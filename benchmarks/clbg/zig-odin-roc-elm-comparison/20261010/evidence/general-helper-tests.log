@@ -1,0 +1,32 @@
+
+[1;36m── UNUSED DEFINITION in evidence/general-helpers.roc ───────────────────────────[0m
+
+[1;36mnatural[0m is not used anywhere in your code.
+
+[1;36m20[0m[1;36m│[0m  [37mnatural = |value|[0m
+     [1;33m^^^^^^^[0m
+
+If you didn't intend on using [1;36mnatural[0m then remove it so future readers
+of your code don't wonder why it is there.
+
+
+[1;36m── DEFINITION ONLY USED IN RECURSION in evidence/general-helpers.roc ───────────[0m
+
+This definition is only used in recursion with itself:
+
+[1;36m207[0m[1;36m│[0m[1;33m>[0m  [37mcount_matches = |pattern,input,position,insensitive,total|[0m
+[1;36m208[0m[1;36m│[0m[1;33m>[0m  [37m    when find_next(pattern,input,position,insensitive) is[0m
+[1;36m209[0m[1;36m│[0m[1;33m>[0m  [37m        NotFound -> total[0m
+[1;36m210[0m[1;36m│[0m[1;33m>[0m  [37m        Found(first,last) -> count_matches(pattern,input,if first == last then last+1 else last,insensitive,total+1)[0m
+
+If you don't intend to use or export this definition, it should be
+removed!
+
+[1;36m────────────────────────────────────────────────────────────────────────────────[0m
+
+[1;32m0[0m errors and [1;33m2[0m warnings found in 640 ms.
+
+Running tests…
+
+[36m────────────────────────────────────────────────────────────────────────────────[39m
+[1;32m0[0m failed and [1;32m214[0m passed in 652 ms.

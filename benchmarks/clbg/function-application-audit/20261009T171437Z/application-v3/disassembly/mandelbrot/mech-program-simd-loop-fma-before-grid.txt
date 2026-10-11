@@ -1,0 +1,292 @@
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-before.project/grid.o:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000000000000 <_mech_map_bits>:
+       0:      	ldr	d5, [x0]
+       4:      	ldr	d23, [x0, #0x8]
+       8:      	ldr	d6, [x0, #0x10]
+       c:      	ldr	d22, [x0, #0x18]
+      10:      	ldr	d7, [x0, #0x20]
+      14:      	ldr	d20, [x0, #0x28]
+      18:      	ldr	d17, [x0, #0x30]
+      1c:      	ldr	d19, [x0, #0x38]
+      20:      	ldr	d18, [x0, #0x40]
+      24:      	ldr	d25, [x0, #0x48]
+      28:      	movi.16b	v16, #0x0
+      2c:      	movi.2s	v21, #0x0
+      30:      	fmov.2d	v4, #4.00000000
+      34:      	fmov	d3, d23
+      38:      	mov.d	v3[1], v6[0]
+      3c:      	fmov	d6, #2.00000000
+      40:      	fdiv	d6, d6, d5
+      44:      	dup.2d	v23, v6[0]
+      48:      	fmul.2d	v5, v3, v23
+      4c:      	fmov.2d	v24, #1.50000000
+      50:      	fsub.2d	v5, v5, v24
+      54:      	fmul	d6, d25, d6
+      58:      	fmov	d25, #1.00000000
+      5c:      	fsub	d6, d6, d25
+      60:      	dup.2d	v6, v6[0]
+      64:      	fmov	d3, d22
+      68:      	mov.d	v3[1], v7[0]
+      6c:      	fmul.2d	v7, v3, v23
+      70:      	fsub.2d	v7, v7, v24
+      74:      	fmov	d3, d20
+      78:      	mov.d	v3[1], v17[0]
+      7c:      	fmul.2d	v17, v3, v23
+      80:      	fsub.2d	v17, v17, v24
+      84:      	fmov	d3, d19
+      88:      	mov.d	v3[1], v18[0]
+      8c:      	fmul.2d	v18, v3, v23
+      90:      	fsub.2d	v18, v18, v24
+      94:      	mov.16b	v0, v16
+      98:      	mov.16b	v1, v16
+      9c:      	mov.16b	v2, v16
+      a0:      	mov.16b	v3, v16
+      a4:      	mov.16b	v19, v16
+      a8:      	mov.16b	v23, v16
+      ac:      	mov.16b	v24, v16
+      b0:      	mov	x4, #0x4049000000000000 ; =4632233691727265792
+      b4:      	fmov	d20, x4
+      b8:      	mov	x5, #-0x1               ; =-1
+      bc:      	mov	x6, #0x0                ; =0
+      c0:      	fcmp	d21, d20
+      c4:      	csel	x6, x5, x6, ge
+      c8:      	fmul.2d	v22, v16, v16
+      cc:      	mov.16b	v20, v22
+      d0:      	fmla.2d	v20, v24, v24
+      d4:      	fcmge.2d	v20, v4, v20
+      d8:      	mov.d	x7, v20[0]
+      dc:      	mov.d	x8, v20[1]
+      e0:      	orr	x10, x7, x8
+      e4:      	fmul.2d	v26, v2, v2
+      e8:      	mov.16b	v20, v26
+      ec:      	fmla.2d	v20, v23, v23
+      f0:      	fcmge.2d	v20, v4, v20
+      f4:      	mov.d	x9, v20[0]
+      f8:      	orr	x11, x10, x9
+      fc:      	mov.d	x10, v20[1]
+     100:      	orr	x12, x11, x10
+     104:      	fmul.2d	v25, v1, v1
+     108:      	mov.16b	v20, v25
+     10c:      	fmla.2d	v20, v19, v19
+     110:      	fcmge.2d	v20, v4, v20
+     114:      	mov.d	x11, v20[0]
+     118:      	orr	x13, x12, x11
+     11c:      	mov.d	x12, v20[1]
+     120:      	orr	x14, x13, x12
+     124:      	fmul.2d	v20, v0, v0
+     128:      	mov.16b	v27, v20
+     12c:      	fmla.2d	v27, v3, v3
+     130:      	fcmge.2d	v27, v4, v27
+     134:      	mov.d	x13, v27[0]
+     138:      	orr	x15, x14, x13
+     13c:      	mov.d	x14, v27[1]
+     140:      	orr	x15, x15, x14
+     144:      	orn	x6, x6, x15
+     148:      	cmp	x6, #0x0
+     14c:      	b.ne	0x32c <_mech_map_bits+0x32c>
+     150:      	fmls.2d	v22, v24, v24
+     154:      	fadd.2d	v22, v22, v5
+     158:      	fadd.2d	v27, v22, v22
+     15c:      	fadd.2d	v16, v16, v16
+     160:      	mov.16b	v28, v6
+     164:      	fmla.2d	v28, v16, v24
+     168:      	mov.16b	v16, v6
+     16c:      	fmla.2d	v16, v27, v28
+     170:      	fmul.2d	v22, v22, v22
+     174:      	fmls.2d	v22, v28, v28
+     178:      	fadd.2d	v22, v22, v5
+     17c:      	fmul.2d	v24, v22, v22
+     180:      	fmls.2d	v24, v16, v16
+     184:      	fadd.2d	v24, v24, v5
+     188:      	fadd.2d	v27, v24, v24
+     18c:      	fadd.2d	v22, v22, v22
+     190:      	mov.16b	v28, v6
+     194:      	fmla.2d	v28, v22, v16
+     198:      	mov.16b	v22, v6
+     19c:      	fmla.2d	v22, v27, v28
+     1a0:      	fmul.2d	v16, v24, v24
+     1a4:      	fmls.2d	v16, v28, v28
+     1a8:      	fadd.2d	v24, v16, v5
+     1ac:      	fmul.2d	v16, v24, v24
+     1b0:      	fmls.2d	v16, v22, v22
+     1b4:      	fadd.2d	v16, v16, v5
+     1b8:      	fmls.2d	v26, v23, v23
+     1bc:      	fadd.2d	v26, v26, v7
+     1c0:      	fadd.2d	v27, v26, v26
+     1c4:      	fadd.2d	v29, v2, v2
+     1c8:      	mov.16b	v28, v6
+     1cc:      	fmla.2d	v28, v29, v23
+     1d0:      	mov.16b	v23, v6
+     1d4:      	fmla.2d	v23, v27, v28
+     1d8:      	fmul.2d	v26, v26, v26
+     1dc:      	fmls.2d	v26, v28, v28
+     1e0:      	fadd.2d	v26, v26, v7
+     1e4:      	fmul.2d	v27, v26, v26
+     1e8:      	fmls.2d	v27, v23, v23
+     1ec:      	fadd.2d	v27, v27, v7
+     1f0:      	fadd.2d	v28, v27, v27
+     1f4:      	fadd.2d	v26, v26, v26
+     1f8:      	mov.16b	v29, v6
+     1fc:      	fmla.2d	v29, v26, v23
+     200:      	mov.16b	v26, v6
+     204:      	fmla.2d	v26, v28, v29
+     208:      	fmul.2d	v23, v27, v27
+     20c:      	fmls.2d	v23, v29, v29
+     210:      	fadd.2d	v23, v23, v7
+     214:      	fmul.2d	v27, v23, v23
+     218:      	fmls.2d	v27, v26, v26
+     21c:      	fadd.2d	v2, v27, v7
+     220:      	fmls.2d	v25, v19, v19
+     224:      	fadd.2d	v25, v25, v17
+     228:      	fadd.2d	v27, v25, v25
+     22c:      	fadd.2d	v29, v1, v1
+     230:      	mov.16b	v28, v6
+     234:      	fmla.2d	v28, v29, v19
+     238:      	mov.16b	v19, v6
+     23c:      	fmla.2d	v19, v27, v28
+     240:      	fmul.2d	v25, v25, v25
+     244:      	fmls.2d	v25, v28, v28
+     248:      	fadd.2d	v25, v25, v17
+     24c:      	fmul.2d	v27, v25, v25
+     250:      	fmls.2d	v27, v19, v19
+     254:      	fadd.2d	v27, v27, v17
+     258:      	fadd.2d	v28, v27, v27
+     25c:      	fadd.2d	v25, v25, v25
+     260:      	mov.16b	v29, v6
+     264:      	fmla.2d	v29, v25, v19
+     268:      	mov.16b	v25, v6
+     26c:      	fmla.2d	v25, v28, v29
+     270:      	fmul.2d	v19, v27, v27
+     274:      	fmls.2d	v19, v29, v29
+     278:      	fadd.2d	v19, v19, v17
+     27c:      	fmul.2d	v27, v19, v19
+     280:      	fmls.2d	v27, v25, v25
+     284:      	fadd.2d	v1, v27, v17
+     288:      	fmls.2d	v20, v3, v3
+     28c:      	fadd.2d	v27, v20, v18
+     290:      	fadd.2d	v28, v27, v27
+     294:      	fadd.2d	v20, v0, v0
+     298:      	mov.16b	v29, v6
+     29c:      	fmla.2d	v29, v20, v3
+     2a0:      	mov.16b	v20, v6
+     2a4:      	fmla.2d	v20, v28, v29
+     2a8:      	fmul.2d	v27, v27, v27
+     2ac:      	fmls.2d	v27, v29, v29
+     2b0:      	fadd.2d	v27, v27, v18
+     2b4:      	fmul.2d	v28, v27, v27
+     2b8:      	fmls.2d	v28, v20, v20
+     2bc:      	fadd.2d	v28, v28, v18
+     2c0:      	fadd.2d	v29, v28, v28
+     2c4:      	fadd.2d	v30, v27, v27
+     2c8:      	mov.16b	v27, v6
+     2cc:      	fmla.2d	v27, v30, v20
+     2d0:      	mov.16b	v20, v6
+     2d4:      	fmla.2d	v20, v29, v27
+     2d8:      	fmul.2d	v28, v28, v28
+     2dc:      	fmls.2d	v28, v27, v27
+     2e0:      	fadd.2d	v27, v28, v18
+     2e4:      	fmul.2d	v28, v27, v27
+     2e8:      	fmls.2d	v28, v20, v20
+     2ec:      	fadd.2d	v0, v28, v18
+     2f0:      	fadd.2d	v28, v24, v24
+     2f4:      	mov.16b	v24, v6
+     2f8:      	fmla.2d	v24, v28, v22
+     2fc:      	fadd.2d	v22, v23, v23
+     300:      	mov.16b	v23, v6
+     304:      	fmla.2d	v23, v22, v26
+     308:      	fadd.2d	v22, v19, v19
+     30c:      	mov.16b	v19, v6
+     310:      	fmla.2d	v19, v22, v25
+     314:      	fadd.2d	v22, v27, v27
+     318:      	mov.16b	v3, v6
+     31c:      	fmla.2d	v3, v22, v20
+     320:      	fmov	d20, #5.00000000
+     324:      	fadd	d21, d21, d20
+     328:      	b	0xb0 <_mech_map_bits+0xb0>
+     32c:      	and	x15, x7, #0x80
+     330:      	and	x0, x8, #0x40
+     334:      	orr	x15, x15, x0
+     338:      	and	x9, x9, #0x20
+     33c:      	orr	x9, x15, x9
+     340:      	and	x10, x10, #0x10
+     344:      	orr	x9, x9, x10
+     348:      	and	x10, x11, #0x8
+     34c:      	orr	x9, x9, x10
+     350:      	and	x10, x12, #0x4
+     354:      	orr	x9, x9, x10
+     358:      	and	x10, x13, #0x2
+     35c:      	orr	x9, x9, x10
+     360:      	and	x10, x14, #0x1
+     364:      	orr	x0, x9, x10
+     368:      	ret
+
+000000000000036c <_mech_grid_row>:
+     36c:      	pacibsp
+     370:      	stp	x29, x30, [sp, #-0x10]!
+     374:      	mov	x29, sp
+     378:      	stp	x21, x22, [sp, #-0x10]!
+     37c:      	stp	x19, x20, [sp, #-0x10]!
+     380:      	sub	sp, sp, #0x50
+     384:      	mov	x21, x2
+     388:      	ucvtf	d0, x0
+     38c:      	mov	x19, sp
+     390:      	stur	d0, [sp]
+     394:      	ucvtf	d0, x1
+     398:      	stur	d0, [sp, #0x48]
+     39c:      	mov	x20, #0x0               ; =0
+     3a0:      	cmp	x0, #0x0
+     3a4:      	mov	x22, x0
+     3a8:      	b.eq	0x45c <_mech_grid_row+0xf0>
+     3ac:      	ucvtf	d0, x20
+     3b0:      	stur	d0, [sp, #0x8]
+     3b4:      	add	x0, x20, #0x1
+     3b8:      	ucvtf	d0, x0
+     3bc:      	stur	d0, [sp, #0x10]
+     3c0:      	add	x0, x20, #0x2
+     3c4:      	ucvtf	d0, x0
+     3c8:      	stur	d0, [sp, #0x18]
+     3cc:      	add	x0, x20, #0x3
+     3d0:      	ucvtf	d0, x0
+     3d4:      	stur	d0, [sp, #0x20]
+     3d8:      	add	x0, x20, #0x4
+     3dc:      	ucvtf	d0, x0
+     3e0:      	stur	d0, [sp, #0x28]
+     3e4:      	add	x0, x20, #0x5
+     3e8:      	ucvtf	d0, x0
+     3ec:      	stur	d0, [sp, #0x30]
+     3f0:      	add	x0, x20, #0x6
+     3f4:      	ucvtf	d0, x0
+     3f8:      	stur	d0, [sp, #0x38]
+     3fc:      	add	x0, x20, #0x7
+     400:      	ucvtf	d0, x0
+     404:      	stur	d0, [sp, #0x40]
+     408:      	mov	x0, x19
+     40c:      	bl	0x40c <_mech_grid_row+0xa0>
+     410:      	mov	x8, x22
+     414:      	sub	x1, x8, x20
+     418:      	mov	x2, #0x8                ; =8
+     41c:      	sub	x2, x2, x1
+     420:      	mov	x3, #0x0                ; =0
+     424:      	cmp	x1, #0x8
+     428:      	csel	x1, x2, x3, lo
+     42c:      	mov	x2, #0xff               ; =255
+     430:      	lsl	x1, x2, x1
+     434:      	and	x0, x0, x1
+     438:      	lsr	x1, x20, #3
+     43c:      	mov	x2, x21
+     440:      	strb	w0, [x2, x1]
+     444:      	add	x20, x20, #0x8
+     448:      	cmp	x20, x8
+     44c:      	b.hs	0x45c <_mech_grid_row+0xf0>
+     450:      	mov	x21, x2
+     454:      	mov	x22, x8
+     458:      	b	0x3ac <_mech_grid_row+0x40>
+     45c:      	add	sp, sp, #0x50
+     460:      	ldp	x19, x20, [sp], #0x10
+     464:      	ldp	x21, x22, [sp], #0x10
+     468:      	ldp	x29, x30, [sp], #0x10
+     46c:      	retab

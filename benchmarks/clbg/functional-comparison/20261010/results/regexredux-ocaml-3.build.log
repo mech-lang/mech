@@ -1,0 +1,14 @@
+File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/regexredux-ocaml-3.ml", line 1:
+Warning 24 [bad-module-name]: bad source file name: Regexredux-ocaml-3 is not a valid module name.
+
+File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/regexredux-ocaml-3.ml", line 32, characters 10-27:
+32 | let dna = Re.replace_string (Re.Pcre.regexp ">.*\n|\n") "" file_data
+               ^^^^^^^^^^^^^^^^^
+Warning 6 [labels-omitted]: label by was omitted in the application of this
+  function.
+
+File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/regexredux-ocaml-3.ml", line 56, characters 13-30:
+56 |         b := Re.replace_string (Re.Pcre.regexp re) s !b) subst;
+                  ^^^^^^^^^^^^^^^^^
+Warning 6 [labels-omitted]: label by was omitted in the application of this
+  function.

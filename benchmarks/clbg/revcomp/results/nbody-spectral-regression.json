@@ -1,0 +1,145 @@
+{
+  "programs": [
+    {
+      "benchmark": "spectralnorm",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "4"
+      },
+      "expected_small": "1.274219991\n",
+      "expected_full": "1.274224153\n",
+      "id": "mech-integer-simd1-u4-r4-p8-g4-previous",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-integer-simd1-u4-r4-p8-g4",
+        "5500"
+      ],
+      "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+      "samples_seconds": [
+        0.161868875,
+        0.203168458,
+        0.126076875,
+        0.144747375,
+        0.125324833
+      ],
+      "median_seconds": 0.144747375
+    },
+    {
+      "benchmark": "spectralnorm",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "4"
+      },
+      "expected_small": "1.274219991\n",
+      "expected_full": "1.274224153\n",
+      "id": "mech-integer-simd1-u4-r4-p8-g4-current",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/extra-regressions/mech-integer-simd1-u4-r4-p8-g4",
+        "5500"
+      ],
+      "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+      "samples_seconds": [
+        0.125485917,
+        0.149823708,
+        0.159550792,
+        0.203802334,
+        0.144141583
+      ],
+      "median_seconds": 0.149823708
+    },
+    {
+      "benchmark": "spectralnorm",
+      "source_sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "16"
+      },
+      "expected_small": "1.274219991\n",
+      "expected_full": "1.274224153\n",
+      "id": "mech-optimized-simd1-u4-r4-p8-previous",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u4-r4-p8",
+        "5500"
+      ],
+      "native_object_sha256": "f7da2ab5ef946b4cafd0819786fe4b752053e3c5d59b1517ee193227dd327d59",
+      "samples_seconds": [
+        0.159551292,
+        0.198185458,
+        0.155281667,
+        0.153387583,
+        0.19867675
+      ],
+      "median_seconds": 0.159551292
+    },
+    {
+      "benchmark": "spectralnorm",
+      "source_sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "16"
+      },
+      "expected_small": "1.274219991\n",
+      "expected_full": "1.274224153\n",
+      "id": "mech-optimized-simd1-u4-r4-p8-current",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/extra-regressions/mech-optimized-simd1-u4-r4-p8",
+        "5500"
+      ],
+      "native_object_sha256": "f7da2ab5ef946b4cafd0819786fe4b752053e3c5d59b1517ee193227dd327d59",
+      "samples_seconds": [
+        0.153901708,
+        0.223940958,
+        0.231411542,
+        0.152866333,
+        0.168332625
+      ],
+      "median_seconds": 0.168332625
+    },
+    {
+      "benchmark": "nbody",
+      "source_sha256": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170",
+      "runtime_environment": {},
+      "expected_small": "-0.169075164\n-0.169087605\n",
+      "expected_full": "-0.169075164\n-0.169059907\n",
+      "id": "nbody-previous",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-simd-factored-v04",
+        "50000000"
+      ],
+      "native_object_sha256": "f87448dff2cc3d18445e88103980655ecfb11952e6c0c5b5818141735bb1a59e",
+      "samples_seconds": [
+        2.097532833,
+        2.089575209,
+        2.085222791,
+        2.08705175,
+        2.0795985
+      ],
+      "median_seconds": 2.08705175
+    },
+    {
+      "benchmark": "nbody",
+      "source_sha256": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170",
+      "runtime_environment": {},
+      "expected_small": "-0.169075164\n-0.169087605\n",
+      "expected_full": "-0.169075164\n-0.169059907\n",
+      "id": "nbody-current",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/.build/extra-regressions/nbody",
+        "50000000"
+      ],
+      "native_object_sha256": "f87448dff2cc3d18445e88103980655ecfb11952e6c0c5b5818141735bb1a59e",
+      "samples_seconds": [
+        2.068753042,
+        2.100960958,
+        2.068807042,
+        2.071867375,
+        2.072994917
+      ],
+      "median_seconds": 2.071867375
+    }
+  ],
+  "all_outputs_passed": true,
+  "samples": 5,
+  "protocol": "Sequential fresh processes, builds and conformance completed before sampling."
+}

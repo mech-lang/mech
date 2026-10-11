@@ -1,0 +1,23 @@
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+   Compiling mech-clbg-mandelbrot v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mech-driver)
+    Finished `release` profile [optimized] target(s) in 31.07s
+     Running tests/native_map.rs (benchmarks/clbg/mandelbrot/mech-driver/target/release/deps/native_map-72970e535f4e6815)
+
+running 14 tests
+test comparisons_keep_ieee_nan_and_boundary_semantics ... ok
+test loop_fma_preserves_immutable_product_rounding ... ok
+test map_rejects_numeric_and_vector_termination_outputs ... ok
+test boolean_masks_do_not_cache_an_uncomputed_sibling_lane ... ok
+test native_boolean_logic_keeps_canonical_values ... ok
+test boolean_scalar_access_works_for_linear_and_two_dimensional_indices ... ok
+test odd_width_map_state_packing_preserves_complete_output ... ok
+test unrelated_map_resets_state_and_obeys_source_stop ... ok
+test map_matches_resident_with_explicit_pixel_inputs ... ok
+test grid_admission_requires_source_kernel_and_complete_source_orchestration ... ok
+test packed_maps_keep_bit_order_boundaries_and_input_validation ... ok
+test source_defined_grid_kernels_use_the_canonical_compiler ... ok
+test scalar_and_simd_mandelbrot_match_complete_official_bitmap ... ok
+test scheduling_regions_and_square_seeds_preserve_complete_bitmap ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.59s
+

@@ -1,0 +1,2 @@
+regexredux.adb:5:06: warning: "Ada.Strings.Unbounded.Aux" is an internal GNAT unit [-gnatwi]
+regexredux.adb:5:06: warning: use of this unit is non-portable and version-dependent [-gnatwi]

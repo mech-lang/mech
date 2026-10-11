@@ -1,0 +1,25 @@
+{
+  "source_sha256": "f4ee22322a8f0701109c046f3288597e484cfb81f47b420677df9d73d2430a00",
+  "binary_sha256": "97ae34aaa037ff50bf885331499fb9c6f1c65bbbc58fee2967fb8f246ca5b883",
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/fpc/fpc/3.2.2_1/bin/ppca64",
+    "-n",
+    "-Mobjfpc",
+    "-Sh",
+    "-Sc",
+    "-Sj",
+    "-O3",
+    "-OoLOOPUNROLL",
+    "-Fu/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/fpc/fpc/3.2.2_1/lib/fpc/3.2.2/units/aarch64-darwin/*",
+    "-Fu/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/library-sources",
+    "-Fl/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/library-aliases",
+    "-Fl/opt/homebrew/opt/gmp/lib",
+    "-Fl/opt/homebrew/opt/pcre2/lib",
+    "-k-syslibroot",
+    "-k/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+    "-FE/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-fpascal-1",
+    "-FU/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-fpascal-1",
+    "-o/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-fpascal-1/mandelbrot-fpascal-1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/pascal/mandelbrot-fpascal-1.pas"
+  ]
+}

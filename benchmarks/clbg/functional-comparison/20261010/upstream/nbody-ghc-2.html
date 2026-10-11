@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>n-body Haskell GHC&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>n-body Haskell GHC&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/nbody.html#nbody">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Contributed by Branimir Maksimovic</span>
+<span class="slc">-- Fix for GHC 9.2 by Artem Pelenitsyn</span>
+
+<span class="kwb">import</span> Foreign<span class="opt">.</span>Ptr
+<span class="kwb">import</span> Foreign<span class="opt">.</span>Storable
+<span class="kwb">import</span> Foreign<span class="opt">.</span>Marshal<span class="opt">.</span>Alloc
+<span class="kwb">import</span> Control<span class="opt">.</span>Monad
+<span class="kwb">import</span> System<span class="opt">.</span>Environment
+<span class="kwb">import</span> Text<span class="opt">.</span>Printf
+
+main <span class="opt">=</span> <span class="kwd">do</span>
+    n <span class="opt">&lt;-</span> getArgs <span class="opt">&gt;&gt;=</span> readIO<span class="opt">.</span>head :: IO Int
+    pPlanets <span class="opt">&lt;-</span> fromList planets
+    nbodyInit pPlanets
+    energy pPlanets <span class="opt">&gt;&gt;=</span> printf <span class="sng">&quot;%.9f</span><span class="esc">\n</span><span class="sng">&quot;</span> 
+    run n pPlanets
+    energy pPlanets <span class="opt">&gt;&gt;=</span> printf <span class="sng">&quot;%.9f</span><span class="esc">\n</span><span class="sng">&quot;</span> 
+
+run <span class="num">0</span> _ <span class="opt">=</span> return <span class="kwc">()</span>
+run i p <span class="opt">=</span> <span class="kwd">do</span>
+        advance p
+        run <span class="kwc">(</span>i<span class="opt">-</span><span class="num">1</span><span class="kwc">)</span> p
+        
+<span class="kwa">data</span> Planet <span class="opt">=</span> Planet <span class="kwc">{</span> x<span class="kwc">,</span>y<span class="kwc">,</span>z<span class="kwc">,</span>vx<span class="kwc">,</span>vy<span class="kwc">,</span>vz<span class="kwc">,</span>mass :: <span class="opt">!</span>Double <span class="kwc">}</span> <span class="kwa">deriving</span> <span class="kwc">(</span>Show<span class="kwc">)</span>
+    
+offsetMomentum p <span class="kwc">(</span>px<span class="kwc">,</span>py<span class="kwc">,</span>pz<span class="kwc">)</span> <span class="opt">=</span> p <span class="kwc">{</span>
+                                   vx <span class="opt">= -</span>px <span class="opt">/</span> solar_mass<span class="kwc">,</span>
+                                   vy <span class="opt">= -</span>py <span class="opt">/</span> solar_mass<span class="kwc">,</span>
+                                   vz <span class="opt">= -</span>pz <span class="opt">/</span> solar_mass
+                                <span class="kwc">}</span>
+
+nbodyInit pPlanets <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span> init <span class="kwc">(</span>px<span class="kwc">,</span>py<span class="kwc">,</span>pz<span class="kwc">)</span> i <span class="opt">=</span> <span class="kwd">do</span>
+          <span class="kwd">if</span> i <span class="opt">&lt;</span> length planets
+              <span class="kwd">then do</span>
+                  p <span class="opt">&lt;-</span> peekElemOff pPlanets i
+                  init <span class="kwc">(</span>px <span class="opt">+</span> vx p <span class="opt">*</span> mass p<span class="kwc">,</span>py <span class="opt">+</span> vy p <span class="opt">*</span> mass p<span class="kwc">,</span> pz <span class="opt">+</span> vz p <span class="opt">*</span> mass p<span class="kwc">) (</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+              <span class="kwd">else</span> return <span class="kwc">(</span>px<span class="kwc">,</span>py<span class="kwc">,</span>pz<span class="kwc">)</span>
+    s <span class="opt">&lt;-</span> init <span class="kwc">(</span><span class="num">0</span><span class="kwc">,</span><span class="num">0</span><span class="kwc">,</span><span class="num">0</span><span class="kwc">)</span> <span class="num">0</span>
+    p <span class="opt">&lt;-</span> peek pPlanets
+    poke pPlanets <span class="opt">$</span> offsetMomentum p s
+
+squared x y z <span class="opt">=</span> x <span class="opt">*</span> x <span class="opt">+</span> y <span class="opt">*</span> y <span class="opt">+</span> z <span class="opt">*</span> z
+    
+energy pPlanets <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span>
+        energy&#39; e i <span class="opt">=</span> <span class="kwd">if</span> i <span class="opt">&lt;</span> length planets
+                    <span class="kwd">then do</span>
+                        p <span class="opt">&lt;-</span> peekElemOff pPlanets i
+                        e1 <span class="opt">&lt;-</span> energy&#39;&#39; p <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span> e
+                        e2 <span class="opt">&lt;-</span> energy&#39; e <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+                        return <span class="opt">$</span> e <span class="opt">+</span> <span class="num">0.5</span> <span class="opt">*</span> mass p <span class="opt">*</span> squared <span class="kwc">(</span>vx p<span class="kwc">) (</span>vy p<span class="kwc">) (</span>vz p<span class="kwc">)</span><span class="opt">+</span>e1<span class="opt">+</span>e2
+                    <span class="kwd">else</span> return e
+        energy&#39;&#39; p j e <span class="opt">=</span> <span class="kwd">if</span> j <span class="opt">&lt;</span> length planets
+                        <span class="kwd">then do</span>
+                            pj <span class="opt">&lt;-</span> peekElemOff pPlanets j
+                            <span class="kwd">let</span>
+                                distance <span class="opt">=</span> sqrt <span class="opt">$</span> squared dx dy dz
+                                dx <span class="opt">=</span> x pj <span class="opt">-</span> x p
+                                dy <span class="opt">=</span> y pj <span class="opt">-</span> y p
+                                dz <span class="opt">=</span> z pj <span class="opt">-</span> z p
+                            e1 <span class="opt">&lt;-</span> energy&#39;&#39; p <span class="kwc">(</span>j<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span> e
+                            return <span class="opt">$</span> e <span class="opt">-</span> <span class="kwc">(</span>mass p <span class="opt">*</span> mass pj<span class="kwc">)</span> <span class="opt">/</span> distance <span class="opt">+</span> e1
+                        <span class="kwd">else</span> return e
+    energy&#39; <span class="num">0.0 0</span>
+
+advance pPlanets <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span> 
+        advance&#39; i <span class="opt">=</span> 
+            when <span class="kwc">(</span>i <span class="opt">&lt;</span> length planets<span class="kwc">)</span> <span class="opt">$</span> <span class="kwd">do</span>
+                    <span class="kwd">let</span>
+                        loop j <span class="opt">=</span> when <span class="kwc">(</span>j <span class="opt">&lt;</span> length planets<span class="kwc">)</span> <span class="opt">$</span> <span class="kwd">do</span>
+                                    ii <span class="opt">&lt;-</span> peekElemOff pPlanets i
+                                    jj <span class="opt">&lt;-</span> peekElemOff pPlanets j
+                                    <span class="kwd">let</span>
+                                        mag <span class="opt">=</span> dt <span class="opt">/</span> <span class="kwc">(</span>dSquared <span class="opt">*</span> sqrt dSquared<span class="kwc">)</span>
+                                        dSquared <span class="opt">=</span> squared dx dy dz
+                                        dx <span class="opt">=</span> x ii <span class="opt">-</span> x jj
+                                        dy <span class="opt">=</span> y ii <span class="opt">-</span> y jj
+                                        dz <span class="opt">=</span> z ii <span class="opt">-</span> z jj
+                                    pokeV pPlanets i ii<span class="kwc">{</span>
+                                        vx <span class="opt">=</span> vx ii <span class="opt">-</span> dx <span class="opt">*</span> mass jj <span class="opt">*</span> mag<span class="kwc">,</span>
+                                        vy <span class="opt">=</span> vy ii <span class="opt">-</span> dy <span class="opt">*</span> mass jj <span class="opt">*</span> mag<span class="kwc">,</span>
+                                        vz <span class="opt">=</span> vz ii <span class="opt">-</span> dz <span class="opt">*</span> mass jj <span class="opt">*</span> mag
+                                        <span class="kwc">}</span>
+                                    pokeV pPlanets j jj<span class="kwc">{</span>
+                                        vx <span class="opt">=</span> vx jj <span class="opt">+</span> dx <span class="opt">*</span> mass ii <span class="opt">*</span> mag<span class="kwc">,</span>
+                                        vy <span class="opt">=</span> vy jj <span class="opt">+</span> dy <span class="opt">*</span> mass ii <span class="opt">*</span> mag<span class="kwc">,</span>
+                                        vz <span class="opt">=</span> vz jj <span class="opt">+</span> dz <span class="opt">*</span> mass ii <span class="opt">*</span> mag
+                                        <span class="kwc">}</span>
+                                    loop <span class="kwc">(</span>j<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+                    loop <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+                    advance&#39; <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+        advance&#39;&#39; i <span class="opt">=</span> when <span class="kwc">(</span>i <span class="opt">&lt;</span> length planets<span class="kwc">)</span> <span class="opt">$</span> <span class="kwd">do</span>
+                            p <span class="opt">&lt;-</span> peekElemOff pPlanets i
+                            pokeC pPlanets i p <span class="kwc">{</span> 
+                                x <span class="opt">=</span> x p <span class="opt">+</span> dt <span class="opt">*</span> vx p<span class="kwc">,</span>
+                                y <span class="opt">=</span> y p <span class="opt">+</span> dt <span class="opt">*</span> vy p<span class="kwc">,</span>
+                                z <span class="opt">=</span> z p <span class="opt">+</span> dt <span class="opt">*</span> vz p
+                                <span class="kwc">}</span>
+                            advance&#39;&#39; <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+    advance&#39; <span class="num">0</span>
+    advance&#39;&#39; <span class="num">0</span>
+
+planets <span class="opt">=</span> <span class="kwc">[</span>sun<span class="kwc">,</span> jupiter<span class="kwc">,</span> saturn<span class="kwc">,</span> uranus<span class="kwc">,</span> neptune<span class="kwc">]</span>
+    
+sun <span class="opt">=</span> Planet <span class="kwc">{</span>x <span class="opt">=</span> <span class="num">0</span><span class="kwc">,</span> y <span class="opt">=</span> <span class="num">0</span><span class="kwc">,</span> z <span class="opt">=</span> <span class="num">0</span><span class="kwc">,</span>
+              vx <span class="opt">=</span> <span class="num">0</span><span class="kwc">,</span> vy <span class="opt">=</span> <span class="num">0</span><span class="kwc">,</span> vz <span class="opt">=</span> <span class="num">0</span><span class="kwc">,</span>
+              mass <span class="opt">=</span> solar_mass<span class="kwc">}</span>
+              
+jupiter <span class="opt">=</span> Planet 
+    <span class="kwc">{</span>x <span class="opt">=</span> <span class="num">4.84143144246472090e+00</span><span class="kwc">,</span> y <span class="opt">= -</span><span class="num">1.16032004402742839e+00</span><span class="kwc">,</span> z<span class="opt">= -</span><span class="num">1.03622044471123109e-01</span><span class="kwc">,</span>
+     vx <span class="opt">=</span> <span class="num">1.66007664274403694e-03</span><span class="opt">*</span>dp<span class="kwc">,</span> vy <span class="opt">=</span> <span class="num">7.69901118419740425e-03</span><span class="opt">*</span>dp<span class="kwc">,</span> vz <span class="opt">= -</span><span class="num">6.90460016972063023e-05</span><span class="opt">*</span>dp<span class="kwc">,</span>
+     mass <span class="opt">=</span> <span class="num">9.54791938424326609e-04</span> <span class="opt">*</span> solar_mass<span class="kwc">}</span>
+
+saturn <span class="opt">=</span> Planet
+    <span class="kwc">{</span> x <span class="opt">=</span> <span class="num">8.34336671824457987e+00</span><span class="kwc">,</span> y <span class="opt">=</span> <span class="num">4.12479856412430479e+00</span><span class="kwc">,</span> z <span class="opt">= -</span><span class="num">4.03523417114321381e-01</span><span class="kwc">,</span>
+     vx <span class="opt">= -</span><span class="num">2.76742510726862411e-03</span><span class="opt">*</span>dp<span class="kwc">,</span>  vy <span class="opt">=</span> <span class="num">4.99852801234917238e-03</span><span class="opt">*</span>dp<span class="kwc">,</span> vz <span class="opt">=</span> <span class="num">2.30417297573763929e-05</span><span class="opt">*</span>dp<span class="kwc">,</span>
+     mass <span class="opt">=</span> <span class="num">2.85885980666130812e-04</span> <span class="opt">*</span> solar_mass<span class="kwc">}</span>
+
+uranus <span class="opt">=</span> Planet
+    <span class="kwc">{</span>x <span class="opt">=</span> <span class="num">1.28943695621391310e+01</span><span class="kwc">,</span>y <span class="opt">= -</span><span class="num">1.51111514016986312e+01</span><span class="kwc">,</span>z <span class="opt">= -</span><span class="num">2.23307578892655734e-01</span><span class="kwc">,</span>
+     vx <span class="opt">=</span> <span class="num">2.96460137564761618e-03</span><span class="opt">*</span>dp<span class="kwc">,</span>vy <span class="opt">=</span> <span class="num">2.37847173959480950e-03</span><span class="opt">*</span>dp<span class="kwc">,</span> vz <span class="opt">= -</span><span class="num">2.96589568540237556e-05</span><span class="opt">*</span>dp<span class="kwc">,</span>
+     mass <span class="opt">=</span> <span class="num">4.36624404335156298e-05</span> <span class="opt">*</span> solar_mass<span class="kwc">}</span>
+
+neptune <span class="opt">=</span> Planet
+    <span class="kwc">{</span>x <span class="opt">=</span> <span class="num">1.53796971148509165e+01</span><span class="kwc">,</span>y <span class="opt">= -</span><span class="num">2.59193146099879641e+01</span><span class="kwc">,</span>z <span class="opt">=</span> <span class="num">1.79258772950371181e-01</span><span class="kwc">,</span>
+     vx <span class="opt">=</span> <span class="num">2.68067772490389322e-03</span><span class="opt">*</span>dp<span class="kwc">,</span>vy <span class="opt">=</span> <span class="num">1.62824170038242295e-03</span><span class="opt">*</span>dp<span class="kwc">,</span> vz <span class="opt">= -</span><span class="num">9.51592254519715870e-05</span><span class="opt">*</span>dp<span class="kwc">,</span>
+     mass <span class="opt">=</span> <span class="num">5.15138902046611451e-05</span> <span class="opt">*</span> solar_mass<span class="kwc">}</span>
+     
+days_per_year <span class="opt">=</span> <span class="num">365.24</span>
+solar_mass    <span class="opt">=</span> <span class="num">4</span> <span class="opt">*</span> pi <span class="opt">^</span> <span class="num">2</span>
+dp <span class="opt">=</span> days_per_year
+dt <span class="opt">=</span> <span class="num">0.01</span>
+
+<span class="kwa">instance</span> Storable Planet <span class="kwb">where</span>
+    sizeOf _ <span class="opt">=</span> <span class="num">8</span> <span class="opt">*</span> dblSz
+    alignment _ <span class="opt">=</span> dblSz
+    peekElemOff p i <span class="opt">=</span> peek <span class="kwc">(</span>plusPtr p <span class="kwc">(</span>i <span class="opt">*</span> sizeOf <span class="kwc">(</span>undefined::Planet<span class="kwc">)))</span>
+    pokeElemOff p i e <span class="opt">=</span> poke <span class="kwc">(</span>plusPtr p <span class="kwc">(</span>i <span class="opt">*</span> sizeOf e<span class="kwc">))</span> e
+    peek p <span class="opt">=</span> <span class="kwd">do</span>
+        x <span class="opt">&lt;-</span> peek <span class="kwc">(</span>offset <span class="num">0</span><span class="kwc">)</span>
+        y <span class="opt">&lt;-</span> peek <span class="kwc">(</span>offset <span class="num">1</span><span class="kwc">)</span>
+        z <span class="opt">&lt;-</span> peek <span class="kwc">(</span>offset <span class="num">2</span><span class="kwc">)</span>
+        vx <span class="opt">&lt;-</span> peek <span class="kwc">(</span>offset <span class="num">3</span><span class="kwc">)</span>
+        vy <span class="opt">&lt;-</span> peek <span class="kwc">(</span>offset <span class="num">4</span><span class="kwc">)</span>
+        vz <span class="opt">&lt;-</span> peek <span class="kwc">(</span>offset <span class="num">5</span><span class="kwc">)</span>
+        mass <span class="opt">&lt;-</span> peek <span class="kwc">(</span>offset <span class="num">6</span><span class="kwc">)</span>
+        return <span class="opt">$</span> Planet <span class="kwc">{</span>x<span class="opt">=</span>x<span class="kwc">,</span>y<span class="opt">=</span>y<span class="kwc">,</span>z<span class="opt">=</span>z<span class="kwc">,</span>vx<span class="opt">=</span>vx<span class="kwc">,</span>vy<span class="opt">=</span>vy<span class="kwc">,</span>vz<span class="opt">=</span>vz<span class="kwc">,</span>mass<span class="opt">=</span>mass<span class="kwc">}</span>
+            <span class="kwb">where</span>
+                offset i <span class="opt">=</span> plusPtr <span class="kwc">(</span>castPtr p::Ptr Double<span class="kwc">) (</span>i<span class="opt">*</span><span class="num">8</span><span class="kwc">)</span>
+    poke p e <span class="opt">=</span> <span class="kwd">do</span>
+        poke <span class="kwc">(</span>offset <span class="num">0</span><span class="kwc">)</span> <span class="opt">$</span> x e
+        poke <span class="kwc">(</span>offset <span class="num">1</span><span class="kwc">)</span> <span class="opt">$</span> y e
+        poke <span class="kwc">(</span>offset <span class="num">2</span><span class="kwc">)</span> <span class="opt">$</span> z e
+        poke <span class="kwc">(</span>offset <span class="num">3</span><span class="kwc">)</span> <span class="opt">$</span> vx e
+        poke <span class="kwc">(</span>offset <span class="num">4</span><span class="kwc">)</span> <span class="opt">$</span> vy e
+        poke <span class="kwc">(</span>offset <span class="num">5</span><span class="kwc">)</span> <span class="opt">$</span> vz e
+        poke <span class="kwc">(</span>offset <span class="num">6</span><span class="kwc">)</span> <span class="opt">$</span> mass e
+            <span class="kwb">where</span>
+                offset i <span class="opt">=</span> plusPtr <span class="kwc">(</span>castPtr p::Ptr Double<span class="kwc">) (</span>i<span class="opt">*</span><span class="num">8</span><span class="kwc">)</span>
+
+dblSz <span class="opt">=</span> sizeOf <span class="kwc">(</span>undefined::Double<span class="kwc">)</span>
+
+pokeC p i e <span class="opt">=</span> <span class="kwd">do</span>
+        poke <span class="kwc">(</span>offset <span class="num">0</span><span class="kwc">)</span> <span class="opt">$</span> x e
+        poke <span class="kwc">(</span>offset <span class="num">1</span><span class="kwc">)</span> <span class="opt">$</span> y e
+        poke <span class="kwc">(</span>offset <span class="num">2</span><span class="kwc">)</span> <span class="opt">$</span> z e
+        <span class="kwb">where</span>
+            offset o <span class="opt">=</span> <span class="kwc">(</span>plusPtr <span class="kwc">(</span>castPtr p::Ptr Double<span class="kwc">)(</span>o<span class="opt">*</span><span class="num">8</span><span class="opt">+</span>i<span class="opt">*</span><span class="num">64</span><span class="kwc">))</span>
+
+pokeV p i e <span class="opt">=</span> <span class="kwd">do</span>
+        poke <span class="kwc">(</span>offset <span class="num">3</span><span class="kwc">)</span> <span class="opt">$</span> vx e
+        poke <span class="kwc">(</span>offset <span class="num">4</span><span class="kwc">)</span> <span class="opt">$</span> vy e
+        poke <span class="kwc">(</span>offset <span class="num">5</span><span class="kwc">)</span> <span class="opt">$</span> vz e
+        <span class="kwb">where</span>
+            offset o <span class="opt">=</span> <span class="kwc">(</span>plusPtr <span class="kwc">(</span>castPtr p::Ptr Double<span class="kwc">)(</span>o<span class="opt">*</span><span class="num">8</span><span class="opt">+</span>i<span class="opt">*</span><span class="num">64</span><span class="kwc">))</span>
+
+fromList :: <span class="kwc">[</span>Planet<span class="kwc">]</span><span class="opt">-&gt;</span>IO <span class="kwc">(</span>Ptr Planet<span class="kwc">)</span>
+fromList l <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span> len <span class="opt">=</span> length l
+    pa <span class="opt">&lt;-</span> mallocBytes <span class="kwc">(</span>len <span class="opt">*</span> sizeOf <span class="kwc">(</span>undefined::Planet<span class="kwc">))</span>
+    <span class="kwd">let</span> 
+        loop <span class="kwc">[]</span> _ <span class="opt">=</span> return <span class="kwc">()</span>
+        loop <span class="kwc">(</span>x:xs<span class="kwc">)</span> i <span class="opt">=</span> <span class="kwd">do</span>
+                            poke <span class="kwc">(</span>pa <span class="opt">`plusPtr`</span> <span class="kwc">(</span>i <span class="opt">*</span> sizeOf<span class="kwc">(</span>undefined::Planet<span class="kwc">)))</span> x
+                            loop xs <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+    loop l <span class="num">0</span>
+    return pa
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 08:49:27 GMT
+
+MAKE:
+mv nbody.ghc-2.ghc nbody.ghc-2.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts  nbody.ghc-2.hs -o nbody.ghc-2.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( nbody.ghc-2.hs, nbody.ghc-2.o )
+nbody.ghc-2.hs:15:29: warning: [GHC-63394] [-Wx-partial]
+    In the use of ‘head’
+    (imported from Prelude, but defined in GHC.Internal.List):
+    &quot;This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use &quot;Data.List.NonEmpty&quot;.&quot;
+   |
+15 |     n &lt;- getArgs &gt;&gt;= readIO.head :: IO Int
+   |                             ^^^^
+
+[2 of 2] Linking nbody.ghc-2.ghc_run
+rm nbody.ghc-2.hs
+
+17.71 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./nbody.ghc-2.ghc_run +RTS -N4 -RTS 50000000
+
+PROGRAM OUTPUT:
+-0.169075164
+-0.169059907
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

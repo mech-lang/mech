@@ -1,0 +1,18 @@
+[package]
+name = "mech-language-gap-tests"
+version = "0.0.0"
+edition = "2024"
+publish = false
+[dependencies]
+mech-gpu = { path = "../../../../../hosts/gpu", default-features = false, features = ["sequence-cli", "system-gmp"] }
+mech-engine = { path = "../../../../../src/engine", default-features = false, features = ["resident-artifact", "full_compiler"] }
+mech-stdlib = { path = "../../../../../src/stdlib", default-features = false, features = ["native-sequence"] }
+[patch.crates-io]
+mech-core = { path = "../../../../../src/core" }
+mech-engine = { path = "../../../../../src/engine" }
+mech-syntax = { path = "../../../../../src/syntax" }
+mech-stdlib = { path = "../../../../../src/stdlib" }
+[workspace]
+
+[lib]
+path = "../../../native-features/src/lib.rs"

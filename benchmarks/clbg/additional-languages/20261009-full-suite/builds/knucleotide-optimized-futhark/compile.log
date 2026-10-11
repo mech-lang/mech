@@ -1,0 +1,5 @@
+Warning at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/common.fut:5:8-9:
+  Unused name "x".
+
+Warning at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/hashmap.fut:37:8-15:
+  Unused name "old_key".

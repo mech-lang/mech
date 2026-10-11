@@ -1,0 +1,5 @@
+stretch tree of depth 9	 check: 1023
+256	 trees of depth 4	 check: 7936
+64	 trees of depth 6	 check: 8128
+16	 trees of depth 8	 check: 8176
+long lived tree of depth 8	 check: 511

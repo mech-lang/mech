@@ -1,0 +1,5 @@
+AsU64(x<bigint>) => <u64> := x
+More(x<bigint>, i<u64>) => <bool> := i < 100000
+Step(x<bigint>, i<u64>) => <(bigint,u64)> := (x + 1, i + 1)
+(x, i) := control/while((bigint/new(0), 0), More, Step)
+io/print("{} {}\n", AsU64(x), i)

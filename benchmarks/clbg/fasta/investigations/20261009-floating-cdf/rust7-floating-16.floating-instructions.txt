@@ -1,0 +1,9 @@
+10000524c: 1e681800    	fdiv	d0, d0, d8
+100005258: 6e61e401    	fcmge.2d	v1, v0, v1
+10000525c: 6e62e402    	fcmge.2d	v2, v0, v2
+100005268: 6e62e402    	fcmge.2d	v2, v0, v2
+10000526c: 6e63e403    	fcmge.2d	v3, v0, v3
+10000527c: 6e64e404    	fcmge.2d	v4, v0, v4
+100005280: 6e65e405    	fcmge.2d	v5, v0, v5
+10000528c: 6e65e405    	fcmge.2d	v5, v0, v5
+100005290: 6e66e400    	fcmge.2d	v0, v0, v6

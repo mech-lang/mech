@@ -1,0 +1,9 @@
+n := io/argument-u64(1)
+indices := 0..n
+A := [[1.0 / number/to-f64((i + j) * (i + j + 1) / 2 + i + 1) | j <- indices]' | i <- indices]'
+step(x<[f64]>) => <[f64]> := A' ** (A ** x)
+seed := [1.0 | i <- indices]'
+v := sequence/iterate(seed, 19, step)
+u := v |> step
+norm := math/sqrt((u · v) / (v · v))
+io/write(string/concat(number/format(norm, 9), "\n"))

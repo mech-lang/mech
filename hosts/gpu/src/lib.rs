@@ -35,6 +35,9 @@ use serde::{Deserialize, Serialize};
 
 mod batched;
 pub use batched::*;
+/// Experimental autonomous f64 extension of the Cranelift CPU backends.
+#[cfg(feature = "aot")]
+pub mod fused_f64;
 #[cfg(feature = "native")]
 mod native;
 #[cfg(feature = "native")]
@@ -2194,3 +2197,12 @@ mod tests {
         assert_eq!(wgsl, "  var slot_0 = 0.0;\n");
     }
 }
+#[cfg(feature = "sequence-cli")]
+pub mod sequence;
+
+#[cfg(feature = "native-build")]
+pub mod native_build;
+#[cfg(feature = "native-build")]
+pub mod execution;
+#[cfg(feature = "sequence-cli")]
+pub mod control;

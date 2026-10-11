@@ -1,0 +1,56 @@
+[
+  {
+    "language": "python",
+    "label": "Python (CPython)",
+    "benchmarks": 10,
+    "fastest_time_ratio_to_mech_fastest": 23.66838947988358,
+    "smallest_time_ratio_to_mech_fastest": 80.63547886760293,
+    "fast_source_loc_ratio_to_mech_fastest": 2.5756396438477043,
+    "fewest_source_loc_ratio_to_mech_fewest": 1.4512975389989595
+  },
+  {
+    "language": "ruby",
+    "label": "Ruby (YJIT)",
+    "benchmarks": 10,
+    "fastest_time_ratio_to_mech_fastest": 29.439411616608883,
+    "smallest_time_ratio_to_mech_fastest": 88.60119728858432,
+    "fast_source_loc_ratio_to_mech_fastest": 3.1911638844853027,
+    "fewest_source_loc_ratio_to_mech_fewest": 1.546133248456205
+  },
+  {
+    "language": "perl",
+    "label": "Perl",
+    "benchmarks": 10,
+    "fastest_time_ratio_to_mech_fastest": 29.346800121372294,
+    "smallest_time_ratio_to_mech_fastest": 68.61350582736442,
+    "fast_source_loc_ratio_to_mech_fastest": 1.8308043418911626,
+    "fewest_source_loc_ratio_to_mech_fewest": 1.4101055265084506
+  },
+  {
+    "language": "luajit",
+    "label": "LuaJIT",
+    "benchmarks": 10,
+    "fastest_time_ratio_to_mech_fastest": 8.938478031549337,
+    "smallest_time_ratio_to_mech_fastest": 11.536029156889969,
+    "fast_source_loc_ratio_to_mech_fastest": 1.9994975353175668,
+    "fewest_source_loc_ratio_to_mech_fewest": 1.8006163215180075
+  },
+  {
+    "language": "javascript",
+    "label": "JavaScript (V8)",
+    "benchmarks": 10,
+    "fastest_time_ratio_to_mech_fastest": 4.9597819035680635,
+    "smallest_time_ratio_to_mech_fastest": 17.87840490620266,
+    "fast_source_loc_ratio_to_mech_fastest": 3.6047643270167806,
+    "fewest_source_loc_ratio_to_mech_fewest": 2.215732741592236
+  },
+  {
+    "language": "php",
+    "label": "PHP",
+    "benchmarks": 10,
+    "fastest_time_ratio_to_mech_fastest": 17.500035328820687,
+    "smallest_time_ratio_to_mech_fastest": 23.732126532957405,
+    "fast_source_loc_ratio_to_mech_fastest": 2.4484341770193003,
+    "fewest_source_loc_ratio_to_mech_fewest": 1.9068139332879988
+  }
+]

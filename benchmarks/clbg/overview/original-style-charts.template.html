@@ -1,0 +1,102 @@
+<div id="mech-original-style">
+  <h2>Benchmarks Game · updated corner charts</h2>
+  <div class="text-small">● Fastest · ■ Smallest · faint dots: all builds · line joins the endpoints · smaller ← · faster ↓</div>
+  <div data-figures></div>
+  <div class="text-small">Apple M3 · AC power · Low Power Mode off · 3 samples/build · complete Mech source counted; generic runtime excluded · startup and full output included · gzip retains source names.</div>
+  <div class="tooltip" role="tooltip" data-hover hidden></div>
+</div>
+<style>
+  #mech-original-style { position: relative; }
+  #mech-original-style [hidden] { display: none !important; }
+  #mech-original-style figure { margin: 20px 0 32px; }
+  #mech-original-style .original-svg { display: block; width: 100%; overflow: visible; }
+  #mech-original-style .original-svg text { fill: var(--foreground); font-size: 12px; font-weight: 400; }
+  #mech-original-style .original-svg .tick text { fill: var(--muted-foreground); }
+  #mech-original-style .fixed-key { gap: 6px 14px; margin-bottom: 10px; }
+  #mech-original-style .language-toggle { appearance: none; display: inline-flex; align-items: center; gap: 5px; background: transparent; border: none; padding: 0; color: var(--foreground); font: inherit; }
+  #mech-original-style .language-toggle[aria-pressed="false"] { opacity: .45; }
+  #mech-original-style .swatch { display: inline-block; width: 9px; height: 9px; }
+  #mech-original-style [data-hover] { position: absolute; pointer-events: none; z-index: 5; max-width: min(300px, calc(100% - 8px)); overflow-wrap: anywhere; background: var(--popover); color: var(--popover-foreground); }
+  @media (pointer:coarse) { #mech-original-style .language-toggle { min-height:44px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+(() => {
+  const root=document.getElementById('mech-original-style');
+  const data=/*__ORIGINAL_STYLE_DATA__*/;
+  const native=new Set(['c','chapel','cpp','go','java','julia','mech','rust']);
+  const colors={c:'var(--muted-foreground)',chapel:'var(--green)',cpp:'var(--yellow)',go:'var(--viz-series-6)',java:'var(--blue)',julia:'var(--purple)',mech:'var(--red)',rust:'var(--orange)',python:'color-mix(in srgb,var(--yellow) 70%,var(--foreground))',ruby:'color-mix(in srgb,var(--red) 65%,var(--purple))',perl:'color-mix(in srgb,var(--blue) 70%,var(--green))',lua:'color-mix(in srgb,var(--green) 65%,var(--blue))',luajit:'color-mix(in srgb,var(--green) 75%,var(--foreground))',javascript:'color-mix(in srgb,var(--orange) 60%,var(--yellow))',php:'color-mix(in srgb,var(--purple) 70%,var(--foreground))'};
+  const tooltip=root.querySelector('[data-hover]');
+  const container=root.querySelector('[data-figures]');
+  const figures=[];let hidden=new Set();
+  const safe=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const ratio=value=>value.toFixed(2)+'×';
+  function create(model,zoom=false) {
+    const figure=document.createElement('figure');figure.dataset.key=model.key;figure.dataset.zoom=String(zoom);
+    const title=document.createElement('h3');title.textContent=model.key==='summary'?(zoom?'Combined chart · native-language corner':'Combined chart · all languages'):model.title;
+    const workload=document.createElement('div');workload.className='text-small';workload.textContent=model.workload;
+    const key=document.createElement('div');key.className='fixed-key viz-row text-small';key.setAttribute('aria-label','Language colors');
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('original-svg');svg.setAttribute('role','img');
+    const note=document.createElement('div');note.className='text-small';note.textContent='Added scripting runtimes: smallest programs only; fastest versions not sampled.';if(zoom)note.hidden=true;
+    figure.append(title,workload,key,svg,note);container.append(figure);figures.push({model,zoom,figure,key,svg});
+  }
+  create(data.summary);create(data.summary,true);data.studies.forEach(s=>create(s));
+  function save(){window.openai?.setWidgetState?.({modelContent:{chartStyle:'original benchmark corner charts'},privateContent:{hiddenLanguages:[...hidden]}}).catch(()=>{});}
+  function restore(state){hidden=new Set((state?.privateContent?.hiddenLanguages||[]).filter(l=>Object.hasOwn(colors,l)));}
+  function key(item) {
+    item.key.replaceChildren();item.model.groups.filter(g=>!item.zoom||native.has(g.lang)).forEach(g=>{
+      const button=document.createElement('button');button.type='button';button.className='language-toggle cursor-interaction';button.setAttribute('aria-pressed',String(!hidden.has(g.lang)));
+      const mark=document.createElement('span');mark.className='swatch';mark.style.background=colors[g.lang];mark.style.borderRadius=g.compact_only?'0':'50%';
+      button.append(mark,document.createTextNode(g.label+(g.compact_only?' · smallest only':'')));
+      button.addEventListener('click',()=>{hidden.has(g.lang)?hidden.delete(g.lang):hidden.add(g.lang);figures.forEach(i=>{key(i);draw(i);});save();});item.key.append(button);
+    });
+  }
+  function ticks(max,count){const values=[];for(let v=1;v<=max*1.01;v*=2)values.push(v);return values.filter((_,i)=>i%Math.max(1,Math.ceil(values.length/count))===0);}
+  function detail(event,point,item){
+    tooltip.innerHTML='<strong>'+safe(point.group.label)+'</strong> · '+safe(point.kind)+'<br>'+ratio(point.p.x)+' source size · '+ratio(point.p.y)+' elapsed time'+(item.model.key==='summary'?'<br>Geometric means of eight benchmarks':'<br>'+point.p.seconds.toFixed(3)+' s · '+point.p.loc+' LOC · '+point.p.gzip+' gzip bytes<br>'+safe(point.p.id)+(point.p.algorithm?'<br>'+safe(point.p.algorithm.reason):''))+(point.group.compact_only?'<br>Fastest program not sampled':'');
+    tooltip.hidden=false;const b=root.getBoundingClientRect();tooltip.style.left=Math.max(0,Math.min(root.clientWidth-tooltip.offsetWidth,event.clientX-b.left+12))+'px';tooltip.style.top=Math.max(0,event.clientY-b.top-tooltip.offsetHeight-10)+'px';
+  }
+  function draw(item){
+    tooltip.hidden=true;
+    const width=item.figure.clientWidth;if(!width)return;
+    const groups=item.model.groups.filter(g=>!item.zoom||native.has(g.lang));
+    const selected=groups.filter(g=>!hidden.has(g.lang));
+    const all=groups.flatMap(g=>[...g.builds,g.fast,g.small].filter(Boolean));
+    const maxX=d3.max(all,p=>p.x),maxY=d3.max(all,p=>p.y);
+    const height=width<400?420:500,m={left:68,right:22,top:16,bottom:66};
+    const x=d3.scaleLog().base(2).domain([Math.min(1,d3.min(all,p=>p.x))*.94,maxX*1.16]).range([m.left+8,width-m.right-8]);
+    const y=d3.scaleLog().base(2).domain([Math.min(1,d3.min(all,p=>p.y))*.87,maxY*1.22]).range([height-m.bottom-8,m.top+8]);
+    const svg=d3.select(item.svg);svg.attr('viewBox',`0 0 ${width} ${height}`).attr('height',height);svg.selectAll('*').remove();
+    svg.attr('aria-label',item.model.title+'. Fastest circles and smallest-source squares on normalized compressed-size and execution-time axes; line joins each language’s endpoints.');
+    svg.append('rect').attr('data-chart-frame','').attr('x',m.left).attr('y',m.top).attr('width',width-m.left-m.right).attr('height',height-m.top-m.bottom).attr('fill','none').attr('stroke','var(--border)').attr('stroke-width',1);
+    const xt=ticks(maxX,width<400?4:6),yt=ticks(maxY,7);
+    for(const [which,axis,transform] of [['x',d3.axisBottom(x).tickValues(xt).tickSize(-(height-m.top-m.bottom)),`translate(0,${height-m.bottom})`],['y',d3.axisLeft(y).tickValues(yt).tickSize(-(width-m.left-m.right)),`translate(${m.left},0)`]]){
+      svg.append('g').attr('class',which+'-grid').attr('transform',transform).call(axis.tickFormat('')).call(g=>g.select('.domain').remove()).call(g=>g.selectAll('line').attr('stroke','var(--border)'));
+    }
+    svg.append('g').attr('class','x-axis').attr('transform',`translate(0,${height-m.bottom})`).call(d3.axisBottom(x).tickValues(xt).tickFormat(v=>v+'×').tickSize(0).tickPadding(9)).call(g=>g.select('.domain').remove());
+    svg.append('g').attr('class','y-axis').attr('transform',`translate(${m.left},0)`).call(d3.axisLeft(y).tickValues(yt).tickFormat(v=>v+'×').tickSize(0).tickPadding(9)).call(g=>g.select('.domain').remove());
+    const title=svg.append('text').attr('class','axis-title').attr('data-axis','x').attr('x',(m.left+width-m.right)/2).attr('y',height-29).attr('text-anchor','middle');
+    title.append('tspan').attr('x',(m.left+width-m.right)/2).text('Compressed source size');
+    title.append('tspan').attr('x',(m.left+width-m.right)/2).attr('dy',16).text('Relative to smallest · smaller ←');
+    svg.append('text').attr('class','axis-title').attr('data-axis','y').attr('transform',`translate(17,${(m.top+height-m.bottom)/2}) rotate(-90)`).attr('text-anchor','middle').text('Time / fastest · faster ↓');
+    const hits=[];
+    selected.forEach(g=>{
+      g.builds.forEach(p=>{svg.append('circle').attr('class','build').attr('data-language',g.lang).attr('cx',x(p.x)).attr('cy',y(p.y)).attr('r',2.6).attr('fill',colors[g.lang]).attr('opacity',.20);hits.push({group:g,p,kind:'measured build'});});
+      const same=g.fast&&Math.abs(g.fast.x-g.small.x)<1e-10&&Math.abs(g.fast.y-g.small.y)<1e-10;
+      if(g.fast&&!same)svg.append('line').attr('class','connector').attr('data-language',g.lang).attr('x1',x(g.fast.x)).attr('y1',y(g.fast.y)).attr('x2',x(g.small.x)).attr('y2',y(g.small.y)).attr('stroke',colors[g.lang]).attr('stroke-width',1.7);
+      if(!same)svg.append('rect').attr('class','smallest').attr('data-language',g.lang).attr('x',x(g.small.x)-4).attr('y',y(g.small.y)-4).attr('width',8).attr('height',8).attr('fill',colors[g.lang]);
+      if(g.fast){svg.append('circle').attr('class','fastest').attr('data-language',g.lang).attr('cx',x(g.fast.x)).attr('cy',y(g.fast.y)).attr('r',5).attr('fill',colors[g.lang]);hits.push({group:g,p:g.fast,kind:'fastest measured'});}
+      hits.push({group:g,p:g.small,kind:'smallest source'});
+    });
+    const mech=selected.find(g=>g.lang==='mech');
+    if(mech){const p=mech.fast;svg.append('text').attr('class','mech-label').attr('x',Math.max(m.left+5,Math.min(width-m.right-180,x(p.x)+12))).attr('y',Math.max(m.top+14,y(p.y)-12)).text(item.model.key==='summary'?'Mech: '+ratio(p.x)+' size · '+ratio(p.y)+' time':'Mech: '+p.loc+' LOC · '+p.seconds.toFixed(3)+'s');}
+    const occupied=[];
+    [...item.svg.querySelectorAll('.axis-title'),...item.svg.querySelectorAll('.tick text'),...item.svg.querySelectorAll('.mech-label')].forEach(el=>{const b=el.getBoundingClientRect();const clash=occupied.some(o=>b.left<o.right+4&&b.right>o.left-4&&b.top<o.bottom+4&&b.bottom>o.top-4);el.style.visibility=clash?'hidden':'visible';if(!clash)occupied.push(b);});
+    let pinned=false;const hit=svg.append('rect').attr('data-chart-hit','').attr('data-chart-hover-overlay','nearest-point').attr('x',m.left).attr('y',m.top).attr('width',width-m.left-m.right).attr('height',height-m.top-m.bottom).attr('fill','transparent');
+    const hover=event=>{const [mx,my]=d3.pointer(event,item.svg);const closest=d3.least(hits,p=>Math.hypot(x(p.p.x)-mx,y(p.p.y)-my));if(closest&&Math.hypot(x(closest.p.x)-mx,y(closest.p.y)-my)<32)detail(event,closest,item);else if(!pinned)tooltip.hidden=true;};
+    hit.on('pointermove',event=>{if(!pinned)hover(event);}).on('pointerleave',()=>{if(!pinned)tooltip.hidden=true;}).on('click',event=>{pinned=!pinned;hover(event);});
+  }
+  restore(window.openai?.widgetState);figures.forEach(i=>{key(i);draw(i);new ResizeObserver(()=>draw(i)).observe(i.figure);});
+  window.addEventListener('openai:set_globals',event=>{restore(event.detail?.globals?.widgetState);figures.forEach(i=>{key(i);draw(i);});});
+})();
+</script>

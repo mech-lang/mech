@@ -1,0 +1,10 @@
+<row> := <{value<u64>}>
+Yes(n<u64>) = (result<u64>) :=
+  h := memory/allocate({value: n})
+  result := n.
+No(n<u64>) = (result<u64>) :=
+  result := n.
+r := control/if(false, Yes, No, 17)
+io/print("{}\n", r)
+h := memory/allocate({value: 19})
+io/print("{}\n", 1)

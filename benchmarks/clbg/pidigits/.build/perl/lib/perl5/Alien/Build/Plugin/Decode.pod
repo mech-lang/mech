@@ -1,0 +1,132 @@
+# PODNAME: Alien::Build::Plugin::Decode
+# ABSTRACT: Decode Alien::Build plugins
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Plugin::Decode - Decode Alien::Build plugins
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ use alienfile;
+ plugin 'Decode::HTML';
+ plugin 'Decode::DirListing';
+
+=head1 DESCRIPTION
+
+Decode plugins decode HTML and FTP file listings.  Normally you
+will want to use the L<Alien::Build::Plugin::Download::Negotiate>
+plugin which will automatically load the appropriate Decode plugins.
+
+=over 4
+
+=item L<Alien::Build::Plugin::Decode::DirListing>
+
+Default decoder for FTP file listings, that uses the pure-perl L<File::Listing>.
+
+=item L<Alien::Build::Plugin::Decode::DirListingFtpcopy>
+
+Another decoder for FTP file listings, that uses the XS module L<File::Listing::Ftpcopy>.
+
+=item L<Alien::Build::Plugin::Decode::HTML>
+
+Older decoder for HTML file listings, which uses the XS module L<HTML::LinkExtor>.  This
+used to be the default decoder until L<Alien::Build> version 1.75.  In some cases, this
+will be used as the HTML decoder if you configure with L<Alien::Build> prior to 1.75
+and but upgrade to a more recent version for the build stage of your L<Alien>
+
+=item L<Alien::Build::Plugin::Decode::Mojo>
+
+Newer decoder for HTML file listings, which uses the pure-perl L<Mojo::DOM> or L<Mojo::DOM58>.
+This became the default decoder at L<Alien::Build> version 1.75.
+
+=back
+
+=head1 SEE ALSO
+
+L<Alien::Build>, L<Alien::Build::Plugin>
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

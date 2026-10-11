@@ -1,0 +1,69 @@
+{
+  "id": "regexredux-csharpcore-5-aot",
+  "key": "regexredux:regexredux-csharpcore-5-aot",
+  "benchmark": "regexredux",
+  "language": "csharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-5.cs",
+  "source_sha256": "fbb853f13926ddb2ba9a70ce2a3614fce6ffb1df7e3e8ebbac8054aca882f46f",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/regexredux-csharpcore-5.cs",
+  "original_source_sha256": "fbb853f13926ddb2ba9a70ce2a3614fce6ffb1df7e3e8ebbac8054aca882f46f",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-csharpcore-5.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 08:46:28 GMT\n\nMAKE:\ncp regexredux.csharpcore-5.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.csproj (in 740 ms).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/Program.cs(12,21): warning CS8981: The type name 'regexredux' only contains lower-cased ascii characters. Such names may become reserved for the language. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.csproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/Program.cs(12,21): warning CS8981: The type name 'regexredux' only contains lower-cased ascii characters. Such names may become reserved for the language. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.csproj]\n    1 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:05.74\n\n7.53s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 0 < regexredux-input5000000.txt\n\nPROGRAM OUTPUT:\nagggtaaa|tttaccct 356\n[cgt]gggtaaa|tttaccc[acg] 1250\na[act]ggtaaa|tttacc[agt]t 4252\nag[act]gtaaa|tttac[agt]ct 2894\nagg[act]taaa|ttta[agt]cct 5435\naggg[acg]aaa|ttt[cgt]ccct 1537\nagggt[cgt]aa|tt[acg]accct 1431\nagggta[cgt]a|t[acg]taccct 1608\nagggtaa[cgt]|[acg]ttaccct 2178\n\n50833411\n50000000\n27388361",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 52,
+  "normalized_loc": 53,
+  "expansions": [
+    {
+      "line": 24,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/regexredux-csharpcore-5-aot/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-5-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/regexredux-csharpcore-5-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-5-aot/app",
+  "binary_sha256": "29f45f41da4cc7e7a23b192c10f926ca5654713f25fea2e431fbc2ee479a855b",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-5-aot/app"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-5-aot/app": "29f45f41da4cc7e7a23b192c10f926ca5654713f25fea2e431fbc2ee479a855b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 262,
+    "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 1.895,
+  "timing_selection_reasons": [
+    "Fewest normalized source lines among accepted candidates."
+  ]
+}

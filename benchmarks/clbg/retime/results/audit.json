@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "report": "apple-m3-ac-normal-20261008.json",
+  "sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+  "measured_builds": 575,
+  "excluded_builds": 0,
+  "benchmarks": [
+    "revcomp",
+    "knucleotide",
+    "fasta",
+    "binarytrees",
+    "spectralnorm",
+    "nbody",
+    "mandelbrot",
+    "fannkuchredux"
+  ],
+  "power_profiles": {
+    "revcomp": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "knucleotide": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "fasta": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "binarytrees": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "spectralnorm": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "nbody": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "mandelbrot": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "fannkuchredux": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    }
+  },
+  "discarded_attempts": 109,
+  "verified_command_assets": 595,
+  "old_times_used_in_new_chart": false,
+  "compact_only_fastest_inferred": false
+}

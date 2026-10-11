@@ -1,0 +1,184 @@
+0000000100001da4	stp	x22, x21, [sp, #-0x30]!
+0000000100001da8	stp	x20, x19, [sp, #0x10]
+0000000100001dac	stp	x29, x30, [sp, #0x20]
+0000000100001db0	mov	x19, x1
+0000000100001db4	sub	x20, x0, #0x1
+0000000100001db8	mov	x21, x9
+0000000100001dbc	mov	x0, x20
+0000000100001dc0	mov	x1, x19
+0000000100001dc4	bl	"_binarytrees-optimized::build[LITMutOrigin,::Origin[True, $0]](::SIMD[DType.int, 1],::Pointer[True, $0, binarytrees-optimized::Node, $1, AddressSpace.GENERIC]$,::SIMD[DType.int, 1])"
+0000000100001dc8	lsl	x8, x21, #1
+0000000100001dcc	add	x9, x8, #0x2
+0000000100001dd0	mov	w2, #0x1
+0000000100001dd4	bfi	x2, x21, #1, #63
+0000000100001dd8	add	x8, x19, x21, lsl #3
+0000000100001ddc	cmp	x20, #0x0
+0000000100001de0	csinv	w10, w2, wzr, ne
+0000000100001de4	csinv	w11, w9, wzr, ne
+0000000100001de8	stp	w10, w11, [x8]
+0000000100001dec	sub	x20, x20, #0x1
+0000000100001df0	cmn	x20, #0x1
+0000000100001df4	b.ne	0x100001db8
+0000000100001df8	ldp	x29, x30, [sp, #0x20]
+0000000100001dfc	ldp	x20, x19, [sp, #0x10]
+00000001000024e0	bl	0x100007018 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+00000001000024e4	cbz	x0, 0x1000033ac
+00000001000024e8	mov	x19, x0
+00000001000024ec	add	x8, x21, #0x1
+00000001000024f0	str	x8, [sp, #0x28]
+00000001000024f4	add	x0, x21, #0x1
+00000001000024f8	mov	x1, x19
+00000001000024fc	mov	x2, #0x0
+0000000100002500	bl	"_binarytrees-optimized::build[LITMutOrigin,::Origin[True, $0]](::SIMD[DType.int, 1],::Pointer[True, $0, binarytrees-optimized::Node, $1, AddressSpace.GENERIC]$,::SIMD[DType.int, 1])"
+0000000100002504	adrp	x1, 5 ; 0x100007000
+0000000100002508	add	x1, x1, #0x390
+000000010000250c	add	x20, sp, #0xf8
+0000000100002510	add	x0, x21, #0x1
+0000000100002514	add	x3, sp, #0xf8
+0000000100002518	mov	x2, #0x0
+000000010000251c	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100002520	ldp	x10, x8, [sp, #0x100]
+0000000100002524	cmn	x8, #0x1
+0000000100002528	ldr	x9, [sp, #0xf8]
+000000010000252c	csel	x2, x9, x20, gt
+0000000100002530	ubfx	x8, x8, #56, #5
+0000000100002534	csel	x3, x10, x8, gt
+0000000100002538	adrp	x0, 5 ; 0x100007000
+00000001000025bc	mov	x8, #-0x1
+00000001000025c0	ldaddal	x8, x8, [x0]
+00000001000025c4	cmp	x8, #0x1
+00000001000025c8	b.ne	0x1000025d4
+00000001000025cc	dmb	ishld
+00000001000025d0	bl	0x100007024 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000025d4	mov	x0, x19
+00000001000025d8	mov	x1, #0x0
+00000001000025dc	bl	"_binarytrees-optimized::check[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1]](::Pointer[$0, $1, binarytrees-optimized::Node, $2, AddressSpace.GENERIC],::SIMD[DType.int, 1])_REMOVED_ARG"
+00000001000025e0	adrp	x22, 5 ; 0x100007000
+00000001000025e4	add	x22, x22, #0x390
+00000001000025e8	add	x3, sp, #0x110
+00000001000025ec	mov	x1, x22
+00000001000025f0	mov	x2, #0x0
+00000001000025f4	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+00000001000025f8	ldp	x10, x8, [sp, #0x118]
+00000001000025fc	cmn	x8, #0x1
+0000000100002600	ldr	x9, [sp, #0x110]
+0000000100002604	csel	x2, x9, x20, gt
+0000000100002608	ubfx	x8, x8, #56, #5
+000000010000260c	csel	x3, x10, x8, gt
+0000000100002610	ldp	x11, x8, [sp, #0xe8]
+0000000100002614	cmn	x8, #0x1
+0000000100002748	lsl	x1, x8, #3
+000000010000274c	mov	w0, #0x4
+0000000100002750	bl	0x100007018 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+0000000100002754	cbz	x0, 0x1000033ac
+0000000100002758	mov	x1, x0
+000000010000275c	stp	x0, x21, [sp, #0x10]
+0000000100002760	mov	x0, x21
+0000000100002764	mov	x2, #0x0
+0000000100002768	bl	"_binarytrees-optimized::build[LITMutOrigin,::Origin[True, $0]](::SIMD[DType.int, 1],::Pointer[True, $0, binarytrees-optimized::Node, $1, AddressSpace.GENERIC]$,::SIMD[DType.int, 1])"
+000000010000276c	ldr	x8, [sp, #0x28]
+0000000100002770	cmp	x8, #0x5
+0000000100002774	b.ge	0x1000029fc
+0000000100002778	adrp	x1, 5 ; 0x100007000
+000000010000277c	add	x1, x1, #0x390
+0000000100002780	add	x19, sp, #0xf8
+0000000100002784	add	x3, sp, #0xf8
+0000000100002788	ldr	x0, [sp, #0x18]
+000000010000278c	mov	x2, #0x0
+0000000100002790	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100002794	ldp	x10, x8, [sp, #0x100]
+0000000100002798	cmn	x8, #0x1
+000000010000279c	ldr	x9, [sp, #0xf8]
+00000001000027a0	csel	x2, x9, x19, gt
+0000000100002834	ldaddal	x8, x8, [x0]
+0000000100002838	cmp	x8, #0x1
+000000010000283c	b.ne	0x100002848
+0000000100002840	dmb	ishld
+0000000100002844	bl	0x100007024 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100002848	ldr	x21, [sp, #0x10]
+000000010000284c	mov	x0, x21
+0000000100002850	mov	x1, #0x0
+0000000100002854	bl	"_binarytrees-optimized::check[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1]](::Pointer[$0, $1, binarytrees-optimized::Node, $2, AddressSpace.GENERIC],::SIMD[DType.int, 1])_REMOVED_ARG"
+0000000100002858	mov	x19, x0
+000000010000285c	mov	x0, x21
+0000000100002860	bl	0x100007024 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100002864	adrp	x1, 5 ; 0x100007000
+0000000100002868	add	x1, x1, #0x390
+000000010000286c	add	x3, sp, #0x110
+0000000100002870	mov	x0, x19
+0000000100002874	mov	x2, #0x0
+0000000100002878	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+000000010000287c	ldp	x10, x8, [sp, #0x118]
+0000000100002880	cmn	x8, #0x1
+0000000100002884	ldr	x9, [sp, #0x110]
+0000000100002888	csel	x2, x9, x20, gt
+000000010000288c	ubfx	x8, x8, #56, #5
+0000000100006650	cmp	x11, x8
+0000000100006654	csel	x8, xzr, x12, eq
+0000000100006658	add	x8, x8, x10, asr #3
+000000010000665c	subs	x20, x8, x9
+0000000100006660	b.le	0x100006684
+0000000100006664	mov	x0, x22
+0000000100006668	mov	x1, x21
+000000010000666c	mov	x2, #0x0
+0000000100006670	bl	"_binarytrees-optimized::build[LITMutOrigin,::Origin[True, $0]](::SIMD[DType.int, 1],::Pointer[True, $0, binarytrees-optimized::Node, $1, AddressSpace.GENERIC]$,::SIMD[DType.int, 1])"
+0000000100006674	mov	x0, x21
+0000000100006678	mov	x1, #0x0
+000000010000667c	bl	"_binarytrees-optimized::check[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1]](::Pointer[$0, $1, binarytrees-optimized::Node, $2, AddressSpace.GENERIC],::SIMD[DType.int, 1])_REMOVED_ARG"
+0000000100006680	mul	x19, x0, x20
+0000000100006684	cbz	x28, 0x1000065d0
+0000000100006688	mov	x0, x21
+000000010000668c	bl	0x100007024 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100006690	b	0x1000065d0
+0000000100006694	ldr	x0, [sp, #0x40]
+0000000100006698	cbz	x0, 0x1000066a0
+000000010000669c	bl	0x1000070b4 ; symbol stub for: _KGEN_CompilerRT_TracyZoneEnd
+00000001000066a0	ldp	x9, x8, [sp, #0x20]
+00000001000066a4	msr	FPCR, x9
+00000001000066a8	ldp	x1, x0, [x8, #0x10]
+000000010000665c	subs	x20, x8, x9
+0000000100006660	b.le	0x100006684
+0000000100006664	mov	x0, x22
+0000000100006668	mov	x1, x21
+000000010000666c	mov	x2, #0x0
+0000000100006670	bl	"_binarytrees-optimized::build[LITMutOrigin,::Origin[True, $0]](::SIMD[DType.int, 1],::Pointer[True, $0, binarytrees-optimized::Node, $1, AddressSpace.GENERIC]$,::SIMD[DType.int, 1])"
+0000000100006674	mov	x0, x21
+0000000100006678	mov	x1, #0x0
+000000010000667c	bl	"_binarytrees-optimized::check[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1]](::Pointer[$0, $1, binarytrees-optimized::Node, $2, AddressSpace.GENERIC],::SIMD[DType.int, 1])_REMOVED_ARG"
+0000000100006680	mul	x19, x0, x20
+0000000100006684	cbz	x28, 0x1000065d0
+0000000100006688	mov	x0, x21
+000000010000668c	bl	0x100007024 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100006690	b	0x1000065d0
+0000000100006694	ldr	x0, [sp, #0x40]
+0000000100006698	cbz	x0, 0x1000066a0
+000000010000669c	bl	0x1000070b4 ; symbol stub for: _KGEN_CompilerRT_TracyZoneEnd
+00000001000066a0	ldp	x9, x8, [sp, #0x20]
+00000001000066a4	msr	FPCR, x9
+00000001000066a8	ldp	x1, x0, [x8, #0x10]
+00000001000066ac	add	sp, sp, #0x1, lsl #12
+00000001000066b0	add	sp, sp, #0xb0
+00000001000066b4	ldp	x29, x30, [sp, #0x50]
+00000001000067d0	tbnz	x1, #0x3f, 0x100006814
+00000001000067d4	mov	x20, x1
+00000001000067d8	mov	x19, x0
+00000001000067dc	mov	x21, #0x0
+00000001000067e0	add	x8, x19, x20, lsl #3
+00000001000067e4	ldp	w1, w20, [x8]
+00000001000067e8	sxtw	x1, w1
+00000001000067ec	mov	x0, x19
+00000001000067f0	bl	"_binarytrees-optimized::check[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1]](::Pointer[$0, $1, binarytrees-optimized::Node, $2, AddressSpace.GENERIC],::SIMD[DType.int, 1])_REMOVED_ARG"
+00000001000067f4	add	x8, x21, x0
+00000001000067f8	add	x21, x8, #0x1
+00000001000067fc	tbz	w20, #0x1f, 0x1000067e0
+0000000100006800	mov	x0, x21
+0000000100006804	ldp	x29, x30, [sp, #0x20]
+0000000100006808	ldp	x20, x19, [sp, #0x10]
+000000010000680c	ldp	x22, x21, [sp], #0x30
+0000000100006810	ret
+0000000100006814	mov	x21, #0x0
+0000000100006818	mov	x0, x21
+000000010000681c	ldp	x29, x30, [sp, #0x20]
+0000000100006820	ldp	x20, x19, [sp, #0x10]
+0000000100006824	ldp	x22, x21, [sp], #0x30
+0000000100006828	ret

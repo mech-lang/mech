@@ -1,0 +1,5032 @@
+{
+  "nonbenchmark_matrix_cases": [
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 0,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 0,
+      "rows": 7,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 1,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 1,
+      "rows": 5,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 3,
+      "rows": 2,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 5,
+      "rows": 7,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 7,
+      "rows": 3,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 8,
+      "rows": 9,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 9,
+      "rows": 8,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 15,
+      "rows": 17,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "row",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "row",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "row",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "row",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "column",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "column",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "column",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "column",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "mixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "mixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "ratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "ratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "root",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "root",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "root",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "root",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "urow",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "urow",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "ucolumn",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "ucolumn",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "umixed",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "umixed",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uratio",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uratio",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "udivide",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "udivide",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "udynamic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "udynamic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "usubtract",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "usubtract",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uconservative",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uconservative",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uquadratic",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "uquadratic",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "usquare",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "usquare",
+      "transpose": true,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "utwo",
+      "transpose": false,
+      "mode": "divide"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "multiply"
+    },
+    {
+      "columns": 17,
+      "rows": 15,
+      "formula": "utwo",
+      "transpose": true,
+      "mode": "divide"
+    }
+  ],
+  "native_policies": [
+    {
+      "simd": false,
+      "unroll": 1,
+      "rows": 1
+    },
+    {
+      "simd": true,
+      "unroll": 1,
+      "rows": 1
+    },
+    {
+      "simd": true,
+      "unroll": 2,
+      "rows": 1
+    },
+    {
+      "simd": true,
+      "unroll": 4,
+      "rows": 1
+    },
+    {
+      "simd": true,
+      "unroll": 8,
+      "rows": 1
+    },
+    {
+      "simd": false,
+      "unroll": 1,
+      "rows": 2
+    },
+    {
+      "simd": false,
+      "unroll": 1,
+      "rows": 4
+    },
+    {
+      "simd": true,
+      "unroll": 1,
+      "rows": 2
+    },
+    {
+      "simd": true,
+      "unroll": 2,
+      "rows": 2
+    },
+    {
+      "simd": true,
+      "unroll": 4,
+      "rows": 2
+    },
+    {
+      "simd": true,
+      "unroll": 1,
+      "rows": 4
+    },
+    {
+      "simd": true,
+      "unroll": 2,
+      "rows": 4
+    },
+    {
+      "simd": true,
+      "unroll": 4,
+      "rows": 4
+    }
+  ],
+  "row_partitions": [
+    1,
+    3,
+    8
+  ],
+  "array_grains": [
+    1,
+    16,
+    64
+  ],
+  "ieee_nan_infinity_signed_zero_coefficients": true,
+  "checked_results": 85293,
+  "rectangular_and_empty_vectors": true,
+  "nested_scalar_vector_iterations_and_zero_count": true,
+  "dot_shape_errors_rejected": true,
+  "independent_spectral_sizes": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    8,
+    9,
+    15,
+    16,
+    17,
+    31,
+    100
+  ],
+  "all_passed": true,
+  "unsigned_coefficients_and_scalar_arithmetic": true,
+  "unsigned_overflow_and_division_errors": true,
+  "conservative_interval_checked_fallback": true
+}

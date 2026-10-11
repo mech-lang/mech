@@ -1,0 +1,12 @@
+<row> := <{value<u64>}>
+Capacity(n<u64>) = (result<u64>) :=
+  printed := io/print("capacity={}\n", n)
+  result := 1.
+Argument(n<u64>) = (result<u64>) :=
+  printed := io/print("argument={}\n", n)
+  result := n.
+Body(n<u64>) = (result<u64>) :=
+  h := memory/allocate({value: n})
+  result := n.
+r := memory/with-arena(Capacity(0), <row>, Body, Argument(7))
+io/print("result={}\n", r)

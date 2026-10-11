@@ -1,0 +1,11 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-1.swift:34:5: warning: result of call to 'popLast()' is unused
+alu.popLast()
+    ^      ~~
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-1.swift:62:9: warning: variable 'iov' was never mutated; consider changing to 'let' constant
+    var iov = UnsafeMutablePointer<iovec>.allocate(capacity: 1)
+    ~~~ ^
+    let
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-1.swift:73:9: warning: variable 'iov' was never mutated; consider changing to 'let' constant
+    var iov = UnsafeMutablePointer<iovec>.allocate(capacity: 1)
+    ~~~ ^
+    let

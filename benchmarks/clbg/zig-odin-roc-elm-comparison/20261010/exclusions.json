@@ -1,0 +1,25 @@
+{
+  "status": "reviewed",
+  "excluded": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/fannkuch-redux/3-i.zig",
+      "upstream_path": "bench/algorithm/fannkuch-redux/3-i.zig",
+      "sha256": "9d430d5cd3b188489815a140b36e9d99fb5f20725e4472daa7de1e3a851695f5",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/3-i.zig",
+      "id": "excluded-upstream-zig-3-i.zig",
+      "benchmark": "fannkuchredux",
+      "language": "zig",
+      "reason": "Published inline x86 AVX2 assembly cannot execute on the Apple M3 ARM64 CPU. Preserved; portable scalar/SIMD candidates are measured instead."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/knucleotide/1.odin",
+      "upstream_path": "bench/algorithm/knucleotide/1.odin",
+      "sha256": "b94101437e05fe5d16016ea183dc8399b9edc2464dce0cf64460856b4bbf2f04",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/knucleotide/1.odin",
+      "id": "excluded-upstream-odin-1.odin",
+      "benchmark": "knucleotide",
+      "language": "odin",
+      "reason": "Published fixed 65,536-bucket counting structure does not perform the required growable-map workload. Preserved; a faithful Odin growable-map source is measured instead."
+    }
+  ]
+}

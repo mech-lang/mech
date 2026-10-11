@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide F# program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide F# program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+﻿<span class="com">(* The Computer Language Benchmarks Game</span>
+<span class="com"> * https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"> *</span>
+<span class="com"> * contributed by Jimmy Tang</span>
+<span class="com"> *)</span>
+ 
+<span class="kwa">open</span> <span class="kwd">System</span>
+<span class="kwa">open</span> <span class="kwd">System</span><span class="opt">.</span><span class="kwd">IO</span>
+<span class="kwa">open</span> <span class="kwd">System</span><span class="opt">.</span><span class="kwd">Collections</span><span class="opt">.</span><span class="kwd">Generic</span>
+
+<span class="slc">// make our hashtable using System.Collections.Generic.Dictionary</span>
+<span class="kwa">let</span> <span class="kwc">maketable</span> <span class="opt">(</span>dna<span class="opt">:</span><span class="kwb">string</span><span class="opt">) (</span>length<span class="opt">:</span><span class="kwb">int</span><span class="opt">) =</span>
+   <span class="kwa">let</span> <span class="kwc">d</span> <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Dictionary</span><span class="opt">&lt;</span>_<span class="opt">,</span>_<span class="opt">&gt;()</span>
+   <span class="kwa">for</span> start <span class="kwa">in</span> <span class="num">0</span><span class="opt">..(</span>dna<span class="opt">.</span><span class="kwd">Length</span> <span class="opt">-</span> length<span class="opt">)</span> <span class="kwa">do</span>
+      <span class="kwa">let</span> <span class="kwc">substr</span> <span class="opt">=</span> dna<span class="opt">.</span><span class="kwd">Substring</span><span class="opt">(</span>start<span class="opt">,</span> length<span class="opt">)</span>
+      <span class="kwa">let</span> <span class="kwc">x</span> <span class="opt">=</span> <span class="kwb">ref</span> <span class="opt">(</span><span class="kwb">ref</span> <span class="num">0</span><span class="opt">)</span>
+      <span class="kwa">if</span> <span class="kwc">d</span><span class="opt">.</span><span class="kwd">TryGetValue</span><span class="opt">(</span><span class="kwc">substr</span><span class="opt">,</span> <span class="kwc">x</span><span class="opt">)</span> <span class="kwa">then</span> <span class="kwc">x</span><span class="opt">.</span><span class="kwd">Value</span> <span class="opt">:= ! !</span><span class="kwc">x</span> <span class="opt">+</span> <span class="num">1</span>
+      <span class="kwa">else</span> <span class="kwc">d</span><span class="opt">.[</span><span class="kwc">substr</span><span class="opt">] &lt;-</span> <span class="kwb">ref</span> <span class="num">1</span>
+   <span class="kwc">d</span>
+
+<span class="slc">// frequency for all substrings of a given length</span>
+<span class="kwa">let</span> <span class="kwc">frequencies</span> <span class="opt">(</span>dna<span class="opt">:</span><span class="kwb">string</span><span class="opt">) (</span>length<span class="opt">:</span><span class="kwb">int</span><span class="opt">) = [</span>
+   <span class="kwa">let</span> <span class="kwc">d</span> <span class="opt">=</span> <span class="kwc">maketable dna</span> length
+   <span class="kwa">let</span> <span class="kwc">total</span> <span class="opt">=</span> <span class="kwc">d</span><span class="opt">.</span><span class="kwd">Values</span> <span class="opt">|&gt;</span> <span class="kwd">Seq</span><span class="opt">.</span>map <span class="opt">(!) |&gt;</span> <span class="kwd">Seq</span><span class="opt">.</span>sum
+   yield<span class="opt">! [</span> <span class="kwa">for</span> pair <span class="kwa">in</span> <span class="kwc">d</span> <span class="opt">-&gt;</span>
+             pair<span class="opt">.</span><span class="kwd">Key</span><span class="opt">.</span><span class="kwd">ToUpper</span><span class="opt">(), (</span><span class="kwb">float</span><span class="opt">(</span>pair<span class="opt">.</span><span class="kwd">Value</span><span class="opt">.</span><span class="kwd">Value</span><span class="opt">) *</span> <span class="num">100.0</span> <span class="opt">/</span><span class="kwb">float</span><span class="opt">(</span><span class="kwc">total</span><span class="opt">))]</span>
+         <span class="opt">|&gt;</span> <span class="kwd">List</span><span class="opt">.</span>sortBy <span class="opt">(</span>snd <span class="opt">&gt;&gt; (</span>~<span class="opt">-))</span>
+         <span class="opt">|&gt;</span> <span class="kwd">List</span><span class="opt">.</span>map <span class="opt">(</span><span class="kwa">fun</span> <span class="opt">(</span>s<span class="opt">,</span>c<span class="opt">) -&gt;</span> sprintf <span class="sng">&quot;</span><span class="ipl">%s</span> <span class="sng">%.3f&quot;</span> s <span class="kwc">c</span><span class="opt">)</span>
+   yield <span class="sng">&quot;&quot;</span>
+<span class="opt">]</span>
+
+<span class="slc">// frequency of occurrence for a particular substring</span>
+<span class="kwa">let</span> <span class="kwc">countSubstring dna</span> <span class="opt">(</span>substring<span class="opt">:</span><span class="kwb">string</span><span class="opt">) = [</span>
+   <span class="kwa">let</span> <span class="kwc">d</span> <span class="opt">=</span> <span class="kwc">maketable dna</span> <span class="opt">(</span>substring<span class="opt">.</span><span class="kwd">Length</span><span class="opt">)</span>
+   yield <span class="opt">(</span>sprintf <span class="sng">&quot;</span><span class="ipl">%d</span><span class="sng"></span><span class="esc">\t</span><span class="sng"></span><span class="ipl">%s</span><span class="sng">&quot;</span>
+      <span class="opt">(</span><span class="kwa">if</span> <span class="kwc">d</span><span class="opt">.</span><span class="kwd">ContainsKey</span><span class="opt">(</span>substring<span class="opt">)</span> <span class="kwa">then</span> <span class="opt">!</span><span class="kwc">d</span><span class="opt">.[</span>substring<span class="opt">]</span> <span class="kwa">else</span> <span class="kwc">0</span><span class="opt">)</span>
+      <span class="opt">(</span>substring<span class="opt">.</span><span class="kwd">ToUpper</span><span class="opt">()))</span>
+<span class="opt">]</span>
+
+<span class="kwa">let</span> <span class="kwc">input</span> <span class="opt">=</span> <span class="kwd">Console</span><span class="opt">.</span><span class="kwd">In</span>
+<span class="kwa">let</span> <span class="kwc">dna</span> <span class="opt">=</span> seq <span class="opt">{</span> <span class="kwa">while true do</span> yield <span class="kwc">input</span><span class="opt">.</span><span class="kwd">ReadLine</span><span class="opt">() }</span>
+        <span class="opt">|&gt;</span> <span class="kwd">Seq</span><span class="opt">.</span>takeWhile <span class="opt">(</span><span class="kwa">fun</span> <span class="kwc">x</span> <span class="opt">-&gt;</span> <span class="kwc">x</span> <span class="opt">&lt;&gt;</span> <span class="kwa">null</span><span class="opt">)</span>
+        <span class="opt">|&gt;</span> <span class="kwd">Seq</span><span class="opt">.</span>skipWhile <span class="opt">(</span><span class="kwa">fun</span> <span class="kwc">x</span> <span class="opt">-&gt;</span> not<span class="opt">(</span><span class="kwc">x</span><span class="opt">.</span><span class="kwd">StartsWith</span><span class="opt">(</span><span class="sng">&quot;&gt;THREE&quot;</span><span class="opt">)))</span>
+        <span class="opt">|&gt;</span> <span class="kwd">Seq</span><span class="opt">.</span>skip <span class="num">1</span>
+        <span class="opt">|&gt;</span> <span class="kwd">String</span><span class="opt">.</span>concat <span class="sng">&quot;&quot;</span>
+
+<span class="opt">[</span><span class="kwa">for</span> len <span class="kwa">in</span> <span class="opt">[</span><span class="num">1</span><span class="opt">;</span><span class="num">2</span><span class="opt">] -&gt;</span> async <span class="opt">{</span> return <span class="kwc">frequencies dna</span> len <span class="opt">}] &#64;</span>
+<span class="opt">[</span><span class="kwa">for</span> str <span class="kwa">in</span> <span class="opt">[</span><span class="sng">&quot;ggt&quot;</span><span class="opt">;</span><span class="sng">&quot;ggta&quot;</span><span class="opt">;</span><span class="sng">&quot;ggtatt&quot;</span><span class="opt">;</span><span class="sng">&quot;ggtattttaatt&quot;</span><span class="opt">;</span><span class="sng">&quot;ggtattttaatttatagt&quot;</span><span class="opt">]</span>
+ <span class="opt">-&gt;</span> async <span class="opt">{</span> return <span class="kwc">countSubstring dna</span> str <span class="opt">}]</span>
+<span class="opt">|&gt;</span> <span class="kwd">List</span><span class="opt">.</span>rev
+<span class="opt">|&gt;</span> <span class="kwd">Async</span><span class="opt">.</span><span class="kwd">Parallel</span>
+<span class="opt">|&gt;</span> <span class="kwd">Async</span><span class="opt">.</span><span class="kwd">RunSynchronously</span>
+<span class="opt">|&gt;</span> <span class="kwd">Array</span><span class="opt">.</span>rev
+<span class="opt">|&gt;</span> <span class="kwd">Seq</span><span class="opt">.</span>concat
+<span class="opt">|&gt;</span> <span class="kwd">Seq</span><span class="opt">.</span>iter <span class="opt">(</span>printfn <span class="sng">&quot;</span><span class="ipl">%s</span><span class="sng">&quot;</span><span class="opt">)</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+.NET SDK 9.0.100
+Host Version: 9.0.0
+Commit: 9d5a6a9aa4
+
+&lt;OutputType&gt;Exe
+&lt;TargetFramework&gt;net9.0
+&lt;ImplicitUsings&gt;enable
+&lt;Nullable&gt;enable
+&lt;AllowUnsafeBlocks&gt;true
+&lt;ServerGarbageCollection&gt;true
+&lt;ConcurrentGarbageCollection&gt;true
+&lt;PublishAot&gt;false
+
+
+ Thu, 06 Feb 2025 05:17:26 GMT
+
+MAKE:
+cp knucleotide.fsharpcore Program.fs
+cp Include/fsharpcore/program.fsproj .
+/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release	
+  Determining projects to restore...
+  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj (in 894 ms).
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(43,40): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have compatible nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(45,12): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]
+  program -&gt; /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/bin/Release/net9.0/linux-x64/program.dll
+
+Build succeeded.
+
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(43,40): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have compatible nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(45,12): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:10.26
+
+12.15s to complete and log all make actions
+
+COMMAND LINE:
+ ./bin/Release/net9.0/linux-x64/program 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

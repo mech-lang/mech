@@ -1,0 +1,607 @@
+{
+  "created_at": "2026-10-09T21:15:49.949332+00:00",
+  "status": "passed",
+  "builds_sha256": "2040ecff5a42c902e7732e0c72a6c916b5cfb906ce85681b63060faaa26563ac",
+  "power_profile": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "sample_count": 5,
+  "orders": {
+    "spectralnorm": [
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:four-functions",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:unchanged"
+      ],
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:unchanged",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:four-functions"
+      ],
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:unchanged",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:four-functions"
+      ],
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:four-functions",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:unchanged"
+      ],
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:four-functions",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:unchanged"
+      ]
+    ],
+    "fasta": [
+      [
+        "fasta:mech-fasta-final-expanded-v2:unchanged",
+        "fasta:mech-fasta-final-compact-v2:floating",
+        "fasta:mech-fasta-final-expanded-v2:floating",
+        "fasta:mech-fasta-final-compact-v2:unchanged"
+      ],
+      [
+        "fasta:mech-fasta-final-compact-v2:unchanged",
+        "fasta:mech-fasta-final-expanded-v2:floating",
+        "fasta:mech-fasta-final-compact-v2:floating",
+        "fasta:mech-fasta-final-expanded-v2:unchanged"
+      ],
+      [
+        "fasta:mech-fasta-final-compact-v2:floating",
+        "fasta:mech-fasta-final-expanded-v2:unchanged",
+        "fasta:mech-fasta-final-compact-v2:unchanged",
+        "fasta:mech-fasta-final-expanded-v2:floating"
+      ],
+      [
+        "fasta:mech-fasta-final-compact-v2:unchanged",
+        "fasta:mech-fasta-final-expanded-v2:floating",
+        "fasta:mech-fasta-final-expanded-v2:unchanged",
+        "fasta:mech-fasta-final-compact-v2:floating"
+      ],
+      [
+        "fasta:mech-fasta-final-expanded-v2:unchanged",
+        "fasta:mech-fasta-final-compact-v2:floating",
+        "fasta:mech-fasta-final-compact-v2:unchanged",
+        "fasta:mech-fasta-final-expanded-v2:floating"
+      ]
+    ]
+  },
+  "programs": {
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:unchanged": {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:unchanged",
+      "benchmark": "spectralnorm",
+      "variant": "unchanged",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm-integer.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "loc": 9,
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-unchanged",
+      "binary_sha256": "39af00804f9f5cd2ee2960bc99c4134eae5c852daa39b6c1487ace4682f57dfe",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-unchanged",
+        "{n}"
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm-integer.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-unchanged"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+        "MECH_NUMERIC_UNROLL": "4",
+        "MECH_NUMERIC_ROWS": "4",
+        "MECH_NUMERIC_INDUCTION": "0",
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "8",
+        "C_INCLUDE_PATH": "/opt/homebrew/include",
+        "LIBRARY_PATH": "/opt/homebrew/lib"
+      },
+      "artifacts": {
+        "constants.json": "dbaa639f346737e72622e6bcf3b715779711afb0c116a3a6aef2d27130970502",
+        "mech-sequence.o": "3bce07f54e7ed31313f61999f56b60eccacdaac7525988e81aa7fa4d9e8e1868",
+        "source.mec": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+        "build.rs": "6e6210d7fa99316e7a430b0040f9933df70dca8c63f85d1ab02c2924343b01b6",
+        "src/main.rs": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4"
+      },
+      "baseline_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-after",
+      "samples_seconds": [
+        0.0887955,
+        0.090899541,
+        0.095421375,
+        0.096750791,
+        0.089934166
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 0.090899541,
+      "sample_stdev_seconds": 0.0035133436159703077
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:four-functions": {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:four-functions",
+      "benchmark": "spectralnorm",
+      "variant": "four-functions",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "loc": 12,
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "{n}"
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+        "MECH_NUMERIC_UNROLL": "4",
+        "MECH_NUMERIC_ROWS": "4",
+        "MECH_NUMERIC_INDUCTION": "0",
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "8",
+        "C_INCLUDE_PATH": "/opt/homebrew/include",
+        "LIBRARY_PATH": "/opt/homebrew/lib"
+      },
+      "artifacts": {
+        "constants.json": "007867aaadc8f8201b2e86a13b8c6d9a668366ba785f24d72c616e572b280802",
+        "mech-sequence.o": "84bafbcb5e7c56a5cea4805cfc79fa16f1abc26bde514e3d4d2be8914562bc2b",
+        "source.mec": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+        "build.rs": "6e6210d7fa99316e7a430b0040f9933df70dca8c63f85d1ab02c2924343b01b6",
+        "src/main.rs": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4"
+      },
+      "baseline_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-after",
+      "samples_seconds": [
+        0.0886565,
+        0.090254417,
+        0.088514667,
+        0.082090166,
+        0.087960541
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 0.088514667,
+      "sample_stdev_seconds": 0.0031397509406670605
+    },
+    "fasta:mech-fasta-final-compact-v2:unchanged": {
+      "key": "fasta:mech-fasta-final-compact-v2:unchanged",
+      "benchmark": "fasta",
+      "variant": "unchanged",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "loc": 32,
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-unchanged",
+      "binary_sha256": "64ad65ef3f096e1e108d5fb595c02e028f38d75edc49aea6ea73c42a613b312e",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-unchanged",
+        "{n}"
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-unchanged"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib",
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "1",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto",
+        "C_INCLUDE_PATH": "/opt/homebrew/include",
+        "LIBRARY_PATH": "/opt/homebrew/lib"
+      },
+      "artifacts": {
+        "source.mec": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+        "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+        "mech-control.o": "1603c26c3ba0ddff79771102d8d9c0d2edb4f90d2d06e6392e77a59b8d135017",
+        "control.json": "553766fa35fc2d9bdc6bac681c9c1ad7879b5d264859fb85e96328b6fb547ca6",
+        "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+      },
+      "baseline_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-compact-v2-after",
+      "samples_seconds": [
+        1.07201875,
+        1.074622208,
+        1.071380291,
+        1.072224417,
+        1.072581458
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 1.072224417,
+      "sample_stdev_seconds": 0.001229867470077866
+    },
+    "fasta:mech-fasta-final-compact-v2:floating": {
+      "key": "fasta:mech-fasta-final-compact-v2:floating",
+      "benchmark": "fasta",
+      "variant": "floating",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "loc": 32,
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-floating",
+      "binary_sha256": "a5c498195826e54f4b5fa351020e94fb951b06500358c884cce0560ca5ccd064",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-floating",
+        "{n}"
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-floating"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib",
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto",
+        "C_INCLUDE_PATH": "/opt/homebrew/include",
+        "LIBRARY_PATH": "/opt/homebrew/lib"
+      },
+      "artifacts": {
+        "source.mec": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+        "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+        "mech-control.o": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+        "control.json": "553766fa35fc2d9bdc6bac681c9c1ad7879b5d264859fb85e96328b6fb547ca6",
+        "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+      },
+      "baseline_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-compact-v2-after",
+      "samples_seconds": [
+        1.236018125,
+        1.223196375,
+        1.232202667,
+        1.227297416,
+        1.22587825
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 1.227297416,
+      "sample_stdev_seconds": 0.005143057843236765
+    },
+    "fasta:mech-fasta-final-expanded-v2:unchanged": {
+      "key": "fasta:mech-fasta-final-expanded-v2:unchanged",
+      "benchmark": "fasta",
+      "variant": "unchanged",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "loc": 43,
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-unchanged",
+      "binary_sha256": "4014f060591a211bb77feb2e6d8655f6743d5aeda14298976a0d975c6327f276",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-unchanged",
+        "{n}"
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-unchanged"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib",
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "1",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto",
+        "C_INCLUDE_PATH": "/opt/homebrew/include",
+        "LIBRARY_PATH": "/opt/homebrew/lib"
+      },
+      "artifacts": {
+        "source.mec": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+        "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+        "mech-control.o": "42ad20d69b3b2f959bddfc9a7c9989187743169cc61591101a3eb2a43ea4e88c",
+        "control.json": "553766fa35fc2d9bdc6bac681c9c1ad7879b5d264859fb85e96328b6fb547ca6",
+        "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+      },
+      "baseline_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-expanded-v2-after",
+      "samples_seconds": [
+        0.578975875,
+        0.572386416,
+        0.567048167,
+        0.564957541,
+        0.56398825
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 0.567048167,
+      "sample_stdev_seconds": 0.006227846304296366
+    },
+    "fasta:mech-fasta-final-expanded-v2:floating": {
+      "key": "fasta:mech-fasta-final-expanded-v2:floating",
+      "benchmark": "fasta",
+      "variant": "floating",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "loc": 43,
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib",
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto",
+        "C_INCLUDE_PATH": "/opt/homebrew/include",
+        "LIBRARY_PATH": "/opt/homebrew/lib"
+      },
+      "artifacts": {
+        "source.mec": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+        "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+        "mech-control.o": "da16ddc347a935d586d42b18b39065e1339f0a0afccd9feede06e667ab47bfb7",
+        "control.json": "553766fa35fc2d9bdc6bac681c9c1ad7879b5d264859fb85e96328b6fb547ca6",
+        "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+      },
+      "baseline_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-expanded-v2-after",
+      "samples_seconds": [
+        0.574257584,
+        0.576671,
+        0.573187541,
+        0.569931834,
+        0.569805
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 0.573187541,
+      "sample_stdev_seconds": 0.0029347681823338754
+    }
+  },
+  "protocol": "Fresh sequential processes; full standard workload; complete output hashes; randomized rounds; median and sample standard deviation; no compiler load; AC power with Low Power Mode off. Builds, output hashing, and validation comparisons excluded from elapsed time."
+}

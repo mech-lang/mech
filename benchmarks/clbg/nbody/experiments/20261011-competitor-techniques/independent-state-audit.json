@@ -1,0 +1,108 @@
+{
+  "status": "passed",
+  "independent_reference": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-state-reference",
+  "binary_sha256": "8f6dfc3bb8d9a1e0b5e71eca8f49d154ddd7902323fe0d3b15ab604c37d25bde",
+  "checks": [
+    {
+      "id": "compact-before",
+      "steps": 0,
+      "max_scaled_error": 3.465003555274769e-16
+    },
+    {
+      "id": "compact-before",
+      "steps": 1,
+      "max_scaled_error": 3.462799593712276e-16
+    },
+    {
+      "id": "compact-before",
+      "steps": 1000,
+      "max_scaled_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "compact-before",
+      "steps": 10000,
+      "max_scaled_error": 1.6789902801406242e-12
+    },
+    {
+      "id": "pairwise-before",
+      "steps": 0,
+      "max_scaled_error": 3.465003555274769e-16
+    },
+    {
+      "id": "pairwise-before",
+      "steps": 1,
+      "max_scaled_error": 3.462799593712276e-16
+    },
+    {
+      "id": "pairwise-before",
+      "steps": 1000,
+      "max_scaled_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "pairwise-before",
+      "steps": 10000,
+      "max_scaled_error": 2.8703706078658797e-12
+    },
+    {
+      "id": "compact-seed",
+      "steps": 0,
+      "max_scaled_error": 3.465003555274769e-16
+    },
+    {
+      "id": "compact-seed",
+      "steps": 1,
+      "max_scaled_error": 3.462799593712276e-16
+    },
+    {
+      "id": "compact-seed",
+      "steps": 1000,
+      "max_scaled_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "compact-seed",
+      "steps": 10000,
+      "max_scaled_error": 1.6789902801406242e-12
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "steps": 0,
+      "max_scaled_error": 3.465003555274769e-16
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "steps": 1,
+      "max_scaled_error": 3.462799593712276e-16
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "steps": 1000,
+      "max_scaled_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "steps": 10000,
+      "max_scaled_error": 2.8703706078658797e-12
+    },
+    {
+      "id": "compact-regions8",
+      "steps": 0,
+      "max_scaled_error": 3.465003555274769e-16
+    },
+    {
+      "id": "compact-regions8",
+      "steps": 1,
+      "max_scaled_error": 3.462799593712276e-16
+    },
+    {
+      "id": "compact-regions8",
+      "steps": 1000,
+      "max_scaled_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "compact-regions8",
+      "steps": 10000,
+      "max_scaled_error": 1.6789902801406242e-12
+    }
+  ],
+  "max_scaled_error": 2.8703706078658797e-12
+}

@@ -1,0 +1,457 @@
+RUN 1 pidigits-fsharpcore-6-arm64-faithful-jit
+SAMPLE 1 pidigits-fsharpcore-6-arm64-faithful-jit 0.305834s
+RUN 1 pidigits-csharpcore-7-jit
+SAMPLE 1 pidigits-csharpcore-7-jit 4.267430s
+RUN 1 pidigits-fpascal-3
+SAMPLE 1 pidigits-fpascal-3 0.275970s
+RUN 1 pidigits-fpascal-2-faithful
+SAMPLE 1 pidigits-fpascal-2-faithful 1.879709s
+RUN 1 pidigits-csharpcore-7-aot
+SAMPLE 1 pidigits-csharpcore-7-aot 4.128064s
+RUN 1 pidigits-gnat-1
+SAMPLE 1 pidigits-gnat-1 1.907904s
+RUN 1 pidigits-dart-2
+SAMPLE 1 pidigits-dart-2 1.118188s
+RUN 1 mech-control-pidigits
+SAMPLE 1 mech-control-pidigits 0.304821s
+RUN 1 pidigits-dart-jit-2
+SAMPLE 1 pidigits-dart-jit-2 1.156970s
+RUN 1 pidigits-fortran-4
+SAMPLE 1 pidigits-fortran-4 0.297819s
+RUN 1 pidigits-csharpcore-6-arm64-faithful-aot
+SAMPLE 1 pidigits-csharpcore-6-arm64-faithful-aot 0.298633s
+RUN 1 pidigits-gnat-2
+SAMPLE 1 pidigits-gnat-2 0.310870s
+RUN 1 pidigits-toit-bignum
+SAMPLE 1 pidigits-toit-bignum 12.347827s
+RUN 1 pidigits-csharpcore-6-arm64-faithful-jit
+SAMPLE 1 pidigits-csharpcore-6-arm64-faithful-jit 0.318194s
+RUN 1 pidigits-toit-bignum-fields
+SAMPLE 1 pidigits-toit-bignum-fields 8.712314s
+RUN 1 pidigits-fsharpcore-6-arm64-faithful-aot
+SAMPLE 1 pidigits-fsharpcore-6-arm64-faithful-aot 0.305880s
+RUN 1 pidigits-smalltalk-published-1
+SAMPLE 1 pidigits-smalltalk-published-1 3.918779s
+RUN 1 pidigits-smalltalk-compact
+SAMPLE 1 pidigits-smalltalk-compact 4.263503s
+RUN 2 pidigits-gnat-1
+SAMPLE 2 pidigits-gnat-1 1.937911s
+RUN 2 pidigits-fpascal-3
+SAMPLE 2 pidigits-fpascal-3 0.296148s
+RUN 2 pidigits-fsharpcore-6-arm64-faithful-jit
+SAMPLE 2 pidigits-fsharpcore-6-arm64-faithful-jit 0.325947s
+RUN 2 pidigits-csharpcore-6-arm64-faithful-jit
+SAMPLE 2 pidigits-csharpcore-6-arm64-faithful-jit 0.323749s
+RUN 2 pidigits-fortran-4
+SAMPLE 2 pidigits-fortran-4 0.300481s
+RUN 2 pidigits-dart-2
+SAMPLE 2 pidigits-dart-2 1.122172s
+RUN 2 pidigits-csharpcore-6-arm64-faithful-aot
+SAMPLE 2 pidigits-csharpcore-6-arm64-faithful-aot 0.305775s
+RUN 2 pidigits-gnat-2
+SAMPLE 2 pidigits-gnat-2 0.309545s
+RUN 2 pidigits-smalltalk-published-1
+SAMPLE 2 pidigits-smalltalk-published-1 3.930609s
+RUN 2 pidigits-csharpcore-7-aot
+SAMPLE 2 pidigits-csharpcore-7-aot 4.121555s
+RUN 2 pidigits-fsharpcore-6-arm64-faithful-aot
+SAMPLE 2 pidigits-fsharpcore-6-arm64-faithful-aot 0.309286s
+RUN 2 pidigits-fpascal-2-faithful
+SAMPLE 2 pidigits-fpascal-2-faithful 1.928186s
+RUN 2 pidigits-csharpcore-7-jit
+SAMPLE 2 pidigits-csharpcore-7-jit 4.361566s
+RUN 2 pidigits-smalltalk-compact
+SAMPLE 2 pidigits-smalltalk-compact 4.226747s
+RUN 2 pidigits-toit-bignum-fields
+SAMPLE 2 pidigits-toit-bignum-fields 8.952138s
+RUN 2 pidigits-dart-jit-2
+SAMPLE 2 pidigits-dart-jit-2 1.161562s
+RUN 2 pidigits-toit-bignum
+SAMPLE 2 pidigits-toit-bignum 12.766481s
+RUN 2 mech-control-pidigits
+SAMPLE 2 mech-control-pidigits 0.304876s
+RUN 3 pidigits-fsharpcore-6-arm64-faithful-aot
+SAMPLE 3 pidigits-fsharpcore-6-arm64-faithful-aot 0.312986s
+RUN 3 pidigits-csharpcore-6-arm64-faithful-jit
+SAMPLE 3 pidigits-csharpcore-6-arm64-faithful-jit 0.330913s
+RUN 3 pidigits-csharpcore-7-jit
+SAMPLE 3 pidigits-csharpcore-7-jit 4.287537s
+RUN 3 pidigits-dart-jit-2
+SAMPLE 3 pidigits-dart-jit-2 1.160047s
+RUN 3 pidigits-fortran-4
+SAMPLE 3 pidigits-fortran-4 0.307500s
+RUN 3 pidigits-gnat-2
+SAMPLE 3 pidigits-gnat-2 0.312847s
+RUN 3 pidigits-smalltalk-published-1
+SAMPLE 3 pidigits-smalltalk-published-1 3.978631s
+RUN 3 pidigits-csharpcore-7-aot
+SAMPLE 3 pidigits-csharpcore-7-aot 4.097377s
+RUN 3 pidigits-fsharpcore-6-arm64-faithful-jit
+SAMPLE 3 pidigits-fsharpcore-6-arm64-faithful-jit 0.326139s
+RUN 3 pidigits-csharpcore-6-arm64-faithful-aot
+SAMPLE 3 pidigits-csharpcore-6-arm64-faithful-aot 0.310017s
+RUN 3 mech-control-pidigits
+SAMPLE 3 mech-control-pidigits 0.309580s
+RUN 3 pidigits-smalltalk-compact
+SAMPLE 3 pidigits-smalltalk-compact 4.218171s
+RUN 3 pidigits-toit-bignum-fields
+SAMPLE 3 pidigits-toit-bignum-fields 8.928855s
+RUN 3 pidigits-gnat-1
+SAMPLE 3 pidigits-gnat-1 1.935506s
+RUN 3 pidigits-fpascal-3
+SAMPLE 3 pidigits-fpascal-3 0.294968s
+RUN 3 pidigits-dart-2
+SAMPLE 3 pidigits-dart-2 1.127886s
+RUN 3 pidigits-fpascal-2-faithful
+SAMPLE 3 pidigits-fpascal-2-faithful 1.928365s
+RUN 3 pidigits-toit-bignum
+SAMPLE 3 pidigits-toit-bignum 12.777379s
+RUN 1 spectralnorm-dart-jit-6
+SAMPLE 1 spectralnorm-dart-jit-6 0.399687s
+RUN 1 spectralnorm-toit-published-8
+SAMPLE 1 spectralnorm-toit-published-8 103.792733s
+RUN 1 spectralnorm-fsharpcore-4-static-output-aot
+SAMPLE 1 spectralnorm-fsharpcore-4-static-output-aot 0.178618s
+RUN 1 spectralnorm-dart-jit-8
+SAMPLE 1 spectralnorm-dart-jit-8 1.159244s
+RUN 1 spectralnorm-csharpcore-5-arm64-faithful-jit
+SAMPLE 1 spectralnorm-csharpcore-5-arm64-faithful-jit 0.330869s
+RUN 1 spectralnorm-smalltalk-recurrence
+SAMPLE 1 spectralnorm-smalltalk-recurrence 12.888684s
+RUN 1 spectralnorm-csharpcore-5-arm64-faithful-aot
+SAMPLE 1 spectralnorm-csharpcore-5-arm64-faithful-aot 0.124951s
+RUN 1 spectralnorm-dart-8
+SAMPLE 1 spectralnorm-dart-8 1.090063s
+RUN 1 spectralnorm-fpascal-3-native
+SAMPLE 1 spectralnorm-fpascal-3-native 0.453493s
+RUN 1 spectralnorm-fortran-3
+SAMPLE 1 spectralnorm-fortran-3 0.203657s
+RUN 1 spectralnorm-fpascal-1
+SAMPLE 1 spectralnorm-fpascal-1 0.960847s
+RUN 1 spectralnorm-csharpcore-8-jit
+SAMPLE 1 spectralnorm-csharpcore-8-jit 1.019937s
+RUN 1 spectralnorm-gnat-3
+SAMPLE 1 spectralnorm-gnat-3 0.359347s
+RUN 1 spectralnorm-fortran-2
+SAMPLE 1 spectralnorm-fortran-2 0.560304s
+RUN 1 spectralnorm-fsharpcore-6-arm64-faithful-aot
+SAMPLE 1 spectralnorm-fsharpcore-6-arm64-faithful-aot 0.183322s
+RUN 1 spectralnorm-toit-recurrence
+SAMPLE 1 spectralnorm-toit-recurrence 68.232350s
+RUN 1 spectralnorm-smalltalk-published-1
+SAMPLE 1 spectralnorm-smalltalk-published-1 18.162017s
+RUN 1 mech-control-spectralnorm
+SAMPLE 1 mech-control-spectralnorm 0.091289s
+RUN 1 spectralnorm-dart-6
+SAMPLE 1 spectralnorm-dart-6 0.189430s
+RUN 1 spectralnorm-fpascal-2-native
+SAMPLE 1 spectralnorm-fpascal-2-native 0.449656s
+RUN 1 spectralnorm-csharpcore-8-aot
+SAMPLE 1 spectralnorm-csharpcore-8-aot 2.503176s
+RUN 1 spectralnorm-fsharpcore-6-arm64-faithful-jit
+SAMPLE 1 spectralnorm-fsharpcore-6-arm64-faithful-jit 0.313255s
+RUN 1 spectralnorm-fsharpcore-4-jit
+SAMPLE 1 spectralnorm-fsharpcore-4-jit 0.211616s
+RUN 1 spectralnorm-gnat-1
+SAMPLE 1 spectralnorm-gnat-1 1.286384s
+RUN 2 spectralnorm-fortran-2
+SAMPLE 2 spectralnorm-fortran-2 0.559947s
+RUN 2 spectralnorm-fsharpcore-6-arm64-faithful-aot
+SAMPLE 2 spectralnorm-fsharpcore-6-arm64-faithful-aot 0.184551s
+RUN 2 spectralnorm-csharpcore-8-jit
+SAMPLE 2 spectralnorm-csharpcore-8-jit 1.300332s
+RUN 2 spectralnorm-fpascal-3-native
+SAMPLE 2 spectralnorm-fpascal-3-native 0.450102s
+RUN 2 spectralnorm-dart-6
+SAMPLE 2 spectralnorm-dart-6 0.201230s
+RUN 2 spectralnorm-smalltalk-published-1
+SAMPLE 2 spectralnorm-smalltalk-published-1 18.166263s
+RUN 2 spectralnorm-fpascal-1
+SAMPLE 2 spectralnorm-fpascal-1 0.961560s
+RUN 2 spectralnorm-gnat-1
+SAMPLE 2 spectralnorm-gnat-1 1.235099s
+RUN 2 spectralnorm-csharpcore-5-arm64-faithful-jit
+SAMPLE 2 spectralnorm-csharpcore-5-arm64-faithful-jit 0.321517s
+RUN 2 spectralnorm-dart-jit-6
+SAMPLE 2 spectralnorm-dart-jit-6 0.390728s
+RUN 2 spectralnorm-dart-8
+SAMPLE 2 spectralnorm-dart-8 1.083805s
+RUN 2 spectralnorm-fortran-3
+SAMPLE 2 spectralnorm-fortran-3 0.203598s
+RUN 2 spectralnorm-smalltalk-recurrence
+SAMPLE 2 spectralnorm-smalltalk-recurrence 12.880128s
+RUN 2 spectralnorm-fsharpcore-4-static-output-aot
+SAMPLE 2 spectralnorm-fsharpcore-4-static-output-aot 0.178409s
+RUN 2 spectralnorm-csharpcore-8-aot
+SAMPLE 2 spectralnorm-csharpcore-8-aot 2.477851s
+RUN 2 spectralnorm-fpascal-2-native
+SAMPLE 2 spectralnorm-fpascal-2-native 0.450255s
+RUN 2 mech-control-spectralnorm
+SAMPLE 2 mech-control-spectralnorm 0.088675s
+RUN 2 spectralnorm-csharpcore-5-arm64-faithful-aot
+SAMPLE 2 spectralnorm-csharpcore-5-arm64-faithful-aot 0.120098s
+RUN 2 spectralnorm-fsharpcore-6-arm64-faithful-jit
+SAMPLE 2 spectralnorm-fsharpcore-6-arm64-faithful-jit 0.302228s
+RUN 2 spectralnorm-gnat-3
+SAMPLE 2 spectralnorm-gnat-3 0.357817s
+RUN 2 spectralnorm-toit-published-8
+SAMPLE 2 spectralnorm-toit-published-8 103.854052s
+RUN 2 spectralnorm-fsharpcore-4-jit
+SAMPLE 2 spectralnorm-fsharpcore-4-jit 0.205671s
+RUN 2 spectralnorm-toit-recurrence
+SAMPLE 2 spectralnorm-toit-recurrence 68.172513s
+RUN 2 spectralnorm-dart-jit-8
+SAMPLE 2 spectralnorm-dart-jit-8 1.158020s
+RUN 3 spectralnorm-csharpcore-8-jit
+SAMPLE 3 spectralnorm-csharpcore-8-jit 1.017369s
+RUN 3 spectralnorm-toit-recurrence
+SAMPLE 3 spectralnorm-toit-recurrence 68.162323s
+RUN 3 spectralnorm-toit-published-8
+SAMPLE 3 spectralnorm-toit-published-8 103.708358s
+RUN 3 spectralnorm-dart-jit-6
+SAMPLE 3 spectralnorm-dart-jit-6 0.382586s
+RUN 3 spectralnorm-fortran-3
+SAMPLE 3 spectralnorm-fortran-3 0.202720s
+RUN 3 spectralnorm-csharpcore-5-arm64-faithful-aot
+SAMPLE 3 spectralnorm-csharpcore-5-arm64-faithful-aot 0.121809s
+RUN 3 spectralnorm-fpascal-1
+SAMPLE 3 spectralnorm-fpascal-1 0.963182s
+RUN 3 spectralnorm-fpascal-2-native
+SAMPLE 3 spectralnorm-fpascal-2-native 0.444876s
+RUN 3 spectralnorm-smalltalk-recurrence
+SAMPLE 3 spectralnorm-smalltalk-recurrence 12.871501s
+RUN 3 mech-control-spectralnorm
+SAMPLE 3 mech-control-spectralnorm 0.089235s
+RUN 3 spectralnorm-dart-jit-8
+SAMPLE 3 spectralnorm-dart-jit-8 1.157334s
+RUN 3 spectralnorm-fortran-2
+SAMPLE 3 spectralnorm-fortran-2 0.561755s
+RUN 3 spectralnorm-gnat-1
+SAMPLE 3 spectralnorm-gnat-1 1.265849s
+RUN 3 spectralnorm-fsharpcore-6-arm64-faithful-jit
+SAMPLE 3 spectralnorm-fsharpcore-6-arm64-faithful-jit 0.308670s
+RUN 3 spectralnorm-smalltalk-published-1
+SAMPLE 3 spectralnorm-smalltalk-published-1 18.105341s
+RUN 3 spectralnorm-dart-8
+SAMPLE 3 spectralnorm-dart-8 1.105843s
+RUN 3 spectralnorm-fsharpcore-6-arm64-faithful-aot
+SAMPLE 3 spectralnorm-fsharpcore-6-arm64-faithful-aot 0.184522s
+RUN 3 spectralnorm-fsharpcore-4-static-output-aot
+SAMPLE 3 spectralnorm-fsharpcore-4-static-output-aot 0.176260s
+RUN 3 spectralnorm-gnat-3
+SAMPLE 3 spectralnorm-gnat-3 0.357219s
+RUN 3 spectralnorm-csharpcore-8-aot
+SAMPLE 3 spectralnorm-csharpcore-8-aot 2.503574s
+RUN 3 spectralnorm-fsharpcore-4-jit
+SAMPLE 3 spectralnorm-fsharpcore-4-jit 0.209788s
+RUN 3 spectralnorm-csharpcore-5-arm64-faithful-jit
+SAMPLE 3 spectralnorm-csharpcore-5-arm64-faithful-jit 0.321852s
+RUN 3 spectralnorm-dart-6
+SAMPLE 3 spectralnorm-dart-6 0.199915s
+RUN 3 spectralnorm-fpascal-3-native
+SAMPLE 3 spectralnorm-fpascal-3-native 0.438084s
+RUN 1 mech-control-nbody
+SAMPLE 1 mech-control-nbody 1.051262s
+RUN 1 nbody-toit-cached-bodies
+SAMPLE 1 nbody-toit-cached-bodies 129.081948s
+RUN 1 nbody-smalltalk-floatarrays
+SAMPLE 1 nbody-smalltalk-floatarrays 99.930693s
+RUN 1 nbody-fpascal-2-faithful
+SAMPLE 1 nbody-fpascal-2-faithful 2.213734s
+RUN 1 nbody-smalltalk-published-1
+SAMPLE 1 nbody-smalltalk-published-1 60.664952s
+RUN 1 nbody-toit-published-8
+SAMPLE 1 nbody-toit-published-8 168.366165s
+RUN 1 nbody-fsharpcore-6-arm64-faithful-static-output-aot
+SAMPLE 1 nbody-fsharpcore-6-arm64-faithful-static-output-aot 1.833390s
+RUN 1 nbody-gnat-1
+SAMPLE 1 nbody-gnat-1 1.843838s
+RUN 1 nbody-fortran-1
+SAMPLE 1 nbody-fortran-1 1.763902s
+RUN 1 nbody-csharpcore-7-arm64-faithful-jit
+SAMPLE 1 nbody-csharpcore-7-arm64-faithful-jit 2.079235s
+RUN 1 nbody-fsharpcore-4-static-output-aot
+SAMPLE 1 nbody-fsharpcore-4-static-output-aot 2.484700s
+RUN 1 nbody-fsharpcore-6-arm64-faithful-jit
+SAMPLE 1 nbody-fsharpcore-6-arm64-faithful-jit 1.867983s
+RUN 1 nbody-fpascal-3-faithful
+SAMPLE 1 nbody-fpascal-3-faithful 2.307662s
+RUN 1 nbody-dart-6
+SAMPLE 1 nbody-dart-6 1.865314s
+RUN 1 nbody-gnat-3
+SAMPLE 1 nbody-gnat-3 1.545714s
+RUN 1 nbody-fpascal-1-faithful
+SAMPLE 1 nbody-fpascal-1-faithful 2.185831s
+RUN 1 nbody-csharpcore-0-aot
+SAMPLE 1 nbody-csharpcore-0-aot 1.868802s
+RUN 1 nbody-fsharpcore-5-arm64-faithful-static-output-aot
+SAMPLE 1 nbody-fsharpcore-5-arm64-faithful-static-output-aot 1.870206s
+RUN 1 nbody-csharpcore-7-arm64-faithful-aot
+SAMPLE 1 nbody-csharpcore-7-arm64-faithful-aot 2.056748s
+RUN 1 nbody-fortran-5
+SAMPLE 1 nbody-fortran-5 2.020451s
+RUN 1 nbody-dart-jit-8
+SAMPLE 1 nbody-dart-jit-8 2.108137s
+RUN 1 nbody-fsharpcore-5-arm64-faithful-jit
+SAMPLE 1 nbody-fsharpcore-5-arm64-faithful-jit 1.879376s
+RUN 1 nbody-csharpcore-0-jit
+SAMPLE 1 nbody-csharpcore-0-jit 1.886258s
+RUN 1 nbody-csharpcore-6-arm64-faithful-jit
+SAMPLE 1 nbody-csharpcore-6-arm64-faithful-jit 1.736036s
+RUN 1 nbody-fsharpcore-4-jit
+SAMPLE 1 nbody-fsharpcore-4-jit 2.562791s
+RUN 1 nbody-csharpcore-6-arm64-faithful-aot
+SAMPLE 1 nbody-csharpcore-6-arm64-faithful-aot 1.709337s
+RUN 1 nbody-dart-8
+SAMPLE 1 nbody-dart-8 2.089876s
+RUN 1 nbody-dart-jit-6
+SAMPLE 1 nbody-dart-jit-6 1.896247s
+RUN 2 nbody-csharpcore-7-arm64-faithful-aot
+SAMPLE 2 nbody-csharpcore-7-arm64-faithful-aot 2.056935s
+RUN 2 nbody-fsharpcore-5-arm64-faithful-jit
+SAMPLE 2 nbody-fsharpcore-5-arm64-faithful-jit 1.874335s
+RUN 2 nbody-fpascal-3-faithful
+SAMPLE 2 nbody-fpascal-3-faithful 2.309935s
+RUN 2 nbody-fpascal-2-faithful
+SAMPLE 2 nbody-fpascal-2-faithful 2.217906s
+RUN 2 nbody-csharpcore-7-arm64-faithful-jit
+SAMPLE 2 nbody-csharpcore-7-arm64-faithful-jit 2.077419s
+RUN 2 nbody-csharpcore-6-arm64-faithful-jit
+SAMPLE 2 nbody-csharpcore-6-arm64-faithful-jit 1.734524s
+RUN 2 nbody-fsharpcore-6-arm64-faithful-jit
+SAMPLE 2 nbody-fsharpcore-6-arm64-faithful-jit 1.864224s
+RUN 2 nbody-smalltalk-floatarrays
+SAMPLE 2 nbody-smalltalk-floatarrays 99.769931s
+RUN 2 nbody-fsharpcore-4-jit
+SAMPLE 2 nbody-fsharpcore-4-jit 2.555566s
+RUN 2 nbody-fortran-1
+SAMPLE 2 nbody-fortran-1 1.755198s
+RUN 2 nbody-dart-jit-8
+SAMPLE 2 nbody-dart-jit-8 2.103222s
+RUN 2 nbody-fortran-5
+SAMPLE 2 nbody-fortran-5 2.019391s
+RUN 2 nbody-csharpcore-6-arm64-faithful-aot
+SAMPLE 2 nbody-csharpcore-6-arm64-faithful-aot 1.709705s
+RUN 2 nbody-fsharpcore-4-static-output-aot
+SAMPLE 2 nbody-fsharpcore-4-static-output-aot 2.485390s
+RUN 2 nbody-csharpcore-0-jit
+SAMPLE 2 nbody-csharpcore-0-jit 1.887686s
+RUN 2 nbody-toit-cached-bodies
+SAMPLE 2 nbody-toit-cached-bodies 129.075050s
+RUN 2 nbody-dart-8
+SAMPLE 2 nbody-dart-8 2.088380s
+RUN 2 nbody-fpascal-1-faithful
+SAMPLE 2 nbody-fpascal-1-faithful 2.183826s
+RUN 2 nbody-fsharpcore-5-arm64-faithful-static-output-aot
+SAMPLE 2 nbody-fsharpcore-5-arm64-faithful-static-output-aot 1.874579s
+RUN 2 nbody-csharpcore-0-aot
+SAMPLE 2 nbody-csharpcore-0-aot 1.867404s
+RUN 2 nbody-smalltalk-published-1
+SAMPLE 2 nbody-smalltalk-published-1 60.768339s
+RUN 2 nbody-gnat-1
+SAMPLE 2 nbody-gnat-1 1.839069s
+RUN 2 nbody-toit-published-8
+SAMPLE 2 nbody-toit-published-8 165.629080s
+RUN 2 nbody-fsharpcore-6-arm64-faithful-static-output-aot
+SAMPLE 2 nbody-fsharpcore-6-arm64-faithful-static-output-aot 1.821472s
+RUN 2 nbody-dart-jit-6
+SAMPLE 2 nbody-dart-jit-6 1.895362s
+RUN 2 nbody-gnat-3
+SAMPLE 2 nbody-gnat-3 1.549891s
+RUN 2 nbody-dart-6
+SAMPLE 2 nbody-dart-6 1.867000s
+RUN 2 mech-control-nbody
+SAMPLE 2 mech-control-nbody 1.055185s
+RUN 3 nbody-gnat-3
+SAMPLE 3 nbody-gnat-3 1.542996s
+RUN 3 nbody-fsharpcore-5-arm64-faithful-jit
+SAMPLE 3 nbody-fsharpcore-5-arm64-faithful-jit 1.900657s
+RUN 3 nbody-csharpcore-0-aot
+SAMPLE 3 nbody-csharpcore-0-aot 1.869167s
+RUN 3 nbody-fpascal-2-faithful
+SAMPLE 3 nbody-fpascal-2-faithful 2.216271s
+RUN 3 nbody-csharpcore-7-arm64-faithful-jit
+SAMPLE 3 nbody-csharpcore-7-arm64-faithful-jit 2.080262s
+RUN 3 mech-control-nbody
+SAMPLE 3 mech-control-nbody 1.063909s
+RUN 3 nbody-smalltalk-floatarrays
+SAMPLE 3 nbody-smalltalk-floatarrays 99.716740s
+RUN 3 nbody-fpascal-1-faithful
+SAMPLE 3 nbody-fpascal-1-faithful 2.183910s
+RUN 3 nbody-smalltalk-published-1
+SAMPLE 3 nbody-smalltalk-published-1 60.720840s
+RUN 3 nbody-csharpcore-6-arm64-faithful-aot
+SAMPLE 3 nbody-csharpcore-6-arm64-faithful-aot 1.707246s
+RUN 3 nbody-fsharpcore-6-arm64-faithful-static-output-aot
+SAMPLE 3 nbody-fsharpcore-6-arm64-faithful-static-output-aot 1.826110s
+RUN 3 nbody-fsharpcore-6-arm64-faithful-jit
+SAMPLE 3 nbody-fsharpcore-6-arm64-faithful-jit 1.863964s
+RUN 3 nbody-fortran-5
+SAMPLE 3 nbody-fortran-5 2.031197s
+RUN 3 nbody-toit-published-8
+SAMPLE 3 nbody-toit-published-8 166.303757s
+RUN 3 nbody-csharpcore-7-arm64-faithful-aot
+SAMPLE 3 nbody-csharpcore-7-arm64-faithful-aot 2.059884s
+RUN 3 nbody-fsharpcore-5-arm64-faithful-static-output-aot
+SAMPLE 3 nbody-fsharpcore-5-arm64-faithful-static-output-aot 1.870790s
+RUN 3 nbody-dart-jit-6
+SAMPLE 3 nbody-dart-jit-6 1.890583s
+RUN 3 nbody-fpascal-3-faithful
+SAMPLE 3 nbody-fpascal-3-faithful 2.309905s
+RUN 3 nbody-fsharpcore-4-static-output-aot
+SAMPLE 3 nbody-fsharpcore-4-static-output-aot 2.484898s
+RUN 3 nbody-fsharpcore-4-jit
+SAMPLE 3 nbody-fsharpcore-4-jit 2.550604s
+RUN 3 nbody-fortran-1
+SAMPLE 3 nbody-fortran-1 1.759346s
+RUN 3 nbody-dart-jit-8
+SAMPLE 3 nbody-dart-jit-8 2.105891s
+RUN 3 nbody-toit-cached-bodies
+SAMPLE 3 nbody-toit-cached-bodies 129.033480s
+RUN 3 nbody-csharpcore-0-jit
+SAMPLE 3 nbody-csharpcore-0-jit 1.885563s
+RUN 3 nbody-dart-8
+SAMPLE 3 nbody-dart-8 2.092326s
+RUN 3 nbody-gnat-1
+SAMPLE 3 nbody-gnat-1 1.842307s
+RUN 3 nbody-dart-6
+SAMPLE 3 nbody-dart-6 1.862606s
+RUN 3 nbody-csharpcore-6-arm64-faithful-jit
+SAMPLE 3 nbody-csharpcore-6-arm64-faithful-jit 1.737941s
+RUN 1 mandelbrot-fsharpcore-6-arm64-faithful-jit
+SAMPLE 1 mandelbrot-fsharpcore-6-arm64-faithful-jit 1.293487s
+RUN 1 mandelbrot-fsharpcore-1-arm64-faithful-aot
+SAMPLE 1 mandelbrot-fsharpcore-1-arm64-faithful-aot 1.283364s
+RUN 1 mandelbrot-dart-4
+SAMPLE 1 mandelbrot-dart-4 2.165720s
+RUN 1 mandelbrot-toit-rows
+SAMPLE 1 mandelbrot-toit-rows 358.798630s
+RUN 1 mandelbrot-csharpcore-7-aot
+SAMPLE 1 mandelbrot-csharpcore-7-aot 0.416848s
+RUN 1 mandelbrot-dart-1
+SAMPLE 1 mandelbrot-dart-1 110.717476s
+RUN 1 mandelbrot-csharpcore-2-arm64-faithful-aot
+SAMPLE 1 mandelbrot-csharpcore-2-arm64-faithful-aot 49.762871s
+RUN 1 mandelbrot-fpascal-2
+SAMPLE 1 mandelbrot-fpascal-2 7.444857s
+RUN 1 mandelbrot-smalltalk-published-1
+SAMPLE 1 mandelbrot-smalltalk-published-1 168.701203s
+RUN 1 mandelbrot-fpascal-7-native
+SAMPLE 1 mandelbrot-fpascal-7-native 1.864163s
+RUN 1 mandelbrot-dart-jit-1
+SAMPLE 1 mandelbrot-dart-jit-1 112.277875s
+RUN 1 mandelbrot-fsharpcore-1-arm64-faithful-jit
+SAMPLE 1 mandelbrot-fsharpcore-1-arm64-faithful-jit 1.397749s
+RUN 1 mandelbrot-fpascal-1
+SAMPLE 1 mandelbrot-fpascal-1 7.456159s
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/run.py", line 81, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/run.py", line 58, in main
+    compact.wait_for_environment(REQUIRED);pins()
+                                           ^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/run.py", line 43, in pins
+    assert sha(filename)==digest,filename
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/run.py

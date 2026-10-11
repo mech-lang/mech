@@ -1,0 +1,36 @@
+[
+  {
+    "full": false,
+    "seconds": 0.185775709,
+    "validation": {
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "full": true,
+    "seconds": 1.052756791,
+    "validation": {
+      "bytes": 26,
+      "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+      "energies": [
+        -0.169075164,
+        -0.169059907
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  }
+]

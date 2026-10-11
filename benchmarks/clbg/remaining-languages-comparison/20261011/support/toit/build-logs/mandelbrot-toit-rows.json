@@ -1,0 +1,18 @@
+{
+  "cache": {
+    "source_sha256": "bf74309781b4595e2251155569ebdb0efb18a5f4b08b953e5c619eaf7f6f77a4",
+    "sdk_sha256": "4f5170ee11089c5f85c75439f09b53ee7dfb7555faa56da9b320a6bc24038ec6",
+    "package_lock_sha256": "99089733fe4f2e509b3c1ee10cfc2340ff4dcfb5acf60308f60cb2b06ca20fea"
+  },
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+    "compile",
+    "-O2",
+    "--project-root",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/mandelbrot-toit-rows",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/mandelbrot-toit-rows.toit"
+  ],
+  "binary_sha256": "9dabc23b6c2d6d288b4b240ed95a3708ca62185a3e9acc623c38f19b60ebec14"
+}

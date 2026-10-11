@@ -1,0 +1,1 @@
+{"pathname":"S/SH/SHLOMIF/Math-GMP-2.25.tar.gz","dist":"Math-GMP-2.25","version":"2.25","target":"Math::GMP","provides":{"Math::GMP":{"file":"lib/Math/GMP.pm","version":"2.25"}},"name":"Math::GMP"}

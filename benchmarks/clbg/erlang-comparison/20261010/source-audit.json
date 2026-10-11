@@ -1,0 +1,1068 @@
+{
+  "status": "reviewed",
+  "builds_sha256": "320b6f4e3d80e794d039103d20346c85fcee86525802835807240923e94f77c2",
+  "small_checks_sha256": "c2a38dc4d6534e9344e120d6b35c7d87400d3d3b2b1a823116265ad6e8615a3d",
+  "rows": [
+    {
+      "key": "binarytrees:binarytrees-erlang-1",
+      "id": "binarytrees-erlang-1",
+      "benchmark": "binarytrees",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/binarytrees-erlang-1.erl",
+      "sha256": "2f00106ab1454d6f65fd355f7ab0dfe8c6d72a23e60c61d42e73c236561e7a4f",
+      "loc": 28,
+      "physical_loc": 28,
+      "expansions": [],
+      "admitted": false,
+      "reason": "Depth-zero tuples can be shared compiler literals; use the separate dynamic-leaf correction.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-erlang-1.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "binarytrees:binarytrees-erlang-2",
+      "id": "binarytrees-erlang-2",
+      "benchmark": "binarytrees",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/binarytrees-erlang-2.erl",
+      "sha256": "7186119844387945140dd9d84edc376547a04da1d582e3591022aa364239fa10",
+      "loc": 32,
+      "physical_loc": 32,
+      "expansions": [],
+      "admitted": false,
+      "reason": "Depth-zero tuples can be shared compiler literals; use the separate dynamic-leaf correction.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-erlang-2.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-erlang-1",
+      "id": "fannkuchredux-erlang-1",
+      "benchmark": "fannkuchredux",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/fannkuchredux-erlang-1.erl",
+      "sha256": "7c5bde88454b01136675a9e337706264f30dc6d55d5b4ba906c947cc0b3b3ac5",
+      "loc": 91,
+      "physical_loc": 90,
+      "expansions": [
+        {
+          "line": 104,
+          "extra": 1,
+          "source": "reset(N) -> put(N - 1, N), reset(N - 1).",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": true,
+      "reason": "All 479001600 permutations in canonical rotation order, full prefix flips, alternating checksum and maximum. Published factoradic tasks cover disjoint complete intervals and run on eight online schedulers.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-erlang-1.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "fasta:fasta-erlang-1",
+      "id": "fasta-erlang-1",
+      "benchmark": "fasta",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/fasta-erlang-1.erl",
+      "sha256": "73b34520a8ae4ca01b28dffec7b0df6d9a556c84f8e2a865bd149c1778ce6589",
+      "loc": 60,
+      "physical_loc": 60,
+      "expansions": [],
+      "admitted": false,
+      "reason": "Subtraction search or scaled-integer probabilities differ from the common cumulative binary64 workload.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-erlang-1.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "fasta:fasta-erlang-2",
+      "id": "fasta-erlang-2",
+      "benchmark": "fasta",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/fasta-erlang-2.erl",
+      "sha256": "73a61b56f5653429000f4e28903355b18e94b9c86ebeb133b621cc9766f07c3d",
+      "loc": 61,
+      "physical_loc": 61,
+      "expansions": [],
+      "admitted": false,
+      "reason": "Subtraction search or scaled-integer probabilities differ from the common cumulative binary64 workload.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-erlang-2.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "knucleotide:knucleotide-erlang-1",
+      "id": "knucleotide-erlang-1",
+      "benchmark": "knucleotide",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/knucleotide-erlang-1.erl",
+      "sha256": "b4bc101738dd35f6520a6e98842c06fd8612824e680276ea94698bf68502e210",
+      "loc": 67,
+      "physical_loc": 67,
+      "expansions": [],
+      "admitted": false,
+      "reason": "Equal-frequency keys have unspecified order in the original ETS enumeration; corrected ordering is pinned separately.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-erlang-1.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "knucleotide:knucleotide-erlang-3",
+      "id": "knucleotide-erlang-3",
+      "benchmark": "knucleotide",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/knucleotide-erlang-3.erl",
+      "sha256": "e2bab46bdd3670a0344e373a68702ca7e77b7e2c32929a35402dd0ba5ba32d82",
+      "loc": 67,
+      "physical_loc": 67,
+      "expansions": [],
+      "admitted": false,
+      "reason": "Equal-frequency keys have unspecified order in the original ETS enumeration; corrected ordering is pinned separately.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-erlang-3.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-3",
+      "id": "mandelbrot-erlang-3",
+      "benchmark": "mandelbrot",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-3.erl",
+      "sha256": "13fa7dd82a04e5c8cd627d2ec40310066f0324f86066d007cfbb1ea4a43553dd",
+      "loc": 62,
+      "physical_loc": 61,
+      "expansions": [
+        {
+          "line": 94,
+          "extra": 1,
+          "source": "                port_command(Fd, Char), print_loop(Fd)",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": false,
+      "reason": "Original omits the final pixel of each row; two versions also UTF-8 encode PBM bytes.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-erlang-3.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-4",
+      "id": "mandelbrot-erlang-4",
+      "benchmark": "mandelbrot",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-4.erl",
+      "sha256": "4e9a6147061f5e7def1b58a27c32a64a0cc3e111b03775f5f2d97233fea42379",
+      "loc": 68,
+      "physical_loc": 67,
+      "expansions": [
+        {
+          "line": 102,
+          "extra": 1,
+          "source": "                port_command(Fd, Char), print_loop(Fd)",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": false,
+      "reason": "Original omits the final pixel of each row; two versions also UTF-8 encode PBM bytes.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-erlang-4.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-1",
+      "id": "mandelbrot-erlang-1",
+      "benchmark": "mandelbrot",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-1.erl",
+      "sha256": "8511c8e5953cd3c08cdb9e9b9b0a7f0e4e8b540aab6c86691f9254652f239a36",
+      "loc": 31,
+      "physical_loc": 31,
+      "expansions": [],
+      "admitted": false,
+      "reason": "Original omits the final pixel of each row; two versions also UTF-8 encode PBM bytes.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-erlang-1.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-2",
+      "id": "mandelbrot-erlang-2",
+      "benchmark": "mandelbrot",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-2.erl",
+      "sha256": "61473f33a5770b6ce15f8ead44602785f040224afdf911f3e62ffbd18a9778db",
+      "loc": 42,
+      "physical_loc": 42,
+      "expansions": [],
+      "admitted": false,
+      "reason": "Original omits the final pixel of each row; two versions also UTF-8 encode PBM bytes.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-erlang-2.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "nbody:nbody-erlang-3",
+      "id": "nbody-erlang-3",
+      "benchmark": "nbody",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/nbody-erlang-3.erl",
+      "sha256": "9f66ffe55a1945b707621544345ed2840a1fcc7e84378668a595e58dea4046f0",
+      "loc": 114,
+      "physical_loc": 114,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Canonical five bodies, momentum correction, all ten symmetric pair interactions and five position updates at every one of fifty million steps, and both energies. Published floating-point arithmetic and recursive body ordering are retained.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-erlang-3.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "pidigits:pidigits-erlang-2",
+      "id": "pidigits-erlang-2",
+      "benchmark": "pidigits",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/pidigits-erlang-2.erl",
+      "sha256": "015899cd3d1691016a43ee541f839b15b3040ebc2dbbea0a0b0e7bbe84804ea9",
+      "loc": 33,
+      "physical_loc": 33,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Sequential unbounded LFT spigot using Erlang arbitrary-precision integers, computing extract(3) and extract(4) on every attempt. Erlang controls all transformations and digit output; no native spigot executor.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-erlang-2.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "pidigits:pidigits-erlang-1",
+      "id": "pidigits-erlang-1",
+      "benchmark": "pidigits",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/pidigits-erlang-1.erl",
+      "sha256": "a23ca682b59899a40e71a8be1913a08f7b5d5b962ffb81148b938b8b8c135d81",
+      "loc": 35,
+      "physical_loc": 34,
+      "expansions": [
+        {
+          "line": 50,
+          "extra": 1,
+          "source": "do_print(C, [H|T]) -> io:fwrite(\"~p\", [H]), do_print(C, T).",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": true,
+      "reason": "Sequential unbounded LFT spigot using Erlang arbitrary-precision integers, computing extract(3) and extract(4) on every attempt. Erlang controls all transformations and digit output; no native spigot executor.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-erlang-1.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "pidigits:pidigits-erlang-3",
+      "id": "pidigits-erlang-3",
+      "benchmark": "pidigits",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/pidigits-erlang-3.erl",
+      "sha256": "3310461c73c004633339c749b906365dce5b298f55064826d37f92ce2d4aaa6c",
+      "loc": 43,
+      "physical_loc": 43,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Sequential unbounded LFT spigot using Erlang arbitrary-precision integers, computing extract(3) and extract(4) on every attempt. Erlang controls all transformations and digit output; no native spigot executor.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-erlang-3.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "regexredux:regexredux-erlang-6",
+      "id": "regexredux-erlang-6",
+      "benchmark": "regexredux",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/regexredux-erlang-6.erl",
+      "sha256": "b38d70db4de042d5c7bbacc20aa2808b795186ce923df1596a73d262192142c0",
+      "loc": 82,
+      "physical_loc": 80,
+      "expansions": [
+        {
+          "line": 28,
+          "extra": 1,
+          "source": "main() -> do(), halt().",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        },
+        {
+          "line": 76,
+          "extra": 1,
+          "source": "    receive {PID, Ret} -> Fin(Ret), results(R) end;",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": false,
+      "reason": "Original skips ALU and sequence boundaries and performs case-insensitive final substitutions.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-erlang-6.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "revcomp:revcomp-erlang-1",
+      "id": "revcomp-erlang-1",
+      "benchmark": "revcomp",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/revcomp-erlang-1.erl",
+      "sha256": "9cd7ce7fbbbe41ba0f48565ba35879d739980973b5a8c2c6b54fe61bb42b0c3b",
+      "loc": 136,
+      "physical_loc": 136,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Read all three complete FASTA records, preserve headers, uppercase/reverse/complement every sequence, and emit the entire sixty-column output. Published byte/binary processing and ordered worker output retained.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-erlang-1.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "revcomp:revcomp-erlang-4",
+      "id": "revcomp-erlang-4",
+      "benchmark": "revcomp",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/revcomp-erlang-4.erl",
+      "sha256": "4e74c9e502428fa2511c9ff2ee4117861d7755a23f0ac4e53f014ba4b53669dd",
+      "loc": 114,
+      "physical_loc": 114,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Read all three complete FASTA records, preserve headers, uppercase/reverse/complement every sequence, and emit the entire sixty-column output. Published byte/binary processing and ordered worker output retained.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-erlang-4.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "revcomp:revcomp-erlang-3",
+      "id": "revcomp-erlang-3",
+      "benchmark": "revcomp",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/revcomp-erlang-3.erl",
+      "sha256": "9429dffd13cb779a0d254a3ac32bc8376b735e230a00a3bf389a2c2ec556163d",
+      "loc": 63,
+      "physical_loc": 63,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Read all three complete FASTA records, preserve headers, uppercase/reverse/complement every sequence, and emit the entire sixty-column output. Published byte/binary processing and ordered worker output retained.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-erlang-3.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "spectralnorm:spectralnorm-erlang-1",
+      "id": "spectralnorm-erlang-1",
+      "benchmark": "spectralnorm",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/spectralnorm-erlang-1.erl",
+      "sha256": "2930fd184250bd8186915911de49091f3b6a8256272f7f36ffcc015b6526ff89",
+      "loc": 35,
+      "physical_loc": 34,
+      "expansions": [
+        {
+          "line": 29,
+          "extra": 1,
+          "source": "   I = II-1.0, J = JJ-1.0,",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": true,
+      "reason": "Separate coefficient, multiply, transpose and composition functions. All forty N-squared products evaluate each coefficient during multiplication; no cached matrix. Published tuple access and parallel row partitioning are retained.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-erlang-1.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "spectralnorm:spectralnorm-erlang-2",
+      "id": "spectralnorm-erlang-2",
+      "benchmark": "spectralnorm",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/spectralnorm-erlang-2.erl",
+      "sha256": "e73d96678f5a437fad29318b04867608b4ec79a4996bd131614770bf65654c76",
+      "loc": 35,
+      "physical_loc": 35,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Separate coefficient, multiply, transpose and composition functions. All forty N-squared products evaluate each coefficient during multiplication; no cached matrix. Published tuple access and parallel row partitioning are retained.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-erlang-2.html",
+      "local_adaptation": false
+    },
+    {
+      "key": "binarytrees:binarytrees-erlang-1-faithful",
+      "id": "binarytrees-erlang-1-faithful",
+      "benchmark": "binarytrees",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/binarytrees-erlang-1-faithful.erl",
+      "sha256": "3ec54d1186802716832fd59b0f335ebbdeebbc9f67bb04d78040e080ff5bad68",
+      "loc": 29,
+      "physical_loc": 29,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Each interior and depth-zero node is a separately allocated two-slot tuple. Construct each complete tree before traversal; release stretch storage, keep the long-lived root live through all temporary work, and check afterward. Optimized BEAM assembly confirms dynamic leaf/interior allocation and recursive construction/traversal. Default GC and no custom pool.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-erlang-1.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "binarytrees:binarytrees-erlang-2-faithful",
+      "id": "binarytrees-erlang-2-faithful",
+      "benchmark": "binarytrees",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/binarytrees-erlang-2-faithful.erl",
+      "sha256": "4e7e3bbffcde7fd09a529e135c22bda8728d11573b60bba7fae78b9074c825c6",
+      "loc": 33,
+      "physical_loc": 33,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Each interior and depth-zero node is a separately allocated two-slot tuple. Construct each complete tree before traversal; release stretch storage, keep the long-lived root live through all temporary work, and check afterward. Optimized BEAM assembly confirms dynamic leaf/interior allocation and recursive construction/traversal. Default GC and no custom pool.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-erlang-2.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "fasta:fasta-erlang-1-faithful",
+      "id": "fasta-erlang-1-faithful",
+      "benchmark": "fasta",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/fasta-erlang-1-faithful.erl",
+      "sha256": "33f1054e093204f9f105fbfadc1ffdc9beb1e958c0b09b9e254218569e40aa2c",
+      "loc": 65,
+      "physical_loc": 65,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Canonical ALU repetition, every one of 200 million fresh LCG updates, direct binary64 division and comparisons with cumulative unscaled floating probabilities. Complete output, original buffering and RNG dependency retained; no scaled thresholds, subtraction search or period cache.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-erlang-1.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "fasta:fasta-erlang-2-faithful",
+      "id": "fasta-erlang-2-faithful",
+      "benchmark": "fasta",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/fasta-erlang-2-faithful.erl",
+      "sha256": "7209bbd711666fb1a24470c73bae4935448bbd0b695cd574bfa3590a81320259",
+      "loc": 60,
+      "physical_loc": 60,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Canonical ALU repetition, every one of 200 million fresh LCG updates, direct binary64 division and comparisons with cumulative unscaled floating probabilities. Complete output, original buffering and RNG dependency retained; no scaled thresholds, subtraction search or period cache.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-erlang-2.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "knucleotide:knucleotide-erlang-1-faithful",
+      "id": "knucleotide-erlang-1-faithful",
+      "benchmark": "knucleotide",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/knucleotide-erlang-1-faithful.erl",
+      "sha256": "e463b84fd0bfbc40246f0ecbbd968b0afd8e95302215946128920fd9c59efc39",
+      "loc": 67,
+      "physical_loc": 67,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Extract THREE, uppercase and build all seven complete overlapping ETS hash maps for widths 1,2,3,4,6,12,18. Every valid position does an explicit counter lookup/update, including the final window. Grow ordinary default ETS hash tables from their initial small size. Frequency ties sort by key; no selective counting, indexed histogram or period shortcut.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-erlang-1.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "knucleotide:knucleotide-erlang-3-faithful",
+      "id": "knucleotide-erlang-3-faithful",
+      "benchmark": "knucleotide",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/knucleotide-erlang-3-faithful.erl",
+      "sha256": "8e4825a9b38a083802f382e0f14490c7e1f1b6971d6d7ec2bb329869375155e2",
+      "loc": 67,
+      "physical_loc": 67,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Extract THREE, uppercase and build all seven complete overlapping ETS hash maps for widths 1,2,3,4,6,12,18. Every valid position does an explicit counter lookup/update, including the final window. Grow ordinary default ETS hash tables from their initial small size. Frequency ties sort by key; no selective counting, indexed histogram or period shortcut.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-erlang-3.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-3-faithful",
+      "id": "mandelbrot-erlang-3-faithful",
+      "benchmark": "mandelbrot",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-3-faithful.erl",
+      "sha256": "c2ea865ac19891551fd0b5acb53f0d837e0f28c108c38a3c3c388439d35e078f",
+      "loc": 62,
+      "physical_loc": 61,
+      "expansions": [
+        {
+          "line": 94,
+          "extra": 1,
+          "source": "                port_command(Fd, Char), print_loop(Fd)",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": true,
+      "reason": "Every one of the 256 million pixels uses the ordinary recurrence and at most fifty escape-tested iterations. The omitted last pixel is corrected; complete byte-oriented PBM output and ordinary row scheduling are retained. No interior, symmetry or periodicity shortcuts.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-erlang-3.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-4-faithful",
+      "id": "mandelbrot-erlang-4-faithful",
+      "benchmark": "mandelbrot",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-4-faithful.erl",
+      "sha256": "523734fe27613f50fc2f8408456d814ef5a28776cb1f17dcc992e5a5b2e6fb33",
+      "loc": 68,
+      "physical_loc": 67,
+      "expansions": [
+        {
+          "line": 102,
+          "extra": 1,
+          "source": "                port_command(Fd, Char), print_loop(Fd)",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": true,
+      "reason": "Every one of the 256 million pixels uses the ordinary recurrence and at most fifty escape-tested iterations. The omitted last pixel is corrected; complete byte-oriented PBM output and ordinary row scheduling are retained. No interior, symmetry or periodicity shortcuts.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-erlang-4.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-1-faithful",
+      "id": "mandelbrot-erlang-1-faithful",
+      "benchmark": "mandelbrot",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-1-faithful.erl",
+      "sha256": "3f63c723f3e377096f35b96eb6e289f58dc7397df4ac981ef07d1cf63aa48f43",
+      "loc": 32,
+      "physical_loc": 32,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Every one of the 256 million pixels uses the ordinary recurrence and at most fifty escape-tested iterations. The omitted last pixel is corrected; complete byte-oriented PBM output and ordinary row scheduling are retained. No interior, symmetry or periodicity shortcuts.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-erlang-1.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "mandelbrot:mandelbrot-erlang-2-faithful",
+      "id": "mandelbrot-erlang-2-faithful",
+      "benchmark": "mandelbrot",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/mandelbrot-erlang-2-faithful.erl",
+      "sha256": "bb2c57e38344c6c6ef93a7d11c544b7538050f18ba3c10f5d0b9da949b33a35b",
+      "loc": 43,
+      "physical_loc": 43,
+      "expansions": [],
+      "admitted": true,
+      "reason": "Every one of the 256 million pixels uses the ordinary recurrence and at most fifty escape-tested iterations. The omitted last pixel is corrected; complete byte-oriented PBM output and ordinary row scheduling are retained. No interior, symmetry or periodicity shortcuts.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-erlang-2.html",
+      "local_adaptation": true
+    },
+    {
+      "key": "regexredux:regexredux-erlang-6-faithful",
+      "id": "regexredux-erlang-6-faithful",
+      "benchmark": "regexredux",
+      "language": "erlang",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/sources/regexredux-erlang-6-faithful.erl",
+      "sha256": "dc53ea64bda55c8b1472f7f16e322700bf31ef6b4bea1e581662639a02c09bac",
+      "loc": 82,
+      "physical_loc": 80,
+      "expansions": [
+        {
+          "line": 28,
+          "extra": 1,
+          "source": "main() -> do(), halt().",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        },
+        {
+          "line": 76,
+          "extra": 1,
+          "source": "    receive {PID, Ret} -> Fin(Ret), results(R) end;",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "admitted": true,
+      "reason": "All nine complete case-insensitive non-overlapping regex searches and five ordered case-sensitive substitutions operate on the entire cleaned input. Standard Erlang re supplies general regex operations; all sequencing stays in Erlang.",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-erlang-6.html",
+      "local_adaptation": true
+    }
+  ],
+  "controls": [
+    {
+      "id": "mech-control-pidigits",
+      "key": "pidigits:mech-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+      "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 38,
+      "published_chart_key": "pidigits:mech-pi-final-advance-signed",
+      "previous_seconds": 0.300272042,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Sequential unbounded spigot written in Mech with general GMP-backed bigint operations. Both extract(3) and extract(4) are evaluated for each tested candidate. The advance variant uses the same impossible-candidate guard as the pinned Rust #4 source; no alternative pi algorithm or digit cache.",
+        "full_work": {
+          "digits": 10000,
+          "threads": 1
+        },
+        "evidence": [
+          {
+            "path": "pidigits/pidigits.mec",
+            "sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1"
+          },
+          {
+            "path": "pidigits/pidigits-advance.mec",
+            "sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e"
+          },
+          {
+            "path": "pidigits/upstream/pidigits-rust-4.rs",
+            "sha256": "fb6b33b1bf74612f8ce78d19e70f10f41650b02b72e4c73d2cb0480508fbef65"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html"
+      }
+    },
+    {
+      "id": "mech-control-spectralnorm",
+      "key": "spectralnorm:mech-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 12,
+      "published_chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "previous_seconds": 0.086075292,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Four source functions: coefficient, apply, apply-transpose, and step. Twenty power-method applications execute forty matrix-vector products. Coefficients are computed by emitted Mech arithmetic; no stored matrix or answer shortcut.",
+        "full_work": {
+          "n": 5500,
+          "power_applications": 20,
+          "matrix_vector_products": 40,
+          "weighted_contributions": 1210000000
+        },
+        "evidence": [
+          {
+            "path": "work-audit/20261009/sources/spectralnorm-four-functions.mec",
+            "sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html"
+      }
+    },
+    {
+      "id": "mech-control-nbody",
+      "key": "nbody:mech-control",
+      "benchmark": "nbody",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 25,
+      "published_chart_key": "nbody:pairwise-mass-tails",
+      "previous_seconds": 1.05385575,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Full symplectic pair integration is written in Mech. The generic reactive runner supplies iteration count and output formatting; it contains no gravity kernel.",
+        "full_work": {
+          "steps": 50000000,
+          "pairs_per_step": 10
+        },
+        "evidence": [
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+            "sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175"
+          },
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+            "sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa"
+          },
+          {
+            "path": "array-comparison/nbody-20261009/comparison-mech-compact.json",
+            "sha256": "30535144ef6ef3b40d3d7fed28ce44d4e7214bc964852c19429094d76935583e"
+          },
+          {
+            "path": "../../hosts/gpu/src/fused_f64/runner.rs",
+            "sha256": "1249907f7fcb777cf9f09ddd3e57268149b5aad2c4cb5a209a36b8ccf41318db"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html"
+      }
+    },
+    {
+      "id": "mech-control-mandelbrot",
+      "key": "mandelbrot:mech-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+      "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "loc": 29,
+      "published_chart_key": "mandelbrot:mech-program-simd-loop-fma",
+      "previous_seconds": 0.439738792,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "The Mech-defined callback performs double-precision escape iteration for every pixel, with a maximum of 50 iterations, and emits the complete PBM. Native SIMD and lane termination preserve that algorithm.",
+        "full_work": {
+          "width": 16000,
+          "height": 16000,
+          "maximum_iterations": 50
+        },
+        "evidence": [
+          {
+            "path": "mandelbrot/mandelbrot-compact-program.mec",
+            "sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169"
+          },
+          {
+            "path": "mandelbrot/mandelbrot-program.mec",
+            "sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html"
+      }
+    },
+    {
+      "id": "mech-control-regexredux",
+      "key": "regexredux:mech-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "loc": 24,
+      "published_chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "previous_seconds": 0.489611584,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine independent regex counts, each using its prescribed pattern, and five ordered regex substitutions. The general regex library handles each operation; there is no combined-pattern benchmark matcher.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "evidence": [
+          {
+            "path": "regexredux/regexredux.mec",
+            "sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html"
+      }
+    },
+    {
+      "id": "mech-control-binarytrees",
+      "key": "binarytrees:mech-control",
+      "benchmark": "binarytrees",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+      "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 26,
+      "published_chart_key": "binarytrees:mech-binarytrees-parallel",
+      "previous_seconds": 0.394411208,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed-library-pool",
+        "reason": "Full bottom-up construction and traversal of distinct ordinary nodes, including equally allocated leaves. Uses the general core library memory pool through memory/with-arena and memory/with-frame. This allocation strategy must be disclosed; it is not a default-GC comparison.",
+        "allocation_policy": "General core library pool; distinct 16-byte node slots; per-tree frame release.",
+        "full_work": {
+          "maximum_depth": 21,
+          "nodes_constructed_and_walked": 613766494
+        },
+        "evidence": [
+          {
+            "path": "binarytrees/binarytrees-parallel.mec",
+            "sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/runtime.rs",
+            "sha256": "50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b"
+          },
+          {
+            "path": "../../src/core/src/memory_runtime/allocation.rs",
+            "sha256": "03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c"
+          },
+          {
+            "path": "binarytrees/results/conformance.json",
+            "sha256": "51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c"
+          },
+          {
+            "path": "binarytrees/results/records-conformance.json",
+            "sha256": "5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html"
+      }
+    },
+    {
+      "id": "mech-control-fannkuchredux",
+      "key": "fannkuchredux:mech-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+      "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 59,
+      "published_chart_key": "fannkuchredux:mech-fannkuch-even",
+      "previous_seconds": 1.702457333,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "The Mech program enumerates all factorial permutations in the required factoradic order, performs actual prefix flips, and reduces the alternating checksum and maximum. Parallel ranges cover the full permutation domain.",
+        "full_work": {
+          "n": 12,
+          "permutations": 479001600
+        },
+        "evidence": [
+          {
+            "path": "fannkuchredux/fannkuchredux.mec",
+            "sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f"
+          },
+          {
+            "path": "fannkuchredux/fannkuchredux-even.mec",
+            "sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html"
+      }
+    },
+    {
+      "id": "mech-control-fasta",
+      "key": "fasta:mech-control",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 43,
+      "published_chart_key": "fasta:mech-fasta-final-expanded-v2",
+      "previous_seconds": 0.541193292,
+      "previous_report": "fasta/investigations/20261009-floating-cdf/results.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Strict comparison disables the general exact-integer-cutoff transform. Emitted objects retain floating division/comparison. Each random nucleotide advances the naive LCG. The only repeated-sequence cache is for the supplied fixed ALU string.",
+        "full_work": {
+          "n": 25000000,
+          "fixed_sequence_bytes": 50000000,
+          "random_nucleotides": 200000000,
+          "lcg_updates": 200000000
+        },
+        "required_build_environment": {
+          "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0"
+        },
+        "evidence": [
+          {
+            "path": "fasta/fasta.mec",
+            "sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066"
+          },
+          {
+            "path": "fasta/fasta-optimized.mec",
+            "sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/compiler.rs",
+            "sha256": "b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html"
+      }
+    },
+    {
+      "id": "mech-control-knucleotide",
+      "key": "knucleotide:mech-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "loc": 17,
+      "published_chart_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "previous_seconds": 0.51382825,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "All overlapping keys at all seven lengths perform a library hash-table entry lookup/update. No query-only search or indexed-count substitute. The runtime checks each merged histogram total against its window count.",
+        "full_work": {
+          "three_sequence_length": 125000000,
+          "window_lengths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "hash_table_window_updates": 874999961
+        },
+        "evidence": [
+          {
+            "path": "knucleotide/knucleotide-compact.mec",
+            "sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/counts.rs",
+            "sha256": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/runtime.rs",
+            "sha256": "6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4"
+          },
+          {
+            "path": "array-comparison/all-20261009/investigation/confirmation.json",
+            "sha256": "64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html"
+      }
+    },
+    {
+      "id": "mech-control-revcomp",
+      "key": "revcomp:mech-control",
+      "benchmark": "revcomp",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after",
+      "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "loc": 7,
+      "published_chart_key": "revcomp:mech-revcomp-optimized",
+      "previous_seconds": 0.149272625,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Buffered growing record input; full record reversal, alphabet translation, and 60-column output. The implementation does not use file size to preallocate stdin.",
+        "full_work": {
+          "input_bytes": 254166745
+        },
+        "evidence": [
+          {
+            "path": "revcomp/revcomp.mec",
+            "sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/runtime.rs",
+            "sha256": "6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html"
+      }
+    }
+  ],
+  "allocation_evidence": [
+    {
+      "id": "binarytrees-erlang-1-faithful",
+      "file": "builds/binarytrees-erlang-1-faithful/binarytrees.S",
+      "sha256": "4f98a624f4b8fe2fb3beac98f0aca5c80b340ff1c305b038eefbfebb3017bf91",
+      "original_file": "builds/binarytrees-erlang-1/binarytrees.S",
+      "original_sha256": "246e61d849605dfdbd92fb6ccd48f20295c3ba184ea4f6eb24f82d46a5ead809",
+      "finding": "Optimized BEAM uses two recursive calls and a three-word dynamic two-slot tuple for every interior node. The exported leaf constructor also allocates a fresh three-word tuple; the original literal leaf is excluded. Each loop constructs then recursively walks its full tree, and the main continuation retains the long-lived root across all temporary work. Default GC and no heap-tuning flags."
+    },
+    {
+      "id": "binarytrees-erlang-2-faithful",
+      "file": "builds/binarytrees-erlang-2-faithful/binarytrees.S",
+      "sha256": "e481a196cd5155a1b95df40df9a7f95c97fa66783e728a57da786ce387206db9",
+      "original_file": "builds/binarytrees-erlang-2/binarytrees.S",
+      "original_sha256": "c12590c3eec86c4c54106d350bc04e255c15b8f3c715d66c2785e1f62c09842c",
+      "finding": "Optimized BEAM uses two recursive calls and a three-word dynamic two-slot tuple for every interior node. The exported leaf constructor also allocates a fresh three-word tuple; the original literal leaf is excluded. Each loop constructs then recursively walks its full tree, and the main continuation retains the long-lived root across all temporary work. Default GC and no heap-tuning flags."
+    }
+  ],
+  "evidence": {
+    "builds/binarytrees-erlang-1-faithful/binarytrees.S": "4f98a624f4b8fe2fb3beac98f0aca5c80b340ff1c305b038eefbfebb3017bf91",
+    "builds/binarytrees-erlang-1/binarytrees.S": "246e61d849605dfdbd92fb6ccd48f20295c3ba184ea4f6eb24f82d46a5ead809",
+    "builds/binarytrees-erlang-2-faithful/binarytrees.S": "e481a196cd5155a1b95df40df9a7f95c97fa66783e728a57da786ce387206db9",
+    "builds/binarytrees-erlang-2/binarytrees.S": "c12590c3eec86c4c54106d350bc04e255c15b8f3c715d66c2785e1f62c09842c"
+  },
+  "policy": {
+    "output": "Complete small/full output is checked against the same cohort reference; nbody energy tolerance 1e-8. Work review beyond printed answers is mandatory.",
+    "loc": "Nonblank/noncomment LOC, including semantic module/export/compile/macro directives and all application helpers, plus additional packed independent Erlang clause/block expressions. Structural collection, argument and guard separators do not inflate LOC. No compressed-size metric.",
+    "scheduling": "Eight online BEAM schedulers on the Apple M3; published task/worker partitioning retained. Default heap and garbage collection. No builds or browser tests during timed execution.",
+    "upstream": "All 21 sources linked by the published Erlang measurements page were considered and preserved with their attribution and hashes. Eleven separately named work corrections are retained; no new benchmark executor. Only faithful locally timed sources may enter endpoint selection."
+  },
+  "requirements": {
+    "pidigits": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+    "spectralnorm": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+    "nbody": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+    "mandelbrot": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+    "regexredux": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+    "binarytrees": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+    "fannkuchredux": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+    "fasta": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+    "knucleotide": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+    "revcomp": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html"
+  }
+}

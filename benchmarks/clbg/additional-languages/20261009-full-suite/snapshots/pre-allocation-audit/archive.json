@@ -1,0 +1,55 @@
+{
+  "status": "archived-before-allocation-correction",
+  "files": {
+    "profiles.json": "1f983225a64f549c2bc594215fd04cda72c49f5bace198b873d3f6d30a68fb98",
+    "source-audit.json": "6a478e10b6b8e78f8244b4c75323b664ef0bd2718eb802815c1af82ae5f49153",
+    "results/timings.json": "2a926d1bfa43fc0f3989a53dc651282eed40d20f0a78e2401a4bb709c8de6c0e",
+    "results/builds.json": "10ea8af90356c0c5b2cbaefd16618d8b3fda7984904aa71aa55babdc40d94ffd",
+    "results/tree-work-audit.json": "041f6012176f632ec3033739a51d644cfeb35045cfd230df70b05fc5fd9aa3a6",
+    "results/stdlib-tests.json": "e5dafb44dae3b73965dec4cd7acc67ad1b541be07a4945479f47b6868e32767f",
+    "sources/binarytrees-compact.mojo": "3d76aaf30d2fc644e62966c7e80ec0587c2c3f84a10d6694329bac85fcacaae4",
+    "binaries/binarytrees-compact-mojo": "479bd0d64d584fadfb8646b5b00e6b87d80990ab6c235d8884c67b38502e7147",
+    "sources/binarytrees-optimized.mojo": "1fed1bebe544393be931c82ac5e9aa449aa597ffd541ac4a5eb11d22db9bc27c",
+    "binaries/binarytrees-optimized-mojo": "d368298171e70c7016044efa5e709fcab0dfde6f20896d8b584fc066a28655c3",
+    "sources/binarytrees.mojo": "36b99d0f79ee49a97e9a79730351d4d52d9c4cd34dc63a88d221a597862212d4",
+    "binaries/binarytrees-mojo": "6a9a7bccbd55bc6ca0825f13d9fe70d551d42c5d189992bf598a943a11aa513c",
+    "sources/binarytrees-optimized.fut": "8000e9548221e5f87ee87fa616303b303e64ce0408c4c04a1f695e4d0cd6a068",
+    "binaries/binarytrees-optimized-futhark": "e38c952aa386dea8679d7db2be8f24f842da3dbad5e41466cddb5ac4b94a1847",
+    "sources/binarytrees.fut": "f98ac786ef0c4fc89a29c40ff3ea6cf07ef68279672424a5b42787dae2c27a1e",
+    "binaries/binarytrees-futhark": "709de5bef28bb6a038ff0d47986455ca24d522f7de350130e94b79ec6b96e1b0"
+  },
+  "rejected_tree_candidates": [
+    {
+      "source": "sources/binarytrees-compact.mojo",
+      "source_sha256": "3d76aaf30d2fc644e62966c7e80ec0587c2c3f84a10d6694329bac85fcacaae4",
+      "binary_sha256": "479bd0d64d584fadfb8646b5b00e6b87d80990ab6c235d8884c67b38502e7147",
+      "reason": "Flat/indexed array storage omits the reference per-node allocator/library-pool allocation workload. Node writes and matching output do not satisfy this allocation requirement."
+    },
+    {
+      "source": "sources/binarytrees-optimized.mojo",
+      "source_sha256": "1fed1bebe544393be931c82ac5e9aa449aa597ffd541ac4a5eb11d22db9bc27c",
+      "binary_sha256": "d368298171e70c7016044efa5e709fcab0dfde6f20896d8b584fc066a28655c3",
+      "reason": "Flat/indexed array storage omits the reference per-node allocator/library-pool allocation workload. Node writes and matching output do not satisfy this allocation requirement."
+    },
+    {
+      "source": "sources/binarytrees.mojo",
+      "source_sha256": "36b99d0f79ee49a97e9a79730351d4d52d9c4cd34dc63a88d221a597862212d4",
+      "binary_sha256": "6a9a7bccbd55bc6ca0825f13d9fe70d551d42c5d189992bf598a943a11aa513c",
+      "reason": "Flat/indexed array storage omits the reference per-node allocator/library-pool allocation workload. Node writes and matching output do not satisfy this allocation requirement."
+    },
+    {
+      "source": "sources/binarytrees-optimized.fut",
+      "source_sha256": "8000e9548221e5f87ee87fa616303b303e64ce0408c4c04a1f695e4d0cd6a068",
+      "binary_sha256": "e38c952aa386dea8679d7db2be8f24f842da3dbad5e41466cddb5ac4b94a1847",
+      "reason": "Flat/indexed array storage omits the reference per-node allocator/library-pool allocation workload. Node writes and matching output do not satisfy this allocation requirement."
+    },
+    {
+      "source": "sources/binarytrees.fut",
+      "source_sha256": "f98ac786ef0c4fc89a29c40ff3ea6cf07ef68279672424a5b42787dae2c27a1e",
+      "binary_sha256": "709de5bef28bb6a038ff0d47986455ca24d522f7de350130e94b79ec6b96e1b0",
+      "reason": "Flat/indexed array storage omits the reference per-node allocator/library-pool allocation workload. Node writes and matching output do not satisfy this allocation requirement."
+    }
+  ],
+  "original_base": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite",
+  "snapshot_base": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/snapshots/pre-allocation-audit"
+}

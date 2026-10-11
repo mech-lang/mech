@@ -1,0 +1,21 @@
+{
+  "directory": "exports/20261010T192801960763Z",
+  "status": "complete",
+  "completed_benchmarks": [
+    "spectralnorm",
+    "mandelbrot",
+    "regexredux",
+    "revcomp",
+    "fasta",
+    "nbody",
+    "pidigits",
+    "fannkuchredux",
+    "knucleotide",
+    "binarytrees"
+  ],
+  "report_sha256": "35d26ef36401f00bb554824dff1667e05c172874984352976616c8eb71b631a3",
+  "loc_sha256": "2da77ec584752192a2dacde375bfb1e2bc9218c61b97a7757dff89edb1af1b0f",
+  "summary_sha256": "72faea501037deb095cce793ade6ce8d4299fe2dd96950c18143a31dfaa65f4d",
+  "exporter_sha256": "bcfb3d33795cc94ecca1f2781da0f1fdb7cc4a61304797bbf771720a8f8377e3",
+  "measurement_snapshot_sha256": "e82ab6aff97a93b49b8e74068f4a742150be1457e37976b1fffd02f6caf29aa8"
+}

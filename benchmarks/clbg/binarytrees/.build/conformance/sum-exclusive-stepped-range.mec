@@ -1,0 +1,2 @@
+result := (stats/sum([i | i <- 1..2..5]))
+io/print("{}\n", result)

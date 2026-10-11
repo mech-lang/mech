@@ -1,0 +1,68 @@
+use alienfile;
+
+plugin 'Probe::CBuilder' => (
+  libs   => $_->{libs},
+  cflags => $_->{cflags},
+  version => qr/version = '(.*?)'/,
+  program => <<'EOM'
+#include <stdio.h>
+#include <gmp.h>
+int
+main(int argc, char *argv[])
+{
+  printf("version = '%s'\n", gmp_version);
+  return 0;
+}
+EOM
+) for ({ libs => '-lgmp', cflags => '' }, { libs => '-lgmp', cflags => '-I/usr/include/gmp' });
+
+share {
+
+  requires 'Alien::m4'    => '0.08';
+
+  plugin Download => (
+    url => 'https://ftp.gnu.org/gnu/gmp',
+    filter => qr/^gmp-.*\.tar\.bz2$/,
+    version => qr/([0-9\.]+)/,
+  );
+  plugin Extract => 'tar.bz2',
+  plugin 'Build::Autoconf' => ();
+
+  build [
+    '%{configure} --enable-shared --enable-static --enable-cxx=detect',
+    '%{make}',
+    '%{make} check',
+    '%{make} install',
+  ];
+
+  plugin 'Gather::IsolateDynamic';
+
+  gather sub {
+    my($build) = @_;
+    $build->runtime_prop->{$_} = "-I@{[ $build->runtime_prop->{prefix} ]}/include " for qw( cflags cflags_static );
+    $build->runtime_prop->{$_} = "-L@{[ $build->runtime_prop->{prefix} ]}/lib -lgmp " for qw( libs libs_static );
+    if(-e 'include/gmpxx.h')
+    {
+      $build->runtime_prop->{alt}->{gmp}->{$_} = $build->runtime_prop->{$_} for qw( cflags cflags_static libs libs_static );
+      $build->runtime_prop->{alt}->{gmpxx}->{$_} = "-I@{[ $build->runtime_prop->{prefix} ]}/include " for qw( cflags cflags_static );
+      $build->runtime_prop->{alt}->{gmpxx}->{$_} = "-L@{[ $build->runtime_prop->{prefix} ]}/lib -lgmpxx " for qw( libs libs_static );
+    }
+  };
+};
+
+sys {
+
+  requires 'Devel::CheckLib';
+
+  meta->after_hook(
+    gather_system => sub {
+      my($build) = @_;
+      $build->runtime_prop->{legacy}->{name} = 'gmp';
+      if(Devel::CheckLib::check_lib( lib => 'gmpxx'))
+      {
+        $build->runtime_prop->{alt}->{gmp}->{$_} = $build->runtime_prop->{$_} for qw( cflags libs );
+        $build->runtime_prop->{alt}->{gmpxx}->{$_} = "-lgmpxx " for qw( libs );
+      }
+    },
+  );
+};

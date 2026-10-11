@@ -1,0 +1,14 @@
+{
+  "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+  "commit_sha": "c29e74865a2cec3bae3e4bb5fcbf57995876ca61",
+  "archive": "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-array-full.tar.gz",
+  "version_id": "appgprj_6ac8f49664688191961eac14d8a9465b~appgver_3dc87b1f70c4819181a31af5e3d29a40",
+  "version_number": 8,
+  "deployment_id": "appgdep_6ac972295ef08191ac9515e1661f4a1e",
+  "status": "succeeded",
+  "url": "https://mech-benchmark-explorer.refreshthen.chatgpt.site",
+  "coverage": {
+    "bqn": 10,
+    "k": 10
+  }
+}

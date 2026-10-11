@@ -1,0 +1,4 @@
+raw := io/read()
+count := regex/count-bytes(raw, "[A-Z]{2}[0-9]+")
+changed := regex/replace-bytes(raw, "([A-Z]{2})([0-9]+)", "$1")
+io/write(string/concat(string/concat(number/format(count, 0), ":"), changed))

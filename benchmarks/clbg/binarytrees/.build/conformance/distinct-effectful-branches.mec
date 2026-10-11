@@ -1,0 +1,9 @@
+Leaf(n<u64>) = (root<ref>) :=
+  root := heap/new-refs((heap/null(), heap/null())).
+Test(n<u64>) = (result<u64>) :=
+  a := control/if(true, Leaf, Leaf, 0)
+  b := control/if(true, Leaf, Leaf, 0)
+  result := control/select(a != b, 1, 0).
+
+result := memory/with-ref-arena(2, 2, Test, 0)
+io/print("{}\n", result)

@@ -1,0 +1,5 @@
+<row> := <{link<ref>}>
+Test(n<u64>) = (result<row>) :=
+  result := {link: memory/null()}.
+r := memory/with-arena(1, <row>, Test, 0)
+io/print("{}\n", 1)

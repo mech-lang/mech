@@ -1,0 +1,12 @@
+{
+  "inputs/revcomp-input-1000.txt": {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/revcomp-input.txt",
+    "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+    "bytes": 10245
+  },
+  "inputs/revcomp-output-1000.txt": {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/revcomp-output.txt",
+    "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+    "bytes": 10245
+  }
+}

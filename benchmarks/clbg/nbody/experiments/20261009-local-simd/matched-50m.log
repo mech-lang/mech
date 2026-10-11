@@ -1,0 +1,80 @@
+CODEGEN compact-baseline {"disassembly_path": "compact-baseline.disassembly.txt", "loop_start_hex": "0x100003488", "loop_backedge_hex": "0x10000396c", "static_instructions": 314, "stack_load_instructions": 89, "stack_store_instructions": 33, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-baseline {"disassembly_path": "pairwise-baseline.disassembly.txt", "loop_start_hex": "0x10000358c", "loop_backedge_hex": "0x100003974", "static_instructions": 251, "stack_load_instructions": 58, "stack_store_instructions": 22, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN compact-tails {"disassembly_path": "compact-tails.disassembly.txt", "loop_start_hex": "0x100003490", "loop_backedge_hex": "0x100003960", "static_instructions": 309, "stack_load_instructions": 72, "stack_store_instructions": 30, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-tails {"disassembly_path": "pairwise-tails.disassembly.txt", "loop_start_hex": "0x1000035a4", "loop_backedge_hex": "0x100003978", "static_instructions": 246, "stack_load_instructions": 45, "stack_store_instructions": 15, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN compact-cost {"disassembly_path": "compact-cost.disassembly.txt", "loop_start_hex": "0x10000345c", "loop_backedge_hex": "0x100003968", "static_instructions": 324, "stack_load_instructions": 88, "stack_store_instructions": 31, "fused_instructions": 80, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-cost {"disassembly_path": "pairwise-cost.disassembly.txt", "loop_start_hex": "0x100003558", "loop_backedge_hex": "0x100003970", "static_instructions": 263, "stack_load_instructions": 58, "stack_store_instructions": 22, "fused_instructions": 80, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN compact-cost-tails {"disassembly_path": "compact-cost-tails.disassembly.txt", "loop_start_hex": "0x100003458", "loop_backedge_hex": "0x10000395c", "static_instructions": 322, "stack_load_instructions": 76, "stack_store_instructions": 26, "fused_instructions": 80, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-cost-tails {"disassembly_path": "pairwise-cost-tails.disassembly.txt", "loop_start_hex": "0x100003590", "loop_backedge_hex": "0x10000397c", "static_instructions": 252, "stack_load_instructions": 44, "stack_store_instructions": 13, "fused_instructions": 80, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+SAMPLE 1 rust-3 1.069949667
+SAMPLE 1 chapel-3 0.944318916
+SAMPLE 1 compact-cost-tails 1.220352584
+SAMPLE 1 nbody-gcc-8-llvm-fastmath 1.527634542
+SAMPLE 1 compact-cost 1.212326250
+SAMPLE 1 pairwise-baseline 1.115262083
+SAMPLE 1 compact-baseline 1.171438791
+SAMPLE 1 pairwise-cost 1.158428083
+SAMPLE 1 compact-tails 1.139662666
+SAMPLE 1 pairwise-cost-tails 1.140200000
+SAMPLE 1 pairwise-tails 1.129334083
+SAMPLE 1 nbody-gpp-6-llvm-native 0.895570875
+SAMPLE 2 compact-cost-tails 1.234266208
+SAMPLE 2 compact-baseline 1.168364709
+SAMPLE 2 pairwise-baseline 1.131028417
+SAMPLE 2 nbody-gcc-8-llvm-fastmath 1.536011750
+SAMPLE 2 pairwise-tails 1.120017500
+SAMPLE 2 chapel-3 0.952756000
+SAMPLE 2 compact-tails 1.181139750
+SAMPLE 2 pairwise-cost 1.161038834
+SAMPLE 2 rust-3 1.076942334
+SAMPLE 2 compact-cost 1.212786167
+SAMPLE 2 nbody-gpp-6-llvm-native 0.902219292
+SAMPLE 2 pairwise-cost-tails 1.141222166
+SAMPLE 3 compact-baseline 1.165508625
+SAMPLE 3 pairwise-cost 1.169754667
+SAMPLE 3 rust-3 1.081396417
+SAMPLE 3 compact-tails 1.141566791
+SAMPLE 3 compact-cost 1.211629125
+SAMPLE 3 pairwise-baseline 1.120318500
+SAMPLE 3 nbody-gcc-8-llvm-fastmath 1.536667917
+SAMPLE 3 nbody-gpp-6-llvm-native 0.900931083
+SAMPLE 3 pairwise-tails 1.125684250
+SAMPLE 3 compact-cost-tails 1.246302792
+SAMPLE 3 pairwise-cost-tails 1.151623958
+SAMPLE 3 chapel-3 0.955486959
+SAMPLE 4 compact-cost 1.220617917
+SAMPLE 4 compact-tails 1.139621750
+SAMPLE 4 nbody-gcc-8-llvm-fastmath 1.537892917
+SAMPLE 4 pairwise-baseline 1.139725959
+SAMPLE 4 compact-baseline 1.166316000
+SAMPLE 4 compact-cost-tails 1.245914625
+SAMPLE 4 nbody-gpp-6-llvm-native 0.904174208
+SAMPLE 4 pairwise-tails 1.124219792
+SAMPLE 4 rust-3 1.084573500
+SAMPLE 4 pairwise-cost 1.170906458
+SAMPLE 4 pairwise-cost-tails 1.139220083
+SAMPLE 4 chapel-3 0.952837333
+SAMPLE 5 compact-cost 1.214246208
+SAMPLE 5 compact-tails 1.146044334
+SAMPLE 5 nbody-gpp-6-llvm-native 0.915946000
+SAMPLE 5 pairwise-cost 1.174763250
+SAMPLE 5 pairwise-tails 1.100652208
+SAMPLE 5 pairwise-cost-tails 1.165944625
+SAMPLE 5 compact-baseline 1.166867417
+SAMPLE 5 rust-3 1.088869125
+SAMPLE 5 pairwise-baseline 1.138755083
+SAMPLE 5 nbody-gcc-8-llvm-fastmath 1.542622375
+SAMPLE 5 chapel-3 0.963459250
+SAMPLE 5 compact-cost-tails 1.248139666
+RESULT nbody-gpp-6-llvm-native 0.902219292 202 LOC
+RESULT chapel-3 0.952837333 79 LOC
+RESULT rust-3 1.081396417 196 LOC
+RESULT pairwise-tails 1.124219792 38 LOC
+RESULT pairwise-baseline 1.131028417 38 LOC
+RESULT pairwise-cost-tails 1.141222166 38 LOC
+RESULT compact-tails 1.141566791 32 LOC
+RESULT compact-baseline 1.166867417 32 LOC
+RESULT pairwise-cost 1.169754667 38 LOC
+RESULT compact-cost 1.212786167 32 LOC
+RESULT compact-cost-tails 1.245914625 32 LOC
+RESULT nbody-gcc-8-llvm-fastmath 1.536667917 127 LOC

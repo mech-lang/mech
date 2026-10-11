@@ -1,0 +1,7 @@
+splitting /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/ada/binarytrees-gnat-4-native.adb into:
+   binarytrees.adb
+   trees.ads
+   trees.adb
+   apache_runtime.ads
+   apache_runtime-pools.ads
+   apache_runtime-pools.adb

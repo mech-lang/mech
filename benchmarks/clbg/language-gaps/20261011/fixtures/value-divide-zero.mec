@@ -1,0 +1,3 @@
+AsU64(x<bigint>) => <u64> := x
+x := bigint/new(3) / 0
+io/print("{}\n", AsU64(x))

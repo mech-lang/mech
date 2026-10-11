@@ -1,0 +1,23 @@
+{
+  "source_sha256": "6150dbbf465a63de30abea15156665e1a1bee74bf7f3e6bb09a25f3d5b15fedd",
+  "binary_sha256": "d0ff9e72eb9b5a90f88e5e46623c7a55501e5179c24e9d04c3bed13ca0771615",
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatmake",
+    "-f",
+    "-q",
+    "-gnat2022",
+    "-gnatp",
+    "-gnatn2",
+    "-O3",
+    "-march=native",
+    "-funroll-loops",
+    "-fomit-frame-pointer",
+    "-fno-math-errno",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-1/fasta.adb",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-1/fasta-gnat-1",
+    "-largs",
+    "-L/opt/homebrew/opt/gmp/lib",
+    "-L/opt/homebrew/opt/pcre2/lib"
+  ]
+}

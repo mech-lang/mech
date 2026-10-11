@@ -1,0 +1,62 @@
+{
+  "K shorter": {
+    "command": [
+      "benchmarks/clbg/array-comparison/nbody-20261009/binaries/growler",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.k"
+    ],
+    "samples": [
+      0.465357959,
+      0.466437417,
+      0.468210708
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.466437417
+  },
+  "BQN compact": {
+    "command": [
+      "benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-compact.bqn"
+    ],
+    "samples": [
+      0.6222165,
+      0.631732542,
+      0.64267925
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.631732542
+  },
+  "BQN shorter optimized": {
+    "command": [
+      "benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.bqn"
+    ],
+    "samples": [
+      0.376235875,
+      0.382600667,
+      0.388059167
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.382600667
+  }
+}

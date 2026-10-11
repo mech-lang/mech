@@ -1,0 +1,93 @@
+{
+  "created_at": "2026-10-10T21:00:52.030255+00:00",
+  "status": "repaired",
+  "snapshots": {
+    "results/builds.json": {
+      "file": "results/pre-regex-runtime-fix-builds.json",
+      "sha256": "42b8c6a6f0d530186c702efa87aff1345474727c498004edd33bb531e6d9b8a4"
+    },
+    "results/small-checks.json": {
+      "file": "results/pre-regex-runtime-fix-small-checks.json",
+      "sha256": "ad3debbe8a122cd236a0c57592f552c49c722f82f4c75459e1ee2e8037ba990c"
+    },
+    "source-audit.json": {
+      "file": "pre-regex-runtime-fix-source-audit.json",
+      "sha256": "60651c351f9bcfa41f2313ef149c01fb1d7882f47f0abf05574efb56f1b6e1de"
+    },
+    "results/timings.json": {
+      "file": "results/pre-regex-runtime-fix-timings.json",
+      "sha256": "88342f781e053af6bba726f5c0c824b4a0da4bb65248dc6b6e61ad61654c0472"
+    }
+  },
+  "changes": [
+    {
+      "key": "regexredux:regexredux-erlang-6",
+      "before": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/regexredux-erlang-6",
+        "-run",
+        "regexredux",
+        "main",
+        "0"
+      ],
+      "after": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-noinput",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/regexredux-erlang-6",
+        "-run",
+        "regexredux",
+        "main",
+        "0"
+      ],
+      "binary_sha256": "17ed11a58c2b67807768d6ee14dbda08833537409bfc8614843cad12c37bcd93",
+      "source_sha256": "b38d70db4de042d5c7bbacc20aa2808b795186ce923df1596a73d262192142c0"
+    },
+    {
+      "key": "regexredux:regexredux-erlang-6-faithful",
+      "before": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/regexredux-erlang-6-faithful",
+        "-run",
+        "regexredux",
+        "main",
+        "0"
+      ],
+      "after": [
+        "/opt/homebrew/Cellar/erlang/29.1.1_2/lib/erlang/bin/erl",
+        "+S",
+        "8:8",
+        "-noshell",
+        "-noinput",
+        "-pa",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/erlang-comparison/20261010/builds/regexredux-erlang-6-faithful",
+        "-run",
+        "regexredux",
+        "main",
+        "0"
+      ],
+      "binary_sha256": "25ce867c969164c7205a8e28f07e2874e814754cb1881ea60b8e68152010319c",
+      "source_sha256": "dc53ea64bda55c8b1472f7f16e322700bf31ef6b4bea1e581662639a02c09bac"
+    }
+  ],
+  "preserved_samples": 42,
+  "reason": "The original published regex-redux launch uses -noinput with its direct fd port. OTP 29 default standard input initialization also claimed fd 0 and intermittently emitted a driver_select warning into stdout. Restore the published startup flag for regex only; source, BEAM binaries, workload and every already completed sample are unchanged.",
+  "rejected_full_attempt": {
+    "benchmark": "regexredux",
+    "reason": "Startup diagnostic polluted complete stdout; sample was never admitted.",
+    "diagnostic_file": "results/regexredux-full-failure.txt",
+    "diagnostic_sha256": "fc4b56e6f31b27930155fec0b0c189de974eae64341319ed59044b18651a0429",
+    "timed": false
+  }
+}

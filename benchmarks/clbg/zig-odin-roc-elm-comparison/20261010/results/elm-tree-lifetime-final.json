@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "compiled_sha256": "015abadf0ba0b77a6f95c25290df42acd90b278becebf44d617bf1cbfdc9eb9e",
+  "cases": [
+    {
+      "n": 9,
+      "maximum": 9,
+      "distinctNodes": 51550,
+      "nodesExpected": 51550,
+      "traversedNodes": 51550,
+      "temporaryTrees": 672,
+      "temporaryChecks": 672,
+      "finalLongLivedChecks": 1,
+      "leafCount": 26112,
+      "interiorCount": 25438,
+      "equalLeafInteriorFields": true,
+      "freshIdenticalLeaves": true,
+      "actualRunCheckOrder": true,
+      "output_sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf"
+    },
+    {
+      "n": 10,
+      "maximum": 10,
+      "distinctNodes": 135854,
+      "nodesExpected": 135854,
+      "traversedNodes": 135854,
+      "temporaryTrees": 1360,
+      "temporaryChecks": 1360,
+      "finalLongLivedChecks": 1,
+      "leafCount": 68608,
+      "interiorCount": 67246,
+      "equalLeafInteriorFields": true,
+      "freshIdenticalLeaves": true,
+      "actualRunCheckOrder": true,
+      "output_sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb"
+    }
+  ],
+  "reason": "The actual compiled run was instrumented without modifying the measured binary. Every constructor call returns a distinct equal-field node; every node is traversed, both children are distinct, and the long-lived root is checked exactly once after every temporary tree. Generated depths carries the root in every tail-loop iteration until its terminal branch."
+}

@@ -1,0 +1,6 @@
+AsU64(x<bigint>) => <u64> := x
+x := bigint/new(7) + 1
+cell := bigint/new(0)
+y := bigint/assign(cell, x)
+z := bigint/multiply-u64-into(y, y, 2)
+io/print("{} {}\n", AsU64(x), AsU64(z))

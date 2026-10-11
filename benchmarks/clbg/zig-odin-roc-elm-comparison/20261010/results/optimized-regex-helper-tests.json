@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "expectations": 14,
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/roc/roc_nightly-macos_apple_silicon-2025-09-09-d73ea109cc2/roc",
+    "test",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/general-helpers-optimized-regex.roc"
+  ],
+  "source_sha256": "7e6bf86b30ef93695fa4a0bdbc7a548a358005ccbf2ba1762d5ec8854c159634",
+  "compiler_sha256": "d6f1b15e0aa50f21b627494cf892f0ef8f502fcc7ba9424370157d068eb39eb0",
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/general-helpers-optimized-regex.log",
+  "log_sha256": "194b155d1b847c235b632141f4d6ff6a40bb8c782230e28e56063071a491338e",
+  "checked_at": "2026-10-11T03:35:10.542061+00:00"
+}

@@ -1,0 +1,146 @@
+# PODNAME: Alien::Build::Plugin::Fetch
+# ABSTRACT: Fetch Alien::Build plugins
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Plugin::Fetch - Fetch Alien::Build plugins
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ use alienfile;
+ share {
+   start_url 'http://ftp.gnu.org/gnu/make';
+   plugin 'Download';
+ };
+
+=head1 DESCRIPTION
+
+Fetch plugins retrieve single resources from the internet.  The difference
+between a Fetch plugin and a Download plugin is that Download
+plugin may fetch several resources from the internet (usually using
+a Fetch plugin), before finding the final archive.  Normally you
+will not need to use Fetch plugins directly but should instead
+use the L<Alien::Build::Plugin::Download::Negotiate> plugin, which
+will pick the best plugins for your given URL.
+
+=over 4
+
+=item L<Alien::Build::Plugin::Fetch::CurlCommand>
+
+Fetch using the C<curl> command.
+
+=item L<Alien::Build::Plugin::Fetch::HTTPTiny>
+
+Fetch using L<HTTP::Tiny>.
+
+=item L<Alien::Build::Plugin::Fetch::LWP>
+
+Fetch using L<LWP::UserAgent>.
+
+=item L<Alien::Build::Plugin::Fetch::Local>
+
+Fetch from a local file.  This is typically used to bundle packages with your L<Alien>.
+
+=item L<Alien::Build::Plugin::Fetch::LocalDir>
+
+Fetch from a local directory.  This is typically used to bundle packages with your L<Alien>.
+
+=item L<Alien::Build::Plugin::Fetch::NetFTP>
+
+Fetch using L<Net::FTP>.  Use of FTP should be discouraged as of this writing (August 2022).
+
+=item L<Alien::Build::Plugin::Fetch::Wget>
+
+Fetch using C<wget>.
+
+=back
+
+=head1 SEE ALSO
+
+L<Alien::Build>, L<Alien::Build::Plugin>
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

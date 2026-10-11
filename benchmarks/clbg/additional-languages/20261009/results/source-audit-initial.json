@@ -1,0 +1,582 @@
+{
+  "status": "required-work-reviewed",
+  "policy": "Nonblank, noncomment LOC. No packed independent statements. Structural tuples/arrays/loop state remain one language construct. Generic library and IO adapter support is excluded from application LOC and separately inspectable.",
+  "rows": [
+    {
+      "id": "binarytrees:mojo-binarytrees",
+      "benchmark": "binarytrees",
+      "language": "mojo",
+      "file": "sources/binarytrees.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/binarytrees.mojo",
+      "sha256": "36b99d0f79ee49a97e9a79730351d4d52d9c4cd34dc63a88d221a597862212d4",
+      "physical_loc": 45,
+      "normalized_loc": 45,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/binarytrees-mojo",
+      "binary_sha256": "2b24204c8819327f9ddd78256d6259f8f12fefbb9948fe68a1250ea7f8bdb6ac",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Two child slots for every node, including leaves. All stretch, temporary and long-lived trees are constructed and recursively traversed; temporary storage is reclaimed/reused by ordinary array containers. No shared leaves or closed-form checks. Futhark barriers force all node stores to remain inside the per-tree iteration; generated C was checked.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "fannkuchredux:mojo-fannkuchredux",
+      "benchmark": "fannkuchredux",
+      "language": "mojo",
+      "file": "sources/fannkuchredux.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/fannkuchredux.mojo",
+      "sha256": "23cd35914c38f909155889a2337799e657ce424c30167bbb7eba2f0f196c62d7",
+      "physical_loc": 66,
+      "normalized_loc": 66,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/fannkuchredux-mojo",
+      "binary_sha256": "7e6a5b677117471f2e3ac4288f5b8f08b273af2992c92f2192faf3358721f900",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "All 479,001,600 permutations in canonical rotation order; factoradic starting ranks partition only the enumeration. Every prefix reversal, alternating checksum and maximum is computed in the language, using eight CPU workers.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "fasta:mojo-fasta",
+      "benchmark": "fasta",
+      "language": "mojo",
+      "file": "sources/fasta.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/fasta.mojo",
+      "sha256": "70827ce20d87749462842548dc45cf472eb37248a590425cf12b32a77453877f",
+      "physical_loc": 44,
+      "normalized_loc": 44,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/fasta-mojo",
+      "binary_sha256": "89b9fd488530821b73cd8f85d3814c9cef27a13932f5cdf4d7202463256bc018",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Canonical 287-byte ALU repetition; every one of 200,000,000 random LCG updates, division by 139968.0 and cumulative floating probability comparisons. No period caching, skip-ahead generation or integer cutoffs.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "knucleotide:mojo-knucleotide",
+      "benchmark": "knucleotide",
+      "language": "mojo",
+      "file": "sources/knucleotide.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/knucleotide.mojo",
+      "sha256": "efb4ce5eb4ed57c14351edb8cfa9838a16ca9976513c2b65355deb015150c5e6",
+      "physical_loc": 75,
+      "normalized_loc": 75,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/knucleotide-mojo",
+      "binary_sha256": "68e8403f36b75795dde42761d1a7b06c0c5a012d5ac29eb00410b7f717670a7c",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Extract THREE in the language; all seven widths 1,2,3,4,6,12,18. Every one of 874,999,961 overlapping keys is looked up and updated in growing hash tables, distributed over 32 ranges in eight CPU workers. All keys are retained per range before queries; no selective query counting or histogram substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "mandelbrot:mojo-mandelbrot",
+      "benchmark": "mandelbrot",
+      "language": "mojo",
+      "file": "sources/mandelbrot.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/mandelbrot.mojo",
+      "sha256": "ba2745023800cb2ae276fbaaa99ec50e8ddd1fc214c01dcd94fb4767cf11504f",
+      "physical_loc": 35,
+      "normalized_loc": 35,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/mandelbrot-mojo",
+      "binary_sha256": "3b8eb90caa5059dc352957c79edc03800a6f84370e96a2f5c8ebacec1def786d",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Canonical grid, z=0, at most 50 updates per pixel, ordinary escape check and complete PBM. No cardioid/periodicity pruning. Contracted coordinate arithmetic is disabled to preserve reference pixels.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "nbody:mojo-nbody-small",
+      "benchmark": "nbody",
+      "language": "mojo",
+      "file": "sources/nbody-small.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/nbody-small.mojo",
+      "sha256": "11aad35b4fd613b42b815b4e6da9a7601162e19b54c158ddd547c99fa9502738",
+      "physical_loc": 128,
+      "normalized_loc": 128,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/nbody-small-mojo",
+      "binary_sha256": "409074bacbbecdd61977c96a7a9996ff81385af30e5d6a3b33c66f213b6e2394",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Pinned published Mojo source adapted to the official workload and four-function requirement."
+    },
+    {
+      "id": "nbody:mojo-nbody",
+      "benchmark": "nbody",
+      "language": "mojo",
+      "file": "sources/nbody.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/nbody.mojo",
+      "sha256": "35ab84d96bf9a269e3a6601d60e6d78b65df080cb19fb35ebd5a48542d6348ad",
+      "physical_loc": 119,
+      "normalized_loc": 119,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/nbody-mojo",
+      "binary_sha256": "e28a56d3623793d5e59cc5d9d6507141c0baa901b4a13da0cc01428814c7248b",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Pinned published Mojo source adapted to the official workload and four-function requirement."
+    },
+    {
+      "id": "pidigits:mojo-pidigits",
+      "benchmark": "pidigits",
+      "language": "mojo",
+      "file": "sources/pidigits.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/pidigits.mojo",
+      "sha256": "0c2c809a87d349232d41771c264086bc25dbbb609b7ee52a3243ca5074a54b7a",
+      "physical_loc": 45,
+      "normalized_loc": 45,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/pidigits-mojo",
+      "binary_sha256": "b9ee18a3aa903aaa44d3f127c0322067188543cd85fc1f971dd644a6866bb3cd",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Sequential unbounded LFT spigot in the language, published q>r guard, extract(3) and extract(4) checked before each emitted digit. Mojo uses ordinary GMP operations; Futhark uses dynamically growing signed limb arithmetic. No Chudnovsky algorithm or precision bound chosen from N.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/integer.mojo",
+        "stdlib/native.c",
+        "stdlib/khash.h"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "regexredux:mojo-regexredux",
+      "benchmark": "regexredux",
+      "language": "mojo",
+      "file": "sources/regexredux.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/regexredux.mojo",
+      "sha256": "21eeaf0c8ec04cfd5f241f854f56dca58abfd9ac4a24107cb99c101d06ed16aa",
+      "physical_loc": 26,
+      "normalized_loc": 26,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/regexredux-mojo",
+      "binary_sha256": "c5013e05d7e3275e8094038fd4de3190b58264825d2187191fc21df0287309e3",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Full input cleanup, nine separate complete regex searches, then five ordered global substitutions. Mojo uses general PCRE2; Futhark parsing/matching/substitution is written in Futhark. No combined benchmark pattern executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/regex.mojo",
+        "stdlib/native.c",
+        "stdlib/khash.h"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "revcomp:mojo-revcomp",
+      "benchmark": "revcomp",
+      "language": "mojo",
+      "file": "sources/revcomp.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo",
+      "sha256": "a4180d598e52c24e43a4b11dd4a471659771bddc4f13414a665379152519a8ee",
+      "physical_loc": 44,
+      "normalized_loc": 44,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/revcomp-mojo",
+      "binary_sha256": "b761ebf0c3749c2f2d1705554c3e9b59821a61611371352528e1ecc1712d8fdd",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Read full stdin with growing buffers, preserve each header, reverse and complement every sequence and output sixty-column FASTA. No file-size knowledge, cached answers or native DNA executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "spectralnorm:mojo-spectralnorm-small",
+      "benchmark": "spectralnorm",
+      "language": "mojo",
+      "file": "sources/spectralnorm-small.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/spectralnorm-small.mojo",
+      "sha256": "8f73a6f98825e4c258a92226ca67b62a037d8fac64a9636d358ffed6d94cfafc",
+      "physical_loc": 35,
+      "normalized_loc": 35,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/spectralnorm-small-mojo",
+      "binary_sha256": "96052589f3fe61419716277d6d1fc01ce90b6d51c28e8495a58ac97808c74bd1",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Four required functions are explicit. All 40 matrix/vector products evaluate all N\u00b2 coefficients during multiplication. No stored coefficient matrix. SIMD/parallelism changes execution only.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Pinned published Mojo source adapted to the official workload and four-function requirement."
+    },
+    {
+      "id": "spectralnorm:mojo-spectralnorm",
+      "benchmark": "spectralnorm",
+      "language": "mojo",
+      "file": "sources/spectralnorm.mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/spectralnorm.mojo",
+      "sha256": "199b151d21bf229acdb50bc9d57a07bec3e20e4a7374037c0b5bd492ba7256e6",
+      "physical_loc": 50,
+      "normalized_loc": 50,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/spectralnorm-mojo",
+      "binary_sha256": "ee785dd8dea7af8fc8406bb26dc6aede673ad5d437b58d0eea87b5884d27ba25",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Four required functions are explicit. All 40 matrix/vector products evaluate all N\u00b2 coefficients during multiplication. No stored coefficient matrix. SIMD/parallelism changes execution only.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "binarytrees:futhark-binarytrees",
+      "benchmark": "binarytrees",
+      "language": "futhark",
+      "file": "sources/binarytrees.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/binarytrees.fut",
+      "sha256": "f98ac786ef0c4fc89a29c40ff3ea6cf07ef68279672424a5b42787dae2c27a1e",
+      "physical_loc": 22,
+      "normalized_loc": 22,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/binarytrees-futhark",
+      "binary_sha256": "4313e01df5c58b35dd60e84b6bf20377f8f53c9914446a69c88e512b0c720203",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Two child slots for every node, including leaves. All stretch, temporary and long-lived trees are constructed and recursively traversed; temporary storage is reclaimed/reused by ordinary array containers. No shared leaves or closed-form checks. Futhark barriers force all node stores to remain inside the per-tree iteration; generated C was checked.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "fannkuchredux:futhark-fannkuchredux",
+      "benchmark": "fannkuchredux",
+      "language": "futhark",
+      "file": "sources/fannkuchredux.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/fannkuchredux.fut",
+      "sha256": "5189c4cc14658a14bc631ce9db54cc2a05df12ec11bcd965b2d3f36adfb094d6",
+      "physical_loc": 36,
+      "normalized_loc": 36,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/fannkuchredux-futhark",
+      "binary_sha256": "03424be5eb2e87de675a0b2a8e535c9e266bd5f093d8c5eb56da381ec3963d2d",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "All 479,001,600 permutations in canonical rotation order; factoradic starting ranks partition only the enumeration. Every prefix reversal, alternating checksum and maximum is computed in the language, using eight CPU workers.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "fasta:futhark-fasta",
+      "benchmark": "fasta",
+      "language": "futhark",
+      "file": "sources/fasta.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/fasta.fut",
+      "sha256": "cc63dba4a1cbc95e327288bf28846ca31e032d294abc76d37266a92405fefcb0",
+      "physical_loc": 21,
+      "normalized_loc": 21,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/fasta-futhark",
+      "binary_sha256": "5a91221a88701b0a99c7dcc8735a4627287fa494b8aad8348adc9727bb3f98ef",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Canonical 287-byte ALU repetition; every one of 200,000,000 random LCG updates, division by 139968.0 and cumulative floating probability comparisons. No period caching, skip-ahead generation or integer cutoffs.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "mandelbrot:futhark-mandelbrot",
+      "benchmark": "mandelbrot",
+      "language": "futhark",
+      "file": "sources/mandelbrot.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/mandelbrot.fut",
+      "sha256": "8547b78195437f90dc4891e208bad4c8e4c907879754fbf7739cb8a4cee4d6b0",
+      "physical_loc": 19,
+      "normalized_loc": 19,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/mandelbrot-futhark",
+      "binary_sha256": "594d352d48dd31cd04faa609a52163f2483a05bd8a1f907a807f202ca0823f64",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Canonical grid, z=0, at most 50 updates per pixel, ordinary escape check and complete PBM. No cardioid/periodicity pruning. Contracted coordinate arithmetic is disabled to preserve reference pixels.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "nbody:futhark-nbody",
+      "benchmark": "nbody",
+      "language": "futhark",
+      "file": "sources/nbody.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/nbody.fut",
+      "sha256": "a3e6e8c0bfa8929189b61afb5244c9f4e2689e0693e7305396e4114b92f19890",
+      "physical_loc": 44,
+      "normalized_loc": 44,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/nbody-futhark",
+      "binary_sha256": "2965cba822241abf67261a2b7e2144c4aab55f6dc5ef5f7ff3acf027856166a9",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "pidigits:futhark-pidigits",
+      "benchmark": "pidigits",
+      "language": "futhark",
+      "file": "sources/pidigits.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/pidigits.fut",
+      "sha256": "e01ba1ef73392dca5a087d46f0f0c6f173ba72cb12ae8856744d43288a277d25",
+      "physical_loc": 23,
+      "normalized_loc": 23,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/pidigits-futhark",
+      "binary_sha256": "7cf7c632e6898fb8f87de1d728dc83672629c5bfb8a4e6a98e1eaf3f357df8e6",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Sequential unbounded LFT spigot in the language, published q>r guard, extract(3) and extract(4) checked before each emitted digit. Mojo uses ordinary GMP operations; Futhark uses dynamically growing signed limb arithmetic. No Chudnovsky algorithm or precision bound chosen from N.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/bigint.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "revcomp:futhark-revcomp",
+      "benchmark": "revcomp",
+      "language": "futhark",
+      "file": "sources/revcomp.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.fut",
+      "sha256": "e935b10ec4e24335c0c1802586221dc8e8e623e2b14a5a8fa2626ae5694ff710",
+      "physical_loc": 29,
+      "normalized_loc": 29,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/revcomp-futhark",
+      "binary_sha256": "6f5625e33c475f52e7b39b627b42f2bd076f79f5770a931511639f795e6d2a6c",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Read full stdin with growing buffers, preserve each header, reverse and complement every sequence and output sixty-column FASTA. No file-size knowledge, cached answers or native DNA executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "spectralnorm:futhark-spectralnorm",
+      "benchmark": "spectralnorm",
+      "language": "futhark",
+      "file": "sources/spectralnorm.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/spectralnorm.fut",
+      "sha256": "a1a180bd455baba4a8627d47250c7c91f2f7b5679bb7f6ffa86e7c14e1d8c661",
+      "physical_loc": 16,
+      "normalized_loc": 16,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/spectralnorm-futhark",
+      "binary_sha256": "6dfd8b0ec69be12c478d5f77a05925300f69200b6aec58b5599e41f65a3fdfa6",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Four required functions are explicit. All 40 matrix/vector products evaluate all N\u00b2 coefficients during multiplication. No stored coefficient matrix. SIMD/parallelism changes execution only.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "knucleotide:futhark-knucleotide",
+      "benchmark": "knucleotide",
+      "language": "futhark",
+      "file": "sources/knucleotide.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/knucleotide.fut",
+      "sha256": "089ef1d8565758568fd66c3f3e32b187f62061ec582a7e2b602c66e3dafaa4e5",
+      "physical_loc": 50,
+      "normalized_loc": 50,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/knucleotide-futhark",
+      "binary_sha256": "7c35f4abbe720e063b43f7b79d9511912e7b5acfcc1af8a97922b35c67169825",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Extract THREE in the language; all seven widths 1,2,3,4,6,12,18. Every one of 874,999,961 overlapping keys is looked up and updated in growing hash tables, distributed over 32 ranges in eight CPU workers. All keys are retained per range before queries; no selective query counting or histogram substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/hashmap.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "nbody:futhark-nbody-optimized",
+      "benchmark": "nbody",
+      "language": "futhark",
+      "file": "sources/nbody-optimized.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/nbody-optimized.fut",
+      "sha256": "e00b5aec73ba14ebd502e9e6c181abcf51ca6944fda9a521a9c937b7cc4c7680",
+      "physical_loc": 57,
+      "normalized_loc": 57,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/nbody-optimized-futhark",
+      "binary_sha256": "3bb01bc8cc6e01f396386e42e7386a51efe0d725d6bb9f359e39dc57ae76261c",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    },
+    {
+      "id": "regexredux:futhark-regexredux",
+      "benchmark": "regexredux",
+      "language": "futhark",
+      "file": "sources/regexredux.fut",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/regexredux.fut",
+      "sha256": "a3643da919031ec8e0277afe58d2c7ab77e8aa7c72c3e9761e2de219a6392203",
+      "physical_loc": 26,
+      "normalized_loc": 26,
+      "expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/regexredux-futhark",
+      "binary_sha256": "8cf6ffb474c9bab0820b5cbe4736d7e903a053b9f71c5ead0d4ad72911ae2440",
+      "algorithm": {
+        "strict": true,
+        "status": "source-and-generated-code-reviewed",
+        "reason": "Full input cleanup, nine separate complete regex searches, then five ordered global substitutions. Mojo uses general PCRE2; Futhark parsing/matching/substitution is written in Futhark. No combined benchmark pattern executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/regex.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language."
+    }
+  ],
+  "source_provenance_sha256": "f99dac73b8a93a47f6d365a8ce8690564e6a52476648c2d31b24afb2d4116078",
+  "builds_sha256": "b8c83e99c331fb6007a7152853ba8f5bd2953f35387fa58d611d4a8844fdfde9",
+  "stdlib_test_report_sha256": "01be48f388361961aa3d28c44bacabcc11f444d47e86c204d25cc16ef0cd6b68",
+  "libraries": {
+    "stdlib/common.mojo": "7f01c03cb0be9cebd97848fe49a8a6a63dc6dd6c4117ab6bea7e1fc1dc3f11f3",
+    "stdlib/regex.fut": "6a17d148655affa0595ad3935296ac862e946a1cc3bda409dd7ea0f17c8c3fc1",
+    "stdlib/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+    "stdlib/native.c": "471a3ffc683e09c4b1b57e326be3571dce567197e9dbdb53aebb0f59b66483f0",
+    "stdlib/integer.mojo": "0515c841e0f27df841a9486f999e7b51f820bdc1e4317293a8dadc90d003d09a",
+    "stdlib/regex.mojo": "708ab2b2a0d43cb8583a0d1a1a7b5d2d09f069dc117d49d90335363b4c93b8ec",
+    "stdlib/common.fut": "60996074a0c6e784ff6ec1cedf1d7222eacbcb140ffb5a606d435d51120f08f1",
+    "stdlib/hashmap.fut": "e82e9d9134d0bfd51d755db886efebf93358f86d8d8bb60c4beaed0c0de2248b",
+    "stdlib/bigint.fut": "6a1dd08fc56091a66d6e78a058a974ee5daeb028531c45659783c0503d853a50",
+    "stdlib/libnative.dylib": "c9ef6eaaac29b6699d6d0544eea442a4ff690be3181e498e7371cd0473e44f46",
+    "adapters/futhark.c": "0014598c2062c35c3e0ad2b527e8ce6f359dead2ab2b558bfd9c10b5828ebad9"
+  },
+  "runtimes": {
+    "mojo": {
+      "path": "/tmp/mech-extra-languages-20261009/mojo-runtime/bin/mojo",
+      "sha256": "5d0b1538df7c73dfb131654caa5fb5bd20b847a78d87c0a6677e433027cc90c7",
+      "version": "Mojo 1.1.0 (8189361e)"
+    },
+    "futhark": {
+      "path": "/opt/homebrew/bin/futhark",
+      "sha256": "5ee05389c9bc9a27bbb91b540f3e13caeae8db8c5e56282332913dd900796d5e",
+      "version": "Futhark 0.27.1.\nCompiled with GHC 9.14.1.\n\nCopyright (C) DIKU, University of Copenhagen, released under the ISC license.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law."
+    }
+  },
+  "max_version": "26.6.0",
+  "futhark_backend": "multicore CPU",
+  "maximum_workers": 8
+}

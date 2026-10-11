@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fasta Racket program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fasta Racket program</h1>
+    <aside>
+      <p><a href="../description/fasta.html#fasta">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="opt">#</span>lang racket<span class="opt">/</span>base
+
+<span class="slc">;;; The Computer Language Benchmarks Game</span>
+<span class="slc">;;; https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+
+<span class="slc">;;; Derived from the Chicken Scheme variant by Anthony Borla</span>
+<span class="slc">;;; contributed by Matthew Flatt</span>
+
+
+<span class="opt">(</span><span class="kwa">require</span> racket<span class="opt">/</span>cmdline<span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="kwe">+alu+</span>
+  <span class="opt">(</span><span class="kwa">bytes-append</span>
+   <span class="opt">#</span><span class="sng">&quot;GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGG&quot;</span>
+   <span class="opt">#</span><span class="sng">&quot;GAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGA&quot;</span>
+   <span class="opt">#</span><span class="sng">&quot;CCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAAT&quot;</span>
+   <span class="opt">#</span><span class="sng">&quot;ACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCA&quot;</span>
+   <span class="opt">#</span><span class="sng">&quot;GCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG&quot;</span>
+   <span class="opt">#</span><span class="sng">&quot;AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC&quot;</span>
+   <span class="opt">#</span><span class="sng">&quot;AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA&quot;</span><span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="kwe">+iub+</span>
+  <span class="opt">(</span><span class="kwa">list</span>
+   <span class="opt">&#39;(#</span><span class="esc">\a</span> . <span class="num">0.27</span><span class="opt">) &#39;(#</span><span class="esc">\c</span> . <span class="num">0.12</span><span class="opt">) &#39;(#</span><span class="esc">\g</span> . <span class="num">0.12</span><span class="opt">) &#39;(#</span><span class="esc">\t</span> . <span class="num">0.27</span><span class="opt">) &#39;(#</span><span class="esc">\B</span> . <span class="num">0.02</span><span class="opt">)</span>
+   <span class="opt">&#39;(#</span><span class="esc">\D</span> . <span class="num">0.02</span><span class="opt">) &#39;(#</span><span class="esc">\H</span> . <span class="num">0.02</span><span class="opt">) &#39;(#</span><span class="esc">\K</span> . <span class="num">0.02</span><span class="opt">) &#39;(#</span><span class="esc">\M</span> . <span class="num">0.02</span><span class="opt">) &#39;(#</span><span class="esc">\N</span> . <span class="num">0.02</span><span class="opt">)</span>
+   <span class="opt">&#39;(#</span><span class="esc">\R</span> . <span class="num">0.02</span><span class="opt">) &#39;(#</span><span class="esc">\S</span> . <span class="num">0.02</span><span class="opt">) &#39;(#</span><span class="esc">\V</span> . <span class="num">0.02</span><span class="opt">) &#39;(#</span><span class="esc">\W</span> . <span class="num">0.02</span><span class="opt">) &#39;(#</span><span class="esc">\Y</span> . <span class="num">0.02</span><span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="kwe">+homosapien+</span>
+  <span class="opt">(</span><span class="kwa">list</span>
+   <span class="opt">&#39;(#</span><span class="esc">\a</span> . <span class="num">0.3029549426680</span><span class="opt">) &#39;(#</span><span class="esc">\c</span> . <span class="num">0.1979883004921</span><span class="opt">)</span>
+   <span class="opt">&#39;(#</span><span class="esc">\g</span> . <span class="num">0.1975473066391</span><span class="opt">) &#39;(#</span><span class="esc">\t</span> . <span class="num">0.3015094502008</span><span class="opt">)))</span>
+
+<span class="slc">;; -------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">+</span>line-size<span class="opt">+</span> <span class="num">60</span><span class="opt">)</span>
+
+<span class="slc">;; -------------------------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">make-random</span> seed<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ((</span><span class="kwa">ia</span> <span class="num">3877</span><span class="opt">) (</span><span class="kwa">ic</span> <span class="num">29573</span><span class="opt">) (</span><span class="kwa">im</span> <span class="num">139968</span><span class="opt">) (</span><span class="kwa">last</span> seed<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">(</span><span class="kwa">max</span><span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">set</span><span class="opt">!</span> last <span class="opt">(</span><span class="kwa">modulo</span> <span class="opt">(+</span> ic <span class="opt">(*</span> last ia<span class="opt">))</span> im<span class="opt">))</span>
+      <span class="opt">(/ (*</span> max last<span class="opt">)</span> im<span class="opt">))))</span>
+
+<span class="slc">;; -------------------------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">make-cumulative-table</span> frequency-table<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>cumulative <span class="num">0.0</span><span class="opt">])</span>
+    <span class="opt">(</span><span class="kwa">for</span><span class="opt">/</span>list <span class="opt">([</span>x frequency-table<span class="opt">])</span>
+      <span class="opt">(</span><span class="kwa">set</span><span class="opt">!</span> cumulative <span class="opt">(+</span> cumulative <span class="opt">(</span><span class="kwa">cdr</span> x<span class="opt">)))</span> 
+      <span class="opt">(</span><span class="kwa">cons</span> <span class="opt">(</span><span class="kwa">char-</span><span class="opt">&gt;</span>integer <span class="opt">(</span><span class="kwa">car</span> x<span class="opt">))</span> cumulative<span class="opt">))))</span>
+
+<span class="slc">;; -------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> random-next <span class="opt">(</span><span class="kwa">make-random</span> <span class="num">42</span><span class="opt">))</span>
+<span class="opt">(</span><span class="kwa">define</span> <span class="kwe">+segmarker+</span> <span class="sng">&quot;&gt;&quot;</span><span class="opt">)</span>
+
+<span class="slc">;; -------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">select-random</span> cumulative-table<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">rvalue</span> <span class="opt">(</span><span class="kwa">random-next</span> <span class="num">1.0</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">let</span> select-over-threshold <span class="opt">([</span>table cumulative-table<span class="opt">])</span>
+      <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(&lt;=</span> rvalue <span class="opt">(</span><span class="kwa">cdar</span> table<span class="opt">))</span>
+          <span class="opt">(</span><span class="kwa">caar</span> table<span class="opt">)</span>
+          <span class="opt">(</span><span class="kwa">select-over-threshold</span> <span class="opt">(</span><span class="kwa">cdr</span> table<span class="opt">))))))</span>
+
+<span class="slc">;; -------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">repeat-fasta</span> id desc n_ sequence line-length<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">seqlen</span> <span class="opt">(</span><span class="kwa">bytes-length</span> sequence<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">out</span> <span class="opt">(</span><span class="kwa">current-output-port</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">display</span> <span class="opt">(</span><span class="kwa">string-append</span> <span class="kwe">+segmarker+</span> id <span class="sng">&quot; &quot;</span> desc <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">)</span> out<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">let</span> loop-o <span class="opt">((</span><span class="kwa">n</span> n_<span class="opt">) (</span><span class="kwa">k</span> <span class="num">0</span><span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">unless</span> <span class="opt">(&lt;=</span> n <span class="num">0</span><span class="opt">)</span> 
+        <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">m</span> <span class="opt">(</span><span class="kwa">min</span> n line-length<span class="opt">)))</span>
+          <span class="opt">(</span><span class="kwa">let</span> loop-i <span class="opt">((</span><span class="kwa">i</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">k</span> k<span class="opt">))</span>
+            <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(&gt;=</span> i m<span class="opt">)</span> 
+                <span class="opt">(</span><span class="kwa">begin</span>
+                  <span class="opt">(</span><span class="kwa">newline</span> out<span class="opt">)</span>
+                  <span class="opt">(</span><span class="kwa">loop-o</span> <span class="opt">(</span><span class="kwa">-</span> n line-length<span class="opt">)</span> k<span class="opt">))</span>
+                <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>k <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(=</span> k seqlen<span class="opt">)</span> <span class="num">0</span> k<span class="opt">)])</span>
+                  <span class="opt">(</span><span class="kwa">write-byte</span> <span class="opt">(</span><span class="kwa">bytes-ref</span> sequence k<span class="opt">)</span> out<span class="opt">)</span>
+                  <span class="opt">(</span><span class="kwa">loop-i</span> <span class="opt">(</span><span class="kwa">add1</span> i<span class="opt">) (</span><span class="kwa">add1</span> k<span class="opt">))))))))))</span>
+
+<span class="slc">;; -------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">random-fasta</span> id desc n_ cumulative-table line-length<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">out</span> <span class="opt">(</span><span class="kwa">current-output-port</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">display</span> <span class="opt">(</span><span class="kwa">string-append</span> <span class="kwe">+segmarker+</span> id <span class="sng">&quot; &quot;</span> desc <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">)</span> out<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">let</span> loop-o <span class="opt">((</span><span class="kwa">n</span> n_<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">unless</span> <span class="opt">(&lt;=</span> n <span class="num">0</span><span class="opt">)</span>
+        <span class="opt">(</span><span class="kwa">for</span> <span class="opt">([</span>i <span class="opt">(</span><span class="kwa">in-range</span> <span class="opt">(</span><span class="kwa">min</span> n line-length<span class="opt">))])</span>
+          <span class="opt">(</span><span class="kwa">write-byte</span> <span class="opt">(</span><span class="kwa">select-random</span> cumulative-table<span class="opt">)</span> out<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">newline</span> out<span class="opt">)</span>
+        <span class="opt">(</span><span class="kwa">loop-o</span> <span class="opt">(</span><span class="kwa">-</span> n line-length<span class="opt">))))))</span>
+
+<span class="slc">;; -------------------------------</span>
+  
+<span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">n</span> <span class="opt">(</span><span class="kwa">command-line</span> <span class="opt">#</span><span class="kwc">:args</span> <span class="opt">(</span><span class="kwa">n</span><span class="opt">) (</span><span class="kwa">string-</span><span class="opt">&gt;</span>number n<span class="opt">))))</span>
+    
+  <span class="opt">(</span><span class="kwa">repeat-fasta</span> <span class="sng">&quot;ONE&quot;</span> <span class="sng">&quot;Homo sapiens alu&quot;</span> <span class="opt">(*</span> n <span class="num">2</span><span class="opt">)</span> <span class="kwe">+alu+</span> <span class="opt">+</span>line-size<span class="opt">+)</span>
+  
+  <span class="opt">(</span><span class="kwa">random-fasta</span> <span class="sng">&quot;TWO&quot;</span> <span class="sng">&quot;IUB ambiguity codes&quot;</span> <span class="opt">(*</span> n <span class="num">3</span><span class="opt">)</span>
+                <span class="opt">(</span><span class="kwa">make-cumulative-table</span> <span class="kwe">+iub+</span><span class="opt">) +</span>line-size<span class="opt">+)</span>
+  
+  <span class="opt">(</span><span class="kwa">random-fasta</span> <span class="sng">&quot;THREE&quot;</span> <span class="sng">&quot;Homo sapiens frequency&quot;</span> <span class="opt">(*</span> n <span class="num">5</span><span class="opt">)</span>
+                <span class="opt">(</span><span class="kwa">make-cumulative-table</span> <span class="kwe">+homosapien+</span><span class="opt">) +</span>line-size<span class="opt">+))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Racket v8.15 [cs].
+
+
+ Fri, 07 Feb 2025 21:54:41 GMT
+
+COMMAND LINE:
+ /opt/src/./racket-8.15/bin/racket fasta.racket 25000000
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA
+TCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT
+AAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG
+GCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG
+CCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT
+GGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA
+GGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA
+TTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG
+AATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA
+GCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT
+AATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC
+AGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG
+GTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC
+CGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG
+AGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT
+TGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA
+TGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT
+GTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG
+TTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT
+CTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG
+CGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG
+TCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA
+CTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG
+AGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG
+GGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC
+TGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA
+TACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA
+GGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT
+GCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC
+ACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT
+TCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC
+CGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG
+CTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG
+GGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC
+CAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT
+GGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC
+GCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA
+GGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA
+GACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA
+GGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG
+AAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT
+CCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA
+GTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA
+AAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC
+GGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT
+ACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG
+GAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC
+GCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC
+GGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG
+TCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA
+AAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG
+GAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT
+CCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC
+TGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG
+ACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC
+GTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA
+ACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA
+CAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA
+CTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA
+ACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG
+CCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG
+AGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC
+CGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG
+AGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC
+CCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG
+CTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG
+CCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG
+CCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC
+ACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA
+AAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC
+TGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC
+ACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG
+CTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG
+AGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT
+AGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA
+TCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC
+CTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA
+TCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG
+CCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT
+GGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG
+GGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG
+CGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG
+GGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG
+GTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT
+AATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT
+GCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT
+CAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG
+GGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC
+TCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT
+CGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG
+ATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG
+CGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG
+AGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA
+CAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG
+CAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC
+ACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC
+GCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC
+GAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG
+GGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT
+TGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG
+CGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA
+GCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG
+CCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC
+GCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG
+CGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA
+CTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG
+CCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA
+ACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC
+CAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT
+GAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA
+AGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG
+ATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC
+TAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA
+GGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC
+GCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG
+TGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC
+AGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA
+ATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA
+GAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC
+AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG
+TAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC
+CAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT
+GGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC
+CCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA
+GAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT
+TTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC
+ATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC
+TGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG
+GTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG
+TCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG
+GCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC
+GTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT
+ACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC
+GAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC
+GGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC
+CTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA
+ATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG
+AGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC
+TGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT
+CACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG
+TTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG
+CCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC
+GCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT
+GGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC
+CCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC
+TGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG
+CGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG
+AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG
+AGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG
+AGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT
+GAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA
+TCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC
+AGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA
+AAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG
+CGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC
+TACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG
+GGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT
+CGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG
+CGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG
+GTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA
+AAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA
+GGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC
+TCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC
+CTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA
+GACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG
+CGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG
+AACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG
+ACAGAGCGAGACTCCGTCTCAAAAAGGCCGG    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

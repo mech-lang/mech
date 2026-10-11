@@ -1,0 +1,37 @@
+-- Eight pixels, ten steps; doubling uses addition as in Rust #4.
+scale := 2.0 / width<f64>
+cr := pixel<[f64]:8,1> * scale - 1.5
+ci := row<f64> * scale - 1.0
+~zr := [0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0]
+~zi := [0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0]
+~iteration := 0.0
+tr := zr * zr
+ti := zi * zi
+inside := tr + ti <= 4.0
+any-inside := inside[1,1] || inside[2,1] || inside[3,1] || inside[4,1] || inside[5,1] || inside[6,1] || inside[7,1] || inside[8,1]
+done := iteration >= 50.0 || !any-inside
+zr1 := tr - ti + cr
+zi1 := (zr + zr) * zi + ci
+zr2 := zr1 * zr1 - zi1 * zi1 + cr
+zi2 := (zr1 + zr1) * zi1 + ci
+zr3 := zr2 * zr2 - zi2 * zi2 + cr
+zi3 := (zr2 + zr2) * zi2 + ci
+zr4 := zr3 * zr3 - zi3 * zi3 + cr
+zi4 := (zr3 + zr3) * zi3 + ci
+zr5 := zr4 * zr4 - zi4 * zi4 + cr
+zi5 := (zr4 + zr4) * zi4 + ci
+zr6 := zr5 * zr5 - zi5 * zi5 + cr
+zi6 := (zr5 + zr5) * zi5 + ci
+zr7 := zr6 * zr6 - zi6 * zi6 + cr
+zi7 := (zr6 + zr6) * zi6 + ci
+zr8 := zr7 * zr7 - zi7 * zi7 + cr
+zi8 := (zr7 + zr7) * zi7 + ci
+zr9 := zr8 * zr8 - zi8 * zi8 + cr
+zi9 := (zr8 + zr8) * zi8 + ci
+zr10 := zr9 * zr9 - zi9 * zi9 + cr
+zi10 := (zr9 + zr9) * zi9 + ci
+zr = zr10
+zi = zi10
+iteration += 10.0
+<+ inside
+<+ done

@@ -1,0 +1,4 @@
+Error at probes/recursive-type.fut:1:27-31:
+Unknown type "tree"
+If you find this error message confusing, uninformative, or wrong, please open an issue:
+  https://github.com/diku-dk/futhark/issues

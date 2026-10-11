@@ -1,0 +1,16 @@
+prepared regexredux-gpp-6
+excluded regexredux-gpp-3 
+ld: library 'omp' not found
+clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+
+prepared regexredux-gpp-1
+excluded regexredux-gpp-2 
+ld: library 'omp' not found
+clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+
+excluded regexredux-gpp-5 Command '['/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-gpp-5']' died with <Signals.SIGABRT: 6>. libc++abi: terminating due to uncaught exception of type std::length_error: basic_string
+
+excluded regexredux-gpp-4 
+ld: library 'omp' not found
+clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+

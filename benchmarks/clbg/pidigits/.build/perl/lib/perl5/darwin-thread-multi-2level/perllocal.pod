@@ -1,0 +1,220 @@
+=head2 Fri Oct  9 09:04:27 2026: C<Module> L<File::Which|File::Which>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.27>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Oct  9 09:04:29 2026: C<Module> L<FFI::CheckLib|FFI::CheckLib>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.31>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Oct  9 09:04:29 2026: C<Module> L<Capture::Tiny|Capture::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.50>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Oct  9 09:04:30 2026: C<Module> L<Path::Tiny|Path::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.150>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Oct  9 09:04:31 2026: C<Module> L<File::chdir|File::chdir>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.1011>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Oct  9 09:04:32 2026: C<Module> L<Alien::Build|Alien::Build>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 2.88>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Oct  9 09:05:08 2026: C<Module> L<Devel::CheckLib|Devel::CheckLib>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.16>
+
+=item *
+
+C<EXE_FILES: bin/use-devel-checklib>
+
+=back
+
+=head2 Fri Oct  9 09:05:10 2026: C<Module> L<Alien::GMP|Alien::GMP>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.16>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Oct  9 09:05:11 2026: C<Module> L<Math::GMP|Math::GMP>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 2.25>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Fri Oct  9 09:05:13 2026: C<Module> L<Math::BigInt::GMP|Math::BigInt::GMP>
+
+=over 4
+
+=item *
+
+C<installed into: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.7003>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+

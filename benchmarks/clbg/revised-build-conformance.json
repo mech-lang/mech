@@ -1,0 +1,20 @@
+{
+  "public_command": "mech build --backend cranelift",
+  "source_programs": {
+    "knucleotide": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+    "mandelbrot": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab"
+  },
+  "official_small_output_byte_equal": {
+    "knucleotide": true,
+    "mandelbrot": true
+  },
+  "native_objects_identical_to_benchmark_emission": {
+    "knucleotide": true,
+    "mandelbrot": true
+  },
+  "compiler_options": {
+    "sequence": "4096 batch, DAG schedule, integer pack8, fused extraction",
+    "grid": "SIMD, loop FMA"
+  },
+  "mech_executable_sha256": "a093d0b356a1269c937ee7b5b21bce940f508662beed8fa6001e356391a08b8c"
+}

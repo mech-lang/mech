@@ -1,0 +1,32 @@
+{
+  "input": {
+    "path": "inputs/regexredux-input-small.txt",
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/regexredux-input.txt",
+    "bytes": 10245,
+    "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73"
+  },
+  "output": {
+    "path": "inputs/regexredux-output-small.txt",
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/regexredux-output.txt",
+    "bytes": 262,
+    "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1"
+  },
+  "full_input": {
+    "path": ".build/input5000000.txt",
+    "fasta_n": 5000000,
+    "bytes": 50833411,
+    "sha256": "97197f5957a12f8a859ba7edff6d97994daa18afacd77db21fa68c6f2e447e38",
+    "generation_command": [
+      "benchmarks/clbg/knucleotide/.build/fasta",
+      "5000000"
+    ],
+    "generator_sha256": "27327085ecd9aac3cb4eb2fd1ea38224d42c88aaa6cfb002fd7a580f9d6c8677"
+  },
+  "full_output": {
+    "path": "inputs/output-full.txt",
+    "bytes": 298,
+    "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+    "generator": "regexredux-rust-7",
+    "generator_sha256": "b8807627b4ac1947e1f7c066eacc33d513bd13189593e120031bd8c29b255e26"
+  }
+}

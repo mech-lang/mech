@@ -1,0 +1,114 @@
+{
+  "compact": [
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    }
+  ],
+  "fast": [
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "0"
+      ],
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "1"
+      ],
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "9"
+      ],
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "11"
+      ],
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "27"
+      ],
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_match": true
+    },
+    {
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "30"
+      ],
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    }
+  ]
+}

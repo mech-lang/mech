@@ -1,0 +1,36 @@
+{
+  "knucleotide": [
+    {
+      "sequence": "AAAACCCCGGGGTTTT",
+      "both_forms_match": true,
+      "output": "A 25.000\nC 25.000\nG 25.000\nT 25.000\n\nAA 20.000\nCC 20.000\nGG 20.000\nTT 20.000\nAC 6.667\nCG 6.667\nGT 6.667\n\n1\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n"
+    },
+    {
+      "sequence": "ACG",
+      "both_forms_match": true,
+      "output": "A 33.333\nC 33.333\nG 33.333\n\nAC 50.000\nCG 50.000\n\n0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n"
+    },
+    {
+      "sequence": "A",
+      "both_forms_match": true,
+      "output": "A 100.000\n\n\n0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n"
+    },
+    {
+      "sequence": "",
+      "both_forms_match": true,
+      "output": "\n\n0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n"
+    }
+  ],
+  "sampled_full_input_cardinalities": {
+    "bases": 1000020,
+    "k1": 4,
+    "k2": 16,
+    "k3": 64,
+    "k4": 256,
+    "k6": 4096,
+    "k12": 138127,
+    "k18": 139882
+  },
+  "full_window_updates": 874999961,
+  "period_note": "Observed canonical input cardinalities naturally remain small; no program tests, assumes, or exploits the generator period. Both forms update every window in every complete growing map."
+}

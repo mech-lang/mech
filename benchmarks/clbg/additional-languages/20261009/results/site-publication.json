@@ -1,0 +1,23 @@
+{
+  "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+  "commit_sha": "92ea9bbe7765c7c1828dc34a05e4a024c92077d8",
+  "archive": "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-mojo-futhark-full.tar.gz",
+  "deployment_id": "appgdep_6ac9835180788191ad773ae6b19f190c",
+  "version_id": "appgprj_6ac8f49664688191961eac14d8a9465b~appgver_69268dd5db1c8191b8f63f9569b068f5",
+  "status": "succeeded",
+  "url": "https://mech-benchmark-explorer.refreshthen.chatgpt.site",
+  "updated_at": "2026-10-10T00:14:17.079703+00:00",
+  "coverage": {
+    "benchmarks": 10,
+    "languages": 18,
+    "endpoints": 280,
+    "sources": 293,
+    "samples": 912
+  },
+  "checks": {
+    "numerical": true,
+    "source_hashes": true,
+    "desktop_mobile": true,
+    "sortable_tables": true
+  }
+}

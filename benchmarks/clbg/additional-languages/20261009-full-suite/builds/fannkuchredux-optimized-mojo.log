@@ -1,0 +1,90 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:15:33: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        var d = rank // fact_ptr[i]
+                        ~~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:16:18: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        count_ptr[i] = d
+        ~~~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:17:25: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        rank %= fact_ptr[i]
+                ~~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:21:18: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            p_ptr[j] = old_ptr[(j + d) % (i + 1)]
+            ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:21:31: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            p_ptr[j] = old_ptr[(j + d) % (i + 1)]
+                       ~~~~~~~^~~~~~~~~~~~~~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:29:18: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            q_ptr[i] = p_ptr[i]
+            ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:29:29: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            q_ptr[i] = p_ptr[i]
+                       ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:31:20: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        while q_ptr[0] != 0:
+              ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:32:26: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            var k = q_ptr[0]
+                    ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:34:33: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                var temp = q_ptr[i]
+                           ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:35:22: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                q_ptr[i] = q_ptr[k - i]
+                ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:35:33: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                q_ptr[i] = q_ptr[k - i]
+                           ~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:36:22: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                q_ptr[k - i] = temp
+                ~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:42:36: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            var first_value = p_ptr[0]
+                              ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:44:22: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                p_ptr[i] = p_ptr[i + 1]
+                ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:44:33: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                p_ptr[i] = p_ptr[i + 1]
+                           ~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:45:18: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            p_ptr[r] = first_value
+            ~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:46:25: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            if count_ptr[r] < r:
+               ~~~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:47:26: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                count_ptr[r] += 1
+                ~~~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:49:22: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            count_ptr[r] = 0
+            ~~~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:64:16: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        sum_ptr[w] = result[0]
+        ~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo:65:16: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        max_ptr[w] = result[1]
+        ~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-6fe0220.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

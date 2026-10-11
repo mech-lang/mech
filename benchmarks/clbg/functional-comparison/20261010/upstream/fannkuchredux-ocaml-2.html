@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fannkuch-redux OCaml&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fannkuch-redux OCaml&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/fannkuchredux.html#fannkuchredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">(* The Computer Language Benchmarks Game</span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">   contributed by Ethan Burns</span>
+<span class="com">*)</span>
+
+
+<span class="com">(** Flip the front [n] pancakes of [a]. *)</span>
+<span class="kwa">let</span> <span class="kwd">flip</span> n <span class="opt">(</span>a <span class="opt">:</span> <span class="kwb">int</span> array<span class="opt">) =</span>
+  <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">0</span> <span class="kwa">to</span> n <span class="opt">/</span> <span class="num">2</span> <span class="kwa">do</span>
+    <span class="kwa">let</span> <span class="kwd">t</span> <span class="opt">=</span> a<span class="opt">.(</span>i<span class="opt">)</span> <span class="kwa">in</span>
+    <span class="kwa">let</span> <span class="kwd">k</span> <span class="opt">=</span> n <span class="opt">-</span> i <span class="kwa">in</span>
+      a<span class="opt">.(</span>i<span class="opt">) &lt;-</span> a<span class="opt">.(</span><span class="kwd">k</span><span class="opt">);</span>
+      a<span class="opt">.(</span><span class="kwd">k</span><span class="opt">) &lt;-</span> <span class="kwd">t</span><span class="opt">;</span>
+  <span class="kwa">done</span>
+
+<span class="com">(** Count the number of flips so that pancake 0 is at index 0. *)</span>
+<span class="kwa">let rec</span> <span class="kwd">count</span> c ary <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">z</span> <span class="opt">=</span> ary<span class="opt">.(</span><span class="num">0</span><span class="opt">)</span> <span class="kwa">in</span>
+    <span class="kwa">if</span> <span class="kwd">z</span> <span class="opt">&lt;&gt;</span> <span class="num">0</span> <span class="kwa">then begin</span>
+      <span class="kwd">flip z</span> ary<span class="opt">;</span>
+      <span class="kwd">count</span> <span class="opt">(</span>c <span class="opt">+</span> <span class="num">1</span><span class="opt">)</span> ary
+    <span class="kwa">end else</span>
+      c
+
+<span class="com">(** Rotate the first [n] pancakes of [a]. *)</span>
+<span class="kwa">let</span> <span class="kwd">rotate</span> n <span class="opt">(</span>a <span class="opt">:</span> <span class="kwb">int</span> array<span class="opt">) =</span>
+  <span class="kwa">let</span> <span class="kwd">t</span> <span class="opt">=</span> a<span class="opt">.(</span><span class="num">0</span><span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">m</span> <span class="opt">=</span> n <span class="opt">-</span> <span class="num">1</span> <span class="kwa">in</span>
+    <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">1</span> <span class="kwa">to</span> <span class="kwd">m</span> <span class="kwa">do</span>
+      a<span class="opt">.(</span>i <span class="opt">-</span> <span class="num">1</span><span class="opt">) &lt;-</span> a<span class="opt">.(</span>i<span class="opt">);</span>
+    <span class="kwa">done</span><span class="opt">;</span>
+    a<span class="opt">.(</span><span class="kwd">m</span><span class="opt">) &lt;-</span> <span class="kwd">t</span>
+
+<span class="com">(** Call [f] on each permutation of [n] numbers in order. *)</span>
+<span class="kwa">let</span> <span class="kwd">iter_perms</span> n f <span class="opt">=</span>
+  <span class="kwa">let rec</span> <span class="kwd">do_iter</span> num perm copy f ht <span class="opt">=</span>
+    <span class="kwa">if</span> ht <span class="opt">=</span> <span class="num">1</span> <span class="kwa">then begin</span>
+      <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">0</span> <span class="kwa">to</span> n <span class="opt">-</span> <span class="num">1</span> <span class="kwa">do</span> copy<span class="opt">.(</span>i<span class="opt">) &lt;-</span> perm<span class="opt">.(</span>i<span class="opt">)</span> <span class="kwa">done</span><span class="opt">;</span>
+      f <span class="opt">!</span>num copy<span class="opt">;</span>
+      incr num<span class="opt">;</span>
+    <span class="kwa">end else</span>
+      <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">1</span> <span class="kwa">to</span> ht <span class="kwa">do</span>
+	<span class="kwd">do_iter</span> num perm copy f <span class="opt">(</span>ht <span class="opt">-</span> <span class="num">1</span><span class="opt">);</span>
+	<span class="kwd">rotate</span> ht perm<span class="opt">;</span>
+      <span class="kwa">done</span>
+  <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">perm</span> <span class="opt">=</span> <span class="kwc">Array</span><span class="opt">.</span>init n <span class="opt">(</span><span class="kwa">fun</span> i <span class="opt">-&gt;</span> i<span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">copy</span> <span class="opt">=</span> <span class="kwc">Array</span><span class="opt">.</span>make n <span class="num">0</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">num</span> <span class="opt">=</span> <span class="kwb">ref</span> <span class="num">0</span> <span class="kwa">in</span>
+    <span class="kwd">do_iter num perm copy</span> f n
+
+<span class="kwa">let</span> <span class="kwd">_</span> <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">n</span> <span class="opt">=</span> int_of_string <span class="kwc">Sys</span><span class="opt">.</span>argv<span class="opt">.(</span><span class="num">1</span><span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">csum</span> <span class="opt">=</span> <span class="kwb">ref</span> <span class="num">0</span> <span class="kwa">and</span> <span class="kwd">m</span> <span class="opt">=</span> <span class="kwb">ref</span> <span class="num">0</span> <span class="kwa">in</span>
+    <span class="kwd">iter_perms n</span> <span class="opt">(</span><span class="kwa">fun</span> <span class="kwd">num</span> a <span class="opt">-&gt;</span>
+		    <span class="kwa">let</span> <span class="kwd">c</span> <span class="opt">=</span> <span class="kwd">count</span> <span class="num">0</span> a <span class="kwa">in</span>
+		      <span class="com">(* csum update from Otto Bommer&#39;s Scala ver. *)</span>
+		      <span class="kwd">csum</span> <span class="opt">:= !</span><span class="kwd">csum</span> <span class="opt">+</span> <span class="kwd">c</span> <span class="opt">* (</span><span class="num">1</span> <span class="opt">- (</span><span class="kwd">num</span> <span class="kwa">land</span> <span class="num">1</span><span class="opt">)</span> <span class="kwa">lsl</span> <span class="num">1</span><span class="opt">);</span>
+		      <span class="kwa">if</span> <span class="kwd">c</span> <span class="opt">&gt; !</span><span class="kwd">m</span> <span class="kwa">then</span> <span class="kwd">m</span> <span class="opt">:=</span> <span class="kwd">c</span><span class="opt">;);</span>
+    <span class="kwc">Printf</span><span class="opt">.</span>printf <span class="sng">&quot;</span><span class="ipl">%d</span><span class="sng"></span><span class="esc">\n</span><span class="sng">Pfannkuchen(</span><span class="ipl">%d</span><span class="sng">) =</span> <span class="ipl">%d</span><span class="sng"></span><span class="esc">\n</span><span class="sng">&quot;</span> <span class="opt">!</span><span class="kwd">csum n</span> <span class="opt">!</span><span class="kwd">m</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+OCaml native-code
+5.4.0+dev0-2024-08-25
+
+
+ Fri, 10 Jan 2025 00:07:41 GMT
+
+MAKE:
+mv fannkuchredux.ocaml-2.ocaml fannkuchredux.ocaml-2.ml
+~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge fannkuchredux.ocaml-2.ml -o fannkuchredux.ocaml-2.ocaml_run
+rm fannkuchredux.ocaml-2.ml
+
+1.42s to complete and log all make actions
+
+COMMAND LINE:
+ ./fannkuchredux.ocaml-2.ocaml_run 12
+
+PROGRAM OUTPUT:
+3968050
+Pfannkuchen(12) = 65
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

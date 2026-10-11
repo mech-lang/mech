@@ -1,0 +1,377 @@
+{
+  "status": "passed",
+  "at": "2026-10-11T05:49:48.424536+00:00",
+  "compiled_units": [
+    {
+      "id": "binarytrees-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-3/binarytrees.adb",
+      "sha256": "389e6675bc33da0eb4da52a99837cb5b7e5b03ff3b7aa4830c500a19d27ba0cc",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-3/treenodes.ads",
+      "sha256": "475cf33ad538f325f7ba7578878967a6aa653c12a7428c950b3e4fd2e773d05e",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-3/treenodes.adb",
+      "sha256": "42a714977c5bd3531ab5a3a40bed175fa99658965d1df4d08b3190fed971af44",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-1/binarytrees.adb",
+      "sha256": "1845085f9d5266a5e43f6fe0137623a44e6307c52612cbe82d6b24b079b7ff69",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-1/treenodes.ads",
+      "sha256": "3d2574d070513f3487ff58891c3c64e0f49fa03129c90a0789192e2ac986f1a8",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-1/treenodes.adb",
+      "sha256": "d84d8d2b2fe3cf9d77f3dbdcfc812f96f1d237344c02b14012779ea0cec5b875",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fannkuchredux-gnat-3-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fannkuchredux-gnat-3-faithful/fannkuchredux.adb",
+      "sha256": "ef0e0f832104f2526b7abc9fde6400581b70681cc9ca95c74400f3d7d3e96796",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-1/fasta_pck.ads",
+      "sha256": "77a5ca02fc81e840dad2526b6b9a5b0e424e9a26b627f9172feabfef3e54b4f2",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-1/fasta_pck.adb",
+      "sha256": "0a65900c2d138b8b5c24fd175632f0427d7f91576805edf3ef7407f138f52950",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-1/fasta.adb",
+      "sha256": "04a60440c940eb36a1bf544d9beb94a18e390174781c02b8f80290dd46f46375",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/fasta.adb",
+      "sha256": "f95ef7cc16c4742bb24c4ce2d70c106f832887024ee11a3ac21663b75438dbdf",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/sequence-data.ads",
+      "sha256": "7438b7baeff65bd17cc39e38d46814d18ccd2395b3c6e2df2b98018d27b0d42d",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/sequence-creation.ads",
+      "sha256": "80ccef1fd599ff1a91758a215d5aa7464af34bab514008f0849e0eee99267265",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/sequence.ads",
+      "sha256": "147292f0c74aefa9eea4366d403297c697b58ae428960180212632b8a3122877",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/sequence-creation.adb",
+      "sha256": "f864d7d6638f8e36be3d0065666c38438787a0773e053a3c7475eedb0d740caf",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/line_io.ads",
+      "sha256": "3e6ade1c9a3009cad6dafa1ac2d04e812d68b8be1608e845db08c316f0f38817",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/line_io.adb",
+      "sha256": "ad49da8248c76d95e767e1603343ab2ad872db1d9a0eca02f64dc4f960a5b4d3",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/lcg_random.ads",
+      "sha256": "2f4b582b4651b2190e52bf2adecdd62bac9873b74e83bc49b7230f59c71fb439",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-2-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/lcg_random.adb",
+      "sha256": "001a24ec7bf4321dc7493fae79ed5b19d90f9b29fb1a4434fbf26c0c86214569",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/fasta.adb",
+      "sha256": "5f8fac8a4051162d324be8399399c15bddb6b22506fbb566e4f114514dbc0dfa",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/sequence-data.ads",
+      "sha256": "7438b7baeff65bd17cc39e38d46814d18ccd2395b3c6e2df2b98018d27b0d42d",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/sequence-creation.ads",
+      "sha256": "80ccef1fd599ff1a91758a215d5aa7464af34bab514008f0849e0eee99267265",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/sequence.ads",
+      "sha256": "147292f0c74aefa9eea4366d403297c697b58ae428960180212632b8a3122877",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/sequence-creation.adb",
+      "sha256": "c1c172fbeb36e025d7f843cc43bd7d6aa72f5bcbdca4912f20964dce353c710f",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/line_io.ads",
+      "sha256": "3e6ade1c9a3009cad6dafa1ac2d04e812d68b8be1608e845db08c316f0f38817",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/line_io.adb",
+      "sha256": "ad49da8248c76d95e767e1603343ab2ad872db1d9a0eca02f64dc4f960a5b4d3",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/lcg_random.ads",
+      "sha256": "2f4b582b4651b2190e52bf2adecdd62bac9873b74e83bc49b7230f59c71fb439",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "fasta-gnat-5-faithful",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/lcg_random.adb",
+      "sha256": "001a24ec7bf4321dc7493fae79ed5b19d90f9b29fb1a4434fbf26c0c86214569",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "mandelbrot-gnat-2",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-gnat-2/mandelbrot.adb",
+      "sha256": "65b5b9f7fee52a2bc2cd41571f6121e546f9d1672fb9dc379539a419cff10253",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "mandelbrot-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-gnat-3/mandelbrot.adb",
+      "sha256": "4dcead94ba4b96c4691fd7732c94d52fb17e7ead8047ee9eba5b76be753b7d0a",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "nbody-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-1/nbody_pck.ads",
+      "sha256": "1323b9ae72a8cd0a72fa730acd05c2ac4b7023b1bfa0197b9000d3852589401f",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "nbody-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-1/nbody_pck.adb",
+      "sha256": "5d12a62514bc2883a540a9d254562c2d047bdd50412d894351e00e4876e1f710",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "nbody-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-1/nbody.adb",
+      "sha256": "ce7a24e8cab51c0112195b2f30f9c5581d7f36a8b7434309b20fe330e593ee11",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "nbody-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-3/nbody.adb",
+      "sha256": "083c79ceaa4ce893e5e371c4e80ee257de1420472442fd56b63ae2e07bc0d533",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "nbody-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-3/nbody_pck.ads",
+      "sha256": "c8fbab720647eb95e133fa19c93c9e50452f2bf478a6805a48cdf5e9b2bba8bc",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "nbody-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-3/nbody_pck.adb",
+      "sha256": "3db24e4e4cc9074fa5725cb8dd12b78153aef7918d597c10bc6d90f0e892ee8b",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "pidigits-gnat-2",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/pidigits-gnat-2/pidigits.adb",
+      "sha256": "0b3d2bdd6e8486b1a901a81941eb661cad6e140d920ce50fd0a91561dd62ca6d",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "pidigits-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/pidigits-gnat-1/pidigits.adb",
+      "sha256": "c7d796e9f96203274a38954394952a823b8f229877d07f636d33ac808a4f7508",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "revcomp-gnat-2",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/revcomp.adb",
+      "sha256": "178f75b727e3c7f63ff5d838da5617357088bf88e832e1cc3a0950c9a1d16b12",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "revcomp-gnat-2",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/text_input.ads",
+      "sha256": "056a4ed7ab6636d2d5c62806f04adecd10422eac7ec1e92672a14c75d38c5708",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "revcomp-gnat-2",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/text_input.adb",
+      "sha256": "1952714e9f598b4a0bdbd3055fa5fa53bffcaa7f51a46ce8e8c5a9b8f898e43e",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "revcomp-gnat-2",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/line_io.ads",
+      "sha256": "3cb025fa30d21292a56dd5144467db78cdf3c0f9014879be5c183c2b8ada290f",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "revcomp-gnat-2",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/line_io.adb",
+      "sha256": "46ce73741670927eac9fa70fb96195ce91943d5a61b7012890fd0dbe19b91cd9",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "revcomp-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-1/revcomp.adb",
+      "sha256": "0dd75b06fdf5cc6c1afc4b1e3f4288c2b17751ca950ae21caeb573713ec36dd7",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "spectralnorm-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-3/spectralnorm.adb",
+      "sha256": "104325a9af4dd053960b9133030ec9291615f5bf50177b81e8c80da4d6a1ef0a",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "spectralnorm-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-3/spectral_utils.ads",
+      "sha256": "c5718f9ab5fa72e8121dcc3f89d9383ac2cb1bc2c53bcb43aeb0fcfcbd915461",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "spectralnorm-gnat-3",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-3/spectral_utils.adb",
+      "sha256": "331e886a04dab97a8813d63ae74ffe41d2dcfd6b51328a685bbc6a2b2afb72a9",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "spectralnorm-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-1/spectral_utils.ads",
+      "sha256": "e4ef106262091baedbeedcfbed9316a4a4806b323907c2bde5dfcd32b8548afd",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "spectralnorm-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-1/spectral_utils.adb",
+      "sha256": "38a58d878f5de28c2dba74f931fffd7ab936d75bce33e63144128f9b442bd6f2",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "spectralnorm-gnat-1",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-1/spectralnorm.adb",
+      "sha256": "f302155bb2b4cdd4a0f8a41db695524d33f0726c6413a26d7dda0da7526ea6f0",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "knucleotide-ada-compact",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/knucleotide-ada-compact/knucleotide.adb",
+      "sha256": "08fe3f0d32b486e3dc1bf2653096dfd28a56d488e14e95348c63f1362deae0b7",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "regexredux-ada-pcre2",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2/regexredux.adb",
+      "sha256": "af4a3747e82fcfe803aaa85a7c29923db2d09f5d1db9b4d6bd2c476974134c4c",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-4-native",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/binarytrees.adb",
+      "sha256": "ee6fbdbf28ba3baf798757813d9b61367df4ab3f9ce4bac96e38b717ecac3b9a",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-4-native",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/trees.ads",
+      "sha256": "bf13212bd1f2db6624253593dbf5b9f80232fd19d6330588e4342a8a700528ee",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-4-native",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/trees.adb",
+      "sha256": "bdfbc74c1ce5b46e428775ccae9d28c6ac1bec7b5fa4775adb254e109fc62310",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-4-native",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/apache_runtime.ads",
+      "sha256": "91913ab615abf78fc5728a863d67305f1bcfc9ddb525f5a707f6261f1dd8d0da",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-4-native",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/apache_runtime-pools.ads",
+      "sha256": "2f61ba2e3649567d6832904903a8e3b5a56055997670ed31d78a73e509a9f710",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "binarytrees-gnat-4-native",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/apache_runtime-pools.adb",
+      "sha256": "67443e855aa78ca2f5889711575284b72db7da6f1da43a8e2f5b97db3f061d83",
+      "included_in_counted_source": true
+    },
+    {
+      "id": "knucleotide-ada-optimized",
+      "compiled_unit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/knucleotide-ada-optimized/knucleotide.adb",
+      "sha256": "22cc497365914266d81e2c6458e6cd7bcb0eb67a88044800b59f2002546c61dc",
+      "included_in_counted_source": true
+    }
+  ],
+  "fortran_dart_evidence": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/tree-work-audit.json": {
+      "sha256": "b5da247d713cebf91912cab931888d25b64e2d0b902e8a30205619132b43edf1",
+      "status": "passed",
+      "checks": 4
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/knucleotide-work-checks.json": {
+      "sha256": "56104f43899a2a9adc1d7f8ead8e0802378274e24657eb5d47ea7fa1fdf81519",
+      "status": "passed",
+      "checks": 28
+    },
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/mandelbrot-work-checks.json": {
+      "sha256": "45eb3363f53a2495898dd3a250b5822208e99fbf3410febcc1087c6677100322",
+      "status": "passed",
+      "checks": 60
+    }
+  }
+}

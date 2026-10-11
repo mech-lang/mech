@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/probes/stdlib-tests",
+  "binary_sha256": "c685f442b200420987788939cb6a45514a6dc41ef9727ccf723058ceca32ffd9",
+  "arithmetic_cases": 848,
+  "arithmetic_max_bits": 16416,
+  "regex_cases": 90,
+  "hashmap_updates": 4002,
+  "hashmap_reserved_batches": [
+    1,
+    3,
+    64,
+    1024,
+    4003
+  ],
+  "wrapping_cases": 80,
+  "random_seed": 20261009
+}

@@ -1,0 +1,102 @@
+{
+  "K upstream Growler": {
+    "command": [
+      "/tmp/mech-array-runtimes/growler/k",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.growler.k"
+    ],
+    "samples": [
+      0.466941792,
+      0.47645025,
+      0.470561542
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.470561542
+  },
+  "K force reduce": {
+    "command": [
+      "/tmp/mech-array-runtimes/growler/k",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-force-reduce.k"
+    ],
+    "samples": [
+      0.534884792,
+      0.536417041,
+      0.550086166
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.536417041
+  },
+  "K two reductions": {
+    "command": [
+      "/tmp/mech-array-runtimes/growler/k",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-two-reductions.k"
+    ],
+    "samples": [
+      0.58172625,
+      0.593521708,
+      0.598262417
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.593521708
+  },
+  "BQN flat two reductions": {
+    "command": [
+      "/tmp/mech-array-runtimes/CBQN/BQN",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-flat-two-reductions.bqn"
+    ],
+    "samples": [
+      0.380339208,
+      0.381657792,
+      0.425746917
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.381657792
+  },
+  "BQN flat cached reduce": {
+    "command": [
+      "/tmp/mech-array-runtimes/CBQN/BQN",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-flat-cached-reduce.bqn"
+    ],
+    "samples": [
+      0.385205,
+      0.396484,
+      0.393841833
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.393841833
+  }
+}

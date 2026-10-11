@@ -1,0 +1,1244 @@
+{
+  "created_at": "2026-10-09T17:46:46.057380+00:00",
+  "build_report_sha256": "ff920ac9b8ea783924792133bbdbc51fa98e7bc0110469e2d4f31b4ed694f406",
+  "verification_sha256": "2bf44e8262c23fc77b5e6454afb8c3d8754f93f4be7f0f6f86eb27a3251d1814",
+  "protocol": {
+    "samples": 5,
+    "power": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "required_workloads": {
+      "nbody": 50000000,
+      "mandelbrot": 16000,
+      "knucleotide": 25000000,
+      "spectralnorm": 5500,
+      "revcomp": 25000000,
+      "fannkuchredux": 12,
+      "fasta": 25000000,
+      "binarytrees": 21,
+      "regexredux": 5000000,
+      "pidigits": 10000
+    },
+    "workers": 8,
+    "metric": "Physical LOC excluding blank/comment-only lines",
+    "timing": "Sequential fresh process to exit with complete stdout to regular file; builds and output hashing excluded",
+    "ordering": "Randomized complete rounds; published binary plus new compiler before/after sources",
+    "compiler_guard": "Reject any sample with detected competing compiler or power change"
+  },
+  "programs": [
+    {
+      "key": "nbody:compact-baseline",
+      "benchmark": "nbody",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 32,
+          "binary_sha256": "794e34d68b99342b4594f39922afa857cde8d00eda55aaa7121ab66ce176d8b2",
+          "samples_seconds": [
+            1.131334875,
+            1.130688334,
+            1.124896625,
+            1.127285166,
+            1.122311125
+          ],
+          "median_seconds": 1.127285166,
+          "stdev_seconds": 0.003821854156095657,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 32,
+          "binary_sha256": "ea853a1d836b803ce9cf14631e6948b31375205849706f1697b52765e4189f56",
+          "samples_seconds": [
+            1.124061542,
+            1.12489575,
+            1.121362917,
+            1.124825,
+            1.125078375
+          ],
+          "median_seconds": 1.124825,
+          "stdev_seconds": 0.0015486996084431066,
+          "time_ratio_to_published": 0.9978176187585883
+        },
+        "after": {
+          "loc": 32,
+          "binary_sha256": "ea853a1d836b803ce9cf14631e6948b31375205849706f1697b52765e4189f56",
+          "samples_seconds": [
+            1.133802416,
+            1.129248542,
+            1.127593875,
+            1.125872583,
+            1.126256834
+          ],
+          "median_seconds": 1.127593875,
+          "stdev_seconds": 0.003217804541196879,
+          "time_ratio_to_published": 1.0002738517362872
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "before",
+          "after",
+          "published"
+        ]
+      ]
+    },
+    {
+      "key": "nbody:pairwise-mass-tails",
+      "benchmark": "nbody",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 37,
+          "binary_sha256": "068abbacde58c70bf1f971a228d7da3542b0c86cfa11913ed4f05499701b7008",
+          "samples_seconds": [
+            1.053556458,
+            1.055661584,
+            1.051395583,
+            1.053669708,
+            1.053929792
+          ],
+          "median_seconds": 1.053669708,
+          "stdev_seconds": 0.0015178946208575159,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 37,
+          "binary_sha256": "107aeba5684de79eb1ed8f5907fb5d4ef47efc91d30c24d1e843b30f614ebabc",
+          "samples_seconds": [
+            1.055480291,
+            1.061192375,
+            1.051790667,
+            1.054092875,
+            1.059026916
+          ],
+          "median_seconds": 1.055480291,
+          "stdev_seconds": 0.003783101565085276,
+          "time_ratio_to_published": 1.0017183591653565
+        },
+        "after": {
+          "loc": 37,
+          "binary_sha256": "107aeba5684de79eb1ed8f5907fb5d4ef47efc91d30c24d1e843b30f614ebabc",
+          "samples_seconds": [
+            1.054417,
+            1.052524541,
+            1.063239416,
+            1.054109291,
+            1.055573334
+          ],
+          "median_seconds": 1.054417,
+          "stdev_seconds": 0.004205560328476766,
+          "time_ratio_to_published": 1.0007092279433738
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ]
+      ]
+    },
+    {
+      "key": "mandelbrot:mech-program-compact",
+      "benchmark": "mandelbrot",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 20,
+          "binary_sha256": "373c027cbbfa814188fa03bd1125365ce4bdef60bdee96bdb5ffdf5a656f0ee3",
+          "samples_seconds": [
+            2.255768625,
+            2.253370041,
+            2.24144925,
+            2.264486458,
+            2.267651458
+          ],
+          "median_seconds": 2.255768625,
+          "stdev_seconds": 0.010307581617284015,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 20,
+          "binary_sha256": "4068bcfb6669d4b5ba0b4b2aa7dabda30a1a32967fb0470a865159e70ffe27b8",
+          "samples_seconds": [
+            2.256401709,
+            2.274916958,
+            2.247386875,
+            2.251020708,
+            2.272079042
+          ],
+          "median_seconds": 2.256401709,
+          "stdev_seconds": 0.012454250087601057,
+          "time_ratio_to_published": 1.00028065112396
+        },
+        "after": {
+          "loc": 20,
+          "binary_sha256": "a4e2b0c8ca8bccdeca54a4f76b13b202472e5445a4e93384d70565869cedba34",
+          "samples_seconds": [
+            2.255569791,
+            2.247926541,
+            2.250449917,
+            2.2903195,
+            2.266769125
+          ],
+          "median_seconds": 2.255569791,
+          "stdev_seconds": 0.017301291093381514,
+          "time_ratio_to_published": 0.999911855321598
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "published",
+          "before",
+          "after"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "published",
+          "before",
+          "after"
+        ]
+      ]
+    },
+    {
+      "key": "mandelbrot:mech-program-simd-loop-fma",
+      "benchmark": "mandelbrot",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 29,
+          "binary_sha256": "3bb5c75da1341d7d72baed66e27779194b14d8bfb7ac49b67e487f20ff11c65a",
+          "samples_seconds": [
+            0.437038458,
+            0.439404333,
+            0.439987,
+            0.43933575,
+            0.439822333
+          ],
+          "median_seconds": 0.439404333,
+          "stdev_seconds": 0.0011942719173273276,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 29,
+          "binary_sha256": "3665bdaeecc565990b055d9949110f4f188cc9bc7097973d4dbb324babe68ed9",
+          "samples_seconds": [
+            0.437065584,
+            0.441491458,
+            0.441855,
+            0.440535583,
+            0.4410745
+          ],
+          "median_seconds": 0.4410745,
+          "stdev_seconds": 0.0019300175338312299,
+          "time_ratio_to_published": 1.0038009798141887
+        },
+        "after": {
+          "loc": 29,
+          "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+          "samples_seconds": [
+            0.442306542,
+            0.444461208,
+            0.440026959,
+            0.440094959,
+            0.441355708
+          ],
+          "median_seconds": 0.441355708,
+          "stdev_seconds": 0.0018352762681255101,
+          "time_ratio_to_published": 1.0044409552966334
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "published",
+          "before",
+          "after"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ]
+      ]
+    },
+    {
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "benchmark": "knucleotide",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 17,
+          "binary_sha256": "aee9b629cf48fb4bdd0f5ddde06de1b1282426b1c49085c136af3716c180ec68",
+          "samples_seconds": [
+            0.659456208,
+            0.542789333,
+            0.549265042,
+            0.54811275,
+            0.678001792
+          ],
+          "median_seconds": 0.549265042,
+          "stdev_seconds": 0.06719110118368829,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 17,
+          "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+          "samples_seconds": [
+            0.519965125,
+            0.530809958,
+            0.5466775,
+            0.529158583,
+            0.541582584
+          ],
+          "median_seconds": 0.530809958,
+          "stdev_seconds": 0.010584841535774582,
+          "time_ratio_to_published": 0.9664004031044815
+        },
+        "after": {
+          "loc": 17,
+          "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+          "samples_seconds": [
+            0.517708666,
+            0.524700292,
+            0.521226375,
+            0.560073416,
+            0.542890417
+          ],
+          "median_seconds": 0.524700292,
+          "stdev_seconds": 0.017829799704352264,
+          "time_ratio_to_published": 0.9552770554802575
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ]
+      ]
+    },
+    {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 13,
+          "binary_sha256": "7ad5fde759b4f22e67571b5453ef488ea5c36e6bed8d182820f1d1cf3206d4be",
+          "samples_seconds": [
+            0.082258833,
+            0.083518833,
+            0.096925375,
+            0.084149458,
+            0.084063667
+          ],
+          "median_seconds": 0.084063667,
+          "stdev_seconds": 0.006052321006174918,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 13,
+          "binary_sha256": "54c780617227a1c2f4411d748e7006a6ba413dd9bb66a11b7f7803f120067f1f",
+          "samples_seconds": [
+            0.086874708,
+            0.088379125,
+            0.085217042,
+            0.085773708,
+            0.085466583
+          ],
+          "median_seconds": 0.085773708,
+          "stdev_seconds": 0.0013027372173518715,
+          "time_ratio_to_published": 1.0203422127659505
+        },
+        "after": {
+          "loc": 9,
+          "binary_sha256": "02ba64480f916df8cc8726a14e370b4c214438421d8cf73f5618e0c8619bcf5d",
+          "samples_seconds": [
+            0.086355042,
+            0.090173083,
+            0.087402458,
+            0.090071666,
+            0.090436583
+          ],
+          "median_seconds": 0.090071666,
+          "stdev_seconds": 0.001875721448870884,
+          "time_ratio_to_published": 1.0714696278952476
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "published",
+          "before",
+          "after"
+        ]
+      ]
+    },
+    {
+      "key": "revcomp:mech-revcomp-optimized",
+      "benchmark": "revcomp",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 10,
+          "binary_sha256": "631d9c3a747238fbc922b3a1d723f10f02cbbac6f56cb084d37309ab7fc37d8b",
+          "samples_seconds": [
+            0.150027083,
+            0.148636541,
+            0.148903208,
+            0.151306333,
+            0.149178875
+          ],
+          "median_seconds": 0.149178875,
+          "stdev_seconds": 0.0010821909680167286,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 10,
+          "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+          "samples_seconds": [
+            0.154458791,
+            0.151790916,
+            0.154622542,
+            0.153134042,
+            0.14827275
+          ],
+          "median_seconds": 0.153134042,
+          "stdev_seconds": 0.0026032063924528144,
+          "time_ratio_to_published": 1.0265129161216695
+        },
+        "after": {
+          "loc": 7,
+          "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+          "samples_seconds": [
+            0.150427958,
+            0.150890917,
+            0.149180875,
+            0.1529575,
+            0.150197542
+          ],
+          "median_seconds": 0.150427958,
+          "stdev_seconds": 0.0013930340174767115,
+          "time_ratio_to_published": 1.0083730555013235
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ]
+      ]
+    },
+    {
+      "key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 43,
+          "binary_sha256": "4580f66c87496a7255f8c192211d2a7353284c7f323a20b0e6a207ea27306a37",
+          "samples_seconds": [
+            2.988449,
+            2.830849125,
+            2.843043708,
+            2.831282167,
+            3.278117792
+          ],
+          "median_seconds": 2.843043708,
+          "stdev_seconds": 0.1928571836929804,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 43,
+          "binary_sha256": "8e61ad4638bddb023721a4c23e38005db39eb3d4248f55675fae88708a9d8c50",
+          "samples_seconds": [
+            2.8242545,
+            2.838092833,
+            2.855881625,
+            2.826765375,
+            2.841716709
+          ],
+          "median_seconds": 2.838092833,
+          "stdev_seconds": 0.012713842619293614,
+          "time_ratio_to_published": 0.9982586004618681
+        },
+        "after": {
+          "loc": 39,
+          "binary_sha256": "8e61ad4638bddb023721a4c23e38005db39eb3d4248f55675fae88708a9d8c50",
+          "samples_seconds": [
+            2.825488792,
+            2.897177292,
+            2.834260709,
+            2.82953575,
+            2.830438792
+          ],
+          "median_seconds": 2.830438792,
+          "stdev_seconds": 0.030234680173521468,
+          "time_ratio_to_published": 0.9955664009088107
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "before",
+          "after",
+          "published"
+        ],
+        [
+          "published",
+          "before",
+          "after"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ]
+      ]
+    },
+    {
+      "key": "fannkuchredux:mech-fannkuch-even",
+      "benchmark": "fannkuchredux",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 64,
+          "binary_sha256": "56d4223950a96eddf8471b7622ee4d3b8d5088b57aeb5c047aa981cb4d96ad84",
+          "samples_seconds": [
+            1.708775167,
+            1.72863925,
+            1.712881916,
+            1.73018775,
+            1.766940667
+          ],
+          "median_seconds": 1.72863925,
+          "stdev_seconds": 0.022960268521003527,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 64,
+          "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+          "samples_seconds": [
+            1.71549825,
+            1.714456792,
+            1.728728917,
+            1.737329375,
+            1.787236166
+          ],
+          "median_seconds": 1.728728917,
+          "stdev_seconds": 0.029841666785749565,
+          "time_ratio_to_published": 1.0000518714358706
+        },
+        "after": {
+          "loc": 59,
+          "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+          "samples_seconds": [
+            1.7063745,
+            1.729003625,
+            1.718459333,
+            1.756119042,
+            1.827194291
+          ],
+          "median_seconds": 1.729003625,
+          "stdev_seconds": 0.04822402537066157,
+          "time_ratio_to_published": 1.000210787184197
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "before",
+          "after",
+          "published"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ]
+      ]
+    },
+    {
+      "key": "fasta:mech-fasta-final-compact-v2",
+      "benchmark": "fasta",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 33,
+          "binary_sha256": "8073e5a2be4f1fe12719f04ac45180e35af67aae3f7135bd6db3428940bca365",
+          "samples_seconds": [
+            1.071113,
+            1.07678775,
+            1.076504667,
+            1.078458375,
+            1.071845584
+          ],
+          "median_seconds": 1.076504667,
+          "stdev_seconds": 0.003258168477964088,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 33,
+          "binary_sha256": "85d2fb68f79ade068be6dc9174f845f53b58e14ac102269439df3496503bdf5a",
+          "samples_seconds": [
+            1.07075675,
+            1.080277166,
+            1.077448417,
+            1.071294792,
+            1.07826375
+          ],
+          "median_seconds": 1.077448417,
+          "stdev_seconds": 0.004312181686588136,
+          "time_ratio_to_published": 1.0008766798964561
+        },
+        "after": {
+          "loc": 32,
+          "binary_sha256": "85d2fb68f79ade068be6dc9174f845f53b58e14ac102269439df3496503bdf5a",
+          "samples_seconds": [
+            1.079546083,
+            1.072179,
+            1.076867292,
+            1.071252791,
+            1.0758375
+          ],
+          "median_seconds": 1.0758375,
+          "stdev_seconds": 0.003419117796388542,
+          "time_ratio_to_published": 0.9993802469971085
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "after",
+          "published",
+          "before"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "before",
+          "after",
+          "published"
+        ],
+        [
+          "published",
+          "before",
+          "after"
+        ]
+      ]
+    },
+    {
+      "key": "fasta:mech-fasta-final-expanded-v2",
+      "benchmark": "fasta",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 44,
+          "binary_sha256": "29f31ab471930f1a32e894add43b01ee1c4cf0f10eafbd7c2e3d4cd5f5b4c7e5",
+          "samples_seconds": [
+            0.571561166,
+            0.571552042,
+            0.5720965,
+            0.572626083,
+            0.572276209
+          ],
+          "median_seconds": 0.5720965,
+          "stdev_seconds": 0.0004659174910566228,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 44,
+          "binary_sha256": "2d7c1f7f26b522d02114a12444f2a40bab09b1237440ece17a30d471048cae1f",
+          "samples_seconds": [
+            0.573754208,
+            0.570026375,
+            0.575760834,
+            0.573664375,
+            0.572875875
+          ],
+          "median_seconds": 0.573664375,
+          "stdev_seconds": 0.0020770339537377167,
+          "time_ratio_to_published": 1.0027405778570573
+        },
+        "after": {
+          "loc": 43,
+          "binary_sha256": "2d7c1f7f26b522d02114a12444f2a40bab09b1237440ece17a30d471048cae1f",
+          "samples_seconds": [
+            0.573701792,
+            0.575407167,
+            0.575968375,
+            0.57097675,
+            0.571368375
+          ],
+          "median_seconds": 0.573701792,
+          "stdev_seconds": 0.0022737795792230264,
+          "time_ratio_to_published": 1.002805981158773
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "published",
+          "before",
+          "after"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "before",
+          "after",
+          "published"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ]
+      ]
+    },
+    {
+      "key": "binarytrees:mech-binarytrees-parallel",
+      "benchmark": "binarytrees",
+      "source_distinction": "before: published callback program; after: current match/comprehension program; paired-callback: only application syntax changed",
+      "variants": {
+        "published": {
+          "loc": 50,
+          "binary_sha256": "1012626abdca8eef02ecd3cd68e02ff21b7a11436a3fa68281616edc5617e794",
+          "samples_seconds": [
+            0.403077416,
+            0.402611041,
+            0.404781792,
+            0.403092709,
+            0.404390375
+          ],
+          "median_seconds": 0.403092709,
+          "stdev_seconds": 0.0009393305474550951,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 50,
+          "binary_sha256": "10d8688dc13223e926df03cccfe068adcd16e69c897687e8d34a2f41dec180af",
+          "samples_seconds": [
+            0.404476833,
+            0.4033445,
+            0.400695542,
+            0.396465416,
+            0.406795208
+          ],
+          "median_seconds": 0.4033445,
+          "stdev_seconds": 0.003957200143756083,
+          "time_ratio_to_published": 1.0006246478648166
+        },
+        "after": {
+          "loc": 26,
+          "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+          "samples_seconds": [
+            0.401622625,
+            0.3988285,
+            0.402702875,
+            0.399498334,
+            0.416691667
+          ],
+          "median_seconds": 0.401622625,
+          "stdev_seconds": 0.0073371690467627666,
+          "time_ratio_to_published": 0.9963529878681086
+        },
+        "paired-callback": {
+          "loc": 42,
+          "binary_sha256": "10d8688dc13223e926df03cccfe068adcd16e69c897687e8d34a2f41dec180af",
+          "samples_seconds": [
+            0.404863791,
+            0.4026365,
+            0.400656875,
+            0.402884083,
+            0.397519459
+          ],
+          "median_seconds": 0.4026365,
+          "stdev_seconds": 0.002777271773639683,
+          "time_ratio_to_published": 0.9988682281028308
+        },
+        "current-before": {
+          "loc": 29,
+          "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+          "samples_seconds": [
+            0.397758625,
+            0.395937125,
+            0.399567125,
+            0.397517916,
+            0.398803208
+          ],
+          "median_seconds": 0.397758625,
+          "stdev_seconds": 0.0013795409227162214,
+          "time_ratio_to_published": 0.9867671037433723
+        },
+        "saved-current": {
+          "loc": 29,
+          "binary_sha256": "342ef43b68f87b2bc755c56be114519d1200937264890e5e5c3793c4cbbc546f",
+          "samples_seconds": [
+            0.398716292,
+            0.393761167,
+            0.400556292,
+            0.400446042,
+            0.402351459
+          ],
+          "median_seconds": 0.400446042,
+          "stdev_seconds": 0.0032837868816870948,
+          "time_ratio_to_published": 0.9934340985562208
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "published",
+          "saved-current",
+          "after",
+          "before",
+          "paired-callback",
+          "current-before"
+        ],
+        [
+          "before",
+          "paired-callback",
+          "after",
+          "saved-current",
+          "published",
+          "current-before"
+        ],
+        [
+          "published",
+          "saved-current",
+          "paired-callback",
+          "current-before",
+          "before",
+          "after"
+        ],
+        [
+          "after",
+          "before",
+          "published",
+          "saved-current",
+          "current-before",
+          "paired-callback"
+        ],
+        [
+          "before",
+          "after",
+          "saved-current",
+          "current-before",
+          "paired-callback",
+          "published"
+        ]
+      ]
+    },
+    {
+      "key": "regexredux:mech-regex-final-reuse-signed",
+      "benchmark": "regexredux",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 24,
+          "binary_sha256": "b987cf932caf3d03144e85192af02bd1736ee1c02fea29a769fbaa2d477ec134",
+          "samples_seconds": [
+            0.504757791,
+            0.497845375,
+            0.489056042,
+            0.491033667,
+            0.493846542
+          ],
+          "median_seconds": 0.493846542,
+          "stdev_seconds": 0.00622955822431944,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 24,
+          "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+          "samples_seconds": [
+            0.497255541,
+            0.49244175,
+            0.499954167,
+            0.494166041,
+            0.503281083
+          ],
+          "median_seconds": 0.497255541,
+          "stdev_seconds": 0.004363844775925659,
+          "time_ratio_to_published": 1.0069029520510442
+        },
+        "after": {
+          "loc": 24,
+          "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+          "samples_seconds": [
+            0.49589075,
+            0.541391,
+            0.49553425,
+            0.495753792,
+            0.490138375
+          ],
+          "median_seconds": 0.495753792,
+          "stdev_seconds": 0.02118564707027441,
+          "time_ratio_to_published": 1.0038620296747973
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "published",
+          "before",
+          "after"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ]
+      ]
+    },
+    {
+      "key": "pidigits:mech-pi-final-compact-signed",
+      "benchmark": "pidigits",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 39,
+          "binary_sha256": "444645348ab9d157ac529b5b4ca86f3574ad22e4d248080f49b2c400eb80a166",
+          "samples_seconds": [
+            0.398668292,
+            0.394901084,
+            0.39871225,
+            0.397612,
+            0.399240375
+          ],
+          "median_seconds": 0.398668292,
+          "stdev_seconds": 0.001738985186958518,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 39,
+          "binary_sha256": "53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336",
+          "samples_seconds": [
+            0.398215166,
+            0.396854292,
+            0.39670375,
+            0.397317,
+            0.396415083
+          ],
+          "median_seconds": 0.396854292,
+          "stdev_seconds": 0.0007030605218032072,
+          "time_ratio_to_published": 0.9954498513265259
+        },
+        "after": {
+          "loc": 35,
+          "binary_sha256": "53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336",
+          "samples_seconds": [
+            0.396189334,
+            0.396613875,
+            0.395167625,
+            0.399240917,
+            0.400528709
+          ],
+          "median_seconds": 0.396613875,
+          "stdev_seconds": 0.002243621070114987,
+          "time_ratio_to_published": 0.9948468011095299
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "after",
+          "before",
+          "published"
+        ],
+        [
+          "published",
+          "before",
+          "after"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ]
+      ]
+    },
+    {
+      "key": "pidigits:mech-pi-final-advance-signed",
+      "benchmark": "pidigits",
+      "source_distinction": null,
+      "variants": {
+        "published": {
+          "loc": 42,
+          "binary_sha256": "580d6774e9ea696527e2c48d7bad929816bbbec5f64b85a5958e20c316830df1",
+          "samples_seconds": [
+            0.304987666,
+            0.305199458,
+            0.307614042,
+            0.305313541,
+            0.303692291
+          ],
+          "median_seconds": 0.305199458,
+          "stdev_seconds": 0.00141673159349655,
+          "time_ratio_to_published": 1.0
+        },
+        "before": {
+          "loc": 42,
+          "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+          "samples_seconds": [
+            0.304195833,
+            0.307323041,
+            0.304678167,
+            0.303863125,
+            0.306474417
+          ],
+          "median_seconds": 0.304678167,
+          "stdev_seconds": 0.0015118020530310162,
+          "time_ratio_to_published": 0.9982919661672532
+        },
+        "after": {
+          "loc": 38,
+          "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+          "samples_seconds": [
+            0.305370375,
+            0.305976291,
+            0.306338125,
+            0.302914583,
+            0.305231166
+          ],
+          "median_seconds": 0.305370375,
+          "stdev_seconds": 0.0013365386936089805,
+          "time_ratio_to_published": 1.0005600173772262
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "before",
+          "published",
+          "after"
+        ],
+        [
+          "before",
+          "after",
+          "published"
+        ],
+        [
+          "published",
+          "after",
+          "before"
+        ],
+        [
+          "published",
+          "before",
+          "after"
+        ]
+      ]
+    }
+  ],
+  "status": "complete"
+}

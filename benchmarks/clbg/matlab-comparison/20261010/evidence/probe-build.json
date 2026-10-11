@@ -1,0 +1,26 @@
+{
+  "status": "built",
+  "command": [
+    "/Library/Developer/CommandLineTools/usr/bin/clang++",
+    "-std=c++17",
+    "-DMX_HAS_INTERLEAVED_COMPLEX=1",
+    "-O2",
+    "-fPIC",
+    "-isysroot",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+    "-bundle",
+    "-I/Applications/MATLAB_R2026b.app/extern/include",
+    "-L/Applications/MATLAB_R2026b.app/bin/maca64",
+    "-Wl,-rpath,/Applications/MATLAB_R2026b.app/bin/maca64",
+    "allocation_identity.cpp",
+    "-lmx",
+    "-lmex",
+    "-lmat",
+    "-o",
+    "allocation_identity.mexmaca64"
+  ],
+  "compiler_sha256": "693d5d0ba3e939d5bb32b62e253c443f8997c5bb118b9398844d0cbd47e890a4",
+  "source_sha256": "b264e77c479e0a4ebad17fa258bda23a778ef3aa030a5ecc441d6c0bb0352fad",
+  "binary_sha256": "cb3f0a95c3043db6de47deb45aaba0b26a6e7c2519e2ea279bb3f49abe54f0dc",
+  "note": "Untimed generic identity inventory only. MATLAB benchmark sources do not call this diagnostic. Uses the existing Apple Command Line Tools directly, with its own SDK; does not change Xcode settings or accept its license."
+}

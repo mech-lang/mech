@@ -1,0 +1,18 @@
+{
+  "cache": {
+    "source_sha256": "535860cdc6219521bd11f9fdd53e501b99d407237b683ead79a50400fb5ea6a7",
+    "sdk_sha256": "4f5170ee11089c5f85c75439f09b53ee7dfb7555faa56da9b320a6bc24038ec6",
+    "package_lock_sha256": "99089733fe4f2e509b3c1ee10cfc2340ff4dcfb5acf60308f60cb2b06ca20fea"
+  },
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+    "compile",
+    "-O2",
+    "--project-root",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/pidigits-toit-bignum",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/pidigits-toit-bignum.toit"
+  ],
+  "binary_sha256": "853073b8ef431b56f1e3da462927f163f78eb5d3c5d33b1fce43fa5a048f8c8f"
+}

@@ -1,0 +1,56 @@
+{
+  "url": "https://github.com/rrthomas/lrexlib",
+  "commit": "037e40b36bf5e594225f956b95aa3c05da3b6a3a",
+  "builds": [
+    {
+      "runtime": "lua",
+      "command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-bundle",
+        "-undefined",
+        "dynamic_lookup",
+        "-I/opt/homebrew/include/lua5.5",
+        "-I/opt/homebrew/include",
+        "-L/opt/homebrew/lib",
+        "-DVERSION=\"2.9.4\"",
+        "-DLUA_LIB=",
+        "-DPCRE2_CODE_UNIT_WIDTH=8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/lrexlib/src/common.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/lrexlib/src/pcre2/lpcre2.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/lrexlib/src/pcre2/lpcre2_f.c",
+        "-lpcre2-8",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/lua/rex_pcre2.so"
+      ],
+      "module_sha256": "3e0c6943a573425045651b496a9fed1cd65be8b555fcea46cabf332ee305bf5c"
+    },
+    {
+      "runtime": "luajit",
+      "command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-bundle",
+        "-undefined",
+        "dynamic_lookup",
+        "-I/tmp/mech-clbg-luajit/src",
+        "-I/opt/homebrew/include",
+        "-L/opt/homebrew/lib",
+        "-DVERSION=\"2.9.4\"",
+        "-DLUA_LIB=",
+        "-DPCRE2_CODE_UNIT_WIDTH=8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/lrexlib/src/common.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/lrexlib/src/pcre2/lpcre2.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/lrexlib/src/pcre2/lpcre2_f.c",
+        "-lpcre2-8",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/luajit/rex_pcre2.so"
+      ],
+      "module_sha256": "5527c45593a82450bc7c8e6950653cd59e68a458d70c83aa8fd121bc9bc97cd7"
+    }
+  ]
+}

@@ -1,0 +1,1051 @@
+{
+  "status": "passed",
+  "timing_report_sha256": "cf0d7c024e599c847232a9eed77edc56c88ad26d2292022f3d242c9af3be8d2b",
+  "source_audit_sha256": "05c8ac995ff3b6aedcdd98fac656d852a215e4b02637e91ca4e6ed2a1f969533",
+  "final_loc_audit_sha256": "638ef2298cf39c9351e73cdf016147e8d54dfd34af1df56d2ce996a46cf55f52",
+  "admitted_sources": 60,
+  "rows": [
+    {
+      "benchmark": "spectralnorm",
+      "language": "haskell",
+      "candidates": 2,
+      "fast": {
+        "key": "spectralnorm:spectralnorm-ghc-4",
+        "id": "spectralnorm-ghc-4",
+        "loc": 74,
+        "source_sha256": "b7d624f2f446811e4f1ff6d545fd6861929d452b46dc9d5353ceff294cf5cae9",
+        "binary_sha256": "e900d86cc3bc552aed4d433d678c0460c906329e5a9bc503f3c521d9afbc9d93",
+        "median_seconds": 0.183089625,
+        "samples_seconds": [
+          0.179854959,
+          0.188809709,
+          0.183089625
+        ],
+        "sample_stdev_seconds": 0.0045344968971414296
+      },
+      "small": {
+        "key": "spectralnorm:spectralnorm-ghc-2",
+        "id": "spectralnorm-ghc-2",
+        "loc": 22,
+        "source_sha256": "2a62d198bcd1d5723c8d7385050f7812296c29191d525d6185cac7d97b269667",
+        "binary_sha256": "bb549bc78cf564f882e6c2aed115b1d5342cdf4782c6bf7bbd52df116e649a1d",
+        "median_seconds": 4.820529667,
+        "samples_seconds": [
+          4.820529667,
+          4.828689583,
+          4.810057625
+        ],
+        "sample_stdev_seconds": 0.009339858597168365
+      },
+      "fastest_seconds_over_mech": 2.0742576586079626
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "ocaml",
+      "candidates": 1,
+      "fast": {
+        "key": "spectralnorm:spectralnorm-ocaml-2",
+        "id": "spectralnorm-ocaml-2",
+        "loc": 34,
+        "source_sha256": "5d797e98c096ee3ef410f293fa8f56beab835f62c029380104c9645b2e36bcd7",
+        "binary_sha256": "33bda363dd7ca1476168500398aaf1b76687ea9d4e1433ae894367927a2edebb",
+        "median_seconds": 4.104844541,
+        "samples_seconds": [
+          4.025733667,
+          4.155623791,
+          4.104844541
+        ],
+        "sample_stdev_seconds": 0.0654580106230218
+      },
+      "small": {
+        "key": "spectralnorm:spectralnorm-ocaml-2",
+        "id": "spectralnorm-ocaml-2",
+        "loc": 34,
+        "source_sha256": "5d797e98c096ee3ef410f293fa8f56beab835f62c029380104c9645b2e36bcd7",
+        "binary_sha256": "33bda363dd7ca1476168500398aaf1b76687ea9d4e1433ae894367927a2edebb",
+        "median_seconds": 4.104844541,
+        "samples_seconds": [
+          4.025733667,
+          4.155623791,
+          4.104844541
+        ],
+        "sample_stdev_seconds": 0.0654580106230218
+      },
+      "fastest_seconds_over_mech": 46.50457515855602
+    },
+    {
+      "benchmark": "pidigits",
+      "language": "haskell",
+      "candidates": 6,
+      "fast": {
+        "key": "pidigits:pidigits-ghc-6",
+        "id": "pidigits-ghc-6",
+        "loc": 18,
+        "source_sha256": "91fae8b100e9873a978882102e652c60d51db566757ecd501a9c4690f2481324",
+        "binary_sha256": "5a6c1af4e8123e8a301d0ca62feb2bc86baa5be3672f64ce09685533e79e66d5",
+        "median_seconds": 0.5044175,
+        "samples_seconds": [
+          0.505490792,
+          0.5044175,
+          0.50147525
+        ],
+        "sample_stdev_seconds": 0.0020789968868634517
+      },
+      "small": {
+        "key": "pidigits:pidigits-ghc-3",
+        "id": "pidigits-ghc-3",
+        "loc": 11,
+        "source_sha256": "d6ed647dc1582d56c2119f2c11ebe45657673fb387479d779af88a66474f94af",
+        "binary_sha256": "23acfb3d38c7cc075909c702447560a9a3b645005ff8ea8120bd7bc1f9afcae7",
+        "median_seconds": 0.710717792,
+        "samples_seconds": [
+          0.713226708,
+          0.704962125,
+          0.710717792
+        ],
+        "sample_stdev_seconds": 0.004237249388338179
+      },
+      "fastest_seconds_over_mech": 1.652571735530612
+    },
+    {
+      "benchmark": "pidigits",
+      "language": "ocaml",
+      "candidates": 2,
+      "fast": {
+        "key": "pidigits:pidigits-ocaml-7",
+        "id": "pidigits-ocaml-7",
+        "loc": 48,
+        "source_sha256": "7e4d3ef208238b07a6dd68ef4c24bd35aa2fd1d2e4904bb4c3d343782204a404",
+        "binary_sha256": "6b996cc237e22b1de1990360835cf9fdc648c5f158145958528a118e2b38490d",
+        "median_seconds": 0.310801834,
+        "samples_seconds": [
+          0.309315041,
+          0.311244708,
+          0.310801834
+        ],
+        "sample_stdev_seconds": 0.0010108004695630933
+      },
+      "small": {
+        "key": "pidigits:pidigits-ocaml-5",
+        "id": "pidigits-ocaml-5",
+        "loc": 32,
+        "source_sha256": "98109e6b36285d941dd7d8adbdb2dae6a6d752ea9cd40fa02372810b6b721cc4",
+        "binary_sha256": "5fd272c18a060d453273df6fd6583149bf0d19f749e3cab1a493253388561793",
+        "median_seconds": 0.978042667,
+        "samples_seconds": [
+          0.978042667,
+          0.968835541,
+          0.978384584
+        ],
+        "sample_stdev_seconds": 0.005417137907151889
+      },
+      "fastest_seconds_over_mech": 1.018248427581274
+    },
+    {
+      "benchmark": "nbody",
+      "language": "haskell",
+      "candidates": 2,
+      "fast": {
+        "key": "nbody:nbody-ghc-2",
+        "id": "nbody-ghc-2",
+        "loc": 166,
+        "source_sha256": "454ae201c30d93e0bcc1d5f914172c244bc2eaa2ed8e485cb7c51ee8ed081356",
+        "binary_sha256": "8001c0e8280421715b5ea0ac0c7046638e6414065b95162aa3959dd0694459fe",
+        "median_seconds": 1.911183292,
+        "samples_seconds": [
+          1.911183292,
+          1.904650584,
+          1.92584275
+        ],
+        "sample_stdev_seconds": 0.010852679257819041
+      },
+      "small": {
+        "key": "nbody:nbody-ghc-1",
+        "id": "nbody-ghc-1",
+        "loc": 140,
+        "source_sha256": "893e606afb0d9e7d90d0dce496b470912b5cd23b9605c3f3ee1a6e3e73883c8e",
+        "binary_sha256": "6f3851d83f6c47068a3bbe247c9ca5c9a61d3ddb0ea8f1858b82f5976b4afbe0",
+        "median_seconds": 1.996172958,
+        "samples_seconds": [
+          1.985530292,
+          2.001012666,
+          1.996172958
+        ],
+        "sample_stdev_seconds": 0.007920364236034129
+      },
+      "fastest_seconds_over_mech": 1.814616867600861
+    },
+    {
+      "benchmark": "nbody",
+      "language": "ocaml",
+      "candidates": 1,
+      "fast": {
+        "key": "nbody:nbody-ocaml-1",
+        "id": "nbody-ocaml-1",
+        "loc": 95,
+        "source_sha256": "c01e053c04764ed4861fd5839ff7e6bed2472589803e45579e6fbf797e36f3b8",
+        "binary_sha256": "f35c537373e6c53957b2b142f08e33f30460fad526d16a2cf3f9eb2f4807b1ba",
+        "median_seconds": 1.95340975,
+        "samples_seconds": [
+          1.95340975,
+          1.951842,
+          1.960956375
+        ],
+        "sample_stdev_seconds": 0.004873076040752742
+      },
+      "small": {
+        "key": "nbody:nbody-ocaml-1",
+        "id": "nbody-ocaml-1",
+        "loc": 95,
+        "source_sha256": "c01e053c04764ed4861fd5839ff7e6bed2472589803e45579e6fbf797e36f3b8",
+        "binary_sha256": "f35c537373e6c53957b2b142f08e33f30460fad526d16a2cf3f9eb2f4807b1ba",
+        "median_seconds": 1.95340975,
+        "samples_seconds": [
+          1.95340975,
+          1.951842,
+          1.960956375
+        ],
+        "sample_stdev_seconds": 0.004873076040752742
+      },
+      "fastest_seconds_over_mech": 1.8547097478947514
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "haskell",
+      "candidates": 3,
+      "fast": {
+        "key": "mandelbrot:mandelbrot-ghc-3-faithful",
+        "id": "mandelbrot-ghc-3-faithful",
+        "loc": 216,
+        "source_sha256": "561d590a4ed9e91013b382ef0ed368de32b30961c5a03450de26501e1138dd91",
+        "binary_sha256": "a794222feec94ffd82dfa589b0fc11062ca0a84bcc0f352549f774d127d47ff2",
+        "median_seconds": 0.672077,
+        "samples_seconds": [
+          0.672077,
+          0.6786165,
+          0.666400875
+        ],
+        "sample_stdev_seconds": 0.006112895514214849
+      },
+      "small": {
+        "key": "mandelbrot:mandelbrot-ghc-1",
+        "id": "mandelbrot-ghc-1",
+        "loc": 35,
+        "source_sha256": "0b728992a551dfaeaec136e0406b85469161ec1ddb9e5ab2cedadc33ce45ae37",
+        "binary_sha256": "8c5379ba007920ea2131b1a680e49d6ab2db54c4364f891ddb79fe11cd4937e2",
+        "median_seconds": 12.527052834,
+        "samples_seconds": [
+          12.501856042,
+          12.564800833,
+          12.527052834
+        ],
+        "sample_stdev_seconds": 0.031680268490099875
+      },
+      "fastest_seconds_over_mech": 1.517072732343955
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "ocaml",
+      "candidates": 2,
+      "fast": {
+        "key": "mandelbrot:mandelbrot-ocaml-1",
+        "id": "mandelbrot-ocaml-1",
+        "loc": 75,
+        "source_sha256": "1f3dffadc19679be4b6d2d306d17b733f602a8856c1f953a49352ff9690c6f92",
+        "binary_sha256": "83818b66584675cc76e00642a578281e7a240d13f67e0c6362864094cab580a0",
+        "median_seconds": 2.616842208,
+        "samples_seconds": [
+          2.600650334,
+          2.665224875,
+          2.616842208
+        ],
+        "sample_stdev_seconds": 0.03359794288103912
+      },
+      "small": {
+        "key": "mandelbrot:mandelbrot-ocaml-6",
+        "id": "mandelbrot-ocaml-6",
+        "loc": 44,
+        "source_sha256": "eeae7cf662bfa209b41485feb73b78ca41501b655f877286d522f23011122cfc",
+        "binary_sha256": "afb2cf68cabd46430d1396d33baef1665dc007e6eb9028bb1b0523cd77bad2bb",
+        "median_seconds": 14.9418255,
+        "samples_seconds": [
+          14.921742417,
+          14.9418255,
+          14.997862583
+        ],
+        "sample_stdev_seconds": 0.039449893463736854
+      },
+      "fastest_seconds_over_mech": 5.906971907390892
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "haskell",
+      "candidates": 2,
+      "fast": {
+        "key": "revcomp:revcomp-ghc-4",
+        "id": "revcomp-ghc-4",
+        "loc": 69,
+        "source_sha256": "c8246fbb8e0402c232527c548dd50a294f810860deaa93f8417367f574fdba16",
+        "binary_sha256": "7149ddf27ba4aea1529ee95fb753618601628d43d7bc50da568c46838dc7d080",
+        "median_seconds": 0.334077167,
+        "samples_seconds": [
+          0.330068208,
+          0.335122292,
+          0.334077167
+        ],
+        "sample_stdev_seconds": 0.0026679518863840846
+      },
+      "small": {
+        "key": "revcomp:revcomp-ghc-2",
+        "id": "revcomp-ghc-2",
+        "loc": 59,
+        "source_sha256": "93bbf18cd15ca30373ad85318b7617393ac5578d8cd8050940a5caa2805972ce",
+        "binary_sha256": "97ff9b60a31c3143447f48b6f4f3eb328c7150c4d8c1c70f75aec5bea61fd64e",
+        "median_seconds": 0.684352125,
+        "samples_seconds": [
+          0.685712084,
+          0.675362375,
+          0.684352125
+        ],
+        "sample_stdev_seconds": 0.005624078738318904
+      },
+      "fastest_seconds_over_mech": 2.244770129403347
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "ocaml",
+      "candidates": 3,
+      "fast": {
+        "key": "revcomp:revcomp-ocaml-1",
+        "id": "revcomp-ocaml-1",
+        "loc": 153,
+        "source_sha256": "7c29fac0d938ae02fdf26308dbf9e070eb8d465ae8694a3a0dedd42a6c219d23",
+        "binary_sha256": "d9eb3ae2ea30e15534c43ba198583aa4c997a0bb991c789774b2595eb5c016ab",
+        "median_seconds": 0.238218375,
+        "samples_seconds": [
+          0.238395916,
+          0.238218375,
+          0.237927917
+        ],
+        "sample_stdev_seconds": 0.00023625894002345406
+      },
+      "small": {
+        "key": "revcomp:revcomp-ocaml-2",
+        "id": "revcomp-ocaml-2",
+        "loc": 23,
+        "source_sha256": "349eb1136bdf1f53049bc4108fad2d44e26af2fa8d29d7aa8c7c06cb70b88205",
+        "binary_sha256": "54da0c6633e53645408df5bafd212706c75d1a9d50e999a11aacfe64f1860940",
+        "median_seconds": 1.093762583,
+        "samples_seconds": [
+          1.088588042,
+          1.093762583,
+          1.0940505
+        ],
+        "sample_stdev_seconds": 0.003074009817847401
+      },
+      "fastest_seconds_over_mech": 1.6006645927855496
+    },
+    {
+      "benchmark": "fasta",
+      "language": "haskell",
+      "candidates": 6,
+      "fast": {
+        "key": "fasta:fasta-ghc-6-faithful",
+        "id": "fasta-ghc-6-faithful",
+        "loc": 132,
+        "source_sha256": "e4a31555230ee7df58d755ab958680a51cc9c966aad0570b83e039e58b9d24bf",
+        "binary_sha256": "988406d378a0902cbcb13ae0e734e573ea5ad87bb87254f851a86dd39ec8ed52",
+        "median_seconds": 0.62988375,
+        "samples_seconds": [
+          0.62988375,
+          0.637289417,
+          0.627533625
+        ],
+        "sample_stdev_seconds": 0.005091536584990457
+      },
+      "small": {
+        "key": "fasta:fasta-ghc-1",
+        "id": "fasta-ghc-1",
+        "loc": 68,
+        "source_sha256": "49cc1c2df1f33e42b45588ceee7f8c44b87fac92facee2796f77e1d07e625b79",
+        "binary_sha256": "a26fb0e12b9225701632038d1d28624dc6e664e7548293ee595decdb08644b2e",
+        "median_seconds": 3.226526792,
+        "samples_seconds": [
+          3.226526792,
+          3.2671815,
+          3.224275625
+        ],
+        "sample_stdev_seconds": 0.024148109466867004
+      },
+      "fastest_seconds_over_mech": 1.1096170775273604
+    },
+    {
+      "benchmark": "fasta",
+      "language": "ocaml",
+      "candidates": 2,
+      "fast": {
+        "key": "fasta:fasta-ocaml-6-faithful",
+        "id": "fasta-ocaml-6-faithful",
+        "loc": 101,
+        "source_sha256": "c76ab55e6ea3891e2f5172d69534b01d8a774c8696b9faec4d49f28426ee3069",
+        "binary_sha256": "122bc1ce43cb67c1854954f2b15422cac2b77c66b161a623a38f8ca9693d9efd",
+        "median_seconds": 2.607958917,
+        "samples_seconds": [
+          2.615692666,
+          2.586208125,
+          2.607958917
+        ],
+        "sample_stdev_seconds": 0.015287500254581284
+      },
+      "small": {
+        "key": "fasta:fasta-ocaml-3",
+        "id": "fasta-ocaml-3",
+        "loc": 76,
+        "source_sha256": "78fc3ab6e8b24d5b3d5a306bb437577e7b38b39ac143a8cab44c1ab638caa80f",
+        "binary_sha256": "fc2612f4f19fd46a99bcf77b0071ed9eb1b028719ff17325bf5943b6fe4225b2",
+        "median_seconds": 3.361522833,
+        "samples_seconds": [
+          3.361522833,
+          3.351680375,
+          3.377926708
+        ],
+        "sample_stdev_seconds": 0.013259154638992375
+      },
+      "fastest_seconds_over_mech": 4.5942378284770164
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "candidates": 7,
+      "fast": {
+        "key": "binarytrees:binarytrees-ghc-4-faithful",
+        "id": "binarytrees-ghc-4-faithful",
+        "loc": 80,
+        "source_sha256": "ab8abb7fd39555fd6969eb2ced2ecd9715bf0713906a693d16a82fa4da689d16",
+        "binary_sha256": "b8e788e85e3f34719bc29b183c1a28414bf5b98f29ff3f2fd5999090fd49d18a",
+        "median_seconds": 2.422954584,
+        "samples_seconds": [
+          2.41920925,
+          2.422954584,
+          2.447743
+        ],
+        "sample_stdev_seconds": 0.015506278210363114
+      },
+      "small": {
+        "key": "binarytrees:binarytrees-ghc-1-faithful",
+        "id": "binarytrees-ghc-1-faithful",
+        "loc": 36,
+        "source_sha256": "980fe0e71100f472e8d1083fd16c46b383cbe59c808309a723f9de2b91e3d218",
+        "binary_sha256": "2c07718f8d1af1777a36c72860193d185d47ca7a115aefee5925700d5822aa2d",
+        "median_seconds": 6.436738375,
+        "samples_seconds": [
+          6.323817833,
+          6.445151542,
+          6.436738375
+        ],
+        "sample_stdev_seconds": 0.0677540885903333
+      },
+      "fastest_seconds_over_mech": 5.999907971622197
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "ocaml",
+      "candidates": 2,
+      "fast": {
+        "key": "binarytrees:binarytrees-ocaml-2-faithful",
+        "id": "binarytrees-ocaml-2-faithful",
+        "loc": 54,
+        "source_sha256": "7203519c6d4ef21aff37b7685377028678599325693ae0603eb5ab0d24b357ef",
+        "binary_sha256": "ab55090a108ab5b9ec1110b560ad8bb27c0a6d11d7223cc8922814781eb17eb7",
+        "median_seconds": 2.097798333,
+        "samples_seconds": [
+          2.087424125,
+          2.097798333,
+          2.103055833
+        ],
+        "sample_stdev_seconds": 0.007954200073698216
+      },
+      "small": {
+        "key": "binarytrees:binarytrees-ocaml-5-faithful",
+        "id": "binarytrees-ocaml-5-faithful",
+        "loc": 27,
+        "source_sha256": "44879d76861173902de2b75eb9f857ef537ff0804294c755db853ea10e507622",
+        "binary_sha256": "b379dcf5e62a24505e5fe52c2865ee61b7d14a2d53a7d57860649b84d6e64866",
+        "median_seconds": 5.887776916,
+        "samples_seconds": [
+          5.86293675,
+          5.901776583,
+          5.887776916
+        ],
+        "sample_stdev_seconds": 0.019670439541294448
+      },
+      "fastest_seconds_over_mech": 5.194730856342974
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "haskell",
+      "candidates": 3,
+      "fast": {
+        "key": "knucleotide:knucleotide-ghc-2",
+        "id": "knucleotide-ghc-2",
+        "loc": 129,
+        "source_sha256": "627049ebdd2ed6975bbd02b19c2a7122b3c8e3f2890c86810d906cd99a6fed02",
+        "binary_sha256": "4110349c192f24858b5c0eaac763d7bb51dd71d8932301fa0f750e91bec63027",
+        "median_seconds": 4.711651833,
+        "samples_seconds": [
+          4.751020875,
+          4.711651833,
+          4.683949125
+        ],
+        "sample_stdev_seconds": 0.03370455247834621
+      },
+      "small": {
+        "key": "knucleotide:knucleotide-ghc-1-faithful",
+        "id": "knucleotide-ghc-1-faithful",
+        "loc": 79,
+        "source_sha256": "01f1aabe366056cb3bdfd070ab0b012e666b717a3d6db86c651f6d40d1fc1ac3",
+        "binary_sha256": "1a298435806530a3e402edc0c65f6963b35c911cb1f3fb712147e6d8dba9a572",
+        "median_seconds": 5.838708292,
+        "samples_seconds": [
+          5.838708292,
+          5.769929959,
+          5.986186833
+        ],
+        "sample_stdev_seconds": 0.1104893770896848
+      },
+      "fastest_seconds_over_mech": 8.630638501427411
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "ocaml",
+      "candidates": 3,
+      "fast": {
+        "key": "knucleotide:knucleotide-ocaml-3-faithful",
+        "id": "knucleotide-ocaml-3-faithful",
+        "loc": 193,
+        "source_sha256": "a5f07bb79caebfae884171c6ebe34d4f958f6bf6013c78b37d3c29cd512b9c4e",
+        "binary_sha256": "fd5c8bced9cb2af65872e1f8cbf19ace3dffc101aa18738aeaf5c597ac7171e0",
+        "median_seconds": 5.158997709,
+        "samples_seconds": [
+          5.134216,
+          5.158997709,
+          5.286480167
+        ],
+        "sample_stdev_seconds": 0.08170096567247126
+      },
+      "small": {
+        "key": "knucleotide:knucleotide-ocaml-1-faithful",
+        "id": "knucleotide-ocaml-1-faithful",
+        "loc": 53,
+        "source_sha256": "ee70f98889ee566d947a39eadb4f6237f6404d570122963080deb3a6e76deacb",
+        "binary_sha256": "8430889f3a73c52df1cb3c034d8f5cdd19147393170db6eb2d262eec93bf6650",
+        "median_seconds": 19.679617875,
+        "samples_seconds": [
+          19.65968125,
+          19.737942875,
+          19.679617875
+        ],
+        "sample_stdev_seconds": 0.04066971967166703
+      },
+      "fastest_seconds_over_mech": 9.45007098024919
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "haskell",
+      "candidates": 6,
+      "fast": {
+        "key": "fannkuchredux:fannkuchredux-ghc-6",
+        "id": "fannkuchredux-ghc-6",
+        "loc": 110,
+        "source_sha256": "16ebcd654ac4b2f1d3c5d0ed52971c428beff030a1d94c9526a96a011c13d07c",
+        "binary_sha256": "7f8344a18f0bd1f5e8ff107c6c46801acb42afa4b4d516fba489b98ab2298cdd",
+        "median_seconds": 4.385500666,
+        "samples_seconds": [
+          4.385500666,
+          4.378843875,
+          4.411123833
+        ],
+        "sample_stdev_seconds": 0.017043352770749788
+      },
+      "small": {
+        "key": "fannkuchredux:fannkuchredux-ghc-1",
+        "id": "fannkuchredux-ghc-1",
+        "loc": 31,
+        "source_sha256": "010c75e293708c1ff2c1934870bbe971ef79881ddcff25057f49f684bc5ab9fb",
+        "binary_sha256": "6705235074a47c7117321b08bd3880a9b9875decf65d0ff4c31a76ee282f8f91",
+        "median_seconds": 119.804056584,
+        "samples_seconds": [
+          119.804056584,
+          119.995070166,
+          119.695900875
+        ],
+        "sample_stdev_seconds": 0.1514849335606276
+      },
+      "fastest_seconds_over_mech": 2.5821859320788936
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "ocaml",
+      "candidates": 4,
+      "fast": {
+        "key": "fannkuchredux:fannkuchredux-ocaml-4-faithful",
+        "id": "fannkuchredux-ocaml-4-faithful",
+        "loc": 116,
+        "source_sha256": "939492655db542696b88812d97a487a03f14ff38b4878814165fad4f00b5a0f5",
+        "binary_sha256": "04564a313d892ba23ed24cf121725133c64c819b30e5774edbf76a20b3b1a839",
+        "median_seconds": 3.928385708,
+        "samples_seconds": [
+          3.966067416,
+          3.928385708,
+          3.922254833
+        ],
+        "sample_stdev_seconds": 0.02372425332578021
+      },
+      "small": {
+        "key": "fannkuchredux:fannkuchredux-ocaml-2",
+        "id": "fannkuchredux-ocaml-2",
+        "loc": 46,
+        "source_sha256": "aa727c32bc49458f7dc4c4d486a9754f5378b8776255e57d2a5dd9f36fbd6f27",
+        "binary_sha256": "ce7630cb4c5dd728fc746876189f2ac855f451d96cc8deafa375b408042c406b",
+        "median_seconds": 29.942699875,
+        "samples_seconds": [
+          29.979709042,
+          29.942699875,
+          29.92533075
+        ],
+        "sample_stdev_seconds": 0.027773979387599106
+      },
+      "fastest_seconds_over_mech": 2.313036317522562
+    },
+    {
+      "benchmark": "regexredux",
+      "language": "haskell",
+      "candidates": 1,
+      "fast": {
+        "key": "regexredux:regexredux-ghc-3",
+        "id": "regexredux-ghc-3",
+        "loc": 199,
+        "source_sha256": "da838e66bc5b2f9ce67e7b2dc2d290e783dae31c685496bc53d27786e99a4c56",
+        "binary_sha256": "f3f0f16ee83a9b02791140e8b28781c79ee8eec5c3678603dbcc00bb8b74cf5c",
+        "median_seconds": 0.7236155,
+        "samples_seconds": [
+          0.740359958,
+          0.7236155,
+          0.67453625
+        ],
+        "sample_stdev_seconds": 0.034209916177295574
+      },
+      "small": {
+        "key": "regexredux:regexredux-ghc-3",
+        "id": "regexredux-ghc-3",
+        "loc": 199,
+        "source_sha256": "da838e66bc5b2f9ce67e7b2dc2d290e783dae31c685496bc53d27786e99a4c56",
+        "binary_sha256": "f3f0f16ee83a9b02791140e8b28781c79ee8eec5c3678603dbcc00bb8b74cf5c",
+        "median_seconds": 0.7236155,
+        "samples_seconds": [
+          0.740359958,
+          0.7236155,
+          0.67453625
+        ],
+        "sample_stdev_seconds": 0.034209916177295574
+      },
+      "fastest_seconds_over_mech": 1.4524455205246398
+    },
+    {
+      "benchmark": "regexredux",
+      "language": "ocaml",
+      "candidates": 2,
+      "fast": {
+        "key": "regexredux:regexredux-ocaml-3",
+        "id": "regexredux-ocaml-3",
+        "loc": 42,
+        "source_sha256": "b85b674dc3efbc06802741ce06991728274a6339af7f65c9f2882421be869cbe",
+        "binary_sha256": "57e274cc515886a80566e3a5ce6e9caef1d53d6645288dd36465d0e247c099af",
+        "median_seconds": 1.148709125,
+        "samples_seconds": [
+          1.149032708,
+          1.142511833,
+          1.148709125
+        ],
+        "sample_stdev_seconds": 0.0036749817427388096
+      },
+      "small": {
+        "key": "regexredux:regexredux-ocaml-2",
+        "id": "regexredux-ocaml-2",
+        "loc": 38,
+        "source_sha256": "a8ccf6249871c86477a2b77cd4911e569131e075117b98397656c864cb36eb71",
+        "binary_sha256": "972a0428fe991fb3e01a959596aa24aac03f858b64984c50e045f44de0b21f63",
+        "median_seconds": 6.569322125,
+        "samples_seconds": [
+          6.539692875,
+          6.569322125,
+          6.575312583
+        ],
+        "sample_stdev_seconds": 0.019072413064500172
+      },
+      "fastest_seconds_over_mech": 2.3056960816787764
+    }
+  ],
+  "controls": {
+    "spectralnorm": {
+      "chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "previous_seconds": 0.086075292,
+      "samples_seconds": [
+        0.088772166,
+        0.088267542,
+        0.086866875
+      ],
+      "median_seconds": 0.088267542,
+      "median_ratio": 1.0254689812728142
+    },
+    "pidigits": {
+      "chart_key": "pidigits:mech-pi-final-advance-signed",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+      "previous_seconds": 0.300272042,
+      "samples_seconds": [
+        0.303620625,
+        0.308720542,
+        0.305231833
+      ],
+      "median_seconds": 0.305231833,
+      "median_ratio": 1.0165176583439626
+    },
+    "nbody": {
+      "chart_key": "nbody:pairwise-mass-tails",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "previous_seconds": 1.05385575,
+      "samples_seconds": [
+        1.061730833,
+        1.053215875,
+        1.052417375
+      ],
+      "median_seconds": 1.053215875,
+      "median_ratio": 0.9993928248719048
+    },
+    "mandelbrot": {
+      "chart_key": "mandelbrot:mech-program-simd-loop-fma",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+      "previous_seconds": 0.439738792,
+      "samples_seconds": [
+        0.441210209,
+        0.482580834,
+        0.443009083
+      ],
+      "median_seconds": 0.443009083,
+      "median_ratio": 1.0074368944916736
+    },
+    "revcomp": {
+      "chart_key": "revcomp:mech-revcomp-optimized",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+      "previous_seconds": 0.149272625,
+      "samples_seconds": [
+        0.148824667,
+        0.149689625,
+        0.147915333
+      ],
+      "median_seconds": 0.148824667,
+      "median_ratio": 0.9969990612813301
+    },
+    "fasta": {
+      "chart_key": "fasta:mech-fasta-final-expanded-v2",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "previous_seconds": 0.541193292,
+      "samples_seconds": [
+        0.566316125,
+        0.584854833,
+        0.567658666
+      ],
+      "median_seconds": 0.567658666,
+      "median_ratio": 1.0489018884587358
+    },
+    "binarytrees": {
+      "chart_key": "binarytrees:mech-binarytrees-parallel",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+      "previous_seconds": 0.394411208,
+      "samples_seconds": [
+        0.40473325,
+        0.402605958,
+        0.403831958
+      ],
+      "median_seconds": 0.403831958,
+      "median_ratio": 1.023885604183946
+    },
+    "knucleotide": {
+      "chart_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "previous_seconds": 0.51382825,
+      "samples_seconds": [
+        0.526301334,
+        0.545921583,
+        0.560231875
+      ],
+      "median_seconds": 0.545921583,
+      "median_ratio": 1.0624592614360928
+    },
+    "fannkuchredux": {
+      "chart_key": "fannkuchredux:mech-fannkuch-even",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+      "previous_seconds": 1.702457333,
+      "samples_seconds": [
+        1.723385542,
+        1.689742709,
+        1.6983675
+      ],
+      "median_seconds": 1.6983675,
+      "median_ratio": 0.997597688399748
+    },
+    "regexredux": {
+      "chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "previous_seconds": 0.489611584,
+      "samples_seconds": [
+        0.496892417,
+        0.498204917,
+        0.502791208
+      ],
+      "median_seconds": 0.498204917,
+      "median_ratio": 1.0175513269718717
+    }
+  },
+  "output_exclusions": [],
+  "excluded": [
+    {
+      "id": "binarytrees-ghc-5",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-5.hs",
+      "source_sha256": "653ef0712e8ef9cfc2dbf33b5e9207beae960416b862527cdc1822042df69351",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-5.html"
+    },
+    {
+      "id": "binarytrees-ghc-3",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-3.hs",
+      "source_sha256": "a56dedcf730958ad1e86dbbcb3bef152bfc4be4f6386bef0dac02a53ae0278de",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-3.html"
+    },
+    {
+      "id": "binarytrees-ghc-7",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-7.hs",
+      "source_sha256": "e6be55ee853ceb405da659f157dc3922b48201c4dda03be039538355ab944754",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-7.html"
+    },
+    {
+      "id": "binarytrees-ghc-1",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-1.hs",
+      "source_sha256": "ac4fb8cbb647821b1ffddfa312804f941ca08de57d3cdbcc92f890498cee64f5",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-1.html"
+    },
+    {
+      "id": "binarytrees-ghc-2",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-2.hs",
+      "source_sha256": "968cb493ea66bc8926c3ce841ce7dea4ae2644d667af793b26a9bd9a2ec1a511",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-2.html"
+    },
+    {
+      "id": "binarytrees-ghc-6",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-6.hs",
+      "source_sha256": "bfe331ea66beef1a6829f411774a711a4c4d9e61585f3e7113d2c7608c3269e2",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-6.html"
+    },
+    {
+      "id": "binarytrees-ghc-4",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-4.hs",
+      "source_sha256": "da067814c82f19b52dc5d752ee67b53c78fa89cff3ba8c175c29e4b985119437",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-4.html"
+    },
+    {
+      "id": "fasta-ghc-2",
+      "benchmark": "fasta",
+      "language": "haskell",
+      "reason": "Binary32 sampling differs from the common binary64 cohort workload.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ghc-2.hs",
+      "source_sha256": "2dba497838990372f9abfdaf95b19c3994b2f49bbd79be359f97afd3929b55c6",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ghc-2.html"
+    },
+    {
+      "id": "fasta-ghc-4",
+      "benchmark": "fasta",
+      "language": "haskell",
+      "reason": "Integer-scaled probability lookup is prohibited by the current FASTA description.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ghc-4.hs",
+      "source_sha256": "bdad7f0199a46e28e3efa594c77826789ae4ded6b1fe27adee8bed0910f91256",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ghc-4.html"
+    },
+    {
+      "id": "fasta-ghc-6",
+      "benchmark": "fasta",
+      "language": "haskell",
+      "reason": "Integer-scaled probability lookup is prohibited by the current FASTA description.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ghc-6.hs",
+      "source_sha256": "0ba6382f620a970881829da670c98a70dbf1f4e91705ac37b632810da571b8ce",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ghc-6.html"
+    },
+    {
+      "id": "fasta-ghc-5",
+      "benchmark": "fasta",
+      "language": "haskell",
+      "reason": "Integer-scaled probability lookup is prohibited by the current FASTA description.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ghc-5.hs",
+      "source_sha256": "55cdaacdb242417f93f95ce9e7f88a47097a38d934662da9975961110b7c85b0",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ghc-5.html"
+    },
+    {
+      "id": "knucleotide-ghc-3",
+      "benchmark": "knucleotide",
+      "language": "haskell",
+      "reason": "Build failed; pinned compiler diagnostics retained.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ghc-3.hs",
+      "source_sha256": "deb2e040af86bc7f34cb156f092b5f1a33a222875df6d9d8b942deadbf93bd34",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ghc-3.html"
+    },
+    {
+      "id": "knucleotide-ghc-1",
+      "benchmark": "knucleotide",
+      "language": "haskell",
+      "reason": "Original fails when a requested key is absent; separately corrected for small-input correctness.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ghc-1.hs",
+      "source_sha256": "99e02b1f8541ad3e83e52ccb8472d06007f68e8d890c23e3461a7e5e09d47193",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ghc-1.html"
+    },
+    {
+      "id": "mandelbrot-ghc-3",
+      "benchmark": "mandelbrot",
+      "language": "haskell",
+      "reason": "Original truncates each 64-pixel packed block to one byte.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/mandelbrot-ghc-3.hs",
+      "source_sha256": "7ebbcd88698298e1e05aa772cdd21fc682fce19fa97adb6b6871dc4ab6dff624",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-ghc-3.html"
+    },
+    {
+      "id": "mandelbrot-ghc-2",
+      "benchmark": "mandelbrot",
+      "language": "haskell",
+      "reason": "Original starts byte counter at one and omits the final byte of each row.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/mandelbrot-ghc-2.hs",
+      "source_sha256": "7b125b7bb63f4f00ccb152d533351f8d71d02b72fe1b5fc501bd9f6c05264346",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-ghc-2.html"
+    },
+    {
+      "id": "binarytrees-ocaml-2",
+      "benchmark": "binarytrees",
+      "language": "ocaml",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ocaml-2.ml",
+      "source_sha256": "f84b320c73f5219ae8dc70f2c654e41300bbe255d1027c38f9734dcecdbef86a",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ocaml-2.html"
+    },
+    {
+      "id": "binarytrees-ocaml-5",
+      "benchmark": "binarytrees",
+      "language": "ocaml",
+      "reason": "Original can share leaf nodes, eliminate allocation work, or precompute the long-lived check. A separately labelled corrected source preserves the required allocation and lifetime.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ocaml-5.ml",
+      "source_sha256": "cc42bd335d90aa6699c990f5b90d7aee96890ec8b29ef8d3b0e0d75896d20f7a",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ocaml-5.html"
+    },
+    {
+      "id": "fannkuchredux-ocaml-3",
+      "benchmark": "fannkuchredux",
+      "language": "ocaml",
+      "reason": "Original miscounts identity flips and advances beyond its final assigned permutation.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fannkuchredux-ocaml-3.ml",
+      "source_sha256": "2a9118c6b920cbba36b0fda6311c61e773c3f0c75e580029ffcc68bb7c815460",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-ocaml-3.html"
+    },
+    {
+      "id": "fannkuchredux-ocaml-4",
+      "benchmark": "fannkuchredux",
+      "language": "ocaml",
+      "reason": "Original counts one flip for permutations already headed by zero.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fannkuchredux-ocaml-4.ml",
+      "source_sha256": "e98bd1e30e96d2b5a4b002700ffecb14c49cfc74b8af76d2d49037c94212f9fc",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-ocaml-4.html"
+    },
+    {
+      "id": "fasta-ocaml-6",
+      "benchmark": "fasta",
+      "language": "ocaml",
+      "reason": "Reciprocal multiplication replaced with direct division for cohort comparability; not a blanket CLBG violation.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ocaml-6.ml",
+      "source_sha256": "c9fa16ca68bdecc7fc68e8935045195003c0e43098bc6de11fe429a22e9daccb",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ocaml-6.html"
+    },
+    {
+      "id": "knucleotide-ocaml-1",
+      "benchmark": "knucleotide",
+      "language": "ocaml",
+      "reason": "Original preallocates 262,144 slots instead of growing from a small initial table.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ocaml-1.ml",
+      "source_sha256": "5086cc2edd041bc6c7f683732eacdc592b260143ddc2b957f1ca6faa0185406a",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ocaml-1.html"
+    },
+    {
+      "id": "knucleotide-ocaml-2",
+      "benchmark": "knucleotide",
+      "language": "ocaml",
+      "reason": "Original omits the final window and preallocates 262,144 hash slots.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ocaml-2.ml",
+      "source_sha256": "9d5e17f9ba6b606eb1f30362c25fe2ee043d959b4b16135b4526313a9958d50f",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ocaml-2.html"
+    },
+    {
+      "id": "knucleotide-ocaml-3",
+      "benchmark": "knucleotide",
+      "language": "ocaml",
+      "reason": "Original omits the final window and preallocates 262,144 hash slots.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ocaml-3.ml",
+      "source_sha256": "c2ae52e98bcf0596832954cd866d0012eb9196359b12c9d8b946852dade7abef",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ocaml-3.html"
+    }
+  ],
+  "compilers": {
+    "haskell": {
+      "path": "/opt/homebrew/Cellar/ghc@9.10/9.10.3/bin/ghc-9.10.3",
+      "sha256": "1c9ddd965e7b3eb42cee84c15e36b57ae0b6651441f03e77a721d8fb55bbb272",
+      "version": "9.10.3",
+      "frontend_path": "/opt/homebrew/Cellar/ghc@9.10/9.10.3/lib/ghc-9.10.3/bin/ghc-9.10.3",
+      "frontend_sha256": "49bfc9d5f0e4e8aceb53d4fa9c0ef7e4213069cab587cfc465400af01091c9c9"
+    },
+    "ocaml": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/toolchains/opam/functional-flambda/bin/ocamlopt.opt",
+      "sha256": "a4337314e496d88312c6a26346a3b218c9a7abba75796c9c3ba103c5ba79aceb",
+      "version": "5.4.1"
+    }
+  },
+  "protocol": "Every admitted Haskell/OCaml candidate and an unchanged Mech AOT control have three shuffled sequential fresh-process full-workload samples per benchmark. Startup, complete input, computation, full stdout to a regular file and teardown are timed; compilation, validation and hashing are excluded. Apple M3, AC power, Low Power Mode off, eight logical CPUs. Haskell uses eight runtime capabilities; OCaml published fork/task partitioning is retained. Default GC: no heap-tuning flags in tree runs. Competing compiler/power changes invalidate samples. Small and full output checks and source/compiler work review are required. LOC excludes blanks/comments, includes semantic pragmas, and counts packed independent statements/bindings separately. General standard libraries only; no native benchmark executor. Published Linux times are never reused.",
+  "discarded_samples": 0,
+  "fastest_seconds_over_mech_geomeans": {
+    "haskell": 2.3224342378217955,
+    "ocaml": 3.980601236890239
+  }
+}

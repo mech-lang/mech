@@ -1,0 +1,38 @@
+{
+  "all_passed": true,
+  "checked_results": 12356,
+  "policies": [
+    [
+      false,
+      0,
+      0
+    ],
+    [
+      false,
+      1,
+      1
+    ],
+    [
+      true,
+      0,
+      1
+    ],
+    [
+      true,
+      1,
+      0
+    ],
+    [
+      true,
+      1,
+      1
+    ]
+  ],
+  "all_byte_values_checked": true,
+  "arbitrary_tables_and_dynamic_fallback": true,
+  "independent_reference": true,
+  "shared_input_preserved": true,
+  "thread_partition_and_simd_tails": true,
+  "generic_record_markers_and_empty_records": true,
+  "io_errors_before_value_publication": true
+}

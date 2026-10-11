@@ -1,0 +1,6 @@
+Touch(x<u64>) => <u64> := io/print("touch:{}\n", x)
+Add(a<u64>, b<u64>) => <u64> := a + b
+More(x<u64>) => <bool> := x < 3
+Step(x<u64>) => <u64> := Touch(x) |> Add(_, _) |> Add(_, x + 1)
+result := control/while(0, More, Step)
+io/print("result:{}\n", result)

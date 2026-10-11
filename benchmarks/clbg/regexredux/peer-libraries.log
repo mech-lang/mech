@@ -1,0 +1,24 @@
+Warning: pcre has been deprecated because it is not maintained upstream! It will be disabled on 2030-06-22.
+Replacement:
+  brew install --formula pcre2
+==> Downloading bottle manifests
+✔︎ Bottle Manifest pcre (8.45)
+✔︎ Bottle Manifest re2 (2025-11-05_2)
+==> Fetching downloads for: pcre and re2
+==> Would install 2 formulae:
+pcre  8.45
+re2   2025-11-05_2
+==> Would install 1 dependency for re2:
+abseil
+✔︎ Bottle Manifest abseil (20260817.0)
+✔︎ Bottle re2 (2025-11-05_2)
+✔︎ Bottle pcre (8.45)
+✔︎ Bottle abseil (20260817.0)
+==> Pouring pcre--8.45.arm64_tahoe.bottle.1.tar.gz
+🍺  /opt/homebrew/Cellar/pcre/8.45: 205 files, 4.8MB
+==> Installing re2 dependency: abseil
+==> Pouring abseil--20260817.0.arm64_tahoe.bottle.1.tar.gz
+🍺  /opt/homebrew/Cellar/abseil/20260817.0: 832 files, 11.8MB
+==> Installing re2
+==> Pouring re2--2025-11-05_2.arm64_tahoe.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/re2/2025-11-05_2: 18 files, 1.2MB

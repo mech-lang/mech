@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fasta Free Pascal&nbsp;#6 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fasta Free Pascal&nbsp;#6 program</h1>
+    <aside>
+      <p><a href="../description/fasta.html#fasta">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">(*</span>
+<span class="com">  The Computer Language Benchmarks Game</span>
+<span class="com">  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">  - contributed by Ian Osgood</span>
+<span class="com">  - modified by Vincent Snijders</span>
+<span class="com">  - modified by Steve Fisher</span>
+<span class="com">  - modified by Akira1364</span>
+<span class="com">*)</span>
+
+<span class="kwa">program</span> Fasta<span class="opt">;</span>
+
+<span class="kwa">type</span>
+  TGene <span class="opt">=</span> <span class="kwa">record</span>
+    Code<span class="opt">:</span> <span class="kwb">Char</span><span class="opt">;</span>
+    Prob<span class="opt">:</span> <span class="kwb">Double</span><span class="opt">;</span>
+  <span class="kwa">end</span><span class="opt">;</span>
+  PGene <span class="opt">= ^</span>TGene<span class="opt">;</span>
+
+<span class="kwa">const</span>
+  ALU <span class="opt">=</span>
+    <span class="sng">&#39;GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGG&#39;</span> <span class="opt">+</span> <span class="sng">&#39;GAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGA&#39;</span> <span class="opt">+</span>
+    <span class="sng">&#39;CCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAAT&#39;</span> <span class="opt">+</span> <span class="sng">&#39;ACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCA&#39;</span> <span class="opt">+</span>
+    <span class="sng">&#39;GCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG&#39;</span> <span class="opt">+</span> <span class="sng">&#39;AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC&#39;</span> <span class="opt">+</span>
+    <span class="sng">&#39;AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA&#39;</span><span class="opt">;</span>
+
+  SourceALU <span class="opt">=</span> ALU <span class="opt">+</span> <span class="sng">&#39;GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA&#39;</span><span class="opt">;</span>
+
+  IUB<span class="opt">:</span> <span class="kwa">array</span><span class="opt">[</span><span class="num">0</span><span class="opt">.</span><span class="num">.14</span><span class="opt">]</span> <span class="kwa">of</span> TGene <span class="opt">= (</span>
+    <span class="opt">(</span>Code<span class="opt">:</span> <span class="sng">&#39;a&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.27</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;c&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.12</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;g&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.12</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;t&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.27</span><span class="opt">),</span>
+    <span class="opt">(</span>Code<span class="opt">:</span> <span class="sng">&#39;B&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;D&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;H&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;K&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">),</span>
+    <span class="opt">(</span>Code<span class="opt">:</span> <span class="sng">&#39;M&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;N&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;R&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;S&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">),</span>
+    <span class="opt">(</span>Code<span class="opt">:</span> <span class="sng">&#39;V&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;W&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;Y&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.02</span><span class="opt">)</span>
+  <span class="opt">);</span>
+
+  HomoSapiens<span class="opt">:</span> <span class="kwa">array</span><span class="opt">[</span><span class="num">0</span><span class="opt">.</span><span class="num">.3</span><span class="opt">]</span> <span class="kwa">of</span> TGene <span class="opt">= (</span>
+    <span class="opt">(</span>Code<span class="opt">:</span> <span class="sng">&#39;a&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.3029549426680</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;c&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.1979883004921</span><span class="opt">),</span>
+    <span class="opt">(</span>Code<span class="opt">:</span> <span class="sng">&#39;g&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.1975473066391</span><span class="opt">), (</span>Code<span class="opt">:</span> <span class="sng">&#39;t&#39;</span><span class="opt">;</span> Prob<span class="opt">:</span> <span class="num">0.3015094502008</span><span class="opt">)</span>
+  <span class="opt">);</span>
+
+  ALULength <span class="opt">=</span> <span class="num">287</span><span class="opt">;</span>
+
+  Width <span class="opt">=</span> <span class="num">60</span><span class="opt">;</span>
+
+<span class="kwa">var</span>
+  IO<span class="opt">:</span> PText<span class="opt">;</span>
+  TextBuf<span class="opt">:</span> <span class="kwa">array</span><span class="opt">[</span><span class="num">0</span><span class="opt">.</span><span class="num">.65535</span><span class="opt">]</span> <span class="kwa">of</span> <span class="kwb">Byte</span><span class="opt">;</span>
+  N<span class="opt">:</span> PtrInt <span class="opt">=</span> <span class="num">1000</span><span class="opt">;</span>
+
+<span class="kwa">procedure</span> <span class="kwd">FastaRepeat</span><span class="opt">(</span>Reps<span class="opt">:</span> PtrInt<span class="opt">);</span> <span class="kwa">inline</span><span class="opt">;</span>
+<span class="kwa">var</span> Here<span class="opt">:</span> PtrInt<span class="opt">;</span>
+<span class="kwa">begin</span>
+  Here <span class="opt">:=</span> <span class="num">1</span><span class="opt">;</span>
+  <span class="kwa">repeat</span>
+    <span class="kwd">WriteLn</span><span class="opt">(</span>IO<span class="opt">^,</span> SourceALU<span class="opt">[</span>Here <span class="opt">..</span> Here <span class="opt">+</span> Width <span class="opt">-</span> <span class="num">1</span><span class="opt">]);</span>
+    Here <span class="opt">+=</span> Width<span class="opt">;</span>
+    <span class="kwa">if</span> Here <span class="opt">&gt;</span> ALULength <span class="kwa">then</span> Here <span class="opt">-=</span> ALULength<span class="opt">;</span>
+    Reps <span class="opt">-=</span> Width<span class="opt">;</span>
+  <span class="kwa">until</span> Reps <span class="opt">&lt;=</span> Width<span class="opt">;</span>
+  <span class="kwd">WriteLn</span><span class="opt">(</span>IO<span class="opt">^,</span> SourceALU<span class="opt">[</span>Here <span class="opt">..</span> Here <span class="opt">+</span> Reps <span class="opt">-</span> <span class="num">1</span><span class="opt">]);</span>
+<span class="kwa">end</span><span class="opt">;</span>
+
+<span class="kwa">function</span> <span class="kwd">GenRandom</span><span class="opt">(</span><span class="kwa">const</span> Limit<span class="opt">:</span> PtrInt<span class="opt">):</span> <span class="kwb">Double</span><span class="opt">;</span> <span class="kwa">inline</span><span class="opt">;</span>
+<span class="kwa">const</span>
+  Seed<span class="opt">:</span> PtrInt <span class="opt">=</span> <span class="num">42</span><span class="opt">;</span>
+  IM <span class="opt">=</span> <span class="num">139968</span><span class="opt">;</span>
+  IA <span class="opt">=</span> <span class="num">3877</span><span class="opt">;</span>
+  IC <span class="opt">=</span> <span class="num">29573</span><span class="opt">;</span>
+<span class="kwa">begin</span>
+  Seed <span class="opt">:= (</span>Seed <span class="opt">*</span> IA <span class="opt">+</span> IC<span class="opt">)</span> <span class="kwa">mod</span> IM<span class="opt">;</span>
+  GenRandom <span class="opt">:=</span> Limit <span class="opt">*</span> Seed <span class="opt">* (</span><span class="num">1</span> <span class="opt">/</span> IM<span class="opt">);</span>
+<span class="kwa">end</span><span class="opt">;</span>
+
+<span class="kwa">procedure</span> <span class="kwd">FastaRandom</span><span class="opt">(</span>N<span class="opt">:</span> PtrInt<span class="opt">;</span> <span class="kwa">const</span> Genes<span class="opt">:</span> PGene<span class="opt">;</span> <span class="kwa">const</span> GenesLen<span class="opt">:</span> PtrInt<span class="opt">);</span>
+<span class="kwa">var</span>
+  SumProb<span class="opt">:</span> <span class="kwb">Double</span><span class="opt">;</span>
+  Gene<span class="opt">,</span> GenesEnd<span class="opt">:</span> PGene<span class="opt">;</span>
+  Line<span class="opt">:</span> <span class="kwb">String</span><span class="opt">[</span><span class="num">60</span><span class="opt">] =</span> <span class="sng">&#39;000000000000000000000000000000000000000000000000000000000000&#39;</span><span class="opt">;</span>
+  LineEnd<span class="opt">:</span> PChar<span class="opt">;</span>
+
+  <span class="kwa">function</span> ChooseCode<span class="opt">:</span> <span class="kwb">Char</span><span class="opt">;</span> <span class="kwa">inline</span><span class="opt">;</span>
+  <span class="kwa">var</span>
+    R<span class="opt">:</span> <span class="kwb">Double</span><span class="opt">;</span>
+    Gene<span class="opt">:</span> PGene<span class="opt">;</span>
+  <span class="kwa">begin</span>
+    R <span class="opt">:=</span> <span class="kwd">GenRandom</span><span class="opt">(</span><span class="num">1</span><span class="opt">);</span>
+    Gene <span class="opt">:=</span> Genes<span class="opt">;</span>
+    <span class="kwa">while</span> R <span class="opt">&gt;=</span> Gene<span class="opt">^.</span>Prob <span class="kwa">do</span> Gene <span class="opt">+=</span> <span class="num">1</span><span class="opt">;</span>
+    ChooseCode <span class="opt">:=</span> Gene<span class="opt">^.</span>Code<span class="opt">;</span>
+  <span class="kwa">end</span><span class="opt">;</span>
+
+  <span class="kwa">procedure</span> DoOneLine<span class="opt">;</span> <span class="kwa">inline</span><span class="opt">;</span>
+  <span class="kwa">var</span> P<span class="opt">:</span> PChar<span class="opt">;</span>
+  <span class="kwa">begin</span>
+    P <span class="opt">:= &#64;</span>Line<span class="opt">[</span><span class="num">1</span><span class="opt">];</span>
+    <span class="kwa">while</span> P <span class="opt">&lt;=</span> LineEnd <span class="kwa">do begin</span>
+      P<span class="opt">^ :=</span> <span class="kwd">ChooseCode</span><span class="opt">();</span>
+      P <span class="opt">+=</span> <span class="num">1</span><span class="opt">;</span>
+    <span class="kwa">end</span><span class="opt">;</span>
+    <span class="kwd">WriteLn</span><span class="opt">(</span>IO<span class="opt">^,</span> Line<span class="opt">);</span>
+  <span class="kwa">end</span><span class="opt">;</span>
+
+<span class="kwa">begin</span>
+  SumProb <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span>
+  Gene <span class="opt">:=</span> Genes<span class="opt">;</span>
+  GenesEnd <span class="opt">:=</span> Genes <span class="opt">+</span> GenesLen<span class="opt">;</span>
+  <span class="kwa">while</span> Gene <span class="opt">&lt;</span> GenesEnd <span class="kwa">do begin</span>
+    <span class="kwa">with</span> Gene<span class="opt">^</span> <span class="kwa">do begin</span>
+      SumProb <span class="opt">+=</span> Prob<span class="opt">;</span>
+      Prob <span class="opt">:=</span> SumProb<span class="opt">;</span>
+    <span class="kwa">end</span><span class="opt">;</span>
+    Gene <span class="opt">+=</span> <span class="num">1</span><span class="opt">;</span>
+  <span class="kwa">end</span><span class="opt">;</span>
+  LineEnd <span class="opt">:= &#64;</span>Line<span class="opt">[</span>Width<span class="opt">];</span>
+  <span class="kwa">while</span> N <span class="opt">&gt;</span> Width <span class="kwa">do begin</span>
+    <span class="kwd">DoOneLine</span><span class="opt">();</span>
+    N <span class="opt">-=</span> Width<span class="opt">;</span>
+  <span class="kwa">end</span><span class="opt">;</span>
+  Line<span class="opt">[</span><span class="num">0</span><span class="opt">] :=</span> <span class="kwb">Char</span><span class="opt">(</span>N<span class="opt">);</span>
+  LineEnd <span class="opt">:= &#64;</span>Line<span class="opt">[</span>N<span class="opt">];</span>
+  <span class="kwd">DoOneLine</span><span class="opt">();</span>
+<span class="kwa">end</span><span class="opt">;</span>
+
+<span class="kwa">begin</span>
+  IO <span class="opt">:= &#64;</span>Output<span class="opt">;</span>
+  <span class="kwd">SetTextBuf</span><span class="opt">(</span>IO<span class="opt">^,</span> TextBuf<span class="opt">);</span>
+  <span class="kwa">if</span> ParamCount <span class="opt">=</span> <span class="num">1</span> <span class="kwa">then</span> <span class="kwd">Val</span><span class="opt">(</span><span class="kwd">ParamStr</span><span class="opt">(</span><span class="num">1</span><span class="opt">),</span> N<span class="opt">);</span>
+  <span class="kwd">WriteLn</span><span class="opt">(</span>IO<span class="opt">^,</span> <span class="sng">&#39;&gt;ONE Homo sapiens alu&#39;</span><span class="opt">);</span>
+  <span class="kwd">FastaRepeat</span><span class="opt">(</span>N <span class="opt">*</span> <span class="num">2</span><span class="opt">);</span>
+  <span class="kwd">WriteLn</span><span class="opt">(</span>IO<span class="opt">^,</span> <span class="sng">&#39;&gt;TWO IUB ambiguity codes&#39;</span><span class="opt">);</span>
+  <span class="kwd">FastaRandom</span><span class="opt">(</span>N <span class="opt">*</span> <span class="num">3</span><span class="opt">, &#64;</span>IUB<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> <span class="num">15</span><span class="opt">);</span>
+  <span class="kwd">WriteLn</span><span class="opt">(</span>IO<span class="opt">^,</span> <span class="sng">&#39;&gt;THREE Homo sapiens frequency&#39;</span><span class="opt">);</span>
+  <span class="kwd">FastaRandom</span><span class="opt">(</span>N <span class="opt">*</span> <span class="num">5</span><span class="opt">, &#64;</span>HomoSapiens<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> <span class="num">4</span><span class="opt">);</span>
+<span class="kwa">end</span><span class="opt">.</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Free Pascal Compiler
+version 3.2.2 [2021/05/16]
+
+
+ Fri, 10 Jan 2025 05:30:08 GMT
+
+MAKE:
+mv fasta.fpascal-6.fpascal fasta.fpascal-6.pas
+/opt/src/fpc-3.2.2/bin/fpc -FuInclude/fpascal -XXs -O3 -Ci- -Cr- -g- -CpCOREAVX -CfAVX -Tlinux -Sh -oFPASCAL_RUN fasta.fpascal-6.pas
+Free Pascal Compiler version 3.2.2 [2021/05/16] for x86_64
+Copyright (c) 1993-2021 by Florian Klaempfl and others
+Target OS: Linux for x86-64
+Compiling fasta.fpascal-6.pas
+fasta.fpascal-6.pas(116,5) Warning: Local variable &quot;LineEnd&quot; does not seem to be initialized
+Linking FPASCAL_RUN
+134 lines compiled, 0.5 sec
+1 warning(s) issued
+mv FPASCAL_RUN fasta.fpascal-6.fpascal_run
+rm fasta.fpascal-6.pas
+
+0.75s to complete and log all make actions
+
+COMMAND LINE:
+ ./fasta.fpascal-6.fpascal_run 25000000
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA
+TCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT
+AAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG
+GCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG
+CCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT
+GGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA
+GGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA
+TTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG
+AATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA
+GCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT
+AATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC
+AGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG
+GTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC
+CGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG
+AGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT
+TGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA
+TGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT
+GTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG
+TTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT
+CTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG
+CGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG
+TCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA
+CTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG
+AGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG
+GGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC
+TGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA
+TACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA
+GGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT
+GCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC
+ACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT
+TCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC
+CGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG
+CTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG
+GGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC
+CAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT
+GGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC
+GCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA
+GGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA
+GACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA
+GGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG
+AAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT
+CCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA
+GTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA
+AAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC
+GGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT
+ACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG
+GAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC
+GCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC
+GGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG
+TCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA
+AAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG
+GAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT
+CCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC
+TGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG
+ACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC
+GTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA
+ACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA
+CAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA
+CTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA
+ACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG
+CCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG
+AGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC
+CGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG
+AGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC
+CCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG
+CTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG
+CCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG
+CCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC
+ACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA
+AAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC
+TGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC
+ACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG
+CTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG
+AGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT
+AGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA
+TCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC
+CTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA
+TCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG
+CCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT
+GGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG
+GGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG
+CGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG
+GGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG
+GTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT
+AATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT
+GCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT
+CAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG
+GGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC
+TCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT
+CGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG
+ATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG
+CGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG
+AGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA
+CAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG
+CAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC
+ACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC
+GCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC
+GAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG
+GGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT
+TGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG
+CGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA
+GCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG
+CCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC
+GCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG
+CGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA
+CTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG
+CCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA
+ACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC
+CAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT
+GAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA
+AGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG
+ATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC
+TAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA
+GGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC
+GCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG
+TGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC
+AGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA
+ATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA
+GAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC
+AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG
+TAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC
+CAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT
+GGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC
+CCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA
+GAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT
+TTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC
+ATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC
+TGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG
+GTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG
+TCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG
+GCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC
+GTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT
+ACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC
+GAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC
+GGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC
+CTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA
+ATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG
+AGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC
+TGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT
+CACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG
+TTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG
+CCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC
+GCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT
+GGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC
+CCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC
+TGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG
+CGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG
+AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG
+AGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG
+AGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT
+GAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA
+TCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC
+AGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA
+AAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG
+CGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC
+TACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG
+GGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT
+CGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG
+CGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG
+GTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA
+AAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA
+GGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC
+TCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC
+CTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA
+GACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG
+CGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG
+AACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG
+ACAGAGCGAGACTCCGTCTCAAAAAGGCCGG    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

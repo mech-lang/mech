@@ -1,0 +1,20 @@
+pixels(width<f64>, pixel<f64>, row<f64>) = (result<[bool]:1,2>) :=
+  scale := 2.0 / width<f64>
+  cr := pixel<f64> * scale - 1.5
+  ci := row<f64> * scale - 1.0
+  ~zr := 0.0
+  ~zi := 0.0
+  ~iteration := 0.0
+  tr := zr * zr
+  ti := zi * zi
+  inside := tr + ti <= 4.0
+  done := iteration >= 50.0 || !inside
+  next-zr := tr - ti + cr
+  next-zi := 2.0 * zr * zi + ci
+  zr = next-zr
+  zi = next-zi
+  iteration += 1.0
+  result := [inside, done].
+size := io/argument-u64(1)
+image := grid/map-until(size, size, pixels)
+io/write(image/pbm(image))

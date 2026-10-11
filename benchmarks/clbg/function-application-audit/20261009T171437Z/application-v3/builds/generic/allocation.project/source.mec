@@ -1,0 +1,9 @@
+<cell> := <{value<u64>}>
+Make(x<u64>) => <ref> := memory/allocate({value: x})
+Sum(a<ref>, b<ref>) = (value<u64>) :=
+  first := memory/read(a, <cell>)
+  second := memory/read(b, <cell>)
+  value := first.value + second.value.
+Check(x<u64>) => <u64> := Make(x) |> Sum(_, _)
+result := memory/with-arena(1, <cell>, Check, 7)
+io/print("result:{}\n", result)

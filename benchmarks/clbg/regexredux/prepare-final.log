@@ -1,0 +1,86 @@
+prepared mech-regexredux
+prepared mech-regexredux-async
+prepared regexredux-rust-7
+prepared regexredux-gcc-5
+excluded regexredux-gcc-4 ols for architecture arm64:
+  "_pcre_jit_exec", referenced from:
+      _replace in ccxRvyW0.o
+      _main._omp_fn.0 in ccxRvyW0.o
+ld: symbol(s) not found for architecture arm64
+collect2: error: ld returned 1 exit status
+
+prepared regexredux-gpp-6
+prepared regexredux-rust-6
+prepared regexredux-rust-5
+prepared regexredux-rust-1
+prepared regexredux-rust-3
+prepared regexredux-rust-2
+excluded regexredux-graalvmaot-4 exredux.java:213: error: cannot find symbol
+    public void duringSetup(DuringSetupAccess access) {
+                            ^
+  symbol:   class DuringSetupAccess
+  location: class ForeignRegistrationFeature
+4 errors
+
+prepared regexredux-rust-4
+prepared regexredux-python3-2
+prepared regexredux-gcc-3
+prepared regexredux-php-1
+prepared regexredux-julia-5
+prepared regexredux-julia-4
+prepared regexredux-julia-3
+prepared regexredux-lua-1
+prepared regexredux-chapel-3
+prepared regexredux-gcc-2
+excluded regexredux-go-5 
+# regexredux-go-5
+./main.go:28:62: pcre.MustCompileJIT(pat, 0, pcre.STUDY_JIT_COMPILE).Matcher undefined (type pcre.Regexp has no field or method Matcher)
+
+prepared regexredux-chapel-2
+prepared regexredux-node-3
+prepared regexredux-julia-1
+prepared regexredux-node-4
+prepared regexredux-graalvmaot-3
+prepared regexredux-graalvmaot-6
+prepared regexredux-python3-1
+prepared regexredux-perl-3
+prepared regexredux-graalvmaot-1
+prepared regexredux-gpp-3
+prepared regexredux-ruby-3
+excluded regexredux-racket-2 runtime not configured
+excluded regexredux-go-4 
+main.go:27:5: no required module provides package github.com/mdellandrea/golang-pkg-pcre/src/pkg/pcre; to add it:
+	go get github.com/mdellandrea/golang-pkg-pcre/src/pkg/pcre
+
+prepared regexredux-perl-1
+excluded regexredux-racket-1 runtime not configured
+prepared regexredux-go-3
+prepared regexredux-go-1
+prepared regexredux-ruby-9
+excluded regexredux-gpp-1 har, std::char_traits<char>, std::allocator<char>> const&)", referenced from:
+      _main in cciLLIWQ.o
+      _main in cciLLIWQ.o
+ld: symbol(s) not found for architecture arm64
+collect2: error: ld returned 1 exit status
+
+excluded regexredux-gpp-2 s<char>, std::allocator<char>> const&)", referenced from:
+      _main._omp_fn.0 in cctqnR2c.o
+      _main._omp_fn.0 in cctqnR2c.o
+ld: symbol(s) not found for architecture arm64
+collect2: error: ld returned 1 exit status
+
+excluded regexredux-gpp-5 sult_base::_Deleter>, std::thread::_Invoker<std::tuple<main::'lambda0'()>>, int>>::_M_invoke(std::_Any_data const&) in cc16F4WR.o
+ld: symbol(s) not found for architecture arm64
+collect2: error: ld returned 1 exit status
+
+excluded regexredux-gpp-4 /regexredux/upstream/regexredux-gpp-4.cpp:8:
+/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/bits/stl_pair.h:99:12: note: declaration of 'struct std::array<char, 16384>'
+   99 |     struct array;
+      |            ^~~~~
+
+excluded regexredux-graalvmaot-2 /worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-graalvmaot-2.java/regexredux.java:8: error: package jextract_pcre2 does not exist
+import jextract_pcre2.pcre2_h;
+                     ^
+1 error
+
+prepared regexredux-lua-1-luajit

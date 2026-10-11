@@ -1,0 +1,14 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/revcomp-sbcl-2.lisp" (written 10 OCT 2026 06:58:32 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/revcomp-sbcl-2.lisp
+; in: DEFUN MAIN
+;     (PROCESS-FASTA (GET-OUTPUT-STREAM-STRING FASTA) OUT)
+; 
+; note: deleting unreachable code
+; 
+; compilation unit finished
+;   printed 1 note
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/revcomp-sbcl-2/program.fasl
+; compilation finished in 0:00:00.004

@@ -1,0 +1,61 @@
+{
+  "primary_report": "apple-m3-v04-native-optimized-50m.json",
+  "scope": "Fastest of five measured ARM-compatible Rust submissions, not fastest published x86 Rust submission.",
+  "excluded_rust_ids": [
+    "nbody-rust-9",
+    "nbody-rust-7",
+    "nbody-rust-5"
+  ],
+  "loops": [
+    {
+      "id": "nbody-chapel-3",
+      "function": "_chpl_gen_main",
+      "loop_start_hex": "0x100030a74",
+      "loop_backedge_hex": "0x100030da0",
+      "static_loop_instructions": 204,
+      "stack_load_instructions": 25,
+      "stack_store_instructions": 9,
+      "fused_instructions": 44,
+      "sqrt_instructions": 6,
+      "binary_sha256": "6cc212eda2d070e55026cdd63a3b76db7b1991e744af0ade88ac98736ae9bf4d",
+      "disassembly_path": "apple-m3-chapel-3-loop.disassembly.txt",
+      "compile_command": [
+        "/opt/homebrew/bin/chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-chapel-3",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "median_seconds": 1.702535084
+    },
+    {
+      "id": "nbody-rust-3",
+      "function": "__RNvCs8EH0xgIh7nB_12nbody_rust_34main",
+      "loop_start_hex": "0x100001484",
+      "loop_backedge_hex": "0x1000017f0",
+      "static_loop_instructions": 220,
+      "stack_load_instructions": 24,
+      "stack_store_instructions": 12,
+      "fused_instructions": 0,
+      "sqrt_instructions": 6,
+      "binary_sha256": "f271b5e487c8fddbee29b3ba0b66cb6f7cc6268d27dc1c452c6943bbca213cc9",
+      "disassembly_path": "apple-m3-rust-3-loop.disassembly.txt",
+      "compile_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-3"
+      ],
+      "median_seconds": 1.95580075
+    }
+  ],
+  "interpretation": "Chapel uses compile-time param loops and immediate pair updates; Rust #3 uses separate displacement/magnitude/update passes. Both machine loops contain scalar and vector sqrt/divide. Chapel permits FMA contraction in this build, while Rust #3 contains no fused instructions. This is a concrete code-generation difference and plausible contributor; no isolated experiment establishes its fraction of the timing gap."
+}

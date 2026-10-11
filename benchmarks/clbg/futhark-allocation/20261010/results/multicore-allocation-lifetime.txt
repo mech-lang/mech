@@ -1,0 +1,68 @@
+FUTHARK_FUN_ATTR int futrts_allocate_6798(struct futhark_context *ctx, struct memblock *mem_out_p_7807, int64_t a_7675, int64_t b_7676)
+{
+    (void) ctx;
+    
+    int err = 0;
+    struct memblock mem_7758;
+    
+    mem_7758.references = NULL;
+    
+    struct memblock mem_out_7773;
+    
+    mem_out_7773.references = NULL;
+    if (memblock_alloc(ctx, &mem_7758, (int64_t) 16, "mem_7758")) {
+        err = 1;
+        goto cleanup;
+    }
+    ((int64_t *) mem_7758.mem)[(int64_t) 0] = a_7675;
+    ((int64_t *) mem_7758.mem)[(int64_t) 1] = b_7676;
+    if (memblock_set(ctx, &mem_out_7773, &mem_7758, "mem_7758") != 0)
+        return 1;
+    if (memblock_set(ctx, &*mem_out_p_7807, &mem_out_7773, "mem_out_7773") != 0)
+        return 1;
+    
+  cleanup:
+    {
+        if (memblock_unref(ctx, &mem_7758, "mem_7758") != 0)
+            return 1;
+        if (memblock_unref(ctx, &mem_out_7773, "mem_out_7773") != 0)
+            return 1;
+    }
+    return err;
+}
+
+if (futrts_allocate_6798(ctx, &ext_mem_7766, allocate_arg0_7755, allocate_arg1_7754) != 0) {
+            err = 1;
+            goto cleanup;
+        }
+        // probes/node-noinline.fut:6:8-29
+        
+        int64_t iterations_7806 = (int64_t) 2;
+        struct futhark_mc_task_7825 futhark_mc_task_7825_;
+        
+        futhark_mc_task_7825_.ctx = ctx;
+        futhark_mc_task_7825_.free_i_7751 = i_7751;
+        futhark_mc_task_7825_.free_mem_7761 = mem_7761.mem;
+        futhark_mc_task_7825_.free_ext_mem_7766 = ext_mem_7766.mem;
+        
+        struct scheduler_segop futhark_mc_task_7825_task;
+        
+        futhark_mc_task_7825_task.args = &futhark_mc_task_7825_;
+        futhark_mc_task_7825_task.top_level_fn = futhark_mc_copy_7805_task_7826;
+        futhark_mc_task_7825_task.name = "futhark_mc_copy_7805_task_7826";
+        futhark_mc_task_7825_task.iterations = iterations_7806;
+        futhark_mc_task_7825_task.task_time = &ctx->program->futhark_mc_copy_7805_task_7826_total_time;
+        futhark_mc_task_7825_task.task_iter = &ctx->program->futhark_mc_copy_7805_task_7826_total_iter;
+        futhark_mc_task_7825_task.sched = STATIC;
+        futhark_mc_task_7825_task.nested_fn = NULL;
+        
+        int futhark_mc_copy_7805_task_7826_err = scheduler_prepare_task(&ctx->scheduler, &futhark_mc_task_7825_task);
+        
+        if (futhark_mc_copy_7805_task_7826_err != 0) {
+            err = futhark_mc_copy_7805_task_7826_err;
+            goto cleanup;
+        }
+        if (memblock_unref(ctx, &ext_mem_7766, "ext_mem_7766") != 0)
+            return 1;
+    }
+    if (memblock_set(ctx, &me

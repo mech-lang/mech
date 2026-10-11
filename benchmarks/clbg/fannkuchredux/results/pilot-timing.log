@@ -1,0 +1,44 @@
+full output passed fannkuchredux-rust-4
+full output passed fannkuchredux-gcc-5-gcc
+full output passed fannkuchredux-gcc-5-llvm
+full output passed fannkuchredux-rust-5
+full output passed fannkuchredux-go-3
+full output passed fannkuchredux-chapel-2
+full output passed fannkuchredux-julia-3
+full output passed mech-fannkuch-simd
+full output passed mech-fannkuch-scalar
+full output passed mech-fannkuch-coarse
+full output passed mech-fannkuch-paired
+1/3 fannkuchredux-gcc-5-llvm 5.293048
+1/3 mech-fannkuch-paired 3.061733
+1/3 mech-fannkuch-scalar 7.929488
+1/3 fannkuchredux-rust-4 3.975763
+1/3 mech-fannkuch-coarse 4.002169
+1/3 fannkuchredux-julia-3 5.446433
+1/3 mech-fannkuch-simd 3.810618
+1/3 fannkuchredux-go-3 6.940926
+1/3 fannkuchredux-gcc-5-gcc 4.948779
+1/3 fannkuchredux-chapel-2 7.187532
+1/3 fannkuchredux-rust-5 4.825294
+2/3 fannkuchredux-go-3 6.912827
+2/3 fannkuchredux-julia-3 5.282733
+2/3 fannkuchredux-gcc-5-llvm 5.265491
+2/3 fannkuchredux-chapel-2 7.189717
+2/3 mech-fannkuch-simd 3.684669
+2/3 fannkuchredux-rust-4 4.609193
+2/3 fannkuchredux-rust-5 4.965128
+2/3 mech-fannkuch-coarse 3.997967
+2/3 fannkuchredux-gcc-5-gcc 4.981481
+2/3 mech-fannkuch-paired 3.043151
+2/3 mech-fannkuch-scalar 8.092152
+3/3 fannkuchredux-julia-3 5.558178
+3/3 mech-fannkuch-scalar 7.919679
+3/3 fannkuchredux-rust-4 3.975182
+3/3 mech-fannkuch-coarse 4.019249
+3/3 mech-fannkuch-simd 3.994341
+3/3 fannkuchredux-go-3 6.915741
+3/3 mech-fannkuch-paired 3.093114
+3/3 fannkuchredux-rust-5 4.957605
+3/3 fannkuchredux-chapel-2 7.245077
+3/3 fannkuchredux-gcc-5-gcc 4.912038
+3/3 fannkuchredux-gcc-5-llvm 5.214646

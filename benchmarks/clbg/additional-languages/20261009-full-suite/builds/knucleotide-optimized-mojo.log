@@ -1,0 +1,79 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:25:43: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                key = key * 4 + UInt64(src[first + j])
+                                       ~~~^~~~~~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:29:47: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                key = ((key << 2) | UInt64(src[i + width])) & mask
+                                           ~~~^~~~~~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:31:16: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            dst[piece * bins + bin] = table.get(UInt64(bin) if width <= 2 else wanted, UInt64(0))
+            ~~~^~~~~~~~~~~~~~~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:3:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/common.mojo:22:68: warning: '__add__' is deprecated, use 'unsafe_offset' instead
+        var got = external_call["read", Int](0, bytes.unsafe_ptr() + used, 65536)
+                                                ~~~~~~~~~~~~~~~~~~~^~~~~~
+<unknown>:0: note: '__add__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:30:77: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        return self.values.unsafe_ptr()[index] if self.occupied.unsafe_ptr()[index] else default
+                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:30:40: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        return self.values.unsafe_ptr()[index] if self.occupied.unsafe_ptr()[index] else default
+               ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:64:34: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        self.used += Int(not used[index])
+                             ~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:65:13: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        used[index] = 1
+        ~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:66:31: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        self.keys.unsafe_ptr()[index] = key
+        ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:67:15: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        values[index] += delta
+        ~~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:23:19: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        while used[index] and keys[index] != key:
+              ~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:23:35: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        while used[index] and keys[index] != key:
+                              ~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:52:34: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        self.used += Int(not used[index])
+                             ~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:53:13: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        used[index] = 1
+        ~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:54:31: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        self.keys.unsafe_ptr()[index] = key
+        ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/uintmap.mojo:55:33: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        self.values.unsafe_ptr()[index] = value
+        ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-c7ff43b.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

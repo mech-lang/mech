@@ -1,0 +1,18 @@
+[workspace]
+name = "n_body_mojo"
+version = "0.2.0"
+description = "N-body simulation in modern Mojo (SIMD, compile-time metaprogramming)"
+channels = ["https://conda.modular.com/max/", "conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+mojo = "==1.0.0b2,<2"
+
+[tasks]
+version = "mojo --version"
+build = { depends-on = ["build-simd", "build-naive"] }
+build-simd = "mojo build n_body.mojo -O3 -o n_body"
+build-naive = "mojo build n_body_naive.mojo -O3 -o n_body_naive"
+run = "mojo run n_body.mojo"
+fmt = "mojo format ."
+test = "mojo run -I . test_n_body.mojo && mojo run -I . test_n_body_naive.mojo"

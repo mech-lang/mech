@@ -1,0 +1,3 @@
+x := bigint/new(1) - 2
+y<u64> := x
+io/print("{}\n", y)

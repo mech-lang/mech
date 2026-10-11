@@ -1,0 +1,38 @@
+{
+  "source": "https://raw.githubusercontent.com/github-linguist/linguist/main/lib/linguist/languages.yml",
+  "sha256": "183243e30496ba53f5f8743b0e39c9f0e0bccc5a32639f7b541cc2285db0e043",
+  "colors": {
+    "C": "#555555",
+    "Chapel": "#8dc63f",
+    "C++": "#f34b7d",
+    "Go": "#00ADD8",
+    "Java": "#b07219",
+    "Julia": "#a270ba",
+    "Mech": null,
+    "Rust": "#dea584",
+    "Python": "#3572A5",
+    "Ruby": "#701516",
+    "Perl": "#0298c3",
+    "Lua": "#000080",
+    "LuaJIT": null,
+    "JavaScript": "#f1e05a",
+    "PHP": "#4F5D95"
+  },
+  "fetched_at_utc": "2026-10-09T13:36:17.621350+00:00",
+  "fallbacks": {
+    "Mech": {
+      "color": "#F6C04E",
+      "source": "https://mech-lang.org/img/logo.png"
+    },
+    "LuaJIT": {
+      "color": "#2142BF",
+      "source": "https://luajit.org/bluequad.css"
+    }
+  },
+  "display_overrides": {
+    "Perl": {
+      "color": "#218C7F",
+      "reason": "User requested a different Perl color; choose dark teal to distinguish it from Go. This is a plotting override, not the GitHub Linguist color."
+    }
+  }
+}

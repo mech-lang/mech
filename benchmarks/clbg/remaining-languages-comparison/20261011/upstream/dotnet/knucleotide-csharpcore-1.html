@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide C# program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide C# program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">// The Computer Language Benchmarks Game</span>
+<span class="slc">// https://benchmarksgame-team.pages.debian.net/benchmarksgame/</span>
+
+<span class="slc">// submitted by Josh Goldfoot</span>
+<span class="slc">// Modified to reduce memory and do more in parallel by Anthony Lloyd</span>
+<span class="slc">// Added dictionary incrementor by Anthony Lloyd</span>
+<span class="slc">// Use DictionarySlim by Anthony Lloyd</span>
+
+<span class="kwa">using</span> System<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>IO<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Text<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Linq<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Collections<span class="opt">.</span>Generic<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Threading<span class="opt">.</span>Tasks<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Runtime<span class="opt">.</span>CompilerServices<span class="opt">;</span>
+<span class="kwa">using</span> Microsoft<span class="opt">.</span>Collections<span class="opt">.</span>Extensions<span class="opt">;</span>
+
+<span class="kwa">public static class</span> KNucleotide
+<span class="opt">{</span>
+    <span class="kwa">const int</span> BLOCK_SIZE <span class="opt">=</span> <span class="num">1024</span> <span class="opt">*</span> <span class="num">1024</span> <span class="opt">*</span> <span class="num">8</span><span class="opt">;</span>
+    <span class="kwa">public static</span> List<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">[]&gt;</span> threeBlocks <span class="opt">=</span> <span class="kwa">new</span> List<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">[]&gt;();</span>
+    <span class="kwa">public static int</span> threeStart<span class="opt">,</span> threeEnd<span class="opt">;</span>
+    <span class="kwa">static readonly byte</span><span class="opt">[]</span> tonum <span class="opt">=</span> <span class="kwa">new byte</span><span class="opt">[</span><span class="num">256</span><span class="opt">];</span>
+    <span class="kwa">static readonly char</span><span class="opt">[]</span> tochar <span class="opt">=</span> <span class="kwa">new char</span><span class="opt">[] {</span> <span class="sng">&#39;A&#39;</span><span class="opt">,</span> <span class="sng">&#39;C&#39;</span><span class="opt">,</span> <span class="sng">&#39;G&#39;</span><span class="opt">,</span> <span class="sng">&#39;T&#39;</span> <span class="opt">};</span>
+
+    <span class="kwa">static int</span> <span class="kwd">Read</span><span class="opt">(</span>Stream stream<span class="opt">,</span> <span class="kwa">byte</span><span class="opt">[]</span> buffer<span class="opt">,</span> <span class="kwa">int</span> offset<span class="opt">,</span> <span class="kwa">int</span> count<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">var</span> bytesRead <span class="opt">=</span> stream<span class="opt">.</span><span class="kwd">Read</span><span class="opt">(</span>buffer<span class="opt">,</span> offset<span class="opt">,</span> count<span class="opt">);</span>
+        <span class="kwa">return</span> bytesRead <span class="opt">==</span> count <span class="opt">?</span> offset <span class="opt">+</span> count
+             <span class="opt">:</span> bytesRead <span class="opt">==</span> <span class="num">0</span> <span class="opt">?</span> offset
+             <span class="opt">:</span> <span class="kwd">Read</span><span class="opt">(</span>stream<span class="opt">,</span> buffer<span class="opt">,</span> offset <span class="opt">+</span> bytesRead<span class="opt">,</span> count <span class="opt">-</span> bytesRead<span class="opt">);</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">static int</span> <span class="kwd">Find</span><span class="opt">(</span><span class="kwa">byte</span><span class="opt">[]</span> buffer<span class="opt">,</span> <span class="kwa">byte</span><span class="opt">[]</span> toFind<span class="opt">,</span> <span class="kwa">int</span> i<span class="opt">,</span> <span class="kwa">ref int</span> matchIndex<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">if</span> <span class="opt">(</span>matchIndex <span class="opt">==</span> <span class="num">0</span><span class="opt">)</span>
+        <span class="opt">{</span>
+            i <span class="opt">=</span> Array<span class="opt">.</span><span class="kwd">IndexOf</span><span class="opt">(</span>buffer<span class="opt">,</span> toFind<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> i<span class="opt">);</span>
+            <span class="kwa">if</span> <span class="opt">(</span>i <span class="opt">== -</span><span class="num">1</span><span class="opt">)</span> <span class="kwa">return</span> <span class="opt">-</span><span class="num">1</span><span class="opt">;</span>
+            matchIndex <span class="opt">=</span> <span class="num">1</span><span class="opt">;</span>
+            <span class="kwa">return</span> <span class="kwd">Find</span><span class="opt">(</span>buffer<span class="opt">,</span> toFind<span class="opt">,</span> i <span class="opt">+</span> <span class="num">1</span><span class="opt">,</span> <span class="kwa">ref</span> matchIndex<span class="opt">);</span>
+        <span class="opt">}</span>
+        <span class="kwa">else</span>
+        <span class="opt">{</span>
+            <span class="kwa">int</span> bl <span class="opt">=</span> buffer<span class="opt">.</span>Length<span class="opt">,</span> fl <span class="opt">=</span> toFind<span class="opt">.</span>Length<span class="opt">;</span>
+            <span class="kwa">while</span> <span class="opt">(</span>i <span class="opt">&lt;</span> bl <span class="opt">&amp;&amp;</span> matchIndex <span class="opt">&lt;</span> fl<span class="opt">)</span>
+            <span class="opt">{</span>
+                <span class="kwa">if</span> <span class="opt">(</span>buffer<span class="opt">[</span>i<span class="opt">++] !=</span> toFind<span class="opt">[</span>matchIndex<span class="opt">++])</span>
+                <span class="opt">{</span>
+                    matchIndex <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+                    <span class="kwa">return</span> <span class="kwd">Find</span><span class="opt">(</span>buffer<span class="opt">,</span> toFind<span class="opt">,</span> i<span class="opt">,</span> <span class="kwa">ref</span> matchIndex<span class="opt">);</span>
+                <span class="opt">}</span>
+            <span class="opt">}</span>
+            <span class="kwa">return</span> matchIndex <span class="opt">==</span> fl <span class="opt">?</span> i <span class="opt">: -</span><span class="num">1</span><span class="opt">;</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">public static void</span> <span class="kwd">LoadThreeData</span><span class="opt">()</span>
+    <span class="opt">{</span>
+        <span class="kwa">var</span> stream <span class="opt">=</span> Console<span class="opt">.</span><span class="kwd">OpenStandardInput</span><span class="opt">();</span>
+
+        <span class="slc">// find three sequence</span>
+        <span class="kwa">int</span> matchIndex <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        <span class="kwa">var</span> toFind <span class="opt">=</span> <span class="kwa">new</span><span class="opt">[] { (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;&gt;&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;T&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;H&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;R&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;E&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;E&#39;</span> <span class="opt">};</span>
+        <span class="kwa">var</span> buffer <span class="opt">=</span> <span class="kwa">new byte</span><span class="opt">[</span>BLOCK_SIZE<span class="opt">];</span>
+        <span class="kwa">do</span>
+        <span class="opt">{</span>
+            threeEnd <span class="opt">=</span> <span class="kwd">Read</span><span class="opt">(</span>stream<span class="opt">,</span> buffer<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> BLOCK_SIZE<span class="opt">);</span>
+            threeStart <span class="opt">=</span> <span class="kwd">Find</span><span class="opt">(</span>buffer<span class="opt">,</span> toFind<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="kwa">ref</span> matchIndex<span class="opt">);</span>
+        <span class="opt">}</span> <span class="kwa">while</span> <span class="opt">(</span>threeStart <span class="opt">== -</span><span class="num">1</span><span class="opt">);</span>
+
+        <span class="slc">// Skip to end of line</span>
+        matchIndex <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        toFind <span class="opt">=</span> <span class="kwa">new</span><span class="opt">[] { (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span> <span class="opt">};</span>
+        threeStart <span class="opt">=</span> <span class="kwd">Find</span><span class="opt">(</span>buffer<span class="opt">,</span> toFind<span class="opt">,</span> threeStart<span class="opt">,</span> <span class="kwa">ref</span> matchIndex<span class="opt">);</span>
+        <span class="kwa">while</span> <span class="opt">(</span>threeStart <span class="opt">== -</span><span class="num">1</span><span class="opt">)</span>
+        <span class="opt">{</span>
+            threeEnd <span class="opt">=</span> <span class="kwd">Read</span><span class="opt">(</span>stream<span class="opt">,</span> buffer<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> BLOCK_SIZE<span class="opt">);</span>
+            threeStart <span class="opt">=</span> <span class="kwd">Find</span><span class="opt">(</span>buffer<span class="opt">,</span> toFind<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="kwa">ref</span> matchIndex<span class="opt">);</span>
+        <span class="opt">}</span>
+        threeBlocks<span class="opt">.</span><span class="kwd">Add</span><span class="opt">(</span>buffer<span class="opt">);</span>
+
+        <span class="kwa">if</span> <span class="opt">(</span>threeEnd <span class="opt">!=</span> BLOCK_SIZE<span class="opt">)</span> <span class="slc">// Needs to be at least 2 blocks</span>
+        <span class="opt">{</span>
+            <span class="kwa">var</span> bytes <span class="opt">=</span> threeBlocks<span class="opt">[</span><span class="num">0</span><span class="opt">];</span>
+            <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> i <span class="opt">=</span> threeEnd<span class="opt">;</span> i <span class="opt">&lt;</span> bytes<span class="opt">.</span>Length<span class="opt">;</span> i<span class="opt">++)</span>
+                bytes<span class="opt">[</span>i<span class="opt">] =</span> <span class="num">255</span><span class="opt">;</span>
+            threeEnd <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+            threeBlocks<span class="opt">.</span><span class="kwd">Add</span><span class="opt">(</span>Array<span class="opt">.</span>Empty<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">&gt;());</span>
+            <span class="kwa">return</span><span class="opt">;</span>
+        <span class="opt">}</span>
+
+        <span class="slc">// find next seq or end of input</span>
+        matchIndex <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        toFind <span class="opt">=</span> <span class="kwa">new</span><span class="opt">[] { (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;&gt;&#39;</span> <span class="opt">};</span>
+        threeEnd <span class="opt">=</span> <span class="kwd">Find</span><span class="opt">(</span>buffer<span class="opt">,</span> toFind<span class="opt">,</span> threeStart<span class="opt">,</span> <span class="kwa">ref</span> matchIndex<span class="opt">);</span>
+        <span class="kwa">while</span> <span class="opt">(</span>threeEnd <span class="opt">== -</span><span class="num">1</span><span class="opt">)</span>
+        <span class="opt">{</span>
+            buffer <span class="opt">=</span> <span class="kwa">new byte</span><span class="opt">[</span>BLOCK_SIZE<span class="opt">];</span>
+            <span class="kwa">var</span> bytesRead <span class="opt">=</span> <span class="kwd">Read</span><span class="opt">(</span>stream<span class="opt">,</span> buffer<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> BLOCK_SIZE<span class="opt">);</span>
+            threeEnd <span class="opt">=</span> bytesRead <span class="opt">==</span> BLOCK_SIZE <span class="opt">?</span> <span class="kwd">Find</span><span class="opt">(</span>buffer<span class="opt">,</span> toFind<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="kwa">ref</span> matchIndex<span class="opt">)</span>
+                        <span class="opt">:</span> bytesRead<span class="opt">;</span>
+            threeBlocks<span class="opt">.</span><span class="kwd">Add</span><span class="opt">(</span>buffer<span class="opt">);</span>
+        <span class="opt">}</span>
+
+        <span class="kwa">if</span> <span class="opt">(</span>threeStart <span class="opt">+</span> <span class="num">18</span> <span class="opt">&gt;</span> BLOCK_SIZE<span class="opt">)</span> <span class="slc">// Key needs to be in the first block</span>
+        <span class="opt">{</span>
+            <span class="kwa">byte</span><span class="opt">[]</span> block0 <span class="opt">=</span> threeBlocks<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> block1 <span class="opt">=</span> threeBlocks<span class="opt">[</span><span class="num">1</span><span class="opt">];</span>
+            Buffer<span class="opt">.</span><span class="kwd">BlockCopy</span><span class="opt">(</span>block0<span class="opt">,</span> threeStart<span class="opt">,</span> block0<span class="opt">,</span> threeStart <span class="opt">-</span> <span class="num">18</span><span class="opt">,</span> BLOCK_SIZE <span class="opt">-</span> threeStart<span class="opt">);</span>
+            Buffer<span class="opt">.</span><span class="kwd">BlockCopy</span><span class="opt">(</span>block1<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> block0<span class="opt">,</span> BLOCK_SIZE <span class="opt">-</span> <span class="num">18</span><span class="opt">,</span> <span class="num">18</span><span class="opt">);</span>
+            <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> <span class="num">18</span><span class="opt">;</span> i<span class="opt">++)</span> block1<span class="opt">[</span>i<span class="opt">] =</span> <span class="num">255</span><span class="opt">;</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="opt">[</span><span class="kwd">MethodImpl</span><span class="opt">(</span>MethodImplOptions<span class="opt">.</span>AggressiveInlining<span class="opt">)]</span>
+    <span class="kwa">private static void</span> <span class="kwd">Check</span><span class="opt">(</span>DictionarySlim<span class="opt">&lt;</span><span class="kwa">long</span><span class="opt">,</span> <span class="kwa">int</span><span class="opt">&gt;</span> dict<span class="opt">,</span> <span class="kwa">ref long</span> rollingKey<span class="opt">,</span> <span class="kwa">byte</span> nb<span class="opt">,</span> <span class="kwa">long</span> mask<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">if</span> <span class="opt">(</span>nb <span class="opt">==</span> <span class="num">255</span><span class="opt">)</span> <span class="kwa">return</span><span class="opt">;</span>
+        rollingKey <span class="opt">= ((</span>rollingKey <span class="opt">&amp;</span> mask<span class="opt">) &lt;&lt;</span> <span class="num">2</span><span class="opt">) |</span> nb<span class="opt">;</span>
+        dict<span class="opt">.</span><span class="kwd">GetOrAddValueRef</span><span class="opt">(</span>rollingKey<span class="opt">)++;</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">static</span> Task<span class="opt">&lt;</span><span class="kwa">string</span><span class="opt">&gt;</span> <span class="kwd">Count</span><span class="opt">(</span><span class="kwa">int</span> l<span class="opt">,</span> <span class="kwa">long</span> mask<span class="opt">,</span> Func<span class="opt">&lt;</span>DictionarySlim<span class="opt">&lt;</span><span class="kwa">long</span><span class="opt">,</span> <span class="kwa">int</span><span class="opt">&gt;,</span> <span class="kwa">string</span><span class="opt">&gt;</span> summary<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">return</span> Task<span class="opt">.</span><span class="kwd">Run</span><span class="opt">(() =&gt;</span>
+        <span class="opt">{</span>
+            <span class="kwa">long</span> rollingKey <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+            <span class="kwa">var</span> firstBlock <span class="opt">=</span> threeBlocks<span class="opt">[</span><span class="num">0</span><span class="opt">];</span>
+            <span class="kwa">var</span> start <span class="opt">=</span> threeStart<span class="opt">;</span>
+            <span class="kwa">while</span> <span class="opt">(--</span>l <span class="opt">&gt;</span> <span class="num">0</span><span class="opt">)</span> rollingKey <span class="opt">= (</span>rollingKey <span class="opt">&lt;&lt;</span> <span class="num">2</span><span class="opt">) |</span> firstBlock<span class="opt">[</span>start<span class="opt">++];</span>
+            <span class="kwa">var</span> dict <span class="opt">=</span> <span class="kwa">new</span> DictionarySlim<span class="opt">&lt;</span><span class="kwa">long</span><span class="opt">,</span> <span class="kwa">int</span><span class="opt">&gt;(</span><span class="num">1024</span><span class="opt">);</span>
+            
+            <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> i <span class="opt">=</span> start<span class="opt">;</span> i <span class="opt">&lt;</span> firstBlock<span class="opt">.</span>Length<span class="opt">;</span> i<span class="opt">++)</span>
+                <span class="kwd">Check</span><span class="opt">(</span>dict<span class="opt">,</span> <span class="kwa">ref</span> rollingKey<span class="opt">,</span> firstBlock<span class="opt">[</span>i<span class="opt">],</span> mask<span class="opt">);</span>
+
+            <span class="kwa">int</span> lastBlockId <span class="opt">=</span> threeBlocks<span class="opt">.</span>Count <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+            <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> bl <span class="opt">=</span> <span class="num">1</span><span class="opt">;</span> bl <span class="opt">&lt;</span> lastBlockId<span class="opt">;</span> bl<span class="opt">++)</span>
+            <span class="opt">{</span>
+                <span class="kwa">var</span> bytes <span class="opt">=</span> threeBlocks<span class="opt">[</span>bl<span class="opt">];</span>
+                <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> bytes<span class="opt">.</span>Length<span class="opt">;</span> i<span class="opt">++)</span>
+                    <span class="kwd">Check</span><span class="opt">(</span>dict<span class="opt">,</span> <span class="kwa">ref</span> rollingKey<span class="opt">,</span> bytes<span class="opt">[</span>i<span class="opt">],</span> mask<span class="opt">);</span>
+            <span class="opt">}</span>
+
+            <span class="kwa">var</span> lastBlock <span class="opt">=</span> threeBlocks<span class="opt">[</span>lastBlockId<span class="opt">];</span>
+            <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> threeEnd<span class="opt">;</span> i<span class="opt">++)</span>
+                <span class="kwd">Check</span><span class="opt">(</span>dict<span class="opt">,</span> <span class="kwa">ref</span> rollingKey<span class="opt">,</span> lastBlock<span class="opt">[</span>i<span class="opt">],</span> mask<span class="opt">);</span>
+            
+            <span class="kwa">return</span> <span class="kwd">summary</span><span class="opt">(</span>dict<span class="opt">);</span>
+        <span class="opt">});</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">static string</span> <span class="kwd">WriteFrequencies</span><span class="opt">(</span>DictionarySlim<span class="opt">&lt;</span><span class="kwa">long</span><span class="opt">,</span> <span class="kwa">int</span><span class="opt">&gt;</span> freq<span class="opt">,</span> <span class="kwa">int</span> fragmentLength<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">var</span> sb <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">StringBuilder</span><span class="opt">();</span>
+        <span class="kwa">double</span> percent <span class="opt">=</span> <span class="num">100.0</span> <span class="opt">/</span> freq<span class="opt">.</span><span class="kwd">Select</span><span class="opt">(</span>x <span class="opt">=&gt;</span> x<span class="opt">.</span>Value<span class="opt">).</span><span class="kwd">Sum</span><span class="opt">();</span>
+        <span class="kwa">foreach</span> <span class="opt">(</span><span class="kwa">var</span> kv <span class="kwa">in</span> freq<span class="opt">.</span><span class="kwd">OrderByDescending</span><span class="opt">(</span>i <span class="opt">=&gt;</span> i<span class="opt">.</span>Value<span class="opt">))</span>
+        <span class="opt">{</span>
+            <span class="kwa">var</span> keyChars <span class="opt">=</span> <span class="kwa">new char</span><span class="opt">[</span>fragmentLength<span class="opt">];</span>
+            <span class="kwa">var</span> key <span class="opt">=</span> kv<span class="opt">.</span>Key<span class="opt">;</span>
+            <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> i <span class="opt">=</span> keyChars<span class="opt">.</span>Length <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span> i <span class="opt">&gt;=</span> <span class="num">0</span><span class="opt">; --</span>i<span class="opt">)</span>
+            <span class="opt">{</span>
+                keyChars<span class="opt">[</span>i<span class="opt">] =</span> tochar<span class="opt">[</span>key <span class="opt">&amp;</span> <span class="num">0x3</span><span class="opt">];</span>
+                key <span class="opt">&gt;&gt;=</span> <span class="num">2</span><span class="opt">;</span>
+            <span class="opt">}</span>
+            sb<span class="opt">.</span><span class="kwd">Append</span><span class="opt">(</span>keyChars<span class="opt">);</span>
+            sb<span class="opt">.</span><span class="kwd">Append</span><span class="opt">(</span><span class="sng">&quot; &quot;</span><span class="opt">);</span>
+            sb<span class="opt">.</span><span class="kwd">AppendLine</span><span class="opt">((</span>kv<span class="opt">.</span>Value <span class="opt">*</span> percent<span class="opt">).</span><span class="kwd">ToString</span><span class="opt">(</span><span class="sng">&quot;F3&quot;</span><span class="opt">));</span>
+        <span class="opt">}</span>
+        <span class="kwa">return</span> sb<span class="opt">.</span><span class="kwd">ToString</span><span class="opt">();</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">static string</span> <span class="kwd">WriteCount</span><span class="opt">(</span>DictionarySlim<span class="opt">&lt;</span><span class="kwa">long</span><span class="opt">,</span> <span class="kwa">int</span><span class="opt">&gt;</span> dictionary<span class="opt">,</span> <span class="kwa">string</span> fragment<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">long</span> key <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> fragment<span class="opt">.</span>Length<span class="opt">; ++</span>i<span class="opt">)</span>
+            key <span class="opt">= (</span>key <span class="opt">&lt;&lt;</span> <span class="num">2</span><span class="opt">) |</span> tonum<span class="opt">[</span>fragment<span class="opt">[</span>i<span class="opt">]];</span>
+        dictionary<span class="opt">.</span><span class="kwd">TryGetValue</span><span class="opt">(</span>key<span class="opt">,</span> <span class="kwa">out var</span> v<span class="opt">);</span>
+        <span class="kwa">return string</span><span class="opt">.</span><span class="kwd">Concat</span><span class="opt">(</span>v<span class="opt">.</span><span class="kwd">ToString</span><span class="opt">(),</span> <span class="sng">&quot;</span><span class="esc">\t</span><span class="sng">&quot;</span><span class="opt">,</span> fragment<span class="opt">);</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">public static void</span> <span class="kwd">Main</span><span class="opt">(</span><span class="kwa">string</span><span class="opt">[]</span> args<span class="opt">)</span>
+    <span class="opt">{</span>
+        tonum<span class="opt">[</span><span class="sng">&#39;c&#39;</span><span class="opt">] =</span> <span class="num">1</span><span class="opt">;</span> tonum<span class="opt">[</span><span class="sng">&#39;C&#39;</span><span class="opt">] =</span> <span class="num">1</span><span class="opt">;</span>
+        tonum<span class="opt">[</span><span class="sng">&#39;g&#39;</span><span class="opt">] =</span> <span class="num">2</span><span class="opt">;</span> tonum<span class="opt">[</span><span class="sng">&#39;G&#39;</span><span class="opt">] =</span> <span class="num">2</span><span class="opt">;</span>
+        tonum<span class="opt">[</span><span class="sng">&#39;t&#39;</span><span class="opt">] =</span> <span class="num">3</span><span class="opt">;</span> tonum<span class="opt">[</span><span class="sng">&#39;T&#39;</span><span class="opt">] =</span> <span class="num">3</span><span class="opt">;</span>
+        tonum<span class="opt">[</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="opt">] =</span> <span class="num">255</span><span class="opt">;</span> tonum<span class="opt">[</span><span class="sng">&#39;&gt;&#39;</span><span class="opt">] =</span> <span class="num">255</span><span class="opt">;</span> tonum<span class="opt">[</span><span class="num">255</span><span class="opt">] =</span> <span class="num">255</span><span class="opt">;</span>
+
+        <span class="kwd">LoadThreeData</span><span class="opt">();</span>
+
+        Parallel<span class="opt">.</span><span class="kwd">ForEach</span><span class="opt">(</span>threeBlocks<span class="opt">,</span> bytes <span class="opt">=&gt;</span>
+        <span class="opt">{</span>
+            <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> bytes<span class="opt">.</span>Length<span class="opt">;</span> i<span class="opt">++)</span>
+                bytes<span class="opt">[</span>i<span class="opt">] =</span> tonum<span class="opt">[</span>bytes<span class="opt">[</span>i<span class="opt">]];</span>
+        <span class="opt">});</span>
+
+        <span class="kwa">var</span> task18 <span class="opt">=</span> <span class="kwd">Count</span><span class="opt">(</span><span class="num">18</span><span class="opt">,</span> <span class="num">34359738367</span><span class="opt">,</span> d <span class="opt">=&gt;</span> <span class="kwd">WriteCount</span><span class="opt">(</span>d<span class="opt">,</span> <span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span><span class="opt">));</span>
+        <span class="kwa">var</span> task12 <span class="opt">=</span> <span class="kwd">Count</span><span class="opt">(</span><span class="num">12</span><span class="opt">,</span> <span class="num">8388607</span><span class="opt">,</span> d <span class="opt">=&gt;</span> <span class="kwd">WriteCount</span><span class="opt">(</span>d<span class="opt">,</span> <span class="sng">&quot;GGTATTTTAATT&quot;</span><span class="opt">));</span>
+        <span class="kwa">var</span> task6 <span class="opt">=</span> <span class="kwd">Count</span><span class="opt">(</span><span class="num">6</span><span class="opt">,</span> <span class="num">0b1111111111</span><span class="opt">,</span> d <span class="opt">=&gt;</span> <span class="kwd">WriteCount</span><span class="opt">(</span>d<span class="opt">,</span> <span class="sng">&quot;GGTATT&quot;</span><span class="opt">));</span>
+        <span class="kwa">var</span> task1 <span class="opt">=</span> <span class="kwd">Count</span><span class="opt">(</span><span class="num">1</span><span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> d <span class="opt">=&gt;</span> <span class="kwd">WriteFrequencies</span><span class="opt">(</span>d<span class="opt">,</span> <span class="num">1</span><span class="opt">));</span>
+        <span class="kwa">var</span> task2 <span class="opt">=</span> <span class="kwd">Count</span><span class="opt">(</span><span class="num">2</span><span class="opt">,</span> <span class="num">0b11</span><span class="opt">,</span> d <span class="opt">=&gt;</span> <span class="kwd">WriteFrequencies</span><span class="opt">(</span>d<span class="opt">,</span> <span class="num">2</span><span class="opt">));</span>
+        <span class="kwa">var</span> task3 <span class="opt">=</span> <span class="kwd">Count</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span> <span class="num">0b1111</span><span class="opt">,</span> d <span class="opt">=&gt;</span> <span class="kwd">WriteCount</span><span class="opt">(</span>d<span class="opt">,</span> <span class="sng">&quot;GGT&quot;</span><span class="opt">));</span>
+        <span class="kwa">var</span> task4 <span class="opt">=</span> <span class="kwd">Count</span><span class="opt">(</span><span class="num">4</span><span class="opt">,</span> <span class="num">0b111111</span><span class="opt">,</span> d <span class="opt">=&gt;</span> <span class="kwd">WriteCount</span><span class="opt">(</span>d<span class="opt">,</span> <span class="sng">&quot;GGTA&quot;</span><span class="opt">));</span>
+
+        Console<span class="opt">.</span>Out<span class="opt">.</span><span class="kwd">WriteLineAsync</span><span class="opt">(</span>task1<span class="opt">.</span>Result<span class="opt">);</span>
+        Console<span class="opt">.</span>Out<span class="opt">.</span><span class="kwd">WriteLineAsync</span><span class="opt">(</span>task2<span class="opt">.</span>Result<span class="opt">);</span>
+        Console<span class="opt">.</span>Out<span class="opt">.</span><span class="kwd">WriteLineAsync</span><span class="opt">(</span>task3<span class="opt">.</span>Result<span class="opt">);</span>
+        Console<span class="opt">.</span>Out<span class="opt">.</span><span class="kwd">WriteLineAsync</span><span class="opt">(</span>task4<span class="opt">.</span>Result<span class="opt">);</span>
+        Console<span class="opt">.</span>Out<span class="opt">.</span><span class="kwd">WriteLineAsync</span><span class="opt">(</span>task6<span class="opt">.</span>Result<span class="opt">);</span>
+        Console<span class="opt">.</span>Out<span class="opt">.</span><span class="kwd">WriteLineAsync</span><span class="opt">(</span>task12<span class="opt">.</span>Result<span class="opt">);</span>
+        Console<span class="opt">.</span><span class="kwd">WriteLine</span><span class="opt">(</span>task18<span class="opt">.</span>Result<span class="opt">);</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+.NET SDK 9.0.100
+Host Version: 9.0.0
+Commit: 9d5a6a9aa4
+
+&lt;OutputType&gt;Exe
+&lt;TargetFramework&gt;net9.0
+&lt;ImplicitUsings&gt;enable
+&lt;Nullable&gt;enable
+&lt;AllowUnsafeBlocks&gt;true
+&lt;ServerGarbageCollection&gt;true
+&lt;ConcurrentGarbageCollection&gt;true
+&lt;PublishAot&gt;false
+
+
+
+ Thu, 06 Feb 2025 07:30:20 GMT
+
+MAKE:
+cp knucleotide.csharpcore Program.cs
+cp Include/csharpcore/program.csproj .
+/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release	
+  Determining projects to restore...
+  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj (in 747 ms).
+  program -&gt; /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/bin/Release/net9.0/linux-x64/program.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:05.88
+
+7.66s to complete and log all make actions
+
+COMMAND LINE:
+ ./bin/Release/net9.0/linux-x64/program 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

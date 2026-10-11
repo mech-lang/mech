@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "reference": "Independent Python scalar double-precision implementation with canonical n-by-n coordinates, up to50 iterations, big-endian packed PBM bits and zero row tail bits.",
+  "checks": [
+    {
+      "id": "mandelbrot-d-modern-array-eight",
+      "n": 21,
+      "bytes": 72,
+      "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+      "reference_match": true
+    },
+    {
+      "id": "mandelbrot-d-archive-complex",
+      "n": 21,
+      "bytes": 72,
+      "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+      "reference_match": true
+    },
+    {
+      "id": "mandelbrot-d-parallel-array-eight",
+      "n": 21,
+      "bytes": 72,
+      "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+      "reference_match": true
+    },
+    {
+      "id": "mandelbrot-d-modern-array-eight",
+      "n": 101,
+      "bytes": 1324,
+      "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+      "reference_match": true
+    },
+    {
+      "id": "mandelbrot-d-archive-complex",
+      "n": 101,
+      "bytes": 1324,
+      "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+      "reference_match": true
+    },
+    {
+      "id": "mandelbrot-d-parallel-array-eight",
+      "n": 101,
+      "bytes": 1324,
+      "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+      "reference_match": true
+    }
+  ]
+}

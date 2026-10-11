@@ -1,0 +1,60 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-6.lisp" (written 10 OCT 2026 06:58:31 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-6.lisp
+; in: DEFUN CUMSUM
+;     (MAP 'VECTOR
+;          #'(LAMBDA (X)
+;              (DECLARE (TYPE SINGLE-FLOAT X)
+;                       (VALUES FIXNUM))
+;              (THE FIXNUM (CEILING (THE # #))))
+;          LST)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a (VECTOR FLOAT), not a SIMPLE-ARRAY.
+
+; in: DEFUN RANDOMIZE
+;     (DEFUN RANDOMIZE (AMINO-ACIDS-SYMS AMINO-ACIDS-CPROBS TITLE N)
+;       (DECLARE (TYPE FIXNUM N))
+;       (DECLARE (TYPE (SIMPLE-ARRAY FIXNUM (*)) AMINO-ACIDS-CPROBS))
+;       (OUTPUT-LINE TITLE)
+;       (LOOP WITH BUF OF-TYPE SIMPLE-BASE-STRING = (MAKE-STRING +BUFFER-SIZE+
+;                                                                :ELEMENT-TYPE
+;                                                                'BASE-CHAR)
+;             WITH I OF-TYPE FIXNUM = ...))
+; ==>
+;   (SB-IMPL::%DEFUN 'RANDOMIZE
+;                    (SB-INT:NAMED-LAMBDA RANDOMIZE
+;                        (AMINO-ACIDS-SYMS AMINO-ACIDS-CPROBS TITLE N)
+;                      (DECLARE (SB-C::TOP-LEVEL-FORM))
+;                      (DECLARE (TYPE FIXNUM N))
+;                      (DECLARE (TYPE (SIMPLE-ARRAY FIXNUM #) AMINO-ACIDS-CPROBS))
+;                      (BLOCK RANDOMIZE
+;                        (OUTPUT-LINE TITLE)
+;                        (LOOP WITH BUF OF-TYPE SIMPLE-BASE-STRING = (MAKE-STRING
+;                                                                     +BUFFER-SIZE+
+;                                                                     :ELEMENT-TYPE
+;                                                                     'BASE-CHAR)
+;                              WITH I OF-TYPE FIXNUM = ...))))
+; 
+; caught STYLE-WARNING:
+;   Call to COMMON-LISP-USER::NEXT-RANDOM could not be inlined because no
+;   definition for it was seen prior to its first use.
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-6.lisp
+; in: DEFUN MAIN
+;     (RESET-RANDOM)
+; 
+; caught STYLE-WARNING:
+;   undefined function: COMMON-LISP-USER::RESET-RANDOM
+; 
+; compilation unit finished
+;   Undefined function:
+;     RESET-RANDOM
+;   caught 2 STYLE-WARNING conditions
+;   printed 1 note
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/fasta-sbcl-6/program.fasl
+; compilation finished in 0:00:00.056

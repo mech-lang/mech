@@ -1,0 +1,16 @@
+     Locking 187 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+   Compiling spectralnorm-integer v0.0.0 (/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-nfOpa8)
+    Finished `release` profile [optimized] target(s) in 1.86s
+     Locking 187 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+   Compiling spectralnorm v0.0.0 (/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-qK0QmJ)
+    Finished `release` profile [optimized] target(s) in 1.78s
+   Compiling mech-engine v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine)
+   Compiling mech-runtime v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/runtime)
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib)
+   Compiling mech-compute v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/compute)
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+   Compiling mech-clbg-nbody v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver)
+    Finished `release` profile [optimized] target(s) in 1m 41s
+ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/extra-regressions/nbody.o', assuming: macOS

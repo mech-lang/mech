@@ -1,0 +1,722 @@
+{
+  "status": "prepared",
+  "programs": [
+    {
+      "id": "nbody-d-modern-scalar",
+      "key": "nbody:d-modern-scalar",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody-1.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-1",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-1"
+      ],
+      "source_sha256": "90b3e6d294efc6a62d1aa7a2a8d5e14c6048e02a05e89e41a7fcd729d85919f7",
+      "binary_sha256": "b4c8cd2b08e7a48d991abe51fe06456a56fd77ef6d7bf750f59f7a295c9c4f43",
+      "adaptations": [
+        "Added explicit module declaration required by hyphenated local filename."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/nbody-1.d",
+      "upstream_sha256": "5b795bcc4905258f60ef51f0657c653ed1458edb97cc12bbd99e381eb19b23ad",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      }
+    },
+    {
+      "id": "nbody-d-modern-vector-arrays",
+      "key": "nbody:d-modern-vector-arrays",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody-2.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-2",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-2",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody-2.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-2"
+      ],
+      "source_sha256": "08d821e6be8c21ff9d056eae4f21fb07b503ad6ede318f12300db545a4e3e2ef",
+      "binary_sha256": "fcfb0aacac4b1d84efda58c66e26bf46b594765ea3d166938f07bda5e7e130f3",
+      "adaptations": [
+        "Added explicit module declaration required by hyphenated local filename."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/2.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/nbody-2.d",
+      "upstream_sha256": "c93dcd7434e17bb556fce7c016726f1ccd8c95b4f95055c2cc12f92f59363e19",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      }
+    },
+    {
+      "id": "nbody-d-archive-classless",
+      "key": "nbody:d-archive-classless",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-nbody.dlang-2.dlang.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-nbody.dlang-2.dlang",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-nbody.dlang-2.dlang",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-nbody.dlang-2.dlang.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-nbody.dlang-2.dlang"
+      ],
+      "source_sha256": "488b8fa838edd10300b3716876bb6047eb35812c541dfa37e37c57c7f927cc3f",
+      "binary_sha256": "0a9a5dd9ef6250b113414a3087de8347da00da6e4259c358204d3bbb602fb2b8",
+      "adaptations": [
+        "Updated D1 typedef/struct initializers/argument conversion to D2 alias/constructors/std.conv.",
+        "Added core.stdc.stdio printf import, explicit module name, replaced obsolete slice length with $.",
+        "Pass static planet array by ref to preserve original D1 typedef-reference behavior and mutation semantics."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/nbody/nbody.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-nbody.dlang-2.dlang.d",
+      "upstream_sha256": "69f140f59e4ae140944bcbf9f02d5aa7d1c579f987945b45d85dc244c8869f9a",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      }
+    },
+    {
+      "id": "nbody-d-compact-array",
+      "key": "nbody:d-compact-array",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_compact.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact"
+      ],
+      "source_sha256": "1ef30891371c778d3a01e693d686ec7cbda248e352766d858e5cca32dfcfeea0",
+      "binary_sha256": "1681f67a5d043c5ea909ce51aa018e2fe5546f893aca9898590950062afa89bb",
+      "adaptations": [
+        "Authored D2 compact equivalent of archived classless source using standard three-element array operations and std.numeric.dotProduct.",
+        "Kept all published constants as one constructor expression per body; independent program assignments remain separate statements.",
+        "Initialized floating-point accumulators explicitly to zero (D floating default is NaN)."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/nbody/nbody.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-nbody.dlang-2.dlang.d",
+      "upstream_sha256": "69f140f59e4ae140944bcbf9f02d5aa7d1c579f987945b45d85dc244c8869f9a",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      }
+    },
+    {
+      "id": "nbody-d-unrolled",
+      "key": "nbody:d-unrolled",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_unrolled.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled-unrolled",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled-unrolled",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "-fp-contract=fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_unrolled.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled-unrolled"
+      ],
+      "source_sha256": "4c8f401ac737a0d6396d7dcd2b01fcc5c0f4ad1b6e4845ada37c96a1270dc61b",
+      "binary_sha256": "578ee9a5b835c0d28e6d551105b272e75d8a4ff8b5d86c82813bd8dd3d7e078a",
+      "adaptations": [
+        "Compact-array equivalent with compile-time static foreach unrolling of the complete five-body pair loops.",
+        "Fused multiply-add contraction enabled by compiler flag; all distances remain double-precision square roots."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/nbody/nbody.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-nbody.dlang-2.dlang.d",
+      "upstream_sha256": "69f140f59e4ae140944bcbf9f02d5aa7d1c579f987945b45d85dc244c8869f9a",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      }
+    },
+    {
+      "id": "nbody-d-unrolled-precise",
+      "key": "nbody:d-unrolled-precise",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_unrolled.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_unrolled.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled"
+      ],
+      "source_sha256": "4c8f401ac737a0d6396d7dcd2b01fcc5c0f4ad1b6e4845ada37c96a1270dc61b",
+      "binary_sha256": "df1284ff9c6449ba72a441d892d9c5a3848077913642a1e713354938e0926831",
+      "adaptations": [
+        "Compact-array equivalent with compile-time static foreach unrolling of the complete five-body pair loops.",
+        "Ordinary precise floating-point compilation (no global fast-math or aggressive FMA contraction flag)."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/nbody/nbody.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-nbody.dlang-2.dlang.d",
+      "upstream_sha256": "69f140f59e4ae140944bcbf9f02d5aa7d1c579f987945b45d85dc244c8869f9a",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      }
+    },
+    {
+      "id": "spectralnorm-d-modern",
+      "key": "spectralnorm:d-modern",
+      "benchmark": "spectralnorm",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectral-norm-1.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectral-norm-1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectral-norm-1",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectral-norm-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectral-norm-1"
+      ],
+      "source_sha256": "f9f2d7ec41dc70ca950f9bc1725a8a99bd3b8494083eb21c78db4ee95d62c642",
+      "binary_sha256": "2af8a0428d89f4fd83f6c9963f76f50c2caa1fa2778066cae64c048c9b797ca0",
+      "adaptations": [
+        "Added explicit module declaration required by hyphenated local filename."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ten alternating AtA power iterations (40 matrix-vector products), formula-derived integer denominator, complete n-by-n products with float64 values and canonical nine-decimal result."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/spectral-norm/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/spectral-norm-1.d",
+      "upstream_sha256": "227900f6a991edf626649adeee892fddac695b6c347a1f84867da305b1fb7d1e",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      }
+    },
+    {
+      "id": "spectralnorm-d-archive",
+      "key": "spectralnorm:d-archive",
+      "benchmark": "spectralnorm",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-spectralnorm.dlang.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-spectralnorm.dlang",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-spectralnorm.dlang",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-spectralnorm.dlang.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-spectralnorm.dlang"
+      ],
+      "source_sha256": "06bc97fbd0be63e0700c6f5e47b056c0c298ae95e60e0617e5fe003115ffce31",
+      "binary_sha256": "2ac49adabf75c5fa38d9320d32558aca28201275d0aeb1dc2ec73a8156536301",
+      "adaptations": [
+        "Updated D1 char[][]/atoi/inout foreach to D2 string[]/std.conv.to/ref and added explicit module declaration."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ten alternating AtA power iterations (40 matrix-vector products), formula-derived integer denominator, complete n-by-n products with float64 values and canonical nine-decimal result."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/spectralnorm/spectralnorm.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-spectralnorm.dlang.d",
+      "upstream_sha256": "7ab83a8c91c3ede17aa732cb76fa35db603f23320cdc9ecb3de28c6c6cfe875f",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      }
+    },
+    {
+      "id": "spectralnorm-d-compact",
+      "key": "spectralnorm:d-compact",
+      "benchmark": "spectralnorm",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectralnorm_compact.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_compact",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectralnorm_compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_compact"
+      ],
+      "source_sha256": "835a19d6dcfb4da5ae9bd7782d1e7b8b7284f08bfac8a36fdd0315dbb82fc7d1",
+      "binary_sha256": "8a44e3e1d97d64edd2f255c3dcd8edd084db82969cf66e2b8323c3fabadbc49a",
+      "adaptations": [
+        "Authored compact D2 equivalent using one compile-time transpose-specialized multiply function.",
+        "Explicit zero initialization for floating-point accumulators; scratch vector reused across canonical products."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ten alternating AtA power iterations (40 matrix-vector products), formula-derived integer denominator, complete n-by-n products with float64 values and canonical nine-decimal result."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/spectralnorm/spectralnorm.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-spectralnorm.dlang.d",
+      "upstream_sha256": "7ab83a8c91c3ede17aa732cb76fa35db603f23320cdc9ecb3de28c6c6cfe875f",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      }
+    },
+    {
+      "id": "spectralnorm-d-parallel-neon",
+      "key": "spectralnorm:d-parallel-neon",
+      "benchmark": "spectralnorm",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectralnorm_parallel.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_parallel",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_parallel",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectralnorm_parallel.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_parallel"
+      ],
+      "source_sha256": "340720a60e55d75dedd2f337d6bc331d8876b45fc445efe8d325d998158ee409",
+      "binary_sha256": "c6ce8cec62df53fb82fe946f6219ba629f31a94a8b88bcb7aeb9b0c24644e631",
+      "adaptations": [
+        "Authored row-parallel equivalent with two-lane float64 SIMD division and independent-lane accumulation.",
+        "Formula-derived adjacent denominators are computed in integer arithmetic; all n columns are traversed with scalar tail for odd n.",
+        "Phobos task pool capped at seven worker threads plus the participating main thread (eight participants)."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ten alternating AtA power iterations (40 matrix-vector products), formula-derived integer denominator, complete n-by-n products with float64 values and canonical nine-decimal result."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/spectralnorm/spectralnorm.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-spectralnorm.dlang.d",
+      "upstream_sha256": "7ab83a8c91c3ede17aa732cb76fa35db603f23320cdc9ecb3de28c6c6cfe875f",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      }
+    },
+    {
+      "id": "mandelbrot-d-modern-array-eight",
+      "key": "mandelbrot:d-modern-array-eight",
+      "benchmark": "mandelbrot",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/mandelbrot-1.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot-1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot-1",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/mandelbrot-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot-1"
+      ],
+      "source_sha256": "0c05ee3e9ddd2529daf5b67881932c5311050aa138bc9baacf05cebd415436d5",
+      "binary_sha256": "e197842055ef9f4a68a08ecca4f3a0761a94aefd61501b8cae3c5af227d58e49",
+      "adaptations": [
+        "Replaced modern repository MD5-only output with stdout.rawWrite(pixels); complete canonical PBM output is measured.",
+        "Removed blanket @safe annotation because std.stdio global stdout.rawWrite is classified @system.",
+        "Added explicit module name; algorithm and pixels unchanged.",
+        "Preserve requested n for PBM header, raster height and 2/n coordinates even when n is not divisible by8; allocate ceil(n/8) bytes per row and zero unused tail bits."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical 50-iteration double-precision escape calculation for every output pixel, with PBM header and complete packed row bitmap written to stdout. SIMD grouping shares early exit only when every lane has escaped."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/mandelbrot-1.d",
+      "upstream_sha256": "d48ddcb8cbf0069d1a0e00e281effd06dfbb2664df6efb34b018788e995ad389",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "odd_size_validation": [
+        {
+          "id": "mandelbrot-d-modern-array-eight",
+          "n": 21,
+          "bytes": 72,
+          "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+          "reference_match": true
+        },
+        {
+          "id": "mandelbrot-d-modern-array-eight",
+          "n": 101,
+          "bytes": 1324,
+          "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+          "reference_match": true
+        }
+      ]
+    },
+    {
+      "id": "mandelbrot-d-archive-complex",
+      "key": "mandelbrot:d-archive-complex",
+      "benchmark": "mandelbrot",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-mandelbrot.dlang-2.dlang.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-mandelbrot.dlang-2.dlang",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-mandelbrot.dlang-2.dlang",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-mandelbrot.dlang-2.dlang.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-mandelbrot.dlang-2.dlang"
+      ],
+      "source_sha256": "2d45bf063b38b40f0cc012c474b2de09ed61529a5030924f16de53c0bc147b07",
+      "binary_sha256": "d666aa3d8cb60b1f33440f70ffc9b8c4aa99295919557d3e17c085c825608c72",
+      "adaptations": [
+        "Updated obsolete built-in complex literals/cdouble to std.complex(Complex!double).",
+        "Updated argument conversion and byte cast for D2, used core.stdc.stdio.putchar for raw packed bytes.",
+        "Split two independent Z and C declarations onto separate lines and added module name."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical 50-iteration double-precision escape calculation for every output pixel, with PBM header and complete packed row bitmap written to stdout. SIMD grouping shares early exit only when every lane has escaped."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/mandelbrot/mandelbrot.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-mandelbrot.dlang-2.dlang.d",
+      "upstream_sha256": "62aa3cec70ebb652678f0cea01fadb2c09584b57c07636ef9146647bfbffec0d",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "odd_size_validation": [
+        {
+          "id": "mandelbrot-d-archive-complex",
+          "n": 21,
+          "bytes": 72,
+          "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+          "reference_match": true
+        },
+        {
+          "id": "mandelbrot-d-archive-complex",
+          "n": 101,
+          "bytes": 1324,
+          "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+          "reference_match": true
+        }
+      ]
+    },
+    {
+      "id": "mandelbrot-d-parallel-array-eight",
+      "key": "mandelbrot:d-parallel-array-eight",
+      "benchmark": "mandelbrot",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/mandelbrot_parallel.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot_parallel",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot_parallel",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/mandelbrot_parallel.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot_parallel"
+      ],
+      "source_sha256": "30d7b398a03f742203b5504f0da738c791e0575e06a1eaef6218571090bf6966",
+      "binary_sha256": "4ee310f5cd019815371c603a9741395fb327e81f0c5854612c632522c9d5f61b",
+      "adaptations": [
+        "Same eight-pixel array algorithm with Phobos parallel row work capped at seven workers plus participating main thread.",
+        "Replaced MD5-only output with full raw PBM; coordinate ci is private to each row.",
+        "Preserve requested n for PBM header, raster height and 2/n coordinates even when n is not divisible by8; allocate ceil(n/8) bytes per row and zero unused tail bits."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical 50-iteration double-precision escape calculation for every output pixel, with PBM header and complete packed row bitmap written to stdout. SIMD grouping shares early exit only when every lane has escaped."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/mandelbrot-1.d",
+      "upstream_sha256": "d48ddcb8cbf0069d1a0e00e281effd06dfbb2664df6efb34b018788e995ad389",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "odd_size_validation": [
+        {
+          "id": "mandelbrot-d-parallel-array-eight",
+          "n": 21,
+          "bytes": 72,
+          "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+          "reference_match": true
+        },
+        {
+          "id": "mandelbrot-d-parallel-array-eight",
+          "n": 101,
+          "bytes": 1324,
+          "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+          "reference_match": true
+        }
+      ]
+    },
+    {
+      "id": "fannkuchredux-d-compact-scalar",
+      "key": "fannkuchredux:d-compact-scalar",
+      "benchmark": "fannkuchredux",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/fannkuch-redux-1.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuch-redux-1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuch-redux-1",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/fannkuch-redux-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuch-redux-1"
+      ],
+      "source_sha256": "249b400dedd4cad911ad0c5edaaec21620cc689df0cb8620d9b0969daa65956d",
+      "binary_sha256": "3c9ae49261e24ad0a43731d7c2f60a48034b7e66a2f1387961aaf9284d29cec1",
+      "adaptations": [
+        "Added explicit module declaration required by hyphenated local filename."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Enumerates every n! permutation in canonical order, performs prefix reversals for all required pancake flips, and calculates alternating checksum and maximum flips; no hardcoded result or skipped permutation."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/fannkuch-redux-1.d",
+      "upstream_sha256": "96f28419b74c95b3cc018a963a306cae9d5bd8917e2bd172a0bd9e01132d2ead",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      }
+    },
+    {
+      "id": "fannkuchredux-d-parallel-neon",
+      "key": "fannkuchredux:d-parallel-neon",
+      "benchmark": "fannkuchredux",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/fannkuchredux_parallel_neon.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuchredux_parallel_neon",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuchredux_parallel_neon",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/fannkuchredux_parallel_neon.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuchredux_parallel_neon"
+      ],
+      "source_sha256": "3b4a50ac8ad91d3021efa0b1569dd2c07d15e8849a7083de50a9848abd55564a",
+      "binary_sha256": "37f33695cdf62ec018bda018427d289837c35285bbe34a1c4313c745b735591c",
+      "adaptations": [
+        "Replaced unavailable x86 inteli PSHUFB binding with native LDC float-independent 16-byte NEON TBL intrinsic; same mask tables/permutation/checksum algorithm.",
+        "Replaced vector construction/extraction helpers with core.simd ubyte16 casts and .array[0].",
+        "Capped Phobos pool at seven workers; split work into eight factorial-index blocks rather than hardware-dependent CPU count."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Enumerates every n! permutation in canonical order, performs prefix reversals for all required pancake flips, and calculates alternating checksum and maximum flips; no hardcoded result or skipped permutation."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/2-im.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/fannkuch-redux-2-im.d",
+      "upstream_sha256": "f75a2fa6ccefb676af6751cfcb1de76def0a5feb0442c39e8e207bba2e293a76",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      }
+    }
+  ],
+  "pins": {
+    "modern": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+    "archive": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2"
+  },
+  "compiler": "LDC - the LLVM D compiler (1.43.0):\n  based on DMD v2.113.0 and LLVM 23.1.2\n  built with LDC - the LLVM D compiler (1.42.0)\n  Default target: arm64-apple-darwin25.2.0\n  Host CPU: apple-m3\n  https://dlang.org - https://wiki.dlang.org/LDC\n\n\n  Registered Targets:\n    aarch64     - AArch64 (little endian)\n    aarch64_32  - AArch64 (little endian ILP32)\n    aarch64_be  - AArch64 (big endian)\n    amdgcn      - legacy name for amdgpu\n    amdgpu      - AMDGPU gfx6+\n    arm         - ARM\n    arm64       - ARM64 (little endian)\n    arm64_32    - ARM64 (little endian ILP32)\n    armeb       - ARM (big endian)\n    avr         - Atmel AVR Microcontroller\n    bpf         - BPF (host endian)\n    bpfeb       - BPF (big endian)\n    bpfel       - BPF (little endian)\n    hexagon     - Hexagon\n    lanai       - Lanai\n    loongarch32 - 32-bit LoongArch\n    loongarch64 - 64-bit LoongArch\n    mips        - MIPS (32-bit big endian)\n    mips64      - MIPS (64-bit big endian)\n    mips64el    - MIPS (64-bit little endian)\n    mipsel      - MIPS (32-bit little endian)\n    msp430      - MSP430 [experimental]\n    nvptx       - NVIDIA PTX 32-bit\n    nvptx64     - NVIDIA PTX 64-bit\n    ppc32       - PowerPC 32\n    ppc32le     - PowerPC 32 LE\n    ppc64       - PowerPC 64\n    ppc64le     - PowerPC 64 LE\n    r600        - AMD GPUs HD2XXX-HD6XXX\n    riscv32     - 32-bit RISC-V\n    riscv32be   - 32-bit big endian RISC-V\n    riscv64     - 64-bit RISC-V\n    riscv64be   - 64-bit big endian RISC-V\n    sparc       - Sparc\n    sparcel     - Sparc LE\n    sparcv9     - Sparc V9\n    spirv       - SPIR-V Logical\n    spirv32     - SPIR-V 32-bit\n    spirv64     - SPIR-V 64-bit\n    systemz     - SystemZ\n    thumb       - Thumb\n    thumbeb     - Thumb (big endian)\n    ve          - VE\n    wasm32      - WebAssembly 32-bit\n    wasm64      - WebAssembly 64-bit\n    x86         - 32-bit X86: Pentium-Pro and above\n    x86-64      - 64-bit X86: EM64T and AMD64\n    xcore       - XCore\n",
+  "unsupported_candidates": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/fannkuch-redux-1-i.d",
+      "reason": "Published x86 inteli-specific variant retained as upstream; native ARM equivalent of parallel2-im is included."
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/fannkuch-redux-1-im.d",
+      "reason": "Published x86 inteli-specific variant retained as upstream; native ARM equivalent of parallel2-im is included."
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/fannkuch-redux-2-i.d",
+      "reason": "Published x86 inteli-specific variant retained as upstream; native ARM equivalent of parallel2-im is included."
+    }
+  ],
+  "notes": "Source-faithful archived and modern inputs preserved byte-for-byte. Full-workload validation and timings are performed centrally by the root runner; no long timing was executed in numerical preparation."
+}

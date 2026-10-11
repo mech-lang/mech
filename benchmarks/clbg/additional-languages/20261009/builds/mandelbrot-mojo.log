@@ -1,0 +1,11 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/mandelbrot.mojo:33:16: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            dst[y * stride + byte] = bits
+            ~~~^~~~~~~~~~~~~~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/mandelbrot.mojo:3:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/stdlib/common.mojo:29:35: warning: '__add__' is deprecated, use 'unsafe_offset' instead
+            1, bytes.unsafe_ptr() + written, len(bytes) - written)
+               ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+<unknown>:0: note: '__add__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-6e7ec16.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

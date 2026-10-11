@@ -1,0 +1,1503 @@
+{
+  "passed": true,
+  "report": "apple-m3-ac-normal-20261009.json",
+  "sha256": "509f2f5932391e819ee2eef19aef777bbb9b16cac3babc66e61178416368fbb2",
+  "policies_sha256": "e359a645bfb3d4bb41f4092830db25c2cbe6795b2b61212987d842b22d517ffb",
+  "measured_programs": 124,
+  "new_programs": 44,
+  "new_accepted_samples": 132,
+  "reused_programs": 80,
+  "excluded_attempts": [
+    {
+      "id": "mandelbrot-python3-7",
+      "benchmark": "mandelbrot",
+      "language": "python",
+      "stage": "small validation",
+      "reason": "mandelbrot output mismatch: 5011 f9c9fc44bb9738ddd1dc82eeb1aff30c4f41121f4db7e564d93fc16bc04fe3c3 (expected 5011 97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5)",
+      "source_sha256": "a8a8a696f51807e9fc93489bbafb1f50db20a9e698cac3cdad03597028f25514",
+      "loc": 59
+    },
+    {
+      "id": "knucleotide-php-4",
+      "benchmark": "knucleotide",
+      "language": "php",
+      "stage": "small validation",
+      "reason": "knucleotide output mismatch: 242 3e9239371c5ca8b907ab576ab4a877747cde25051ebb82c0cba1dc46ebd00a5d (expected 242 baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500)",
+      "source_sha256": "9987036e0638ccbdef5fb27c6963a4fdc119c82d46ed094d89b609cfcd9bb3b7",
+      "loc": 114
+    },
+    {
+      "id": "knucleotide-node-3",
+      "benchmark": "knucleotide",
+      "language": "javascript",
+      "stage": "small validation",
+      "reason": "knucleotide output mismatch: 242 41a803a300c88ff849b84677bd1aa6b20f3a096193feb00711eb916eb7ad42cf (expected 242 baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500)",
+      "source_sha256": "801da817937e165c96769959e688ebce8875650794daa5d676024fba4376beb6",
+      "loc": 202
+    },
+    {
+      "id": "fannkuchredux-ruby-2",
+      "benchmark": "fannkuchredux",
+      "language": "ruby",
+      "stage": "small validation",
+      "reason": "fannkuch output mismatch: '219\\nPfannkuchen(7) = 16\\n'",
+      "source_sha256": "45d77609445db3378a7aba02d855a4e89b0cec9c6f85b4b09b182d88785db328",
+      "loc": 174
+    },
+    {
+      "id": "binarytrees-php-7",
+      "benchmark": "binarytrees",
+      "language": "php",
+      "stage": "small validation",
+      "reason": "binarytrees output mismatch: 188 b66fe8974c2409d92bf8eca840aeee73d5f344e3a249f7e84afbb76914f55fab (expected 223 b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb)",
+      "source_sha256": "3f658c4f70e23e30e68d8bca2313ca567ba348407ef6a17e2663edc65f0815f8",
+      "loc": 69
+    },
+    {
+      "id": "binarytrees-php-4",
+      "benchmark": "binarytrees",
+      "language": "php",
+      "stage": "small validation",
+      "reason": "binarytrees output mismatch: 188 b66fe8974c2409d92bf8eca840aeee73d5f344e3a249f7e84afbb76914f55fab (expected 223 b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb)",
+      "source_sha256": "d0b207c6faa5ad11480b18eb653066b15c4dabf9c7fc1cdae9a97ba07bf3b126",
+      "loc": 69
+    },
+    {
+      "id": "binarytrees-php-6",
+      "benchmark": "binarytrees",
+      "language": "php",
+      "stage": "small validation",
+      "reason": "binarytrees output mismatch: 154 595d119f0ecdf4293a55d06aba17f7c156bec35bbddfdd0c70d2e4a150cff8d0 (expected 223 b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb)",
+      "source_sha256": "d5cf4e54604c30cbae93cf1a4bf0d3b26ca7c517ffce0aa87342e86dc6988aa9",
+      "loc": 80
+    },
+    {
+      "id": "mandelbrot-php-3",
+      "benchmark": "mandelbrot",
+      "language": "php",
+      "stage": "full validation",
+      "reason": "Command '['/opt/homebrew/opt/php/bin/php', '-n', '-d', 'memory_limit=-1', '-d', 'opcache.enable_cli=1', '-d', 'opcache.jit_buffer_size=64M', '-d', 'opcache.jit=tracing', '-d', 'short_open_tag=1', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/mandelbrot-php-3.php', '16000']' returned non-zero exit status 1.; ",
+      "source_sha256": "e517931f412c17a74cd9dd97a77375e26ac491e71e5ba937273c9c19b97a61e9",
+      "loc": 88
+    }
+  ],
+  "control_drift_ratios": {
+    "nbody": 1.0000501377155249,
+    "mandelbrot": 1.0193346982781661,
+    "knucleotide": 0.9917773249006945,
+    "spectralnorm": 1.1001571296115762,
+    "revcomp": 1.0529756911422579,
+    "fannkuchredux": 1.0245139931262506,
+    "fasta": 1.025866517068895,
+    "binarytrees": 0.9819201784449879
+  },
+  "policy_control_drift_ratios": {
+    "fannkuchredux": 1.0327464310542396,
+    "binarytrees": 1.0031468045861864,
+    "mandelbrot": 1.0400067320012425
+  },
+  "discarded_samples": 0,
+  "scope": "Fastest measured among this selected cohort, not an exhaustive local sweep of every scripting source. Published-fastest variants are explicitly covered or excluded with reasons.",
+  "endpoints": [
+    {
+      "benchmark": "nbody",
+      "language": "python",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "nbody-python3-1",
+        "seconds": 150.119821708,
+        "loc": 89,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-python3-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "nbody-python3-1",
+        "seconds": 150.119821708,
+        "loc": 89,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-python3-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "nbody",
+      "language": "ruby",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "nbody-ruby-3",
+        "seconds": 56.652704292,
+        "loc": 113,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-ruby-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "nbody-ruby-2",
+        "seconds": 59.953889334,
+        "loc": 110,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-ruby-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "nbody",
+      "language": "perl",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "nbody-perl-2",
+        "seconds": 129.214177083,
+        "loc": 121,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-perl-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "nbody-perl-2",
+        "seconds": 129.214177083,
+        "loc": 121,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-perl-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "nbody",
+      "language": "lua",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "nbody-lua-4",
+        "seconds": 68.663343625,
+        "loc": 107,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-lua-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "nbody-lua-4",
+        "seconds": 68.663343625,
+        "loc": 107,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-lua-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "nbody",
+      "language": "luajit",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "nbody-lua-4-luajit",
+        "seconds": 3.450806667,
+        "loc": 107,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-lua-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "nbody-lua-4-luajit",
+        "seconds": 3.450806667,
+        "loc": 107,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-lua-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "nbody",
+      "language": "php",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "nbody-php-3",
+        "seconds": 36.987026,
+        "loc": 78,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-php-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "nbody-php-3",
+        "seconds": 36.987026,
+        "loc": 78,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-php-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "nbody",
+      "language": "javascript",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "nbody-node-6",
+        "seconds": 2.267378292,
+        "loc": 136,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-node-6.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "nbody-node-8",
+        "seconds": 2.735490792,
+        "loc": 116,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-node-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "python",
+      "measured_candidates": 4,
+      "fast": {
+        "id": "mandelbrot-python3-5-fork",
+        "seconds": 84.279465,
+        "loc": 33,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-python3-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "mandelbrot-python3-3",
+        "seconds": 279.652973833,
+        "loc": 32,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-python3-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "ruby",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "mandelbrot-ruby-5",
+        "seconds": 33.545108709,
+        "loc": 122,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-ruby-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "mandelbrot-ruby-8",
+        "seconds": 280.738702417,
+        "loc": 38,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-ruby-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "perl",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "mandelbrot-perl-1",
+        "seconds": 194.729651041,
+        "loc": 58,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-perl-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "mandelbrot-perl-1",
+        "seconds": 194.729651041,
+        "loc": 58,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-perl-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "lua",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "mandelbrot-lua-6",
+        "seconds": 38.037899958,
+        "loc": 61,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-lua-6.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "mandelbrot-lua-1",
+        "seconds": 146.536665625,
+        "loc": 22,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "luajit",
+      "measured_candidates": 4,
+      "fast": {
+        "id": "mandelbrot-lua-6-luajit",
+        "seconds": 5.522809042,
+        "loc": 61,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-lua-6.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "mandelbrot-lua-1-luajit",
+        "seconds": 12.51210475,
+        "loc": 22,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "php",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "mandelbrot-php-8",
+        "seconds": 64.508746167,
+        "loc": 43,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-php-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "mandelbrot-php-8",
+        "seconds": 64.508746167,
+        "loc": 43,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-php-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "javascript",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "mandelbrot-node-3",
+        "seconds": 1.739241041,
+        "loc": 114,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-node-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "mandelbrot-node-1",
+        "seconds": 51.562411459,
+        "loc": 32,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-node-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "python",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "knucleotide-python3-3",
+        "seconds": 13.144495,
+        "loc": 156,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-python3-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "knucleotide-python3-1",
+        "seconds": 78.217407417,
+        "loc": 35,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-python3-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "ruby",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "knucleotide-ruby-1",
+        "seconds": 24.7678935,
+        "loc": 50,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ruby-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "knucleotide-ruby-2",
+        "seconds": 88.774451542,
+        "loc": 31,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ruby-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "perl",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "knucleotide-perl-1",
+        "seconds": 12.217787875,
+        "loc": 50,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-perl-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "knucleotide-perl-2",
+        "seconds": 42.411238542,
+        "loc": 19,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-perl-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "lua",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "knucleotide-lua-2",
+        "seconds": 41.106268375,
+        "loc": 57,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "knucleotide-lua-2",
+        "seconds": 41.106268375,
+        "loc": 57,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "luajit",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "knucleotide-lua-2-luajit",
+        "seconds": 7.822570834,
+        "loc": 57,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "knucleotide-lua-2-luajit",
+        "seconds": 7.822570834,
+        "loc": 57,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "php",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "knucleotide-php-8",
+        "seconds": 20.908918583,
+        "loc": 52,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-php-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "knucleotide-php-8",
+        "seconds": 20.908918583,
+        "loc": 52,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-php-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "javascript",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "knucleotide-node-2",
+        "seconds": 11.644344458,
+        "loc": 76,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-node-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "knucleotide-node-8",
+        "seconds": 45.534205334,
+        "loc": 57,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-node-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "python",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "spectralnorm-python3-4",
+        "seconds": 30.245241375,
+        "loc": 36,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-python3-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "spectralnorm-python3-8",
+        "seconds": 113.259163416,
+        "loc": 25,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-python3-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "ruby",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "spectralnorm-ruby-5",
+        "seconds": 19.605751375,
+        "loc": 95,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-ruby-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "spectralnorm-ruby-8",
+        "seconds": 47.873191625,
+        "loc": 29,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-ruby-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "perl",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "spectralnorm-perl-4",
+        "seconds": 7.121807958,
+        "loc": 70,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-perl-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "spectralnorm-perl-2",
+        "seconds": 162.273252167,
+        "loc": 37,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-perl-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "lua",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "spectralnorm-lua-1",
+        "seconds": 40.256519292,
+        "loc": 33,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "spectralnorm-lua-1",
+        "seconds": 40.256519292,
+        "loc": 33,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "luajit",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "spectralnorm-lua-1-luajit",
+        "seconds": 1.126568459,
+        "loc": 33,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "spectralnorm-lua-1-luajit",
+        "seconds": 1.126568459,
+        "loc": 33,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "php",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "spectralnorm-php-1",
+        "seconds": 9.010403667,
+        "loc": 130,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-php-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "spectralnorm-php-8",
+        "seconds": 23.340387166,
+        "loc": 41,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-php-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "javascript",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "spectralnorm-node-6",
+        "seconds": 0.400527541,
+        "loc": 109,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-node-6.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "spectralnorm-node-8",
+        "seconds": 2.390964917,
+        "loc": 38,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-node-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "python",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "revcomp-python3-5",
+        "seconds": 0.462433625,
+        "loc": 88,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-python3-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "revcomp-python3-4",
+        "seconds": 1.129411083,
+        "loc": 15,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-python3-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "ruby",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "revcomp-ruby-4",
+        "seconds": 0.694007583,
+        "loc": 57,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-ruby-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "revcomp-ruby-5",
+        "seconds": 1.413030375,
+        "loc": 15,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-ruby-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "perl",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "revcomp-perl-4",
+        "seconds": 0.534836292,
+        "loc": 16,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-perl-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "revcomp-perl-4",
+        "seconds": 0.534836292,
+        "loc": 16,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-perl-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "lua",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "revcomp-lua-2",
+        "seconds": 5.066564708,
+        "loc": 34,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "revcomp-lua-2",
+        "seconds": 5.066564708,
+        "loc": 34,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "luajit",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "revcomp-lua-5-luajit",
+        "seconds": 1.501016667,
+        "loc": 70,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-lua-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "revcomp-lua-2-luajit",
+        "seconds": 2.658864167,
+        "loc": 34,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "php",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "revcomp-php-3",
+        "seconds": 0.844163375,
+        "loc": 49,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-php-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "revcomp-php-2",
+        "seconds": 1.029475333,
+        "loc": 21,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-php-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "javascript",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "revcomp-node-2",
+        "seconds": 1.882234875,
+        "loc": 181,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-node-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "revcomp-node-2",
+        "seconds": 1.882234875,
+        "loc": 181,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-node-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "python",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "fannkuchredux-python3-4",
+        "seconds": 87.343018375,
+        "loc": 85,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-python3-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fannkuchredux-python3-6",
+        "seconds": 379.705266,
+        "loc": 44,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-python3-6.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "ruby",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "fannkuchredux-ruby-2-cpu4",
+        "seconds": 68.743930625,
+        "loc": 174,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-ruby-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fannkuchredux-ruby-8",
+        "seconds": 1079.721086333,
+        "loc": 46,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-ruby-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "perl",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "fannkuchredux-perl-2",
+        "seconds": 104.6771155,
+        "loc": 68,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-perl-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fannkuchredux-perl-3",
+        "seconds": 407.44712975,
+        "loc": 35,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-perl-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "lua",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "fannkuchredux-lua-1",
+        "seconds": 232.723267083,
+        "loc": 40,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fannkuchredux-lua-1",
+        "seconds": 232.723267083,
+        "loc": 40,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "luajit",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "fannkuchredux-lua-1-luajit",
+        "seconds": 26.253223333,
+        "loc": 40,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fannkuchredux-lua-1-luajit",
+        "seconds": 26.253223333,
+        "loc": 40,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-lua-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "php",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "fannkuchredux-php-4",
+        "seconds": 45.573721583,
+        "loc": 124,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-php-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fannkuchredux-php-1",
+        "seconds": 88.044679166,
+        "loc": 43,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-php-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "javascript",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "fannkuchredux-node-5",
+        "seconds": 4.364394958,
+        "loc": 181,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-node-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fannkuchredux-node-8",
+        "seconds": 26.533341875,
+        "loc": 50,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-node-8.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "language": "python",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "fasta-python3-5",
+        "seconds": 13.263204917,
+        "loc": 168,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-python3-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fasta-python3-1",
+        "seconds": 19.01400225,
+        "loc": 62,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-python3-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "language": "ruby",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "fasta-ruby-6",
+        "seconds": 11.17148,
+        "loc": 95,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ruby-6.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fasta-ruby-2",
+        "seconds": 34.762445291,
+        "loc": 66,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ruby-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "language": "perl",
+      "measured_candidates": 1,
+      "fast": {
+        "id": "fasta-perl-1",
+        "seconds": 23.156820917,
+        "loc": 74,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-perl-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fasta-perl-1",
+        "seconds": 23.156820917,
+        "loc": 74,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-perl-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "language": "lua",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "fasta-lua-2",
+        "seconds": 10.455403666,
+        "loc": 86,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fasta-lua-2",
+        "seconds": 10.455403666,
+        "loc": 86,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "language": "luajit",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "fasta-lua-2-luajit",
+        "seconds": 4.155946167,
+        "loc": 86,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fasta-lua-2-luajit",
+        "seconds": 4.155946167,
+        "loc": 86,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "language": "php",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "fasta-php-3",
+        "seconds": 8.077637917,
+        "loc": 107,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-php-3.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fasta-php-2",
+        "seconds": 14.000759208,
+        "loc": 88,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-php-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "language": "javascript",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "fasta-node-5",
+        "seconds": 0.9609905,
+        "loc": 194,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-node-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "fasta-node-1",
+        "seconds": 13.944454334,
+        "loc": 72,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-node-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "python",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "binarytrees-python3-4",
+        "seconds": 9.192762291,
+        "loc": 34,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-python3-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "binarytrees-python3-2",
+        "seconds": 39.206758292,
+        "loc": 24,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-python3-2.html",
+        "algorithm": {
+          "strict": false,
+          "reason": "Listed compact source uses scalar leaves (Perl) or a shared constant leaf tuple (Python); fewer allocated objects than ordinary-node leaves. Complete output is validated; allocation work differs."
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "ruby",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "binarytrees-ruby-5",
+        "seconds": 7.22139975,
+        "loc": 117,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ruby-5.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "binarytrees-ruby-1",
+        "seconds": 22.222131958,
+        "loc": 27,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ruby-1.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "perl",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "binarytrees-perl-6",
+        "seconds": 12.166952792,
+        "loc": 75,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-perl-6.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "binarytrees-perl-1",
+        "seconds": 98.280011125,
+        "loc": 34,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-perl-1.html",
+        "algorithm": {
+          "strict": false,
+          "reason": "Listed compact source uses scalar leaves (Perl) or a shared constant leaf tuple (Python); fewer allocated objects than ordinary-node leaves. Complete output is validated; allocation work differs."
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "lua",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "binarytrees-lua-4",
+        "seconds": 16.815523583,
+        "loc": 68,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-lua-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "binarytrees-lua-2",
+        "seconds": 47.264672542,
+        "loc": 38,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "luajit",
+      "measured_candidates": 3,
+      "fast": {
+        "id": "binarytrees-lua-4-luajit",
+        "seconds": 5.916913583,
+        "loc": 68,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-lua-4.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "binarytrees-lua-2-luajit",
+        "seconds": 18.903487083,
+        "loc": 38,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-lua-2.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "php",
+      "measured_candidates": 6,
+      "fast": {
+        "id": "binarytrees-php-7-nojit",
+        "seconds": 8.374909084,
+        "loc": 69,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-php-7.html",
+        "algorithm": {
+          "strict": false,
+          "reason": "PHP leaves use constant array literals, which may share copy-on-write backing storage. Allocation parity with ordinary-node leaves is not assumed; recursive construction and full output are validated."
+        }
+      },
+      "small": {
+        "id": "binarytrees-php-3",
+        "seconds": 16.6551415,
+        "loc": 41,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-php-3.html",
+        "algorithm": {
+          "strict": false,
+          "reason": "Listed compact source returns a constant array literal at leaves; PHP may share copy-on-write constant arrays. Allocation parity with ordinary-node leaves is not assumed."
+        }
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "javascript",
+      "measured_candidates": 2,
+      "fast": {
+        "id": "binarytrees-node-6",
+        "seconds": 1.3987845,
+        "loc": 65,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-node-6.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      },
+      "small": {
+        "id": "binarytrees-node-7",
+        "seconds": 5.766925958,
+        "loc": 34,
+        "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-node-7.html",
+        "algorithm": {
+          "strict": true,
+          "reason": "Unmodified listed source; prescribed computation and output."
+        }
+      }
+    }
+  ]
+}

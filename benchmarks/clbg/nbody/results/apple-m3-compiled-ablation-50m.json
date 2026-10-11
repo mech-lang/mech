@@ -1,0 +1,470 @@
+{
+  "created_at": "2026-10-07T02:29:10.439105+00:00",
+  "steps": 50000000,
+  "samples": 3,
+  "cpu": "Apple M3",
+  "git_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "clang": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg",
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+  "compiler_sha256": {
+    "fused-compiler/src/jit.rs": "62306e5998bfffe72d44edd2049ecb49d5afa9e21af4a3fe1e2f8c76d36db366",
+    "fused-compiler/src/lib.rs": "c3558a6520241d3b595651d701715ddc2fc2c5e129c6c188b056c1655be4f6ab"
+  },
+  "protocol": "Fresh processes; AOT compilation excluded; JIT/source/activation included. Kernel timing is separate. Same source and flags except vectorization switches for each SIMD ablation.",
+  "expected_energy": [
+    -0.169075164,
+    -0.169059907
+  ],
+  "sample_order": [
+    [
+      "mech-aot-sqrt-no-simd",
+      "rust-3",
+      "mech-jit-sqrt",
+      "mech-jit-factored",
+      "mech-jit-power",
+      "mech-aot-sqrt",
+      "mech-aot-power",
+      "rust-3-no-simd",
+      "mech-aot-factored"
+    ],
+    [
+      "mech-aot-sqrt",
+      "mech-jit-sqrt",
+      "mech-aot-sqrt-no-simd",
+      "mech-aot-power",
+      "rust-3-no-simd",
+      "mech-jit-power",
+      "mech-aot-factored",
+      "rust-3",
+      "mech-jit-factored"
+    ],
+    [
+      "mech-jit-factored",
+      "mech-aot-power",
+      "mech-aot-sqrt-no-simd",
+      "mech-jit-sqrt",
+      "rust-3",
+      "rust-3-no-simd",
+      "mech-aot-sqrt",
+      "mech-jit-power",
+      "mech-aot-factored"
+    ]
+  ],
+  "full_state_checks": [
+    {
+      "id": "mech-aot-sqrt",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-sqrt",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-sqrt",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-sqrt",
+      "steps": 10000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-sqrt-no-simd",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-sqrt-no-simd",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-sqrt-no-simd",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-sqrt-no-simd",
+      "steps": 10000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-power",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-power",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-power",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-power",
+      "steps": 10000,
+      "max_scaled_state_error": 6.272760089132134e-14
+    },
+    {
+      "id": "mech-aot-factored",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-factored",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-factored",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-aot-factored",
+      "steps": 10000,
+      "max_scaled_state_error": 1.0690642279216523e-13
+    }
+  ],
+  "programs": [
+    {
+      "id": "rust-3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/rust-3"
+      ],
+      "compile_command": [
+        "rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/rust-3"
+      ],
+      "samples_seconds": [
+        1.955116,
+        1.949982584,
+        1.955876708
+      ],
+      "timing_diagnostics": [],
+      "median_seconds": 1.955116
+    },
+    {
+      "id": "rust-3-no-simd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/rust-3-no-simd"
+      ],
+      "compile_command": [
+        "rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "-C",
+        "no-vectorize-loops",
+        "-C",
+        "no-vectorize-slp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/rust-3-no-simd"
+      ],
+      "samples_seconds": [
+        2.511428125,
+        2.503968875,
+        2.531756041
+      ],
+      "timing_diagnostics": [],
+      "median_seconds": 2.511428125
+    },
+    {
+      "id": "mech-aot-sqrt",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-sqrt"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-ablation-sqrt.c",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-sqrt"
+      ],
+      "generated_c_sha256": "72195387b3a2f66bf9be2c374c7ec22f8a85bb9c9f3e9dd94bdbc61d881ddd28",
+      "samples_seconds": [
+        2.216435666,
+        2.210832833,
+        2.216029333
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.199156
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.198132
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.199286
+        }
+      ],
+      "median_seconds": 2.216029333,
+      "median_kernel_seconds": 2.199156,
+      "median_prepare_seconds": 0,
+      "execution_mode": "LLVM AOT via generated C, historical exploratory prototype"
+    },
+    {
+      "id": "mech-aot-sqrt-no-simd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-sqrt-no-simd"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-fno-vectorize",
+        "-fno-slp-vectorize",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-ablation-sqrt.c",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-sqrt-no-simd"
+      ],
+      "generated_c_sha256": "72195387b3a2f66bf9be2c374c7ec22f8a85bb9c9f3e9dd94bdbc61d881ddd28",
+      "samples_seconds": [
+        2.527274666,
+        2.527892959,
+        2.528839584
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.520414
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.511472
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.51365
+        }
+      ],
+      "median_seconds": 2.527892959,
+      "median_kernel_seconds": 2.51365,
+      "median_prepare_seconds": 0,
+      "execution_mode": "LLVM AOT via generated C, historical exploratory prototype"
+    },
+    {
+      "id": "mech-jit-sqrt",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "jit"
+      ],
+      "samples_seconds": [
+        2.615387875,
+        2.622515333,
+        2.636767708
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.189451875,
+          "kernel_seconds": 2.408254209
+        },
+        {
+          "prepare_seconds": 0.191804541,
+          "kernel_seconds": 2.4129025
+        },
+        {
+          "prepare_seconds": 0.190426333,
+          "kernel_seconds": 2.428655667
+        }
+      ],
+      "median_seconds": 2.622515333,
+      "median_kernel_seconds": 2.4129025,
+      "median_prepare_seconds": 0.190426333,
+      "execution_mode": "Cranelift JIT, historical standalone f64 prototype"
+    },
+    {
+      "id": "mech-aot-power",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-power"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-ablation-power.c",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-power"
+      ],
+      "generated_c_sha256": "a899cfdbfbcf40db6d4db2dfb00433068050e501f9888061f2a71f30e9918bf6",
+      "samples_seconds": [
+        8.59061975,
+        8.587999834,
+        8.588863917
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 8.572613
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 8.571407
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 8.571458
+        }
+      ],
+      "median_seconds": 8.588863917,
+      "median_kernel_seconds": 8.571458,
+      "median_prepare_seconds": 0,
+      "execution_mode": "LLVM AOT via generated C, historical exploratory prototype"
+    },
+    {
+      "id": "mech-jit-power",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-power.mec",
+        "jit"
+      ],
+      "samples_seconds": [
+        8.989503125,
+        8.976792292,
+        8.979920375
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.188082958,
+          "kernel_seconds": 8.783626834
+        },
+        {
+          "prepare_seconds": 0.18891825,
+          "kernel_seconds": 8.769264583
+        },
+        {
+          "prepare_seconds": 0.187005542,
+          "kernel_seconds": 8.776003625
+        }
+      ],
+      "median_seconds": 8.979920375,
+      "median_kernel_seconds": 8.776003625,
+      "median_prepare_seconds": 0.188082958,
+      "execution_mode": "Cranelift JIT, historical standalone f64 prototype"
+    },
+    {
+      "id": "mech-aot-factored",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-factored"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-ablation-factored.c",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-factored"
+      ],
+      "generated_c_sha256": "6fba503e0ea8773816344fa320097a8ff022c285014cfc24ace4d6998456a1bb",
+      "samples_seconds": [
+        2.384071708,
+        2.377974709,
+        2.377966416
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.367511
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.362373
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.361
+        }
+      ],
+      "median_seconds": 2.377974709,
+      "median_kernel_seconds": 2.362373,
+      "median_prepare_seconds": 0,
+      "execution_mode": "LLVM AOT via generated C, historical exploratory prototype"
+    },
+    {
+      "id": "mech-jit-factored",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-factored.mec",
+        "jit"
+      ],
+      "samples_seconds": [
+        2.700173417,
+        2.696171709,
+        2.723535416
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.192463917,
+          "kernel_seconds": 2.4896015
+        },
+        {
+          "prepare_seconds": 0.19145325,
+          "kernel_seconds": 2.486535792
+        },
+        {
+          "prepare_seconds": 0.190719083,
+          "kernel_seconds": 2.515154375
+        }
+      ],
+      "median_seconds": 2.700173417,
+      "median_kernel_seconds": 2.4896015,
+      "median_prepare_seconds": 0.19145325,
+      "execution_mode": "Cranelift JIT, historical standalone f64 prototype"
+    }
+  ],
+  "experiment_note": "Historical C-emitting LLVM AOT exploration before the IROS Cranelift AOT backend was located. Its original standalone f64 prototype compiler source hashes are retained; this is not the IROS baseline.",
+  "legacy_harness_snapshot": {
+    "path": "legacy-harness-v1.tar.gz",
+    "sha256": "7eb570bb57ded1d557b36e42a766ff626cbbfa7b1d116a761336951fe8142c76",
+    "note": "Historical handwritten n-body energy adapters and their Cargo entry declarations. Current execution uses the generic runtime and all math is in Mech."
+  }
+}

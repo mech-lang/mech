@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>binary-trees Dart aot&nbsp;#5 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>binary-trees Dart aot&nbsp;#5 program</h1>
+    <aside>
+      <p><a href="../description/binarytrees.html#binarytrees">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks game</span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">   Contributed by Aldo Román </span>
+<span class="com">*/</span>
+
+import <span class="sng">&quot;dart:async&quot;</span> show <span class="kwd">Completer</span><span class="opt">;</span>
+import <span class="sng">&quot;dart:io&quot;</span> show exit<span class="opt">;</span>
+import <span class="sng">&quot;dart:isolate&quot;</span> show <span class="kwd">Isolate</span><span class="opt">,</span> <span class="kwd">SendPort</span><span class="opt">,</span> <span class="kwd">RawReceivePort</span><span class="opt">;</span>
+
+<span class="kwa">const</span> <span class="kwb">int</span> numberOfProcessors <span class="opt">=</span> <span class="num">4</span><span class="opt">;</span>
+<span class="kwa">const</span> <span class="kwb">int</span> minDepth <span class="opt">=</span> <span class="num">4</span><span class="opt">;</span>
+
+<span class="kwa">class</span> <span class="kwd">TreeNode</span> <span class="opt">{</span>
+  <span class="kwa">final</span> <span class="kwd">TreeNode</span><span class="opt">?</span> left<span class="opt">,</span> right<span class="opt">;</span>
+  <span class="kwa">const</span> <span class="kwd">TreeNode</span><span class="opt">(</span><span class="kwa">this</span><span class="opt">.</span>left<span class="opt">,</span> <span class="kwa">this</span><span class="opt">.</span>right<span class="opt">);</span>
+<span class="opt">}</span>
+
+<span class="kwd">TreeNode</span> <span class="kwb">buildTree</span><span class="opt">(</span><span class="kwb">int</span> depth<span class="opt">) =&gt;</span> <span class="num">0</span> <span class="opt">&lt;</span> depth
+    <span class="opt">?</span> <span class="kwd">TreeNode</span><span class="opt">(</span><span class="kwb">buildTree</span><span class="opt">(</span>depth <span class="opt">-</span> <span class="num">1</span><span class="opt">),</span> <span class="kwb">buildTree</span><span class="opt">(</span>depth <span class="opt">-</span> <span class="num">1</span><span class="opt">))</span>
+    <span class="opt">:</span> <span class="kwd">TreeNode</span><span class="opt">(</span><span class="kwa">null</span><span class="opt">,</span> <span class="kwa">null</span><span class="opt">);</span>
+
+<span class="kwb">int itemCheck</span><span class="opt">(</span><span class="kwd">TreeNode</span> node<span class="opt">) {</span>
+  <span class="kwa">if</span> <span class="opt">(</span><span class="kwa">null</span> <span class="opt">==</span> node<span class="opt">.</span>left<span class="opt">) {</span>
+    <span class="kwa">return</span> <span class="num">1</span><span class="opt">;</span>
+  <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+    <span class="kwa">return</span> <span class="num">1</span> <span class="opt">+</span> <span class="kwb">itemCheck</span><span class="opt">(</span>node<span class="opt">.</span>left<span class="opt">!) +</span> <span class="kwb">itemCheck</span><span class="opt">(</span>node<span class="opt">.</span>right<span class="opt">!);</span>
+  <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwa">void</span> <span class="kwb">_isolate</span><span class="opt">(</span><span class="kwd">SendPort</span> parentPort<span class="opt">) {</span>
+  <span class="kwa">final</span> port <span class="opt">=</span> <span class="kwd">RawReceivePort</span><span class="opt">((</span><span class="kwd">List</span> params<span class="opt">) {</span>
+    <span class="kwa">final</span> <span class="kwb">int</span> start <span class="opt">=</span> params<span class="opt">[</span><span class="num">0</span><span class="opt">];</span>
+    <span class="kwa">final</span> <span class="kwb">int</span> end <span class="opt">=</span> params<span class="opt">[</span><span class="num">1</span><span class="opt">];</span>
+    <span class="kwa">final</span> <span class="kwb">int</span> maxDepth <span class="opt">=</span> params<span class="opt">[</span><span class="num">2</span><span class="opt">];</span>
+    <span class="kwa">final</span> <span class="kwd">SendPort</span> resultPort <span class="opt">=</span> params<span class="opt">[</span><span class="num">3</span><span class="opt">];</span>
+
+    <span class="kwa">final</span> <span class="kwd">String</span> result <span class="opt">=</span>
+        <span class="kwd">Iterable</span><span class="opt">.</span><span class="kwb">generate</span><span class="opt">(</span>end <span class="opt">-</span> start<span class="opt">, (</span>i<span class="opt">) =&gt;</span> i <span class="opt">+</span> start<span class="opt">).</span><span class="kwb">map</span><span class="opt">((</span>i<span class="opt">) {</span>
+      <span class="kwa">final</span> <span class="kwb">int</span> depth <span class="opt">=</span> i <span class="opt">*</span> <span class="num">2</span> <span class="opt">+</span> minDepth<span class="opt">;</span>
+      <span class="kwa">final</span> <span class="kwb">int</span> iterations <span class="opt">=</span> <span class="num">1</span> <span class="opt">&lt;&lt; (</span>maxDepth <span class="opt">-</span> depth <span class="opt">+</span> minDepth<span class="opt">);</span>
+      <span class="kwa">final</span> <span class="kwb">int</span> check <span class="opt">=</span> <span class="kwd">Iterable</span><span class="opt">.</span><span class="kwb">generate</span><span class="opt">(</span>iterations<span class="opt">)</span>
+          <span class="opt">.</span><span class="kwb">fold</span><span class="opt">(</span><span class="num">0</span><span class="opt">, (</span>acc<span class="opt">,</span> _<span class="opt">) =&gt;</span> acc <span class="opt">+</span> <span class="kwb">itemCheck</span><span class="opt">(</span><span class="kwb">buildTree</span><span class="opt">(</span>depth<span class="opt">)));</span>
+      <span class="kwa">return</span> <span class="sng">&quot;</span><span class="ipl">${iterations}</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">trees of depth</span> <span class="ipl">$depth</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">$check</span><span class="sng">&quot;</span><span class="opt">;</span>
+    <span class="opt">}).</span><span class="kwb">join</span><span class="opt">(</span><span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">);</span>
+
+    resultPort<span class="opt">.</span><span class="kwb">send</span><span class="opt">(</span>result<span class="opt">);</span>
+  <span class="opt">});</span>
+
+  parentPort<span class="opt">.</span><span class="kwb">send</span><span class="opt">(</span>port<span class="opt">.</span>sendPort<span class="opt">);</span>
+<span class="opt">}</span>
+
+<span class="kwd">Future</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;</span> <span class="kwb">spawnWorker</span><span class="opt">(</span><span class="kwb">int</span> start<span class="opt">,</span> <span class="kwb">int</span> end<span class="opt">,</span> <span class="kwb">int</span> maxDepth<span class="opt">) {</span>
+  <span class="kwa">final</span> <span class="kwd">Completer</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;</span> c <span class="opt">=</span> <span class="kwd">Completer</span><span class="opt">.</span><span class="kwb">sync</span><span class="opt">();</span>
+  <span class="kwa">final</span> resultPort <span class="opt">=</span> <span class="kwd">RawReceivePort</span><span class="opt">(</span>c<span class="opt">.</span>complete<span class="opt">);</span>
+  <span class="kwa">final</span> initPort <span class="opt">=</span> <span class="kwd">RawReceivePort</span><span class="opt">((</span><span class="kwd">SendPort</span> sendPort<span class="opt">) {</span>
+    sendPort<span class="opt">.</span><span class="kwb">send</span><span class="opt">([</span>start<span class="opt">,</span> end<span class="opt">,</span> maxDepth<span class="opt">,</span> resultPort<span class="opt">.</span>sendPort<span class="opt">]);</span>
+  <span class="opt">});</span>
+  <span class="kwd">Isolate</span><span class="opt">.</span><span class="kwb">spawn</span><span class="opt">(</span>_isolate<span class="opt">,</span> initPort<span class="opt">.</span>sendPort<span class="opt">);</span>
+  <span class="kwa">return</span> c<span class="opt">.</span>future<span class="opt">;</span>
+<span class="opt">}</span>
+
+<span class="kwa">void</span> <span class="kwb">main</span><span class="opt">(</span><span class="kwd">List</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;</span> args<span class="opt">) {</span>
+  <span class="kwa">final</span> <span class="kwb">int</span> n <span class="opt">=</span> args<span class="opt">.</span>length <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">?</span> <span class="kwb">int</span><span class="opt">.</span><span class="kwb">parse</span><span class="opt">(</span>args<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> radix<span class="opt">:</span> <span class="num">10</span><span class="opt">) :</span> <span class="num">0</span><span class="opt">;</span>
+
+  <span class="kwa">final</span> <span class="kwb">int</span> maxDepth <span class="opt">= (</span>minDepth <span class="opt">+</span> <span class="num">2</span> <span class="opt">&gt;</span> n<span class="opt">) ?</span> minDepth <span class="opt">+</span> <span class="num">2</span> <span class="opt">:</span> n<span class="opt">;</span>
+
+  <span class="kwa">final</span> <span class="kwb">int</span> stretchDepth <span class="opt">=</span> maxDepth <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+  <span class="kwa">final</span> <span class="kwb">int</span> check <span class="opt">=</span> <span class="kwb">itemCheck</span><span class="opt">(</span><span class="kwb">buildTree</span><span class="opt">(</span>stretchDepth<span class="opt">));</span>
+  <span class="kwb">print</span><span class="opt">(</span><span class="sng">&quot;stretch tree of depth</span> <span class="ipl">$stretchDepth</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">$check</span><span class="sng">&quot;</span><span class="opt">);</span>
+
+  <span class="kwa">final</span> <span class="kwd">TreeNode</span> longLivedTree <span class="opt">=</span> <span class="kwb">buildTree</span><span class="opt">(</span>maxDepth<span class="opt">);</span>
+
+  <span class="kwa">final</span> <span class="kwb">int</span> totalTasks <span class="opt">= (</span>maxDepth <span class="opt">-</span> minDepth<span class="opt">) ~/</span> <span class="num">2</span> <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+  <span class="kwa">final</span> <span class="kwb">int</span> numberOfWorkers <span class="opt">=</span>
+      totalTasks <span class="opt">&gt;</span> numberOfProcessors <span class="opt">?</span> numberOfProcessors <span class="opt">:</span> totalTasks<span class="opt">;</span>
+  <span class="kwa">final</span> <span class="kwb">int</span> tasksPerWorker <span class="opt">=</span> totalTasks <span class="opt">~/</span> numberOfWorkers<span class="opt">;</span>
+  <span class="kwa">final</span> <span class="kwb">int</span> offset <span class="opt">=</span> totalTasks <span class="opt">%</span> numberOfWorkers<span class="opt">;</span>
+
+  <span class="kwa">final</span> tasks <span class="opt">=</span> <span class="kwd">Iterable</span><span class="opt">.</span><span class="kwb">generate</span><span class="opt">(</span>numberOfWorkers<span class="opt">, (</span>i<span class="opt">) {</span>
+    <span class="kwa">final</span> <span class="kwb">int</span> start <span class="opt">=</span> i <span class="opt">*</span> tasksPerWorker <span class="opt">+ ((</span>i <span class="opt">==</span> <span class="num">0</span><span class="opt">) ?</span> <span class="num">0</span> <span class="opt">:</span> offset<span class="opt">);</span>
+    <span class="kwa">final</span> <span class="kwb">int</span> end <span class="opt">=</span> start <span class="opt">+</span> tasksPerWorker <span class="opt">+ ((</span>i <span class="opt">==</span> <span class="num">0</span><span class="opt">) ?</span> offset <span class="opt">:</span> <span class="num">0</span><span class="opt">);</span>
+    <span class="kwa">return</span> <span class="kwb">spawnWorker</span><span class="opt">(</span>start<span class="opt">,</span> end<span class="opt">,</span> maxDepth<span class="opt">);</span>
+  <span class="opt">});</span>
+
+  <span class="kwd">Future</span><span class="opt">.</span><span class="kwb">wait</span><span class="opt">(</span>tasks<span class="opt">)</span>
+      <span class="opt">.</span><span class="kwb">then</span><span class="opt">((</span>resultsPerWorker<span class="opt">) =&gt;</span> resultsPerWorker<span class="opt">.</span><span class="kwb">join</span><span class="opt">(</span><span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">))</span>
+      <span class="opt">.</span><span class="kwb">then</span><span class="opt">(</span>print<span class="opt">)</span>
+      <span class="opt">.</span><span class="kwb">then</span><span class="opt">((</span>_<span class="opt">) {</span>
+    <span class="kwb">print</span><span class="opt">(</span>
+        <span class="sng">&quot;long lived tree of depth</span> <span class="ipl">$maxDepth</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">${itemCheck(longLivedTree)}</span><span class="sng">&quot;</span><span class="opt">);</span>
+    <span class="kwb">exit</span><span class="opt">(</span><span class="num">0</span><span class="opt">);</span>
+  <span class="opt">});</span>
+<span class="opt">}</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Dart SDK version: 3.7.0 (stable)
+Wed Feb 5 04:53:58 2025
+
+
+
+ Sat, 22 Feb 2025 02:06:27 GMT
+
+MAKE:
+/opt/src/dart-sdk/bin/dart analyze 
+Analyzing tmp...
+No issues found!
+
+/opt/src/dart-sdk/bin/dart compile exe binarytrees.dartexe-5.dartexe -o binarytrees.dartexe-5.dartexe_run
+Generated: /home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/binarytrees.dartexe-5.dartexe_run
+
+6.14 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./binarytrees.dartexe-5.dartexe_run 21
+
+PROGRAM OUTPUT:
+stretch tree of depth 22	 check: 8388607
+2097152	 trees of depth 4	 check: 65011712
+524288	 trees of depth 6	 check: 66584576
+131072	 trees of depth 8	 check: 66977792
+32768	 trees of depth 10	 check: 67076096
+8192	 trees of depth 12	 check: 67100672
+2048	 trees of depth 14	 check: 67106816
+512	 trees of depth 16	 check: 67108352
+128	 trees of depth 18	 check: 67108736
+32	 trees of depth 20	 check: 67108832
+long lived tree of depth 21	 check: 4194303
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

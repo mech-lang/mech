@@ -1,0 +1,240 @@
+{
+  "timings_sha256": "b132b38d6e8e313fea5378426596aa6527c8af9af51bb91ae608f935c56a9b21",
+  "full_samples": 135,
+  "semantic_checks": 54,
+  "native_objects_identical": 15,
+  "fastest_by_benchmark": {
+    "revcomp": {
+      "jit": {
+        "source": "revcomp:mech-revcomp-optimized",
+        "loc": 7,
+        "before_seconds": 0.178911125,
+        "seconds": 0.17443625,
+        "speedup": 1.0256533547356126
+      },
+      "resident": {
+        "source": "revcomp:mech-revcomp-optimized",
+        "loc": 7,
+        "before_seconds": 0.233855792,
+        "seconds": 0.22494225,
+        "speedup": 1.039625912873193
+      },
+      "aot-new": {
+        "source": "revcomp:mech-revcomp-optimized",
+        "loc": 7,
+        "before_seconds": 0.148410459,
+        "seconds": 0.147719208,
+        "speedup": 1.0046794930013434
+      }
+    },
+    "regexredux": {
+      "jit": {
+        "source": "regexredux:mech-regex-final-reuse-signed",
+        "loc": 24,
+        "before_seconds": 0.564666334,
+        "seconds": 0.564492708,
+        "speedup": 1.0003075788181839
+      },
+      "resident": {
+        "source": "regexredux:mech-regex-final-reuse-signed",
+        "loc": 24,
+        "before_seconds": 0.473002875,
+        "seconds": 0.478975667,
+        "speedup": 0.9875300721696161
+      },
+      "aot-new": {
+        "source": "regexredux:mech-regex-final-reuse-signed",
+        "loc": 24,
+        "before_seconds": 0.484678417,
+        "seconds": 0.497172625,
+        "speedup": 0.9748694771760613
+      }
+    },
+    "knucleotide": {
+      "jit": {
+        "source": "knucleotide:mech-compact-final-std1-simd0-p4",
+        "loc": 17,
+        "before_seconds": 0.659211333,
+        "seconds": 0.612303667,
+        "speedup": 1.0766085008600805
+      },
+      "resident": {
+        "source": "knucleotide:mech-compact-final-std1-simd0-p4",
+        "loc": 17,
+        "before_seconds": 0.604582792,
+        "seconds": 0.597976959,
+        "speedup": 1.0110469691190893
+      },
+      "aot-new": {
+        "source": "knucleotide:mech-compact-final-std1-simd0-p4",
+        "loc": 17,
+        "before_seconds": 0.521786125,
+        "seconds": 0.507671125,
+        "speedup": 1.0278034327833792
+      }
+    },
+    "pidigits": {
+      "jit": {
+        "source": "pidigits:mech-pi-final-advance-signed",
+        "loc": 38,
+        "before_seconds": 0.719949667,
+        "seconds": 0.447466125,
+        "speedup": 1.6089478661652878
+      },
+      "resident": {
+        "source": "pidigits:mech-pi-final-advance-signed",
+        "loc": 38,
+        "before_seconds": 0.306381708,
+        "seconds": 0.306015459,
+        "speedup": 1.0011968316933948
+      },
+      "aot-new": {
+        "source": "pidigits:mech-pi-final-advance-signed",
+        "loc": 38,
+        "before_seconds": 0.306175542,
+        "seconds": 0.307265083,
+        "speedup": 0.9964540682938583
+      }
+    },
+    "nbody": {
+      "jit": {
+        "source": "nbody:compact-baseline",
+        "loc": 20,
+        "before_seconds": 1.628762125,
+        "seconds": 1.380457333,
+        "speedup": 1.179871399183621
+      },
+      "resident": {
+        "source": "nbody:pairwise-mass-tails",
+        "loc": 25,
+        "before_seconds": 16.6679895,
+        "seconds": 16.149274458,
+        "speedup": 1.0321200214504398
+      },
+      "aot-new": {
+        "source": "nbody:pairwise-mass-tails",
+        "loc": 25,
+        "before_seconds": 1.051977584,
+        "seconds": 1.053824667,
+        "speedup": 0.9982472577670267
+      }
+    },
+    "mandelbrot": {
+      "jit": {
+        "source": "mandelbrot:mech-program-simd-loop-fma",
+        "loc": 29,
+        "before_seconds": 1.066207542,
+        "seconds": 0.783310375,
+        "speedup": 1.3611559045161374
+      },
+      "resident": {
+        "source": "mandelbrot:mech-program-simd-loop-fma",
+        "loc": 29,
+        "before_seconds": 10.783962667,
+        "seconds": 10.762555792,
+        "speedup": 1.0019890140793428
+      },
+      "aot-new": {
+        "source": "mandelbrot:mech-program-simd-loop-fma",
+        "loc": 29,
+        "before_seconds": 0.447153167,
+        "seconds": 0.453510458,
+        "speedup": 0.9859820410139252
+      }
+    },
+    "spectralnorm": {
+      "jit": {
+        "source": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+        "loc": 12,
+        "before_seconds": 0.239738292,
+        "seconds": 0.237050083,
+        "speedup": 1.0113402575775516
+      },
+      "resident": {
+        "source": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+        "loc": 12,
+        "before_seconds": 5.1848855,
+        "seconds": 0.457014417,
+        "speedup": 11.34512458936279
+      },
+      "aot-new": {
+        "source": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+        "loc": 12,
+        "before_seconds": 0.089262084,
+        "seconds": 0.088524458,
+        "speedup": 1.0083324542918977
+      }
+    },
+    "binarytrees": {
+      "jit": {
+        "source": "binarytrees:mech-binarytrees-parallel",
+        "loc": 26,
+        "before_seconds": 0.733148,
+        "seconds": 0.525068667,
+        "speedup": 1.3962897542313262
+      },
+      "resident": {
+        "source": "binarytrees:mech-binarytrees-parallel",
+        "loc": 26,
+        "before_seconds": 9.743936709,
+        "seconds": 9.766766,
+        "speedup": 0.997662553705085
+      },
+      "aot-new": {
+        "source": "binarytrees:mech-binarytrees-parallel",
+        "loc": 26,
+        "before_seconds": 0.403539833,
+        "seconds": 0.400788208,
+        "speedup": 1.0068655338282808
+      }
+    },
+    "fasta": {
+      "jit": {
+        "source": "fasta:mech-fasta-final-expanded-v2",
+        "loc": 43,
+        "before_seconds": 1.126172125,
+        "seconds": 0.765849375,
+        "speedup": 1.4704877509366643
+      },
+      "resident": {
+        "source": "fasta:mech-fasta-final-expanded-v2",
+        "loc": 43,
+        "before_seconds": 18.721241333000002,
+        "seconds": 18.738239708000002,
+        "speedup": 0.9990928510220337
+      },
+      "aot-new": {
+        "source": "fasta:mech-fasta-final-expanded-v2",
+        "loc": 43,
+        "before_seconds": 0.577122333,
+        "seconds": 0.576562292,
+        "speedup": 1.0009713451742697
+      }
+    },
+    "fannkuchredux": {
+      "jit": {
+        "source": "fannkuchredux:mech-fannkuch-even",
+        "loc": 59,
+        "before_seconds": 2.476234958,
+        "seconds": 2.02061375,
+        "speedup": 1.2254865423933694
+      },
+      "resident": {
+        "source": "fannkuchredux:mech-fannkuch-default",
+        "loc": 39,
+        "before_seconds": 59.393436,
+        "seconds": 61.607568583,
+        "speedup": 0.9640607049762556
+      },
+      "aot-new": {
+        "source": "fannkuchredux:mech-fannkuch-even",
+        "loc": 59,
+        "before_seconds": 1.760364167,
+        "seconds": 1.748311375,
+        "speedup": 1.0068939618950887
+      }
+    }
+  },
+  "aot_control_geometric_mean_ratio": 0.9990295303640588,
+  "discarded_runs": 0
+}

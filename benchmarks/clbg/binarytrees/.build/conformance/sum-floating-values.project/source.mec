@@ -1,0 +1,2 @@
+r := stats/sum([1.25 | i <- 0..4])
+io/print("{}\n", control/select(r == 5.0, 1, 0))

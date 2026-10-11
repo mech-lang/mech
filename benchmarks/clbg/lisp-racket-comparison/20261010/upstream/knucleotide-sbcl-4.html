@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Lisp SBCL&nbsp;#4 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Lisp SBCL&nbsp;#4 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">;; The Computer Language Benchmarks Game</span>
+<span class="slc">;;   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">;;</span>
+<span class="slc">;;   contributed by Alexey Voznyuk</span>
+<span class="slc">;;</span>
+
+<span class="opt">(</span><span class="kwa">defpackage</span> <span class="opt">#</span><span class="kwc">:k</span>-nucleotide
+  <span class="opt">(</span><span class="kwc">:use :cl</span><span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">in-package</span> <span class="kwc">:k</span>-nucleotide<span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">with-packed-sequences</span> <span class="opt">((&amp;</span>rest sequences<span class="opt">) &amp;</span>body body<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">loop</span> <span class="kwc">:for</span> <span class="opt">(</span><span class="kwa">bind</span> update length<span class="opt">)</span> <span class="kwc">:in</span> sequences
+     <span class="kwc">:collect</span> <span class="opt">`(,</span>bind <span class="num">0</span><span class="opt">)</span> <span class="kwc">:into</span> binds
+     <span class="kwc">:collect</span> <span class="opt">`(</span><span class="kwa">type</span> <span class="opt">(</span><span class="kwa">integer</span> <span class="num">0</span> <span class="opt">,(</span><span class="kwa">1-</span> <span class="opt">(</span><span class="kwa">expt</span> <span class="num">4</span> length<span class="opt">))) ,</span>bind<span class="opt">)</span> <span class="kwc">:into</span> decls
+     <span class="kwc">:collect</span> <span class="opt">`(,</span>update <span class="opt">(</span><span class="kwa">char</span><span class="opt">) `(</span><span class="kwa">setf</span> <span class="opt">,&#39;,</span>bind
+                                      <span class="opt">(</span><span class="kwa">logior</span> <span class="opt">(</span><span class="kwa">ash</span> <span class="opt">,&#39;,</span>bind -<span class="num">2</span><span class="opt">)</span>
+                                              <span class="opt">(</span><span class="kwa">ash</span> <span class="opt">(</span><span class="kwa">logand</span> <span class="opt">(</span><span class="kwa">char-code</span> <span class="opt">,</span>char<span class="opt">) #</span>x6<span class="opt">)</span>
+                                                   <span class="opt">,&#39;,(</span><span class="kwa">1-</span> <span class="opt">(* (</span><span class="kwa">1-</span> length<span class="opt">)</span> <span class="num">2</span><span class="opt">))))))</span> <span class="kwc">:into</span> updates
+     <span class="kwc">:finally</span> <span class="opt">(</span><span class="kwa">return</span> <span class="opt">`(</span><span class="kwa">let</span> <span class="opt">(,&#64;</span>binds<span class="opt">) (</span><span class="kwa">declare</span> <span class="opt">,&#64;</span>decls<span class="opt">) (</span><span class="kwa">macrolet</span> <span class="opt">(,&#64;</span>updates<span class="opt">) ,&#64;</span>body<span class="opt">)))))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">pack-sequence</span> <span class="opt">(</span><span class="kwa">sequence</span><span class="opt">)</span>
+  <span class="opt">`(</span><span class="kwa">with-packed-sequences</span> <span class="opt">((</span><span class="kwa">bind</span> update <span class="opt">,(</span><span class="kwa">length</span> sequence<span class="opt">)))</span>
+     <span class="opt">(</span><span class="kwa">loop</span> <span class="kwc">:for</span> char <span class="kwc">:across</span> <span class="opt">,</span>sequence
+        <span class="kwc">:do</span> <span class="opt">(</span><span class="kwa">update</span> char<span class="opt">))</span>
+     bind<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">unpack-sequence</span> <span class="opt">(</span><span class="kwa">length</span> packed-seq<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">))</span>
+           <span class="opt">(</span><span class="kwa">type</span> fixnum length packed-seq<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">with-output-to-string</span> <span class="opt">(</span><span class="kwa">seq-out</span><span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">loop</span> <span class="kwc">:repeat</span> length
+       <span class="kwc">:do</span> <span class="opt">(</span><span class="kwa">write-char</span> <span class="opt">(</span><span class="kwa">ecase</span> <span class="opt">(</span><span class="kwa">logand</span> packed-seq <span class="opt">#</span>x3<span class="opt">)</span>
+                         <span class="opt">(</span><span class="kwa">0</span> <span class="opt">#</span><span class="esc">\A</span><span class="opt">) (</span><span class="kwa">1</span> <span class="opt">#</span><span class="esc">\C</span><span class="opt">) (</span><span class="kwa">2</span> <span class="opt">#</span><span class="esc">\T</span><span class="opt">) (</span><span class="kwa">3</span> <span class="opt">#</span><span class="esc">\G</span><span class="opt">))</span>
+                       seq-out<span class="opt">)</span>
+       <span class="kwc">:do</span> <span class="opt">(</span><span class="kwa">setf</span> packed-seq <span class="opt">(</span><span class="kwa">ash</span> packed-seq -<span class="num">2</span><span class="opt">)))))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">with-packed-caches-fill</span> <span class="opt">((</span><span class="kwa">hash-access</span><span class="opt">) &amp;</span>rest updaters<span class="opt">)</span>
+  <span class="opt">`(</span><span class="kwa">progn</span> <span class="opt">,&#64;(</span><span class="kwa">loop</span>
+               <span class="kwc">:for</span> tick <span class="kwc">:from</span> <span class="num">1</span> <span class="kwc">:to</span> <span class="opt">(</span><span class="kwa">apply</span> <span class="opt">#&#39;</span>max <span class="opt">(</span><span class="kwa">mapcar</span> <span class="opt">#&#39;</span>third updaters<span class="opt">))</span>
+               <span class="kwc">:collect</span> <span class="opt">`(</span><span class="kwa">with-current-char</span> <span class="opt">(</span><span class="kwa">char</span> <span class="kwc">:skip</span>-newline t<span class="opt">)</span>
+                           <span class="opt">,&#64;(</span><span class="kwa">loop</span> <span class="kwc">:for</span> <span class="opt">(</span><span class="kwa">bind</span> update length<span class="opt">)</span> <span class="kwc">:in</span> updaters
+                                <span class="kwc">:collect</span> <span class="opt">`(,</span>update char<span class="opt">)</span>
+                                <span class="kwc">:when</span> <span class="opt">(&gt;=</span> tick length<span class="opt">)</span>
+                                <span class="kwc">:collect</span> <span class="opt">`(,</span>hash-access <span class="opt">,</span>length <span class="opt">,</span>bind<span class="opt">))))))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">with-reading-stream</span> <span class="opt">((</span><span class="kwa">stream</span> <span class="opt">&amp;</span>key <span class="opt">(</span><span class="kwa">block-size</span> <span class="num">8192</span><span class="opt">)) &amp;</span>body body<span class="opt">)</span>
+  <span class="opt">`(</span><span class="kwa">block</span> outer-tag
+     <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">advance</span> <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">buffer</span> <span class="opt">(</span><span class="kwa">make-array</span> <span class="opt">,</span>block-size <span class="kwc">:element</span>-type <span class="opt">&#39;</span>standard-char <span class="kwc">:initial</span>-element <span class="opt">#</span><span class="esc">\N</span>ewline<span class="opt">))</span>
+                          <span class="opt">(</span><span class="kwa">index</span> <span class="num">0</span><span class="opt">)</span>
+                          <span class="opt">(</span><span class="kwa">amount</span> <span class="num">0</span><span class="opt">))</span>
+                      <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> fixnum index amount<span class="opt">))</span>
+                      <span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">()</span>
+                        <span class="opt">(</span><span class="kwa">prog2</span> <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(&gt;=</span> index amount<span class="opt">)</span>
+                                 <span class="opt">(</span><span class="kwa">setf</span> amount <span class="opt">(</span><span class="kwa">read-sequence</span> buffer <span class="opt">,</span>stream<span class="opt">)</span>
+                                       index <span class="num">0</span><span class="opt">)</span>
+                                 <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(</span><span class="kwa">zerop</span> amount<span class="opt">)</span>
+                                   <span class="opt">(</span><span class="kwa">return-from</span> outer-tag nil<span class="opt">)))</span>
+                            <span class="opt">(</span><span class="kwa">elt</span> buffer index<span class="opt">)</span>
+                          <span class="opt">(</span><span class="kwa">incf</span> index<span class="opt">))))))</span>
+       <span class="opt">(</span><span class="kwa">flet</span> <span class="opt">((</span><span class="kwa">get-char</span> <span class="opt">() (</span><span class="kwa">funcall</span> advance<span class="opt">)))</span>
+         <span class="opt">(</span><span class="kwa">macrolet</span> <span class="opt">((</span><span class="kwa">with-current-char</span> <span class="opt">((</span><span class="kwa">char</span> <span class="opt">&amp;</span>key skip-newline<span class="opt">) &amp;</span>body body<span class="opt">)</span>
+                      <span class="opt">`(</span><span class="kwa">let</span> <span class="opt">((,</span>char <span class="opt">,(</span><span class="kwa">if</span> skip-newline
+                                         <span class="opt">`(</span><span class="kwa">loop</span> <span class="kwc">:for</span> <span class="opt">,</span>char <span class="opt">= (</span><span class="kwa">get-char</span><span class="opt">)</span> <span class="kwc">:while</span> <span class="opt">(</span><span class="kwa">char</span><span class="opt">= ,</span>char <span class="opt">#</span><span class="esc">\N</span>ewline<span class="opt">)</span>
+                                             <span class="kwc">:finally</span> <span class="opt">(</span><span class="kwa">return</span> <span class="opt">,</span>char<span class="opt">))</span>
+                                         <span class="opt">`(</span><span class="kwa">get-char</span><span class="opt">))))</span>
+                         <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> standard-char <span class="opt">,</span>char<span class="opt">))</span>
+                         <span class="opt">,&#64;</span>body<span class="opt">)))</span>
+           <span class="opt">,&#64;</span>body<span class="opt">)))))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">skip-buffer-to</span> <span class="opt">(&amp;</span>rest patterns<span class="opt">)</span>
+  <span class="opt">`(</span><span class="kwa">progn</span> <span class="opt">,&#64;(</span><span class="kwa">loop</span> <span class="kwc">:for</span> pattern <span class="kwc">:in</span> patterns
+               <span class="kwc">:collect</span> <span class="opt">`(</span><span class="kwa">loop</span> <span class="kwc">:until</span> <span class="opt">(</span><span class="kwa">and</span> <span class="opt">,&#64;(</span><span class="kwa">loop</span> <span class="kwc">:for</span> char <span class="kwc">:across</span> <span class="opt">(</span><span class="kwa">string</span> pattern<span class="opt">)</span>
+                                                <span class="kwc">:collect</span> <span class="opt">`(</span><span class="kwa">with-current-char</span> <span class="opt">(</span><span class="kwa">char</span><span class="opt">)</span>
+                                                            <span class="opt">(</span><span class="kwa">char</span><span class="opt">=</span> char <span class="opt">,</span>char<span class="opt">))))))))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">with-dna-analyzed</span> <span class="opt">((</span><span class="kwa">stream</span> hash-access <span class="opt">&amp;</span>key <span class="opt">(</span><span class="kwa">block-size</span> <span class="num">8192</span><span class="opt">)) &amp;</span>rest sequence-lengths<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">loop</span> <span class="kwc">:for</span> length <span class="kwc">:in</span> sequence-lengths
+     <span class="kwc">:collect</span> <span class="opt">(</span><span class="kwa">gensym</span><span class="opt">)</span> <span class="kwc">:into</span> binds
+     <span class="kwc">:collect</span> <span class="opt">(</span><span class="kwa">gensym</span><span class="opt">)</span> <span class="kwc">:into</span> updaters
+     <span class="kwc">:finally</span> <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">desc</span> <span class="opt">(</span><span class="kwa">mapcar</span> <span class="opt">#&#39;</span>list binds updaters sequence-lengths<span class="opt">)))</span>
+                <span class="opt">(</span><span class="kwa">return</span> <span class="opt">`(</span><span class="kwa">with-packed-sequences</span> <span class="opt">(,&#64;</span>desc<span class="opt">)</span>
+                           <span class="opt">(</span><span class="kwa">with-reading-stream</span> <span class="opt">(,</span>stream <span class="kwc">:block</span>-size <span class="opt">,</span>block-size<span class="opt">)</span>
+                             <span class="opt">(</span><span class="kwa">skip-buffer-to</span> <span class="sng">&quot;&gt;THREE&quot;</span> <span class="opt">#</span><span class="esc">\N</span>ewline<span class="opt">)</span>
+                             <span class="opt">(</span><span class="kwa">with-packed-caches-fill</span> <span class="opt">(,</span>hash-access<span class="opt">)</span>
+                               <span class="opt">,&#64;</span>desc<span class="opt">)</span>
+                             <span class="opt">(</span><span class="kwa">loop</span> <span class="opt">(</span><span class="kwa">with-current-char</span> <span class="opt">(</span><span class="kwa">char</span> <span class="kwc">:skip</span>-newline t<span class="opt">)</span>
+                                     <span class="opt">,&#64;(</span><span class="kwa">loop</span>
+                                          <span class="kwc">:for</span> update <span class="kwc">:in</span> updaters
+                                          <span class="kwc">:for</span> bind <span class="kwc">:in</span> binds
+                                          <span class="kwc">:for</span> length <span class="kwc">:in</span> sequence-lengths
+                                          <span class="kwc">:collect</span> <span class="opt">`(,</span>update char<span class="opt">)</span>
+                                          <span class="kwc">:collect</span> <span class="opt">`(,</span>hash-access <span class="opt">,</span>length <span class="opt">,</span>bind<span class="opt">))))))))))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">seq</span><span class="opt">= (</span><span class="kwa">seq-a</span> seq-b<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">)) (</span><span class="kwa">type</span> fixnum seq-a seq-b<span class="opt">))</span>
+  <span class="opt">(=</span> seq-a seq-b<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">seq-hash</span> <span class="opt">(</span><span class="kwa">seq</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">)) (</span><span class="kwa">type</span> fixnum seq<span class="opt">))</span>
+  seq<span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">sb-ext</span><span class="kwc">:define</span>-hash-table-test seq<span class="opt">=</span> seq-hash<span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">with-smart-dna-hash</span> <span class="opt">((</span><span class="kwa">hash-access</span> hash-loop <span class="opt">&amp;</span>key <span class="opt">(</span><span class="kwa">vector-threshold</span> <span class="num">1048576</span><span class="opt">)) (&amp;</span>rest sequence-lengths<span class="opt">) &amp;</span>body body<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">loop</span> <span class="kwc">:for</span> length <span class="kwc">:in</span> sequence-lengths
+     <span class="kwc">:for</span> bind <span class="opt">= (</span><span class="kwa">gensym</span><span class="opt">)</span>
+     <span class="kwc">:for</span> area <span class="opt">= (</span><span class="kwa">expt</span> <span class="num">4</span> length<span class="opt">)</span>
+     <span class="kwc">:for</span> vec-p <span class="opt">= (&lt;=</span> area vector-threshold<span class="opt">)</span>
+     <span class="kwc">:collect</span> <span class="opt">`(,</span>bind <span class="opt">,(</span><span class="kwa">if</span> vec-p
+                           <span class="opt">`(</span><span class="kwa">make-array</span> <span class="opt">,</span>area <span class="kwc">:element</span>-type <span class="opt">&#39;</span>fixnum <span class="kwc">:initial</span>-element <span class="num">0</span><span class="opt">)</span>
+                           <span class="opt">`(</span><span class="kwa">make-hash-table</span> <span class="kwc">:test</span> <span class="opt">&#39;,(</span><span class="kwa">if</span> <span class="opt">(&lt;</span> area most-positive-fixnum<span class="opt">) &#39;</span>seq<span class="opt">= &#39;</span>eql<span class="opt">)</span>
+                                             <span class="kwc">:rehash</span>-size <span class="opt">,(</span><span class="kwa">expt</span> <span class="num">2</span> <span class="opt">(</span><span class="kwa">1-</span> length<span class="opt">))</span>
+                                             <span class="kwc">:rehash</span>-threshold <span class="num">0.7</span><span class="opt">)))</span> <span class="kwc">:into</span> binds
+     <span class="kwc">:collect</span> <span class="opt">`(,</span>length <span class="opt">,(</span><span class="kwa">if</span> vec-p <span class="opt">``(</span><span class="kwa">elt</span> <span class="opt">,&#39;,</span>bind <span class="opt">,</span>key<span class="opt">) ``(</span><span class="kwa">the</span> fixnum <span class="opt">(</span><span class="kwa">gethash</span> <span class="opt">,</span>key <span class="opt">,&#39;,</span>bind <span class="num">0</span><span class="opt">))))</span> <span class="kwc">:into</span> accesses
+     <span class="kwc">:collect</span> <span class="opt">`(,</span>length <span class="opt">,(</span><span class="kwa">if</span> vec-p
+                             <span class="opt">``(</span><span class="kwa">loop</span> <span class="kwc">:for</span> i <span class="kwc">:from</span> <span class="num">0</span> <span class="kwc">:below</span> <span class="opt">,&#39;,(</span><span class="kwa">expt</span> <span class="num">4</span> length<span class="opt">)</span>
+                                  <span class="kwc">:for</span> <span class="opt">,</span>value <span class="opt">= (</span><span class="kwa">elt</span> <span class="opt">,&#39;,</span>bind i<span class="opt">)</span>
+                                  <span class="kwc">:for</span> <span class="opt">,</span>key <span class="opt">= (</span><span class="kwa">unpack-sequence</span> <span class="opt">,&#39;,</span>length i<span class="opt">)</span>
+                                  <span class="kwc">:unless</span> <span class="opt">(</span><span class="kwa">zerop</span> <span class="opt">,</span>value<span class="opt">)</span>
+                                  <span class="opt">,&#64;</span>loop-keywords<span class="opt">)</span>
+                             <span class="opt">``(</span><span class="kwa">loop</span> <span class="kwc">:for</span> packed-key <span class="kwc">:being :the :hash</span>-keys <span class="kwc">:in</span> <span class="opt">,&#39;,</span>bind
+                                  <span class="kwc">:for</span> <span class="opt">,</span>key <span class="opt">= (</span><span class="kwa">unpack-sequence</span> <span class="opt">,&#39;,</span>length packed-key<span class="opt">)</span>
+                                  <span class="kwc">:for</span> <span class="opt">,</span>value <span class="opt">= (,&#39;,</span>hash-access <span class="opt">,&#39;,</span>length packed-key<span class="opt">)</span>
+                                  <span class="opt">,&#64;</span>loop-keywords<span class="opt">)))</span> <span class="kwc">:into</span> loops
+     <span class="kwc">:finally</span> <span class="opt">(</span><span class="kwa">return</span> <span class="opt">`(</span><span class="kwa">let</span> <span class="opt">(,&#64;</span>binds<span class="opt">)</span>
+                         <span class="opt">(</span><span class="kwa">macrolet</span> <span class="opt">((,</span>hash-access <span class="opt">(</span><span class="kwa">seq-length</span> key<span class="opt">) (</span><span class="kwa">ecase</span> seq-length <span class="opt">,&#64;</span>accesses<span class="opt">))</span>
+                                    <span class="opt">(,</span>hash-loop <span class="opt">((</span><span class="kwa">seq-length</span> key value<span class="opt">) &amp;</span>rest loop-keywords<span class="opt">) (</span><span class="kwa">ecase</span> seq-length <span class="opt">,&#64;</span>loops<span class="opt">)))</span>
+                           <span class="opt">,&#64;</span>body<span class="opt">)))))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">with-percentage</span> <span class="opt">((</span><span class="kwa">hash-loop</span> <span class="opt">&amp;</span>rest seq-descriptions<span class="opt">) &amp;</span>body body<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">null</span> seq-descriptions<span class="opt">)</span>
+      <span class="opt">`(</span><span class="kwa">progn</span> <span class="opt">,&#64;</span>body<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">destructuring-bind</span> <span class="opt">(</span><span class="kwa">seq-bind</span> seq-length<span class="opt">)</span>
+          <span class="opt">(</span><span class="kwa">car</span> seq-descriptions<span class="opt">)</span>
+        <span class="opt">`(</span><span class="kwa">let</span> <span class="opt">((,</span>seq-bind <span class="opt">(,</span>hash-loop <span class="opt">(,</span>seq-length k v<span class="opt">)</span>
+                                      <span class="kwc">:summing</span> v <span class="kwc">:into</span> total <span class="kwc">:of</span>-type fixnum
+                                      <span class="kwc">:and :collect</span> k <span class="kwc">:into</span> seqs
+                                      <span class="kwc">:and :collect</span> v <span class="kwc">:into</span> counts
+                                      <span class="kwc">:finally</span> <span class="opt">(</span><span class="kwa">return</span> <span class="opt">(</span><span class="kwa">mapcar</span> <span class="opt">#&#39;</span>list
+                                                               seqs
+                                                               <span class="opt">(</span><span class="kwa">mapcar</span> <span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">(</span><span class="kwa">count</span><span class="opt">)</span>
+                                                                         <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> fixnum count<span class="opt">))</span>
+                                                                         <span class="opt">(/ (*</span> count <span class="num">100.0</span><span class="opt">)</span> total<span class="opt">))</span>
+                                                                       counts<span class="opt">))))))</span>
+           <span class="opt">(</span><span class="kwa">with-percentage</span> <span class="opt">(,</span>hash-loop <span class="opt">,&#64;(</span><span class="kwa">cdr</span> seq-descriptions<span class="opt">)) ,&#64;</span>body<span class="opt">)))))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">obtain-seq-count</span> <span class="opt">(</span><span class="kwa">hash-access</span> seq<span class="opt">)</span>
+  <span class="opt">`(</span><span class="kwa">list</span> <span class="opt">(,</span>hash-access <span class="opt">,(</span><span class="kwa">length</span> seq<span class="opt">) (</span><span class="kwa">pack-sequence</span> <span class="opt">,</span>seq<span class="opt">)) #</span><span class="esc">\T</span>ab <span class="opt">,</span>seq<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">perform-work</span> <span class="opt">(</span><span class="kwa">stream</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">)))</span>
+  <span class="opt">(</span><span class="kwa">with-smart-dna-hash</span> <span class="opt">(</span><span class="kwa">hash-access</span> hash-loop <span class="kwc">:vector</span>-threshold <span class="num">16777216</span><span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">1</span> <span class="num">2 3 4 6 12 18</span><span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">macrolet</span> <span class="opt">((</span><span class="kwa">incf-hash-element</span> <span class="opt">(</span><span class="kwa">seq-length</span> key<span class="opt">)</span>
+                 <span class="opt">`(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">hash-access</span> <span class="opt">,</span>seq-length <span class="opt">,</span>key<span class="opt">))))</span>
+      <span class="opt">(</span><span class="kwa">with-dna-analyzed</span> <span class="opt">(</span><span class="kwa">stream</span> incf-hash-element <span class="kwc">:block</span>-size <span class="num">655350</span><span class="opt">)</span> <span class="num">1 2 3 4 6 12 18</span><span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">with-percentage</span> <span class="opt">(</span><span class="kwa">hash-loop</span> <span class="opt">(</span><span class="kwa">seqs-1</span> <span class="num">1</span><span class="opt">) (</span><span class="kwa">seqs-2</span> <span class="num">2</span><span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">values</span> <span class="opt">(</span><span class="kwa">list</span> seqs-1 seqs-2<span class="opt">)</span>
+                <span class="opt">(</span><span class="kwa">list</span> <span class="opt">(</span><span class="kwa">obtain-seq-count</span> hash-access <span class="sng">&quot;GGT&quot;</span><span class="opt">)</span>
+                      <span class="opt">(</span><span class="kwa">obtain-seq-count</span> hash-access <span class="sng">&quot;GGTA&quot;</span><span class="opt">)</span>
+                      <span class="opt">(</span><span class="kwa">obtain-seq-count</span> hash-access <span class="sng">&quot;GGTATT&quot;</span><span class="opt">)</span>
+                      <span class="opt">(</span><span class="kwa">obtain-seq-count</span> hash-access <span class="sng">&quot;GGTATTTTAATT&quot;</span><span class="opt">)</span>
+                      <span class="opt">(</span><span class="kwa">obtain-seq-count</span> hash-access <span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span><span class="opt">)))))))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">print-results</span> <span class="opt">(</span><span class="kwa">seq-freqs</span> seq-counts<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">labels</span> <span class="opt">((</span><span class="kwa">compare</span> <span class="opt">(</span><span class="kwa">a</span> b<span class="opt">)</span>
+             <span class="opt">(</span><span class="kwa">cond</span> <span class="opt">((&gt; (</span><span class="kwa">second</span> a<span class="opt">) (</span><span class="kwa">second</span> b<span class="opt">))</span> t<span class="opt">)</span>
+                   <span class="opt">((&lt; (</span><span class="kwa">second</span> a<span class="opt">) (</span><span class="kwa">second</span> b<span class="opt">))</span> nil<span class="opt">)</span>
+                   <span class="opt">(</span><span class="kwa">t</span> <span class="opt">(</span><span class="kwa">string</span><span class="opt">&lt; (</span><span class="kwa">first</span> a<span class="opt">) (</span><span class="kwa">first</span> b<span class="opt">)))))</span>
+           <span class="opt">(</span><span class="kwa">print-freq</span> <span class="opt">(</span><span class="kwa">freq</span><span class="opt">)</span>
+             <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;~{~{~a ~3$~}~%~}~%&quot;</span> <span class="opt">(</span><span class="kwa">sort</span> freq <span class="opt">#&#39;</span>compare<span class="opt">))))</span>
+    <span class="opt">(</span><span class="kwa">mapc</span> <span class="opt">#&#39;</span>print-freq seq-freqs<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;~{~{~a~c~a~}~%~}&quot;</span> seq-counts<span class="opt">)))</span>
+
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">main</span> <span class="opt">()</span>
+  <span class="opt">(</span><span class="kwa">with-open-file</span> <span class="opt">(</span><span class="kwa">input-s</span> <span class="opt">#</span>p<span class="sng">&quot;/dev/stdin&quot;</span> <span class="kwc">:external</span>-format <span class="kwc">:iso</span>-<span class="num">8859</span>-<span class="num">1</span><span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">multiple-value-bind</span> <span class="opt">(</span><span class="kwa">freqs</span> counts<span class="opt">)</span>
+        <span class="opt">(</span><span class="kwa">perform-work</span> input-s<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">print-results</span> freqs counts<span class="opt">))))</span>
+
+
+<span class="opt">(</span><span class="kwa">in-package</span> <span class="kwc">:cl</span>-user<span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">main</span> <span class="opt">()</span>
+  <span class="opt">(</span><span class="kwa">k-nucleotide</span><span class="opt">:</span><span class="kwc">:main</span><span class="opt">))</span>
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+SBCL 2.4.8
+
+
+ Mon, 13 Jan 2025 01:32:33 GMT
+
+MAKE:
+cp: 'knucleotide.sbcl-4.sbcl' and './knucleotide.sbcl-4.sbcl' are the same file
+SBCL built with: /opt/src/sbcl-2.4.8/bin/sbcl --userinit /dev/null --batch --eval '(load &quot;knucleotide.sbcl-4.sbcl_compile&quot;)'
+### START knucleotide.sbcl-4.sbcl_compile
+(handler-bind ((sb-ext:defconstant-uneql      (lambda (c) (abort c))))      (require :sb-concurrency)      (load (compile-file &quot;knucleotide.sbcl-4.sbcl&quot; ))) (save-lisp-and-die &quot;sbcl.core&quot; :purify t)
+### END knucleotide.sbcl-4.sbcl_compile
+
+; compiling file &quot;/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/knucleotide.sbcl-4.sbcl&quot; (written 26 APR 2018 12:48:18 PM):
+
+; wrote /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/knucleotide.sbcl-4.fasl
+; compilation finished in 0:00:00.427
+### START knucleotide.sbcl-4.sbcl_run
+(main) (quit)
+### END knucleotide.sbcl-4.sbcl_run
+
+
+2.80s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/sbcl-2.4.8/bin/sbcl  --noinform --core sbcl.core --userinit /dev/null --load knucleotide.sbcl-4.sbcl_run 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

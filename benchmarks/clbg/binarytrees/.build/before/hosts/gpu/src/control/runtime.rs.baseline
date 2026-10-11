@@ -1,0 +1,720 @@
+//! Storage, CLI formatting and general range scheduling; all callbacks are native.
+use rayon::prelude::*;
+use std::{
+    cell::RefCell,
+    io::{BufWriter, Stdout, Write},
+};
+type Entry = unsafe extern "C" fn(*const u64, *mut u64) -> u64;
+type Range = unsafe extern "C" fn(u64, u64, *const u64, *mut u64) -> u64;
+type Scan = unsafe extern "C" fn(u64, *const u64, *mut u8, *mut u64) -> u64;
+type ScanProducer = unsafe extern "C" fn(u64, *const u64, *mut u32, *mut u64) -> u64;
+type ScanMapper = unsafe extern "C" fn(u64, *const u32, *mut u8, *mut u64) -> u64;
+struct OutputSession {
+    writer: BufWriter<Stdout>,
+    error: Option<String>,
+}
+impl OutputSession {
+    fn write(&mut self, bytes: &[u8]) -> u64 {
+        if let Err(error) = self.writer.write_all(bytes) {
+            self.error = Some(error.to_string());
+            6
+        } else {
+            0
+        }
+    }
+}
+thread_local! {
+    static OUTPUT: RefCell<Option<OutputSession>> = const { RefCell::new(None) };
+}
+fn write_bytes(bytes: &[u8]) -> u64 {
+    OUTPUT.with(|output| {
+        let mut output = output.borrow_mut();
+        let Some(session) = output.as_mut() else {
+            return 6;
+        };
+        session.write(bytes)
+    })
+}
+
+/// Run the object and its source-derived IO descriptor emitted together.
+/// # Safety
+/// `entry` must obey the admitted native ABI and match this compiler descriptor.
+pub unsafe fn run_cli(entry: Entry, descriptor: &str) -> Result<(), String> {
+    let spec: serde_json::Value = serde_json::from_str(descriptor).map_err(|e| e.to_string())?;
+    let required = spec["arguments"].as_u64().ok_or("argument descriptor")? as usize;
+    let count = spec["outputs"].as_u64().ok_or("output descriptor")? as usize;
+    let format = spec["format"].as_str().ok_or("format descriptor")?;
+    let args = std::env::args()
+        .skip(1)
+        .map(|s| {
+            s.parse::<u64>()
+                .map_err(|_| "expected unsigned integer arguments".to_string())
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if args.len() < required || required > 32 || count > 64 {
+        return Err("missing arguments or malformed native descriptor".into());
+    }
+    let mut output = vec![0; count];
+    let streaming = spec["stream_output"].as_bool().unwrap_or(false);
+    if streaming {
+        OUTPUT.with(|out| {
+            let mut out = out.borrow_mut();
+            if out.is_some() {
+                return Err("nested output sessions unsupported".to_string());
+            }
+            *out = Some(OutputSession {
+                writer: BufWriter::with_capacity(1048576, std::io::stdout()),
+                error: None,
+            });
+            Ok(())
+        })?;
+    }
+    // SAFETY: caller guarantees this object/descriptor pair; argument/output
+    // storage has the exact validated lengths and stays live for synchronous entry.
+    let status = unsafe { entry(args.as_ptr(), output.as_mut_ptr()) };
+    if streaming {
+        let mut session = OUTPUT
+            .with(|out| out.borrow_mut().take())
+            .ok_or("missing output session")?;
+        session.writer.flush().map_err(|e| e.to_string())?;
+        if let Some(error) = session.error {
+            return Err(error);
+        }
+    }
+    if status != 0 {
+        return Err(format!(
+            "native control error {status}: bounds, arithmetic domain or range callback"
+        ));
+    }
+    let stdout = std::io::stdout();
+    let mut writer = stdout.lock();
+    let mut rest = format;
+    for value in output {
+        let index = rest.find('{').ok_or("format descriptor mismatch")?;
+        writer
+            .write_all(rest[..index].as_bytes())
+            .map_err(|e| e.to_string())?;
+        if rest[index..].starts_with("{:i64}") {
+            write!(writer, "{}", value as i64).map_err(|e| e.to_string())?;
+            rest = &rest[index + 6..];
+        } else if rest[index..].starts_with("{}") {
+            write!(writer, "{value}").map_err(|e| e.to_string())?;
+            rest = &rest[index + 2..];
+        } else {
+            return Err("unsupported format descriptor".into());
+        }
+    }
+    writer
+        .write_all(rest.as_bytes())
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Serialize constant text from an admitted object during its synchronous entry.
+/// # Safety
+/// The bytes must be initialized and remain live for the provided length.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_control_write(bytes: *const u8, length: u64) -> u64 {
+    let Ok(length) = usize::try_from(length) else {
+        return 6;
+    };
+    if length == 0 {
+        return write_bytes(&[]);
+    }
+    // SAFETY: the same-object emitter owns this immutable constant and exact length.
+    write_bytes(unsafe { std::slice::from_raw_parts(bytes, length) })
+}
+
+/// Stream a stateful source scan through bounded byte storage and general wrapping.
+/// # Safety
+/// The callback and initialized scalar-state/separator regions come from one
+/// admitted object. Output state is an exclusive region of exactly `fields` u64s.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_control_scan(
+    count: u64,
+    initial: *const u64,
+    fields: u64,
+    callback: u64,
+    width: u64,
+    separator: *const u8,
+    separator_length: u64,
+    buffer_size: u64,
+    final_state: *mut u64,
+) -> u64 {
+    if fields == 0
+        || fields > 32
+        || callback == 0
+        || buffer_size == 0
+        || buffer_size > 1048576
+        || separator_length > 4096
+    {
+        return 6;
+    }
+    let Ok(width) = usize::try_from(width) else {
+        return 6;
+    };
+    let block = buffer_size as usize;
+    let cap = if width == 0 {
+        block
+    } else {
+        let Some(cap) = block.checked_add(
+            block
+                .div_ceil(width)
+                .saturating_add(1)
+                .saturating_mul(separator_length as usize),
+        ) else {
+            return 6;
+        };
+        if cap > 67108864 {
+            return 6;
+        }
+        cap
+    };
+    // SAFETY: compiler-owned state pointers have fields initialized u64s and
+    // disjoint output storage; the callback signature matches its emitted ABI.
+    let mut state = unsafe { std::slice::from_raw_parts(initial, fields as usize) }.to_vec();
+    let separator = if separator_length == 0 {
+        &[][..]
+    } else {
+        // SAFETY: same-object constant byte length checked above; zero avoids a null slice.
+        unsafe { std::slice::from_raw_parts(separator, separator_length as usize) }
+    };
+    // SAFETY: same-object admission binds this pointer to the exact four-argument Scan ABI.
+    let function = unsafe { std::mem::transmute::<usize, Scan>(callback as usize) };
+    let mut next = vec![0; fields as usize];
+    let mut bytes = vec![0; block];
+    let mut wrapped = Vec::with_capacity(cap);
+    let mut remaining = count;
+    let mut column = 0;
+    while remaining > 0 {
+        let length = remaining.min(buffer_size) as usize;
+        // SAFETY: immutable state and exclusive next/byte buffers are live,
+        // initialized and exact sized; the synchronous callback runs no host IO.
+        let status = unsafe {
+            function(
+                length as u64,
+                state.as_ptr(),
+                bytes.as_mut_ptr(),
+                next.as_mut_ptr(),
+            )
+        };
+        if status != 0 {
+            return status;
+        }
+        std::mem::swap(&mut state, &mut next);
+        let status = if width == 0 {
+            write_bytes(&bytes[..length])
+        } else {
+            wrapped.clear();
+            let mut position = 0;
+            while position < length {
+                let part = (width - column).min(length - position);
+                wrapped.extend_from_slice(&bytes[position..position + part]);
+                column += part;
+                position += part;
+                if column == width {
+                    wrapped.extend_from_slice(separator);
+                    column = 0;
+                }
+            }
+            write_bytes(&wrapped)
+        };
+        if status != 0 {
+            return status;
+        }
+        remaining -= length as u64;
+    }
+    if column != 0 {
+        let status = write_bytes(separator);
+        if status != 0 {
+            return status;
+        }
+    }
+    // SAFETY: native entry supplied exclusive final-state storage; all callbacks
+    // have completed and the source state allocation is separate from that region.
+    unsafe {
+        std::ptr::copy_nonoverlapping(state.as_ptr(), final_state, fields as usize);
+    }
+    0
+}
+
+/// Replay a proven literal-table cycle through bounded, preformatted storage.
+/// # Safety
+/// The ordinary scan ABI applies. The same-object compiler additionally proves
+/// one integer state, table lookup at state + 1, and next = (state + 1) % period.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_control_scan_periodic(
+    count: u64,
+    initial: *const u64,
+    fields: u64,
+    callback: u64,
+    width: u64,
+    separator: *const u8,
+    separator_length: u64,
+    buffer_size: u64,
+    final_state: *mut u64,
+    period: u64,
+) -> u64 {
+    // Keep small scans, invalid domains and oversized alignments on the ordinary
+    // path, preserving its guards and avoiding work beyond the requested scan.
+    let fallback = || {
+        // SAFETY: this ABI forwards the same admitted callback and storage.
+        unsafe {
+            mech_control_scan(
+                count,
+                initial,
+                fields,
+                callback,
+                width,
+                separator,
+                separator_length,
+                buffer_size,
+                final_state,
+            )
+        }
+    };
+    if fields != 1
+        || period == 0
+        || period > 1048576
+        || callback == 0
+        || buffer_size == 0
+        || buffer_size > 1048576
+        || separator_length > 4096
+    {
+        return fallback();
+    }
+    // SAFETY: one initialized scalar belongs to the admitted scan object.
+    let start = unsafe { *initial };
+    if start >= period {
+        return fallback();
+    }
+    let alignment = if width == 0 {
+        period
+    } else {
+        let (mut a, mut b) = (period, width);
+        while b != 0 {
+            (a, b) = (b, a % b);
+        }
+        let Some(alignment) = (period / a).checked_mul(width) else {
+            return fallback();
+        };
+        alignment
+    };
+    if alignment > buffer_size || count < alignment {
+        return fallback();
+    }
+    let length = (buffer_size / alignment) * alignment;
+    let separators = if width == 0 { 0 } else { length / width };
+    let Some(capacity) = separators
+        .checked_mul(separator_length)
+        .and_then(|n| n.checked_add(length))
+    else {
+        return fallback();
+    };
+    if capacity > 67108864 {
+        return fallback();
+    }
+    // SAFETY: same-object admission binds this pointer to the four-argument Scan ABI.
+    let function = unsafe { std::mem::transmute::<usize, Scan>(callback as usize) };
+    let mut cycle = vec![0; period as usize];
+    let mut next = 0;
+    // SAFETY: callback storage has exactly period bytes and one initialized
+    // input/output scalar. No callback IO or borrowed storage escapes this call.
+    let status = unsafe { function(period, initial, cycle.as_mut_ptr(), &mut next) };
+    if status != 0 {
+        return status;
+    }
+    if next != start {
+        return 6;
+    }
+    let separator = if separator_length == 0 {
+        &[][..]
+    } else {
+        // SAFETY: this is the immutable same-object separator and exact length.
+        unsafe { std::slice::from_raw_parts(separator, separator_length as usize) }
+    };
+    let mut block = Vec::with_capacity(capacity as usize);
+    for i in 0..length {
+        block.push(cycle[(i % period) as usize]);
+        if width != 0 && (i + 1) % width == 0 {
+            block.extend_from_slice(separator);
+        }
+    }
+    let mut remaining = count;
+    while remaining >= length {
+        let status = write_bytes(&block);
+        if status != 0 {
+            return status;
+        }
+        remaining -= length;
+    }
+    let prefix = remaining
+        + if width == 0 {
+            0
+        } else {
+            (remaining / width) * separator_length
+        };
+    let status = write_bytes(&block[..prefix as usize]);
+    if status != 0 {
+        return status;
+    }
+    if width != 0 && remaining % width != 0 {
+        let status = write_bytes(separator);
+        if status != 0 {
+            return status;
+        }
+    }
+    // SAFETY: callbacks have completed, and the exclusive output scalar belongs
+    // to this native entry. The proven period bounds make this addition exact.
+    unsafe {
+        *final_state = (start + count % period) % period;
+    }
+    0
+}
+
+struct ScanBlock {
+    length: usize,
+    column: usize,
+    initial: u64,
+    state: u64,
+    status: u64,
+    samples: Vec<u32>,
+    bytes: Vec<u8>,
+    wrapped: Vec<u8>,
+}
+impl ScanBlock {
+    fn new(size: usize, capacity: usize) -> Self {
+        Self {
+            length: 0,
+            column: 0,
+            initial: 0,
+            state: 0,
+            status: 0,
+            samples: vec![0; size],
+            bytes: vec![0; size],
+            wrapped: Vec::with_capacity(capacity),
+        }
+    }
+}
+
+/// Overlap source state generation with independent source byte mapping.
+/// # Safety
+/// The ordinary scan ABI applies. The same-object compiler proves one integer
+/// state, u32 next-state samples, and byte mapping dependent only on those
+/// samples. Callbacks are pure and synchronous; private buffers cross a bounded
+/// channel. The worker exclusively owns the output session while this call runs;
+/// it joins and restores that session before any later source effect can execute.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_control_scan_pipeline(
+    count: u64,
+    initial: *const u64,
+    fields: u64,
+    callback: u64,
+    width: u64,
+    separator: *const u8,
+    separator_length: u64,
+    buffer_size: u64,
+    final_state: *mut u64,
+    producer: u64,
+    mapper: u64,
+) -> u64 {
+    let fallback = || {
+        // SAFETY: this forwards the ordinary ABI's admitted callback/storage.
+        unsafe {
+            mech_control_scan(
+                count,
+                initial,
+                fields,
+                callback,
+                width,
+                separator,
+                separator_length,
+                buffer_size,
+                final_state,
+            )
+        }
+    };
+    if fields != 1
+        || callback == 0
+        || producer == 0
+        || mapper == 0
+        || buffer_size == 0
+        || buffer_size > 1048576
+        || separator_length > 4096
+        || buffer_size < 1024
+        || count < buffer_size.saturating_mul(2).max(131072)
+    {
+        return fallback();
+    }
+    let Ok(width) = usize::try_from(width) else {
+        return 6;
+    };
+    let size = buffer_size as usize;
+    let cap = if width == 0 {
+        size
+    } else {
+        let Some(cap) = size.checked_add(
+            size.div_ceil(width)
+                .saturating_add(1)
+                .saturating_mul(separator_length as usize),
+        ) else {
+            return 6;
+        };
+        if cap > 67108864 {
+            return 6;
+        }
+        cap
+    };
+    let separator = if separator_length == 0 {
+        &[][..]
+    } else {
+        // SAFETY: same-object immutable separator remains live through all writes.
+        unsafe { std::slice::from_raw_parts(separator, separator_length as usize) }
+    };
+    // SAFETY: compiler admission binds all three functions to their exact ABIs.
+    let (source, produce, map) = unsafe {
+        (
+            std::mem::transmute::<usize, Scan>(callback as usize),
+            std::mem::transmute::<usize, ScanProducer>(producer as usize),
+            std::mem::transmute::<usize, ScanMapper>(mapper as usize),
+        )
+    };
+    // SAFETY: admission provides one initialized integer state scalar.
+    let mut state = unsafe { *initial };
+    let Some(output) = OUTPUT.with(|out| out.borrow_mut().take()) else {
+        return 6;
+    };
+    let output = std::sync::Arc::new(std::sync::Mutex::new(output));
+    let status = std::thread::scope(|scope| {
+        let (send, jobs) = std::sync::mpsc::sync_channel::<ScanBlock>(1);
+        let (completed, receive) = std::sync::mpsc::sync_channel::<ScanBlock>(1);
+        let worker_output = output.clone();
+        let worker = std::thread::Builder::new()
+            .name("mech-scan-map".into())
+            .spawn_scoped(scope, move || {
+                let mut output = worker_output.lock().unwrap_or_else(|e| e.into_inner());
+                while let Ok(mut block) = jobs.recv() {
+                    if block.status == 0 {
+                        let mut unused = 0;
+                        // SAFETY: the worker exclusively owns exact-sized,
+                        // initialized sample/byte buffers and runs a pure callback.
+                        block.status = unsafe {
+                            map(
+                                block.length as u64,
+                                block.samples.as_ptr(),
+                                block.bytes.as_mut_ptr(),
+                                &mut unused,
+                            )
+                        };
+                    }
+                    if block.status != 0 {
+                        // Splitting changes evaluation order within a block.
+                        // Re-evaluate the original callback to retain its first error.
+                        let mut next = 0;
+                        // SAFETY: admitted source callback and exclusive exact-sized storage.
+                        let status = unsafe {
+                            source(
+                                block.length as u64,
+                                &block.initial,
+                                block.bytes.as_mut_ptr(),
+                                &mut next,
+                            )
+                        };
+                        block.status = if status == 0 { 6 } else { status };
+                    }
+                    if block.status == 0 && width != 0 {
+                        block.wrapped.clear();
+                        let mut column = block.column;
+                        let mut position = 0;
+                        while position < block.length {
+                            let part = (width - column).min(block.length - position);
+                            block
+                                .wrapped
+                                .extend_from_slice(&block.bytes[position..position + part]);
+                            column += part;
+                            position += part;
+                            if column == width {
+                                block.wrapped.extend_from_slice(separator);
+                                column = 0;
+                            }
+                        }
+                    }
+                    if block.status == 0 {
+                        block.status = output.write(if width == 0 {
+                            &block.bytes[..block.length]
+                        } else {
+                            &block.wrapped
+                        });
+                    }
+                    let failed = block.status != 0;
+                    if completed.send(block).is_err() || failed {
+                        break;
+                    }
+                }
+            });
+        let Ok(worker) = worker else {
+            return 7;
+        };
+        let mut column = 0;
+        let status = (|| {
+            let mut spare = ScanBlock::new(size, cap);
+            let mut remaining = count;
+            let mut pending = false;
+            let mut second = Some(ScanBlock::new(size, cap));
+            while remaining > 0 {
+                spare.length = remaining.min(buffer_size) as usize;
+                spare.column = column;
+                if width != 0 {
+                    column = ((column as u128 + spare.length as u128) % width as u128) as usize;
+                }
+                spare.initial = state;
+                // SAFETY: the caller exclusively owns exact-sized initialized
+                // sample/state buffers. Generation is synchronous and source-derived.
+                spare.status = unsafe {
+                    produce(
+                        spare.length as u64,
+                        &spare.initial,
+                        spare.samples.as_mut_ptr(),
+                        &mut spare.state,
+                    )
+                };
+                state = spare.state;
+                remaining -= spare.length as u64;
+                let mut recycled = if pending {
+                    let Ok(block) = receive.recv() else {
+                        return 6;
+                    };
+                    let status = block.status;
+                    if status != 0 {
+                        return status;
+                    }
+                    block
+                } else {
+                    second.take().unwrap()
+                };
+                if send.send(spare).is_err() {
+                    return 6;
+                }
+                recycled.status = 0;
+                spare = recycled;
+                pending = true;
+            }
+            if pending {
+                let Ok(block) = receive.recv() else {
+                    return 6;
+                };
+                let status = block.status;
+                if status != 0 {
+                    return status;
+                }
+            }
+            0
+        })();
+        // Drop both endpoints on every path so error handling cannot strand a
+        // worker waiting for input or result capacity. All native calls then join.
+        drop(send);
+        drop(receive);
+        if worker.join().is_err() {
+            return 6;
+        }
+        if status != 0 {
+            return status;
+        }
+        if column != 0 {
+            let status = output
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .write(separator);
+            if status != 0 {
+                return status;
+            }
+        }
+        // SAFETY: no worker or callback can access the exclusive output scalar.
+        unsafe {
+            *final_state = state;
+        }
+        0
+    });
+    // The worker has joined (or never started), so this is again the sole owner.
+    let output = std::sync::Arc::try_unwrap(output)
+        .ok()
+        .expect("joined scan output owner")
+        .into_inner()
+        .unwrap_or_else(|e| e.into_inner());
+    OUTPUT.with(|out| *out.borrow_mut() = Some(output));
+    if status == 7 { fallback() } else { status }
+}
+
+/// Generic parallel half-open range reduction over emitted pure callbacks.
+/// # Safety
+/// Pointers/function and lengths must come from one admitted native object.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_control_reduce(
+    start: u64,
+    end: u64,
+    grain: u64,
+    arguments: *const u64,
+    argument_count: u64,
+    function: u64,
+    reducers: *const u8,
+    fields: u64,
+    output: *mut u64,
+) -> u64 {
+    if end < start
+        || grain == 0
+        || argument_count > 32
+        || fields == 0
+        || fields > 64
+        || function == 0
+    {
+        return 5;
+    }
+    // SAFETY: compiler ABI supplies initialized, immutable regions with validated
+    // lengths, a matching native Range function, and an exclusive result region.
+    let (args, codes, callback) = unsafe {
+        (
+            std::slice::from_raw_parts(arguments, argument_count as usize).to_vec(),
+            std::slice::from_raw_parts(reducers, fields as usize).to_vec(),
+            std::mem::transmute::<usize, Range>(function as usize),
+        )
+    };
+    if codes.iter().any(|&r| r > 1) {
+        return 5;
+    }
+    let tasks = (end - start).div_ceil(grain);
+    let reduce = |mut left: Vec<u64>, right: Vec<u64>| {
+        for ((l, r), code) in left.iter_mut().zip(right).zip(&codes) {
+            *l = if *code == 0 {
+                l.wrapping_add(r)
+            } else {
+                (*l).max(r)
+            };
+        }
+        left
+    };
+    let result = (0..tasks)
+        .into_par_iter()
+        .map(|task| {
+            let begin = start + task * grain;
+            let last = begin.saturating_add(grain).min(end);
+            let mut result = vec![0; fields as usize];
+            // SAFETY: every task has private result storage. Captured args are immutable
+            // and remain live; callbacks do not capture IO or host state. Rayon joins
+            // before any storage is released or the combined result is published.
+            let status = unsafe { callback(begin, last, args.as_ptr(), result.as_mut_ptr()) };
+            if status == 0 { Ok(result) } else { Err(status) }
+        })
+        .try_reduce(
+            || vec![0; fields as usize],
+            |left, right| Ok(reduce(left, right)),
+        );
+    match result {
+        Ok(values) => {
+            // SAFETY: exclusive compiler-owned result buffer is exactly fields u64s;
+            // callbacks have joined, and values is separate initialized storage.
+            unsafe { std::ptr::copy_nonoverlapping(values.as_ptr(), output, fields as usize) };
+            0
+        }
+        Err(status) => status,
+    }
+}

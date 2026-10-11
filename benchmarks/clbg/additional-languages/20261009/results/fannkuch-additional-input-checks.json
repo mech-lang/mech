@@ -1,0 +1,56 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "source": "fannkuchredux-optimized-mojo",
+      "n": 3,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-futhark",
+      "n": 3,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-mojo",
+      "n": 4,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-futhark",
+      "n": 4,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-mojo",
+      "n": 5,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-futhark",
+      "n": 5,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-mojo",
+      "n": 6,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-futhark",
+      "n": 6,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-mojo",
+      "n": 8,
+      "reference_match": true
+    },
+    {
+      "source": "fannkuchredux-optimized-futhark",
+      "n": 8,
+      "reference_match": true
+    }
+  ],
+  "reference": "Independent sequential canonical enumerator; small factorials exercise partition boundaries, including fewer permutations than eight workers."
+}

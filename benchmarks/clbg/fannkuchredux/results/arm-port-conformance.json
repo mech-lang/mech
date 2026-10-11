@@ -1,0 +1,87 @@
+{
+  "all_passed": true,
+  "checked_results": 16,
+  "parent_source_sha256": "b0fac82457e18fea7bd8b64dddb8a0d5266d4f5d84201a3b3970973c96349a38",
+  "cases": [
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "n": 1,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "n": 2,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "n": 3,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "n": 4,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "n": 5,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "n": 6,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "n": 7,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "n": 8,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon-lto",
+      "n": 1,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon-lto",
+      "n": 2,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon-lto",
+      "n": 3,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon-lto",
+      "n": 4,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon-lto",
+      "n": 5,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon-lto",
+      "n": 6,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon-lto",
+      "n": 7,
+      "passed": true
+    },
+    {
+      "id": "fannkuchredux-rust6-neon-lto",
+      "n": 8,
+      "passed": true
+    }
+  ]
+}

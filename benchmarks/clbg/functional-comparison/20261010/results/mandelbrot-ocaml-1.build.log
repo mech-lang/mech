@@ -1,0 +1,2 @@
+File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/mandelbrot-ocaml-1.ml", line 1:
+Warning 24 [bad-module-name]: bad source file name: Mandelbrot-ocaml-1 is not a valid module name.

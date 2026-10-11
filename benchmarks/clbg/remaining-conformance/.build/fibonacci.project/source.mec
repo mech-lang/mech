@@ -1,0 +1,15 @@
+More(i<u64>, n<u64>, a<bigint>, b<bigint>, scratch<bigint>) = (more<bool>) :=
+  more := i < n.
+Step(i<u64>, n<u64>, a<bigint>, b<bigint>, scratch<bigint>) = (next<u64>, limit<u64>, aa<bigint>, bb<bigint>, ss<bigint>) :=
+  sum := bigint/add-into(scratch, a, b)
+  aa := bigint/assign(a, b)
+  bb := bigint/assign(b, sum)
+  ss := scratch
+  next := i + 1
+  limit := n.
+(i, n, a, b, scratch) := control/while((0, io/argument-u64(1), bigint/new(0), bigint/new(1), bigint/new(0)), More, Step)
+denominator := bigint/new(1)
+scaled := bigint/multiply-u64-into(denominator, denominator, 1000000000000000000)
+small := bigint/floor-u64(a, scaled)
+printed := io/print("{}\n", small)
+literal := io/print("done\n")

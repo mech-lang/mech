@@ -1,0 +1,6 @@
+{
+  "candidate": "pairwise-original24",
+  "original_compiler_matches_prototype_object": true,
+  "object_sha256": "cdae82ae00e80751895327eb1d165b98dde6dc9497504ec983a3e9c13b639767",
+  "equivalent_prototype": "pairwise-latency24"
+}

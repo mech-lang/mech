@@ -1,0 +1,4 @@
+Error at probes/foreign-allocator.fut:1:30-47:
+Unknown name "intrinsics.malloc"
+If you find this error message confusing, uninformative, or wrong, please open an issue:
+  https://github.com/diku-dk/futhark/issues

@@ -1,0 +1,4 @@
+Good(x<u64>) => <u64> := x + 3
+Bad(x<u64>) => <u64> := sequence/get(sequence/zero-bytes(2), 3)
+result := control/if(true, Good, Bad, 4)
+io/print("{}\n", result)

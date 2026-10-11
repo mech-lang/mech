@@ -1,0 +1,23 @@
+{
+  "source_sha256": "4dcead94ba4b96c4691fd7732c94d52fb17e7ead8047ee9eba5b76be753b7d0a",
+  "binary_sha256": "9eb276023cdf7fb7d9e45950b065e4d66b69b2fcdcb361e75dfcd7bd5be674f2",
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatmake",
+    "-f",
+    "-q",
+    "-gnat2022",
+    "-gnatp",
+    "-gnatn2",
+    "-O3",
+    "-march=native",
+    "-funroll-loops",
+    "-fomit-frame-pointer",
+    "-fno-math-errno",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-gnat-3/mandelbrot.adb",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-gnat-3/mandelbrot-gnat-3",
+    "-largs",
+    "-L/opt/homebrew/opt/gmp/lib",
+    "-L/opt/homebrew/opt/pcre2/lib"
+  ]
+}

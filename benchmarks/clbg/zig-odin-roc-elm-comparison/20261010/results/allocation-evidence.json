@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "elm": {
+    "source_sha256": "50f648aa6c28ae027cf18e6bd7aafcc1b8921727da0900f436ec5b8a6488b3f3",
+    "compiled_sha256": "0e3c7e86480a3f2ace2dead0bf2bd28f92f6ea844a075c7d36d338c9867ab1d6",
+    "status": "passed",
+    "distinctNodes": 1023,
+    "equalLeafInteriorFields": true,
+    "freshIdenticalLeaves": true,
+    "longLivedRetained": true
+  },
+  "roc": {
+    "source_sha256": "1a58ea8ddede35e6c7bf9ed6ff391db116c3d947a46ba15ea099275dc705e613",
+    "ir_sha256": "cbb92f3013da259dbaee459b8d44b6f05e63bc8d1fda7a99043a0a6b24293c42",
+    "constructor_specializations": 2,
+    "leaf_bytes": 32,
+    "interior_bytes": 32,
+    "child_slots": 2,
+    "reason": "Optimized LLVM IR retains a 32-byte allocation in both leaf and interior branches of both constructor specializations. Left construction is tail-looped with its own fresh node at each depth; right construction remains recursive. Each node has a refcount, dynamic marker and two pointer slots."
+  }
+}

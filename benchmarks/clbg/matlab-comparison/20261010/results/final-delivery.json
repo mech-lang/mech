@@ -1,0 +1,28 @@
+{
+  "status": "published",
+  "source": {
+    "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+    "checkout_path": "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site",
+    "commit_sha": "e387b556af035b0760a148fd77b30ae9369d298b",
+    "archive": "/tmp/mech-benchmark-explorer-matlab-final.tar.gz"
+  },
+  "deployment": {
+    "id": "appgdep_6aca93569794819184f4fd6042e9a2d5",
+    "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+    "status": "succeeded",
+    "version_id": "appgprj_6ac8f49664688191961eac14d8a9465b~appgver_e140d55716188191952977bc8ecd0625",
+    "url": "https://mech-benchmark-explorer.refreshthen.chatgpt.site"
+  },
+  "completed_benchmarks": 10,
+  "matlab_sources": 20,
+  "samples_per_source": 3,
+  "total_validated_samples": 90,
+  "discarded_samples": 0,
+  "earlier_results_preserved": true,
+  "browser_qa": "results/final-browser-qa.json",
+  "preservation_report": "results/previous-chart-preserved-final.json",
+  "published_at": "2026-10-10T19:36:01.248909+00:00",
+  "archive_sha256": "b5162e455757de3bcfe236bc81d87333a02fd1602ab586172b00a0c85b66e803",
+  "chart_data_sha256": "d4595f24680640956f9f042d8739fd6ebc3c583207ae7e49b3f6b8e947579775",
+  "local_preview_stopped": true
+}

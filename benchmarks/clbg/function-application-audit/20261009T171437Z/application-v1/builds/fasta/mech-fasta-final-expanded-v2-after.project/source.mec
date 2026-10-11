@@ -1,0 +1,43 @@
+Count(r<f64>, p<f64>) => <u64> := control/select(r >= p, 1, 0)
+ChooseIub(r<f64>, p<[f64]>, alphabet<[u8]>) = (byte<u64>) :=
+  c1 := Count(r, sequence/get(p, 1))
+  c2 := Count(r, sequence/get(p, 2))
+  c3 := Count(r, sequence/get(p, 3))
+  c4 := Count(r, sequence/get(p, 4))
+  c5 := Count(r, sequence/get(p, 5))
+  c6 := Count(r, sequence/get(p, 6))
+  c7 := Count(r, sequence/get(p, 7))
+  c8 := Count(r, sequence/get(p, 8))
+  c9 := Count(r, sequence/get(p, 9))
+  c10 := Count(r, sequence/get(p, 10))
+  c11 := Count(r, sequence/get(p, 11))
+  c12 := Count(r, sequence/get(p, 12))
+  c13 := Count(r, sequence/get(p, 13))
+  c14 := Count(r, sequence/get(p, 14))
+  byte := sequence/get(alphabet, 1 + c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8 + c9 + c10 + c11 + c12 + c13 + c14).
+ChooseHuman(r<f64>, p<[f64]>, alphabet<[u8]>) = (byte<u64>) :=
+  c1 := Count(r, sequence/get(p, 1))
+  c2 := Count(r, sequence/get(p, 2))
+  c3 := Count(r, sequence/get(p, 3))
+  byte := sequence/get(alphabet, 1 + c1 + c2 + c3).
+Repeat(index<u64>) = (next<u64>, byte<u64>) :=
+  alu := bytes/from-text("GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA")
+  byte := sequence/get(alu, index + 1)
+  next := number/mod(index + 1, sequence/length(alu)).
+Iub(seed<u64>) = (next<u64>, byte<u64>) :=
+  next := number/mod(seed * 3877 + 29573, 139968)
+  r := number/to-f64(next) / 139968.0
+  p := sequence/cumulative-sum(sequence/f64-values((0.27, 0.12, 0.12, 0.27, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02)))
+  byte := ChooseIub(r, p, bytes/from-text("acgtBDHKMNRSVWY")).
+Human(seed<u64>) = (next<u64>, byte<u64>) :=
+  next := number/mod(seed * 3877 + 29573, 139968)
+  r := number/to-f64(next) / 139968.0
+  p := sequence/cumulative-sum(sequence/f64-values((0.3029549426680, 0.1979883004921, 0.1975473066391, 0.3015094502008)))
+  byte := ChooseHuman(r, p, bytes/from-text("acgt")).
+n := number/bounded(io/argument-u64(1), 0, 1844674407370955161)
+io/write(">ONE Homo sapiens alu\n")
+repeat := io/write-scan(n * 2, 0, Repeat, 60, "\n", 65536)
+io/write(">TWO IUB ambiguity codes\n")
+seed := io/write-scan(n * 3, 42, Iub, 60, "\n", 65536)
+io/write(">THREE Homo sapiens frequency\n")
+last := io/write-scan(n * 5, seed, Human, 60, "\n", 65536)

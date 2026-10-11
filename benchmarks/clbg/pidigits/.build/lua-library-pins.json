@@ -1,0 +1,47 @@
+{
+  "url": "https://web.tecgraf.puc-rio.br/~lhf/ftp/lua/ar/lbn-101.tar.gz",
+  "archive_sha256": "ceb71b636b5c9af0182246199ef7beb9940db79557e89fa437dda57a52ca1973",
+  "source_sha256": "187b2fc4d70086631f2fee74d45b50ad5534a8440a622050544ed0b5f154d410",
+  "modules": [
+    {
+      "runtime": "lua",
+      "command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-bundle",
+        "-undefined",
+        "dynamic_lookup",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-I/opt/homebrew/include/lua5.5",
+        "-I/opt/homebrew/opt/openssl@3/include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/lbn-101/lbn.c",
+        "-L/opt/homebrew/opt/openssl@3/lib",
+        "-lcrypto",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/lua/bn.so"
+      ],
+      "module_sha256": "d9d03aaf87ceabc9bd9593740cbded02bf579d5181a3d78c8156ba7d89009db4"
+    },
+    {
+      "runtime": "luajit",
+      "command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-bundle",
+        "-undefined",
+        "dynamic_lookup",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-I/tmp/mech-clbg-luajit/src",
+        "-I/opt/homebrew/opt/openssl@3/include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/lbn-101/lbn.c",
+        "-L/opt/homebrew/opt/openssl@3/lib",
+        "-lcrypto",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/luajit/bn.so"
+      ],
+      "module_sha256": "1959b24ccee00169771ecc62e3861b7a529cf29aad8f2f7da0daec24589f27fa"
+    }
+  ]
+}

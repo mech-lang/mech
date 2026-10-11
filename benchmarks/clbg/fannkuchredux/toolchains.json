@@ -1,0 +1,55 @@
+{
+  "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+  "versions": {
+    "rust": {
+      "command": [
+        "rustc",
+        "--version",
+        "--verbose"
+      ],
+      "output": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0"
+    },
+    "chapel": {
+      "command": [
+        "chpl",
+        "--version"
+      ],
+      "output": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)"
+    },
+    "go": {
+      "command": [
+        "go",
+        "version"
+      ],
+      "output": "go version go1.27.1 darwin/arm64"
+    },
+    "julia": {
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--version"
+      ],
+      "output": "julia version 1.13.1"
+    },
+    "java": {
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "--version"
+      ],
+      "output": "openjdk 27 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)"
+    },
+    "gcc": {
+      "command": [
+        "/opt/homebrew/bin/gcc-16",
+        "--version"
+      ],
+      "output": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+    },
+    "llvm_clang": {
+      "command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "--version"
+      ],
+      "output": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg"
+    }
+  }
+}

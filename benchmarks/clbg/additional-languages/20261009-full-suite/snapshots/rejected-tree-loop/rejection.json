@@ -1,0 +1,5 @@
+{
+  "status": "rejected",
+  "reason": "Loop collapsed to one build/check plus multiplication; output alone insufficient.",
+  "source_sha256": "bb62bb0d43047601eba45503ca5a5f6b3b6beb21b7ba21e451ae0e1b799366fd"
+}

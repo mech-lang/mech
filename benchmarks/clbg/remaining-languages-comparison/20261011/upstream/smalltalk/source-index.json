@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-pharo-1.html",
+    "html": "upstream/smalltalk/binarytrees-pharo-1.html",
+    "source": "upstream/smalltalk/binarytrees-pharo-1.st",
+    "sha256": "fe13cf306648d630a059f758eea915e620a56aef742f50a0ec58f967dcf1860f"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-pharo-1.html",
+    "html": "upstream/smalltalk/fannkuchredux-pharo-1.html",
+    "source": "upstream/smalltalk/fannkuchredux-pharo-1.st",
+    "sha256": "d1ad484144dd20ef6836af4612a4d300fcad734a20228c0b626cc21335f162e7"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-pharo-1.html",
+    "html": "upstream/smalltalk/fasta-pharo-1.html",
+    "source": "upstream/smalltalk/fasta-pharo-1.st",
+    "sha256": "e7a29528f59efc8ca216370b52d8bc1b8fb3c8c90c975ff4767844d203a73cb3"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-pharo-2.html",
+    "html": "upstream/smalltalk/fasta-pharo-2.html",
+    "source": "upstream/smalltalk/fasta-pharo-2.st",
+    "sha256": "2f96377c5c90b268ca663742d9204b8fcd37aa9b8a6f407714397eaa76060f7c"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-pharo-1.html",
+    "html": "upstream/smalltalk/knucleotide-pharo-1.html",
+    "source": "upstream/smalltalk/knucleotide-pharo-1.st",
+    "sha256": "986530effb2ab1aaaeaaab581197a874e13157e53aa957ac3e455202be29872f"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-pharo-2.html",
+    "html": "upstream/smalltalk/knucleotide-pharo-2.html",
+    "source": "upstream/smalltalk/knucleotide-pharo-2.st",
+    "sha256": "7259aecdfdd391f3092ec394d928ae61cfd86cbe0f94568dfcfbbdec6bd09e59"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-pharo-5.html",
+    "html": "upstream/smalltalk/knucleotide-pharo-5.html",
+    "source": "upstream/smalltalk/knucleotide-pharo-5.st",
+    "sha256": "1e4cd32a8f4ddfcaf0581c6c3ce5c5fe8970a855bd4f95f68b68abd80c261df9"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-pharo-1.html",
+    "html": "upstream/smalltalk/mandelbrot-pharo-1.html",
+    "source": "upstream/smalltalk/mandelbrot-pharo-1.st",
+    "sha256": "cd5eb5255edbde49396c0296563792abb4354e16c78aa1c5a47d0f3aa598c1aa"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-pharo-2.html",
+    "html": "upstream/smalltalk/mandelbrot-pharo-2.html",
+    "source": "upstream/smalltalk/mandelbrot-pharo-2.st",
+    "sha256": "72cab80dd9297ca4f7b90a14c9e2907609f1c4bdcf9670e4e83da0a8e3f017e2"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-pharo-1.html",
+    "html": "upstream/smalltalk/nbody-pharo-1.html",
+    "source": "upstream/smalltalk/nbody-pharo-1.st",
+    "sha256": "1b02c40b85292167a811843b9432f4b70642e67eee177da1aa97dbcc0dec9388"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-pharo-1.html",
+    "html": "upstream/smalltalk/pidigits-pharo-1.html",
+    "source": "upstream/smalltalk/pidigits-pharo-1.st",
+    "sha256": "156147d10672076861a9c7fbeac6522dc7fa69e576168bfe2bdad5c345c95ebb"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-pharo-1.html",
+    "html": "upstream/smalltalk/regexredux-pharo-1.html",
+    "source": "upstream/smalltalk/regexredux-pharo-1.st",
+    "sha256": "66caa990d47495e4bdc5b18dde122398ff8ae8ad72977cfd791788977339a6e9"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-pharo-1.html",
+    "html": "upstream/smalltalk/revcomp-pharo-1.html",
+    "source": "upstream/smalltalk/revcomp-pharo-1.st",
+    "sha256": "2df6bf42f564461f332a962dbae94d3f85904bc0c05f300d05b6809471ff699e"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-pharo-2.html",
+    "html": "upstream/smalltalk/revcomp-pharo-2.html",
+    "source": "upstream/smalltalk/revcomp-pharo-2.st",
+    "sha256": "1c6afab2a179174a1043a46d5cc8bb7fb731477f632178d2c37dda1b0efcc1e3"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-pharo-1.html",
+    "html": "upstream/smalltalk/spectralnorm-pharo-1.html",
+    "source": "upstream/smalltalk/spectralnorm-pharo-1.st",
+    "sha256": "cd5adae07edd54ed7fe513d4cbf5ebcdf4d2c54fb89bcb7f4662d40857542d9e"
+  }
+]

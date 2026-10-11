@@ -1,0 +1,7 @@
+{
+  "hosts/gpu/src/fused_f64/mod.rs": "3bafe44689d095dcf198564f4ef53c7bab448862294877f1747f93c35a06195c",
+  "hosts/gpu/src/fused_f64/native.rs": "7eccad1d7823290a503fb0e3dcbacc376d68d51a378c1156559a2ad2c58ad32c",
+  "hosts/gpu/src/fused_f64/runner.rs": "149d02e2024b04d7956a98d8efa63119182c65394cb7060b529f6397cf34cae8",
+  "benchmarks/clbg/nbody/mech-driver/tests/fused.rs": "9d676ce6a47c0e9a7573b9af742557e69dc92403c6458e545f50994ca8ddce5b",
+  "hosts/gpu/src/fused_f64/map_runner.rs": "f93ffdff7f74a0f6a8144d09bc8fb8b0f3d829fe1da133599319dd66d7b665ca"
+}

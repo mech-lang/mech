@@ -1,0 +1,6 @@
+{
+  "prototype_fused_integration_tests": 33,
+  "prototype_map_integration_tests": 14,
+  "supplementary_workspace_unit_build": "Stopped while building unrelated full-feature mech_math dev dependency; no unit-test outcome claimed. All prototypes were exercised by native integration tests.",
+  "restoration": "All compiler and integration test edits restored exactly from compiler-before. Prototype code and frozen binaries retained for audit."
+}

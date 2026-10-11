@@ -1,0 +1,19 @@
+{
+  "reference_report": "apple-m3-confirmation-25000000.json",
+  "mech_ids": [
+    "mech-compact-final-std1-simd0-p4",
+    "mech-parallel-final-std1-simd0-p4"
+  ],
+  "identical_executable_sha256": "ed3c12a97b9879fb5a7ff24d5d48ba197c9a43cd523788232aa5cb0a6edbbb40",
+  "pooled_mech_samples": 22,
+  "mech_median_seconds": 0.946105167,
+  "rust_id": "knucleotide-rust-6-panicabort",
+  "rust_samples": 11,
+  "rust_median_seconds": 0.915538709,
+  "mech_over_rust": 1.0333863087377118,
+  "bootstrap_95_percent_interval": [
+    0.9637587314406572,
+    1.061982647596897
+  ],
+  "method": "10000 resamples of the 11 randomized rounds; preserve each round across compact/expanded Mech and Rust; statistic is pooled Mech median divided by Rust median. Describes local repeat-run variation."
+}

@@ -1,0 +1,253 @@
+{
+  "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+  "cases": [
+    {
+      "case": "arbitrary byte regex, literal replacement and independent counts",
+      "async_policy": "0",
+      "buffer_reuse": "0"
+    },
+    {
+      "case": "arbitrary byte regex, literal replacement and independent counts",
+      "async_policy": "0",
+      "buffer_reuse": "1"
+    },
+    {
+      "case": "arbitrary byte regex, literal replacement and independent counts",
+      "async_policy": "1",
+      "buffer_reuse": "0"
+    },
+    {
+      "case": "arbitrary byte regex, literal replacement and independent counts",
+      "async_policy": "1",
+      "buffer_reuse": "1"
+    },
+    {
+      "case": "zero-length regex matches on non-UTF8 input"
+    },
+    {
+      "case": "source Fibonacci loop, reused arbitrary-precision cells and literal-only printing",
+      "bits": 103
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 0,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 1,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 2,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 9,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 10,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 11,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 27,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 30,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 97,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 1000,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits.mec",
+      "n": 10000,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 0,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 1,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 2,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 9,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 10,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 11,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 27,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 30,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 97,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 1000,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-gated.mec",
+      "n": 10000,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 0,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 1,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 2,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 9,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 10,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 11,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 27,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 30,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 97,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 1000,
+      "complete_output": true
+    },
+    {
+      "case": "pidigits-advance.mec",
+      "n": 10000,
+      "complete_output": true
+    },
+    {
+      "case": "regexredux.mec",
+      "async_policy": "0",
+      "buffer_reuse": "0",
+      "full": false,
+      "complete_output": true
+    },
+    {
+      "case": "regexredux.mec",
+      "async_policy": "0",
+      "buffer_reuse": "0",
+      "full": true,
+      "complete_output": true
+    },
+    {
+      "case": "regexredux.mec",
+      "async_policy": "0",
+      "buffer_reuse": "1",
+      "full": false,
+      "complete_output": true
+    },
+    {
+      "case": "regexredux.mec",
+      "async_policy": "0",
+      "buffer_reuse": "1",
+      "full": true,
+      "complete_output": true
+    },
+    {
+      "case": "regexredux.mec",
+      "async_policy": "1",
+      "buffer_reuse": "0",
+      "full": false,
+      "complete_output": true
+    },
+    {
+      "case": "regexredux.mec",
+      "async_policy": "1",
+      "buffer_reuse": "0",
+      "full": true,
+      "complete_output": true
+    },
+    {
+      "case": "regexredux.mec",
+      "async_policy": "1",
+      "buffer_reuse": "1",
+      "full": false,
+      "complete_output": true
+    },
+    {
+      "case": "regexredux.mec",
+      "async_policy": "1",
+      "buffer_reuse": "1",
+      "full": true,
+      "complete_output": true
+    }
+  ]
+}

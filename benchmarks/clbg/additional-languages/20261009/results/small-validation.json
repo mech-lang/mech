@@ -1,0 +1,300 @@
+[
+  {
+    "source": "sources/binarytrees.mojo",
+    "language": "mojo",
+    "benchmark": "binarytrees",
+    "pass_": true,
+    "seconds": 0.402111,
+    "validation": {
+      "bytes": 223,
+      "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/fannkuchredux.mojo",
+    "language": "mojo",
+    "benchmark": "fannkuchredux",
+    "pass_": true,
+    "seconds": 0.178671625,
+    "validation": {
+      "bytes": 24,
+      "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/fasta.mojo",
+    "language": "mojo",
+    "benchmark": "fasta",
+    "pass_": false,
+    "error": "('fasta', 10245, '3dcde1fef19e09730d3590fae5e71485b55090507c9b8d392f690d45e1f31704', 10245, '62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73')"
+  },
+  {
+    "source": "sources/knucleotide.mojo",
+    "language": "mojo",
+    "benchmark": "knucleotide",
+    "pass_": true,
+    "seconds": 0.147852,
+    "validation": {
+      "bytes": 242,
+      "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/mandelbrot.mojo",
+    "language": "mojo",
+    "benchmark": "mandelbrot",
+    "pass_": false,
+    "error": "('mandelbrot', 5011, 'df779244b3b170ec5b93d4adf06de00f9cd8c5013c62fbe829b8e7c2fb9de592', 5011, '97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5')"
+  },
+  {
+    "source": "sources/nbody-small.mojo",
+    "language": "mojo",
+    "benchmark": "nbody",
+    "pass_": true,
+    "seconds": 0.137343,
+    "validation": {
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/nbody.mojo",
+    "language": "mojo",
+    "benchmark": "nbody",
+    "pass_": true,
+    "seconds": 0.130309042,
+    "validation": {
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/pidigits.mojo",
+    "language": "mojo",
+    "benchmark": "pidigits",
+    "pass_": false,
+    "error": "Command '['/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/pidigits-mojo', '30']' died with <Signals.SIGABRT: 6>.; dyld[71792]: Library not loaded: stdlib/libarray-standard.dylib\n  Referenced from: <B2F1E1AA-AC68-33BA-BAA5-B1F94EBDF007> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/pidigits-mojo\n  Reason: tried: 'stdlib/libarray-standard.dylib' (no such file), '/System/Volumes/Preboot/Cryptexes/OSstdlib/libarray-standard.dylib' (no such file), 'stdlib/libarray-standard.dylib' (no such file)\n"
+  },
+  {
+    "source": "sources/regexredux.mojo",
+    "language": "mojo",
+    "benchmark": "regexredux",
+    "pass_": false,
+    "error": "Command '['/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/regexredux-mojo']' died with <Signals.SIGABRT: 6>.; dyld[71800]: Library not loaded: stdlib/libarray-standard.dylib\n  Referenced from: <74E05D49-E1C3-3F2E-AFE8-70E3E298C4C9> /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/binaries/regexredux-mojo\n  Reason: tried: 'stdlib/libarray-standard.dylib' (no such file), '/System/Volumes/Preboot/Cryptexes/OSstdlib/libarray-standard.dylib' (no such file), 'stdlib/libarray-standard.dylib' (no such file)\n"
+  },
+  {
+    "source": "sources/revcomp.mojo",
+    "language": "mojo",
+    "benchmark": "revcomp",
+    "pass_": true,
+    "seconds": 0.181384833,
+    "validation": {
+      "bytes": 10245,
+      "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/spectralnorm-small.mojo",
+    "language": "mojo",
+    "benchmark": "spectralnorm",
+    "pass_": true,
+    "seconds": 0.188484417,
+    "validation": {
+      "bytes": 12,
+      "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/spectralnorm.mojo",
+    "language": "mojo",
+    "benchmark": "spectralnorm",
+    "pass_": true,
+    "seconds": 0.197259333,
+    "validation": {
+      "bytes": 12,
+      "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/binarytrees.fut",
+    "language": "futhark",
+    "benchmark": "binarytrees",
+    "pass_": true,
+    "seconds": 0.180480208,
+    "validation": {
+      "bytes": 223,
+      "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/fannkuchredux.fut",
+    "language": "futhark",
+    "benchmark": "fannkuchredux",
+    "pass_": true,
+    "seconds": 0.175196875,
+    "validation": {
+      "bytes": 24,
+      "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/fasta.fut",
+    "language": "futhark",
+    "benchmark": "fasta",
+    "pass_": true,
+    "seconds": 0.194269708,
+    "validation": {
+      "bytes": 10245,
+      "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/knucleotide.fut",
+    "language": "futhark",
+    "benchmark": "knucleotide",
+    "pass_": true,
+    "seconds": 0.206914875,
+    "validation": {
+      "bytes": 242,
+      "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/mandelbrot.fut",
+    "language": "futhark",
+    "benchmark": "mandelbrot",
+    "pass_": true,
+    "seconds": 0.188706417,
+    "validation": {
+      "bytes": 5011,
+      "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/nbody.fut",
+    "language": "futhark",
+    "benchmark": "nbody",
+    "pass_": true,
+    "seconds": 0.156175083,
+    "validation": {
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/pidigits.fut",
+    "language": "futhark",
+    "benchmark": "pidigits",
+    "pass_": true,
+    "seconds": 0.160447708,
+    "validation": {
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/regexredux.fut",
+    "language": "futhark",
+    "benchmark": "regexredux",
+    "pass_": true,
+    "seconds": 0.211391167,
+    "validation": {
+      "bytes": 262,
+      "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/revcomp.fut",
+    "language": "futhark",
+    "benchmark": "revcomp",
+    "pass_": true,
+    "seconds": 0.177077834,
+    "validation": {
+      "bytes": 10245,
+      "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "source": "sources/spectralnorm.fut",
+    "language": "futhark",
+    "benchmark": "spectralnorm",
+    "pass_": true,
+    "seconds": 0.173771625,
+    "validation": {
+      "bytes": 12,
+      "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  }
+]

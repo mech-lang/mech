@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Racket&nbsp;#4 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Racket&nbsp;#4 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="opt">#</span>lang racket<span class="opt">/</span>base
+<span class="opt">(</span><span class="kwa">require</span> racket<span class="opt">/</span>fixnum<span class="opt">)</span>
+<span class="opt">(</span><span class="kwa">require</span> racket<span class="opt">/</span>generator<span class="opt">)</span>
+<span class="opt">(</span><span class="kwa">require</span> racket<span class="opt">/</span>sequence<span class="opt">)</span>
+<span class="slc">;;;</span>
+<span class="slc">;;; The Computer Language Benchmarks Game</span>
+<span class="slc">;;; https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+
+<span class="slc">;;; contributed by Matthew Flatt, modified by</span>
+<span class="slc">;;; modified by James Bergstra</span>
+
+<span class="slc">;;; Notes on the implementation: the strategy is to map the DNA letters to the</span>
+<span class="slc">;;; bytes 0, 1, 2, 3, and then create a hash function that is simply the</span>
+<span class="slc">;;; concatenation of these two-byte codes. This is handy because the slow part</span>
+<span class="slc">;;; of this test is building the hash table, and this hash function means that</span>
+<span class="slc">;;; we can take advantage of overlapping DNA sub-sequences to get a</span>
+<span class="slc">;;; constant-time hash function (that does not depend on the sequence length).</span>
+<span class="slc">;;;</span>
+<span class="slc">;;; The bottleneck in this code seems to be Racket&#39;s hash table. The time to</span>
+<span class="slc">;;; create the last hash table (for the len-18 string) seems to be about half</span>
+<span class="slc">;;; the runtime of the whole program.</span>
+
+<span class="slc">;; Map A-&gt;0, C-&gt;1, G-&gt;2 T-&gt;3 (and lowercase too)</span>
+<span class="opt">(</span><span class="kwa">define</span> dna-<span class="opt">&gt;</span>num
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>tbl <span class="opt">(</span><span class="kwa">make-bytes</span> <span class="num">256 255</span><span class="opt">)])</span>
+    <span class="opt">(</span><span class="kwa">for</span> <span class="opt">([</span>ch <span class="opt">(</span><span class="kwa">in-list</span> <span class="opt">(</span><span class="kwa">bytes-</span><span class="opt">&gt;</span>list <span class="opt">#</span><span class="sng">&quot;ACGTacgt&quot;</span><span class="opt">))]</span>
+          <span class="opt">[</span>ii <span class="opt">(</span><span class="kwa">in-list</span> <span class="opt">&#39;(</span><span class="kwa">0</span> <span class="num">1 2 3 0 1 2 3</span><span class="opt">))])</span>
+      <span class="opt">(</span><span class="kwa">bytes-set</span><span class="opt">!</span> tbl ch ii<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">(</span><span class="kwa">ch</span><span class="opt">) (</span><span class="kwa">bytes-ref</span> tbl ch<span class="opt">))))</span>
+
+<span class="slc">;;; map a hash key back to a string (needed for printing)</span>
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">unhash</span> key len<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>rval <span class="opt">(</span><span class="kwa">make-string</span> len<span class="opt">)])</span>
+    <span class="opt">(</span><span class="kwa">sequence-fold</span>
+      <span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">(</span><span class="kwa">key</span> pos<span class="opt">)</span>
+        <span class="opt">(</span><span class="kwa">string-set</span><span class="opt">!</span> rval pos <span class="opt">(</span><span class="kwa">string-ref</span> <span class="sng">&quot;ACGT&quot;</span> <span class="opt">(</span><span class="kwa">bitwise-and</span> key <span class="num">3</span><span class="opt">)))</span>
+        <span class="opt">(</span><span class="kwa">arithmetic-shift</span> key -<span class="num">2</span><span class="opt">))</span>
+      key
+      <span class="opt">(</span><span class="kwa">in-range</span> len<span class="opt">))</span>
+    rval<span class="opt">))</span>
+
+<span class="slc">;;; Ideally this would serve all-counts, but my attempt to do that</span>
+<span class="slc">;;; was horribly slow.</span>
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">hashes</span> keylen dna as-codes<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">generator</span> <span class="opt">()</span>
+    <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>key <span class="num">0</span><span class="opt">] [</span>ishift <span class="opt">(*</span> <span class="num">2</span> keylen<span class="opt">)] [</span>thresh <span class="opt">(</span><span class="kwa">sub1</span> keylen<span class="opt">)])</span>
+      <span class="opt">(</span><span class="kwa">for</span>
+        <span class="opt">([</span>bb <span class="opt">(</span><span class="kwa">in-bytes</span> dna<span class="opt">)]</span>
+         <span class="opt">[</span>ii <span class="opt">(</span><span class="kwa">in-range</span> <span class="opt">(</span><span class="kwa">bytes-length</span> dna<span class="opt">))])</span>
+        <span class="opt">(</span><span class="kwa">set</span><span class="opt">!</span> key <span class="opt">(</span><span class="kwa">arithmetic-shift</span> <span class="opt">(+</span> key <span class="opt">(</span><span class="kwa">arithmetic-shift</span> <span class="opt">(</span><span class="kwa">if</span> as-codes bb <span class="opt">(</span><span class="kwa">dna-</span><span class="opt">&gt;</span>num bb<span class="opt">) )</span> ishift<span class="opt">))</span> -<span class="num">2</span><span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(&gt;=</span> ii thresh<span class="opt">) (</span><span class="kwa">yield</span> key<span class="opt">) #</span>f<span class="opt">))</span>
+      <span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">all-counts</span> keylen dna<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>table <span class="opt">(</span><span class="kwa">make-hasheq</span><span class="opt">)]</span>
+        <span class="opt">[</span>key <span class="num">0</span><span class="opt">]</span>
+        <span class="opt">[</span>ishift <span class="opt">(*</span> <span class="num">2</span> keylen<span class="opt">)]</span>
+        <span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">for</span>
+      <span class="opt">([</span>bb <span class="opt">(</span><span class="kwa">in-bytes</span> dna<span class="opt">)]</span>
+       <span class="opt">[</span>ii <span class="opt">(</span><span class="kwa">in-range</span> <span class="opt">(</span><span class="kwa">bytes-length</span> dna<span class="opt">))])</span>
+      <span class="opt">(</span><span class="kwa">set</span><span class="opt">!</span> key <span class="opt">(</span><span class="kwa">arithmetic-shift</span> <span class="opt">(+</span> key <span class="opt">(</span><span class="kwa">arithmetic-shift</span> bb ishift<span class="opt">))</span> -<span class="num">2</span><span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(&gt;=</span> ii <span class="opt">(</span><span class="kwa">-</span> keylen <span class="num">1</span><span class="opt">)) (</span><span class="kwa">hash-set</span><span class="opt">!</span> table key <span class="opt">(</span><span class="kwa">add1</span> <span class="opt">(</span><span class="kwa">hash-ref</span> table key <span class="num">0</span><span class="opt">))) #</span>f<span class="opt">)</span>
+      <span class="opt">)</span>
+    table<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">readbuf</span> in foo<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>s <span class="opt">(</span><span class="kwa">open-output-bytes</span><span class="opt">)])</span>
+    <span class="slc">;; Skip to &quot;&gt;THREE ...&quot;</span>
+    <span class="opt">(</span><span class="kwa">regexp-match</span> <span class="opt">#</span>rx<span class="opt">#</span><span class="sng">&quot;(?m:^&gt;THREE.*$)&quot;</span> in<span class="opt">)</span>
+    <span class="slc">;; Copy everything but newlines</span>
+    <span class="opt">(</span><span class="kwa">for</span> <span class="opt">([</span>l <span class="opt">(</span><span class="kwa">in-bytes-lines</span> in<span class="opt">)])</span>
+      <span class="opt">(</span><span class="kwa">write-bytes</span> l s<span class="opt">))</span>
+    <span class="slc">;; Replace letters with numbers 0, 1, 2, 3</span>
+    <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>actg <span class="opt">(</span><span class="kwa">get-output-bytes</span> s<span class="opt">)])</span>
+      <span class="opt">(</span><span class="kwa">for</span> <span class="opt">([</span>ii <span class="opt">(</span><span class="kwa">in-range</span> <span class="opt">(</span><span class="kwa">bytes-length</span> actg<span class="opt">))])</span>
+           <span class="opt">(</span><span class="kwa">bytes-set</span><span class="opt">!</span> actg ii <span class="opt">(</span><span class="kwa">foo</span> <span class="opt">(</span><span class="kwa">bytes-ref</span> actg ii<span class="opt">))))</span>
+      actg<span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">write-freqs</span> table len<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ([</span>content <span class="opt">(</span><span class="kwa">hash-map</span> table cons<span class="opt">)]</span>
+         <span class="opt">[</span>total <span class="opt">(</span><span class="kwa">exact-</span><span class="opt">&gt;</span>inexact <span class="opt">(</span><span class="kwa">apply</span> <span class="opt">+ (</span><span class="kwa">map</span> cdr content<span class="opt">)))])</span>
+    <span class="opt">(</span><span class="kwa">for</span> <span class="opt">([</span>a <span class="opt">(</span><span class="kwa">sort</span> content <span class="opt">&gt; #</span><span class="kwc">:key</span> cdr<span class="opt">)])</span>
+      <span class="opt">(</span><span class="kwa">printf</span> <span class="sng">&quot;~a ~a</span><span class="esc">\n</span><span class="sng">&quot;</span> 
+              <span class="opt">(</span><span class="kwa">unhash</span> <span class="opt">(</span><span class="kwa">car</span> a<span class="opt">)</span> len<span class="opt">)</span>
+              <span class="opt">(</span><span class="kwa">real-</span><span class="opt">&gt;</span>decimal-string <span class="opt">(*</span> <span class="num">100</span> <span class="opt">(/ (</span><span class="kwa">cdr</span> a<span class="opt">)</span> total<span class="opt">))</span> <span class="num">3</span><span class="opt">)))))</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">write-one-freq</span> table key<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>cnt <span class="opt">(</span><span class="kwa">hash-ref</span> table <span class="opt">((</span><span class="kwa">hashes</span> <span class="opt">(</span><span class="kwa">bytes-length</span> key<span class="opt">)</span> key <span class="opt">#</span>f<span class="opt">))</span> <span class="num">0</span><span class="opt">)])</span>
+    <span class="opt">(</span><span class="kwa">printf</span> <span class="sng">&quot;~a</span><span class="esc">\t</span><span class="sng">~a</span><span class="esc">\n</span><span class="sng">&quot;</span> cnt key<span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">define</span> dna <span class="opt">(</span><span class="kwa">readbuf</span> <span class="opt">(</span><span class="kwa">current-input-port</span><span class="opt">)</span> dna-<span class="opt">&gt;</span>num<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">write-freqs</span> <span class="opt">(</span><span class="kwa">all-counts</span> <span class="num">1</span> dna<span class="opt">)</span> <span class="num">1</span><span class="opt">)</span>
+<span class="opt">(</span><span class="kwa">newline</span><span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">write-freqs</span> <span class="opt">(</span><span class="kwa">all-counts</span> <span class="num">2</span> dna<span class="opt">)</span> <span class="num">2</span><span class="opt">)</span>
+<span class="opt">(</span><span class="kwa">newline</span><span class="opt">)</span>
+
+<span class="slc">;; Specific sequences:</span>
+<span class="opt">(</span><span class="kwa">for</span> <span class="opt">([</span>seq <span class="opt">&#39;(#</span><span class="sng">&quot;GGT&quot;</span> <span class="opt">#</span><span class="sng">&quot;GGTA&quot;</span> <span class="opt">#</span><span class="sng">&quot;GGTATT&quot;</span> <span class="opt">#</span><span class="sng">&quot;GGTATTTTAATT&quot;</span> <span class="opt">#</span><span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span><span class="opt">)])</span> 
+  <span class="opt">(</span><span class="kwa">write-one-freq</span> <span class="opt">(</span><span class="kwa">all-counts</span> <span class="opt">(</span><span class="kwa">bytes-length</span> seq<span class="opt">)</span> dna<span class="opt">)</span> seq<span class="opt">))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Racket v8.15 [cs].
+
+
+ Fri, 07 Feb 2025 22:00:39 GMT
+
+COMMAND LINE:
+ /opt/src/./racket-8.15/bin/racket knucleotide.racket-4.racket 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

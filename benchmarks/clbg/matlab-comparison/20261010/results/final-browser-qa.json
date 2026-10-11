@@ -1,0 +1,238 @@
+{
+  "status": "passed",
+  "browser": "Installed Google Chrome via Playwright",
+  "checks": {
+    "verify_ui.cjs": {
+      "checks": [
+        {
+          "width": 1440,
+          "overflow": false,
+          "subset": true,
+          "source": true,
+          "timings": true,
+          "program_exclusion": true,
+          "ellipses": true,
+          "views": true,
+          "empty_state": true
+        },
+        {
+          "width": 900,
+          "overflow": false,
+          "subset": true,
+          "source": true,
+          "timings": true,
+          "program_exclusion": true,
+          "ellipses": true,
+          "views": true,
+          "empty_state": true
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "subset": true,
+          "source": true,
+          "timings": true,
+          "program_exclusion": true,
+          "ellipses": true,
+          "views": true,
+          "empty_state": true
+        },
+        {
+          "width": 320,
+          "overflow": false,
+          "subset": true,
+          "source": true,
+          "timings": true,
+          "program_exclusion": true,
+          "ellipses": true,
+          "views": true,
+          "empty_state": true
+        }
+      ],
+      "errors": []
+    },
+    "verify_years.cjs": {
+      "checks": [
+        {
+          "width": 1440,
+          "year_accumulation": true,
+          "distinct_year_steps": true,
+          "mech_2026": true,
+          "manual_selection_preserved": true,
+          "none_clears_hidden_languages": true,
+          "fixed_geometry": true,
+          "compact_metrics": true,
+          "keyboard": true,
+          "overflow": false
+        },
+        {
+          "width": 390,
+          "year_accumulation": true,
+          "distinct_year_steps": true,
+          "mech_2026": true,
+          "manual_selection_preserved": true,
+          "none_clears_hidden_languages": true,
+          "fixed_geometry": true,
+          "compact_metrics": true,
+          "keyboard": true,
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "year_accumulation": true,
+          "distinct_year_steps": true,
+          "mech_2026": true,
+          "manual_selection_preserved": true,
+          "none_clears_hidden_languages": true,
+          "fixed_geometry": true,
+          "compact_metrics": true,
+          "keyboard": true,
+          "overflow": false
+        }
+      ],
+      "errors": []
+    },
+    "verify_axes.cjs": {
+      "checks": [
+        {
+          "width": 1440,
+          "view": "summary",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        },
+        {
+          "width": 1440,
+          "view": "benchmark",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        },
+        {
+          "width": 1440,
+          "view": "mech",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        },
+        {
+          "width": 390,
+          "view": "summary",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        },
+        {
+          "width": 390,
+          "view": "benchmark",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        },
+        {
+          "width": 390,
+          "view": "mech",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        },
+        {
+          "width": 320,
+          "view": "summary",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        },
+        {
+          "width": 320,
+          "view": "benchmark",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        },
+        {
+          "width": 320,
+          "view": "mech",
+          "stable_domains": true,
+          "stable_ticks": true,
+          "stable_points": true,
+          "stable_page_position": true,
+          "program_visibility": true,
+          "source_section_removed": true
+        }
+      ],
+      "errors": []
+    },
+    "verify_sorting.cjs": {
+      "checks": [
+        {
+          "width": 1440,
+          "comparison": true,
+          "timings": true,
+          "original_run_numbers": true,
+          "implementations": true,
+          "keyboard": true,
+          "subset_persistence": true,
+          "source_preserved": true,
+          "scroll_preserved": true,
+          "overflow": false
+        },
+        {
+          "width": 320,
+          "comparison": true,
+          "timings": true,
+          "original_run_numbers": true,
+          "implementations": true,
+          "keyboard": true,
+          "subset_persistence": true,
+          "source_preserved": true,
+          "scroll_preserved": true,
+          "overflow": false
+        }
+      ],
+      "errors": []
+    }
+  },
+  "visual_review": {
+    "desktop": true,
+    "mobile": true,
+    "lowest_labelled_axis_tick": "1\u00d7",
+    "matlab_coverage": "10/10",
+    "futhark_coverage": "9/10"
+  },
+  "finished_at": "2026-10-10T19:33:43.544803+00:00",
+  "sha256": {
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/data.json": "d4595f24680640956f9f042d8739fd6ebc3c583207ae7e49b3f6b8e947579775",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/index.html": "3ba9040dd435dbe7994c7bfea3d82757b36cfe80daa485ef00c9e79003591ae0",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/app.mjs": "b638c6f77b0007a2d255991b65847ed9fade1f4fc18efc4cc309cbd93e7fef9b",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/math.mjs": "79da0046ec6ee95e960a334c032efdf50bcb85753f3041b14aa01e11ee41d612",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/desktop-preview.png": "e56509cc619f17161ea13a08e069a1a40b6ebd8473042814a15ae621347e0a79",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/mobile-preview.png": "d9c295535052a98433be840c168218569069a9e3b1f1303289e49902fc294a15",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/results/timings.json": "e82ab6aff97a93b49b8e74068f4a742150be1457e37976b1fffd02f6caf29aa8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/results/final-allocation-branches.json": "1021de1e15cd2cb2f40e2e653c4ffe86a78a1a7bdb9f3136908c016a06502382"
+  }
+}

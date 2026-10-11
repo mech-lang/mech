@@ -1,0 +1,100 @@
+{
+  "programs": [
+    {
+      "key": "binarytrees:binarytrees-zig-arena-compact",
+      "id": "binarytrees-zig-arena-compact",
+      "benchmark": "binarytrees",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-zig-arena-compact.zig",
+      "source_sha256": "81af06556379389ee22cfdd45c50dab1e6134769f6def30ca67763d3d8415594",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored full pointer-tree workload using the language\u2019s general standard arena allocator. Every leaf/interior makes a separate equal-size Node allocation; both children are recursively allocated. Temporary arenas reset only after complete construction/check; stretch storage is released before a separately allocated long-lived tree, which remains live through all temporary work. Application allocator/thread plumbing counts toward LOC. No flat/indexed tree or native executor."
+      ],
+      "libraries": []
+    },
+    {
+      "key": "binarytrees:binarytrees-zig-arena-parallel",
+      "id": "binarytrees-zig-arena-parallel",
+      "benchmark": "binarytrees",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-zig-arena-parallel.zig",
+      "source_sha256": "e73f078c62f6b500f9d6d22e8e750be5df5cf5ca100bd5182b6d58291ab32de9",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored full pointer-tree workload using the language\u2019s general standard arena allocator and at most eight native workers. Every leaf/interior makes a separate equal-size Node allocation; both children are recursively allocated. Temporary arenas reset only after complete construction/check; stretch storage is released before a separately allocated long-lived tree, which remains live through all temporary work. Application allocator/thread plumbing counts toward LOC. No flat/indexed tree or native executor."
+      ],
+      "libraries": []
+    },
+    {
+      "key": "binarytrees:binarytrees-odin-arena-compact",
+      "id": "binarytrees-odin-arena-compact",
+      "benchmark": "binarytrees",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-odin-arena-compact.odin",
+      "source_sha256": "017ac5f09bf7911f3eb578552aa67c7a9fd7c72eca7fcdf85dd70d360316b794",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored full pointer-tree workload using the language\u2019s general standard arena allocator. Every leaf/interior makes a separate equal-size Node allocation; both children are recursively allocated. Temporary arenas reset only after complete construction/check; stretch storage is released before a separately allocated long-lived tree, which remains live through all temporary work. Application allocator/thread plumbing counts toward LOC. No flat/indexed tree or native executor."
+      ],
+      "libraries": []
+    },
+    {
+      "key": "binarytrees:binarytrees-odin-arena-parallel",
+      "id": "binarytrees-odin-arena-parallel",
+      "benchmark": "binarytrees",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-odin-arena-parallel.odin",
+      "source_sha256": "1d68787e2bb6a45c7749bfd016d69ce9c64379205017bb8a78aa206805abeb2a",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored full pointer-tree workload using the language\u2019s general standard arena allocator and at most eight native workers. Every leaf/interior makes a separate equal-size Node allocation; both children are recursively allocated. Temporary arenas reset only after complete construction/check; stretch storage is released before a separately allocated long-lived tree, which remains live through all temporary work. Application allocator/thread plumbing counts toward LOC. No flat/indexed tree or native executor."
+      ],
+      "libraries": []
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "elm",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC.",
+        "Lifetime correction: carry the long-lived root as an explicit argument through all temporary batches, and check it only at the terminal branch. This prevents the Elm compiler\u2019s let-binding reordering from checking and releasing the root before temporary construction. All leaf and interior nodes have the same two child slots and separate allocations."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ],
+      "id": "binarytrees-elm-faithful",
+      "key": "binarytrees:binarytrees-elm-faithful",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/BinarytreesFaithful.elm",
+      "source_sha256": "bbfcad255e6f35e7de8273f76ca744ada503ad46e7d031b52a7505e12dc41014",
+      "supersedes": "binarytrees:binarytrees-elm-idiomatic"
+    },
+    {
+      "benchmark": "pidigits",
+      "language": "elm",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC.",
+        "Performance correction: multiply the multi-limb integer by the one-limb scalar in the operand order suited to the general library\u2019s schoolbook multiplication. The full unbounded LFT and two signed floor extractions for every tested candidate remain unchanged. Removed an unused formatting import. No JavaScript arithmetic or input-specific shortcut."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json",
+        "dwayne/elm-integer",
+        "dwayne/elm-natural"
+      ],
+      "id": "pidigits-elm-optimized",
+      "key": "pidigits:pidigits-elm-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/PidigitsOptimized.elm",
+      "source_sha256": "b9db701646c807614836f0d3f31ac4be1fe638a0c22f4d4505f8e66678b99ebd",
+      "supersedes": "pidigits:pidigits-elm-idiomatic"
+    }
+  ]
+}

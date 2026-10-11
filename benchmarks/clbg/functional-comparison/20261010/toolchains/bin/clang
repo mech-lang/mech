@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/bin/clang --sysroot=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/opt/homebrew/opt/libffi/include "$@"

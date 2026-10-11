@@ -1,0 +1,85 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/mandelbrot-sbcl-1-faithful.lisp" (written 10 OCT 2026 07:06:59 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/mandelbrot-sbcl-1-faithful.lisp
+; in: DEFMACRO ESCAPES?
+;     (LOOP VOPS::FOR VOPS::I VOPS::FROM 0 VOPS::BELOW VOPS::N
+;           VOPS::COLLECTING `(PROGN
+;                              (LET ((,VOPS::TEMP #))
+;                                (SETF ,VOPS::ZRV1 #)
+;                                (SETF ,VOPS::TRV1 #)
+;                                (SETF ,VOPS::ZIV1 #)
+;                                (SETF ,VOPS::TIV1 #))
+;                              (LET ((,VOPS::TEMP2 #))
+;                                (WHEN (> ,VOPS::TEMP2 4.0d0)
+;                                  (SETF #)
+;                                  (RETURN-FROM ,VOPS::ESCAPED)))))
+; --> LET SB-LOOP::WITH-LOOP-LIST-COLLECTION-HEAD LET* TAGBODY 
+; --> SB-LOOP::LOOP-DESETQ SETQ THE 1+ 
+; ==>
+;   1
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a UNSIGNED-BYTE, not a FIXNUM.
+;       The result is a (VALUES (INTEGER 1) &OPTIONAL), not a (VALUES FIXNUM
+;                                                                     &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 5) because:
+;       The first argument is a UNSIGNED-BYTE, not a (UNSIGNED-BYTE 64).
+;       The result is a (VALUES (INTEGER 1) &OPTIONAL), not a (VALUES
+;                                                              (UNSIGNED-BYTE 64)
+;                                                              &OPTIONAL).
+;       etc.
+
+;     (LOOP VOPS::FOR VOPS::I VOPS::FROM 0 VOPS::BELOW VOPS::N
+;           VOPS::COLLECTING `(PROGN
+;                              (LET ((,VOPS::TEMP #))
+;                                (SETF ,VOPS::ZRV2 #)
+;                                (SETF ,VOPS::TRV2 #)
+;                                (SETF ,VOPS::ZIV2 #)
+;                                (SETF ,VOPS::TIV2 #))
+;                              (LET ((,VOPS::TEMP2 #))
+;                                (WHEN (> ,VOPS::TEMP2 4.0d0)
+;                                  (SETF #)
+;                                  (RETURN-FROM ,VOPS::ESCAPED)))))
+; --> LET SB-LOOP::WITH-LOOP-LIST-COLLECTION-HEAD LET* TAGBODY 
+; --> SB-LOOP::LOOP-DESETQ SETQ THE 1+ 
+; ==>
+;   1
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a UNSIGNED-BYTE, not a FIXNUM.
+;       The result is a (VALUES (INTEGER 1) &OPTIONAL), not a (VALUES FIXNUM
+;                                                                     &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 5) because:
+;       The first argument is a UNSIGNED-BYTE, not a (UNSIGNED-BYTE 64).
+;       The result is a (VALUES (INTEGER 1) &OPTIONAL), not a (VALUES
+;                                                              (UNSIGNED-BYTE 64)
+;                                                              &OPTIONAL).
+;       etc.
+
+; in: DEFUN MAIN
+;     (LAMBDA ()
+;       (LOOP VOPS::FOR VOPS::Y VOPS::FROM VOPS::START VOPS::TO
+;             VOPS::END
+;             DO (VOPS::CALC-ROW VOPS::Y VOPS::N VOPS::BITMAP VOPS::BYTES-PER-ROW
+;                 VOPS::CRVS VOPS::INVERSE-H)))
+; 
+; note: doing float to pointer coercion (cost 13), for:
+;       the second argument of CLOSURE-INIT
+
+; in: DEFUN MAIN
+;     (VOPS::MAIN)
+; --> BLOCK LET* LET LET MAPCAR 
+; ==>
+;   1
+; 
+; note: doing float to pointer coercion (cost 13), for:
+;       the second argument of CLOSURE-INIT
+; 
+; compilation unit finished
+;   printed 4 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/mandelbrot-sbcl-1-faithful/program.fasl
+; compilation finished in 0:00:00.219

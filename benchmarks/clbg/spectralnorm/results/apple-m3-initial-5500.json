@@ -1,0 +1,1001 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T18:45:54.658303+00:00",
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu": "Apple M3",
+    "logical_cpus": 8
+  },
+  "toolchain_versions": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+    "gcc": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "clang": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "go": "go version go1.27.1 darwin/arm64",
+    "julia": "julia version 1.13.1",
+    "java": "openjdk version \"27\" 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)"
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-initial-5500.compiler.tar.gz",
+    "sha256": "43e961eb9523d98d98a25c6b92504f3602794658d7007dad9ed59464652c92de",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "Cargo.lock": "c1411387d302746b4b547ae5a5261e0e3cb8ad34148fd945af5ea30827cfca05",
+      "Cargo.toml": "b98e0c170b770803e732df39f37e2c4e5c4ce43c5a46d8650a5f3956c8bccaf4",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "benchmarks/clbg/spectralnorm/fetch_sources.py": "78ea8ee9ec494e8dca82ffca84dda9157abfbab2f8ae0e495177eecb8466fe91",
+      "benchmarks/clbg/spectralnorm/input-pins.json": "15cc83149a0c69b1c88c5724801467d1786f5e8297b16c5afa9f3d3de7644c8d",
+      "benchmarks/clbg/spectralnorm/manifest.json": "a698ff7b1dd84ce308c4a38ef091348f6d77bc037e07d6ca194d1919bcddca9d",
+      "benchmarks/clbg/spectralnorm/output100.txt": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+      "benchmarks/clbg/spectralnorm/run.py": "56780377c0e8d743bcf889282c7b852e5b76876cf06d93a8eb8da24ca630d612",
+      "benchmarks/clbg/spectralnorm/spectralnorm-compact.mec": "8544df02d4799b3bba1c743c32df0ecab2750fe645e88ba444e9ad11457d632b",
+      "benchmarks/clbg/spectralnorm/spectralnorm.mec": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+      "benchmarks/clbg/spectralnorm/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-chapel-1.chpl": "fa698846bc4090c2faacb61ab06dfeaa561d3bf610bfdd8c6af10617c1126233",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-chapel-2.chpl": "aff850b8a9c453856326c60409f64730873d36e0c8b08bced807da63ffad6587",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gcc-2.c": "0113a97576f705d605539ab1dbc86080b18f3caa3edde2f2a7d37cc9145b7a5e",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gcc-3.c": "f51f8f10088748f926530a83e1fe7f36adeae3f2868c090b11b6149245e0460a",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gcc-4.c": "284abb18b8606f96104ef2a07bce8c4bf156491f9c88cc2fd533b0112aff743c",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gcc-5.c": "768818e297d8899f218da798070a4f54b99a4a0489b5f7f54d9a978f49fe04cb",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gcc-6.c": "8de0459b5b79a5bc7cffd2d62d84501cb9dfc2ced2b4584151d3db10f6a5d938",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gcc-7.c": "8cb34a0e2f9d6d0958a6de7bd97cd190893856ec37a80ce186d4fa9db4dd42f9",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gcc-8.c": "2fd32f77fbab6513c9e7330f16e249458dd7abdb5138a9d4694652af3e84f4f5",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-go-1.go": "c090aa0518e8239e97a57322aeb577a8cfb94aae5a1b55604be82ac3a77dbbe9",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-go-2.go": "4006bff81ba463f5de67d52414591728da6f4021f6fd2b1b5a0b1c48b8c75f6e",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-go-4.go": "bed1eaba75cc4fe09231497d1f2d3e2a6320f88dfee6f0a3b63ff1af5d8f465e",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-go-8.go": "8f277cc7c9f4b0cb287c9bd697d047fc8d40562d960030d9c718a948073dd6ab",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gpp-1.cpp": "2842f77e9fcbdb31f4b722005348c76735b52671ccd99794f2cb780484b127e2",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gpp-5.cpp": "d993a0e0dc8e506c64d2ee1c56b1211910125b179431a75a632415834780399d",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gpp-6.cpp": "f533751670d8e1c23f8bf28943211f49b79e395325da20370aa70cd03ce36617",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-gpp-7.cpp": "c600b2897e5c5c66364d5f13d9eef0fca5229d9f1dddfec5f744ba229b61887f",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-graalvmaot-1.java": "ea8f5dd39e452361f649e776dac1fb63bc336626db07fa9b5e7bf5447184768d",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-graalvmaot-2.java": "b4c9545b6a711733dcf0b85cfa66f577f533b565ad47ae705a8f043f420815a9",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-graalvmaot-3.java": "10b296b1143288adeec9646f090a087fa327c05a10c603e391e092ab4f3f7747",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-graalvmaot-8.java": "15754d3b51597372bd265bae66e289827d9d6d89cff50d305ca1fdfd5fa9cd1b",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-julia-2.jl": "a5bd42b2ce02c215f7469fbb3288ef22f7908eb039b8e27c7820fa6440330586",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-julia-4.jl": "9756c242275d4f05f8b60c69300ec9699b3dacd6548bde55440b4cb7d7af4d8f",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-1.rs": "a4c4e4df5e239e12f125fcad80a3e521d64adcbf6d6774223aa3467723bb9e3b",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-2.rs": "ad19b0848bd42342b406b3de3de3d7d3d91538fdd14db3d0b681526e103c9c5a",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-3.rs": "6b8fca569218ac7cff178ce4da8e44cccae1c8668b1e5f0e2d2876e80c7b2424",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-4.rs": "c33712a6b2c264c937c9fbca390d0643f51058ce05d1fc843c1b1cebba63478d",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-5.rs": "4ff08e9d0816e172d312741eba6cecd1126e8653c271692102ac4cfcdd6de0d7",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-6.rs": "fd81731399d95833a369c0c0dbabc3e82467a2146e6a0175161ed23423dee1f4",
+      "benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-7.rs": "77640f108d85bef0da4c8d14370e00365cc324868342ba8f4d18767a5b6a016f",
+      "benchmarks/clbg/spectralnorm/verify.py": "38bf4398ade07ce2497eb518b3e402c4005185e2f74405a10d2deb4a114c307b",
+      "hosts/gpu/Cargo.toml": "76027bf1af852a2617c394a4e7d8a25856050ce52b9f9f703c1a4182d5b54e46",
+      "hosts/gpu/src/lib.rs": "cdb837cd48a6533704f14b5b7296d9b7f25db0972905add73b5929bfb0c0527a",
+      "hosts/gpu/src/native_build.rs": "1a0adda806aef8d07eb68b8e3374acc024556bd471db67da9ffebf50b4a9d626",
+      "hosts/gpu/src/sequence/application.rs.in": "3c1f9ba1877e8fef953acd731be89560f25fb5fb17bc7dc15f01a8cb742edb79",
+      "hosts/gpu/src/sequence/compiler.rs": "9f3e669dbf61ea1015de8217026c3972f10476b9e5fccfb9ddf290d6e0cd7eb4",
+      "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+      "hosts/gpu/src/sequence/mod.rs": "947516050a8cf591fd8d0392da32f156a79b1fb31bccbe549fe6140d6e0ceabd",
+      "hosts/gpu/src/sequence/numeric.rs": "786e7642201c10b5458c1ada2e7cffd9db458dde18193a2e7600f2315dc8369b",
+      "hosts/gpu/src/sequence/runtime.rs": "4594cff679f9b9c2b565f686e1e3b678e27f4fbefe2816f5793d5969a51c49b4",
+      "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d",
+      "src/cli/commands/build.rs": "f1c616abe74e102fefd429edf72d8aa4fd07549ce58ee2eeb0d181ed38ab2056",
+      "src/engine/Cargo.toml": "53d1489619006a3d44b4a08cdf3da1188b31d9b9c9939c1ac24af0c8a43ed373",
+      "src/engine/src/lib.rs": "e927f1f8977054de501c48e7b6919be35bd82a7dbb16d18b6c35f6f2477dcd16",
+      "src/engine/src/native_sequence/grid.rs": "937f5ae4fac23068149c03bf20f263475043b9f2f5b6ed3f5e0dee0f79a629ba",
+      "src/engine/src/native_sequence/mod.rs": "c3866c2c0e5e9feaed5714a0250db4c477fb52da9d98bf9f032399cba348bafd",
+      "src/stdlib/Cargo.toml": "7e7fee937d6587e6170210f392d67e356b391b74c607257a02ccceb20988ce0e",
+      "src/stdlib/src/lib.rs": "4e8dca1686ead1c9894bbb5ba2d45c4bac75cfb171621a2585c945cdc599fba6",
+      "src/stdlib/src/native_sequence.rs": "4cf7f7db81593b38406ecf95c09f9fcdb89eb913c64513e95ebaded1554b9caa"
+    }
+  },
+  "protocol": {
+    "n": 5500,
+    "samples": 3,
+    "requested_threads": 8,
+    "sample_order": [
+      [
+        "mech-optimized-simd0-u1-p1",
+        "mech-optimized-simd1-u8-p8",
+        "mech-optimized-simd1-u4-p4",
+        "spectralnorm-rust-5",
+        "mech-optimized-simd1-u2-p8",
+        "mech-optimized-simd1-u1-p8",
+        "spectralnorm-gcc-3-llvm-fastmath",
+        "mech-optimized-simd1-u4-p8",
+        "mech-compact-simd0-u1-p1",
+        "spectralnorm-chapel-2",
+        "mech-compact-simd1-u2-p8",
+        "spectralnorm-rust-7"
+      ],
+      [
+        "mech-compact-simd1-u2-p8",
+        "mech-compact-simd0-u1-p1",
+        "mech-optimized-simd1-u4-p8",
+        "mech-optimized-simd0-u1-p1",
+        "mech-optimized-simd1-u1-p8",
+        "mech-optimized-simd1-u4-p4",
+        "mech-optimized-simd1-u2-p8",
+        "spectralnorm-gcc-3-llvm-fastmath",
+        "spectralnorm-chapel-2",
+        "spectralnorm-rust-7",
+        "mech-optimized-simd1-u8-p8",
+        "spectralnorm-rust-5"
+      ],
+      [
+        "mech-optimized-simd1-u4-p4",
+        "mech-optimized-simd0-u1-p1",
+        "spectralnorm-gcc-3-llvm-fastmath",
+        "spectralnorm-chapel-2",
+        "mech-optimized-simd1-u8-p8",
+        "mech-optimized-simd1-u1-p8",
+        "mech-optimized-simd1-u2-p8",
+        "mech-compact-simd0-u1-p1",
+        "mech-compact-simd1-u2-p8",
+        "mech-optimized-simd1-u4-p8",
+        "spectralnorm-rust-5",
+        "spectralnorm-rust-7"
+      ]
+    ],
+    "timed_region": "Sequential fresh process to exit; includes CLI, full prescribed work, output, and JIT startup. Builds and validation excluded.",
+    "required_work": "40 matrix-vector applications; 1210000000 weighted contributions; ten pairs of AtAv applications. No stored matrix, answer shortcut or reduced iteration count.",
+    "source_scope": "Complete Mech source with four required functions, matrix formula, iteration and norm; compiler/runtime array primitives excluded.",
+    "source_metric": "Nonblank noncomment LOC and whitespace-normalized gzip level1 bytes.",
+    "compiler_status": "Experimental v0.4 integration extension exposed through public mech build --backend cranelift.",
+    "cohort": "All pinned submissions for seven languages attempted. Architecture/build exclusions recorded. Java uses OpenJDK JIT, not published GraalVM AOT.",
+    "environment": {
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8",
+      "OMP_DYNAMIC": "FALSE",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "RAYON_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "provisional_note": "Initial optimization screening. A source audit may have overlapped initial validation or samples; exclude this batch from final timing claims. Final measurements are isolated."
+  },
+  "programs": [
+    {
+      "id": "spectralnorm-rust-5",
+      "language": "rust",
+      "variant": 5,
+      "path": "upstream/spectralnorm-rust-5.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-rust-5.html",
+      "sha256": "4ff08e9d0816e172d312741eba6cecd1126e8653c271692102ac4cfcdd6de0d7",
+      "upstream_starred": false,
+      "published_secs": 0.72,
+      "published_gz": 1062,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:22:06 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs spectralnorm.rs -o spectralnorm.rust-5.rust_run\n\n11.30 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./spectralnorm.rust-5.rust_run 5500\n\nPROGRAM OUTPUT:\n1.274224153",
+      "source": {
+        "paths": [
+          "upstream/spectralnorm-rust-5.rs"
+        ],
+        "sha256": "4ff08e9d0816e172d312741eba6cecd1126e8653c271692102ac4cfcdd6de0d7",
+        "physical_lines": 127,
+        "nonblank_noncomment_lines": 91,
+        "normalized_bytes": 2296,
+        "gzip1_bytes": 1038
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/librayon-df4ef925755eec75.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-5.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-rust-5"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-rust-5"
+      ],
+      "worker_policy": "Rayon workers",
+      "samples_seconds": [
+        0.132209958,
+        0.148802875,
+        0.189293292
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.148802875,
+      "min_seconds": 0.132209958,
+      "max_seconds": 0.189293292
+    },
+    {
+      "id": "spectralnorm-chapel-2",
+      "language": "chapel",
+      "variant": 2,
+      "path": "upstream/spectralnorm-chapel-2.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-chapel-2.html",
+      "sha256": "aff850b8a9c453856326c60409f64730873d36e0c8b08bced807da63ffad6587",
+      "upstream_starred": false,
+      "published_secs": 0.78,
+      "published_gz": 348,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 18:12:33 GMT\n\nMAKE:\nmv spectralnorm.chapel-2.chapel spectralnorm.chapel-2.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast spectralnorm.chapel-2.chpl -o spectralnorm.chapel-2.chapel_run\nrm spectralnorm.chapel-2.chpl\n\n20.39 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./spectralnorm.chapel-2.chapel_run --n=5500\n\nPROGRAM OUTPUT:\n1.274224153",
+      "source": {
+        "paths": [
+          "upstream/spectralnorm-chapel-2.chpl"
+        ],
+        "sha256": "aff850b8a9c453856326c60409f64730873d36e0c8b08bced807da63ffad6587",
+        "physical_lines": 53,
+        "nonblank_noncomment_lines": 25,
+        "normalized_bytes": 648,
+        "gzip1_bytes": 338
+      },
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/upstream/spectralnorm-chapel-2.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-chapel-2",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-chapel-2"
+      ],
+      "worker_policy": "Chapel runtime tasks",
+      "samples_seconds": [
+        0.41286125,
+        0.408549125,
+        0.408773875
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.408773875,
+      "min_seconds": 0.408549125,
+      "max_seconds": 0.41286125
+    },
+    {
+      "id": "spectralnorm-gcc-3-llvm-fastmath",
+      "language": "c",
+      "variant": 3,
+      "path": "upstream/spectralnorm-gcc-3.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-gcc-3.html",
+      "sha256": "f51f8f10088748f926530a83e1fe7f36adeae3f2868c090b11b6149245e0460a",
+      "upstream_starred": false,
+      "published_secs": 1.43,
+      "published_gz": 470,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 05:52:30 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp spectralnorm.gcc-3.c -o spectralnorm.gcc-3.gcc_run -lm\nrm spectralnorm.gcc-3.c\n\n2.42s to complete and log all make actions\n\nCOMMAND LINE:\n ./spectralnorm.gcc-3.gcc_run 5500\n\nPROGRAM OUTPUT:\n1.274224153",
+      "cc_backend": "llvm",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/spectralnorm-gcc-3.c"
+        ],
+        "sha256": "f51f8f10088748f926530a83e1fe7f36adeae3f2868c090b11b6149245e0460a",
+        "physical_lines": 72,
+        "nonblank_noncomment_lines": 54,
+        "normalized_bytes": 1152,
+        "gzip1_bytes": 459
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/upstream/spectralnorm-gcc-3.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-gcc-3-llvm-fastmath",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-fopenmp",
+        "-I/opt/homebrew/opt/libomp/include",
+        "-L/opt/homebrew/opt/libomp/lib",
+        "-Wl,-rpath,/opt/homebrew/opt/libomp/lib",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-gcc-3-llvm-fastmath"
+      ],
+      "worker_policy": "OpenMP workers",
+      "samples_seconds": [
+        0.217335375,
+        0.19971325,
+        0.185020791
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.19971325,
+      "min_seconds": 0.185020791,
+      "max_seconds": 0.217335375
+    },
+    {
+      "id": "spectralnorm-rust-7",
+      "language": "rust",
+      "variant": 7,
+      "path": "upstream/spectralnorm-rust-7.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-rust-7.html",
+      "sha256": "77640f108d85bef0da4c8d14370e00365cc324868342ba8f4d18767a5b6a016f",
+      "upstream_starred": false,
+      "published_secs": null,
+      "published_gz": null,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 06:09:24 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs spectralnorm.rs -o spectralnorm.rust-7.rust_run\nerror: no rules expected `,`\n  --> spectralnorm.rs:80:35\n   |\n80 |         let mut jx4 = narr![i32; 0, 1, 2, 3];\n   |                                   ^ no rules expected this token in macro call\n   |\nnote: while trying to match meta-variable `$n:expr`\n  --> /home/dunham/.cargo/registry/src/index.crates.io-6f17d22bba15001f/generic-array-1.2.0/src/arr.rs:38:15\n   |\n38 |     ($x:expr; $n:expr) => ( $crate::GenericArray::from_array([$x; $n]) );\n   |               ^^^^^^^\n\nerror: no rules expected `,`\n   --> spectralnorm.rs:103:30\n    |\n103 | ...ij[0] as f64, a_ij[1] as f64, a_ij[2] as f64, a_ij[3] as f64]\n    |                ^ no rules expected this token in macro call\n    |\nnote: while trying to match meta-variable `$n:expr`\n   --> /home/dunham/.cargo/registry/src/index.crates.io-6f17d22bba15001f/generic-array-1.2.0/src/arr.rs:38:15\n    |\n38  |     ($x:expr; $n:expr) => ( $crate::GenericArray::from_array([$x; $n]) );\n    |               ^^^^^^^\n\nwarning: unused `#[macro_use]` import\n  --> spectralnorm.rs:12:1\n   |\n12 | #[macro_use]\n   | ^^^^^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` on by default\n\nerror: aborting due to 2 previous errors; 1 warning emitted\n\nmake: [/home/dunham/all-benchmarksgame/2000-benchmarksgame/nanobench/makefiles/u64q.programs.Makefile:446: spectralnorm.rust-7.rust_run] Error 1 (ignored)\n\n7.57 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./spectralnorm.rust-7.rust_run 500\n\nEMPTY \n\n\nPROGRAM OUTPUT:",
+      "source": {
+        "paths": [
+          "upstream/spectralnorm-rust-7.rs"
+        ],
+        "sha256": "77640f108d85bef0da4c8d14370e00365cc324868342ba8f4d18767a5b6a016f",
+        "physical_lines": 117,
+        "nonblank_noncomment_lines": 73,
+        "normalized_bytes": 1954,
+        "gzip1_bytes": 916
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "--extern",
+        "generic_array=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/libgeneric_array-e9ca6c75ac2b35d0.rlib",
+        "--extern",
+        "numeric_array=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/libnumeric_array-e2dc2d7a2f0143db.rlib",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/librayon-df4ef925755eec75.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/upstream/spectralnorm-rust-7.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-rust-7"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/spectralnorm-rust-7"
+      ],
+      "worker_policy": "Rayon workers",
+      "samples_seconds": [
+        0.2237955,
+        0.195949875,
+        0.229284167
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.2237955,
+      "min_seconds": 0.195949875,
+      "max_seconds": 0.229284167
+    },
+    {
+      "id": "mech-compact-simd0-u1-p1",
+      "language": "mech",
+      "path": "spectralnorm-compact.mec",
+      "simd": false,
+      "unroll": 1,
+      "partitions": 1,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "43682a281f4fc7aca5c10b3fcc621f4bfe20b574a96d94ea2123569adaae6664",
+      "execution_mode": "Mech canonical typed source; Cranelift AOT coefficients, matrix traversal, iteration, dot and sqrt; generic array storage and row scheduling runtime",
+      "native_object_sha256": "0717be8196d9ceeac6e1d2e1d7775aa2cfc3d0b6d3edf1ef28de99dbd013055b",
+      "constants_sha256": "da696887e2ae59c4eaa6e0cc53db754288e552fa57667ffa02ae105826d5a367",
+      "source": {
+        "paths": [
+          "spectralnorm-compact.mec"
+        ],
+        "sha256": "8544df02d4799b3bba1c743c32df0ecab2750fe645e88ba444e9ad11457d632b",
+        "physical_lines": 13,
+        "nonblank_noncomment_lines": 13,
+        "normalized_bytes": 609,
+        "gzip1_bytes": 304
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm-compact.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-compact-simd0-u1-p1",
+        "--scalar"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-compact-simd0-u1-p1"
+      ],
+      "worker_policy": "1 row partitions over Rayon pool",
+      "samples_seconds": [
+        2.077316292,
+        2.084189167,
+        2.079821875
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 2.079821875,
+      "min_seconds": 2.077316292,
+      "max_seconds": 2.084189167
+    },
+    {
+      "id": "mech-compact-simd1-u2-p8",
+      "language": "mech",
+      "path": "spectralnorm-compact.mec",
+      "simd": true,
+      "unroll": 2,
+      "partitions": 8,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "43682a281f4fc7aca5c10b3fcc621f4bfe20b574a96d94ea2123569adaae6664",
+      "execution_mode": "Mech canonical typed source; Cranelift AOT coefficients, matrix traversal, iteration, dot and sqrt; generic array storage and row scheduling runtime",
+      "native_object_sha256": "66b2f9fd816269eebf81dd1314b8a2547ec50684932f75950a1927c3342d1aa7",
+      "constants_sha256": "da696887e2ae59c4eaa6e0cc53db754288e552fa57667ffa02ae105826d5a367",
+      "source": {
+        "paths": [
+          "spectralnorm-compact.mec"
+        ],
+        "sha256": "8544df02d4799b3bba1c743c32df0ecab2750fe645e88ba444e9ad11457d632b",
+        "physical_lines": 13,
+        "nonblank_noncomment_lines": 13,
+        "normalized_bytes": 609,
+        "gzip1_bytes": 304
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm-compact.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-compact-simd1-u2-p8"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-compact-simd1-u2-p8"
+      ],
+      "worker_policy": "8 row partitions over Rayon pool",
+      "samples_seconds": [
+        0.292465541,
+        0.3000665,
+        0.25781775
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.292465541,
+      "min_seconds": 0.25781775,
+      "max_seconds": 0.3000665
+    },
+    {
+      "id": "mech-optimized-simd0-u1-p1",
+      "language": "mech",
+      "path": "spectralnorm.mec",
+      "simd": false,
+      "unroll": 1,
+      "partitions": 1,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "43682a281f4fc7aca5c10b3fcc621f4bfe20b574a96d94ea2123569adaae6664",
+      "execution_mode": "Mech canonical typed source; Cranelift AOT coefficients, matrix traversal, iteration, dot and sqrt; generic array storage and row scheduling runtime",
+      "native_object_sha256": "9603dcdf844158e3724b5f073129b55791b51dba3b0c26094c5da9bbec26aea0",
+      "constants_sha256": "4b99009f27430007c148ecabf126889f10cf7a5913672eed73d27651bf808d1e",
+      "source": {
+        "paths": [
+          "spectralnorm.mec"
+        ],
+        "sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+        "physical_lines": 13,
+        "nonblank_noncomment_lines": 13,
+        "normalized_bytes": 589,
+        "gzip1_bytes": 300
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd0-u1-p1",
+        "--scalar"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd0-u1-p1"
+      ],
+      "worker_policy": "1 row partitions over Rayon pool",
+      "samples_seconds": [
+        1.990171041,
+        1.992797375,
+        1.993508917
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 1.992797375,
+      "min_seconds": 1.990171041,
+      "max_seconds": 1.993508917
+    },
+    {
+      "id": "mech-optimized-simd1-u1-p8",
+      "language": "mech",
+      "path": "spectralnorm.mec",
+      "simd": true,
+      "unroll": 1,
+      "partitions": 8,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "43682a281f4fc7aca5c10b3fcc621f4bfe20b574a96d94ea2123569adaae6664",
+      "execution_mode": "Mech canonical typed source; Cranelift AOT coefficients, matrix traversal, iteration, dot and sqrt; generic array storage and row scheduling runtime",
+      "native_object_sha256": "ce9362c0ef71e3ae261c88d6579ee555e0326ceee956d1fd0ea822c0b385f186",
+      "constants_sha256": "4b99009f27430007c148ecabf126889f10cf7a5913672eed73d27651bf808d1e",
+      "source": {
+        "paths": [
+          "spectralnorm.mec"
+        ],
+        "sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+        "physical_lines": 13,
+        "nonblank_noncomment_lines": 13,
+        "normalized_bytes": 589,
+        "gzip1_bytes": 300
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u1-p8"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u1-p8"
+      ],
+      "worker_policy": "8 row partitions over Rayon pool",
+      "samples_seconds": [
+        0.306482416,
+        0.2588215,
+        0.303149
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.303149,
+      "min_seconds": 0.2588215,
+      "max_seconds": 0.306482416
+    },
+    {
+      "id": "mech-optimized-simd1-u2-p8",
+      "language": "mech",
+      "path": "spectralnorm.mec",
+      "simd": true,
+      "unroll": 2,
+      "partitions": 8,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "43682a281f4fc7aca5c10b3fcc621f4bfe20b574a96d94ea2123569adaae6664",
+      "execution_mode": "Mech canonical typed source; Cranelift AOT coefficients, matrix traversal, iteration, dot and sqrt; generic array storage and row scheduling runtime",
+      "native_object_sha256": "36fcae2be9678da744a7f8d15ff675ef2c37c52da1f9b9643fdc533125ac6a1c",
+      "constants_sha256": "4b99009f27430007c148ecabf126889f10cf7a5913672eed73d27651bf808d1e",
+      "source": {
+        "paths": [
+          "spectralnorm.mec"
+        ],
+        "sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+        "physical_lines": 13,
+        "nonblank_noncomment_lines": 13,
+        "normalized_bytes": 589,
+        "gzip1_bytes": 300
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u2-p8"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u2-p8"
+      ],
+      "worker_policy": "8 row partitions over Rayon pool",
+      "samples_seconds": [
+        0.263146917,
+        0.278620792,
+        0.285563041
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.278620792,
+      "min_seconds": 0.263146917,
+      "max_seconds": 0.285563041
+    },
+    {
+      "id": "mech-optimized-simd1-u4-p8",
+      "language": "mech",
+      "path": "spectralnorm.mec",
+      "simd": true,
+      "unroll": 4,
+      "partitions": 8,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "43682a281f4fc7aca5c10b3fcc621f4bfe20b574a96d94ea2123569adaae6664",
+      "execution_mode": "Mech canonical typed source; Cranelift AOT coefficients, matrix traversal, iteration, dot and sqrt; generic array storage and row scheduling runtime",
+      "native_object_sha256": "208eb47515dc70cee68ca6d0fe7e2ce4ba7dbcf13e87ef371c15b4ad2c37e2fe",
+      "constants_sha256": "4b99009f27430007c148ecabf126889f10cf7a5913672eed73d27651bf808d1e",
+      "source": {
+        "paths": [
+          "spectralnorm.mec"
+        ],
+        "sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+        "physical_lines": 13,
+        "nonblank_noncomment_lines": 13,
+        "normalized_bytes": 589,
+        "gzip1_bytes": 300
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u4-p8"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u4-p8"
+      ],
+      "worker_policy": "8 row partitions over Rayon pool",
+      "samples_seconds": [
+        0.255560958,
+        0.226613,
+        0.259733083
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.255560958,
+      "min_seconds": 0.226613,
+      "max_seconds": 0.259733083
+    },
+    {
+      "id": "mech-optimized-simd1-u8-p8",
+      "language": "mech",
+      "path": "spectralnorm.mec",
+      "simd": true,
+      "unroll": 8,
+      "partitions": 8,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "43682a281f4fc7aca5c10b3fcc621f4bfe20b574a96d94ea2123569adaae6664",
+      "execution_mode": "Mech canonical typed source; Cranelift AOT coefficients, matrix traversal, iteration, dot and sqrt; generic array storage and row scheduling runtime",
+      "native_object_sha256": "a662590060079faf109be960f2697d23211a71fcad9b32198d375e20de586d79",
+      "constants_sha256": "4b99009f27430007c148ecabf126889f10cf7a5913672eed73d27651bf808d1e",
+      "source": {
+        "paths": [
+          "spectralnorm.mec"
+        ],
+        "sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+        "physical_lines": 13,
+        "nonblank_noncomment_lines": 13,
+        "normalized_bytes": 589,
+        "gzip1_bytes": 300
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u8-p8"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u8-p8"
+      ],
+      "worker_policy": "8 row partitions over Rayon pool",
+      "samples_seconds": [
+        0.24970425,
+        0.311343333,
+        0.233548583
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.24970425,
+      "min_seconds": 0.233548583,
+      "max_seconds": 0.311343333
+    },
+    {
+      "id": "mech-optimized-simd1-u4-p4",
+      "language": "mech",
+      "path": "spectralnorm.mec",
+      "simd": true,
+      "unroll": 4,
+      "partitions": 4,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "43682a281f4fc7aca5c10b3fcc621f4bfe20b574a96d94ea2123569adaae6664",
+      "execution_mode": "Mech canonical typed source; Cranelift AOT coefficients, matrix traversal, iteration, dot and sqrt; generic array storage and row scheduling runtime",
+      "native_object_sha256": "208eb47515dc70cee68ca6d0fe7e2ce4ba7dbcf13e87ef371c15b4ad2c37e2fe",
+      "constants_sha256": "4b99009f27430007c148ecabf126889f10cf7a5913672eed73d27651bf808d1e",
+      "source": {
+        "paths": [
+          "spectralnorm.mec"
+        ],
+        "sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+        "physical_lines": 13,
+        "nonblank_noncomment_lines": 13,
+        "normalized_bytes": 589,
+        "gzip1_bytes": 300
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u4-p4"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u4-p4"
+      ],
+      "worker_policy": "4 row partitions over Rayon pool",
+      "samples_seconds": [
+        0.28979275,
+        0.2991195,
+        0.322977875
+      ],
+      "correctness_100": {
+        "exact_reference_match": true,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6"
+      },
+      "correctness_full": {
+        "output": "1.274224153\n",
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb"
+      },
+      "median_seconds": 0.2991195,
+      "min_seconds": 0.28979275,
+      "max_seconds": 0.322977875
+    }
+  ],
+  "excluded": [],
+  "endpoints": {
+    "time_baseline_seconds": 0.148802875,
+    "size_baseline_bytes": 300,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 1,
+        "fastest": "spectralnorm-gcc-3-llvm-fastmath",
+        "smallest": "spectralnorm-gcc-3-llvm-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.53,
+            "time_ratio": 1.3421330065027306
+          },
+          "smallest": {
+            "size_ratio": 1.53,
+            "time_ratio": 1.3421330065027306
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 1,
+        "fastest": "spectralnorm-chapel-2",
+        "smallest": "spectralnorm-chapel-2",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.1266666666666667,
+            "time_ratio": 2.747083179676468
+          },
+          "smallest": {
+            "size_ratio": 1.1266666666666667,
+            "time_ratio": 2.747083179676468
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 8,
+        "fastest": "mech-optimized-simd1-u8-p8",
+        "smallest": "mech-optimized-simd1-u8-p8",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.678087536951151
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.678087536951151
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 2,
+        "fastest": "spectralnorm-rust-5",
+        "smallest": "spectralnorm-rust-7",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.5039729575117418,
+        "fastest_size_over_smallest": 1.1331877729257642,
+        "log2_tradeoff_distance": 0.6157919448438867,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.46,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 3.0533333333333332,
+            "time_ratio": 1.5039729575117418
+          }
+        }
+      }
+    }
+  },
+  "nonheroic_endpoints": {
+    "time_baseline_seconds": 0.148802875,
+    "size_baseline_bytes": 300,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 1,
+        "fastest": "spectralnorm-gcc-3-llvm-fastmath",
+        "smallest": "spectralnorm-gcc-3-llvm-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.53,
+            "time_ratio": 1.3421330065027306
+          },
+          "smallest": {
+            "size_ratio": 1.53,
+            "time_ratio": 1.3421330065027306
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 1,
+        "fastest": "spectralnorm-chapel-2",
+        "smallest": "spectralnorm-chapel-2",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.1266666666666667,
+            "time_ratio": 2.747083179676468
+          },
+          "smallest": {
+            "size_ratio": 1.1266666666666667,
+            "time_ratio": 2.747083179676468
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 8,
+        "fastest": "mech-optimized-simd1-u8-p8",
+        "smallest": "mech-optimized-simd1-u8-p8",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.678087536951151
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.678087536951151
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 2,
+        "fastest": "spectralnorm-rust-5",
+        "smallest": "spectralnorm-rust-7",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.5039729575117418,
+        "fastest_size_over_smallest": 1.1331877729257642,
+        "log2_tradeoff_distance": 0.6157919448438867,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.46,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 3.0533333333333332,
+            "time_ratio": 1.5039729575117418
+          }
+        }
+      }
+    }
+  }
+}

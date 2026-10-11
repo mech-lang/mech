@@ -1,0 +1,122 @@
+const fs=require('node:fs');
+const assert=require('node:assert/strict');
+const {pathToFileURL}=require('node:url');
+const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
+const familyCount=new Set(data.languages.map(language=>language.family??language.key)).size;
+const runtimeCount=data.languages.length;
+const withoutMechCount=data.languages.filter(language=>language.family!=='mech').length;
+const click=(page,selector)=>page.evaluate(selector=>document.querySelector(selector).click(),selector);
+const settle=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+const selection=page=>page.evaluate(()=>window.benchmarkExplorer.getSelection());
+const domain=page=>page.evaluate(()=>window.benchmarkExplorer.getDomains());
+const globals=page=>page.evaluate(()=>window.benchmarkExplorer.getGlobalStatistics());
+const chartBox=page=>page.locator('#chart').evaluate(chart=>{
+  const box=chart.getBoundingClientRect();return {x:box.x+scrollX,y:box.y+scrollY,width:box.width,height:box.height};
+});
+async function checkGlobalMarkers(page){
+  const statistics=await globals(page);
+  const marks=await page.locator('.global-center').evaluateAll(marks=>marks.map(m=>({
+    kind:m.dataset.globalProfile,statistic:m.dataset.globalStatistic,x:Number(m.dataset.ratioX),y:Number(m.dataset.ratioY)})));
+  for(const mark of marks)assert.deepEqual({x:mark.x,y:mark.y},statistics[mark.kind][mark.statistic]);
+  return statistics;
+}
+(async()=>{
+  const playwright=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(require.resolve(process.env.PLAYWRIGHT_MODULE)).href:'playwright');
+  const {chromium}=playwright.default??playwright;
+  const browser=await chromium.launch({executablePath:process.env.BROWSER_EXECUTABLE||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+  const errors=[],checks=[];
+  try{
+    for(const width of [1440,900,390,320]){
+      const page=await browser.newPage({viewport:{width,height:1000},colorScheme:'dark'});
+      page.on('pageerror',error=>errors.push(error.message));
+      await page.goto(process.env.BENCHMARK_EXPLORER_URL||'http://127.0.0.1:8766/');
+      await page.waitForFunction(n=>window.benchmarkExplorer?.getSummary().length===n,data.languages.length);
+      await page.evaluate(()=>document.fonts.ready);await settle(page);
+      if(width<=720)await click(page,'#toggle-language-filters');
+      assert.equal(await page.locator('.language-family').count(),familyCount);
+      assert.equal(await page.locator('[data-language-family="lua"] [data-language]').count(),2);
+      assert.equal(await page.locator('[data-language-family="mech"] [data-language]').count(),3);
+      const names=await page.locator('.family-name').evaluateAll(labels=>labels.map(l=>l.querySelector('span:last-child').firstChild.textContent));
+      assert.deepEqual(names,names.slice().sort((a,b)=>a.localeCompare(b,'en',{sensitivity:'base'})));
+      const original=await domain(page);
+      const originalBox=await chartBox(page);
+      await page.locator('#show-global').check();await settle(page);
+      assert.deepEqual(await domain(page),original);
+      assert.deepEqual(await chartBox(page),originalBox,'Global toggle does not move or resize the chart');
+      assert.equal(await page.locator('.global-spread').count(),4);assert.equal(await page.locator('.global-center').count(),4);
+      const population=await checkGlobalMarkers(page);assert.equal(population.fast.n,runtimeCount);
+      assert.equal(await page.locator('.global-spread[data-global-sigma="1"]').count(),2);
+      assert.equal(await page.locator('.global-spread[data-global-sigma="2"]').count(),2);
+      await page.locator('#small-profile').uncheck();
+      assert.equal(await page.locator('[data-global-profile="small"]').count(),0);
+      assert.equal(await page.locator('.global-center').count(),2);assert.deepEqual(await domain(page),original);
+      await page.locator('#small-profile').check();
+      await page.locator('input[data-language="mech-jit"]').uncheck();
+      assert.equal(await page.locator('input[data-family="mech"]').evaluate(i=>i.indeterminate),true);
+      assert.equal((await globals(page)).fast.n,runtimeCount-1);assert.deepEqual(await domain(page),original);
+      await page.locator('input[data-family="mech"]').check();
+      assert.equal(await page.evaluate(()=>document.activeElement.dataset.family),'mech','Parent checkbox retains keyboard focus');
+      assert.deepEqual(new Set((await selection(page)).languages.filter(key=>key.startsWith('mech'))),new Set(['mech','mech-jit','mech-resident']));
+      assert.equal((await globals(page)).fast.n,runtimeCount);
+      await page.locator('input[data-family="mech"]').uncheck();
+      assert.equal((await selection(page)).languages.filter(key=>key.startsWith('mech')).length,0);
+      assert.equal((await globals(page)).fast.n,withoutMechCount);
+      await page.locator('input[data-family="mech"]').check();
+      await page.locator('[data-toggle-family="lua"]').click();
+      assert.equal(await page.locator('#variants-lua').isVisible(),false);assert.equal((await globals(page)).fast.n,runtimeCount);
+      await page.locator('[data-toggle-family="lua"]').click();
+      await click(page,'#no-languages');
+      assert.equal(await page.locator('.global-center,.global-spread').count(),0);
+      assert.deepEqual(await globals(page),{fast:null,small:null});assert.deepEqual(await domain(page),original);
+      await page.locator('input[data-family="lua"]').check();
+      assert.deepEqual(new Set((await selection(page)).languages),new Set(['lua','luajit']));
+      assert.equal((await globals(page)).fast.n,2);assert.equal(await page.locator('.global-spread').count(),4);
+      await page.locator('input[data-language="lua"]').uncheck();
+      assert.equal(await page.evaluate(()=>document.activeElement.dataset.language),'lua','Child checkbox retains keyboard focus');
+      assert.equal(await page.locator('input[data-family="lua"]').evaluate(i=>i.indeterminate),true);
+      assert.equal((await globals(page)).fast.n,1);assert.equal(await page.locator('.global-spread').count(),0);
+      assert.equal(await page.locator('.global-center').count(),4);
+      assert.deepEqual((await globals(page)).fast.average,(await globals(page)).fast.median);
+      await click(page,'#all-languages');
+      await page.evaluate(()=>window.benchmarkExplorer.setReleaseYear(2023));
+      assert.equal((await globals(page)).fast.n,data.languages.filter(language=>language.release_year<=2023).length);
+      assert.equal(await page.locator('input[data-family="mech"]').isDisabled(),true);
+      await page.evaluate(()=>window.benchmarkExplorer.setReleaseYear(2026));
+      assert.equal((await globals(page)).fast.n,runtimeCount);assert.deepEqual(await domain(page),original);
+      await click(page,'[data-view="benchmark"]');
+      for(const benchmark of data.benchmarks){
+        await page.locator('#focused-benchmark').selectOption(benchmark.key);
+        const eligible=benchmark.groups.length;
+        assert.equal((await checkGlobalMarkers(page)).fast.n,eligible,benchmark.key);
+        assert.equal(await page.locator('.global-spread').count(),4);
+      }
+      await page.locator('#focused-benchmark').selectOption('nbody');
+      await page.locator('#chart-wrap').screenshot({path:__dirname+`/global-nbody-${width}-preview.png`});
+      await click(page,'[data-view="summary"]');
+      await page.locator('#focus-means').uncheck();
+      const fullRange=await domain(page);assert(fullRange.yMax>original.yMax);
+      await page.locator('#show-samples').uncheck();
+      assert.equal(await page.locator('#focus-means-option').isVisible(),false);
+      assert.equal(await page.locator('#focus-means').isDisabled(),true);
+      assert.equal((await selection(page)).focusMeans,true);assert.deepEqual(await domain(page),original);
+      assert.equal(await page.locator('[data-sample="true"]').count(),0);
+      await page.locator('#show-samples').check();
+      assert.equal(await page.locator('#focus-means-option').isVisible(),true);assert.deepEqual(await domain(page),original);
+      await page.locator('#focus-means').uncheck();assert.deepEqual(await domain(page),fullRange);
+      await page.locator('#focus-means').check();
+      await page.locator('#chart-wrap').screenshot({path:__dirname+`/global-suite-${width}-preview.png`});
+      await click(page,'[data-view="mech"]');
+      assert.equal((await globals(page)).fast.n,3);
+      await page.locator('#show-samples').uncheck();
+      assert.equal(await page.locator('.endpoint[data-program]').count(),0,'Mech benchmark endpoints follow Samples visibility');
+      assert.equal(await page.locator('.mean-mark').count(),6);assert.equal(await page.locator('.global-center').count(),4);
+      assert.equal(await page.locator('#focus-means-option').isVisible(),false);
+      await click(page,'#reset');
+      assert.equal((await selection(page)).global,false);assert.equal((await selection(page)).samples,true);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+      checks.push({width,global_statistics:true,independent_variants:true,fixed_axes:true,conditional_data_fit:true});
+      await page.close();
+    }
+    assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,checks}));
+  }finally{await browser.close();}
+})().catch(error=>{console.error(error);process.exit(1);});

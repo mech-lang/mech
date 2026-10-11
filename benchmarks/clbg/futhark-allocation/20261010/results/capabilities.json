@@ -1,0 +1,83 @@
+{
+  "status": "unsupported-allocation-model",
+  "language": "futhark",
+  "benchmark": "binarytrees",
+  "compiler": {
+    "path": "/opt/homebrew/bin/futhark",
+    "sha256": "5ee05389c9bc9a27bbb91b540f3e13caeae8db8c5e56282332913dd900796d5e",
+    "version": "Futhark 0.27.1.\nCompiled with GHC 9.14.1.\n\nCopyright (C) DIKU, University of Copenhagen, released under the ISC license.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law."
+  },
+  "sources": {
+    "probes/recursive-type.fut": "31922ec41895c93be50f9879fb658f1aedfa60fa9d92066e164944d4c9a036cb",
+    "probes/foreign-allocator.fut": "b6a3f0c255c5ee928b9ac39a55e0ebcb09d4d704c5774409960e174406b4d4e5",
+    "probes/node-noinline.fut": "e0d4b84c3ff780fcd4a947c222a3b5ac32397d2c5690da2ea22f06e9bb29a2d2"
+  },
+  "constructor_probes": [
+    {
+      "backend": "c",
+      "command": [
+        "/opt/homebrew/bin/futhark",
+        "c",
+        "--library",
+        "-o",
+        "builds/node-noinline",
+        "probes/node-noinline.fut"
+      ],
+      "generated_c_sha256": "327d17a28d2f22ef8403ea434d00d54b3f4205b6e600248f5cc036309aa0ddbe",
+      "evidence": "results/c-allocation-lifetime.txt",
+      "evidence_sha256": "ca360420dd879d5f9496c45dee4259b83c43d0444f7c709c14b41a0a15f69de2",
+      "result": "Each 16-byte array is allocated, copied into contiguous outer storage, and unreferenced inside the construction loop. It is not retained as a distinct node allocation for later traversal."
+    },
+    {
+      "backend": "multicore",
+      "command": [
+        "/opt/homebrew/bin/futhark",
+        "multicore",
+        "--library",
+        "-o",
+        "builds/node-noinline-multicore",
+        "probes/node-noinline.fut"
+      ],
+      "generated_c_sha256": "6a9f9b2fa41c281b11c3d49c763aed38efe7ebb12247cfee6cc88a033fc4b29e",
+      "evidence": "results/multicore-allocation-lifetime.txt",
+      "evidence_sha256": "162041a29aa2b77e492285c6a1703627c2cc13d8580bed9dec2aa9a108bd60a9",
+      "result": "Each 16-byte array is allocated, copied into contiguous outer storage, and unreferenced inside the construction loop. It is not retained as a distinct node allocation for later traversal."
+    }
+  ],
+  "rejected_type_and_intrinsic_probes": [
+    {
+      "probe": "recursive-type",
+      "source_sha256": "31922ec41895c93be50f9879fb658f1aedfa60fa9d92066e164944d4c9a036cb",
+      "command": [
+        "/opt/homebrew/bin/futhark",
+        "check",
+        "probes/recursive-type.fut"
+      ],
+      "returncode": 2,
+      "log": "results/recursive-type.log",
+      "log_sha256": "0f1b96e75e11b0e4d0b9712632657a1eed4751645570ac3b3d7f6868eef1a291"
+    },
+    {
+      "probe": "foreign-allocator",
+      "source_sha256": "b6a3f0c255c5ee928b9ac39a55e0ebcb09d4d704c5774409960e174406b4d4e5",
+      "command": [
+        "/opt/homebrew/bin/futhark",
+        "check",
+        "probes/foreign-allocator.fut"
+      ],
+      "returncode": 2,
+      "log": "results/foreign-allocator.log",
+      "log_sha256": "8ed81c38c6b1a505526301d3fb3c84bfc5b9006b5e21da606448434c8712159d"
+    }
+  ],
+  "conclusion": "The stock 0.27.1 C and multicore backends do not provide a faithful retained per-node heap model. Non-inlined array allocation still copies into flat storage and releases the temporary immediately. A general heap-reference/allocator compiler extension would be needed; no host tree executor or modified generated-C benchmark is admitted.",
+  "scope": "This is capability evidence, not a benchmark timing. Existing nine faithful Futhark workloads and their immutable measurements are unchanged.",
+  "references": [
+    "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+    "https://futhark-lang.org/blog/2021-08-02-value-representation.html",
+    "https://futhark-lang.org/blog/2026-08-05-recursion.html",
+    "https://futhark-lang.org/blog/2026-10-02-cpu_function.html",
+    "https://futhark-lang.org/blog/2026-10-08-end-of-futharkscript.html"
+  ],
+  "new_interpreter_ffi": "The October 8 proposal only adds interpreter IO and calls to compiled Futhark entry points. Its foreign effects are unavailable in compiled Futhark, and it is not a compiled C allocator interface."
+}

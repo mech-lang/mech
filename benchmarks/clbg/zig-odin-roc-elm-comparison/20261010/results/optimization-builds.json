@@ -1,0 +1,173 @@
+{
+  "status": "passed",
+  "programs": [
+    {
+      "key": "regexredux:regexredux-odin-jit-pcre2",
+      "id": "regexredux-odin-jit-pcre2",
+      "benchmark": "regexredux",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/regexredux-odin-jit-pcre2.odin",
+      "source_sha256": "15107e77101e23891864f4674f2fdb8240ff482a17d9ec1e8f3b0ed09b136bfb",
+      "libraries": [
+        "pcre2"
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored optimized full regex-redux application using the ordinary PCRE2 JIT API. Every input byte is read; the Odin application performs all nine case-insensitive counts and five ordered substitutions. General pattern compilation/matching uses PCRE2, with compilation included in process timing. All FFI declarations, application helpers, counting, substitution and output logic are in the displayed Odin source and count toward LOC. No native benchmark executor."
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/odin/odin-macos-arm64-nightly+2026-10-06/odin",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/regexredux-odin-jit-pcre2.odin",
+        "-file",
+        "-o:speed",
+        "-microarch:native",
+        "-no-bounds-check",
+        "-out:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/regexredux-odin-jit-pcre2",
+        "-thread-count:2"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/results/regexredux-odin-jit-pcre2.build.log",
+      "compiler_sha256": "635b869342e44333324183d5459b109d5c3e54494d2b8dd9bb3d4cf65e099d31",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/regexredux-odin-jit-pcre2",
+      "binary_sha256": "ede5269ef6b45b7aaa6ea9ac48cc56fc162368c0e83882fe51c0ca63d54b4ab9",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/regexredux-odin-jit-pcre2"
+      ]
+    },
+    {
+      "key": "regexredux:regexredux-roc-prefix-table",
+      "id": "regexredux-roc-prefix-table",
+      "benchmark": "regexredux",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/regexredux-roc-prefix-table.roc",
+      "source_sha256": "8695d8f3d2f6d8dc0c34baa33f1edcafda5ef6bb2d2afad834c2fa865d737eb7",
+      "libraries": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored optimized pure-Roc regex-redux application. The general ASCII regex engine builds a 256-entry possible-first-byte table by applying its AST-derived first-character predicate to every byte, once per pattern/case mode. Searches consult that table before ordinary matching; anchors, nullable and zero-length patterns retain their original behavior. This is a general regex compilation optimization independent of benchmark names, patterns or inputs. Every byte, all nine case-insensitive counts, all five ordered substitutions and all lengths are computed in Roc. The complete engine and application count toward LOC; no native benchmark executor."
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/roc/roc_nightly-macos_apple_silicon-2025-09-09-d73ea109cc2/roc",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/regexredux-roc-prefix-table.roc",
+        "--optimize",
+        "--output",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/regexredux-roc-prefix-table"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/results/regexredux-roc-prefix-table.build.log",
+      "compiler_sha256": "d6f1b15e0aa50f21b627494cf892f0ef8f502fcc7ba9424370157d068eb39eb0",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/regexredux-roc-prefix-table",
+      "binary_sha256": "587278af5624a28066a666f36e2cf12e31f4a3ef8fe4c04da02fda2bba34d7e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/regexredux-roc-prefix-table"
+      ]
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-elm-packed",
+      "id": "fannkuchredux-elm-packed",
+      "benchmark": "fannkuchredux",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/FannkuchPacked.elm",
+      "source_sha256": "19d38f478245ebf29b623fae41cce49b325172f44f9700b925c757265ac10801",
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored optimized pure-Elm fannkuch application. For up to thirteen elements, base-16 packed permutation/counter digits stay below 2^52 and all arithmetic is exact; division by powers of sixteen uses floor on ordinary Elm numeric values rather than truncating 32-bit integer division. Prefix flips, rotations, every factorial permutation, checksum and maximum are computed in Elm without intermediate lists or counter arrays. A single direct tail loop avoids mutually recursive stack growth. Larger inputs use the complete general list/array implementation, which also counts toward application LOC. The generic Node adapter supplies process I/O only; no host benchmark executor or precomputed result."
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/elm/elm",
+        "make",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/FannkuchPacked.elm",
+        "--optimize",
+        "--output=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/fannkuchredux-elm-packed.js"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/results/fannkuchredux-elm-packed.build.log",
+      "compiler_sha256": "aab23c83783f7d559bfdff9047a3a07d9be0cb11bb78dea4421e73a2f3cf137d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/fannkuchredux-elm-packed.js",
+      "binary_sha256": "6bb2e8bc0b44b607ee7a3aeabce0b47a6c47ba0bb583f4db8020fe8e181b7297",
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/elm-runner.cjs",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/fannkuchredux-elm-packed.js",
+        "{n}"
+      ]
+    },
+    {
+      "key": "knucleotide:knucleotide-odin-parallel-entry",
+      "id": "knucleotide-odin-parallel-entry",
+      "benchmark": "knucleotide",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/knucleotide-odin-parallel-entry.odin",
+      "source_sha256": "5dfa908f80f8138223e129e56348deddf6a07573a35c68f258761299fd579e09",
+      "libraries": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored optimized Odin k-nucleotide application. Seven ordinary native threads each scan every overlapping window of one required width into its own standard growable map; all maps retain complete keys, including the 36-bit width-18 key. Ordinary map_entry returns the possibly inserted value pointer so each increment avoids a second lookup. Shared input is read-only after complete decoding; output stays in required deterministic order after joining each worker, and every map/thread is destroyed. The complete worker, sequencing, input, hash counting, sorting, formatting and output logic count toward LOC. No benchmark executor, fixed bucket table, cached input period or target-only counting."
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/odin/odin-macos-arm64-nightly+2026-10-06/odin",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/knucleotide-odin-parallel-entry.odin",
+        "-file",
+        "-o:speed",
+        "-microarch:native",
+        "-no-bounds-check",
+        "-out:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/knucleotide-odin-parallel-entry",
+        "-thread-count:2"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/results/knucleotide-odin-parallel-entry.build.log",
+      "compiler_sha256": "635b869342e44333324183d5459b109d5c3e54494d2b8dd9bb3d4cf65e099d31",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/knucleotide-odin-parallel-entry",
+      "binary_sha256": "e9bef584c262adad3488dd7441bc5b995e0e1882a24661168f8fa244ae7bace2",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/knucleotide-odin-parallel-entry"
+      ]
+    },
+    {
+      "key": "knucleotide:knucleotide-elm-core-dict",
+      "id": "knucleotide-elm-core-dict",
+      "benchmark": "knucleotide",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/KnucleotideDict.elm",
+      "source_sha256": "55dcf173e56390782e6719865775bb9e0e10a750b84af56aeb57af890b3ee7a4",
+      "libraries": [
+        "elm/core",
+        "elm/json",
+        "myrho/elm-round"
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure-Elm alternative using the ordinary core Dict map rather than the generic HashingContainers/typeclass package. All seven maps for widths 1,2,3,4,6,12,18 scan every overlapping window. Numeric keys retain all 36 bits: core Dict compares exact ordinary numeric values without truncating bitwise keys. No fixed bucket limit, target-only counting, period cache, host benchmark executor or precomputed result. All decoding, window generation, maps, sorting, formatting and output remain in counted Elm application source."
+      ],
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/elm/elm",
+        "make",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/KnucleotideDict.elm",
+        "--optimize",
+        "--output=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/knucleotide-elm-core-dict.js"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/results/knucleotide-elm-core-dict.build.log",
+      "compiler_sha256": "aab23c83783f7d559bfdff9047a3a07d9be0cb11bb78dea4421e73a2f3cf137d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/knucleotide-elm-core-dict.js",
+      "binary_sha256": "d9d14c53d98de0b42bac9c05a80d4578e5eace4f3c4c14f69226ff3c61b36c17",
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/elm-runner.cjs",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/knucleotide-elm-core-dict.js"
+      ]
+    }
+  ]
+}

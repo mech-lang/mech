@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Haskell GHC program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Haskell GHC program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Contributed by Branimir Maksimovic</span>
+
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>ByteString<span class="opt">.</span>Char8 <span class="kwb">as</span> S
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>HashTable<span class="opt">.</span>IO <span class="kwb">as</span> H
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Map <span class="kwb">as</span> M
+<span class="kwb">import</span> Text<span class="opt">.</span>Printf
+<span class="kwb">import</span> Data<span class="opt">.</span>List
+<span class="kwb">import</span> Data<span class="opt">.</span>Maybe
+<span class="kwb">import</span> Data<span class="opt">.</span>Char
+<span class="kwb">import</span> Data<span class="opt">.</span>IORef
+<span class="kwb">import</span> Control<span class="opt">.</span>Concurrent
+
+main <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span> skip <span class="opt">=</span> <span class="kwd">do</span>
+            l <span class="opt">&lt;-</span> S<span class="opt">.</span>getLine
+            <span class="kwd">if</span> S<span class="opt">.</span>isPrefixOf <span class="kwc">(</span>S<span class="opt">.</span>pack <span class="sng">&quot;&gt;THREE&quot;</span><span class="kwc">)</span> l
+                <span class="kwd">then</span> return <span class="kwc">()</span>
+                <span class="kwd">else</span> skip
+    skip
+    s <span class="opt">&lt;-</span> S<span class="opt">.</span>getContents
+    <span class="kwd">let</span> content <span class="opt">=</span> S<span class="opt">.</span>map toUpper <span class="opt">$</span> S<span class="opt">.</span>filter <span class="kwc">((</span><span class="opt">/=</span><span class="kwc">)</span> <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span> s<span class="kwc">;</span>
+    mapM_ <span class="kwc">(</span>execute content<span class="kwc">)</span> actions
+    
+<span class="kwa">data</span> Actions <span class="opt">=</span> I Int <span class="opt">|</span> S String
+actions <span class="opt">=</span> <span class="kwc">[</span>I <span class="num">1</span><span class="kwc">,</span>I <span class="num">2</span><span class="kwc">,</span>
+           S <span class="sng">&quot;GGT&quot;</span><span class="kwc">,</span>S <span class="sng">&quot;GGTA&quot;</span><span class="kwc">,</span>S <span class="sng">&quot;GGTATT&quot;</span><span class="kwc">,</span>S <span class="sng">&quot;GGTATTTTAATT&quot;</span><span class="kwc">,</span>S <span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span><span class="kwc">]</span>
+execute content <span class="kwc">(</span>I i<span class="kwc">)</span> <span class="opt">=</span> writeFrequencies content i
+execute content <span class="kwc">(</span>S s<span class="kwc">)</span> <span class="opt">=</span> writeCount content s
+
+writeFrequencies :: S<span class="opt">.</span>ByteString <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+writeFrequencies input size <span class="opt">=</span> <span class="kwd">do</span>
+    mp <span class="opt">&lt;-</span> tcalculate input size
+    <span class="kwd">let</span> sorted <span class="opt">=</span> sortBy <span class="kwc">(</span>\<span class="kwc">(</span>_<span class="kwc">,</span>x<span class="kwc">) (</span>_<span class="kwc">,</span>y<span class="kwc">)</span> <span class="opt">-&gt;</span> y <span class="opt">`compare`</span> x<span class="kwc">)</span> <span class="opt">$</span> M<span class="opt">.</span>toList mp
+        sum <span class="opt">=</span> fromIntegral <span class="kwc">((</span>S<span class="opt">.</span>length input<span class="kwc">)</span> <span class="opt">+</span> <span class="num">1</span> <span class="opt">-</span> size<span class="kwc">)</span>
+    mapM_ <span class="kwc">(</span>\<span class="kwc">(</span>k<span class="kwc">,</span>v<span class="kwc">)</span><span class="opt">-&gt;</span> <span class="kwd">do</span>
+        printf <span class="sng">&quot;%s %.3f</span><span class="esc">\n</span><span class="sng">&quot;</span> 
+            <span class="kwc">(</span>S<span class="opt">.</span>unpack k<span class="kwc">) ((</span><span class="num">100</span> <span class="opt">*</span> <span class="kwc">(</span>fromIntegral v<span class="kwc">)</span><span class="opt">/</span>sum<span class="kwc">)</span>::Double<span class="kwc">))</span> sorted
+    putChar <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span>
+
+writeCount :: S<span class="opt">.</span>ByteString <span class="opt">-&gt;</span> String <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+writeCount input string <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span> size <span class="opt">=</span> length string
+    mp <span class="opt">&lt;-</span> tcalculate input size
+    <span class="kwd">let</span> v <span class="opt">=</span> fromJust <span class="opt">$</span> M<span class="opt">.</span>lookup <span class="kwc">(</span>S<span class="opt">.</span>pack string<span class="kwc">)</span> mp
+    printf <span class="sng">&quot;%d</span><span class="esc">\t</span><span class="sng">%s</span><span class="esc">\n</span><span class="sng">&quot;</span> v string
+
+tcalculate :: S<span class="opt">.</span>ByteString <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> IO <span class="kwc">(</span>M<span class="opt">.</span>Map S<span class="opt">.</span>ByteString Int<span class="kwc">)</span> 
+tcalculate input size <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span> 
+        l <span class="opt">=</span> <span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>63<span class="kwc">]</span>
+        actions <span class="opt">=</span> map <span class="kwc">(</span>\i <span class="opt">-&gt;</span> calculate input i size <span class="kwc">(</span>length l<span class="kwc">))</span> l
+    vars <span class="opt">&lt;-</span> mapM <span class="kwc">(\</span>action <span class="opt">-&gt;</span> <span class="kwd">do</span>
+                    var <span class="opt">&lt;-</span> newEmptyMVar
+                    forkIO <span class="opt">$</span> <span class="kwd">do</span>
+                        answer <span class="opt">&lt;-</span> action
+                        putMVar var answer
+                    return var<span class="kwc">)</span> actions
+    <span class="kwd">let</span> result <span class="opt">=</span> M<span class="opt">.</span>empty
+    results <span class="opt">&lt;-</span> mapM takeMVar vars
+    return <span class="opt">$</span> foldl <span class="kwc">(\</span>res m <span class="opt">-&gt;</span> foldl 
+                               <span class="kwc">(</span>\m <span class="kwc">(</span>k<span class="kwc">,</span>v<span class="kwc">)</span><span class="opt">-&gt;</span>M<span class="opt">.</span>insertWith <span class="kwc">(</span><span class="opt">+</span><span class="kwc">)</span> k v m<span class="kwc">)</span>
+                                res m<span class="kwc">)</span>
+                   result results
+
+calculate :: S<span class="opt">.</span>ByteString <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> IO <span class="kwc">[(</span>S<span class="opt">.</span>ByteString<span class="kwc">,</span>Int<span class="kwc">)]</span>
+calculate input beg size incr <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span> updateMap freqmap word <span class="opt">=</span> <span class="kwd">do</span>
+           lu <span class="opt">&lt;-</span> H<span class="opt">.</span>lookup freqmap word
+           <span class="kwd">case</span> lu <span class="kwd">of</span> 
+            Nothing <span class="opt">-&gt;</span> <span class="kwd">do</span>
+                ref <span class="opt">&lt;-</span> newIORef <span class="num">1</span>
+                H<span class="opt">.</span>insert freqmap word ref
+            Just x <span class="opt">-&gt;</span> modifyIORef&#39; x <span class="kwc">(</span><span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+           return freqmap
+        word inp pos sz <span class="opt">=</span> S<span class="opt">.</span>take size <span class="opt">$</span> S<span class="opt">.</span>drop pos inp
+        calculate&#39; freqmap i
+            <span class="opt">|</span> i <span class="opt">&gt;=</span> <span class="kwc">((</span>S<span class="opt">.</span>length input<span class="kwc">)</span><span class="opt">+</span><span class="num">1</span> <span class="opt">-</span> size<span class="kwc">)</span> <span class="opt">=</span> return <span class="kwc">()</span>
+            <span class="opt">|</span> otherwise <span class="opt">=</span> <span class="kwd">do</span>
+                ht <span class="opt">&lt;-</span> updateMap freqmap <span class="opt">$</span> word input i size
+                calculate&#39; ht <span class="kwc">(</span>i<span class="opt">+</span>incr<span class="kwc">)</span>
+    freqmap <span class="opt">&lt;-</span> H<span class="opt">.</span>new :: IO <span class="kwc">(</span>HashTable S<span class="opt">.</span>ByteString <span class="kwc">(</span>IORef Int<span class="kwc">))</span>
+    calculate&#39; freqmap beg
+    lst <span class="opt">&lt;-</span> H<span class="opt">.</span>toList freqmap
+    mapM <span class="kwc">(</span>\<span class="kwc">(</span>x<span class="kwc">,</span>y<span class="kwc">)</span><span class="opt">-&gt;</span> <span class="kwd">do</span>
+            v <span class="opt">&lt;-</span> readIORef y
+            return <span class="kwc">(</span>x<span class="kwc">,</span>v<span class="kwc">))</span> lst
+    
+
+<span class="kwa">type</span> HashTable k v <span class="opt">=</span> H<span class="opt">.</span>BasicHashTable k v
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 08:12:08 GMT
+
+MAKE:
+mv knucleotide.ghc knucleotide.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -funbox-strict-fields -XScopedTypeVariables -package hashable -package unordered-containers -package  pvar -package ghc-compact knucleotide.hs -o knucleotide.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( knucleotide.hs, knucleotide.o )
+[2 of 2] Linking knucleotide.ghc_run
+rm knucleotide.hs
+
+20.05 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./knucleotide.ghc_run +RTS -N4 -K2048M -RTS 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

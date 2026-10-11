@@ -1,0 +1,15 @@
+clear-package-db
+global-package-db
+package-db /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/toolchains/cabal-store/ghc-9.10.3-inplace/package.db
+package-id base-4.20.2.0-inplace
+package-id hshbl-1.5.1.0-515e2802
+package-id hshtbls-1.4.2-85e26c8f
+package-id mssv-1.0.5.0-1dd20e9e
+package-id nrdrd-cntnrs-0.2.21-2edb6c98
+package-id prlll--0.3.5-2d2d3133
+package-id prlll-3.3.0.0-2ad08868
+package-id prmtv-0.9.1.0-486e3084
+package-id sync-2.2.6-391e40a1
+package-id txt-bldr-1.0.0.5-fce127f4
+package-id vctr-0.13.2.0-5fd26942
+package-id vctr-lgrthms-0.9.1.0-edd9936b

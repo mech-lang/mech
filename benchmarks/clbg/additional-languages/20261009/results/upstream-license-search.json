@@ -1,0 +1,15 @@
+{
+  "method": "Recursive GitHub tree query at pinned commits; no license/copying filenames found in these two community repositories. Source URLs and revision attribution are retained.",
+  "repositories": [
+    {
+      "repository": "mikeleppane/mojo-rust-python-perf",
+      "commit": "39bf8264f68bfa9d75e1b6ac4ab6d9f44a2c3046",
+      "license_files": []
+    },
+    {
+      "repository": "cemrehancavdar/faster-python-bench",
+      "commit": "6c5ed6f801624d442f8e17183b3bac7db49367ee",
+      "license_files": []
+    }
+  ]
+}

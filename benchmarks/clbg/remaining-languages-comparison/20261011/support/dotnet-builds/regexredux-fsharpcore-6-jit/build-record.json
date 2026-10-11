@@ -1,0 +1,56 @@
+{
+  "id": "regexredux-fsharpcore-6-jit",
+  "key": "regexredux:regexredux-fsharpcore-6-jit",
+  "benchmark": "regexredux",
+  "language": "fsharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-6.fs",
+  "source_sha256": "4fcf77c033e959328809011b76e7f905611ce59ef44e56ea9597ebb60550d8d2",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/regexredux-fsharpcore-6.fs",
+  "original_source_sha256": "4fcf77c033e959328809011b76e7f905611ce59ef44e56ea9597ebb60550d8d2",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-fsharpcore-6.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:52:06 GMT\n\nMAKE:\ncp regexredux.fsharpcore-6.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.fsproj (in 730 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.27\n\n12.16s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 0 < regexredux-input5000000.txt\n\nPROGRAM OUTPUT:\nagggtaaa|tttaccct 356\n[cgt]gggtaaa|tttaccc[acg] 1250\na[act]ggtaaa|tttacc[agt]t 4252\nag[act]gtaaa|tttac[agt]ct 2894\nagg[act]taaa|ttta[agt]cct 5435\naggg[acg]aaa|ttt[cgt]ccct 1537\nagggt[cgt]aa|tt[acg]accct 1431\nagggta[cgt]a|t[acg]taccct 1608\nagggtaa[cgt]|[acg]ttaccct 2178\n\n50833411\n50000000\n27388361",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 50,
+  "normalized_loc": 50,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/regexredux-fsharpcore-6-jit/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/regexredux-fsharpcore-6-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app.dll",
+  "binary_sha256": "7024e6c80d91f2b14b7185b2cb414a8a18c646fa3dfc45a67ebdb194a8c5b805",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app.dll"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app.pdb": "f221597333166a834ea8e0ff4c7b62873a68f3001179ef56493878d37a6b0da5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/FSharp.Core.dll": "3e3eddb10b03c42748d592835f22438b73d9cd1ffd6f6cb339c610b26b1dd4fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app.dll": "7024e6c80d91f2b14b7185b2cb414a8a18c646fa3dfc45a67ebdb194a8c5b805",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-jit/app.deps.json": "d6ed5ffb91f134eb8835ca7650a6c0227c70da663b9df2dbef6c036d226d818b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

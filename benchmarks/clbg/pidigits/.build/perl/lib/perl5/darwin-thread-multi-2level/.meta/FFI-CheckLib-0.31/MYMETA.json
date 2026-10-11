@@ -1,0 +1,156 @@
+{
+   "abstract" : "Check that a library is available for FFI",
+   "author" : [
+      "Graham Ollis <plicease@cpan.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 6.025, CPAN::Meta::Converter version 2.150010, CPAN::Meta::Converter version 2.150013",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "FFI-CheckLib",
+   "no_index" : {
+      "directory" : [
+         "corpus"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "develop" : {
+         "recommends" : {
+            "Dist::Zilla::Plugin::Author::Plicease::Thanks" : "0",
+            "Dist::Zilla::Plugin::Author::Plicease::Upload" : "0",
+            "Dist::Zilla::Plugin::MetaNoIndex" : "0",
+            "Dist::Zilla::Plugin::RemovePrereqs" : "0",
+            "Dist::Zilla::PluginBundle::Author::Plicease" : "2.72",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitBooleanGrep" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitStringySplit" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitVoidGrep" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitVoidMap" : "0",
+            "Perl::Critic::Policy::ClassHierarchies::ProhibitExplicitISA" : "0",
+            "Perl::Critic::Policy::ClassHierarchies::ProhibitOneArgBless" : "0",
+            "Perl::Critic::Policy::CodeLayout::ProhibitHardTabs" : "0",
+            "Perl::Critic::Policy::CodeLayout::ProhibitTrailingWhitespace" : "0",
+            "Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines" : "0",
+            "Perl::Critic::Policy::ControlStructures::ProhibitLabelsWithSpecialBlockNames" : "0",
+            "Perl::Critic::Policy::ControlStructures::ProhibitMutatingListFunctions" : "0",
+            "Perl::Critic::Policy::ControlStructures::ProhibitUnreachableCode" : "0",
+            "Perl::Critic::Policy::Freenode::ArrayAssignAref" : "0",
+            "Perl::Critic::Policy::Freenode::BarewordFilehandles" : "0",
+            "Perl::Critic::Policy::Freenode::ConditionalDeclarations" : "0",
+            "Perl::Critic::Policy::Freenode::ConditionalImplicitReturn" : "0",
+            "Perl::Critic::Policy::Freenode::DeprecatedFeatures" : "0",
+            "Perl::Critic::Policy::Freenode::DiscouragedModules" : "0",
+            "Perl::Critic::Policy::Freenode::DollarAB" : "0",
+            "Perl::Critic::Policy::Freenode::Each" : "0",
+            "Perl::Critic::Policy::Freenode::IndirectObjectNotation" : "0",
+            "Perl::Critic::Policy::Freenode::LexicalForeachIterator" : "0",
+            "Perl::Critic::Policy::Freenode::LoopOnHash" : "0",
+            "Perl::Critic::Policy::Freenode::ModPerl" : "0",
+            "Perl::Critic::Policy::Freenode::OpenArgs" : "0",
+            "Perl::Critic::Policy::Freenode::OverloadOptions" : "0",
+            "Perl::Critic::Policy::Freenode::POSIXImports" : "0",
+            "Perl::Critic::Policy::Freenode::PackageMatchesFilename" : "0",
+            "Perl::Critic::Policy::Freenode::PreferredAlternatives" : "0",
+            "Perl::Critic::Policy::Freenode::StrictWarnings" : "0",
+            "Perl::Critic::Policy::Freenode::Threads" : "0",
+            "Perl::Critic::Policy::Freenode::WarningsSwitch" : "0",
+            "Perl::Critic::Policy::Freenode::WhileDiamondDefaultAssignment" : "0",
+            "Perl::Critic::Policy::InputOutput::ProhibitBarewordFileHandles" : "0",
+            "Perl::Critic::Policy::InputOutput::ProhibitJoinedReadline" : "0",
+            "Perl::Critic::Policy::InputOutput::ProhibitTwoArgOpen" : "0",
+            "Perl::Critic::Policy::Miscellanea::ProhibitFormats" : "0",
+            "Perl::Critic::Policy::Miscellanea::ProhibitUselessNoCritic" : "0",
+            "Perl::Critic::Policy::Modules::ProhibitConditionalUseStatements" : "0",
+            "Perl::Critic::Policy::Modules::RequireNoMatchVarsWithUseEnglish" : "0",
+            "Perl::Critic::Policy::Objects::ProhibitIndirectSyntax" : "0",
+            "Perl::Critic::Policy::RegularExpressions::ProhibitUselessTopic" : "0",
+            "Perl::Critic::Policy::Subroutines::ProhibitNestedSubs" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::ProhibitLeadingZeros" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::ProhibitMixedBooleanOperators" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::ProhibitSpecialLiteralHeredocTerminator" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::RequireUpperCaseHeredocTerminator" : "0",
+            "Perl::Critic::Policy::Variables::ProhibitPerl4PackageNames" : "0",
+            "Perl::Critic::Policy::Variables::ProhibitUnusedVariables" : "0",
+            "Software::License::Perl_5" : "0"
+         },
+         "requires" : {
+            "FindBin" : "0",
+            "Perl::Critic" : "0",
+            "Test2::Require::EnvVar" : "0.000121",
+            "Test2::Require::Module" : "0.000121",
+            "Test2::Tools::PerlCritic" : "0",
+            "Test2::V0" : "0.000121",
+            "Test::CPAN::Changes" : "0",
+            "Test::EOL" : "0",
+            "Test::Fixme" : "0.07",
+            "Test::More" : "0.98",
+            "Test::NoTabs" : "0",
+            "Test::Pod" : "0",
+            "Test::Pod::Coverage" : "0",
+            "Test::Pod::LinkCheck::Lite" : "0",
+            "Test::Pod::Spelling::CommonMistakes" : "0",
+            "Test::Spelling" : "0",
+            "Test::Strict" : "0",
+            "YAML" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "File::Which" : "0",
+            "List::Util" : "1.33",
+            "perl" : "5.006"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test2::API" : "1.302015",
+            "Test2::Require::EnvVar" : "0.000121",
+            "Test2::Require::Module" : "0.000121",
+            "Test2::V0" : "0.000121"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/PerlFFI/FFI-CheckLib/issues"
+      },
+      "homepage" : "https://metacpan.org/pod/FFI::CheckLib",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/PerlFFI/FFI-CheckLib.git",
+         "web" : "https://github.com/PerlFFI/FFI-CheckLib"
+      },
+      "x_IRC" : "irc://irc.perl.org/#native"
+   },
+   "version" : "0.31",
+   "x_contributors" : [
+      "Graham Ollis <plicease@cpan.org>",
+      "Bakkiaraj Murugesan (bakkiaraj)",
+      "Dan Book (grinnz, DBOOK)",
+      "Ilya Pavlov (Ilya, ILUX)",
+      "Shawn Laffan (SLAFFAN)",
+      "Petr Písař (ppisar)",
+      "Michael R. Davis (MRDVT)",
+      "Shawn Laffan (SLAFFAN)",
+      "Carlos D. Álvaro (cdalvaro)"
+   ],
+   "x_generated_by_perl" : "v5.36.0",
+   "x_serialization_backend" : "JSON::PP version 4.16",
+   "x_spdx_expression" : "Artistic-1.0-Perl OR GPL-1.0-or-later",
+   "x_use_unsafe_inc" : 0
+}

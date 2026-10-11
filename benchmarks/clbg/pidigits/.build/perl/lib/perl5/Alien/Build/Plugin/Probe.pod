@@ -1,0 +1,145 @@
+# PODNAME: Alien::Build::Plugin::Probe
+# ABSTRACT: Probe Alien::Build plugins
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Plugin::Probe - Probe Alien::Build plugins
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+look for libraries in known location:
+
+ use alienfile;
+ plugin 'Probe::CBuilder' => (
+   cflags => '-I/opt/libfoo/include',
+   libs   => '-L/opt/libfoo/lib -lfoo',
+ );
+
+look for tools in the path:
+
+ use alienfile;
+ plugin 'Probe::CommandLine' => (
+   command => 'gzip',
+   args    => [ '--version' ],
+   match   => qr/gzip/,
+   version => qr/gzip ([0-9\.]+)/,
+ );
+
+Use C<vcpkg> for Visual C++ Perl:
+
+ use alienfile;
+ plugin 'Probe::Vcpkg' => 'libffi';
+
+=head1 DESCRIPTION
+
+Probe plugins try to find existing libraries and tools
+I<already> installed on the system.  If found they can
+be used instead of downloading the source from the
+internet and building.
+
+=over 4
+
+=item L<Alien::Build::Plugin::Probe::CBuilder>
+
+Use L<ExtUtils::CBuilder> to probe for existing installed
+library.
+
+=item L<Alien::Build::Plugin::Probe::CommandLine>
+
+Execute commands to probe for existing tools.
+
+=item L<Alien::Build::Plugin::Probe::Vcpkg>
+
+Use L<Win32::Vcpkg> to probe for existing installed library.
+
+=back
+
+=head1 SEE ALSO
+
+L<Alien::Build>, L<Alien::Build::Plugin>
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

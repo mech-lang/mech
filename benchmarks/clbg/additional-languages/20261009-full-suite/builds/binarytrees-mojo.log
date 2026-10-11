@@ -1,0 +1,6 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.mojo:43:16: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            dst[w] = sum
+            ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-6b04469.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

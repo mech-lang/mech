@@ -1,0 +1,61 @@
+{
+  "id": "knucleotide-fsharp-local-compact-jit",
+  "key": "knucleotide:knucleotide-fsharp-local-compact-jit",
+  "benchmark": "knucleotide",
+  "language": "fsharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-compact.fs",
+  "source_sha256": "106c1b62ab391ccc4e0914e625f5c14e1b517f0403b70f0576ba23b098ed63af",
+  "source_url": null,
+  "local_adaptation": true,
+  "adaptations": [
+    "Locally authored F# application. All seven widths build complete growable maps; packed keys retain all 36 bits."
+  ],
+  "physical_loc": 25,
+  "normalized_loc": 26,
+  "expansions": [
+    {
+      "line": 4,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharp-local-compact-jit/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/knucleotide-fsharp-local-compact-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app.dll",
+  "binary_sha256": "adccbd02034610a32b4ce743270fc215cca9c9cc7b42eff4e5af54b2a76f876e",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app.dll"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app.pdb": "113ff7b3f624fa0e675a59dd0244fd7cddc357a302174c9b082fe39cc7ac35f5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/FSharp.Core.dll": "3e3eddb10b03c42748d592835f22438b73d9cd1ffd6f6cb339c610b26b1dd4fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app.dll": "adccbd02034610a32b4ce743270fc215cca9c9cc7b42eff4e5af54b2a76f876e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-jit/app.deps.json": "d6ed5ffb91f134eb8835ca7650a6c0227c70da663b9df2dbef6c036d226d818b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

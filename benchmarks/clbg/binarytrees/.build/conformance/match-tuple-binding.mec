@@ -1,0 +1,2 @@
+result := ((7, true) ? | (x, true) => x | * => 0)
+io/print("{}\n", result)

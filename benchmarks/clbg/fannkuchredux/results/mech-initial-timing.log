@@ -1,0 +1,8 @@
+full output passed mech-fannkuch-simd
+full output passed mech-fannkuch-scalar
+1/3 mech-fannkuch-scalar 7.992085
+1/3 mech-fannkuch-simd 4.116488
+2/3 mech-fannkuch-simd 4.323560
+2/3 mech-fannkuch-scalar 7.916962
+3/3 mech-fannkuch-scalar 7.938662
+3/3 mech-fannkuch-simd 4.248418

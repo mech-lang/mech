@@ -1,0 +1,288 @@
+{
+  "status": "passed",
+  "coverage": {
+    "bqn": 10,
+    "k": 10
+  },
+  "sample_policy": "nbody 5; other nine 3",
+  "ahead_of_leading_native_flags": [],
+  "discarded_samples": 0,
+  "timing_report_sha256": "8beacb22bcda5899d67219fe815018c8be22a0efb228876034da571114a95316",
+  "website_data_sha256": "9ba98570f47a5e34fd50c89ce1ba5a6b2c88853567309a889ed34417ad70616c",
+  "rows": [
+    {
+      "benchmark": "nbody",
+      "mech_fast_seconds": 1.053447291,
+      "mech_fast_key": "nbody:pairwise-mass-tails",
+      "leading_native_key": "nbody:nbody-gpp-6-llvm-native",
+      "leading_native_seconds": 0.903767959,
+      "bqn": {
+        "key": "nbody:array-bqn-optimized",
+        "seconds": 18.89028725,
+        "sd_seconds": 0.08440410948923474,
+        "samples": 5,
+        "time_over_fastest_mech": 17.93187700171323,
+        "fewer_loc": 26,
+        "loc_over_smallest_mech": 1.3,
+        "time_over_leading_native": 20.901700554754896
+      },
+      "k": {
+        "key": "nbody:array-k-growler",
+        "seconds": 23.312178708,
+        "sd_seconds": 0.026469794537122733,
+        "samples": 5,
+        "time_over_fastest_mech": 22.129421098867304,
+        "fewer_loc": 36,
+        "loc_over_smallest_mech": 1.8,
+        "time_over_leading_native": 25.79442928447522
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "mech_fast_seconds": 0.441355708,
+      "mech_fast_key": "mandelbrot:mech-program-simd-loop-fma",
+      "leading_native_key": "mandelbrot:mandelbrot-rust-4",
+      "leading_native_seconds": 0.422513291,
+      "bqn": {
+        "key": "mandelbrot:array-bqn-faithful",
+        "seconds": 26.760191542,
+        "sd_seconds": 0.037693715483896904,
+        "samples": 3,
+        "time_over_fastest_mech": 60.63180119107013,
+        "fewer_loc": 21,
+        "loc_over_smallest_mech": 1.05,
+        "time_over_leading_native": 63.335739045425676
+      },
+      "k": {
+        "key": "mandelbrot:array-k-faithful",
+        "seconds": 34.494190917,
+        "sd_seconds": 0.06695010628910805,
+        "samples": 3,
+        "time_over_fastest_mech": 78.155080565991,
+        "fewer_loc": 15,
+        "loc_over_smallest_mech": 0.75,
+        "time_over_leading_native": 81.64048717937253
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "mech_fast_seconds": 0.524700292,
+      "mech_fast_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "leading_native_key": "knucleotide:knucleotide-rust-7",
+      "leading_native_seconds": 0.554751458,
+      "bqn": {
+        "key": "knucleotide:array-bqn-faithful",
+        "seconds": 11.941989625,
+        "sd_seconds": 0.31951690811194144,
+        "samples": 3,
+        "time_over_fastest_mech": 22.759639754498174,
+        "fewer_loc": 39,
+        "loc_over_smallest_mech": 2.2941176470588234,
+        "time_over_leading_native": 21.52673860119895
+      },
+      "k": {
+        "key": "knucleotide:array-k-faithful",
+        "seconds": 22.803227833,
+        "sd_seconds": 0.7980607276584487,
+        "samples": 3,
+        "time_over_fastest_mech": 43.45952952700091,
+        "fewer_loc": 52,
+        "loc_over_smallest_mech": 3.0588235294117645,
+        "time_over_leading_native": 41.10530491476419
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "mech_fast_seconds": 0.088514667,
+      "mech_fast_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "leading_native_key": "spectralnorm:spectralnorm-gcc-3-gcc-fastmath",
+      "leading_native_seconds": 0.085783958,
+      "bqn": {
+        "key": "spectralnorm:array-bqn-faithful",
+        "seconds": 2.166914167,
+        "sd_seconds": 0.008254211689372527,
+        "samples": 3,
+        "time_over_fastest_mech": 24.480848659804593,
+        "fewer_loc": 13,
+        "loc_over_smallest_mech": 1.0833333333333333,
+        "time_over_leading_native": 25.26013275116077
+      },
+      "k": {
+        "key": "spectralnorm:array-k-faithful",
+        "seconds": 2.750823542,
+        "sd_seconds": 0.006131583248136358,
+        "samples": 3,
+        "time_over_fastest_mech": 31.077601432991887,
+        "fewer_loc": 9,
+        "loc_over_smallest_mech": 0.75,
+        "time_over_leading_native": 32.06687597697463
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "mech_fast_seconds": 0.150427958,
+      "mech_fast_key": "revcomp:mech-revcomp-optimized",
+      "leading_native_key": "revcomp:revcomp-gcc-9-llvm",
+      "leading_native_seconds": 0.098012709,
+      "bqn": {
+        "key": "revcomp:array-bqn-faithful",
+        "seconds": 1.022621375,
+        "sd_seconds": 0.003440826750422255,
+        "samples": 3,
+        "time_over_fastest_mech": 6.798080546968536,
+        "fewer_loc": 16,
+        "loc_over_smallest_mech": 2.2857142857142856,
+        "time_over_leading_native": 10.433558927546834
+      },
+      "k": {
+        "key": "revcomp:array-k-faithful",
+        "seconds": 1.089582708,
+        "sd_seconds": 0.0036719447603308602,
+        "samples": 3,
+        "time_over_fastest_mech": 7.2432194286649825,
+        "fewer_loc": 15,
+        "loc_over_smallest_mech": 2.142857142857143,
+        "time_over_leading_native": 11.11674923708108
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "mech_fast_seconds": 1.729003625,
+      "mech_fast_key": "fannkuchredux:mech-fannkuch-even",
+      "leading_native_key": "fannkuchredux:fannkuchredux-rust6-neon",
+      "leading_native_seconds": 1.742618666,
+      "bqn": {
+        "key": "fannkuchredux:array-bqn-faithful",
+        "seconds": 164.855024125,
+        "sd_seconds": 1.0585673520465253,
+        "samples": 3,
+        "time_over_fastest_mech": 95.34683544981,
+        "fewer_loc": 50,
+        "loc_over_smallest_mech": 1.2820512820512822,
+        "time_over_leading_native": 94.60189273847706
+      },
+      "k": {
+        "key": "fannkuchredux:array-k-faithful",
+        "seconds": 226.722388084,
+        "sd_seconds": 2.425621480419825,
+        "samples": 3,
+        "time_over_fastest_mech": 131.1289258193429,
+        "fewer_loc": 57,
+        "loc_over_smallest_mech": 1.4615384615384615,
+        "time_over_leading_native": 130.10441842931573
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "mech_fast_seconds": 0.573187541,
+      "mech_fast_key": "fasta:mech-fasta-final-expanded-v2",
+      "leading_native_key": "fasta:fasta-gcc-2-llvm",
+      "leading_native_seconds": 0.817714459,
+      "bqn": {
+        "key": "fasta:array-bqn-faithful",
+        "seconds": 10.785043417,
+        "sd_seconds": 0.0106151810942183,
+        "samples": 3,
+        "time_over_fastest_mech": 18.81590691623215,
+        "fewer_loc": 24,
+        "loc_over_smallest_mech": 0.75,
+        "time_over_leading_native": 13.189253654862915
+      },
+      "k": {
+        "key": "fasta:array-k-faithful",
+        "seconds": 16.563403208,
+        "sd_seconds": 0.485849917617196,
+        "samples": 3,
+        "time_over_fastest_mech": 28.89700494728653,
+        "fewer_loc": 20,
+        "loc_over_smallest_mech": 0.625,
+        "time_over_leading_native": 20.255729889203295
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "mech_fast_seconds": 0.401622625,
+      "mech_fast_key": "binarytrees:mech-binarytrees-parallel",
+      "leading_native_key": "binarytrees:binarytrees-rust-2-thin",
+      "leading_native_seconds": 0.361014791,
+      "bqn": {
+        "key": "binarytrees:array-bqn-faithful",
+        "seconds": 30.1465245,
+        "sd_seconds": 0.08433306500124665,
+        "samples": 3,
+        "time_over_fastest_mech": 75.06181829273189,
+        "fewer_loc": 16,
+        "loc_over_smallest_mech": 0.6153846153846154,
+        "time_over_leading_native": 83.50495672627441
+      },
+      "k": {
+        "key": "binarytrees:array-k-faithful",
+        "seconds": 39.497409459,
+        "sd_seconds": 0.15587378262362067,
+        "samples": 3,
+        "time_over_fastest_mech": 98.34458270123602,
+        "fewer_loc": 16,
+        "loc_over_smallest_mech": 0.6153846153846154,
+        "time_over_leading_native": 109.40662389370081
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "mech_fast_seconds": 0.495753792,
+      "mech_fast_key": "regexredux:mech-regex-final-reuse-signed",
+      "leading_native_key": "regexredux:regexredux-rust-6",
+      "leading_native_seconds": 0.469501042,
+      "bqn": {
+        "key": "regexredux:array-bqn-faithful",
+        "seconds": 2.485554167,
+        "sd_seconds": 0.04419074682507028,
+        "samples": 3,
+        "time_over_fastest_mech": 5.0136866466973995,
+        "fewer_loc": 16,
+        "loc_over_smallest_mech": 0.6666666666666666,
+        "time_over_leading_native": 5.294033334648063
+      },
+      "k": {
+        "key": "regexredux:array-k-faithful",
+        "seconds": 2.408460917,
+        "sd_seconds": 0.007725719009255582,
+        "samples": 3,
+        "time_over_fastest_mech": 4.858179515447862,
+        "fewer_loc": 15,
+        "loc_over_smallest_mech": 0.625,
+        "time_over_leading_native": 5.129830823676852
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "mech_fast_seconds": 0.305370375,
+      "mech_fast_key": "pidigits:mech-pi-final-advance-signed",
+      "leading_native_key": "pidigits:pidigits-rust-3",
+      "leading_native_seconds": 0.303086375,
+      "bqn": {
+        "key": "pidigits:array-bqn-faithful",
+        "seconds": 0.428152291,
+        "sd_seconds": 0.003054970525622347,
+        "samples": 3,
+        "time_over_fastest_mech": 1.402075401060106,
+        "fewer_loc": 41,
+        "loc_over_smallest_mech": 1.1714285714285715,
+        "time_over_leading_native": 1.4126411687097449
+      },
+      "k": {
+        "key": "pidigits:array-k-faithful",
+        "seconds": 0.416911292,
+        "sd_seconds": 0.0017771066372185642,
+        "samples": 3,
+        "time_over_fastest_mech": 1.3652643679007825,
+        "fewer_loc": 35,
+        "loc_over_smallest_mech": 1.0,
+        "time_over_leading_native": 1.3755527347608416
+      }
+    }
+  ],
+  "bqn_geomean_time_over_fastest_mech": 18.158850188913757,
+  "bqn_geomean_loc_over_smallest_mech": 1.1361273728190966,
+  "k_geomean_time_over_fastest_mech": 23.02175095674681,
+  "k_geomean_loc_over_smallest_mech": 1.0883434280418003
+}

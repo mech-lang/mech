@@ -1,0 +1,21 @@
+{
+  "all_passed": true,
+  "cases": [
+    {
+      "case": "successful exit",
+      "passed": true,
+      "seconds": 0.040806125005474314
+    },
+    {
+      "case": "nonzero exit",
+      "passed": true
+    },
+    {
+      "case": "deadline kills and reaps",
+      "passed": true,
+      "seconds": 0.05635291599901393
+    }
+  ],
+  "handler_restored": true,
+  "no_remaining_alarm": true
+}

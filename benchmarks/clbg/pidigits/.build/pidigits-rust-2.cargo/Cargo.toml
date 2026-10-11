@@ -1,0 +1,16 @@
+[package]
+name="pidigits-rust-2"
+version="0.0.0"
+edition="2021"
+[[bin]]
+name="pidigits-rust-2"
+path="/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-rust-2.rs"
+[dependencies]
+libc="=0.2.189"
+rayon="=1.12.0"
+regex="=1.13.1"
+crossbeam-utils="=0.8.21"
+pcre2-sys="=0.2.10"
+rug={version="=1.28.1",default-features=false,features=["integer"]}
+gmp-mpfr-sys={version="=1.6.8",default-features=false,features=["use-system-libs"]}
+[workspace]

@@ -1,0 +1,442 @@
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-before.project/mech-control.o:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000000001330 <_mech_control_range_0>:
+    1330:      	pacibsp
+    1334:      	stp	x29, x30, [sp, #-0x10]!
+    1338:      	mov	x29, sp
+    133c:      	sub	sp, sp, #0x50
+    1340:      	mov	x5, x0
+    1344:      	ldr	x0, [x2]
+    1348:      	ldr	q0, 0x18d0 <_mech_control_range_0+0x5a0>
+    134c:      	movi.16b	v1, #0x0
+    1350:      	sub	x2, x0, #0x1
+    1354:      	mov	x4, x5
+    1358:      	mov.16b	v5, v0
+    135c:      	cmp	x2, #0x0
+    1360:      	b.ne	0x1790 <_mech_control_range_0+0x460>
+    1364:      	mov	x4, #0x0                ; =0
+    1368:      	mov	x2, x4
+    136c:      	mov	x11, x5
+    1370:      	cmp	x11, x1
+    1374:      	b.lo	0x1390 <_mech_control_range_0+0x60>
+    1378:      	str	x4, [x3]
+    137c:      	str	x2, [x3, #0x8]
+    1380:      	mov	x0, #0x0                ; =0
+    1384:      	add	sp, sp, #0x50
+    1388:      	ldp	x29, x30, [sp], #0x10
+    138c:      	retab
+    1390:      	add	x5, x11, #0x1
+    1394:      	cmp	x5, x1
+    1398:      	b.lo	0x14ec <_mech_control_range_0+0x1bc>
+    139c:      	cmp	x5, x1
+    13a0:      	b.lo	0x13ac <_mech_control_range_0+0x7c>
+    13a4:      	mov.16b	v26, v5
+    13a8:      	b	0x13c4 <_mech_control_range_0+0x94>
+    13ac:      	mov	x15, #0x1               ; =1
+    13b0:      	mov	w0, #0x0                ; =0
+    13b4:      	mov.16b	v26, v5
+    13b8:      	uxtb	w6, w0
+    13bc:      	cmp	w6, #0x0
+    13c0:      	b.eq	0x141c <_mech_control_range_0+0xec>
+    13c4:      	mov	x0, #0x0                ; =0
+    13c8:      	umov.b	w6, v5[0]
+    13cc:      	uxtb	w6, w6
+    13d0:      	cmp	w6, #0x0
+    13d4:      	b.ne	0x13fc <_mech_control_range_0+0xcc>
+    13d8:      	and	x6, x11, #0x1
+    13dc:      	add	x7, x4, x0
+    13e0:      	sub	x8, x4, x0
+    13e4:      	cmp	x6, #0x0
+    13e8:      	csel	x4, x7, x8, eq
+    13ec:      	cmp	x2, x0
+    13f0:      	csel	x2, x2, x0, hi
+    13f4:      	mov	x11, x5
+    13f8:      	b	0x1578 <_mech_control_range_0+0x248>
+    13fc:      	adrp	x9, 0x1000 <_mech_control_reduce+0x1000>
+    1400:      	ldr	x9, [x9]
+    1404:      	umov.b	w10, v5[0]
+    1408:      	add	x10, x10, #0x1
+    140c:      	ldr	q16, [x9, x10, lsl #4]
+    1410:      	tbl.16b	v5, { v5 }, v16
+    1414:      	add	x0, x0, #0x1
+    1418:      	b	0x13c8 <_mech_control_range_0+0x98>
+    141c:      	add	x10, x15, #0x1
+    1420:      	cmp	x10, #0x10
+    1424:      	cset	x12, ls
+    1428:      	cmp	x10, #0x10
+    142c:      	b.ls	0x1440 <_mech_control_range_0+0x110>
+    1430:      	mov	x0, #0x4                ; =4
+    1434:      	add	sp, sp, #0x50
+    1438:      	ldp	x29, x30, [sp], #0x10
+    143c:      	retab
+    1440:      	adrp	x14, 0x1000 <_mech_control_reduce+0x1000>
+    1444:      	ldr	x14, [x14]
+    1448:      	mov	x0, #0x4                ; =4
+    144c:      	ldr	q16, [x14, x10, lsl #4]
+    1450:      	mov	x13, #-0x1              ; =-1
+    1454:      	cmp	x15, x13
+    1458:      	cset	x6, ne
+    145c:      	and	w6, w6, w12
+    1460:      	uxtb	w7, w6
+    1464:      	cbnz	x7, 0x1474 <_mech_control_range_0+0x144>
+    1468:      	add	sp, sp, #0x50
+    146c:      	ldp	x29, x30, [sp], #0x10
+    1470:      	retab
+    1474:      	add	x7, sp, #0x40
+    1478:      	stur	q1, [sp, #0x40]
+    147c:      	ldrb	w7, [x7, x15]
+    1480:      	uxtb	w6, w6
+    1484:      	cbnz	x6, 0x1494 <_mech_control_range_0+0x164>
+    1488:      	add	sp, sp, #0x50
+    148c:      	ldp	x29, x30, [sp], #0x10
+    1490:      	retab
+    1494:      	uxtb	w6, w7
+    1498:      	add	x6, x6, #0x1
+    149c:      	mov	x7, #0x0                ; =0
+    14a0:      	cmp	x6, x15
+    14a4:      	csel	x7, x7, x6, hi
+    14a8:      	cmp	x7, #0xff
+    14ac:      	b.ls	0x14bc <_mech_control_range_0+0x18c>
+    14b0:      	add	sp, sp, #0x50
+    14b4:      	ldp	x29, x30, [sp], #0x10
+    14b8:      	retab
+    14bc:      	tbl.16b	v26, { v26 }, v16
+    14c0:      	dup.16b	v24, w15
+    14c4:      	cmeq.16b	v22, v24, v0
+    14c8:      	dup.16b	v24, w7
+    14cc:      	bsl.16b	v22, v24, v1
+    14d0:      	cmp	x6, x15
+    14d4:      	csel	x7, x10, x15, hi
+    14d8:      	cmp	x6, x15
+    14dc:      	cset	x0, ls
+    14e0:      	mov	x15, x7
+    14e4:      	mov.16b	v1, v22
+    14e8:      	b	0x13b8 <_mech_control_range_0+0x88>
+    14ec:      	mov	x6, #0x1                ; =1
+    14f0:      	mov	w5, #0x0                ; =0
+    14f4:      	mov	x0, x5
+    14f8:      	mov.16b	v16, v5
+    14fc:      	uxtb	w7, w0
+    1500:      	cmp	w7, #0x0
+    1504:      	b.eq	0x16c0 <_mech_control_range_0+0x390>
+    1508:      	add	x0, x11, #0x2
+    150c:      	cmp	x0, x1
+    1510:      	b.lo	0x151c <_mech_control_range_0+0x1ec>
+    1514:      	mov.16b	v26, v16
+    1518:      	b	0x1530 <_mech_control_range_0+0x200>
+    151c:      	mov	x9, #0x1                ; =1
+    1520:      	mov.16b	v26, v16
+    1524:      	uxtb	w0, w5
+    1528:      	cmp	w0, #0x0
+    152c:      	b.eq	0x15f0 <_mech_control_range_0+0x2c0>
+    1530:      	umov.b	w8, v5[0]
+    1534:      	umov.b	w7, v16[0]
+    1538:      	mov	x5, #0x0                ; =0
+    153c:      	mov	x6, x5
+    1540:      	cmp	x8, #0x0
+    1544:      	cset	x0, ne
+    1548:      	cmp	x7, #0x0
+    154c:      	cset	x9, ne
+    1550:      	orr	w0, w0, w9
+    1554:      	uxtb	w0, w0
+    1558:      	cbnz	x0, 0x1580 <_mech_control_range_0+0x250>
+    155c:      	add	x11, x11, #0x2
+    1560:      	add	x0, x4, x5
+    1564:      	sub	x4, x0, x6
+    1568:      	cmp	x5, x6
+    156c:      	csel	x0, x5, x6, hi
+    1570:      	cmp	x2, x0
+    1574:      	csel	x2, x2, x0, hi
+    1578:      	mov.16b	v5, v26
+    157c:      	b	0x1370 <_mech_control_range_0+0x40>
+    1580:      	adrp	x9, 0x1000 <_mech_control_reduce+0x1000>
+    1584:      	ldr	x9, [x9]
+    1588:      	mov	x0, #0x1                ; =1
+    158c:      	add	x10, x8, #0x1
+    1590:      	ldr	q2, [x9, x10, lsl #4]
+    1594:      	adrp	x9, 0x1000 <_mech_control_reduce+0x1000>
+    1598:      	ldr	x9, [x9]
+    159c:      	add	x10, x7, #0x1
+    15a0:      	ldr	q3, [x9, x10, lsl #4]
+    15a4:      	add	x9, sp, #0x20
+    15a8:      	stur	q5, [sp, #0x20]
+    15ac:      	ldrb	w9, [x9, x8]
+    15b0:      	add	x10, sp, #0x30
+    15b4:      	stur	q16, [sp, #0x30]
+    15b8:      	tbl.16b	v5, { v5 }, v2
+    15bc:      	tbl.16b	v16, { v16 }, v3
+    15c0:      	uxtb	w9, w9
+    15c4:      	ldrb	w10, [x10, x7]
+    15c8:      	mov	x12, #0x0               ; =0
+    15cc:      	cmp	x8, xzr
+    15d0:      	csel	x8, x0, x12, ne
+    15d4:      	add	x5, x5, x8
+    15d8:      	cmp	x7, xzr
+    15dc:      	csel	x0, x0, x12, ne
+    15e0:      	add	x6, x6, x0
+    15e4:      	mov	x7, x10
+    15e8:      	mov	x8, x9
+    15ec:      	b	0x1540 <_mech_control_range_0+0x210>
+    15f0:      	add	x5, x9, #0x1
+    15f4:      	cmp	x5, #0x10
+    15f8:      	cset	x6, ls
+    15fc:      	cmp	x5, #0x10
+    1600:      	b.ls	0x1614 <_mech_control_range_0+0x2e4>
+    1604:      	mov	x0, #0x4                ; =4
+    1608:      	add	sp, sp, #0x50
+    160c:      	ldp	x29, x30, [sp], #0x10
+    1610:      	retab
+    1614:      	adrp	x7, 0x1000 <_mech_control_reduce+0x1000>
+    1618:      	ldr	x7, [x7]
+    161c:      	mov	x0, #0x4                ; =4
+    1620:      	ldr	q2, [x7, x5, lsl #4]
+    1624:      	mov	x7, #-0x1               ; =-1
+    1628:      	cmp	x9, x7
+    162c:      	cset	x7, ne
+    1630:      	and	w6, w7, w6
+    1634:      	uxtb	w7, w6
+    1638:      	cbnz	x7, 0x1648 <_mech_control_range_0+0x318>
+    163c:      	add	sp, sp, #0x50
+    1640:      	ldp	x29, x30, [sp], #0x10
+    1644:      	retab
+    1648:      	add	x7, sp, #0x10
+    164c:      	stur	q1, [sp, #0x10]
+    1650:      	ldrb	w7, [x7, x9]
+    1654:      	uxtb	w6, w6
+    1658:      	cbnz	x6, 0x1668 <_mech_control_range_0+0x338>
+    165c:      	add	sp, sp, #0x50
+    1660:      	ldp	x29, x30, [sp], #0x10
+    1664:      	retab
+    1668:      	uxtb	w6, w7
+    166c:      	add	x6, x6, #0x1
+    1670:      	mov	x7, #0x0                ; =0
+    1674:      	cmp	x6, x9
+    1678:      	csel	x7, x7, x6, hi
+    167c:      	cmp	x7, #0xff
+    1680:      	b.ls	0x1690 <_mech_control_range_0+0x360>
+    1684:      	add	sp, sp, #0x50
+    1688:      	ldp	x29, x30, [sp], #0x10
+    168c:      	retab
+    1690:      	tbl.16b	v26, { v26 }, v2
+    1694:      	dup.16b	v2, w9
+    1698:      	cmeq.16b	v2, v2, v0
+    169c:      	dup.16b	v3, w7
+    16a0:      	bsl.16b	v2, v3, v1
+    16a4:      	cmp	x6, x9
+    16a8:      	csel	x7, x5, x9, hi
+    16ac:      	cmp	x6, x9
+    16b0:      	cset	x5, ls
+    16b4:      	mov	x9, x7
+    16b8:      	mov.16b	v1, v2
+    16bc:      	b	0x1524 <_mech_control_range_0+0x1f4>
+    16c0:      	add	x7, x6, #0x1
+    16c4:      	cmp	x7, #0x10
+    16c8:      	cset	x8, ls
+    16cc:      	cmp	x7, #0x10
+    16d0:      	b.ls	0x16e4 <_mech_control_range_0+0x3b4>
+    16d4:      	mov	x0, #0x4                ; =4
+    16d8:      	add	sp, sp, #0x50
+    16dc:      	ldp	x29, x30, [sp], #0x10
+    16e0:      	retab
+    16e4:      	adrp	x9, 0x1000 <_mech_control_reduce+0x1000>
+    16e8:      	ldr	x9, [x9]
+    16ec:      	mov	x0, #0x4                ; =4
+    16f0:      	ldr	q17, [x9, x7, lsl #4]
+    16f4:      	mov	x9, #-0x1               ; =-1
+    16f8:      	cmp	x6, x9
+    16fc:      	cset	x10, ne
+    1700:      	and	w9, w10, w8
+    1704:      	uxtb	w10, w9
+    1708:      	cbnz	x10, 0x1718 <_mech_control_range_0+0x3e8>
+    170c:      	add	sp, sp, #0x50
+    1710:      	ldp	x29, x30, [sp], #0x10
+    1714:      	retab
+    1718:      	mov	x12, sp
+    171c:      	stur	q1, [sp]
+    1720:      	ldrb	w12, [x12, x6]
+    1724:      	uxtb	w13, w9
+    1728:      	cbnz	x13, 0x1738 <_mech_control_range_0+0x408>
+    172c:      	add	sp, sp, #0x50
+    1730:      	ldp	x29, x30, [sp], #0x10
+    1734:      	retab
+    1738:      	uxtb	w14, w12
+    173c:      	add	x14, x14, #0x1
+    1740:      	mov	x15, #0x0               ; =0
+    1744:      	cmp	x14, x6
+    1748:      	csel	x15, x15, x14, hi
+    174c:      	cmp	x15, #0xff
+    1750:      	b.ls	0x1760 <_mech_control_range_0+0x430>
+    1754:      	add	sp, sp, #0x50
+    1758:      	ldp	x29, x30, [sp], #0x10
+    175c:      	retab
+    1760:      	tbl.16b	v16, { v16 }, v17
+    1764:      	dup.16b	v18, w6
+    1768:      	cmeq.16b	v17, v18, v0
+    176c:      	dup.16b	v18, w15
+    1770:      	bsl.16b	v17, v18, v1
+    1774:      	cmp	x14, x6
+    1778:      	csel	x7, x7, x6, hi
+    177c:      	cmp	x14, x6
+    1780:      	cset	x0, ls
+    1784:      	mov	x6, x7
+    1788:      	mov.16b	v1, v17
+    178c:      	b	0x14fc <_mech_control_range_0+0x1cc>
+    1790:      	mov	x11, x5
+    1794:      	cmp	x2, #0x14
+    1798:      	b.ls	0x17ac <_mech_control_range_0+0x47c>
+    179c:      	mov	x0, #0x3                ; =3
+    17a0:      	add	sp, sp, #0x50
+    17a4:      	ldp	x29, x30, [sp], #0x10
+    17a8:      	retab
+    17ac:      	mov	x0, #0x1                ; =1
+    17b0:      	mov	x5, x0
+    17b4:      	cmp	x0, x2
+    17b8:      	b.ls	0x18ac <_mech_control_range_0+0x57c>
+    17bc:      	cmp	x5, #0x0
+    17c0:      	b.ne	0x17d4 <_mech_control_range_0+0x4a4>
+    17c4:      	mov	x0, #0x2                ; =2
+    17c8:      	add	sp, sp, #0x50
+    17cc:      	ldp	x29, x30, [sp], #0x10
+    17d0:      	retab
+    17d4:      	cbz	x5, 0x18bc <_mech_control_range_0+0x58c>
+    17d8:      	udiv	x6, x4, x5
+    17dc:      	add	x7, x2, #0x1
+    17e0:      	cmp	x7, #0x10
+    17e4:      	cset	x8, ls
+    17e8:      	cmp	x7, #0x10
+    17ec:      	b.ls	0x1800 <_mech_control_range_0+0x4d0>
+    17f0:      	mov	x0, #0x4                ; =4
+    17f4:      	add	sp, sp, #0x50
+    17f8:      	ldp	x29, x30, [sp], #0x10
+    17fc:      	retab
+    1800:      	mov	x0, #0x1                ; =1
+    1804:      	cmp	x7, xzr
+    1808:      	csel	x0, x7, x0, ne
+    180c:      	cbz	x0, 0x18c0 <_mech_control_range_0+0x590>
+    1810:      	udiv	x9, x6, x0
+    1814:      	msub	x9, x9, x0, x6
+    1818:      	adrp	x10, 0x1000 <_mech_control_reduce+0x1000>
+    181c:      	ldr	x10, [x10]
+    1820:      	mov	x0, #0x4                ; =4
+    1824:      	add	x7, x9, x7, lsl #4
+    1828:      	ldr	q2, [x10, x7, lsl #4]
+    182c:      	mov	x7, #-0x1               ; =-1
+    1830:      	cmp	x2, x7
+    1834:      	cset	x7, ne
+    1838:      	and	w7, w7, w8
+    183c:      	uxtb	w7, w7
+    1840:      	cbnz	x7, 0x1850 <_mech_control_range_0+0x520>
+    1844:      	add	sp, sp, #0x50
+    1848:      	ldp	x29, x30, [sp], #0x10
+    184c:      	retab
+    1850:      	cmp	x6, #0xff
+    1854:      	b.ls	0x1864 <_mech_control_range_0+0x534>
+    1858:      	add	sp, sp, #0x50
+    185c:      	ldp	x29, x30, [sp], #0x10
+    1860:      	retab
+    1864:      	cmp	x5, #0x0
+    1868:      	b.ne	0x187c <_mech_control_range_0+0x54c>
+    186c:      	mov	x0, #0x2                ; =2
+    1870:      	add	sp, sp, #0x50
+    1874:      	ldp	x29, x30, [sp], #0x10
+    1878:      	retab
+    187c:      	cbz	x5, 0x18c4 <_mech_control_range_0+0x594>
+    1880:      	udiv	x0, x4, x5
+    1884:      	msub	x4, x0, x5, x4
+    1888:      	tbl.16b	v5, { v5 }, v2
+    188c:      	dup.16b	v2, w2
+    1890:      	cmeq.16b	v2, v2, v0
+    1894:      	dup.16b	v3, w6
+    1898:      	bsl.16b	v2, v3, v1
+    189c:      	sub	x2, x2, #0x1
+    18a0:      	mov	x5, x11
+    18a4:      	mov.16b	v1, v2
+    18a8:      	b	0x135c <_mech_control_range_0+0x2c>
+    18ac:      	add	x6, x0, #0x1
+    18b0:      	mul	x5, x5, x0
+    18b4:      	mov	x0, x6
+    18b8:      	b	0x17b4 <_mech_control_range_0+0x484>
+    18bc:      	udf	#0xc11f
+    18c0:      	udf	#0xc11f
+    18c4:      	udf	#0xc11f
+		...
+    18d0:      	<unknown>
+    18d4:      	<unknown>
+    18d8:      	add	w8, w8, w10, lsl #2
+    18dc:      	<unknown>
+
+00000000000018e0 <_mech_control_entry>:
+    18e0:      	pacibsp
+    18e4:      	stp	x29, x30, [sp, #-0x10]!
+    18e8:      	mov	x29, sp
+    18ec:      	stp	x19, x20, [sp, #-0x10]!
+    18f0:      	sub	sp, sp, #0x30
+    18f4:      	mov	x20, x1
+    18f8:      	ldr	x19, [x0]
+    18fc:      	cmp	x19, #0x0
+    1900:      	cset	x0, ne
+    1904:      	cmp	x19, #0x10
+    1908:      	cset	x1, ls
+    190c:      	and	w0, w0, w1
+    1910:      	uxtb	w0, w0
+    1914:      	cbnz	x0, 0x192c <_mech_control_entry+0x4c>
+    1918:      	mov	x0, #0x1                ; =1
+    191c:      	add	sp, sp, #0x30
+    1920:      	ldp	x19, x20, [sp], #0x10
+    1924:      	ldp	x29, x30, [sp], #0x10
+    1928:      	retab
+    192c:      	cmp	x19, #0x14
+    1930:      	b.ls	0x1948 <_mech_control_entry+0x68>
+    1934:      	mov	x0, #0x3                ; =3
+    1938:      	add	sp, sp, #0x30
+    193c:      	ldp	x19, x20, [sp], #0x10
+    1940:      	ldp	x29, x30, [sp], #0x10
+    1944:      	retab
+    1948:      	mov	x4, #0x1                ; =1
+    194c:      	mov	x1, x4
+    1950:      	mov	x2, x4
+    1954:      	cmp	x2, x19
+    1958:      	b.ls	0x19e8 <_mech_control_entry+0x108>
+    195c:      	add	x3, sp, #0x10
+    1960:      	stur	x19, [sp, #0x10]
+    1964:      	mov	x0, #0x0                ; =0
+    1968:      	mov	x7, #0x2                ; =2
+    196c:      	lsr	x2, x1, #7
+    1970:      	and	x2, x2, #0xfffffffffffffffe
+    1974:      	cmp	x7, x2
+    1978:      	csel	x2, x7, x2, hi
+    197c:      	adrp	x5, 0x1000 <_mech_control_reduce+0x1000>
+    1980:      	ldr	x5, [x5]
+    1984:      	adrp	x6, 0x1000 <_mech_control_reduce+0x1000>
+    1988:      	ldr	x6, [x6]
+    198c:      	add	x8, sp, #0x20
+    1990:      	stur	x8, [sp]
+    1994:      	adrp	x8, 0x1000 <_mech_control_reduce+0x1000>
+    1998:      	ldr	x8, [x8]
+    199c:      	blr	x8
+    19a0:      	cmp	x0, #0x0
+    19a4:      	b.eq	0x19bc <_mech_control_entry+0xdc>
+    19a8:      	mov	x0, #0x5                ; =5
+    19ac:      	add	sp, sp, #0x30
+    19b0:      	ldp	x19, x20, [sp], #0x10
+    19b4:      	ldp	x29, x30, [sp], #0x10
+    19b8:      	retab
+    19bc:      	ldur	x1, [sp, #0x20]
+    19c0:      	ldur	x0, [sp, #0x28]
+    19c4:      	mov	x6, x20
+    19c8:      	str	x1, [x6]
+    19cc:      	str	x19, [x6, #0x8]
+    19d0:      	str	x0, [x6, #0x10]
+    19d4:      	mov	x0, #0x0                ; =0
+    19d8:      	add	sp, sp, #0x30
+    19dc:      	ldp	x19, x20, [sp], #0x10
+    19e0:      	ldp	x29, x30, [sp], #0x10
+    19e4:      	retab
+    19e8:      	mov	x6, x20
+    19ec:      	add	x0, x2, #0x1
+    19f0:      	mul	x1, x1, x2
+    19f4:      	mov	x2, x0
+    19f8:      	b	0x1954 <_mech_control_entry+0x74>

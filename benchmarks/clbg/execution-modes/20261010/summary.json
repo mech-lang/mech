@@ -1,0 +1,207 @@
+{
+  "timings_report_sha256": "42e703b5b0c61d5de426a6e5d0b5a38fbf9878bb430b956c1545c1315d96e8d0",
+  "fastest_medians": {
+    "revcomp": {
+      "aot-new": {
+        "seconds": 0.148410459,
+        "loc": 7,
+        "source": "revcomp:mech-revcomp-optimized",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 0.178911125,
+        "loc": 7,
+        "source": "revcomp:mech-revcomp-optimized",
+        "relative_to_rebuilt_aot": 1.2055156099207267
+      },
+      "resident": {
+        "seconds": 0.233855792,
+        "loc": 7,
+        "source": "revcomp:mech-revcomp-optimized",
+        "relative_to_rebuilt_aot": 1.5757365995344035
+      }
+    },
+    "regexredux": {
+      "aot-new": {
+        "seconds": 0.484678417,
+        "loc": 24,
+        "source": "regexredux:mech-regex-final-reuse-signed",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 0.564666334,
+        "loc": 24,
+        "source": "regexredux:mech-regex-final-reuse-signed",
+        "relative_to_rebuilt_aot": 1.1650329665907118
+      },
+      "resident": {
+        "seconds": 0.473002875,
+        "loc": 24,
+        "source": "regexredux:mech-regex-final-reuse-signed",
+        "relative_to_rebuilt_aot": 0.9759107449589611
+      }
+    },
+    "knucleotide": {
+      "aot-new": {
+        "seconds": 0.521786125,
+        "loc": 17,
+        "source": "knucleotide:mech-compact-final-std1-simd0-p4",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 0.659211333,
+        "loc": 17,
+        "source": "knucleotide:mech-compact-final-std1-simd0-p4",
+        "relative_to_rebuilt_aot": 1.2633745924156186
+      },
+      "resident": {
+        "seconds": 0.604582792,
+        "loc": 17,
+        "source": "knucleotide:mech-compact-final-std1-simd0-p4",
+        "relative_to_rebuilt_aot": 1.1586793190409193
+      }
+    },
+    "pidigits": {
+      "aot-new": {
+        "seconds": 0.306175542,
+        "loc": 38,
+        "source": "pidigits:mech-pi-final-advance-signed",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 0.719949667,
+        "loc": 38,
+        "source": "pidigits:mech-pi-final-advance-signed",
+        "relative_to_rebuilt_aot": 2.3514277538210413
+      },
+      "resident": {
+        "seconds": 0.306381708,
+        "loc": 38,
+        "source": "pidigits:mech-pi-final-advance-signed",
+        "relative_to_rebuilt_aot": 1.0006733588145325
+      }
+    },
+    "nbody": {
+      "aot-new": {
+        "seconds": 1.051977584,
+        "loc": 25,
+        "source": "nbody:pairwise-mass-tails",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 1.628762125,
+        "loc": 20,
+        "source": "nbody:compact-baseline",
+        "relative_to_rebuilt_aot": 1.5482859613860365
+      },
+      "resident": {
+        "seconds": 16.6679895,
+        "loc": 25,
+        "source": "nbody:pairwise-mass-tails",
+        "relative_to_rebuilt_aot": 15.844434095850469
+      }
+    },
+    "mandelbrot": {
+      "aot-new": {
+        "seconds": 0.447153167,
+        "loc": 29,
+        "source": "mandelbrot:mech-program-simd-loop-fma",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 1.066207542,
+        "loc": 29,
+        "source": "mandelbrot:mech-program-simd-loop-fma",
+        "relative_to_rebuilt_aot": 2.3844347321820485
+      },
+      "resident": {
+        "seconds": 10.783962667,
+        "loc": 29,
+        "source": "mandelbrot:mech-program-simd-loop-fma",
+        "relative_to_rebuilt_aot": 24.116932323997162
+      }
+    },
+    "spectralnorm": {
+      "aot-new": {
+        "seconds": 0.089262084,
+        "loc": 12,
+        "source": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 0.239738292,
+        "loc": 12,
+        "source": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+        "relative_to_rebuilt_aot": 2.685779686703259
+      },
+      "resident": {
+        "seconds": 5.1848855,
+        "loc": 12,
+        "source": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+        "relative_to_rebuilt_aot": 58.086090618274156
+      }
+    },
+    "binarytrees": {
+      "aot-new": {
+        "seconds": 0.403539833,
+        "loc": 26,
+        "source": "binarytrees:mech-binarytrees-parallel",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 0.733148,
+        "loc": 26,
+        "source": "binarytrees:mech-binarytrees-parallel",
+        "relative_to_rebuilt_aot": 1.8167921480009137
+      },
+      "resident": {
+        "seconds": 9.743936709,
+        "loc": 26,
+        "source": "binarytrees:mech-binarytrees-parallel",
+        "relative_to_rebuilt_aot": 24.146158352104983
+      }
+    },
+    "fasta": {
+      "aot-new": {
+        "seconds": 0.577122333,
+        "loc": 43,
+        "source": "fasta:mech-fasta-final-expanded-v2",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 1.126172125,
+        "loc": 43,
+        "source": "fasta:mech-fasta-final-expanded-v2",
+        "relative_to_rebuilt_aot": 1.9513577288647397
+      },
+      "resident": {
+        "seconds": 18.721241333000002,
+        "loc": 43,
+        "source": "fasta:mech-fasta-final-expanded-v2",
+        "relative_to_rebuilt_aot": 32.438947970845554
+      }
+    },
+    "fannkuchredux": {
+      "aot-new": {
+        "seconds": 1.760364167,
+        "loc": 59,
+        "source": "fannkuchredux:mech-fannkuch-even",
+        "relative_to_rebuilt_aot": 1.0
+      },
+      "jit": {
+        "seconds": 2.476234958,
+        "loc": 59,
+        "source": "fannkuchredux:mech-fannkuch-even",
+        "relative_to_rebuilt_aot": 1.406660624216171
+      },
+      "resident": {
+        "seconds": 59.393436,
+        "loc": 39,
+        "source": "fannkuchredux:mech-fannkuch-default",
+        "relative_to_rebuilt_aot": 33.7392893546668
+      }
+    }
+  },
+  "aot_controls_geometric_mean_ratio": 0.9909016755309646,
+  "aot_controls_max_ratio": 1.0145627994541497
+}

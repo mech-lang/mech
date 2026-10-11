@@ -1,0 +1,11 @@
+Inner(n<u64>) = (result<u64>) :=
+  a := heap/new-refs((heap/null(), heap/null()))
+  result := control/select(a != heap/null(), 1, 0).
+Test(n<u64>) = (result<u64>) :=
+  a := heap/new-refs((heap/null(), heap/null()))
+  x := memory/with-ref-arena(1, 2, Inner, 0)
+  (l, r) := heap/read-refs(a, 2)
+  result := control/select(l == heap/null() && r == heap/null(), x, 0).
+
+result := memory/with-ref-arena(1, 2, Test, 0)
+io/print("{}\n", result)

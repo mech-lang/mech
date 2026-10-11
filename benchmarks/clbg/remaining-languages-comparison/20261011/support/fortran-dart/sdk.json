@@ -1,0 +1,13 @@
+{
+  "url": "https://storage.googleapis.com/dart-archive/channels/stable/release/3.13.5/sdk/dartsdk-macos-arm64-release.zip",
+  "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/dartsdk-macos-arm64-3.13.5.zip",
+  "archive_sha256": "9dfe7d6f2558816c2a978aff6c80e8a4509c6cb726c0702a616c64d286f60e88",
+  "sdk": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/dart-sdk",
+  "runtime": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/dart-sdk/bin/dart",
+  "version": "Dart SDK version: 3.13.5 (stable) (Tue Sep 29 01:00:52 2026 -0700) on \"macos_arm64\"",
+  "release": {
+    "date": "2026-09-29",
+    "version": "3.13.5",
+    "revision": "04bcd1036cdc799ac6564988f159ee454d42c822"
+  }
+}

@@ -1,0 +1,873 @@
+{
+  "created_at": "2026-10-09T17:27:57.808839+00:00",
+  "compiler": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+  "compiler_sha256": "f37df6af00c210ecfa0a9e5134376f9845b22f5b14640f5a6d3bfdf0212ea47e",
+  "nbody_driver": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+  "nbody_driver_sha256": "59c2f373b285aab6a9832a9a0918920c18a24ef212ec875c5b3c88088bff3fe6",
+  "baseline_sha256": "91c18b842408335763183af3342bbc715712120c04f79f81c93e8e44f41665a1",
+  "programs": [
+    {
+      "key": "nbody:compact-baseline",
+      "benchmark": "nbody",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/nbody/nbody.mec",
+          "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+          "loc": 32,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+              "0",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/nbody/nbody.mec",
+              "emit-cranelift-simd",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before.c",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before.o",
+              "--output",
+              "energy",
+              "--fp-contract",
+              "--algebraic-powers"
+            ],
+            [
+              "/opt/homebrew/opt/llvm@22/bin/clang-22",
+              "-O3",
+              "-isysroot",
+              "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before.c",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before.o",
+              "-lm",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before",
+          "binary_sha256": "ea853a1d836b803ce9cf14631e6948b31375205849706f1697b52765e4189f56",
+          "artifacts": {
+            "compact-baseline-before.o": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+          "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+          "loc": 32,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+              "0",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/nbody/nbody.mec",
+              "emit-cranelift-simd",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before.c",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before.o",
+              "--output",
+              "energy",
+              "--fp-contract",
+              "--algebraic-powers"
+            ],
+            [
+              "/opt/homebrew/opt/llvm@22/bin/clang-22",
+              "-O3",
+              "-isysroot",
+              "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before.c",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before.o",
+              "-lm",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/compact-baseline-before",
+          "binary_sha256": "ea853a1d836b803ce9cf14631e6948b31375205849706f1697b52765e4189f56",
+          "artifacts": {
+            "compact-baseline-before.o": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479"
+          },
+          "reused_identical_source": true
+        }
+      }
+    },
+    {
+      "key": "nbody:pairwise-mass-tails",
+      "benchmark": "nbody",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/nbody/nbody-pairwise-mass.mec",
+          "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+          "loc": 37,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+              "0",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/nbody/nbody-pairwise-mass.mec",
+              "emit-cranelift-simd",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before.c",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before.o",
+              "--output",
+              "energy",
+              "--fp-contract",
+              "--algebraic-powers",
+              "--pack-state-tails"
+            ],
+            [
+              "/opt/homebrew/opt/llvm@22/bin/clang-22",
+              "-O3",
+              "-isysroot",
+              "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before.c",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before.o",
+              "-lm",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before",
+          "binary_sha256": "107aeba5684de79eb1ed8f5907fb5d4ef47efc91d30c24d1e843b30f614ebabc",
+          "artifacts": {
+            "pairwise-mass-tails-before.o": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise-mass.mec",
+          "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+          "loc": 37,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+              "0",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/nbody/nbody-pairwise-mass.mec",
+              "emit-cranelift-simd",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before.c",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before.o",
+              "--output",
+              "energy",
+              "--fp-contract",
+              "--algebraic-powers",
+              "--pack-state-tails"
+            ],
+            [
+              "/opt/homebrew/opt/llvm@22/bin/clang-22",
+              "-O3",
+              "-isysroot",
+              "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before.c",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before.o",
+              "-lm",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/nbody/pairwise-mass-tails-before",
+          "binary_sha256": "107aeba5684de79eb1ed8f5907fb5d4ef47efc91d30c24d1e843b30f614ebabc",
+          "artifacts": {
+            "pairwise-mass-tails-before.o": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232"
+          },
+          "reused_identical_source": true
+        }
+      }
+    },
+    {
+      "key": "mandelbrot:mech-program-compact",
+      "benchmark": "mandelbrot",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/mandelbrot/mandelbrot-compact-program.mec",
+          "source_sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+          "loc": 20,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/mandelbrot/mandelbrot-compact-program.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-compact-before",
+              "--scalar"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-compact-before",
+          "binary_sha256": "4068bcfb6669d4b5ba0b4b2aa7dabda30a1a32967fb0470a865159e70ffe27b8",
+          "artifacts": {
+            "source.mec": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+            "grid.o": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+          "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+          "loc": 20,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-compact-after",
+              "--scalar"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-compact-after",
+          "binary_sha256": "a4e2b0c8ca8bccdeca54a4f76b13b202472e5445a4e93384d70565869cedba34",
+          "artifacts": {
+            "source.mec": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+            "grid.o": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3"
+          }
+        }
+      }
+    },
+    {
+      "key": "mandelbrot:mech-program-simd-loop-fma",
+      "benchmark": "mandelbrot",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/mandelbrot/mandelbrot-program.mec",
+          "source_sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+          "loc": 29,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/mandelbrot/mandelbrot-program.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-simd-loop-fma-before",
+              "--fp-contract-loop"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-simd-loop-fma-before",
+          "binary_sha256": "3665bdaeecc565990b055d9949110f4f188cc9bc7097973d4dbb324babe68ed9",
+          "artifacts": {
+            "source.mec": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+            "grid.o": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+          "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+          "loc": 29,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-simd-loop-fma-after",
+              "--fp-contract-loop"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/mandelbrot/mech-program-simd-loop-fma-after",
+          "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+          "artifacts": {
+            "source.mec": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+            "grid.o": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843"
+          }
+        }
+      }
+    },
+    {
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "benchmark": "knucleotide",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/knucleotide/knucleotide-compact.mec",
+          "source_sha256": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+          "loc": 17,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/knucleotide/knucleotide-compact.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/knucleotide/mech-compact-final-std1-simd0-p4-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/knucleotide/mech-compact-final-std1-simd0-p4-before",
+          "binary_sha256": "4c9cde302b96a79c3a2ca0e4bfcde4b49a76fb4a4eefa945c61c554a14cab5a2",
+          "artifacts": {
+            "constants.json": "378d433ebd4a675749ebc936d3b15cbb559ba1235e9de4372de3e2b7f99a3da6",
+            "mech-sequence.o": "6bbb29e24b736879f6ea0223e4111e0289e3ca139a2bf6f36ac89f512e1f1d4f",
+            "source.mec": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+            "build.rs": "6e6210d7fa99316e7a430b0040f9933df70dca8c63f85d1ab02c2924343b01b6",
+            "src/main.rs": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+          "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+          "loc": 17,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+          "binary_sha256": "4c9cde302b96a79c3a2ca0e4bfcde4b49a76fb4a4eefa945c61c554a14cab5a2",
+          "artifacts": {
+            "constants.json": "378d433ebd4a675749ebc936d3b15cbb559ba1235e9de4372de3e2b7f99a3da6",
+            "mech-sequence.o": "6bbb29e24b736879f6ea0223e4111e0289e3ca139a2bf6f36ac89f512e1f1d4f",
+            "source.mec": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+            "build.rs": "6e6210d7fa99316e7a430b0040f9933df70dca8c63f85d1ab02c2924343b01b6",
+            "src/main.rs": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4"
+          }
+        }
+      }
+    },
+    {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/spectralnorm/spectralnorm-integer.mec",
+          "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+          "loc": 13,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/spectralnorm/spectralnorm-integer.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+            "MECH_NUMERIC_UNROLL": "4",
+            "MECH_NUMERIC_ROWS": "4",
+            "MECH_NUMERIC_INDUCTION": "0",
+            "MECH_SEQUENCE_PARTITIONS": "8",
+            "MECH_ARRAY_GRAIN": "8"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-before",
+          "binary_sha256": "0fe49a23e5654569865b374572531db8f7e5c06dc5c9eec56162ccea72d9658a",
+          "artifacts": {
+            "constants.json": "3af0fb61d4b287cc6c79428f0bb823da925b32c389d8a845e4f8cadaa7f968c0",
+            "mech-sequence.o": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+            "source.mec": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+            "build.rs": "6e6210d7fa99316e7a430b0040f9933df70dca8c63f85d1ab02c2924343b01b6",
+            "src/main.rs": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm-integer.mec",
+          "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+          "loc": 9,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm-integer.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-after"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+            "MECH_NUMERIC_UNROLL": "4",
+            "MECH_NUMERIC_ROWS": "4",
+            "MECH_NUMERIC_INDUCTION": "0",
+            "MECH_SEQUENCE_PARTITIONS": "8",
+            "MECH_ARRAY_GRAIN": "8"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-after",
+          "binary_sha256": "872c72222b0c1681f04c3df622c820eca9ec2c291062fab40b87d19842e36da5",
+          "artifacts": {
+            "constants.json": "dbaa639f346737e72622e6bcf3b715779711afb0c116a3a6aef2d27130970502",
+            "mech-sequence.o": "6840f6ad1a6e8af6ac7f02921e5311aa848219b3bb6951169d5a14e4bd461eb3",
+            "source.mec": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+            "build.rs": "6e6210d7fa99316e7a430b0040f9933df70dca8c63f85d1ab02c2924343b01b6",
+            "src/main.rs": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4"
+          }
+        }
+      }
+    },
+    {
+      "key": "revcomp:mech-revcomp-optimized",
+      "benchmark": "revcomp",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/revcomp/revcomp.mec",
+          "source_sha256": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+          "loc": 10,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/revcomp/revcomp.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/revcomp/mech-revcomp-optimized-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+            "MECH_BYTE_FUSION": "1",
+            "MECH_BYTE_REUSE": "1"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/revcomp/mech-revcomp-optimized-before",
+          "binary_sha256": "657c5ebb23cebe2717ef10b923ef103bc7d2d072108b13877d9639c616847ece",
+          "artifacts": {
+            "constants.json": "fec4090bc482c9db1b66e67826c3adc84df983dfd02b2b6d1927eb9d43611d30",
+            "mech-sequence.o": "c1e649ece8e124ba23a6b1a3030217eacece9ee1042eb8726c40aee9aafc7cc4",
+            "source.mec": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+            "build.rs": "6e6210d7fa99316e7a430b0040f9933df70dca8c63f85d1ab02c2924343b01b6",
+            "src/main.rs": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+          "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+          "loc": 7,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/revcomp/mech-revcomp-optimized-after"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+            "MECH_BYTE_FUSION": "1",
+            "MECH_BYTE_REUSE": "1"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/revcomp/mech-revcomp-optimized-after",
+          "binary_sha256": "657c5ebb23cebe2717ef10b923ef103bc7d2d072108b13877d9639c616847ece",
+          "artifacts": {
+            "constants.json": "fec4090bc482c9db1b66e67826c3adc84df983dfd02b2b6d1927eb9d43611d30",
+            "mech-sequence.o": "c1e649ece8e124ba23a6b1a3030217eacece9ee1042eb8726c40aee9aafc7cc4",
+            "source.mec": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+            "build.rs": "6e6210d7fa99316e7a430b0040f9933df70dca8c63f85d1ab02c2924343b01b6",
+            "src/main.rs": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4"
+          }
+        }
+      }
+    },
+    {
+      "key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fannkuchredux/fannkuchredux.mec",
+          "source_sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+          "loc": 43,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fannkuchredux/fannkuchredux.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-default-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+            "MECH_CONTROL_BYTE_INDEX": "auto"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-default-before",
+          "binary_sha256": "f7cf8eb2606376182f9d400c24aa61ff0d8f473f72029198cf1b2a8211efe0db",
+          "artifacts": {
+            "source.mec": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "8a1d0c8f565a1e762f47c3629a75c8cbb29fe58563c29fceff57033ed88523ea",
+            "control.json": "5a51526d9cfaecb0a680438f3e578b835eb633d965bc6fa389f145b4d1945220",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+          "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+          "loc": 39,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-default-after"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+            "MECH_CONTROL_BYTE_INDEX": "auto"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-default-after",
+          "binary_sha256": "f7cf8eb2606376182f9d400c24aa61ff0d8f473f72029198cf1b2a8211efe0db",
+          "artifacts": {
+            "source.mec": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "8a1d0c8f565a1e762f47c3629a75c8cbb29fe58563c29fceff57033ed88523ea",
+            "control.json": "5a51526d9cfaecb0a680438f3e578b835eb633d965bc6fa389f145b4d1945220",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        }
+      }
+    },
+    {
+      "key": "fannkuchredux:mech-fannkuch-even",
+      "benchmark": "fannkuchredux",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fannkuchredux/fannkuchredux-even.mec",
+          "source_sha256": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+          "loc": 64,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fannkuchredux/fannkuchredux-even.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-even-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+            "MECH_CONTROL_BYTE_INDEX": "auto"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-even-before",
+          "binary_sha256": "92f94d401f2e20b8367473e938aabd697fc4457b8bee06014c624e80f7385a98",
+          "artifacts": {
+            "source.mec": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "8430f419036230f41625215e0e956a3a347975aeaeabe1c68da97c2c33238288",
+            "control.json": "5a51526d9cfaecb0a680438f3e578b835eb633d965bc6fa389f145b4d1945220",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+          "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+          "loc": 59,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-even-after"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+            "MECH_CONTROL_BYTE_INDEX": "auto"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fannkuchredux/mech-fannkuch-even-after",
+          "binary_sha256": "92f94d401f2e20b8367473e938aabd697fc4457b8bee06014c624e80f7385a98",
+          "artifacts": {
+            "source.mec": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "8430f419036230f41625215e0e956a3a347975aeaeabe1c68da97c2c33238288",
+            "control.json": "5a51526d9cfaecb0a680438f3e578b835eb633d965bc6fa389f145b4d1945220",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        }
+      }
+    },
+    {
+      "key": "fasta:mech-fasta-final-compact-v2",
+      "benchmark": "fasta",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fasta/fasta.mec",
+          "source_sha256": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+          "loc": 33,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fasta/fasta.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-compact-v2-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib",
+            "MECH_CONTROL_EXACT_FLOAT_COMPARE": "1",
+            "MECH_CONTROL_SCAN_CACHE": "1",
+            "MECH_CONTROL_SCAN_PIPELINE": "auto"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-compact-v2-before",
+          "binary_sha256": "5c0120f5abeb726b32b4bcab56a19fecb5bc6df2e889c2245de4d688b7952955",
+          "artifacts": {
+            "source.mec": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "1603c26c3ba0ddff79771102d8d9c0d2edb4f90d2d06e6392e77a59b8d135017",
+            "control.json": "553766fa35fc2d9bdc6bac681c9c1ad7879b5d264859fb85e96328b6fb547ca6",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+          "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+          "loc": 32,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-compact-v2-after"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib",
+            "MECH_CONTROL_EXACT_FLOAT_COMPARE": "1",
+            "MECH_CONTROL_SCAN_CACHE": "1",
+            "MECH_CONTROL_SCAN_PIPELINE": "auto"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-compact-v2-after",
+          "binary_sha256": "5c0120f5abeb726b32b4bcab56a19fecb5bc6df2e889c2245de4d688b7952955",
+          "artifacts": {
+            "source.mec": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "1603c26c3ba0ddff79771102d8d9c0d2edb4f90d2d06e6392e77a59b8d135017",
+            "control.json": "553766fa35fc2d9bdc6bac681c9c1ad7879b5d264859fb85e96328b6fb547ca6",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        }
+      }
+    },
+    {
+      "key": "fasta:mech-fasta-final-expanded-v2",
+      "benchmark": "fasta",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fasta/fasta-optimized.mec",
+          "source_sha256": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+          "loc": 44,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/fasta/fasta-optimized.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-expanded-v2-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib",
+            "MECH_CONTROL_EXACT_FLOAT_COMPARE": "1",
+            "MECH_CONTROL_SCAN_CACHE": "1",
+            "MECH_CONTROL_SCAN_PIPELINE": "auto"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-expanded-v2-before",
+          "binary_sha256": "ab4d3e4020338e16bf849f6d01bd8a5b6095f92c1006ae6515cf6df0ff3fd586",
+          "artifacts": {
+            "source.mec": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "42ad20d69b3b2f959bddfc9a7c9989187743169cc61591101a3eb2a43ea4e88c",
+            "control.json": "553766fa35fc2d9bdc6bac681c9c1ad7879b5d264859fb85e96328b6fb547ca6",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        },
+        "after": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+          "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+          "loc": 43,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-expanded-v2-after"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib",
+            "MECH_CONTROL_EXACT_FLOAT_COMPARE": "1",
+            "MECH_CONTROL_SCAN_CACHE": "1",
+            "MECH_CONTROL_SCAN_PIPELINE": "auto"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/fasta/mech-fasta-final-expanded-v2-after",
+          "binary_sha256": "ab4d3e4020338e16bf849f6d01bd8a5b6095f92c1006ae6515cf6df0ff3fd586",
+          "artifacts": {
+            "source.mec": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "42ad20d69b3b2f959bddfc9a7c9989187743169cc61591101a3eb2a43ea4e88c",
+            "control.json": "553766fa35fc2d9bdc6bac681c9c1ad7879b5d264859fb85e96328b6fb547ca6",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        }
+      }
+    },
+    {
+      "key": "binarytrees:mech-binarytrees-parallel",
+      "benchmark": "binarytrees",
+      "builds": {
+        "before": {
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/binarytrees/experiments/callback-forms/binarytrees-parallel.mec",
+          "source_sha256": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+          "loc": 50,
+          "commands": [
+            [
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+              "build",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/published-sources/binarytrees/experiments/callback-forms/binarytrees-parallel.mec",
+              "--backend",
+              "cranelift",
+              "--offline",
+              "--keep-project",
+              "--no-config",
+              "-o",
+              "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/binarytrees/mech-binarytrees-parallel-before"
+            ]
+          ],
+          "build_environment": {
+            "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+            "RUSTFLAGS": "-D warnings -C target-cpu=native -L native=/opt/homebrew/lib"
+          },
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v1/builds/binarytrees/mech-binarytrees-parallel-before",
+          "binary_sha256": "9c0f7814c0d7080a92fbccba05eb3e4e71b1f757d0671f1aa45c6272b10ba70f",
+          "artifacts": {
+            "source.mec": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+            "build.rs": "aef04a1c2594fcf2a27159c5be7f5e24a426e78b3ec2f31974291b46a2188f48",
+            "mech-control.o": "6a52cc96308d9e5087429e2ec3c0abb7b914b448e474b17d0db916c8228005de",
+            "control.json": "1f48d8c8420d45775d23a36626a2b8f341c3684c3fcae0909522e8fea6e67e12",
+            "src/main.rs": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+          }
+        }
+      },
+      "source_distinction": "before: published callback program; after: current match/comprehension program; paired-callback: only application syntax changed"
+    }
+  ]
+}

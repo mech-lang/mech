@@ -1,0 +1,2 @@
+result := (true ? | true => (3 ? | 0 => 1 | x => x + 1) | false => 0)
+io/print("{}\n", result)

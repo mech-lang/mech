@@ -1,0 +1,24 @@
+full output passed mech-fannkuch-cached
+full output passed fannkuchredux-rust6-neon
+full output passed fannkuchredux-rust6-neon-lto
+full output passed mech-fannkuch-simd-stack-index
+full output passed mech-fannkuch-paired-stack-index
+full output passed mech-fannkuch-cached-stack-index
+1/3 mech-fannkuch-paired-stack-index 3.116608
+1/3 mech-fannkuch-simd-stack-index 3.911664
+1/3 mech-fannkuch-cached-stack-index 2.891831
+1/3 mech-fannkuch-cached 3.156803
+1/3 fannkuchredux-rust6-neon-lto 2.494532
+1/3 fannkuchredux-rust6-neon 2.474474
+2/3 mech-fannkuch-cached-stack-index 2.915807
+2/3 mech-fannkuch-paired-stack-index 3.161144
+2/3 mech-fannkuch-simd-stack-index 3.882823
+2/3 mech-fannkuch-cached 3.060557
+2/3 fannkuchredux-rust6-neon 2.456509
+2/3 fannkuchredux-rust6-neon-lto 2.663875
+3/3 mech-fannkuch-paired-stack-index 3.163939
+3/3 mech-fannkuch-simd-stack-index 3.858806
+3/3 fannkuchredux-rust6-neon-lto 2.486461
+3/3 mech-fannkuch-cached-stack-index 2.823428
+3/3 fannkuchredux-rust6-neon 2.465928
+3/3 mech-fannkuch-cached 3.076357

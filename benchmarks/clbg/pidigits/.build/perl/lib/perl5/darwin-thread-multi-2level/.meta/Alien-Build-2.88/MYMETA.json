@@ -1,0 +1,203 @@
+{
+   "abstract" : "Build external dependencies for use in CPAN",
+   "author" : [
+      "Graham Ollis <plicease@cpan.org>",
+      "Joel Berger <joel.a.berger@gmail.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 6.037, CPAN::Meta::Converter version 2.150010, CPAN::Meta::Converter version 2.150013",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "Alien-Build",
+   "no_index" : {
+      "directory" : [
+         "corpus",
+         "example",
+         "maint"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.64"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::CBuilder" : "0",
+            "ExtUtils::MakeMaker" : "6.64",
+            "ExtUtils::ParseXS" : "3.30",
+            "File::Which" : "0"
+         }
+      },
+      "develop" : {
+         "recommends" : {
+            "Dist::Zilla::Plugin::Author::Plicease::Thanks" : "0",
+            "Dist::Zilla::Plugin::Author::Plicease::Upload" : "0",
+            "Dist::Zilla::Plugin::DynamicPrereqs" : "0",
+            "Dist::Zilla::Plugin::GatherFile" : "0",
+            "Dist::Zilla::Plugin::MetaNoIndex" : "0",
+            "Dist::Zilla::Plugin::Prereqs" : "0",
+            "Dist::Zilla::Plugin::PruneFiles" : "0",
+            "Dist::Zilla::Plugin::RemovePrereqs" : "0",
+            "Dist::Zilla::PluginBundle::Author::Plicease" : "2.75",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitBooleanGrep" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitStringyEval" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitStringySplit" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitVoidGrep" : "0",
+            "Perl::Critic::Policy::BuiltinFunctions::ProhibitVoidMap" : "0",
+            "Perl::Critic::Policy::ClassHierarchies::ProhibitExplicitISA" : "0",
+            "Perl::Critic::Policy::ClassHierarchies::ProhibitOneArgBless" : "0",
+            "Perl::Critic::Policy::CodeLayout::ProhibitHardTabs" : "0",
+            "Perl::Critic::Policy::CodeLayout::ProhibitTrailingWhitespace" : "0",
+            "Perl::Critic::Policy::CodeLayout::RequireConsistentNewlines" : "0",
+            "Perl::Critic::Policy::Community::ArrayAssignAref" : "0",
+            "Perl::Critic::Policy::Community::BarewordFilehandles" : "0",
+            "Perl::Critic::Policy::Community::ConditionalDeclarations" : "0",
+            "Perl::Critic::Policy::Community::ConditionalImplicitReturn" : "0",
+            "Perl::Critic::Policy::Community::DeprecatedFeatures" : "0",
+            "Perl::Critic::Policy::Community::DiscouragedModules" : "0",
+            "Perl::Critic::Policy::Community::DollarAB" : "0",
+            "Perl::Critic::Policy::Community::Each" : "0",
+            "Perl::Critic::Policy::Community::EmptyReturn" : "0",
+            "Perl::Critic::Policy::Community::IndirectObjectNotation" : "0",
+            "Perl::Critic::Policy::Community::LexicalForeachIterator" : "0",
+            "Perl::Critic::Policy::Community::LoopOnHash" : "0",
+            "Perl::Critic::Policy::Community::ModPerl" : "0",
+            "Perl::Critic::Policy::Community::OpenArgs" : "0",
+            "Perl::Critic::Policy::Community::OverloadOptions" : "0",
+            "Perl::Critic::Policy::Community::POSIXImports" : "0",
+            "Perl::Critic::Policy::Community::PackageMatchesFilename" : "0",
+            "Perl::Critic::Policy::Community::PreferredAlternatives" : "0",
+            "Perl::Critic::Policy::Community::StrictWarnings" : "0",
+            "Perl::Critic::Policy::Community::Threads" : "0",
+            "Perl::Critic::Policy::Community::Wantarray" : "0",
+            "Perl::Critic::Policy::Community::WarningsSwitch" : "0",
+            "Perl::Critic::Policy::Community::WhileDiamondDefaultAssignment" : "0",
+            "Perl::Critic::Policy::ControlStructures::ProhibitLabelsWithSpecialBlockNames" : "0",
+            "Perl::Critic::Policy::ControlStructures::ProhibitMutatingListFunctions" : "0",
+            "Perl::Critic::Policy::ControlStructures::ProhibitUnreachableCode" : "0",
+            "Perl::Critic::Policy::InputOutput::ProhibitBarewordFileHandles" : "0",
+            "Perl::Critic::Policy::InputOutput::ProhibitJoinedReadline" : "0",
+            "Perl::Critic::Policy::InputOutput::ProhibitTwoArgOpen" : "0",
+            "Perl::Critic::Policy::Miscellanea::ProhibitFormats" : "0",
+            "Perl::Critic::Policy::Miscellanea::ProhibitUselessNoCritic" : "0",
+            "Perl::Critic::Policy::Modules::ProhibitConditionalUseStatements" : "0",
+            "Perl::Critic::Policy::Modules::RequireNoMatchVarsWithUseEnglish" : "0",
+            "Perl::Critic::Policy::Objects::ProhibitIndirectSyntax" : "0",
+            "Perl::Critic::Policy::RegularExpressions::ProhibitUselessTopic" : "0",
+            "Perl::Critic::Policy::Subroutines::ProhibitNestedSubs" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::ProhibitLeadingZeros" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::ProhibitMixedBooleanOperators" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::ProhibitSpecialLiteralHeredocTerminator" : "0",
+            "Perl::Critic::Policy::ValuesAndExpressions::RequireUpperCaseHeredocTerminator" : "0",
+            "Perl::Critic::Policy::Variables::ProhibitPerl4PackageNames" : "0",
+            "Perl::Critic::Policy::Variables::ProhibitUnusedVariables" : "0",
+            "Software::License::Perl_5" : "0"
+         },
+         "requires" : {
+            "FindBin" : "0",
+            "Perl::Critic" : "0",
+            "Test2::Require::EnvVar" : "0.000121",
+            "Test2::Require::Module" : "0.000121",
+            "Test2::Tools::PerlCritic" : "0",
+            "Test2::V0" : "0.000121",
+            "Test::CPAN::Changes" : "0",
+            "Test::EOL" : "0",
+            "Test::Fixme" : "0.07",
+            "Test::More" : "0.98",
+            "Test::NoTabs" : "0",
+            "Test::Pod" : "0",
+            "Test::Pod::Coverage" : "0",
+            "Test::Pod::LinkCheck::Lite" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Capture::Tiny" : "0.17",
+            "Digest::SHA" : "0",
+            "ExtUtils::CBuilder" : "0",
+            "ExtUtils::MakeMaker" : "6.64",
+            "ExtUtils::ParseXS" : "3.30",
+            "FFI::CheckLib" : "0.11",
+            "File::Which" : "1.10",
+            "File::chdir" : "0",
+            "JSON::PP" : "0",
+            "List::Util" : "1.33",
+            "Path::Tiny" : "0.130",
+            "Test2::API" : "1.302096",
+            "Text::ParseWords" : "3.26",
+            "parent" : "0",
+            "perl" : "5.008004"
+         },
+         "suggests" : {
+            "Archive::Tar" : "0"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test2::API" : "1.302096",
+            "Test2::V0" : "0.000121"
+         },
+         "suggests" : {
+            "Devel::Hide" : "0"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/PerlAlien/Alien-Build/issues"
+      },
+      "homepage" : "https://metacpan.org/pod/Alien::Build",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/PerlAlien/Alien-Build.git",
+         "web" : "https://github.com/PerlAlien/Alien-Build"
+      },
+      "x_IRC" : "irc://irc.perl.org/#native"
+   },
+   "version" : "2.88",
+   "x_contributors" : [
+      "Graham Ollis <plicease@cpan.org>",
+      "Diab Jerius (DJERIUS)",
+      "Roy Storey (KIWIROY)",
+      "Ilya Pavlov",
+      "David Mertens (run4flat)",
+      "Mark Nunberg (mordy, mnunberg)",
+      "Christian Walde (Mithaldu)",
+      "Brian Wightman (MidLifeXis)",
+      "Zaki Mughal (zmughal)",
+      "mohawk (mohawk2, ETJ)",
+      "Vikas N Kumar (vikasnkumar)",
+      "Flavio Poletti (polettix)",
+      "Salvador Fandiño (salva)",
+      "Gianni Ceccarelli (dakkar)",
+      "Pavel Shaydo (zwon, trinitum)",
+      "Kang-min Liu (劉康民, gugod)",
+      "Nicholas Shipp (nshp)",
+      "Juan Julián Merelo Guervós (JJ)",
+      "Joel Berger (JBERGER)",
+      "Petr Písař (ppisar)",
+      "Lance Wicks (LANCEW)",
+      "Ahmad Fatoum (a3f, ATHREEF)",
+      "José Joaquín Atria (JJATRIA)",
+      "Duke Leto (LETO)",
+      "Shoichi Kaji (SKAJI)",
+      "Shawn Laffan (SLAFFAN)",
+      "Paul Evans (leonerd, PEVANS)",
+      "Håkon Hægland (hakonhagland, HAKONH)",
+      "nick nauwelaerts (INPHOBIA)",
+      "Florian Weimer",
+      "Marcel Telka (mtelka)"
+   ],
+   "x_generated_by_perl" : "v5.42.3",
+   "x_serialization_backend" : "JSON::PP version 4.16",
+   "x_spdx_expression" : "Artistic-1.0-Perl OR GPL-1.0-or-later",
+   "x_use_unsafe_inc" : 0
+}

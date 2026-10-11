@@ -1,0 +1,53 @@
+{
+  "object_path": "benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-power-algebraic-contract.o",
+  "object_sha256": "4c1452617d12a6398f5ae8d80d7729fff657eb95eb0aa8a55bc6f32c2359b3f2",
+  "options": [
+    "SIMD",
+    "fp-contract",
+    "algebraic-powers"
+  ],
+  "loop_start_hex": "0x1c8",
+  "loop_backedge_hex": "0x6ac",
+  "static_loop_instructions": 314,
+  "vector_f64x2_sqrt": 5,
+  "vector_f64x2_divide": 5,
+  "vector_fma_or_fms": 40,
+  "loop_calls": [],
+  "loop_stack_load_instructions": 89,
+  "loop_stack_store_instructions": 33,
+  "interpretation": "Five f64x2 sqrt/divide instructions cover ten pair distances per turn. No library calls in the optimized inverse-power loop. Stack traffic remains; this count excludes one-time callee-save prologue/epilogue and does not establish the performance bottleneck.",
+  "cpp_9_llvm_fastmath_comparison": {
+    "binary_sha256": "bbc44ad137f5d1133c15729a2187fd390381d15f7c8805d091f5f422193ed21e",
+    "loop_start_hex": "0x100003658",
+    "loop_backedge_hex": "0x1000038f8",
+    "static_loop_instructions": 169,
+    "vector_f64x2_sqrt": 4,
+    "scalar_sqrt": 2,
+    "vector_f64x2_divide": 5,
+    "scalar_divide": 1,
+    "reciprocal_estimate_instructions": 0,
+    "loop_stack_load_instructions": 21,
+    "loop_stack_store_instructions": 9,
+    "note": "Static counts; ldp/stp are each counted as one instruction. C++ permits broader fast-math reassociation than Mech FMA/algebraic-powers. Different arithmetic schedules and lane layouts make this a diagnostic comparison, not equal instruction obligations.",
+    "disassembly_path": "apple-m3-cpp-9-llvm-fastmath.disassembly.txt",
+    "compiler_provenance": "apple-m3-v04-native-optimized-50m.json; nbody-gpp-9-llvm-fastmath compile command"
+  },
+  "disassembly_path": "apple-m3-mech-optimized.disassembly.txt",
+  "compiler_provenance": "apple-m3-native-output-ablation-50m.json and its compiler snapshot",
+  "cpp_6_llvm_native_comparison": {
+    "binary_sha256": "0c211e6499d12227c8d424673c1e8d123ae0eb301f9368addd6a2de7c192297b",
+    "disassembly_path": "apple-m3-cpp-6-llvm-native.disassembly.txt",
+    "compiler_provenance": "apple-m3-v04-native-optimized-50m.json; nbody-gpp-6-llvm-native compile command",
+    "loop_start_hex": "0x10000381c",
+    "loop_backedge_hex": "0x100003ac8",
+    "static_loop_instructions": 172,
+    "vector_f64x2_sqrt": 4,
+    "scalar_sqrt": 2,
+    "vector_f64x2_divide": 4,
+    "scalar_divide": 2,
+    "reciprocal_estimate_instructions": 0,
+    "loop_stack_load_instructions": 11,
+    "loop_stack_store_instructions": 2,
+    "note": "Fastest observed C++ entry in full cohort. Static instruction counts; ldp/stp count once. This is native O3 with default LLVM floating-point policy, without broad fast-math flags. Counts are diagnostic, not a causal performance model."
+  }
+}

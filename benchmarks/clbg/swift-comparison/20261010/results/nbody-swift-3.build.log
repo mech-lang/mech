@@ -1,0 +1,9 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/nbody-swift-3.swift:64:19: warning: initialization of 'UnsafeMutablePointer<Body>' results in a dangling pointer
+        bodiesp = UnsafeMutablePointer<Body>(mutating: self.bodies)
+                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/nbody-swift-3.swift:64:61: note: implicit argument conversion from '[Body]' to 'UnsafePointer<Body>' produces a pointer valid only for the duration of the call to 'init(mutating:)'
+        bodiesp = UnsafeMutablePointer<Body>(mutating: self.bodies)
+                                                       ~~~~~^~~~~~
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/nbody-swift-3.swift:64:61: note: use the 'withUnsafeBufferPointer' method on Array in order to explicitly convert argument to buffer pointer valid for a defined scope
+        bodiesp = UnsafeMutablePointer<Body>(mutating: self.bodies)
+                                                            ^

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="all" >
+<meta name="description" content="Performance measurements for all the Pharo Smalltalk toy benchmark programs." >
+<title>Pharo Smalltalk performance measurements (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article,footer{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}code, h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}nav p{margin:0 .5em}ul{clear:left;margin:-0.3em 0 1.5em;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a,span{border-bottom: .1em solid #333;padding-bottom: .1em}.best{font-weight:bold}.message{font-size: .8em}table{color:#333;margin:1.3em auto 0;text-align:right}tbody::after{content:"-";display:block;line-height:2.6em;visibility:hidden}td{border-bottom: .15em dotted #eee;padding: .7em 0 0 1em}td a, th a{display:block}td:first-child,th:first-child{text-align:left;padding-left:0}th{font-weight:normal;padding:0 0 0 1em}@media only screen{th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7){display:none}}@media only screen and (min-width: 27em){th:nth-child(3),td:nth-child(3){display:table-cell}}@media only screen and (min-width: 38em){th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6){display:table-cell}}@media only screen and (min-width: 47em){th:nth-child(7),td:nth-child(7){display:table-cell}}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+
+<article>
+  <div>
+    <h1>all Pharo Smalltalk programs & measurements</h1>
+    <aside>
+      <p>File system caches and swap are cleared before measurements are made for each program — so each program has a similiar initial context. That makes the first measurements different from later measurements.
+    </aside>
+  </div>
+  <section>
+    <table>
+      <tbody>
+      <tr>
+        <td colspan="7" class="message"><p>Pharo 12.0.0<br>
+Pharo-12.0.0+SNAPSHOT.build.1507.sha.<br>
+a4f8da8972214b9c9c39c33e826394a109911041 (64 Bit)<br>
+<br>
+Compiler: 5.4.0 20160609<br>
+
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/binarytrees-pharo-1.html"><span>binary-trees&nbsp;</span></a>
+          <td>35.48—35.81
+          <td>35.216
+          <td>399,409
+          <td>673
+          <td>28.64
+          <td>&nbsp;21
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/fannkuchredux-pharo-1.html"><span>fannkuch-redux&nbsp;</span></a>
+          <td>482.09
+          <td>481.235
+          <td>143,667
+          <td>871
+          <td>30.05
+          <td>&nbsp;12
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/fasta-pharo-2.html"><span>fasta&nbsp;&nbsp;#2</span></a>
+          <td>43.44—43.73
+          <td>43.163
+          <td>142,504
+          <td>1381
+          <td>31.83
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/fasta-pharo-1.html"><span>fasta&nbsp;</span></a>
+          <td>94.12—95.29
+          <td>92.729
+          <td>143,000
+          <td>1375
+          <td>30.09
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/knucleotide-pharo-1.html"><span>k-nucleotide&nbsp;</span></a>
+          <td>562.32
+          <td>560.981
+          <td>671,412
+          <td>1196
+          <td>30.06
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <td><a href="../program/knucleotide-pharo-5.html"><span>k-nucleotide&nbsp;&nbsp;#5</span></a>
+          <td>
+          <td class="message">Empty
+          <td>
+          <td>
+          <td>30.06
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/knucleotide-pharo-2.html"><span>k-nucleotide&nbsp;&nbsp;#2</span></a>
+          <td>494.22
+          <td>493.709
+          <td>671,744
+          <td>1105
+          <td>28.94
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/mandelbrot-pharo-2.html"><span>mandelbrot&nbsp;&nbsp;#2</span></a>
+          <td>344.08
+          <td>344.214
+          <td>175,542
+          <td>574
+          <td>33.82
+          <td>&nbsp;16,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/mandelbrot-pharo-1.html"><span>mandelbrot&nbsp;</span></a>
+          <td>366.31
+          <td>366.486
+          <td>176,222
+          <td>573
+          <td>29.93
+          <td>&nbsp;16,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/nbody-pharo-1.html"><span>n-body&nbsp;</span></a>
+          <td>115.80—116.91
+          <td>114.746
+          <td>143,004
+          <td>1801
+          <td>33.97
+          <td>&nbsp;50,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/pidigits-pharo-1.html"><span>pidigits&nbsp;</span></a>
+          <td>7.33
+          <td>7.309
+          <td>160,817
+          <td>706
+          <td>30.34
+          <td>&nbsp;10,000
+      <tbody>
+        <tr>
+          <td><a href="../program/regexredux-pharo-1.html"><span>regex-redux&nbsp;</span></a>
+          <td>
+          <td class="message">Empty
+          <td>
+          <td>
+          <td>30.34
+          <td>&nbsp;5,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/revcomp-pharo-1.html"><span>reverse-complement&nbsp;</span></a>
+          <td>564.86
+          <td>565.032
+          <td>2,728,526
+          <td>907
+          <td>30.52
+          <td>&nbsp;100,000,001
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/revcomp-pharo-2.html"><span>reverse-complement&nbsp;&nbsp;#2</span></a>
+          <td>153.80—155.49
+          <td>151.894
+          <td>1,164,440
+          <td>724
+          <td>34.42
+          <td>&nbsp;100,000,001
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/spectralnorm-pharo-1.html"><span>spectral-norm&nbsp;</span></a>
+          <td>53.76—53.96
+          <td>53.392
+          <td>142,340
+          <td>683
+          <td>32.38
+          <td>&nbsp;5,500
+    </table>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../how-programs-are-measured.html"><span>How programs are measured</span></a>
+    </ul>
+  </nav>
+</footer>
+

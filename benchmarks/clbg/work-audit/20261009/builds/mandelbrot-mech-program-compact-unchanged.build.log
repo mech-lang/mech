@@ -1,0 +1,2 @@
+ld: warning: no platform load command found in '/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-LrrXPA/grid.o', assuming: macOS
+[Output] Cranelift AOT Mech application written to: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/mandelbrot-mech-program-compact-unchanged

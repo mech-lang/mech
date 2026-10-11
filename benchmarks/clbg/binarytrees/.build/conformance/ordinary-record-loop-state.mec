@@ -1,0 +1,7 @@
+<accum> := <{i<u64>, total<u64>}>
+More(row<accum>) = (more<bool>) :=
+  more := row.i < 10.
+Step(row<accum>) = (result<accum>) :=
+  result := {i: row.i + 1, total: row.total + row.i}.
+row := control/while({i: 0, total: 0}, More, Step)
+io/print("{} {}\n", row.i, row.total)

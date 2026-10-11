@@ -1,0 +1,4 @@
+Narrow(x<bigint>) => <u64> := x
+x<bigint> := 1
+y := Narrow(-x)
+io/print("{}\n", y)

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>n-body Intel Fortran&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>n-body Intel Fortran&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/nbody.html#nbody">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">! The Computer Language Benchmarks Game</span>
+<span class="slc">! https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">!</span>
+<span class="slc">!   Translated from Mark C. Lewis nbody.java by Simon Geard</span>
+<span class="slc">!   Revised by Mike Garrahan</span>
+<span class="slc">!</span>
+<span class="slc">! ifort -O3 -xHost -o nbody nbody.f90</span>
+<span class="slc">!</span>
+
+<span class="kwa">program</span> nbody
+  <span class="kwa">implicit none</span>
+  <span class="kwa">integer</span><span class="opt">,</span> <span class="kwa">parameter</span> <span class="opt">::</span> dp <span class="opt">=</span> <span class="kwd">selected_real_kind</span><span class="opt">(</span><span class="num">15</span><span class="opt">,</span> <span class="num">307</span><span class="opt">)</span>
+
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwa">parameter</span> <span class="opt">::</span> TSTEP <span class="opt">=</span> <span class="num">0.01d0</span>
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwa">parameter</span> <span class="opt">::</span> PI <span class="opt">=</span> <span class="num">3.141592653589793d0</span>
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwa">parameter</span> <span class="opt">::</span> SOLAR_MASS <span class="opt">=</span> <span class="num">4</span> <span class="opt">*</span> PI <span class="opt">*</span> PI
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwa">parameter</span> <span class="opt">::</span> DAYS_PER_YEAR <span class="opt">=</span> <span class="num">365.24d0</span>
+
+  <span class="kwa">integer</span><span class="opt">,</span> <span class="kwa">parameter</span> <span class="opt">::</span> NB <span class="opt">=</span> <span class="num">5</span>
+  <span class="kwa">integer</span><span class="opt">,</span> <span class="kwa">parameter</span> <span class="opt">::</span> NPAIR <span class="opt">=</span> NB <span class="opt">* (</span>NB <span class="opt">-</span> <span class="num">1</span><span class="opt">) /</span> <span class="num">2</span>
+
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">) ::</span> <span class="kwd">x</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NB<span class="opt">),</span> <span class="kwd">v</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NB<span class="opt">),</span> <span class="kwd">mass</span><span class="opt">(</span>NB<span class="opt">)</span>
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">) ::</span> e
+
+  <span class="kwa">integer</span> <span class="opt">::</span> nstep<span class="opt">,</span> i
+  <span class="kwa">character</span><span class="opt">(</span>len<span class="opt">=</span><span class="num">8</span><span class="opt">) ::</span> argv
+
+  <span class="kwa">call</span> <span class="kwd">getarg</span><span class="opt">(</span><span class="num">1</span><span class="opt">,</span> argv<span class="opt">)</span>
+  <span class="kwa">read</span> <span class="opt">(</span>argv<span class="opt">,*)</span> nstep
+
+  <span class="kwa">call</span> <span class="kwd">init</span><span class="opt">(</span>x<span class="opt">,</span> v<span class="opt">,</span> mass<span class="opt">)</span>
+
+  e <span class="opt">=</span> <span class="kwd">energy</span><span class="opt">(</span>x<span class="opt">,</span> v<span class="opt">,</span> mass<span class="opt">)</span>
+  <span class="kwa">write</span> <span class="opt">(*,</span><span class="sng">&#39;(f12.9)&#39;</span><span class="opt">)</span> e
+
+  <span class="kwa">do</span> i <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> nstep
+     <span class="kwa">call</span> <span class="kwd">advance</span><span class="opt">(</span>x<span class="opt">,</span> v<span class="opt">,</span> mass<span class="opt">)</span>
+  <span class="kwa">end do</span>
+
+  e <span class="opt">=</span> <span class="kwd">energy</span><span class="opt">(</span>x<span class="opt">,</span> v<span class="opt">,</span> mass<span class="opt">)</span>
+  <span class="kwa">write</span> <span class="opt">(*,</span><span class="sng">&#39;(f12.9)&#39;</span><span class="opt">)</span> e
+
+<span class="kwa">contains</span>
+
+  <span class="kwa">subroutine</span> <span class="kwd">advance</span><span class="opt">(</span>x<span class="opt">,</span> v<span class="opt">,</span> mass<span class="opt">)</span>
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwd">intent</span><span class="opt">(</span>inout<span class="opt">) ::</span> <span class="kwd">x</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NB<span class="opt">),</span> <span class="kwd">v</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NB<span class="opt">)</span>
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwd">intent</span><span class="opt">(</span>in<span class="opt">) ::</span> <span class="kwd">mass</span><span class="opt">(</span>NB<span class="opt">)</span>
+
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">) ::</span> <span class="kwd">r</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NPAIR<span class="opt">),</span> <span class="kwd">rmag</span><span class="opt">(</span><span class="num">3</span><span class="opt">)</span>
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">) ::</span> <span class="kwd">distance</span><span class="opt">(</span>NPAIR<span class="opt">),</span> <span class="kwd">mag</span><span class="opt">(</span>NPAIR<span class="opt">)</span>
+    <span class="kwa">integer</span> <span class="opt">::</span> i<span class="opt">,</span> j<span class="opt">,</span> k
+
+    k <span class="opt">=</span> <span class="num">1</span>
+    <span class="kwa">do</span> i <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> NB <span class="opt">-</span> <span class="num">1</span>
+       <span class="kwa">do</span> j <span class="opt">=</span> i <span class="opt">+</span> <span class="num">1</span><span class="opt">,</span> NB
+          <span class="kwd">r</span><span class="opt">(:,</span>k<span class="opt">) =</span> <span class="kwd">x</span><span class="opt">(:,</span>i<span class="opt">) -</span> <span class="kwd">x</span><span class="opt">(:,</span>j<span class="opt">)</span>
+          k <span class="opt">=</span> k <span class="opt">+</span> <span class="num">1</span>
+       <span class="kwa">end do</span>
+    <span class="kwa">end do</span>
+
+    distance <span class="opt">=</span> <span class="kwd">sqrt</span><span class="opt">(</span><span class="kwd">sum</span><span class="opt">(</span>r<span class="opt">**</span><span class="num">2</span><span class="opt">,</span> dim<span class="opt">=</span><span class="num">1</span><span class="opt">))</span>
+    mag <span class="opt">=</span> TSTEP <span class="opt">/</span> distance<span class="opt">**</span><span class="num">3</span>
+
+    k <span class="opt">=</span> <span class="num">1</span>
+    <span class="kwa">do</span> i <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> NB <span class="opt">-</span> <span class="num">1</span>
+       <span class="kwa">do</span> j <span class="opt">=</span> i <span class="opt">+</span> <span class="num">1</span><span class="opt">,</span> NB
+          rmag <span class="opt">=</span> <span class="kwd">mag</span><span class="opt">(</span>k<span class="opt">) *</span> <span class="kwd">r</span><span class="opt">(:,</span>k<span class="opt">)</span>
+          <span class="kwd">v</span><span class="opt">(:,</span>i<span class="opt">) =</span> <span class="kwd">v</span><span class="opt">(:,</span>i<span class="opt">) -</span> <span class="kwd">mass</span><span class="opt">(</span>j<span class="opt">) *</span> rmag
+          <span class="kwd">v</span><span class="opt">(:,</span>j<span class="opt">) =</span> <span class="kwd">v</span><span class="opt">(:,</span>j<span class="opt">) +</span> <span class="kwd">mass</span><span class="opt">(</span>i<span class="opt">) *</span> rmag
+          k <span class="opt">=</span> k <span class="opt">+</span> <span class="num">1</span>
+       <span class="kwa">end do</span>
+    <span class="kwa">end do</span>
+
+    x <span class="opt">=</span> x <span class="opt">+</span> TSTEP <span class="opt">*</span> v
+  <span class="kwa">end subroutine</span> advance
+
+  <span class="kwa">function</span> <span class="kwd">energy</span><span class="opt">(</span>x<span class="opt">,</span> v<span class="opt">,</span> mass<span class="opt">)</span>
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">) ::</span> energy
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwd">intent</span><span class="opt">(</span>in<span class="opt">) ::</span> <span class="kwd">x</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NB<span class="opt">),</span> <span class="kwd">v</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NB<span class="opt">),</span> <span class="kwd">mass</span><span class="opt">(</span>NB<span class="opt">)</span>
+
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">) ::</span> <span class="kwd">r</span><span class="opt">(</span><span class="num">3</span><span class="opt">),</span> distance<span class="opt">,</span> ke<span class="opt">,</span> pe
+    <span class="kwa">integer</span> <span class="opt">::</span> i<span class="opt">,</span> j
+
+    ke <span class="opt">=</span> <span class="num">0.5d0</span> <span class="opt">*</span> <span class="kwd">dot_product</span><span class="opt">(</span>mass<span class="opt">,</span> <span class="kwd">sum</span><span class="opt">(</span>v<span class="opt">**</span><span class="num">2</span><span class="opt">,</span> dim<span class="opt">=</span><span class="num">1</span><span class="opt">))</span>
+    pe <span class="opt">=</span> <span class="num">0.0d0</span>
+    <span class="kwa">do</span> i <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> NB <span class="opt">-</span> <span class="num">1</span>
+       <span class="kwa">do</span> j <span class="opt">=</span> i <span class="opt">+</span> <span class="num">1</span><span class="opt">,</span> NB
+          r <span class="opt">=</span> <span class="kwd">x</span><span class="opt">(:,</span>i<span class="opt">) -</span> <span class="kwd">x</span><span class="opt">(:,</span>j<span class="opt">)</span>
+          distance <span class="opt">=</span> <span class="kwd">sqrt</span><span class="opt">(</span><span class="kwd">sum</span><span class="opt">(</span>r<span class="opt">**</span><span class="num">2</span><span class="opt">))</span>
+          pe <span class="opt">=</span> pe <span class="opt">-</span> <span class="kwd">mass</span><span class="opt">(</span>i<span class="opt">) *</span> <span class="kwd">mass</span><span class="opt">(</span>j<span class="opt">) /</span> distance
+       <span class="kwa">end do</span>
+    <span class="kwa">end do</span>
+    energy <span class="opt">=</span> ke <span class="opt">+</span> pe
+  <span class="kwa">end function</span> energy
+
+  <span class="kwa">subroutine</span> <span class="kwd">init</span><span class="opt">(</span>x<span class="opt">,</span> v<span class="opt">,</span> mass<span class="opt">)</span>
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwd">intent</span><span class="opt">(</span>out<span class="opt">) ::</span> <span class="kwd">x</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NB<span class="opt">),</span> <span class="kwd">v</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span>NB<span class="opt">),</span> <span class="kwd">mass</span><span class="opt">(</span>NB<span class="opt">)</span>
+    <span class="kwa">integer</span><span class="opt">,</span> <span class="kwa">parameter</span> <span class="opt">::</span> SUN <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> JUPITER <span class="opt">=</span> <span class="num">2</span><span class="opt">,</span> SATURN <span class="opt">=</span> <span class="num">3</span><span class="opt">, &amp;</span>
+         URANUS <span class="opt">=</span> <span class="num">4</span><span class="opt">,</span> NEPTUNE <span class="opt">=</span> <span class="num">5</span>
+    <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">) ::</span> <span class="kwd">momentum</span><span class="opt">(</span><span class="num">3</span><span class="opt">)</span>
+
+    <span class="kwd">x</span><span class="opt">(:,</span>JUPITER<span class="opt">) = (/ &amp;</span>
+         <span class="num">4.84143144246472090d</span><span class="opt">+</span><span class="num">00</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">1.16032004402742839d</span><span class="opt">+</span><span class="num">00</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">1.03622044471123109d</span><span class="opt">-</span><span class="num">01</span> <span class="opt">/)</span>
+    <span class="kwd">v</span><span class="opt">(:,</span>JUPITER<span class="opt">) = (/ &amp;</span>
+         <span class="num">1.66007664274403694d</span><span class="opt">-</span><span class="num">03</span><span class="opt">, &amp;</span>
+         <span class="num">7.69901118419740425d</span><span class="opt">-</span><span class="num">03</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">6.90460016972063023d</span><span class="opt">-</span><span class="num">05</span> <span class="opt">/)</span>
+    <span class="kwd">mass</span><span class="opt">(</span>JUPITER<span class="opt">) = &amp;</span>
+         <span class="num">9.54791938424326609d</span><span class="opt">-</span><span class="num">04</span>
+
+    <span class="kwd">x</span><span class="opt">(:,</span>SATURN<span class="opt">) = (/ &amp;</span>
+         <span class="num">8.34336671824457987d</span><span class="opt">+</span><span class="num">00</span><span class="opt">, &amp;</span>
+         <span class="num">4.12479856412430479d</span><span class="opt">+</span><span class="num">00</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">4.03523417114321381d</span><span class="opt">-</span><span class="num">01</span> <span class="opt">/)</span>
+    <span class="kwd">v</span><span class="opt">(:,</span>SATURN<span class="opt">) = (/ &amp;</span>
+        <span class="opt">-</span><span class="num">2.76742510726862411d</span><span class="opt">-</span><span class="num">03</span><span class="opt">, &amp;</span>
+         <span class="num">4.99852801234917238d</span><span class="opt">-</span><span class="num">03</span><span class="opt">, &amp;</span>
+         <span class="num">2.30417297573763929d</span><span class="opt">-</span><span class="num">05</span> <span class="opt">/)</span>
+    <span class="kwd">mass</span><span class="opt">(</span>SATURN<span class="opt">) = &amp;</span>
+         <span class="num">2.85885980666130812d</span><span class="opt">-</span><span class="num">04</span>
+
+    <span class="kwd">x</span><span class="opt">(:,</span>URANUS<span class="opt">) = (/ &amp;</span>
+         <span class="num">1.28943695621391310d</span><span class="opt">+</span><span class="num">01</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">1.51111514016986312d</span><span class="opt">+</span><span class="num">01</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">2.23307578892655734d</span><span class="opt">-</span><span class="num">01</span> <span class="opt">/)</span>
+    <span class="kwd">v</span><span class="opt">(:,</span>URANUS<span class="opt">) = (/ &amp;</span>
+         <span class="num">2.96460137564761618d</span><span class="opt">-</span><span class="num">03</span><span class="opt">, &amp;</span>
+         <span class="num">2.37847173959480950d</span><span class="opt">-</span><span class="num">03</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">2.96589568540237556d</span><span class="opt">-</span><span class="num">05</span> <span class="opt">/)</span>
+    <span class="kwd">mass</span><span class="opt">(</span>URANUS<span class="opt">) = &amp;</span>
+         <span class="num">4.36624404335156298d</span><span class="opt">-</span><span class="num">05</span>
+
+    <span class="kwd">x</span><span class="opt">(:,</span>NEPTUNE<span class="opt">) = (/ &amp;</span>
+         <span class="num">1.53796971148509165d</span><span class="opt">+</span><span class="num">01</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">2.59193146099879641d</span><span class="opt">+</span><span class="num">01</span><span class="opt">, &amp;</span>
+         <span class="num">1.79258772950371181d</span><span class="opt">-</span><span class="num">01</span> <span class="opt">/)</span>
+    <span class="kwd">v</span><span class="opt">(:,</span>NEPTUNE<span class="opt">) = (/ &amp;</span>
+         <span class="num">2.68067772490389322d</span><span class="opt">-</span><span class="num">03</span><span class="opt">, &amp;</span>
+         <span class="num">1.62824170038242295d</span><span class="opt">-</span><span class="num">03</span><span class="opt">, &amp;</span>
+        <span class="opt">-</span><span class="num">9.51592254519715870d</span><span class="opt">-</span><span class="num">05</span> <span class="opt">/)</span>
+    <span class="kwd">mass</span><span class="opt">(</span>NEPTUNE<span class="opt">) = &amp;</span>
+         <span class="num">5.15138902046611451d</span><span class="opt">-</span><span class="num">05</span>
+
+    <span class="kwd">x</span><span class="opt">(:,</span>SUN<span class="opt">) =</span> <span class="num">0.0d0</span>
+    <span class="kwd">v</span><span class="opt">(:,</span>SUN<span class="opt">) =</span> <span class="num">0.0d0</span>
+    <span class="kwd">mass</span><span class="opt">(</span>SUN<span class="opt">) =</span> <span class="num">1.0d0</span>
+
+    v <span class="opt">=</span> v <span class="opt">*</span> DAYS_PER_YEAR
+    mass <span class="opt">=</span> mass <span class="opt">*</span> SOLAR_MASS
+
+    momentum <span class="opt">=</span> <span class="kwd">matmul</span><span class="opt">(</span>v<span class="opt">,</span> mass<span class="opt">)</span>
+    <span class="kwd">v</span><span class="opt">(:,</span>SUN<span class="opt">) =</span> <span class="kwd">v</span><span class="opt">(:,</span>SUN<span class="opt">) -</span> momentum <span class="opt">/</span> <span class="kwd">mass</span><span class="opt">(</span>SUN<span class="opt">)</span>
+  <span class="kwa">end subroutine</span> init
+
+<span class="kwa">end program</span> nbody
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+ifx (IFX)
+2024.1.0 20240308
+
+
+ Sat, 11 Jan 2025 20:29:18 GMT
+
+MAKE:
+mv nbody.ifx-3.ifx nbody.ifx-3.f90
+~/intel/oneapi/compiler/latest/bin/ifx -O3 -march=ivybridge -ipo -static nbody.ifx-3.f90 -o nbody.ifx-3.ifx_run
+ld: /home/dunham/intel/oneapi/compiler/2024.1/lib/libifcoremt.a(for_close_proc.o): in function `for__close_proc':
+for_close_proc.c:(.text+0x1df): warning: Using 'dlopen' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+rm nbody.ifx-3.f90
+
+4.43s to complete and log all make actions
+
+COMMAND LINE:
+ ./nbody.ifx-3.ifx_run 50000000
+
+PROGRAM OUTPUT:
+-0.169075164
+-0.169059907
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

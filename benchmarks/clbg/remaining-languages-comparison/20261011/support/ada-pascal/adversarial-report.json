@@ -1,0 +1,1064 @@
+{
+  "probes": [
+    {
+      "id": "knucleotide-ada-compact",
+      "probe": "case-crlf-boundaries",
+      "passed": true,
+      "bytes": 189,
+      "sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "reference_sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-compact",
+      "probe": "case-crlf-boundaries",
+      "passed": true,
+      "bytes": 189,
+      "sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "reference_sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-optimized",
+      "probe": "case-crlf-boundaries",
+      "passed": true,
+      "bytes": 189,
+      "sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "reference_sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-optimized",
+      "probe": "case-crlf-boundaries",
+      "passed": true,
+      "bytes": 189,
+      "sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "reference_sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-compact",
+      "probe": "full36bit-upper-key-collision",
+      "passed": true,
+      "bytes": 190,
+      "sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "reference_sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-compact",
+      "probe": "full36bit-upper-key-collision",
+      "passed": true,
+      "bytes": 190,
+      "sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "reference_sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-optimized",
+      "probe": "full36bit-upper-key-collision",
+      "passed": true,
+      "bytes": 190,
+      "sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "reference_sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-optimized",
+      "probe": "full36bit-upper-key-collision",
+      "passed": true,
+      "bytes": 190,
+      "sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "reference_sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-compact",
+      "probe": "overlaps-ties",
+      "passed": true,
+      "bytes": 190,
+      "sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "reference_sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-compact",
+      "probe": "overlaps-ties",
+      "passed": true,
+      "bytes": 190,
+      "sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "reference_sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-optimized",
+      "probe": "overlaps-ties",
+      "passed": true,
+      "bytes": 190,
+      "sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "reference_sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-optimized",
+      "probe": "overlaps-ties",
+      "passed": true,
+      "bytes": 190,
+      "sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "reference_sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-compact",
+      "probe": "map-growth",
+      "passed": true,
+      "bytes": 243,
+      "sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "reference_sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-compact",
+      "probe": "map-growth",
+      "passed": true,
+      "bytes": 243,
+      "sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "reference_sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-optimized",
+      "probe": "map-growth",
+      "passed": true,
+      "bytes": 243,
+      "sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "reference_sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-optimized",
+      "probe": "map-growth",
+      "passed": true,
+      "bytes": 243,
+      "sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "reference_sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-compact",
+      "probe": "absent-short",
+      "passed": true,
+      "bytes": 136,
+      "sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "reference_sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-compact",
+      "probe": "absent-short",
+      "passed": true,
+      "bytes": 136,
+      "sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "reference_sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-ada-optimized",
+      "probe": "absent-short",
+      "passed": true,
+      "bytes": 136,
+      "sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "reference_sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "returncode": 0
+    },
+    {
+      "id": "knucleotide-pascal-optimized",
+      "probe": "absent-short",
+      "passed": true,
+      "bytes": 136,
+      "sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "reference_sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-2",
+      "probe": "partial-row-1",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-1",
+      "probe": "partial-row-1",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-2-faithful",
+      "probe": "partial-row-1",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-3",
+      "probe": "partial-row-1",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "reference_sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-2",
+      "probe": "partial-row-3",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-1",
+      "probe": "partial-row-3",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-2-faithful",
+      "probe": "partial-row-3",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-3",
+      "probe": "partial-row-3",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "reference_sha256": "41491c34d62130b6458d0622bb6e2299714cd6504f7fe53251a51b2bf957c942",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-2",
+      "probe": "partial-row-9",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-1",
+      "probe": "partial-row-9",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-2-faithful",
+      "probe": "partial-row-9",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-3",
+      "probe": "partial-row-9",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "reference_sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-2",
+      "probe": "partial-row-10",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-1",
+      "probe": "partial-row-10",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-2-faithful",
+      "probe": "partial-row-10",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-3",
+      "probe": "partial-row-10",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "reference_sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-2",
+      "probe": "partial-row-11",
+      "passed": true,
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-1",
+      "probe": "partial-row-11",
+      "passed": true,
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-2-faithful",
+      "probe": "partial-row-11",
+      "passed": true,
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-3",
+      "probe": "partial-row-11",
+      "passed": true,
+      "bytes": 30,
+      "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "reference_sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-2",
+      "probe": "partial-row-27",
+      "passed": true,
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-1",
+      "probe": "partial-row-27",
+      "passed": true,
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-2-faithful",
+      "probe": "partial-row-27",
+      "passed": true,
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-3",
+      "probe": "partial-row-27",
+      "passed": true,
+      "bytes": 45,
+      "sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "reference_sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-2",
+      "probe": "partial-row-30",
+      "passed": true,
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-gnat-1",
+      "probe": "partial-row-30",
+      "passed": true,
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-2-faithful",
+      "probe": "partial-row-30",
+      "passed": true,
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "returncode": 0
+    },
+    {
+      "id": "pidigits-fpascal-3",
+      "probe": "partial-row-30",
+      "passed": true,
+      "bytes": 45,
+      "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "reference_sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-2",
+      "probe": "PBM-width-1",
+      "passed": true,
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-3",
+      "probe": "PBM-width-1",
+      "passed": true,
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-2",
+      "probe": "PBM-width-1",
+      "passed": true,
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-1",
+      "probe": "PBM-width-1",
+      "passed": true,
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-3",
+      "probe": "PBM-width-1",
+      "passed": true,
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-6-native",
+      "probe": "PBM-width-1",
+      "passed": true,
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-7-native",
+      "probe": "PBM-width-1",
+      "passed": true,
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-5-native",
+      "probe": "PBM-width-1",
+      "passed": true,
+      "bytes": 8,
+      "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-2",
+      "probe": "PBM-width-7",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-3",
+      "probe": "PBM-width-7",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-2",
+      "probe": "PBM-width-7",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-1",
+      "probe": "PBM-width-7",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-3",
+      "probe": "PBM-width-7",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-6-native",
+      "probe": "PBM-width-7",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-7-native",
+      "probe": "PBM-width-7",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-5-native",
+      "probe": "PBM-width-7",
+      "passed": true,
+      "bytes": 14,
+      "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-2",
+      "probe": "PBM-width-8",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "reference_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-3",
+      "probe": "PBM-width-8",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "reference_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-2",
+      "probe": "PBM-width-8",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "reference_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-1",
+      "probe": "PBM-width-8",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "reference_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-3",
+      "probe": "PBM-width-8",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "reference_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-6-native",
+      "probe": "PBM-width-8",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "reference_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-7-native",
+      "probe": "PBM-width-8",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "reference_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-5-native",
+      "probe": "PBM-width-8",
+      "passed": true,
+      "bytes": 15,
+      "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "reference_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-2",
+      "probe": "PBM-width-9",
+      "passed": true,
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "reference_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-3",
+      "probe": "PBM-width-9",
+      "passed": true,
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "reference_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-2",
+      "probe": "PBM-width-9",
+      "passed": true,
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "reference_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-1",
+      "probe": "PBM-width-9",
+      "passed": true,
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "reference_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-3",
+      "probe": "PBM-width-9",
+      "passed": true,
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "reference_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-6-native",
+      "probe": "PBM-width-9",
+      "passed": true,
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "reference_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-7-native",
+      "probe": "PBM-width-9",
+      "passed": true,
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "reference_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-5-native",
+      "probe": "PBM-width-9",
+      "passed": true,
+      "bytes": 25,
+      "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "reference_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-2",
+      "probe": "PBM-width-31",
+      "passed": true,
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-3",
+      "probe": "PBM-width-31",
+      "passed": true,
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-2",
+      "probe": "PBM-width-31",
+      "passed": true,
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-1",
+      "probe": "PBM-width-31",
+      "passed": true,
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-3",
+      "probe": "PBM-width-31",
+      "passed": true,
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-6-native",
+      "probe": "PBM-width-31",
+      "passed": true,
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-7-native",
+      "probe": "PBM-width-31",
+      "passed": true,
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-5-native",
+      "probe": "PBM-width-31",
+      "passed": true,
+      "bytes": 133,
+      "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-2",
+      "probe": "PBM-width-32",
+      "passed": true,
+      "bytes": 137,
+      "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-gnat-3",
+      "probe": "PBM-width-32",
+      "passed": true,
+      "bytes": 137,
+      "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-2",
+      "probe": "PBM-width-32",
+      "passed": true,
+      "bytes": 137,
+      "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-1",
+      "probe": "PBM-width-32",
+      "passed": true,
+      "bytes": 137,
+      "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-3",
+      "probe": "PBM-width-32",
+      "passed": true,
+      "bytes": 137,
+      "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-6-native",
+      "probe": "PBM-width-32",
+      "passed": true,
+      "bytes": 137,
+      "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-7-native",
+      "probe": "PBM-width-32",
+      "passed": true,
+      "bytes": 137,
+      "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "returncode": 0
+    },
+    {
+      "id": "mandelbrot-fpascal-5-native",
+      "probe": "PBM-width-32",
+      "passed": true,
+      "bytes": 137,
+      "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+      "returncode": 0
+    },
+    {
+      "id": "regexredux-ada-pcre2",
+      "probe": "patterns-order-nonoverlap",
+      "passed": true,
+      "bytes": 257,
+      "sha256": "c30f7b8f230e4aca11a05e27f15d09b1c3a77b21354f59ce2c012486e3258680",
+      "reference_sha256": "c30f7b8f230e4aca11a05e27f15d09b1c3a77b21354f59ce2c012486e3258680",
+      "returncode": 0
+    },
+    {
+      "id": "regexredux-pascal-pcre2",
+      "probe": "patterns-order-nonoverlap",
+      "passed": true,
+      "bytes": 257,
+      "sha256": "c30f7b8f230e4aca11a05e27f15d09b1c3a77b21354f59ce2c012486e3258680",
+      "reference_sha256": "c30f7b8f230e4aca11a05e27f15d09b1c3a77b21354f59ce2c012486e3258680",
+      "returncode": 0
+    }
+  ],
+  "k_reference_maps": [
+    {
+      "name": "case-crlf-boundaries",
+      "stdin_sha256": "c77acfa79d244346f9ce8e83b460e161b4a46b96c6be548ba69a60440e77eb7c",
+      "reference_sha256": "89e7d2acb078a634ea330ebc6c836d8980ae5b88ba88e8904510e9a4ad763a1d",
+      "maps": {
+        "1": {
+          "distinct": 4,
+          "windows": 40
+        },
+        "2": {
+          "distinct": 10,
+          "windows": 39
+        },
+        "3": {
+          "distinct": 16,
+          "windows": 38
+        },
+        "4": {
+          "distinct": 20,
+          "windows": 37
+        },
+        "6": {
+          "distinct": 22,
+          "windows": 35
+        },
+        "12": {
+          "distinct": 22,
+          "windows": 29
+        },
+        "18": {
+          "distinct": 22,
+          "windows": 23
+        }
+      }
+    },
+    {
+      "name": "full36bit-upper-key-collision",
+      "stdin_sha256": "927022d410a0685a4dc674b3737d3a1c7f1343a5c4da61811b2d4102ee39cc83",
+      "reference_sha256": "29050fb1c9d9e47dd1f3cba7120cea60bdcc92cd46ddef913c08f43619a7a05a",
+      "maps": {
+        "1": {
+          "distinct": 4,
+          "windows": 94
+        },
+        "2": {
+          "distinct": 10,
+          "windows": 93
+        },
+        "3": {
+          "distinct": 19,
+          "windows": 92
+        },
+        "4": {
+          "distinct": 29,
+          "windows": 91
+        },
+        "6": {
+          "distinct": 37,
+          "windows": 89
+        },
+        "12": {
+          "distinct": 55,
+          "windows": 83
+        },
+        "18": {
+          "distinct": 72,
+          "windows": 77
+        }
+      }
+    },
+    {
+      "name": "overlaps-ties",
+      "stdin_sha256": "97fb5b31db9c13bc4a1049e6a2110ce9e349c80503d33cc65d542b7e9d52c537",
+      "reference_sha256": "3ba5640caa4a52395eba3080eb81e96f33eda3e6e803183b6dff78920666cd9c",
+      "maps": {
+        "1": {
+          "distinct": 4,
+          "windows": 304
+        },
+        "2": {
+          "distinct": 10,
+          "windows": 303
+        },
+        "3": {
+          "distinct": 17,
+          "windows": 302
+        },
+        "4": {
+          "distinct": 24,
+          "windows": 301
+        },
+        "6": {
+          "distinct": 28,
+          "windows": 299
+        },
+        "12": {
+          "distinct": 28,
+          "windows": 293
+        },
+        "18": {
+          "distinct": 28,
+          "windows": 287
+        }
+      }
+    },
+    {
+      "name": "map-growth",
+      "stdin_sha256": "32b284e8ae3c3de538078c77b79ef7e6d77f59367b8803cd9a80fcf30a65df73",
+      "reference_sha256": "2cfa60833fde77b22b1334c9fa3ed869fa2cd1f55ea22624ad4dfb258ac4562c",
+      "maps": {
+        "1": {
+          "distinct": 4,
+          "windows": 20000
+        },
+        "2": {
+          "distinct": 16,
+          "windows": 19999
+        },
+        "3": {
+          "distinct": 64,
+          "windows": 19998
+        },
+        "4": {
+          "distinct": 256,
+          "windows": 19997
+        },
+        "6": {
+          "distinct": 4069,
+          "windows": 19995
+        },
+        "12": {
+          "distinct": 19973,
+          "windows": 19989
+        },
+        "18": {
+          "distinct": 19983,
+          "windows": 19983
+        }
+      }
+    },
+    {
+      "name": "absent-short",
+      "stdin_sha256": "7106a0304c499ccc6dfb4788e171540a3b05a8a7d8f2585cd2de6405d24d46c5",
+      "reference_sha256": "4533f140ce5def5a487f2b90451aa61e95517a657db6b175e7b13834c157318e",
+      "maps": {
+        "1": {
+          "distinct": 4,
+          "windows": 6
+        },
+        "2": {
+          "distinct": 4,
+          "windows": 5
+        },
+        "3": {
+          "distinct": 4,
+          "windows": 4
+        },
+        "4": {
+          "distinct": 3,
+          "windows": 3
+        },
+        "6": {
+          "distinct": 1,
+          "windows": 1
+        },
+        "12": {
+          "distinct": 0,
+          "windows": 0
+        },
+        "18": {
+          "distinct": 0,
+          "windows": 0
+        }
+      }
+    }
+  ],
+  "all_passed": true
+}

@@ -1,0 +1,11 @@
+{
+  "url": "https://julialang-s3.julialang.org/bin/mac/aarch64/1.13/julia-1.13.1-macaarch64.tar.gz",
+  "sha256": "a3e0259d4777c2b776c2cba134d5b6c6c124048dcb913f8881517892c49a0f7f",
+  "triplet": "aarch64-apple-darwin14",
+  "size": 223653417,
+  "legacy_harness_snapshot": {
+    "path": "legacy-harness-v1.tar.gz",
+    "sha256": "7eb570bb57ded1d557b36e42a766ff626cbbfa7b1d116a761336951fe8142c76",
+    "note": "Historical handwritten n-body energy adapters and their Cargo entry declarations. Current execution uses the generic runtime and all math is in Mech."
+  }
+}

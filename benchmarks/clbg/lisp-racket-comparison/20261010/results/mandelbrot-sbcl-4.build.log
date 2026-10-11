@@ -1,0 +1,70 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/mandelbrot-sbcl-4.lisp" (written 10 OCT 2026 06:58:31 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/mandelbrot-sbcl-4.lisp
+; in: DEFUN CALC-ROW
+;     (VOPS::ESCAPES? 50 VOPS::TWO-PIXELS VOPS::CRV VOPS::CIV)
+; 
+; note: doing complex double float to pointer coercion (cost 13)
+; 
+; note: doing complex double float to pointer coercion (cost 13)
+
+; in: DEFUN MAIN
+;     (LAMBDA ()
+;       (LOOP VOPS::FOR VOPS::Y VOPS::OF-TYPE FIXNUM VOPS::FROM VOPS::I VOPS::BELOW VOPS::N VOPS::BY VOPS::+WORKERS+
+;             DO ...))
+; 
+; note: doing float to pointer coercion (cost 13), for:
+;       the second argument of CLOSURE-INIT
+
+;     (VOPS::CALC-ROW VOPS::Y VOPS::N VOPS::BITMAP VOPS::BYTES-PER-ROW VOPS::CRVS
+;      VOPS::INVERSE-H)
+; 
+; note: doing complex double float to pointer coercion (cost 13)
+; 
+; note: doing complex double float to pointer coercion (cost 13)
+
+; in: DEFUN MAIN
+;     (VOPS::MAIN)
+; --> BLOCK LET* LET MAPCAR 
+; ==>
+;   1
+; 
+; note: doing float to pointer coercion (cost 13), for:
+;       the second argument of CLOSURE-INIT
+; 
+; note: doing complex double float to pointer coercion (cost 13)
+; 
+; note: doing complex double float to pointer coercion (cost 13)
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/mandelbrot-sbcl-4.lisp
+; in: DEFUN MAIN
+;     (VOPS::MAIN)
+; --> BLOCK LET* LET MAPCAR 
+; ==>
+;   1
+; 
+; caught STYLE-WARNING:
+;   undefined function: VOPS::ESCAPES?
+
+; in: DEFUN VOPS::MAIN
+;     (VOPS::CALC-ROW VOPS::Y VOPS::N VOPS::BITMAP VOPS::BYTES-PER-ROW VOPS::CRVS
+;      VOPS::INVERSE-H)
+; 
+; caught STYLE-WARNING:
+;   undefined function: VOPS::ESCAPES?
+
+; in: DEFUN VOPS::CALC-ROW
+;     (VOPS::ESCAPES? 50 VOPS::TWO-PIXELS VOPS::CRV VOPS::CIV)
+; 
+; caught STYLE-WARNING:
+;   undefined function: VOPS::ESCAPES?
+; 
+; compilation unit finished
+;   Undefined function:
+;     VOPS::ESCAPES?
+;   caught 3 STYLE-WARNING conditions
+;   printed 8 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/mandelbrot-sbcl-4/program.fasl
+; compilation finished in 0:00:00.023

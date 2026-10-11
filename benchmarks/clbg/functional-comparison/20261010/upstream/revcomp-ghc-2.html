@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement Haskell GHC&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement Haskell GHC&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--</span>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Contributed by Sterling Clover</span>
+<span class="slc">-- Heavily inspired by contribution from Don Stewart</span>
+<span class="slc">-- Inlining improvements by Don Stewart.</span>
+<span class="slc">-- GHC 7.8.1 fix by Ersin Er</span>
+<span class="slc">-- GHC 9.0.1, 9.2.1 fixes by Artem Pelenitsyn</span>
+<span class="slc">--</span>
+
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>ByteString<span class="opt">.</span>Char8 <span class="kwb">as</span> S
+<span class="kwb">import</span> Data<span class="opt">.</span>ByteString<span class="opt">.</span>Internal
+<span class="kwb">import</span> Data<span class="opt">.</span>ByteString<span class="opt">.</span>Unsafe
+<span class="kwb">import</span> Foreign
+<span class="kwb">import</span> Control<span class="opt">.</span>Arrow
+<span class="kwb">import</span> GHC<span class="opt">.</span>Base
+<span class="kwb">import</span> GHC<span class="opt">.</span>Ptr
+<span class="kwb">import</span> GHC<span class="opt">.</span>IO
+
+main <span class="opt">=</span> uncurry proc <span class="opt">=&lt;&lt;</span> clines <span class="opt">`fmap`</span> S<span class="opt">.</span>getContents
+
+proc <span class="kwc">[]</span> _ <span class="opt">=</span> return <span class="kwc">()</span>
+proc <span class="kwc">(</span>h:hs<span class="kwc">) (</span>b:bs<span class="kwc">)</span> <span class="opt">=</span> S<span class="opt">.</span>putStrLn h <span class="opt">&gt;&gt;</span> revcomp b <span class="opt">&gt;&gt;</span> writeFasta b <span class="opt">&gt;&gt;</span> proc hs bs
+
+writeFasta t
+    <span class="opt">|</span> S<span class="opt">.</span>null t  <span class="opt">=</span> return <span class="kwc">()</span>
+    <span class="opt">|</span> otherwise <span class="opt">=</span> S<span class="opt">.</span>putStrLn l <span class="opt">&gt;&gt;</span> writeFasta r
+    <span class="kwb">where</span> <span class="kwc">(</span>l<span class="kwc">,</span>r<span class="kwc">)</span> <span class="opt">=</span> S<span class="opt">.</span>splitAt <span class="num">60</span> t
+
+clines :: ByteString <span class="opt">-&gt;</span> <span class="kwc">([</span>ByteString<span class="kwc">],[</span>ByteString<span class="kwc">])</span>
+clines ps <span class="opt">=</span> clines&#39; ps <span class="kwc">([],[])</span>
+    <span class="kwb">where</span>
+      <span class="com">{-# INLINE clines&#39; #-}</span>
+      clines&#39; ps accum<span class="opt">&#64;</span><span class="kwc">(</span>f<span class="kwc">,</span>s<span class="kwc">)</span>
+          <span class="opt">|</span> otherwise <span class="opt">=</span> <span class="kwd">case</span> S<span class="opt">.</span>elemIndex <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span> ps <span class="kwd">of</span>
+                          Just n  <span class="opt">-&gt;</span> clines&#39;&#39; <span class="kwc">(</span>S<span class="opt">.</span>drop <span class="kwc">(</span>n<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span> ps<span class="kwc">) (</span>f<span class="opt">++</span><span class="kwc">[</span>S<span class="opt">.</span>take n ps<span class="kwc">],</span>s<span class="kwc">)</span>
+      clines&#39;&#39; ps accum<span class="opt">&#64;</span><span class="kwc">(</span>f<span class="kwc">,</span>s<span class="kwc">)</span>
+          <span class="opt">|</span> otherwise <span class="opt">=</span> <span class="kwd">case</span> S<span class="opt">.</span>elemIndex <span class="sng">&#39;&gt;&#39;</span> ps <span class="kwd">of</span>
+                      Nothing <span class="opt">-&gt;</span> <span class="kwc">(</span>f<span class="kwc">,</span>s<span class="opt">++</span><span class="kwc">[</span>S<span class="opt">.</span>filter <span class="kwc">(</span><span class="opt">/=</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span> ps<span class="kwc">])</span>
+                      Just n  <span class="opt">-&gt;</span> clines&#39; <span class="kwc">(</span>S<span class="opt">.</span>drop n ps<span class="kwc">) (</span>f<span class="kwc">,</span>s<span class="opt">++</span><span class="kwc">[</span>S<span class="opt">.</span>filter <span class="kwc">(</span><span class="opt">/=</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span> <span class="opt">.</span> S<span class="opt">.</span>take n <span class="opt">$</span> ps<span class="kwc">])</span>
+
+<span class="com">{-# INLINE comps #-}</span>
+comps <span class="opt">=</span> map <span class="kwc">(</span>ord <span class="opt">***</span> c2w<span class="kwc">) [</span>
+    <span class="kwc">(</span><span class="sng">&#39;A&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;T&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;a&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;T&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;C&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;G&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;c&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;G&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;G&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;C&#39;</span><span class="kwc">),</span>
+    <span class="kwc">(</span><span class="sng">&#39;g&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;C&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;T&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;A&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;t&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;A&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;U&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;A&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;u&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;A&#39;</span><span class="kwc">),</span>
+    <span class="kwc">(</span><span class="sng">&#39;M&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;K&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;m&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;K&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;R&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;Y&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;r&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;Y&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;Y&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;R&#39;</span><span class="kwc">),</span>
+    <span class="kwc">(</span><span class="sng">&#39;y&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;R&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;K&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;M&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;k&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;M&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;V&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;B&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;v&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;B&#39;</span><span class="kwc">),</span>
+    <span class="kwc">(</span><span class="sng">&#39;H&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;D&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;h&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;D&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;D&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;H&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;d&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;H&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;B&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;V&#39;</span><span class="kwc">), (</span> <span class="sng">&#39;b&#39;</span> <span class="kwc">,</span> <span class="sng">&#39;V&#39;</span><span class="kwc">)]</span>
+
+ca :: Ptr Word8
+ca <span class="opt">=</span> unsafeDupablePerformIO <span class="opt">$</span> <span class="kwd">do</span>
+       a <span class="opt">&lt;-</span> mallocArray <span class="num">200</span>
+       mapM_ <span class="kwc">(</span>uncurry <span class="kwc">(</span>pokeByteOff a<span class="kwc">))</span> <span class="opt">$</span> zip <span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>199::Int<span class="kwc">] [</span><span class="num">0</span><span class="opt">..</span>199::Word8<span class="kwc">]</span>
+       mapM_ <span class="kwc">(</span>uncurry <span class="kwc">(</span>pokeByteOff a<span class="kwc">))</span> comps
+       return a
+
+comp :: Word<span class="opt"># -&gt;</span> Word<span class="opt">#</span>
+comp c <span class="opt">=</span> rw8 ca <span class="kwc">(</span>word2Int<span class="opt">#</span> c<span class="kwc">)</span>
+
+revcomp <span class="kwc">(</span>PS fp s <span class="kwc">(</span>I<span class="opt">#</span> l<span class="kwc">))</span> <span class="opt">=</span> withForeignPtr fp <span class="opt">$</span> \p <span class="opt">-&gt;</span> rc <span class="kwc">(</span>p <span class="opt">`plusPtr`</span> s<span class="kwc">)</span> <span class="num">0</span><span class="opt">#</span> <span class="kwc">(</span>l <span class="opt">-#</span> <span class="num">1</span><span class="opt">#</span><span class="kwc">)</span>
+  <span class="kwb">where</span>
+    rc :: Ptr Word8 <span class="opt">-&gt;</span> Int<span class="opt"># -&gt;</span> Int<span class="opt"># -&gt;</span> IO <span class="kwc">()</span>
+    rc p i j  <span class="opt">=</span> rc&#39; i j
+        <span class="kwb">where</span>
+          rc&#39; i j
+              <span class="opt">|</span> isTrue<span class="opt">#</span> <span class="kwc">(</span>i <span class="opt">&lt;#</span> j<span class="kwc">)</span> <span class="opt">=</span> <span class="kwd">do</span>
+                          <span class="kwd">let</span> x <span class="opt">=</span> rw8 p i
+                          ww8 p i <span class="kwc">(</span>comp <span class="kwc">(</span>rw8 p j<span class="kwc">))</span>
+                          ww8 p j <span class="kwc">(</span>comp x<span class="kwc">)</span>
+                          rc&#39; <span class="kwc">(</span>i <span class="opt">+#</span> <span class="num">1</span><span class="opt">#</span><span class="kwc">) (</span>j <span class="opt">-#</span> <span class="num">1</span><span class="opt">#</span><span class="kwc">)</span>
+              <span class="opt">|</span> isTrue<span class="opt">#</span> <span class="kwc">(</span>i <span class="opt">==#</span> j<span class="kwc">)</span> <span class="opt">=</span> ww8 p i <span class="kwc">(</span>comp <span class="kwc">(</span>rw8 p i<span class="kwc">))</span>
+              <span class="opt">|</span> otherwise <span class="opt">=</span>  return <span class="kwc">()</span>
+
+rw8 :: Ptr Word8 <span class="opt">-&gt;</span> Int<span class="opt"># -&gt;</span> Word<span class="opt">#</span>
+rw8 <span class="kwc">(</span>Ptr a<span class="kwc">)</span> i <span class="opt">=</span> <span class="kwd">case</span> readWord8OffAddr<span class="opt">#</span> a i realWorld<span class="opt">#</span>  <span class="kwd">of</span> <span class="kwc">(</span><span class="opt">#</span> _<span class="kwc">,</span> x <span class="opt">#</span><span class="kwc">)</span> <span class="opt">-&gt;</span>  word8ToWord<span class="opt">#</span> x
+<span class="com">{-# INLINE rw8 #-}</span>
+
+ww8 :: Ptr Word8 <span class="opt">-&gt;</span> Int<span class="opt"># -&gt;</span> Word<span class="opt"># -&gt;</span> IO <span class="kwc">()</span>
+ww8 <span class="kwc">(</span>Ptr a<span class="kwc">)</span> i x  <span class="opt">=</span> IO <span class="opt">$</span> \s <span class="opt">-&gt;</span> <span class="kwd">case</span> writeWord8OffAddr<span class="opt">#</span> a i <span class="kwc">(</span>wordToWord8<span class="opt">#</span> x<span class="kwc">)</span> s <span class="kwd">of</span> s2 <span class="opt">-&gt;</span> <span class="kwc">(</span><span class="opt">#</span> s2<span class="kwc">, ()</span> <span class="opt">#</span><span class="kwc">)</span>
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 09:25:54 GMT
+
+MAKE:
+mv revcomp.ghc-2.ghc revcomp.ghc-2.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -funfolding-use-threshold=32 -XMagicHash -XUnboxedTuples revcomp.ghc-2.hs -o revcomp.ghc-2.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( revcomp.ghc-2.hs, revcomp.ghc-2.o )
+[2 of 2] Linking revcomp.ghc-2.ghc_run
+rm revcomp.ghc-2.hs
+
+17.45 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./revcomp.ghc-2.ghc_run +RTS -N4 -RTS 0 &lt; revcomp-input100000001.txt
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

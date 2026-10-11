@@ -1,0 +1,37 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fannkuchredux-sbcl-4.lisp" (written 10 OCT 2026 06:58:30 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fannkuchredux-sbcl-4.lisp
+; in: DEFUN FACTORIAL
+;     (* N (FACTORIAL (- N 1)))
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The second argument is a NUMBER, not a FIXNUM.
+;       The result is a (VALUES NUMBER &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The second argument is a NUMBER, not a FIXNUM.
+;       The result is a (VALUES NUMBER &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fannkuchredux-sbcl-4.lisp
+; in: DEFUN FANNKUCH
+;     (PRE-COMPUTED-FACTORIAL N)
+; 
+; caught STYLE-WARNING:
+;   undefined function: COMMON-LISP-USER::PRE-COMPUTED-FACTORIAL
+
+; in: DEFUN NTH-PERMUTATION
+;     (PRE-COMPUTED-FACTORIAL I)
+; 
+; caught STYLE-WARNING:
+;   undefined function: COMMON-LISP-USER::PRE-COMPUTED-FACTORIAL
+; 
+; compilation unit finished
+;   Undefined function:
+;     PRE-COMPUTED-FACTORIAL
+;   caught 2 STYLE-WARNING conditions
+;   printed 1 note
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/fannkuchredux-sbcl-4/program.fasl
+; compilation finished in 0:00:00.016

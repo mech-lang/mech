@@ -1,0 +1,10 @@
+passed mandelbrot mech-program-simd-loop-fma identical instructions and full output
+passed mandelbrot mech-program-compact identical instructions and full output
+passed knucleotide mech-compact-final-std1-simd0-p4 identical instructions and full output
+passed spectralnorm mech-integer-simd1-u4-r4-p8-g8 identical instructions and full output
+passed revcomp mech-revcomp-optimized identical instructions and full output
+passed fannkuchredux mech-fannkuch-even identical instructions and full output
+passed fannkuchredux mech-fannkuch-default identical instructions and full output
+passed fasta mech-fasta-final-expanded-v2 identical instructions and full output
+passed fasta mech-fasta-final-compact-v2 identical instructions and full output
+passed binarytrees mech-binarytrees-parallel identical instructions and full output

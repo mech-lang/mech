@@ -1,0 +1,23 @@
+   Compiling crossbeam-utils v0.8.23
+   Compiling crossbeam-epoch v0.9.21
+   Compiling autocfg v1.5.1
+   Compiling libc v0.2.190
+   Compiling version_check v0.9.5
+   Compiling crossbeam-deque v0.8.8
+   Compiling rayon-core v1.13.0
+   Compiling typenum v1.20.1
+   Compiling generic-array v0.14.7
+   Compiling num-traits v0.2.19
+   Compiling either v1.19.0
+   Compiling futures v0.1.31
+   Compiling num_cpus v1.17.0
+   Compiling futures-cpupool v0.1.8
+   Compiling numeric-array v0.5.2
+   Compiling rayon v1.12.0
+   Compiling clbg-mandelbrot-rust-dependencies v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/rust-deps)
+    Finished `release` profile [optimized] target(s) in 6.53s
+prepared fannkuchredux-rust-4-lto
+prepared fannkuchredux-rust-5-lto
+prepared fannkuchredux-rust-2-lto
+prepared fannkuchredux-rust6-neon
+prepared fannkuchredux-rust6-neon-lto

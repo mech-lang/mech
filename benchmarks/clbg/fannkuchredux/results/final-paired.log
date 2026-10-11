@@ -1,0 +1,120 @@
+full output passed fannkuchredux-rust-4
+full output passed fannkuchredux-gcc-5-gcc
+full output passed fannkuchredux-gcc-5-llvm
+full output passed fannkuchredux-chapel-2
+full output passed fannkuchredux-julia-2
+full output passed fannkuchredux-julia-3
+full output passed fannkuchredux-gpp-1-gcc
+full output passed fannkuchredux-gpp-1-llvm
+full output passed fannkuchredux-go-2
+full output passed fannkuchredux-graalvmaot-1
+full output passed mech-fannkuch-cached
+full output passed fannkuchredux-rust-4-lto
+full output passed fannkuchredux-rust-5-lto
+full output passed fannkuchredux-rust-2-lto
+full output passed fannkuchredux-rust6-neon
+full output passed fannkuchredux-rust6-neon-lto
+full output passed mech-fannkuch-cached-stack-index
+full output passed mech-fannkuch-default
+full output passed mech-fannkuch-even
+full output passed mech-fannkuch-aligned
+1/5 fannkuchredux-rust6-neon 2.497078
+1/5 fannkuchredux-rust6-neon-lto 2.466480
+1/5 fannkuchredux-rust-5-lto 4.994792
+1/5 fannkuchredux-gpp-1-gcc 6.027388
+1/5 mech-fannkuch-cached 3.078358
+1/5 fannkuchredux-julia-3 5.508988
+1/5 fannkuchredux-rust-4 3.808235
+1/5 mech-fannkuch-aligned 2.771255
+1/5 mech-fannkuch-cached-stack-index 3.050621
+1/5 fannkuchredux-gcc-5-gcc 5.069558
+1/5 mech-fannkuch-even 2.689466
+1/5 fannkuchredux-go-2 4.514613
+1/5 mech-fannkuch-default 3.943679
+1/5 fannkuchredux-rust-2-lto 10.184763
+1/5 fannkuchredux-julia-2 4.786573
+1/5 fannkuchredux-chapel-2 7.209178
+1/5 fannkuchredux-graalvmaot-1 5.924768
+1/5 fannkuchredux-gcc-5-llvm 5.283933
+1/5 fannkuchredux-rust-4-lto 3.813386
+1/5 fannkuchredux-gpp-1-llvm 6.082029
+2/5 mech-fannkuch-cached-stack-index 2.841863
+2/5 fannkuchredux-rust-5-lto 5.054337
+2/5 fannkuchredux-gcc-5-llvm 5.400230
+2/5 mech-fannkuch-default 4.078826
+2/5 fannkuchredux-rust-2-lto 10.664916
+2/5 fannkuchredux-go-2 4.893758
+2/5 fannkuchredux-gcc-5-gcc 5.105616
+2/5 fannkuchredux-rust6-neon-lto 2.412025
+2/5 fannkuchredux-julia-2 4.743522
+2/5 mech-fannkuch-aligned 2.757994
+2/5 fannkuchredux-rust6-neon 2.510107
+2/5 fannkuchredux-rust-4 3.880802
+2/5 mech-fannkuch-even 2.774284
+2/5 fannkuchredux-gpp-1-llvm 6.138035
+2/5 fannkuchredux-graalvmaot-1 5.790371
+2/5 fannkuchredux-rust-4-lto 3.881126
+2/5 fannkuchredux-gpp-1-gcc 5.906761
+2/5 mech-fannkuch-cached 3.173849
+2/5 fannkuchredux-chapel-2 7.175894
+2/5 fannkuchredux-julia-3 5.697955
+3/5 fannkuchredux-rust6-neon 2.617396
+3/5 fannkuchredux-rust-4-lto 3.890371
+3/5 fannkuchredux-gcc-5-llvm 5.298503
+3/5 fannkuchredux-gpp-1-gcc 5.823479
+3/5 fannkuchredux-rust-2-lto 10.296247
+3/5 fannkuchredux-chapel-2 7.189976
+3/5 fannkuchredux-graalvmaot-1 5.551022
+3/5 fannkuchredux-go-2 4.578114
+3/5 fannkuchredux-rust-5-lto 5.130937
+3/5 fannkuchredux-julia-3 5.531461
+3/5 fannkuchredux-rust6-neon-lto 2.470351
+3/5 fannkuchredux-julia-2 4.720486
+3/5 mech-fannkuch-cached 3.068150
+3/5 mech-fannkuch-default 3.852679
+3/5 fannkuchredux-gpp-1-llvm 5.875640
+3/5 mech-fannkuch-even 2.732447
+3/5 mech-fannkuch-cached-stack-index 2.829800
+3/5 mech-fannkuch-aligned 2.764122
+3/5 fannkuchredux-rust-4 4.093586
+3/5 fannkuchredux-gcc-5-gcc 5.157219
+4/5 fannkuchredux-rust-4-lto 3.771377
+4/5 fannkuchredux-gpp-1-gcc 5.839140
+4/5 fannkuchredux-rust6-neon 2.574327
+4/5 fannkuchredux-graalvmaot-1 5.995267
+4/5 mech-fannkuch-cached-stack-index 2.876189
+4/5 fannkuchredux-chapel-2 7.290154
+4/5 fannkuchredux-gcc-5-llvm 5.241458
+4/5 fannkuchredux-rust6-neon-lto 2.422786
+4/5 mech-fannkuch-even 2.736433
+4/5 fannkuchredux-rust-4 3.952127
+4/5 fannkuchredux-julia-3 5.465561
+4/5 mech-fannkuch-cached 3.000907
+4/5 fannkuchredux-rust-2-lto 10.206740
+4/5 fannkuchredux-go-2 4.377708
+4/5 fannkuchredux-gcc-5-gcc 5.067959
+4/5 mech-fannkuch-aligned 2.691772
+4/5 fannkuchredux-rust-5-lto 5.094168
+4/5 mech-fannkuch-default 3.863695
+4/5 fannkuchredux-gpp-1-llvm 5.974368
+4/5 fannkuchredux-julia-2 4.910012
+5/5 mech-fannkuch-default 3.873633
+5/5 fannkuchredux-chapel-2 7.215365
+5/5 fannkuchredux-graalvmaot-1 5.816988
+5/5 mech-fannkuch-even 2.819779
+5/5 fannkuchredux-gcc-5-llvm 5.364971
+5/5 mech-fannkuch-aligned 2.707351
+5/5 fannkuchredux-julia-3 5.628673
+5/5 mech-fannkuch-cached 3.097251
+5/5 fannkuchredux-rust-4 4.116615
+5/5 fannkuchredux-rust-5-lto 5.039550
+5/5 fannkuchredux-go-2 4.590432
+5/5 fannkuchredux-gcc-5-gcc 5.247768
+5/5 fannkuchredux-rust-2-lto 10.147154
+5/5 mech-fannkuch-cached-stack-index 2.617642
+5/5 fannkuchredux-julia-2 4.708679
+5/5 fannkuchredux-gpp-1-gcc 5.728359
+5/5 fannkuchredux-rust6-neon-lto 2.460614
+5/5 fannkuchredux-rust6-neon 2.469133
+5/5 fannkuchredux-gpp-1-llvm 5.979008
+5/5 fannkuchredux-rust-4-lto 3.952218

@@ -1,0 +1,12 @@
+{
+  "hosts/gpu/src/fused_f64/mod.rs": "71cb3af985c963e1d86e4531317e8c77effa4713f62b1feacd41d9c43c7cb284",
+  "hosts/gpu/src/fused_f64/native.rs": "cb4986660205727a0ac32eb26a7424442c2dc822f21cba1e6edb507f02bb4f8e",
+  "hosts/gpu/src/fused_f64/runner.rs": "6d2b63392e206cdc58a81720c0820f21a258eb2d240a4ad4be647030f781661e",
+  "hosts/gpu/src/fused_f64/map_runner.rs": "cc05cc7b7db2828b8c5ad824d702de9d553e122892217b512107b4db37535417",
+  "benchmarks/clbg/nbody/mech-driver/tests/fused.rs": "85813b8571e887130a388ba8289bddbac25e8c3b0c3f88d6d3c37a98a23467e9",
+  "nbody-matrix-short.mec": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+  "nbody-matrix-pairwise.mec": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+  "before-compact-baseline": "794e34d68b99342b4594f39922afa857cde8d00eda55aaa7121ab66ce176d8b2",
+  "before-pairwise-mass-tails": "068abbacde58c70bf1f971a228d7da3542b0c86cfa11913ed4f05499701b7008",
+  "driver-before": "648732c12233a9fd96d69dd2a8990b47980bf8bfdf1ab22aaa0bb2ee78fc7ddb"
+}

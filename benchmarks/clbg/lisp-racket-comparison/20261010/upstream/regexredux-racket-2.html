@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>regex-redux Racket&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>regex-redux Racket&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/regexredux.html#regexredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="opt">#</span>lang racket<span class="opt">/</span>base
+
+<span class="slc">;;; The Computer Language Benchmarks Game</span>
+<span class="slc">;;; https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+
+<span class="slc">;;; based on a version by by Anthony Borla</span>
+<span class="slc">;;; regex-dna program contributed by Matthew Flatt</span>
+<span class="slc">;;; converted from regex-dna program</span>
+<span class="slc">;;; Parallelized by Gustavo Massaccesi, 2018</span>
+
+
+<span class="opt">(</span><span class="kwa">require</span> racket<span class="opt">/</span>port
+         racket<span class="opt">/</span>place
+         racket<span class="opt">/</span>list<span class="opt">)</span>
+
+<span class="slc">;; -------------------------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> VARIANTS
+  <span class="opt">&#39;(#</span><span class="sng">&quot;agggtaaa|tttaccct&quot;</span> <span class="opt">#</span><span class="sng">&quot;[cgt]gggtaaa|tttaccc[acg]&quot;</span> <span class="opt">#</span><span class="sng">&quot;a[act]ggtaaa|tttacc[agt]t&quot;</span>
+    <span class="opt">#</span><span class="sng">&quot;ag[act]gtaaa|tttac[agt]ct&quot;</span> <span class="opt">#</span><span class="sng">&quot;agg[act]taaa|ttta[agt]cct&quot;</span> <span class="opt">#</span><span class="sng">&quot;aggg[acg]aaa|ttt[cgt]ccct&quot;</span>
+    <span class="opt">#</span><span class="sng">&quot;agggt[cgt]aa|tt[acg]accct&quot;</span> <span class="opt">#</span><span class="sng">&quot;agggta[cgt]a|t[acg]taccct&quot;</span> <span class="opt">#</span><span class="sng">&quot;agggtaa[cgt]|[acg]ttaccct&quot;</span><span class="opt">))</span>
+
+
+<span class="opt">(</span><span class="kwa">define</span> IUBS
+  <span class="opt">&#39;((#</span><span class="sng">&quot;tHa[Nt]&quot;</span> <span class="opt">#</span><span class="sng">&quot;&lt;4&gt;&quot;</span><span class="opt">) (#</span><span class="sng">&quot;aND|caN|Ha[DS]|WaS&quot;</span> <span class="opt">#</span><span class="sng">&quot;&lt;3&gt;&quot;</span><span class="opt">) (#</span><span class="sng">&quot;a[NSt]|BY&quot;</span> <span class="opt">#</span><span class="sng">&quot;&lt;2&gt;&quot;</span><span class="opt">)</span>
+    <span class="opt">(#</span><span class="sng">&quot;&lt;[^&gt;]*&gt;&quot;</span> <span class="opt">#</span><span class="sng">&quot;|&quot;</span><span class="opt">) (#</span><span class="sng">&quot;\\|[^|][^|]*\\|&quot;</span> <span class="opt">#</span><span class="sng">&quot;-&quot;</span><span class="opt">)))</span>
+
+<span class="slc">;; -------------------------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">ci-byte-regexp</span> s<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">byte-regexp</span> <span class="opt">(</span><span class="kwa">bytes-append</span> <span class="opt">#</span><span class="sng">&quot;(?i:&quot;</span> s <span class="opt">#</span><span class="sng">&quot;)&quot;</span><span class="opt">)))</span>
+
+<span class="slc">;; -------------------------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">match-count</span> str rx offset cnt<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>m <span class="opt">(</span><span class="kwa">regexp-match-positions</span> rx str offset<span class="opt">)])</span>
+    <span class="opt">(</span><span class="kwa">if</span> m
+        <span class="opt">(</span><span class="kwa">match-count</span> str rx <span class="opt">(</span><span class="kwa">cdar</span> m<span class="opt">) (</span><span class="kwa">add1</span> cnt<span class="opt">))</span>
+        cnt<span class="opt">)))</span>
+
+<span class="slc">;; -------------------------------</span>
+
+<span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">make-counting-place</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">place</span> ch
+    <span class="opt">(</span><span class="kwa">define</span> filtered <span class="opt">(</span><span class="kwa">place-channel-get</span> ch<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">define</span> in <span class="opt">(</span><span class="kwa">place-channel-get</span> ch<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">define</span> out <span class="opt">(</span><span class="kwa">map</span> <span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">(</span><span class="kwa">i</span><span class="opt">)</span>
+                       <span class="opt">(</span><span class="kwa">match-count</span> filtered <span class="opt">(</span><span class="kwa">ci-byte-regexp</span> i<span class="opt">)</span> <span class="num">0 0</span><span class="opt">))</span>
+                     in<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">place-channel-put</span> ch out<span class="opt">)))</span>
+
+<span class="slc">;; -------------------------------</span>
+<span class="slc">;; -------------------------------</span>
+
+<span class="opt">(</span><span class="kwa">module</span><span class="opt">+</span> main
+   <span class="slc">;; Load sequence</span>
+  <span class="opt">(</span><span class="kwa">define</span> orig <span class="opt">(</span><span class="kwa">port-</span><span class="opt">&gt;</span>bytes<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">define</span> filtered <span class="opt">(</span><span class="kwa">regexp-replace</span><span class="opt">* #</span>rx<span class="opt">#</span><span class="sng">&quot;(?:&gt;.*?</span><span class="esc">\n</span><span class="sng">)|</span><span class="esc">\n</span><span class="sng">&quot;</span> orig <span class="opt">#</span><span class="sng">&quot;&quot;</span><span class="opt">))</span>
+
+  <span class="slc">;; Create the places and launch the regexp counts</span>
+  <span class="slc">;; Since it is not possible to split the replacement part,</span>
+  <span class="slc">;; it&#39;s faster to use two places instead of three. </span>
+  <span class="opt">(</span><span class="kwa">define</span> VARIANTS1 <span class="opt">(</span><span class="kwa">drop-right</span> VARIANTS <span class="num">4</span><span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">define</span> VARIANTS2 <span class="opt">(</span><span class="kwa">take-right</span> VARIANTS <span class="num">4</span><span class="opt">))</span>
+
+  <span class="opt">(</span><span class="kwa">define</span> place<span class="opt">/</span>ch1 <span class="opt">(</span><span class="kwa">make-counting-place</span><span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">place-channel-put</span> place<span class="opt">/</span>ch1 filtered<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">place-channel-put</span> place<span class="opt">/</span>ch1 VARIANTS1<span class="opt">)</span>
+
+  <span class="opt">(</span><span class="kwa">define</span> place<span class="opt">/</span>ch2 <span class="opt">(</span><span class="kwa">make-counting-place</span><span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">place-channel-put</span> place<span class="opt">/</span>ch2 filtered<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">place-channel-put</span> place<span class="opt">/</span>ch2 VARIANTS2<span class="opt">)</span>
+    
+  <span class="slc">;; Perform regexp replacements while the places are running</span>
+  <span class="opt">(</span><span class="kwa">define</span> replaced
+          <span class="opt">(</span><span class="kwa">for</span><span class="opt">/</span>fold <span class="opt">([</span>sequence filtered<span class="opt">]) ([</span>IUB IUBS<span class="opt">])</span>
+            <span class="opt">(</span><span class="kwa">regexp-replace</span><span class="opt">* (</span><span class="kwa">byte-regexp</span> <span class="opt">(</span><span class="kwa">car</span> IUB<span class="opt">))</span> sequence <span class="opt">(</span><span class="kwa">cadr</span> IUB<span class="opt">))))</span>
+
+  <span class="slc">;; Collect the results of the regexp counts</span>
+  <span class="opt">(</span><span class="kwa">define</span> count1 <span class="opt">(</span><span class="kwa">place-channel-get</span> place<span class="opt">/</span>ch1<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">define</span> count2 <span class="opt">(</span><span class="kwa">place-channel-get</span> place<span class="opt">/</span>ch2<span class="opt">))</span>
+
+
+  <span class="slc">;; Print regexp counts</span>
+  <span class="opt">(</span><span class="kwa">for</span> <span class="opt">([</span>i <span class="opt">(</span><span class="kwa">in-list</span> VARIANTS<span class="opt">)]</span>
+        <span class="opt">[</span>j <span class="opt">(</span><span class="kwa">in-list</span> <span class="opt">(</span><span class="kwa">append</span> count1 count2<span class="opt">))])</span>
+    <span class="opt">(</span><span class="kwa">printf</span> <span class="sng">&quot;~a ~a</span><span class="esc">\n</span><span class="sng">&quot;</span> i j<span class="opt">))</span>
+
+  <span class="slc">;; Print statistics</span>
+  <span class="opt">(</span><span class="kwa">printf</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">~a</span><span class="esc">\n</span><span class="sng">~a</span><span class="esc">\n</span><span class="sng">~a</span><span class="esc">\n</span><span class="sng">&quot;</span>
+          <span class="opt">(</span><span class="kwa">bytes-length</span> orig<span class="opt">) (</span><span class="kwa">bytes-length</span> filtered<span class="opt">) (</span><span class="kwa">bytes-length</span> replaced<span class="opt">))</span>
+
+  <span class="opt">)</span>
+  
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Racket v8.15 [cs].
+
+
+ Fri, 07 Feb 2025 23:38:14 GMT
+
+COMMAND LINE:
+ /opt/src/./racket-8.15/bin/racket regexredux.racket-2.racket 0 &lt; regexredux-input5000000.txt
+
+PROGRAM OUTPUT:
+agggtaaa|tttaccct 356
+[cgt]gggtaaa|tttaccc[acg] 1250
+a[act]ggtaaa|tttacc[agt]t 4252
+ag[act]gtaaa|tttac[agt]ct 2894
+agg[act]taaa|ttta[agt]cct 5435
+aggg[acg]aaa|ttt[cgt]ccct 1537
+agggt[cgt]aa|tt[acg]accct 1431
+agggta[cgt]a|t[acg]taccct 1608
+agggtaa[cgt]|[acg]ttaccct 2178
+
+50833411
+50000000
+27388361
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

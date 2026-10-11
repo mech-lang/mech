@@ -1,0 +1,1586 @@
+{
+  "status": "reviewed",
+  "frozen_at": "2026-10-11T05:32:21.140603+00:00",
+  "programs": [
+    {
+      "id": "binarytrees-micropython-2-faithful",
+      "key": "binarytrees:binarytrees-micropython-2-faithful",
+      "benchmark": "binarytrees",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-2-faithful.py",
+      "source_sha256": "b6759c920cd2040435f04ba906b688292199c7475273cef861bb3af70e0b3ef5",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-2-faithful.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Allocate a fresh mutable two-slot node for every leaf and interior instead of a shared constant tuple leaf; retain the long-lived root through all temporary trees."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 24,
+      "normalized_loc": 24,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/binarytrees-micropython-2.py",
+      "original_source_sha256": "83abb69aff56cedfd7e61b38d312810ab049763d93040ca5fc1746df4702bc20",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-micropython-2.html",
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 24,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fannkuchredux-micropython-8",
+      "key": "fannkuchredux:fannkuchredux-micropython-8",
+      "benchmark": "fannkuchredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-8.py",
+      "source_sha256": "58073b310b1d424d78159dad93cb0c7b7dd94b1c70d155d5ce1a784de3a82150",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-8.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Published MicroPython workload source, unchanged."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 45,
+      "normalized_loc": 55,
+      "expansions": [
+        {
+          "line": 13,
+          "extra_lines": 6,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 18,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 19,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 27,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/fannkuchredux-micropython-8.py",
+      "original_source_sha256": "58073b310b1d424d78159dad93cb0c7b7dd94b1c70d155d5ce1a784de3a82150",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-micropython-8.html",
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 55,
+      "loc_expansions": [
+        {
+          "line": 13,
+          "extra_lines": 6,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 18,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 19,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 27,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fasta-micropython-8-faithful",
+      "key": "fasta:fasta-micropython-8-faithful",
+      "benchmark": "fasta",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-8-faithful.py",
+      "source_sha256": "9b01e6ebdef5216a26961467399a0f84690c8f4767b5159d640ce21e24713647",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-8-faithful.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Avoid an extra repeat-record newline at an exact multiple of sixty; preserve every binary64 random selection and LCG step."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 58,
+      "normalized_loc": 58,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/fasta-micropython-8.py",
+      "original_source_sha256": "771efad89370ddfe8fa173028ca83f16fc9bada198b74675f06e1a65436a2856",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-micropython-8.html",
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 58,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "knucleotide-micropython-8-faithful",
+      "key": "knucleotide:knucleotide-micropython-8-faithful",
+      "benchmark": "knucleotide",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-8-faithful.py",
+      "source_sha256": "933d0fa70746b877144eb1d489201572f9f86becc203da48b42b40e004ce0428",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-8-faithful.py"
+      ],
+      "adaptations": [
+        "Strip CR/LF, preserve the selected record, and sort equal counts lexically; retain all seven complete substring maps."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 40,
+      "normalized_loc": 40,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/knucleotide-micropython-8.py",
+      "original_source_sha256": "ffaacc7cfcf1acbf6a73982c0ec7689bec98d431f90b6e5e407bc2b03b473b0d",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-micropython-8.html",
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 40,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "mandelbrot-micropython-3-faithful",
+      "key": "mandelbrot:mandelbrot-micropython-3-faithful",
+      "benchmark": "mandelbrot",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-3-faithful.py",
+      "source_sha256": "d8b40294e193a6caddb8e593f8977475d44032ce5f657d28f989c1e26350f091",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-3-faithful.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Use the prescribed strict escape boundary rather than rejecting points at exactly radius two."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 32,
+      "normalized_loc": 32,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/mandelbrot-micropython-3.py",
+      "original_source_sha256": "26b2be1bb72913bac550ec95c3443ce68a0eb250adb858c2b3c9f7c9575ec3a4",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-micropython-3.html",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 32,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "spectralnorm-micropython-8",
+      "key": "spectralnorm:spectralnorm-micropython-8",
+      "benchmark": "spectralnorm",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-8.py",
+      "source_sha256": "cde130d4e454cf7643012f3ca56844b6e38d0f63025a8906d78f3bcb6b7c3574",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-8.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Published MicroPython workload source, unchanged."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 25,
+      "normalized_loc": 29,
+      "expansions": [
+        {
+          "line": 25,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 33,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 34,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/spectralnorm-micropython-8.py",
+      "original_source_sha256": "cde130d4e454cf7643012f3ca56844b6e38d0f63025a8906d78f3bcb6b7c3574",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-micropython-8.html",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 29,
+      "loc_expansions": [
+        {
+          "line": 25,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 33,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 34,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "nbody-micropython-local",
+      "key": "nbody:nbody-micropython-local",
+      "benchmark": "nbody",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-local.py",
+      "source_sha256": "3172a1125fda3398d64a58e0fd4404ae90bf48e07e6943524444cb33d5b659c8",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 33,
+      "normalized_loc": 33,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 33,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "mandelbrot-micropython-local",
+      "key": "mandelbrot:mandelbrot-micropython-local",
+      "benchmark": "mandelbrot",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-local.py",
+      "source_sha256": "ab73e68c40ef55f0769802f727054e3868aa6e09808b896db65e7a6f52e283b6",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 21,
+      "normalized_loc": 21,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 21,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "spectralnorm-micropython-local",
+      "key": "spectralnorm:spectralnorm-micropython-local",
+      "benchmark": "spectralnorm",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-local.py",
+      "source_sha256": "c9e966a62aa2d491df701dd5c97f5cfb30cfcaf00f8bb2b40ea075b244d554de",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 22,
+      "normalized_loc": 22,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 22,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fasta-micropython-local",
+      "key": "fasta:fasta-micropython-local",
+      "benchmark": "fasta",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-local.py",
+      "source_sha256": "09e179c2275b2823bf0eb4f1409d29dd16ebdc9f43cb4f1759542aa7a8cba90b",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 44,
+      "normalized_loc": 44,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 44,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "knucleotide-micropython-local",
+      "key": "knucleotide:knucleotide-micropython-local",
+      "benchmark": "knucleotide",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-local.py",
+      "source_sha256": "d8cdc8c3fa623658a3d76d373558ec739587247438dfda672ee4671d4bb172f7",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-local.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 34,
+      "normalized_loc": 34,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 34,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "revcomp-micropython-local",
+      "key": "revcomp:revcomp-micropython-local",
+      "benchmark": "revcomp",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-local.py",
+      "source_sha256": "f6921a66267fafe597aeab7db7bc45707e87c07774fddaa1c442ce8f5138bf8e",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-local.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 22,
+      "normalized_loc": 22,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 22,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fannkuchredux-micropython-local",
+      "key": "fannkuchredux:fannkuchredux-micropython-local",
+      "benchmark": "fannkuchredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-local.py",
+      "source_sha256": "f4f0c33de2ef45ecf0592824dc27834098edb47d3522d6d3c63c627a57ec4883",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 33,
+      "normalized_loc": 33,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 33,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "pidigits-micropython-local",
+      "key": "pidigits:pidigits-micropython-local",
+      "benchmark": "pidigits",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/pidigits-micropython-local.py",
+      "source_sha256": "b666d8f96442a788e7bb159faf5154a1ea53c6642fb3062279004363835b5bcc",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/pidigits-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 24,
+      "normalized_loc": 24,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 24,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "pidigits-micropython-gmp",
+      "key": "pidigits:pidigits-micropython-gmp",
+      "benchmark": "pidigits",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/pidigits-micropython-gmp.py",
+      "source_sha256": "8eea4db95d244efe62df7de442934f7d8019717e1336f35ae0ce563ea4137619",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/pidigits-micropython-gmp.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 52,
+      "normalized_loc": 52,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 52,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "binarytrees-micropython-array-arena",
+      "key": "binarytrees:binarytrees-micropython-array-arena",
+      "benchmark": "binarytrees",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-array-arena.py",
+      "source_sha256": "d70f073b93dcc19fdad44bcdfcff66d624665ef68982987a9ded86cb0bb70203",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-array-arena.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 34,
+      "normalized_loc": 34,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 34,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "revcomp-micropython-buffered",
+      "key": "revcomp:revcomp-micropython-buffered",
+      "benchmark": "revcomp",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-buffered.py",
+      "source_sha256": "28ce491e25ee60251ab706ffc81ffc9ac3294f96e323496d2879af883fba84d6",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-buffered.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 35,
+      "normalized_loc": 35,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 35,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "regexredux-micropython-pcre2",
+      "key": "regexredux:regexredux-micropython-pcre2",
+      "benchmark": "regexredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/regexredux-micropython-pcre2.py",
+      "source_sha256": "6cc2fdbad6a372ff853101834550ccd8085d85e4d59cf16b3db7f4db482f5f62",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/regexredux-micropython-pcre2.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 63,
+      "normalized_loc": 63,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 63,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "regexredux-micropython-pcre2-jit",
+      "key": "regexredux:regexredux-micropython-pcre2-jit",
+      "benchmark": "regexredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/regexredux-micropython-pcre2-jit.py",
+      "source_sha256": "ad6416954b93f9badb2f17d90176712a4ed4e0dfebbcb7cdf9440ace5db0dd7a",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/regexredux-micropython-pcre2-jit.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 65,
+      "normalized_loc": 65,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 65,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "nbody-micropython-python3-pairs",
+      "key": "nbody:nbody-micropython-python3-pairs",
+      "benchmark": "nbody",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-python3-pairs.py",
+      "source_sha256": "c9f144ee18fa2bd64f5271a868d8e20b7d99284f3368c13c13b4eddb9b67bb00",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=12288M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-python3-pairs.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Port the published Python mutable-list/pair candidate to the same supported MicroPython operations; preserve every binary64 pair and update."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 90,
+      "normalized_loc": 90,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/nbody-python3-2.py",
+      "original_source_sha256": "f59c522f189fa547639696298e57fe90db40c737fb7b83d9678bfd921fd003c1",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-python3-2.html",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "preparation_status": "passed",
+      "loc": 90,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    }
+  ],
+  "controls": [
+    {
+      "id": "mech-control-pidigits",
+      "key": "pidigits:mech-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+      "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 38,
+      "published_chart_key": "pidigits:mech-pi-final-advance-signed",
+      "previous_seconds": 0.300272042,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Sequential unbounded spigot written in Mech with general GMP-backed bigint operations. Both extract(3) and extract(4) are evaluated for each tested candidate. The advance variant uses the same impossible-candidate guard as the pinned Rust #4 source; no alternative pi algorithm or digit cache.",
+        "full_work": {
+          "digits": 10000,
+          "threads": 1
+        },
+        "evidence": [
+          {
+            "path": "pidigits/pidigits.mec",
+            "sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1"
+          },
+          {
+            "path": "pidigits/pidigits-advance.mec",
+            "sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e"
+          },
+          {
+            "path": "pidigits/upstream/pidigits-rust-4.rs",
+            "sha256": "fb6b33b1bf74612f8ce78d19e70f10f41650b02b72e4c73d2cb0480508fbef65"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html"
+      }
+    },
+    {
+      "id": "mech-control-spectralnorm",
+      "key": "spectralnorm:mech-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 12,
+      "published_chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "previous_seconds": 0.086075292,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Four source functions: coefficient, apply, apply-transpose, and step. Twenty power-method applications execute forty matrix-vector products. Coefficients are computed by emitted Mech arithmetic; no stored matrix or answer shortcut.",
+        "full_work": {
+          "n": 5500,
+          "power_applications": 20,
+          "matrix_vector_products": 40,
+          "weighted_contributions": 1210000000
+        },
+        "evidence": [
+          {
+            "path": "work-audit/20261009/sources/spectralnorm-four-functions.mec",
+            "sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html"
+      }
+    },
+    {
+      "id": "mech-control-nbody",
+      "key": "nbody:mech-control",
+      "benchmark": "nbody",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 25,
+      "published_chart_key": "nbody:pairwise-mass-tails",
+      "previous_seconds": 1.05385575,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Full symplectic pair integration is written in Mech. The generic reactive runner supplies iteration count and output formatting; it contains no gravity kernel.",
+        "full_work": {
+          "steps": 50000000,
+          "pairs_per_step": 10
+        },
+        "evidence": [
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+            "sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175"
+          },
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+            "sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa"
+          },
+          {
+            "path": "array-comparison/nbody-20261009/comparison-mech-compact.json",
+            "sha256": "30535144ef6ef3b40d3d7fed28ce44d4e7214bc964852c19429094d76935583e"
+          },
+          {
+            "path": "../../hosts/gpu/src/fused_f64/runner.rs",
+            "sha256": "1249907f7fcb777cf9f09ddd3e57268149b5aad2c4cb5a209a36b8ccf41318db"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html"
+      }
+    },
+    {
+      "id": "mech-control-mandelbrot",
+      "key": "mandelbrot:mech-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+      "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "loc": 29,
+      "published_chart_key": "mandelbrot:mech-program-simd-loop-fma",
+      "previous_seconds": 0.439738792,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "The Mech-defined callback performs double-precision escape iteration for every pixel, with a maximum of 50 iterations, and emits the complete PBM. Native SIMD and lane termination preserve that algorithm.",
+        "full_work": {
+          "width": 16000,
+          "height": 16000,
+          "maximum_iterations": 50
+        },
+        "evidence": [
+          {
+            "path": "mandelbrot/mandelbrot-compact-program.mec",
+            "sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169"
+          },
+          {
+            "path": "mandelbrot/mandelbrot-program.mec",
+            "sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html"
+      }
+    },
+    {
+      "id": "mech-control-regexredux",
+      "key": "regexredux:mech-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "loc": 24,
+      "published_chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "previous_seconds": 0.489611584,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine independent regex counts, each using its prescribed pattern, and five ordered regex substitutions. The general regex library handles each operation; there is no combined-pattern benchmark matcher.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "evidence": [
+          {
+            "path": "regexredux/regexredux.mec",
+            "sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html"
+      }
+    },
+    {
+      "id": "mech-control-binarytrees",
+      "key": "binarytrees:mech-control",
+      "benchmark": "binarytrees",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+      "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 26,
+      "published_chart_key": "binarytrees:mech-binarytrees-parallel",
+      "previous_seconds": 0.394411208,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed-library-pool",
+        "reason": "Full bottom-up construction and traversal of distinct ordinary nodes, including equally allocated leaves. Uses the general core library memory pool through memory/with-arena and memory/with-frame. This allocation strategy must be disclosed; it is not a default-GC comparison.",
+        "allocation_policy": "General core library pool; distinct 16-byte node slots; per-tree frame release.",
+        "full_work": {
+          "maximum_depth": 21,
+          "nodes_constructed_and_walked": 613766494
+        },
+        "evidence": [
+          {
+            "path": "binarytrees/binarytrees-parallel.mec",
+            "sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/runtime.rs",
+            "sha256": "50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b"
+          },
+          {
+            "path": "../../src/core/src/memory_runtime/allocation.rs",
+            "sha256": "03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c"
+          },
+          {
+            "path": "binarytrees/results/conformance.json",
+            "sha256": "51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c"
+          },
+          {
+            "path": "binarytrees/results/records-conformance.json",
+            "sha256": "5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html"
+      }
+    },
+    {
+      "id": "mech-control-fannkuchredux",
+      "key": "fannkuchredux:mech-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+      "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 59,
+      "published_chart_key": "fannkuchredux:mech-fannkuch-even",
+      "previous_seconds": 1.702457333,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "The Mech program enumerates all factorial permutations in the required factoradic order, performs actual prefix flips, and reduces the alternating checksum and maximum. Parallel ranges cover the full permutation domain.",
+        "full_work": {
+          "n": 12,
+          "permutations": 479001600
+        },
+        "evidence": [
+          {
+            "path": "fannkuchredux/fannkuchredux.mec",
+            "sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f"
+          },
+          {
+            "path": "fannkuchredux/fannkuchredux-even.mec",
+            "sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html"
+      }
+    },
+    {
+      "id": "mech-control-fasta",
+      "key": "fasta:mech-control",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 43,
+      "published_chart_key": "fasta:mech-fasta-final-expanded-v2",
+      "previous_seconds": 0.541193292,
+      "previous_report": "fasta/investigations/20261009-floating-cdf/results.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Strict comparison disables the general exact-integer-cutoff transform. Emitted objects retain floating division/comparison. Each random nucleotide advances the naive LCG. The only repeated-sequence cache is for the supplied fixed ALU string.",
+        "full_work": {
+          "n": 25000000,
+          "fixed_sequence_bytes": 50000000,
+          "random_nucleotides": 200000000,
+          "lcg_updates": 200000000
+        },
+        "required_build_environment": {
+          "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0"
+        },
+        "evidence": [
+          {
+            "path": "fasta/fasta.mec",
+            "sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066"
+          },
+          {
+            "path": "fasta/fasta-optimized.mec",
+            "sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/compiler.rs",
+            "sha256": "b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html"
+      }
+    },
+    {
+      "id": "mech-control-knucleotide",
+      "key": "knucleotide:mech-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "loc": 17,
+      "published_chart_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "previous_seconds": 0.51382825,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "All overlapping keys at all seven lengths perform a library hash-table entry lookup/update. No query-only search or indexed-count substitute. The runtime checks each merged histogram total against its window count.",
+        "full_work": {
+          "three_sequence_length": 125000000,
+          "window_lengths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "hash_table_window_updates": 874999961
+        },
+        "evidence": [
+          {
+            "path": "knucleotide/knucleotide-compact.mec",
+            "sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/counts.rs",
+            "sha256": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/runtime.rs",
+            "sha256": "6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4"
+          },
+          {
+            "path": "array-comparison/all-20261009/investigation/confirmation.json",
+            "sha256": "64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html"
+      }
+    },
+    {
+      "id": "mech-control-revcomp",
+      "key": "revcomp:mech-control",
+      "benchmark": "revcomp",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after",
+      "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "loc": 7,
+      "published_chart_key": "revcomp:mech-revcomp-optimized",
+      "previous_seconds": 0.149272625,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Buffered growing record input; full record reversal, alphabet translation, and 60-column output. The implementation does not use file size to preallocate stdin.",
+        "full_work": {
+          "input_bytes": 254166745
+        },
+        "evidence": [
+          {
+            "path": "revcomp/revcomp.mec",
+            "sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/runtime.rs",
+            "sha256": "6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html"
+      }
+    }
+  ],
+  "runtimes": {
+    "micropython": {
+      "path": "/opt/homebrew/bin/micropython",
+      "sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "version": "3.4.0; MicroPython v1.29.0 on 2026-08-24",
+      "runtime_options": [
+        "-X",
+        "heapsize=12288M"
+      ],
+      "precision": "IEEE binary64 confirmed with 1.0000000000000002-1.0",
+      "integers": "unbounded MPZ verified beyond 2**100"
+    }
+  },
+  "libraries": {
+    "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9",
+    "/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib": "c3adcd954967b7e92812831fe12c614a9ca2d12221e897a87ee379df2ac004fd",
+    "/opt/homebrew/opt/apr/lib/libapr-1.0.dylib": "0a10f4741a4c2560a095b48f2dcc3f3f0451c71f6cc353c5435236e3711202fb",
+    "/opt/homebrew/opt/gcc/lib/gcc/current/libquadmath.0.dylib": "6f885df6ad8277edf614f0f5f7fbc6f8564a95b64679b88fb860382c9d1c0e9a",
+    "/opt/homebrew/opt/gcc/lib/gcc/current/libgomp.1.dylib": "954328f63a49f0f294763c7b370c91893d7d99794b1665ada67b03b21283cc6b",
+    "/opt/homebrew/opt/gcc/lib/gcc/current/libgfortran.5.dylib": "09c11f298a73589b0fa79d93bad7fda25c29055999b5c331507e02f456bf1775",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Info.plist": "c84d57eaf0b321f734ffb4c4ba4d248e2fda3e9998e7dfa38c001764a332a289",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/PharoSources.icns": "89d5c7b20b8d92255542452509cf2e5fe1e155e22c0d851c89973f9c0d1e8bd3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/pharo.signatures": "cc4b5d2515b0ad7810b547ed5567646f46a1be6b1251094caf61a575d3f3bae9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/Pharo.icns": "55e3e75664059787516694c5cc0646ab563b6ad51b40021fe4982c93c414a60d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/PharoImage.icns": "e45ed55471c17caca9cf87acde6a64e9e0671d35fa783850a0de8ac9a3d35718",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/PharoChanges.icns": "241248fd7059f68da58954ca2189d36a2c94c1361f470eb2d121ea86461ded4a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libB2DPlugin.dylib": "2028af177b1c1593a893c9896e5d99d9ba73fea520c84a4a72cb723ed0ed216d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libLocalePlugin.dylib": "a62fee9bda168bc447f243b007fe890c14330a8d11daeacf053a3d6efc63416c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libz.dylib": "cdcd6caa72a3865071c62562f3188b4d05ef11f10d54df86861a05e56fef0e04",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libLargeIntegers.dylib": "c8d97e79774b88f543fa20615bf29fde900a8a7e1b073d621857a7a93314b5c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libDSAPrims.dylib": "9b5dbfef117a9f511aed42c449fcacd578c2832ea59508f820d98812fed5dee6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libgit2-1.9.1.9.dylib": "27c468bc9246c622d54c69ddbba556106ca502bad90c36057931855aed00e669",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfreetype.dylib": "e0165c53d98f02b0c56d021e3f4ece623804ba6ce4649f2bfe67f57ad6ba9fea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfontconfig.dylib": "1eb8439741139cf2f72145a88fe5dee2e3e3f0318c8b61b1b5ba8bbe83a25db3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libFloatArrayPlugin.dylib": "4a52e7b1236e44a967641ab00de38144ddeb02445000b2543aab397908dc2558",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libgit2-1.9.dylib": "27c468bc9246c622d54c69ddbba556106ca502bad90c36057931855aed00e669",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssh2.1.0.1.dylib": "33eee6ca2c0f1e98f157feb5f427537c1df2195d1115b61dc9977288ae61212a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libharfbuzz-cairo.dylib": "9bbec62d86448740a532a1cd4400ad5a45ea25da4538f91b5cbcde4765c55191",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSqueakSSL.dylib": "d401857fdbb4376cbfe1ba54f684c66d6de0a06d272923b81b99c3a25fb81a08",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libcairo.2.dylib": "a550a39e8ac2c50d58b23b9df7485de9ab79fa811332533b9380582243361d28",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSurfacePlugin.dylib": "e864d6fd806556451fb1f77fa7967f94849ed4e7155539b2e316d9eb812678af",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libharfbuzz-cairo.0.dylib": "9bbec62d86448740a532a1cd4400ad5a45ea25da4538f91b5cbcde4765c55191",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libbz2.dylib": "b309062c08cf76fb5d2e565b5d043fd35d40373b8985c949d5c7a4abefd96bec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSocketPlugin.dylib": "5dcb8d27ed851f9534ef9842ea9533590907bb4347a984c70a2df6c4abcd63ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libgit2-1.9.1.9.0.dylib": "27c468bc9246c622d54c69ddbba556106ca502bad90c36057931855aed00e669",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL2-2.0.0.dylib": "2ca3a8e69016096d045bbd63a3581574e80a8edd118274d738022cfb655a486f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libFileAttributesPlugin.dylib": "6a301410858b843bb0c4db514129942f09168e94a79deac53f4a168e5b0145ad",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libBitBltPlugin.dylib": "6d5a1c4ae0173184bb564f4f9e6308be8651069f8e5afacfd840a91fb59e9736",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpng16.16.dylib": "5d9233da48c0434fd3ed45ef18dcea4eae0fa86c9e913c1ea32d7851a735bb02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssl.dylib": "4816432890925aed44c1d11e9ce9bf0ace8d127694c3c2f115bc613cf465ca6c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libJPEGReadWriter2Plugin.dylib": "827fcb226208fc9d8953af0e10123f8f4056b725b41d50e7c7b0af2397058836",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libTestLibrary.dylib": "74019d9f44172a1fcf97b3f01e0df4ac6ade09b426a11a371cf6b745d2bf3cb7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpixman-1.dylib": "9204dde32747e1bf314267efec44e7a1938922040898a076726e0cc5b61a53c3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssl.3.dylib": "4816432890925aed44c1d11e9ce9bf0ace8d127694c3c2f115bc613cf465ca6c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL3.0.dylib": "7b9e5c91603924e30a6447104b02683592fe8ca19484b2becaa5fc2f5f67c736",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libcairo.dylib": "a550a39e8ac2c50d58b23b9df7485de9ab79fa811332533b9380582243361d28",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libFilePlugin.dylib": "1ac325b43db316ad0afe4653301c60a8c179c9e608bb804ed2881d85b13cf756",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libMiscPrimitivePlugin.dylib": "8751731a1b82ce4883185fa4fd83b4d93f6180179fe4d315964a3ab9e8cf4bb6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssh2.1.dylib": "33eee6ca2c0f1e98f157feb5f427537c1df2195d1115b61dc9977288ae61212a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libUnixOSProcessPlugin.dylib": "78cab1555f4775d20c26ff43a9c797d8a232802f0b392f1863da88404b058282",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfreetype.6.dylib": "e0165c53d98f02b0c56d021e3f4ece623804ba6ce4649f2bfe67f57ad6ba9fea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libcrypto.3.dylib": "326b87e415b239946454407bce6222d9705319fb6846a8fce8aa879d78bc1644",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfreetype.6.20.6.dylib": "e0165c53d98f02b0c56d021e3f4ece623804ba6ce4649f2bfe67f57ad6ba9fea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpng.dylib": "5d9233da48c0434fd3ed45ef18dcea4eae0fa86c9e913c1ea32d7851a735bb02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libharfbuzz.0.dylib": "bb596db507e2246734e1145007b0ea580756883054bfb144304225505b85ef17",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL2.dylib": "2ca3a8e69016096d045bbd63a3581574e80a8edd118274d738022cfb655a486f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssh2.dylib": "33eee6ca2c0f1e98f157feb5f427537c1df2195d1115b61dc9977288ae61212a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libUUIDPlugin.dylib": "e9f876bcf9a1a01e9c4575de3ee28219805bf05c093cb6ea02c3d5ffcfb6cd36",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libz.1.3.1.dylib": "cdcd6caa72a3865071c62562f3188b4d05ef11f10d54df86861a05e56fef0e04",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libcrypto.dylib": "326b87e415b239946454407bce6222d9705319fb6846a8fce8aa879d78bc1644",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfontconfig.1.dylib": "1eb8439741139cf2f72145a88fe5dee2e3e3f0318c8b61b1b5ba8bbe83a25db3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libNewFilePlugin.dylib": "c78fea3fc78ca5cb105e43a6549c4a4249fd7464b9f1cceb04e637e425dac276",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libJPEGReaderPlugin.dylib": "b35faf40e39de75bc892621a7c969ba164fe7c6c33996330a30db5fc1ec7f118",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpng16.dylib": "5d9233da48c0434fd3ed45ef18dcea4eae0fa86c9e913c1ea32d7851a735bb02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libbz2.1.dylib": "b309062c08cf76fb5d2e565b5d043fd35d40373b8985c949d5c7a4abefd96bec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL3.dylib": "7b9e5c91603924e30a6447104b02683592fe8ca19484b2becaa5fc2f5f67c736",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libbz2.1.0.9.dylib": "b309062c08cf76fb5d2e565b5d043fd35d40373b8985c949d5c7a4abefd96bec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libharfbuzz.dylib": "bb596db507e2246734e1145007b0ea580756883054bfb144304225505b85ef17",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpixman-1.0.dylib": "9204dde32747e1bf314267efec44e7a1938922040898a076726e0cc5b61a53c3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libPharoVMCore.dylib": "3e0e63544cb6fd33ec2632dfaf721e5739bd43c597f2316c1e8b931b719248c2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL2-2.0.dylib": "2ca3a8e69016096d045bbd63a3581574e80a8edd118274d738022cfb655a486f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libz.1.dylib": "cdcd6caa72a3865071c62562f3188b4d05ef11f10d54df86861a05e56fef0e04",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libtty.dylib": "a24783f9ee972a1f283acb6585f452b3a699f3cca21c1a874beb0757e54eafac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpng16.16.47.0.dylib": "5d9233da48c0434fd3ed45ef18dcea4eae0fa86c9e913c1ea32d7851a735bb02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-published-1.image": "141cf34c5779e52dab1f1712d3ea9fc2dad34ae0f1da583fc33caee0ed16bcc3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-published-1.image": "0917ea349aa825ca8504a556606d7de28fb081134c1ccb6724b521a5fc59f4f6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-1.image": "6db9db0fc8cd91bb99b49aa93607e8fbbc2216ae1a2ff74700633404523cec1a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-2.image": "9e2c6b02a66cd919e5ae584f5a6c5f357e2c2e3a4cb045eac498e334ac81147e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-published-2.image": "3310c6082d26669a4e784d1708fa7ef95b1bce3e630e31a3929e5b86a41dbdfa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-1.image": "3d6b27d973e2bdea28f382dff19bef8156b56d0c07b0e80157fb864509e4a9c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-2.image": "1cc8462902d3b0ee8176b44d978d4db675beb2ef71baab2ec6df9003ebafc3a2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-published-1.image": "e36aa25fff55d2780c281d48ea2f67fa8160d42b54e7095c573e9c3e3643c74e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-published-1.image": "ca4714e82b0dda590444423ad10bfc6775d9a74422ae6ca1b23dd7979aff32da",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-published-2.image": "24aaf508ca55f3dc6434a04bd92f09932f7ffbc9863f76fb93be6ca219ba612a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-published-1.image": "e638a363d564eff847aaa53ac07e4e45b5dfd8c1780d0ba21c9bae37486ad739",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-arrays.image": "b611d089fdadcb1eb3a06aad196eb5f21cf0f15ba06052a4d41ac22345bfce8f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-compact.image": "e743eedffe9c1111aea623cf77e2a31e2998aee04d5405d155a7511070a015a9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-recurrence.image": "1b8880b7252a2ce593b2e4f7703ba4948db4efffd2d702b234ba3e3d26c453de",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-reuse.image": "025b28f6d437ec5278f9757b270e553f8aa7c036829e0fd00894459830097af9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-floatarrays.image": "29e1d57913b53a4b5d4b548da50725009bef901c72d070a1cbee5f8c0f3a28ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-buffered.image": "c1b45b68e1abef18ad561a016a27517b8270478561c558ba288e5fde71b5e282",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-packed.image": "1e88dfd91fcef8cfc5ff472e736ece60f4453267532055228986051d9c677214",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-regex.image": "a704222d8ad89d099166cf939c3179f6cad3b3a7457a58373d9aac9f970c77e8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-pcre2.image": "a0f4634e883ae9b8ed50e9639d46920b62f38deed5e213c562ba7215a21cd227",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-streaming.image": "35c3ba858e9544751fe0f2ac702ca9eda2b871f9f5ec2d642dc0088e865530de",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/package.yaml": "d4e6ba3ce62c40ab2e8e9a57a4bda88563d94e3c6adb9b1eec941cac5818de4e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/package.lock": "99089733fe4f2e509b3c1ee10cfc2340ff4dcfb5acf60308f60cb2b06ca20fea"
+  },
+  "pin_files": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-3/binarytrees.adb": "389e6675bc33da0eb4da52a99837cb5b7e5b03ff3b7aa4830c500a19d27ba0cc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-3/treenodes.ads": "475cf33ad538f325f7ba7578878967a6aa653c12a7428c950b3e4fd2e773d05e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-3/treenodes.adb": "42a714977c5bd3531ab5a3a40bed175fa99658965d1df4d08b3190fed971af44",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-1/binarytrees.adb": "1845085f9d5266a5e43f6fe0137623a44e6307c52612cbe82d6b24b079b7ff69",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-1/treenodes.ads": "3d2574d070513f3487ff58891c3c64e0f49fa03129c90a0789192e2ac986f1a8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-1/treenodes.adb": "d84d8d2b2fe3cf9d77f3dbdcfc812f96f1d237344c02b14012779ea0cec5b875",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fannkuchredux-gnat-3-faithful/fannkuchredux.adb": "ef0e0f832104f2526b7abc9fde6400581b70681cc9ca95c74400f3d7d3e96796",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-1/fasta_pck.ads": "77a5ca02fc81e840dad2526b6b9a5b0e424e9a26b627f9172feabfef3e54b4f2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-1/fasta_pck.adb": "0a65900c2d138b8b5c24fd175632f0427d7f91576805edf3ef7407f138f52950",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-1/fasta.adb": "04a60440c940eb36a1bf544d9beb94a18e390174781c02b8f80290dd46f46375",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/fasta.adb": "f95ef7cc16c4742bb24c4ce2d70c106f832887024ee11a3ac21663b75438dbdf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/sequence-data.ads": "7438b7baeff65bd17cc39e38d46814d18ccd2395b3c6e2df2b98018d27b0d42d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/sequence-creation.ads": "80ccef1fd599ff1a91758a215d5aa7464af34bab514008f0849e0eee99267265",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/sequence.ads": "147292f0c74aefa9eea4366d403297c697b58ae428960180212632b8a3122877",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/sequence-creation.adb": "f864d7d6638f8e36be3d0065666c38438787a0773e053a3c7475eedb0d740caf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/line_io.ads": "3e6ade1c9a3009cad6dafa1ac2d04e812d68b8be1608e845db08c316f0f38817",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/line_io.adb": "ad49da8248c76d95e767e1603343ab2ad872db1d9a0eca02f64dc4f960a5b4d3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/lcg_random.ads": "2f4b582b4651b2190e52bf2adecdd62bac9873b74e83bc49b7230f59c71fb439",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-2-faithful/lcg_random.adb": "001a24ec7bf4321dc7493fae79ed5b19d90f9b29fb1a4434fbf26c0c86214569",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/fasta.adb": "5f8fac8a4051162d324be8399399c15bddb6b22506fbb566e4f114514dbc0dfa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/sequence-data.ads": "7438b7baeff65bd17cc39e38d46814d18ccd2395b3c6e2df2b98018d27b0d42d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/sequence-creation.ads": "80ccef1fd599ff1a91758a215d5aa7464af34bab514008f0849e0eee99267265",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/sequence.ads": "147292f0c74aefa9eea4366d403297c697b58ae428960180212632b8a3122877",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/sequence-creation.adb": "c1c172fbeb36e025d7f843cc43bd7d6aa72f5bcbdca4912f20964dce353c710f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/line_io.ads": "3e6ade1c9a3009cad6dafa1ac2d04e812d68b8be1608e845db08c316f0f38817",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/line_io.adb": "ad49da8248c76d95e767e1603343ab2ad872db1d9a0eca02f64dc4f960a5b4d3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/lcg_random.ads": "2f4b582b4651b2190e52bf2adecdd62bac9873b74e83bc49b7230f59c71fb439",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/fasta-gnat-5-faithful/lcg_random.adb": "001a24ec7bf4321dc7493fae79ed5b19d90f9b29fb1a4434fbf26c0c86214569",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-gnat-2/mandelbrot.adb": "65b5b9f7fee52a2bc2cd41571f6121e546f9d1672fb9dc379539a419cff10253",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/mandelbrot-gnat-3/mandelbrot.adb": "4dcead94ba4b96c4691fd7732c94d52fb17e7ead8047ee9eba5b76be753b7d0a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-1/nbody_pck.ads": "1323b9ae72a8cd0a72fa730acd05c2ac4b7023b1bfa0197b9000d3852589401f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-1/nbody_pck.adb": "5d12a62514bc2883a540a9d254562c2d047bdd50412d894351e00e4876e1f710",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-1/nbody.adb": "ce7a24e8cab51c0112195b2f30f9c5581d7f36a8b7434309b20fe330e593ee11",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-3/nbody.adb": "083c79ceaa4ce893e5e371c4e80ee257de1420472442fd56b63ae2e07bc0d533",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-3/nbody_pck.ads": "c8fbab720647eb95e133fa19c93c9e50452f2bf478a6805a48cdf5e9b2bba8bc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/nbody-gnat-3/nbody_pck.adb": "3db24e4e4cc9074fa5725cb8dd12b78153aef7918d597c10bc6d90f0e892ee8b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/pidigits-gnat-2/pidigits.adb": "0b3d2bdd6e8486b1a901a81941eb661cad6e140d920ce50fd0a91561dd62ca6d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/pidigits-gnat-1/pidigits.adb": "c7d796e9f96203274a38954394952a823b8f229877d07f636d33ac808a4f7508",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/revcomp.adb": "178f75b727e3c7f63ff5d838da5617357088bf88e832e1cc3a0950c9a1d16b12",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/text_input.ads": "056a4ed7ab6636d2d5c62806f04adecd10422eac7ec1e92672a14c75d38c5708",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/text_input.adb": "1952714e9f598b4a0bdbd3055fa5fa53bffcaa7f51a46ce8e8c5a9b8f898e43e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/line_io.ads": "3cb025fa30d21292a56dd5144467db78cdf3c0f9014879be5c183c2b8ada290f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-2/line_io.adb": "46ce73741670927eac9fa70fb96195ce91943d5a61b7012890fd0dbe19b91cd9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/revcomp-gnat-1/revcomp.adb": "0dd75b06fdf5cc6c1afc4b1e3f4288c2b17751ca950ae21caeb573713ec36dd7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-3/spectralnorm.adb": "104325a9af4dd053960b9133030ec9291615f5bf50177b81e8c80da4d6a1ef0a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-3/spectral_utils.ads": "c5718f9ab5fa72e8121dcc3f89d9383ac2cb1bc2c53bcb43aeb0fcfcbd915461",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-3/spectral_utils.adb": "331e886a04dab97a8813d63ae74ffe41d2dcfd6b51328a685bbc6a2b2afb72a9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-1/spectral_utils.ads": "e4ef106262091baedbeedcfbed9316a4a4806b323907c2bde5dfcd32b8548afd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-1/spectral_utils.adb": "38a58d878f5de28c2dba74f931fffd7ab936d75bce33e63144128f9b442bd6f2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/spectralnorm-gnat-1/spectralnorm.adb": "f302155bb2b4cdd4a0f8a41db695524d33f0726c6413a26d7dda0da7526ea6f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/knucleotide-ada-compact/knucleotide.adb": "08fe3f0d32b486e3dc1bf2653096dfd28a56d488e14e95348c63f1362deae0b7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2/regexredux.adb": "af4a3747e82fcfe803aaa85a7c29923db2d09f5d1db9b4d6bd2c476974134c4c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/binarytrees.adb": "ee6fbdbf28ba3baf798757813d9b61367df4ab3f9ce4bac96e38b717ecac3b9a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/trees.ads": "bf13212bd1f2db6624253593dbf5b9f80232fd19d6330588e4342a8a700528ee",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/trees.adb": "bdfbc74c1ce5b46e428775ccae9d28c6ac1bec7b5fa4775adb254e109fc62310",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/apache_runtime.ads": "91913ab615abf78fc5728a863d67305f1bcfc9ddb525f5a707f6261f1dd8d0da",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/apache_runtime-pools.ads": "2f61ba2e3649567d6832904903a8e3b5a56055997670ed31d78a73e509a9f710",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/binarytrees-gnat-4-native/apache_runtime-pools.adb": "67443e855aa78ca2f5889711575284b72db7da6f1da43a8e2f5b97db3f061d83",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/knucleotide-ada-optimized/knucleotide.adb": "22cc497365914266d81e2c6458e6cd7bcb0eb67a88044800b59f2002546c61dc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/root-canaries.json": "2c9ccde6c77b4ba77a241e5e84e0e8c561561607397144c158a1aea9abb00ab1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/adversarial-report.json": "af735c13bf96d2e2a33be145a400e5f1088a8929cd698441599b41980168684f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/tree-allocation-audit.json": "b1dd00e8b3cb3891fbac2136530015a0973eb68765b0ba54cf7162d83ca60518",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json": "87e658da5bcf37b0b27356d3282ab2862d2990f3b13aa8e871cbcce3d29b6c24",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/audit.py": "414cd2d5709d2d8f0e4ec06200a0c8e6fb1d8193d2b68750314426991740539d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/run.py": "dd5122a6011454474e70d74f2ea80ffc67a8c004e4be906d36edc022ba8d4e3b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/probe.py": "05a69c12fea0329b96962dffa306c5a1879eb16cfd838dad031c9cf175af3b79",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/metrics.py": "42f8013dde84f40a33b16711bc3460dfa29574956c2c4d635a9ce8181b07f909",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/run.py": "6926e288a7b9b59b030c9226227df967aa1d92b3e395789467706e2241d987ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/run.py": "8b7f1b408fb5838dc6adc2404bcfa6146e48e770e602fbe78255454f3cacb8c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-input25000000.txt": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/input5000000.txt": "97197f5957a12f8a859ba7edff6d97994daa18afacd77db21fa68c6f2e447e38",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/dotnet_manifest.json": "c1a724dba0a3c887938b7af1f8e584e0d07206e56249785d2837d7f3d1e1d8c6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/ada_pascal_manifest.json": "3f97726bd8d15fc66aad99d339d462d24290d905d8dd5d8e4ae7590b1f71b2f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/fortran_dart_manifest.json": "7239c9931c47cdede6dcdc320b500350eac65f17b67ac0048fd90e6c14343114",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/smalltalk_manifest.json": "98ee5827a4c2b130a26fabe7f935a0c6f6af5d4258cb6f08c3f47f22edab62e2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/micropython_manifest.json": "0ab94ca468841db13332ba47d546b443842efcf11e45262af36ba98188a9508d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/evidence/run-v1.py": "aa783aba5521a574494185a962791a346390d545dd6404398dd557122ff457d7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/omit_toit.py": "920709c92276ab40413f02df14383d71a341becceb70949a2e390f0ee1cbccec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/metrics_final.py": "db866bfb1b339a324b75f50d4919727192defd73370f9cb5064eda90be3ee778",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/source-audit.json": "acff5d94e9dad8013b278b22f8514b6db778cd4ddd088a4c5a4ab3889a504175",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/native-timings.json": "5b350fb4fa3c7aaeb4c54b0fb083b2290b4059c94d97215fd0ba9984a3dcd52f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/source-audit-v2.json": "e5917fc2950b4a20e9e70fde421043c9cd4f5775a1852be3645c52d965c7dfd6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/prepare_micropython_heap.py": "777ead14d43b893f59e428430b1e8ceb9a56d6b6faf7d59f495892e042210d85",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/micropython_heap_preflight.py": "67a36a34fb5fa0d1ad472b03619f3b420842ac4c7cbe0f61b7f776e15e1e2eb1"
+  },
+  "timing_boundary": "Sequential fresh processes in randomized rounds, three admitted samples per candidate. Full prescribed workloads and complete output to regular files; process startup, JIT compilation, image loading, standard libraries, workers and output are included. Ahead-of-time compilation, source audits, output hashing and comparisons are outside timing. AC power with Low Power Mode off. Samples overlapping competing compilers or power changes are discarded and retried. At most eight application workers; native ARM64 execution. No scaled timings. MicroPython uses a uniform 12288 MB heap for every candidate and sample; allocation, GC, startup and output remain timed.",
+  "coverage": {
+    "micropython": 20
+  },
+  "unmeasured_alternates": [],
+  "loc_policy": "Nonblank, noncomment application lines; independent packed assignments/statements expanded. All application helpers and FFI declarations counted. General library implementations excluded uniformly.",
+  "requirements": "Full seven growable nucleotide maps with collision-free 36-bit keys; binary64 arithmetic and full Fasta random steps/CDF decisions; both pi extractions for every tested candidate (generic impossible-candidate guard allowed equally); distinct equal-size leaf/interior tree records retained and traversed; all permutations and pixels; full regex counts and ordered substitutions; no specialized native benchmark kernels.",
+  "scope_transition": {
+    "reason": "User removed Toit from the comparison.",
+    "at": "2026-10-11T06:29:56.091803+00:00",
+    "original_audit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/source-audit.json",
+    "original_audit_sha256": "acff5d94e9dad8013b278b22f8514b6db778cd4ddd088a4c5a4ab3889a504175",
+    "original_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/native-timings.json",
+    "original_report_sha256": "5b350fb4fa3c7aaeb4c54b0fb083b2290b4059c94d97215fd0ba9984a3dcd52f",
+    "original_runner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/evidence/run-v1.py",
+    "original_runner_sha256": "aa783aba5521a574494185a962791a346390d545dd6404398dd557122ff457d7",
+    "retained_samples": 204,
+    "excluded_samples": 19,
+    "sample_policy": "Retain complete validated samples verbatim. Preserve randomized round orders after removing Toit; execute only missing samples."
+  },
+  "heap_policy": {
+    "megabytes": 12288,
+    "uniform": true,
+    "reason": "The full 125-million-base nucleotide workload constructs complete growable maps. The initial 1024 MB test heap is not a full-workload memory budget.",
+    "application_source_changed": false,
+    "prior_full_size_micropython_samples": 0,
+    "original_audit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/source-audit-v2.json",
+    "original_audit_sha256": "e5917fc2950b4a20e9e70fde421043c9cd4f5775a1852be3645c52d965c7dfd6"
+  }
+}

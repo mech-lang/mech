@@ -1,0 +1,69 @@
+[
+  {
+    "benchmark": "fasta",
+    "profile": "prototype",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds/fasta-prototype/aot",
+    "binary_sha256": "5a932ae8e3b05748d573b984a25d0617f7d483c6abb8bc4ebaf46d64bf7272ac",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/fasta.prototype.mec",
+    "source_sha256": "4863053d6d9e16d9ced4e05531a7cd36c62d3ac70ba1f8ca1de9853300404546",
+    "native_object_sha256": "95c6d2f0b1e9771078ed321d91de190e050b1eedfd28922e7f79bccffc0b9855",
+    "old_native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+    "runtime_environment": {
+      "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+      "MECH_CONTROL_SCAN_CACHE": "1",
+      "MECH_CONTROL_SCAN_PIPELINE": "auto"
+    }
+  },
+  {
+    "benchmark": "fasta",
+    "profile": "binary-search",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds/fasta-binary-search/aot",
+    "binary_sha256": "6bee84f6c02ac4f606ac5d4438296dde8692f5770682dbfcecf9e52c1bd3952a",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/fasta.binary-search.mec",
+    "source_sha256": "7a3d21986c8312f256b7667ec71e21156c9d3bd8e2524a01b95c0f9771b960c2",
+    "native_object_sha256": "23585416d65b4d5d77024231e0a383c138b17c9e33f87d22bddf80b8168dfcf3",
+    "old_native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+    "runtime_environment": {
+      "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+      "MECH_CONTROL_SCAN_CACHE": "1",
+      "MECH_CONTROL_SCAN_PIPELINE": "auto"
+    }
+  },
+  {
+    "benchmark": "fasta",
+    "profile": "rebuilt-smallest",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds/fasta-rebuilt-smallest/aot",
+    "binary_sha256": "a2ce99fd0ab2674d85fafd300ca4d0934f589a03d429a7a99bd452e3b47ccf63",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+    "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+    "native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+    "old_native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+    "runtime_environment": {
+      "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+      "MECH_CONTROL_SCAN_CACHE": "1",
+      "MECH_CONTROL_SCAN_PIPELINE": "auto"
+    }
+  },
+  {
+    "benchmark": "pidigits",
+    "profile": "prototype",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds/pidigits-prototype/aot",
+    "binary_sha256": "255815d044db664ffd7e82efebbfb9a5935eb671c7a6cfef0944583aea7f4e98",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/pidigits.prototype.mec",
+    "source_sha256": "e8a3197fb776b633ccba133d5193d48769eebf90b9f8a8ceccde4d4725278a08",
+    "native_object_sha256": "14e5eb79f503a4c9ec0e9177aa29342ac6bbd963f9129d0a8c9f166824206cce",
+    "old_native_object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+    "runtime_environment": {}
+  },
+  {
+    "benchmark": "pidigits",
+    "profile": "rebuilt-smallest",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds/pidigits-rebuilt-smallest/aot",
+    "binary_sha256": "2a1d9a56fd3086d7c0b4ff78a063650d526b435949c0cd0d5c0de768f9a56736",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+    "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+    "native_object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+    "old_native_object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+    "runtime_environment": {}
+  }
+]

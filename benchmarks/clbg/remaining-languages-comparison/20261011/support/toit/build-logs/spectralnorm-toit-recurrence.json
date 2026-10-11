@@ -1,0 +1,18 @@
+{
+  "cache": {
+    "source_sha256": "f45e55a60d169844aac748cb3c0b1fc98d6fe36f546e5f77df655006709e484d",
+    "sdk_sha256": "4f5170ee11089c5f85c75439f09b53ee7dfb7555faa56da9b320a6bc24038ec6",
+    "package_lock_sha256": "99089733fe4f2e509b3c1ee10cfc2340ff4dcfb5acf60308f60cb2b06ca20fea"
+  },
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+    "compile",
+    "-O2",
+    "--project-root",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/spectralnorm-toit-recurrence",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/spectralnorm-toit-recurrence.toit"
+  ],
+  "binary_sha256": "d8b52531528ce4f4e3f4b24443a3295ff834c44ebf57520377179bf531cd480e"
+}

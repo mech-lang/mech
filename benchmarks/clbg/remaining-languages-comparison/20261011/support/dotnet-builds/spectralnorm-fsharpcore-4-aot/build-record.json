@@ -1,0 +1,64 @@
+{
+  "id": "spectralnorm-fsharpcore-4-aot",
+  "key": "spectralnorm:spectralnorm-fsharpcore-4-aot",
+  "benchmark": "spectralnorm",
+  "language": "fsharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/spectralnorm-fsharpcore-4.fs",
+  "source_sha256": "a355c5804474d2ecd074a8030af671538bc8f9a9fc6e0d4d0c68efce3c194f67",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/spectralnorm-fsharpcore-4.fs",
+  "original_source_sha256": "a355c5804474d2ecd074a8030af671538bc8f9a9fc6e0d4d0c68efce3c194f67",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-fsharpcore-4.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 14:09:21 GMT\n\nMAKE:\ncp spectralnorm.fsharpcore-4.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/program.fsproj (in 831 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:09.53\n\n11.38s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 5500\n\nPROGRAM OUTPUT:\n1.274224153",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 46,
+  "normalized_loc": 46,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/spectralnorm-fsharpcore-4-aot/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-4-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/spectralnorm-fsharpcore-4-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-4-aot/app",
+  "binary_sha256": "76e51ae5e1a64e4f7fb09226ce9c6ebd4ad6e8558caad28a901ac358b39f48a1",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-4-aot/app",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-4-aot/app": "76e51ae5e1a64e4f7fb09226ce9c6ebd4ad6e8558caad28a901ac358b39f48a1"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 12,
+    "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 1.595,
+  "timing_selection_reasons": [
+    "Fewest normalized source lines among accepted candidates."
+  ]
+}

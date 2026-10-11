@@ -1,0 +1,12 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib)
+   Compiling mech-time v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/time)
+   Compiling mech-scene v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/scene)
+   Compiling mech-console v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/console)
+   Compiling mech-timer v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/timer)
+   Compiling mech-terminal v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/terminal)
+   Compiling mech v0.3.6 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech)
+   Compiling mech-browser v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/browser)
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+   Compiling mech-build v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/build)
+    Finished `release` profile [optimized] target(s) in 1m 39s

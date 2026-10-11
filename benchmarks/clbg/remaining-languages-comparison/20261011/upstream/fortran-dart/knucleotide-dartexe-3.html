@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Dart aot&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Dart aot&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks Game</span>
+<span class="com"></span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">   Contributed by Philip Rogers</span>
+<span class="com">   Based on a javascript implementation by Jesse Millikan and Matt Baker</span>
+<span class="com">   Optimized and parallelized by Dwayne Slater</span>
+<span class="com">   + null safety    </span>
+<span class="com">*/</span>
+
+import <span class="sng">&#39;dart:async&#39;</span><span class="opt">;</span>
+import <span class="sng">&#39;dart:collection&#39;</span><span class="opt">;</span>
+import <span class="sng">&#39;dart:convert&#39;</span><span class="opt">;</span>
+import <span class="sng">&#39;dart:io&#39;</span><span class="opt">;</span>
+import <span class="sng">&#39;dart:isolate&#39;</span><span class="opt">;</span>
+import <span class="sng">&#39;dart:typed_data&#39;</span><span class="opt">;</span>
+
+<span class="kwa">class</span> <span class="kwd">CodeList</span> <span class="opt">{</span>
+  <span class="kwd">Uint</span><span class="num">64L</span>ist buffer<span class="opt">;</span>
+  <span class="kwb">int</span> length<span class="opt">;</span>
+  <span class="kwb">int</span> codeBuffer <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+  <span class="kwb">int</span> codeBufferLen <span class="opt">=</span> <span class="num">32</span><span class="opt">;</span>
+  <span class="kwb">int</span> codeLen <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+
+  <span class="kwd">CodeList</span><span class="opt">(</span><span class="kwb">int</span> initialCapacity<span class="opt">)</span>
+      <span class="opt">:</span> buffer <span class="opt">=</span> <span class="kwd">Uint</span><span class="num">64L</span>ist<span class="opt">(</span>initialCapacity<span class="opt">),</span>
+        length <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+
+  <span class="kwa">void</span> <span class="kwb">appendBuffer</span><span class="opt">(</span><span class="kwb">int</span> codes<span class="opt">) {</span>
+    <span class="kwa">if</span> <span class="opt">(</span>length <span class="opt">==</span> buffer<span class="opt">.</span>length<span class="opt">) {</span>
+      <span class="kwa">final</span> newBuffer <span class="opt">=</span> <span class="kwd">Uint</span><span class="num">64L</span>ist<span class="opt">(</span>length <span class="opt">*</span> <span class="num">2</span><span class="opt">);</span>
+      newBuffer<span class="opt">.</span><span class="kwb">setRange</span><span class="opt">(</span><span class="num">0</span><span class="opt">,</span> length<span class="opt">,</span> buffer<span class="opt">);</span>
+      buffer <span class="opt">=</span> newBuffer<span class="opt">;</span>
+    <span class="opt">}</span>
+    buffer<span class="opt">[</span>length<span class="opt">++] =</span> codes<span class="opt">;</span>
+  <span class="opt">}</span>
+
+  <span class="kwa">void</span> <span class="kwb">add</span><span class="opt">(</span><span class="kwb">int</span> n<span class="opt">) {</span>
+    codeBuffer <span class="opt">= (</span>codeBuffer <span class="opt">&lt;&lt;</span> <span class="num">2</span><span class="opt">) |</span> n<span class="opt">;</span>
+    <span class="kwa">if</span> <span class="opt">((--</span>codeBufferLen<span class="opt">) ==</span> <span class="num">0</span><span class="opt">) {</span>
+      <span class="kwb">appendBuffer</span><span class="opt">(</span>codeBuffer<span class="opt">);</span>
+      codeBuffer <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+      codeBufferLen <span class="opt">=</span> <span class="num">32</span><span class="opt">;</span>
+    <span class="opt">}</span>
+  <span class="opt">}</span>
+
+  <span class="kwa">void</span> <span class="kwb">flush</span><span class="opt">() {</span>
+    codeLen <span class="opt">= (</span>length <span class="opt">*</span> <span class="num">32</span><span class="opt">) + (</span><span class="num">32</span> <span class="opt">-</span> codeBufferLen<span class="opt">);</span>
+    <span class="kwa">while</span> <span class="opt">(</span>codeBuffer <span class="opt">!=</span> <span class="num">0</span><span class="opt">)</span> <span class="kwb">add</span><span class="opt">(</span><span class="num">0</span><span class="opt">);</span>
+  <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwd">String</span> <span class="kwb">codeToString</span><span class="opt">(</span><span class="kwb">int</span> code<span class="opt">,</span> <span class="kwb">int</span> len<span class="opt">) {</span>
+  <span class="kwa">final</span> b <span class="opt">=</span> <span class="kwd">Uint</span><span class="num">8L</span>ist<span class="opt">(</span>len<span class="opt">);</span>
+  <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> i <span class="opt">=</span> len <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span> i <span class="opt">&gt;=</span> <span class="num">0</span><span class="opt">;</span> i<span class="opt">--) {</span>
+    <span class="kwa">const</span> <span class="kwb">int</span> $A <span class="opt">=</span> <span class="num">0x41</span><span class="opt">;</span>
+    <span class="kwa">const</span> <span class="kwb">int</span> $T <span class="opt">=</span> <span class="num">0x54</span><span class="opt">;</span>
+    <span class="kwa">const</span> <span class="kwb">int</span> $C <span class="opt">=</span> <span class="num">0x43</span><span class="opt">;</span>
+    <span class="kwa">const</span> <span class="kwb">int</span> $G <span class="opt">=</span> <span class="num">0x47</span><span class="opt">;</span>
+    b<span class="opt">[</span>i<span class="opt">] =</span> <span class="kwa">const</span> <span class="opt">[</span>$A<span class="opt">,</span> $C<span class="opt">,</span> $T<span class="opt">,</span> $G<span class="opt">][</span>code <span class="opt">&amp;</span> <span class="num">3</span><span class="opt">];</span>
+    code <span class="opt">&gt;&gt;=</span> <span class="num">2</span><span class="opt">;</span>
+  <span class="opt">}</span>
+  <span class="kwa">return</span> <span class="kwd">String</span><span class="opt">.</span><span class="kwb">fromCharCodes</span><span class="opt">(</span>b<span class="opt">);</span>
+<span class="opt">}</span>
+
+<span class="kwd">Future</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;</span> <span class="kwb">readInput</span><span class="opt">() {</span>
+  <span class="kwa">return</span> stdin
+      <span class="opt">.</span><span class="kwb">transform</span><span class="opt">(</span>ascii<span class="opt">.</span>decoder<span class="opt">)</span>
+      <span class="opt">.</span><span class="kwb">transform</span><span class="opt">(</span><span class="kwd">LineSplitter</span><span class="opt">())</span>
+      <span class="opt">.</span><span class="kwb">skipWhile</span><span class="opt">((</span>line<span class="opt">) =&gt; !</span>line<span class="opt">.</span><span class="kwb">startsWith</span><span class="opt">(</span><span class="sng">&quot;&gt;THREE&quot;</span><span class="opt">))</span>
+      <span class="opt">.</span><span class="kwb">skip</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span>
+      <span class="opt">.</span><span class="kwb">takeWhile</span><span class="opt">((</span>line<span class="opt">) =&gt; !</span>line<span class="opt">.</span><span class="kwb">startsWith</span><span class="opt">(</span><span class="sng">&quot;&gt;&quot;</span><span class="opt">))</span>
+      <span class="opt">.</span><span class="kwb">map</span><span class="opt">((</span>s<span class="opt">) =&gt;</span> s<span class="opt">.</span><span class="kwb">toUpperCase</span><span class="opt">())</span>
+      <span class="opt">.</span><span class="kwb">join</span><span class="opt">();</span>
+<span class="opt">}</span>
+
+<span class="kwd">Future</span><span class="opt">&lt;</span><span class="kwd">CodeList</span><span class="opt">&gt;</span> <span class="kwb">readCodes</span><span class="opt">() {</span>
+  <span class="kwa">final</span> codeList <span class="opt">=</span> <span class="kwd">CodeList</span><span class="opt">(</span><span class="num">1024</span> <span class="opt">*</span> <span class="num">1024</span> <span class="opt">*</span> <span class="num">4</span><span class="opt">);</span>
+  <span class="kwa">return</span> stdin
+      <span class="opt">.</span><span class="kwb">map</span><span class="opt">((</span>s<span class="opt">) =&gt;</span> <span class="kwd">String</span><span class="opt">.</span><span class="kwb">fromCharCodes</span><span class="opt">(</span>s<span class="opt">))</span>
+      <span class="opt">.</span><span class="kwb">transform</span><span class="opt">(</span><span class="kwd">LineSplitter</span><span class="opt">())</span>
+      <span class="opt">.</span><span class="kwb">skipWhile</span><span class="opt">((</span>line<span class="opt">) =&gt; !</span>line<span class="opt">.</span><span class="kwb">startsWith</span><span class="opt">(</span><span class="sng">&quot;&gt;THREE&quot;</span><span class="opt">))</span>
+      <span class="opt">.</span><span class="kwb">skip</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span>
+      <span class="opt">.</span><span class="kwb">takeWhile</span><span class="opt">((</span>line<span class="opt">) =&gt; !</span>line<span class="opt">.</span><span class="kwb">startsWith</span><span class="opt">(</span><span class="sng">&quot;&gt;&quot;</span><span class="opt">))</span>
+      <span class="opt">.</span><span class="kwb">forEach</span><span class="opt">((</span>line<span class="opt">) {</span>
+    <span class="kwa">final</span> units <span class="opt">=</span> line<span class="opt">.</span>codeUnits<span class="opt">;</span>
+    <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> units<span class="opt">.</span>length<span class="opt">;</span> i<span class="opt">++) {</span>
+      codeList<span class="opt">.</span><span class="kwb">add</span><span class="opt">((</span>units<span class="opt">[</span>i<span class="opt">] &gt;&gt;</span> <span class="num">1</span><span class="opt">) &amp;</span> <span class="num">3</span><span class="opt">);</span>
+    <span class="opt">}</span>
+  <span class="opt">}).</span><span class="kwb">then</span><span class="opt">((</span>_<span class="opt">) {</span>
+    codeList<span class="opt">.</span><span class="kwb">flush</span><span class="opt">();</span>
+    <span class="kwa">return</span> codeList<span class="opt">;</span>
+  <span class="opt">});</span>
+<span class="opt">}</span>
+
+<span class="kwd">Map</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">,</span> <span class="kwb">int</span><span class="opt">&gt;</span> <span class="kwb">frequency</span><span class="opt">(</span><span class="kwd">CodeList</span> codes<span class="opt">,</span> <span class="kwb">int</span> length<span class="opt">) {</span>
+  <span class="kwa">final</span> freq <span class="opt">=</span> <span class="kwd">HashMap</span><span class="opt">&lt;</span><span class="kwb">int</span><span class="opt">,</span> <span class="kwb">int</span><span class="opt">&gt;();</span>
+  <span class="kwa">final</span> <span class="kwb">int</span> shift <span class="opt">=</span> <span class="num">64</span> <span class="opt">- (</span>length <span class="opt">*</span> <span class="num">2</span><span class="opt">);</span>
+  <span class="kwb">int</span> window <span class="opt">=</span> codes<span class="opt">.</span>buffer<span class="opt">[</span><span class="num">0</span><span class="opt">];</span>
+  <span class="kwb">int</span> next <span class="opt">=</span> codes<span class="opt">.</span>buffer<span class="opt">[</span><span class="num">1</span><span class="opt">];</span>
+  <span class="kwb">int</span> count <span class="opt">=</span> codes<span class="opt">.</span>codeLen <span class="opt">-</span> length <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+  <span class="kwb">int</span> cd <span class="opt">=</span> <span class="num">32</span><span class="opt">;</span>
+  <span class="kwb">int</span> i <span class="opt">=</span> <span class="num">2</span><span class="opt">;</span>
+  <span class="kwa">while</span> <span class="opt">(</span>count <span class="opt">&gt;</span> <span class="num">0</span><span class="opt">) {</span>
+    freq<span class="opt">[</span>window <span class="opt">&gt;&gt;</span> shift<span class="opt">] = (</span>freq<span class="opt">[</span>window <span class="opt">&gt;&gt;</span> shift<span class="opt">] ??</span> <span class="num">0</span><span class="opt">) +</span> <span class="num">1</span><span class="opt">;</span>
+
+    window <span class="opt">= (</span>window <span class="opt">&lt;&lt;</span> <span class="num">2</span><span class="opt">) | ((</span>next <span class="opt">&gt;&gt;</span> <span class="num">62</span><span class="opt">) &amp;</span> <span class="num">0x3</span><span class="opt">);</span>
+    next <span class="opt">&lt;&lt;=</span> <span class="num">2</span><span class="opt">;</span>
+    count<span class="opt">--;</span>
+
+    <span class="kwa">if</span> <span class="opt">((--</span>cd<span class="opt">) ==</span> <span class="num">0</span><span class="opt">) {</span>
+      cd <span class="opt">=</span> <span class="num">32</span><span class="opt">;</span>
+      next <span class="opt">=</span> codes<span class="opt">.</span>buffer<span class="opt">[</span>i<span class="opt">++];</span>
+    <span class="opt">}</span>
+  <span class="opt">}</span>
+
+  <span class="kwa">return</span> <span class="kwd">Map</span><span class="opt">.</span><span class="kwb">fromEntries</span><span class="opt">(</span>freq<span class="opt">.</span>entries<span class="opt">.</span><span class="kwb">map</span><span class="opt">((</span>entry<span class="opt">) =&gt;</span> <span class="kwd">MapEntry</span><span class="opt">(</span>
+      <span class="kwb">codeToString</span><span class="opt">(</span>entry<span class="opt">.</span>key<span class="opt">.</span><span class="kwb">toUnsigned</span><span class="opt">(</span>length <span class="opt">*</span> <span class="num">2</span><span class="opt">),</span> length<span class="opt">),</span> entry<span class="opt">.</span>value<span class="opt">)));</span>
+<span class="opt">}</span>
+
+<span class="kwa">void</span> <span class="kwb">sort</span><span class="opt">(</span><span class="kwd">CodeList</span> codes<span class="opt">,</span> <span class="kwb">int</span> length<span class="opt">) {</span>
+  <span class="kwa">final</span> freq <span class="opt">=</span> <span class="kwb">frequency</span><span class="opt">(</span>codes<span class="opt">,</span> length<span class="opt">);</span>
+  <span class="kwa">final</span> keys <span class="opt">=</span> freq<span class="opt">.</span>keys<span class="opt">.</span><span class="kwb">toList</span><span class="opt">();</span>
+  <span class="kwb">int</span> n <span class="opt">=</span> codes<span class="opt">.</span>codeLen <span class="opt">-</span> length <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+
+  keys<span class="opt">.</span><span class="kwb">sort</span><span class="opt">((</span>a<span class="opt">,</span> b<span class="opt">) {</span>
+    <span class="kwb">int</span> _a <span class="opt">=</span> freq<span class="opt">[</span>a<span class="opt">] ??</span> <span class="num">0</span><span class="opt">;</span>
+    <span class="kwb">int</span> _b <span class="opt">=</span> freq<span class="opt">[</span>b<span class="opt">] ??</span> <span class="num">0</span><span class="opt">;</span>
+    <span class="kwa">return</span> _b <span class="opt">-</span> _a<span class="opt">;</span>
+  <span class="opt">});</span>
+
+  <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">final</span> key <span class="kwa">in</span> keys<span class="opt">) {</span>
+    <span class="kwd">String</span> count <span class="opt">= ((</span>freq<span class="opt">[</span>key<span class="opt">] ??</span> <span class="num">0</span><span class="opt">) *</span> <span class="num">100</span> <span class="opt">/</span> n<span class="opt">).</span><span class="kwb">toStringAsFixed</span><span class="opt">(</span><span class="num">3</span><span class="opt">);</span>
+    <span class="kwb">print</span><span class="opt">(</span><span class="sng">&#39;</span><span class="ipl">$key $count</span><span class="sng">&#39;</span><span class="opt">);</span>
+  <span class="opt">}</span>
+  <span class="kwb">print</span><span class="opt">(</span><span class="sng">&#39;&#39;</span><span class="opt">);</span>
+<span class="opt">}</span>
+
+<span class="kwd">String</span> <span class="kwb">find</span><span class="opt">(</span><span class="kwd">CodeList</span> codes<span class="opt">,</span> <span class="kwd">String</span> string<span class="opt">) {</span>
+  <span class="kwd">Map</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">,</span> <span class="kwb">int</span><span class="opt">&gt;</span> freq <span class="opt">=</span> <span class="kwb">frequency</span><span class="opt">(</span>codes<span class="opt">,</span> string<span class="opt">.</span>length<span class="opt">);</span>
+  <span class="kwa">return</span> <span class="sng">&#39;</span><span class="ipl">${(freq[string])}</span><span class="sng"></span><span class="esc">\t</span><span class="sng"></span><span class="ipl">$string</span><span class="sng">&#39;</span><span class="opt">;</span>
+<span class="opt">}</span>
+
+<span class="kwa">void</span> <span class="kwb">main</span><span class="opt">(</span>args<span class="opt">)</span> async <span class="opt">{</span>
+  <span class="kwa">final</span> sequence <span class="opt">=</span> await <span class="kwb">readCodes</span><span class="opt">();</span>
+  <span class="kwa">final</span> a <span class="opt">=</span> <span class="kwb">par</span><span class="opt">(</span>sequence<span class="opt">, [</span><span class="sng">&#39;GGT&#39;</span><span class="opt">,</span> <span class="sng">&#39;GGTA&#39;</span><span class="opt">,</span> <span class="sng">&#39;GGTATT&#39;</span><span class="opt">]);</span>
+  <span class="kwa">final</span> b <span class="opt">=</span> <span class="kwb">par</span><span class="opt">(</span>sequence<span class="opt">, [</span><span class="sng">&#39;GGTATTTTAATT&#39;</span><span class="opt">]);</span>
+  <span class="kwa">final</span> c <span class="opt">=</span> <span class="kwb">par</span><span class="opt">(</span>sequence<span class="opt">, [</span><span class="sng">&#39;GGTATTTTAATTTATAGT&#39;</span><span class="opt">]);</span>
+  <span class="kwb">sort</span><span class="opt">(</span>sequence<span class="opt">,</span> <span class="num">1</span><span class="opt">);</span>
+  <span class="kwb">sort</span><span class="opt">(</span>sequence<span class="opt">,</span> <span class="num">2</span><span class="opt">);</span>
+  <span class="opt">(</span>await a<span class="opt">).</span><span class="kwb">forEach</span><span class="opt">(</span>print<span class="opt">);</span>
+  <span class="opt">(</span>await b<span class="opt">).</span><span class="kwb">forEach</span><span class="opt">(</span>print<span class="opt">);</span>
+  <span class="opt">(</span>await c<span class="opt">).</span><span class="kwb">forEach</span><span class="opt">(</span>print<span class="opt">);</span>
+<span class="opt">}</span>
+
+<span class="kwa">void</span> <span class="kwb">findMultiple</span><span class="opt">(</span><span class="kwd">List</span><span class="opt">&lt;</span>dynamic<span class="opt">&gt;</span> data<span class="opt">) {</span>
+  <span class="kwa">final</span> codes <span class="opt">=</span> data<span class="opt">[</span><span class="num">1</span><span class="opt">]</span> as <span class="kwd">CodeList</span><span class="opt">;</span>
+  <span class="kwa">final</span> l <span class="opt">= (</span>data<span class="opt">[</span><span class="num">2</span><span class="opt">]</span> as <span class="kwd">List</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;)</span>
+      <span class="opt">.</span><span class="kwb">map</span><span class="opt">((</span>s<span class="opt">) =&gt;</span> <span class="kwb">find</span><span class="opt">(</span>codes<span class="opt">,</span> s<span class="opt">))</span>
+      <span class="opt">.</span><span class="kwb">toList</span><span class="opt">(</span>growable<span class="opt">:</span> <span class="kwa">false</span><span class="opt">);</span>
+  <span class="opt">(</span>data<span class="opt">[</span><span class="num">0</span><span class="opt">]</span> as <span class="kwd">SendPort</span><span class="opt">).</span><span class="kwb">send</span><span class="opt">(</span>l<span class="opt">);</span>
+<span class="opt">}</span>
+
+<span class="kwd">Future</span><span class="opt">&lt;</span><span class="kwd">List</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;&gt;</span> <span class="kwb">par</span><span class="opt">(</span><span class="kwd">CodeList</span> codes<span class="opt">,</span> <span class="kwd">List</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;</span> s<span class="opt">) {</span>
+  <span class="kwa">final</span> completer <span class="opt">=</span> <span class="kwd">Completer</span><span class="opt">&lt;</span><span class="kwd">List</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;&gt;.</span><span class="kwb">sync</span><span class="opt">();</span>
+  <span class="kwa">final</span> recv <span class="opt">=</span> <span class="kwd">RawReceivePort</span><span class="opt">((</span>data<span class="opt">) {</span>
+    completer<span class="opt">.</span><span class="kwb">complete</span><span class="opt">(</span>data<span class="opt">);</span>
+  <span class="opt">});</span>
+
+  <span class="kwd">Isolate</span><span class="opt">.</span><span class="kwb">spawn</span><span class="opt">(</span>findMultiple<span class="opt">, [</span>recv<span class="opt">.</span>sendPort<span class="opt">,</span> codes<span class="opt">,</span> s<span class="opt">]);</span>
+
+  completer<span class="opt">.</span>future<span class="opt">.</span><span class="kwb">whenComplete</span><span class="opt">(() =&gt;</span> recv<span class="opt">.</span><span class="kwb">close</span><span class="opt">());</span>
+
+  <span class="kwa">return</span> completer<span class="opt">.</span>future<span class="opt">;</span>
+<span class="opt">}</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Dart SDK version: 3.7.0 (stable)
+Wed Feb 5 04:53:58 2025
+
+
+
+ Sat, 22 Feb 2025 03:59:59 GMT
+
+MAKE:
+/opt/src/dart-sdk/bin/dart analyze 
+Analyzing tmp...
+No issues found!
+
+/opt/src/dart-sdk/bin/dart compile exe knucleotide.dartexe-3.dartexe -o knucleotide.dartexe-3.dartexe_run
+Generated: /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/knucleotide.dartexe-3.dartexe_run
+
+6.45 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./knucleotide.dartexe-3.dartexe_run 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

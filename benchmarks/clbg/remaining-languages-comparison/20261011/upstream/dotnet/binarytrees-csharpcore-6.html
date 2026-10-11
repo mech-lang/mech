@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>binary-trees C#&nbsp;#6 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>binary-trees C#&nbsp;#6 program</h1>
+    <aside>
+      <p><a href="../description/binarytrees.html#binarytrees">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">// The Computer Language Benchmarks Game</span>
+<span class="slc">// https://benchmarksgame-team.pages.debian.net/benchmarksgame/</span>
+<span class="slc">//</span>
+<span class="slc">// based on</span>
+<span class="slc">// - Tristan Dupont Java #7</span>
+<span class="slc">// - Anthony Lloyd C#</span>
+<span class="slc">// - Isaac Guoy C# #7</span>
+<span class="slc">// - Steve (hez2010) https://github.com/dotnet/runtime/issues/101006#issue-2241502984</span>
+<span class="slc">// contributed by Arseniy Zlobintsev</span>
+
+not accepted kind<span class="opt">-</span>of interesting
+
+<span class="kwa">using</span> System<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Linq<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Threading<span class="opt">.</span>Tasks<span class="opt">;</span>
+
+<span class="kwa">const int</span> minDepth <span class="opt">=</span> <span class="num">4</span><span class="opt">;</span>
+
+<span class="kwa">var</span> workers <span class="opt">=</span> Environment<span class="opt">.</span>ProcessorCount<span class="opt">;</span>
+<span class="kwa">var</span> maxDepth <span class="opt">=</span> args<span class="opt">.</span>Length <span class="kwa">is</span> <span class="num">0</span> <span class="opt">?</span> <span class="num">10</span>
+    <span class="opt">:</span> Math<span class="opt">.</span><span class="kwd">Max</span><span class="opt">(</span>minDepth <span class="opt">+</span> <span class="num">2</span><span class="opt">,</span> <span class="kwa">int</span><span class="opt">.</span><span class="kwd">Parse</span><span class="opt">(</span>args<span class="opt">[</span><span class="num">0</span><span class="opt">]));</span>
+
+Console<span class="opt">.</span><span class="kwd">WriteLine</span><span class="opt">(</span>
+    <span class="opt">$</span><span class="sng">&quot;stretch tree of depth</span> <span class="ipl">{maxDepth + 1}</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">{new TreeNode(maxDepth + 1).Check()}</span><span class="sng">&quot;</span><span class="opt">);</span>
+
+<span class="kwa">var</span> longLivedTree <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">TreeNode</span><span class="opt">(</span>maxDepth<span class="opt">);</span>
+
+<span class="kwa">var</span> results <span class="opt">=</span> <span class="kwa">new string</span><span class="opt">[((</span>maxDepth <span class="opt">-</span> minDepth<span class="opt">) /</span> <span class="num">2</span><span class="opt">) +</span> <span class="num">1</span><span class="opt">];</span>
+<span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> results<span class="opt">.</span>Length<span class="opt">;</span> i<span class="opt">++) {</span>
+    <span class="kwa">var</span> depth <span class="opt">= (</span>i <span class="opt">*</span> <span class="num">2</span><span class="opt">) +</span> minDepth<span class="opt">;</span>
+    <span class="kwa">var</span> n <span class="opt">= (</span><span class="num">1</span> <span class="opt">&lt;&lt; (</span>maxDepth <span class="opt">-</span> depth <span class="opt">+</span> minDepth<span class="opt">)) /</span> workers<span class="opt">;</span>
+    <span class="kwa">var</span> checks <span class="opt">=</span> <span class="kwa">new int</span><span class="opt">[</span>workers<span class="opt">];</span>
+    Parallel<span class="opt">.</span><span class="kwd">For</span><span class="opt">(</span><span class="num">0</span><span class="opt">,</span> workers<span class="opt">,</span> w <span class="opt">=&gt; {</span>
+        <span class="kwa">var</span> check <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> n<span class="opt">;</span> i <span class="opt">&gt;</span> <span class="num">0</span><span class="opt">;</span> i<span class="opt">--)</span>
+            check <span class="opt">+=</span> <span class="kwa">new</span> <span class="kwd">TreeNode</span><span class="opt">(</span>depth<span class="opt">).</span><span class="kwd">Check</span><span class="opt">();</span>
+        checks<span class="opt">[</span>w<span class="opt">] =</span> check<span class="opt">;</span>
+    <span class="opt">});</span>
+    results<span class="opt">[</span>i<span class="opt">] = $</span><span class="sng">&quot;</span><span class="ipl">{n * workers}</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">trees of depth</span> <span class="ipl">{depth}</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">{checks.Sum()}</span><span class="sng">&quot;</span><span class="opt">;</span>
+<span class="opt">}</span>
+
+<span class="kwa">foreach</span> <span class="opt">(</span><span class="kwa">var</span> r <span class="kwa">in</span> results<span class="opt">)</span>
+    Console<span class="opt">.</span><span class="kwd">WriteLine</span><span class="opt">(</span>r<span class="opt">);</span>
+
+Console<span class="opt">.</span><span class="kwd">WriteLine</span><span class="opt">(</span>
+    <span class="opt">$</span><span class="sng">&quot;long lived tree of depth</span> <span class="ipl">{maxDepth}</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">{longLivedTree.Check()}</span><span class="sng">&quot;</span><span class="opt">);</span>
+
+<span class="kwa">readonly struct</span> <span class="kwd">TreeNode</span><span class="opt">(</span><span class="kwa">int</span> depth<span class="opt">) {</span>
+    record <span class="kwd">Next</span><span class="opt">(</span>TreeNode Left<span class="opt">,</span> TreeNode Right<span class="opt">);</span>
+    <span class="kwa">readonly</span> Next<span class="opt">?</span> next <span class="opt">=</span> depth <span class="opt">&gt;</span> <span class="num">0</span>
+        <span class="opt">?</span> <span class="kwa">new</span><span class="opt">(</span><span class="kwa">new</span><span class="opt">(</span>depth <span class="opt">-</span> <span class="num">1</span><span class="opt">),</span> <span class="kwa">new</span><span class="opt">(</span>depth <span class="opt">-</span> <span class="num">1</span><span class="opt">))</span>
+        <span class="opt">:</span> <span class="kwa">null</span><span class="opt">;</span>
+
+    <span class="kwa">public int</span> <span class="kwd">Check</span><span class="opt">() {</span>
+        <span class="kwa">return</span> next <span class="kwa">is null</span> <span class="opt">?</span> <span class="num">1</span> <span class="opt">:</span> <span class="num">1</span> <span class="opt">+</span> next<span class="opt">.</span>Left<span class="opt">.</span><span class="kwd">Check</span><span class="opt">() +</span> next<span class="opt">.</span>Right<span class="opt">.</span><span class="kwd">Check</span><span class="opt">();</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+.NET SDK 9.0.100
+Host Version: 9.0.0
+Commit: 9d5a6a9aa4
+
+&lt;OutputType&gt;Exe
+&lt;TargetFramework&gt;net9.0
+&lt;ImplicitUsings&gt;enable
+&lt;Nullable&gt;enable
+&lt;AllowUnsafeBlocks&gt;true
+&lt;ServerGarbageCollection&gt;true
+&lt;ConcurrentGarbageCollection&gt;true
+&lt;PublishAot&gt;false
+
+
+
+ Thu, 06 Feb 2025 06:50:50 GMT
+
+MAKE:
+cp binarytrees.csharpcore-6.csharpcore Program.cs
+cp Include/csharpcore/program.csproj .
+/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release	
+  Determining projects to restore...
+  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj (in 2.11 sec).
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(11,14): error CS1003: Syntax error, ',' expected [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(11,33): error CS1002: ; expected [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(13,1): error CS1529: A using clause must precede all other elements defined in the namespace except extern alias declarations [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(14,1): error CS1529: A using clause must precede all other elements defined in the namespace except extern alias declarations [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(15,1): error CS1529: A using clause must precede all other elements defined in the namespace except extern alias declarations [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+
+Build FAILED.
+
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(11,14): error CS1003: Syntax error, ',' expected [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(11,33): error CS1002: ; expected [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(13,1): error CS1529: A using clause must precede all other elements defined in the namespace except extern alias declarations [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(14,1): error CS1529: A using clause must precede all other elements defined in the namespace except extern alias declarations [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(15,1): error CS1529: A using clause must precede all other elements defined in the namespace except extern alias declarations [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]
+    0 Warning(s)
+    5 Error(s)
+
+Time Elapsed 00:00:08.69
+make: [/home/dunham/all-benchmarksgame/2000-benchmarksgame/nanobench/makefiles/u64q.programs.Makefile:164: binarytrees.csharpcore-6.csharpcore_run] Error 1 (ignored)
+
+10.76s to complete and log all make actions
+
+COMMAND LINE:
+ ./bin/Release/net9.0/linux-x64/program 7
+
+EMPTY 
+
+
+PROGRAM OUTPUT:
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

@@ -1,0 +1,942 @@
+{
+  "status": "prepared",
+  "runtimes": {
+    "micropython": {
+      "path": "/opt/homebrew/bin/micropython",
+      "sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "version": "3.4.0; MicroPython v1.29.0 on 2026-08-24",
+      "runtime_options": [
+        "-X",
+        "heapsize=1024M"
+      ],
+      "precision": "IEEE binary64 confirmed with 1.0000000000000002-1.0",
+      "integers": "unbounded MPZ verified beyond 2**100"
+    }
+  },
+  "libraries": {
+    "/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib": "c3adcd954967b7e92812831fe12c614a9ca2d12221e897a87ee379df2ac004fd",
+    "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9"
+  },
+  "programs": [
+    {
+      "id": "binarytrees-micropython-2-faithful",
+      "key": "binarytrees:binarytrees-micropython-2-faithful",
+      "benchmark": "binarytrees",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-2-faithful.py",
+      "source_sha256": "b6759c920cd2040435f04ba906b688292199c7475273cef861bb3af70e0b3ef5",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-2-faithful.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Allocate a fresh mutable two-slot node for every leaf and interior instead of a shared constant tuple leaf; retain the long-lived root through all temporary trees."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 24,
+      "normalized_loc": 24,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/binarytrees-micropython-2.py",
+      "original_source_sha256": "83abb69aff56cedfd7e61b38d312810ab049763d93040ca5fc1746df4702bc20",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-micropython-2.html",
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "fannkuchredux-micropython-8",
+      "key": "fannkuchredux:fannkuchredux-micropython-8",
+      "benchmark": "fannkuchredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-8.py",
+      "source_sha256": "58073b310b1d424d78159dad93cb0c7b7dd94b1c70d155d5ce1a784de3a82150",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-8.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Published MicroPython workload source, unchanged."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 45,
+      "normalized_loc": 55,
+      "expansions": [
+        {
+          "line": 13,
+          "extra_lines": 6,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 18,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 19,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 27,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/fannkuchredux-micropython-8.py",
+      "original_source_sha256": "58073b310b1d424d78159dad93cb0c7b7dd94b1c70d155d5ce1a784de3a82150",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-micropython-8.html",
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "fasta-micropython-8-faithful",
+      "key": "fasta:fasta-micropython-8-faithful",
+      "benchmark": "fasta",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-8-faithful.py",
+      "source_sha256": "9b01e6ebdef5216a26961467399a0f84690c8f4767b5159d640ce21e24713647",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-8-faithful.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Avoid an extra repeat-record newline at an exact multiple of sixty; preserve every binary64 random selection and LCG step."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 58,
+      "normalized_loc": 58,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/fasta-micropython-8.py",
+      "original_source_sha256": "771efad89370ddfe8fa173028ca83f16fc9bada198b74675f06e1a65436a2856",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-micropython-8.html",
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "knucleotide-micropython-8-faithful",
+      "key": "knucleotide:knucleotide-micropython-8-faithful",
+      "benchmark": "knucleotide",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-8-faithful.py",
+      "source_sha256": "933d0fa70746b877144eb1d489201572f9f86becc203da48b42b40e004ce0428",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-8-faithful.py"
+      ],
+      "adaptations": [
+        "Strip CR/LF, preserve the selected record, and sort equal counts lexically; retain all seven complete substring maps."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 40,
+      "normalized_loc": 40,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/knucleotide-micropython-8.py",
+      "original_source_sha256": "ffaacc7cfcf1acbf6a73982c0ec7689bec98d431f90b6e5e407bc2b03b473b0d",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-micropython-8.html",
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "mandelbrot-micropython-3-faithful",
+      "key": "mandelbrot:mandelbrot-micropython-3-faithful",
+      "benchmark": "mandelbrot",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-3-faithful.py",
+      "source_sha256": "d8b40294e193a6caddb8e593f8977475d44032ce5f657d28f989c1e26350f091",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-3-faithful.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Use the prescribed strict escape boundary rather than rejecting points at exactly radius two."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 32,
+      "normalized_loc": 32,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/mandelbrot-micropython-3.py",
+      "original_source_sha256": "26b2be1bb72913bac550ec95c3443ce68a0eb250adb858c2b3c9f7c9575ec3a4",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-micropython-3.html",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "mandelbrot-micropython-8",
+      "key": "mandelbrot:mandelbrot-micropython-8",
+      "benchmark": "mandelbrot",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-8.py",
+      "source_sha256": "9aa6e981c0d1c58081e4aa9525c0a6df4d0c94641047126ebf2316292ca1ce09",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-8.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Published MicroPython workload source, unchanged."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 35,
+      "normalized_loc": 49,
+      "expansions": [
+        {
+          "line": 13,
+          "extra_lines": 4,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 15,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 17,
+          "extra_lines": 5,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 22,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 28,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 29,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 35,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/mandelbrot-micropython-8.py",
+      "original_source_sha256": "9aa6e981c0d1c58081e4aa9525c0a6df4d0c94641047126ebf2316292ca1ce09",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-micropython-8.html",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "nbody-micropython-8",
+      "key": "nbody:nbody-micropython-8",
+      "benchmark": "nbody",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-8.py",
+      "source_sha256": "b0adb5671e270b37d1f398bfb8e77ad15bdc2d5898315a0d7e844ae5297088ab",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-8.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Published MicroPython workload source, unchanged."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 108,
+      "normalized_loc": 108,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/nbody-micropython-8.py",
+      "original_source_sha256": "b0adb5671e270b37d1f398bfb8e77ad15bdc2d5898315a0d7e844ae5297088ab",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-micropython-8.html",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "spectralnorm-micropython-8",
+      "key": "spectralnorm:spectralnorm-micropython-8",
+      "benchmark": "spectralnorm",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-8.py",
+      "source_sha256": "cde130d4e454cf7643012f3ca56844b6e38d0f63025a8906d78f3bcb6b7c3574",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-8.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Published MicroPython workload source, unchanged."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 25,
+      "normalized_loc": 29,
+      "expansions": [
+        {
+          "line": 25,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 33,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 34,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/spectralnorm-micropython-8.py",
+      "original_source_sha256": "cde130d4e454cf7643012f3ca56844b6e38d0f63025a8906d78f3bcb6b7c3574",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-micropython-8.html",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "nbody-micropython-local",
+      "key": "nbody:nbody-micropython-local",
+      "benchmark": "nbody",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-local.py",
+      "source_sha256": "3172a1125fda3398d64a58e0fd4404ae90bf48e07e6943524444cb33d5b659c8",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 33,
+      "normalized_loc": 33,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "mandelbrot-micropython-local",
+      "key": "mandelbrot:mandelbrot-micropython-local",
+      "benchmark": "mandelbrot",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-local.py",
+      "source_sha256": "ab73e68c40ef55f0769802f727054e3868aa6e09808b896db65e7a6f52e283b6",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 21,
+      "normalized_loc": 21,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "spectralnorm-micropython-local",
+      "key": "spectralnorm:spectralnorm-micropython-local",
+      "benchmark": "spectralnorm",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-local.py",
+      "source_sha256": "c9e966a62aa2d491df701dd5c97f5cfb30cfcaf00f8bb2b40ea075b244d554de",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 22,
+      "normalized_loc": 22,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "fasta-micropython-local",
+      "key": "fasta:fasta-micropython-local",
+      "benchmark": "fasta",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-local.py",
+      "source_sha256": "09e179c2275b2823bf0eb4f1409d29dd16ebdc9f43cb4f1759542aa7a8cba90b",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 44,
+      "normalized_loc": 44,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "knucleotide-micropython-local",
+      "key": "knucleotide:knucleotide-micropython-local",
+      "benchmark": "knucleotide",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-local.py",
+      "source_sha256": "d8cdc8c3fa623658a3d76d373558ec739587247438dfda672ee4671d4bb172f7",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-local.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 34,
+      "normalized_loc": 34,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "revcomp-micropython-local",
+      "key": "revcomp:revcomp-micropython-local",
+      "benchmark": "revcomp",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-local.py",
+      "source_sha256": "f6921a66267fafe597aeab7db7bc45707e87c07774fddaa1c442ce8f5138bf8e",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-local.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 22,
+      "normalized_loc": 22,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "fannkuchredux-micropython-local",
+      "key": "fannkuchredux:fannkuchredux-micropython-local",
+      "benchmark": "fannkuchredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-local.py",
+      "source_sha256": "f4f0c33de2ef45ecf0592824dc27834098edb47d3522d6d3c63c627a57ec4883",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 33,
+      "normalized_loc": 33,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "pidigits-micropython-local",
+      "key": "pidigits:pidigits-micropython-local",
+      "benchmark": "pidigits",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/pidigits-micropython-local.py",
+      "source_sha256": "b666d8f96442a788e7bb159faf5154a1ea53c6642fb3062279004363835b5bcc",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/pidigits-micropython-local.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 24,
+      "normalized_loc": 24,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "pidigits-micropython-gmp",
+      "key": "pidigits:pidigits-micropython-gmp",
+      "benchmark": "pidigits",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/pidigits-micropython-gmp.py",
+      "source_sha256": "8eea4db95d244efe62df7de442934f7d8019717e1336f35ae0ce563ea4137619",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/pidigits-micropython-gmp.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 52,
+      "normalized_loc": 52,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "binarytrees-micropython-array-arena",
+      "key": "binarytrees:binarytrees-micropython-array-arena",
+      "benchmark": "binarytrees",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-array-arena.py",
+      "source_sha256": "d70f073b93dcc19fdad44bcdfcff66d624665ef68982987a9ded86cb0bb70203",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-array-arena.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 34,
+      "normalized_loc": 34,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "revcomp-micropython-buffered",
+      "key": "revcomp:revcomp-micropython-buffered",
+      "benchmark": "revcomp",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-buffered.py",
+      "source_sha256": "28ce491e25ee60251ab706ffc81ffc9ac3294f96e323496d2879af883fba84d6",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-buffered.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 35,
+      "normalized_loc": 35,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "regexredux-micropython-pcre2",
+      "key": "regexredux:regexredux-micropython-pcre2",
+      "benchmark": "regexredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/regexredux-micropython-pcre2.py",
+      "source_sha256": "6cc2fdbad6a372ff853101834550ccd8085d85e4d59cf16b3db7f4db482f5f62",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/regexredux-micropython-pcre2.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 63,
+      "normalized_loc": 63,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "regexredux-micropython-pcre2-jit",
+      "key": "regexredux:regexredux-micropython-pcre2-jit",
+      "benchmark": "regexredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/regexredux-micropython-pcre2-jit.py",
+      "source_sha256": "ad6416954b93f9badb2f17d90176712a4ed4e0dfebbcb7cdf9440ace5db0dd7a",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/regexredux-micropython-pcre2-jit.py"
+      ],
+      "adaptations": [
+        "Locally authored measured-language application; every helper and ordinary library binding counts."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 65,
+      "normalized_loc": 65,
+      "expansions": [],
+      "source_url": null,
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    },
+    {
+      "id": "nbody-micropython-python3-pairs",
+      "key": "nbody:nbody-micropython-python3-pairs",
+      "benchmark": "nbody",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-python3-pairs.py",
+      "source_sha256": "c9f144ee18fa2bd64f5271a868d8e20b7d99284f3368c13c13b4eddb9b67bb00",
+      "binary": "/opt/homebrew/bin/micropython",
+      "binary_sha256": "c41e4ae723a22a10da57b80cc7ee33850007c72b0bd55b91a2791bc4df69f7db",
+      "command": [
+        "/opt/homebrew/bin/micropython",
+        "-X",
+        "heapsize=1024M",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-python3-pairs.py",
+        "{n}"
+      ],
+      "adaptations": [
+        "Port the published Python mutable-list/pair candidate to the same supported MicroPython operations; preserve every binary64 pair and update."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "arithmetic": "binary64",
+        "work": "Complete prescribed workload. Each K window updates one of seven growable full maps; both pi extracts; distinct equal-size tree records."
+      },
+      "physical_loc": 90,
+      "normalized_loc": 90,
+      "expansions": [],
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/nbody-python3-2.py",
+      "original_source_sha256": "f59c522f189fa547639696298e57fe90db40c737fb7b83d9678bfd921fd003c1",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-python3-2.html",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "preparation_status": "passed"
+    }
+  ],
+  "excluded": [
+    {
+      "id": "revcomp-micropython-4",
+      "reason": "The Unix runtime has no bytes.maketrans/translate or stream.detach; the counted local byte-array implementation replaces these unsupported APIs."
+    }
+  ]
+}

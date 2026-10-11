@@ -1,0 +1,120 @@
+FRESH 63 TWO-SLOT NODES
+; disassembly for BUILD-TREE
+; Size: 228 bytes. Origin: #x800391CF80                       ; BUILD-TREE
+; CF80: L0:   BE0700F9         STR LR, [CFP, #8]
+; CF84:       6C0400B4         CBZ R2, L3
+; CF88:       AC0F00F9         STR R2, [CFP, #24]
+; CF8C:       800900D1         SUB NL0, R2, #2
+; CF90:       E1031BAA         MOV NL1, CSP
+; CF94:       7D0702F8         STR CFP, [CSP], #32
+; CF98:       EC0300AA         MOV R2, NL0
+; CF9C:       FD0301AA         MOV CFP, NL1
+; CFA0:       F8FFFF97         BL L0
+; CFA4:       AC0F40F9         LDR R2, [CFP, #24]
+; CFA8:       EE030AAA         MOV R4, R0
+; CFAC:       AE0B00F9         STR R4, [CFP, #16]
+; CFB0:       820900D1         SUB NL2, R2, #2
+; CFB4:       E1031BAA         MOV NL1, CSP
+; CFB8:       7D0702F8         STR CFP, [CSP], #32
+; CFBC:       EC0302AA         MOV R2, NL2
+; CFC0:       FD0301AA         MOV CFP, NL1
+; CFC4:       EFFFFF97         BL L0
+; CFC8:       AE0B40F9         LDR R4, [CFP, #16]
+; CFCC:       ED030AAA         MOV R3, R0
+; CFD0:       BA2A00B9         STR WNULL, [THREAD, #40]       ; pseudo-atomic-bits
+; CFD4:       A9FA45A9         LDP TMP, LR, [THREAD, #88]     ; cons-tlab.{free-pointer, end-addr}
+; CFD8:       2A410091         ADD R0, TMP, #16
+; CFDC:       5F011EEB         CMP R0, LR
+; CFE0:       28030054         BHI L6
+; CFE4:       AA2E00F9         STR R0, [THREAD, #88]          ; cons-tlab
+; CFE8: L1:   2A1D0091         ADD R0, TMP, #7
+; CFEC:       2E3500A9         STP R4, R3, [TMP]
+; CFF0:       BF2A00B9         STR WZR, [THREAD, #40]         ; pseudo-atomic-bits
+; CFF4:       BE2E40B9         LDR WLR, [THREAD, #44]         ; pseudo-atomic-bits
+; CFF8:       5E0000B4         CBZ LR, L2
+; CFFC:       200120D4         BRK #9                         ; Pending interrupt trap
+; D000: L2:   FB031DAA         MOV CSP, CFP
+; D004:       5F0300F1         CMP NULL, #0
+; D008:       BD7B40A9         LDP CFP, LR, [CFP]
+; D00C:       C0035FD6         RET
+; D010: L3:   BA2A00B9         STR WNULL, [THREAD, #40]       ; pseudo-atomic-bits
+; D014:       A9FA45A9         LDP TMP, LR, [THREAD, #88]     ; cons-tlab.{free-pointer, end-addr}
+; D018:       2A410091         ADD R0, TMP, #16
+; D01C:       5F011EEB         CMP R0, LR
+; D020:       A8010054         BHI L7
+; D024:       AA2E00F9         STR R0, [THREAD, #88]          ; cons-tlab
+; D028: L4:   2A1D0091         ADD R0, TMP, #7
+; D02C:       3A6900A9         STP NULL, NULL, [TMP]
+; D030:       BF2A00B9         STR WZR, [THREAD, #40]         ; pseudo-atomic-bits
+; D034:       BE2E40B9         LDR WLR, [THREAD, #44]         ; pseudo-atomic-bits
+; D038:       5E0000B4         CBZ LR, L5
+; D03C:       200120D4         BRK #9                         ; Pending interrupt trap
+; D040: L5:   F0FFFF17         B L2
+; D044: L6:   090280D2         MOVZ TMP, #16
+; D048:       8AF8FF58         LDR R0, #x800391CF58           ; SB-VM::LIST-ALLOC-TRAMP
+; D04C:       40013FD6         BLR R0
+; D050:       E6FFFF17         B L1
+; D054: L7:   090280D2         MOVZ TMP, #16
+; D058:       0AF8FF58         LDR R0, #x800391CF58           ; SB-VM::LIST-ALLOC-TRAMP
+; D05C:       40013FD6         BLR R0
+; D060:       F2FFFF17         B L4
+; disassembly for CHECK-NODE
+; Size: 164 bytes. Origin: #x800391C4B8                       ; CHECK-NODE
+; 4B8: L0:   BE0700F9         STR LR, [CFP, #8]
+; 4BC:       8A915FF8         LDR R0, [R2, #-7]
+; 4C0:       5F011AEB         CMP R0, NULL
+; 4C4:       E1000054         BNE L2
+; 4C8:       4A0080D2         MOVZ R0, #2
+; 4CC: L1:   1F430091         ADD NSP, NFP, #16
+; 4D0:       FB031DAA         MOV CSP, CFP
+; 4D4:       5F0300F1         CMP NULL, #0
+; 4D8:       BD7B40A9         LDP CFP, LR, [CFP]
+; 4DC:       C0035FD6         RET
+; 4E0: L2:   AC0F00F9         STR R2, [CFP, #24]
+; 4E4:       8A915FF8         LDR R0, [R2, #-7]
+; 4E8:       E0031BAA         MOV NL0, CSP
+; 4EC:       7D0702F8         STR CFP, [CSP], #32
+; 4F0:       E14300D1         SUB NL1, NSP, #16
+; 4F4:       3F000091         MOV NSP, NL1
+; 4F8:       EC030AAA         MOV R2, R0
+; 4FC:       B80B00F9         STR NFP, [CFP, #16]
+; 500:       F80301AA         MOV NFP, NL1
+; 504:       FD0300AA         MOV CFP, NL0
+; 508:       ECFFFF97         BL L0
+; 50C:       B80B40F9         LDR NFP, [CFP, #16]
+; 510:       AC0F40F9         LDR R2, [CFP, #24]
+; 514:       40FD4193         ASR NL0, R0, #1
+; 518:       02040091         ADD NL2, NL0, #1
+; 51C:       020300F9         STR NL2, [NFP]
+; 520:       8A1140F8         LDR R0, [R2, #1]
+; 524:       E0031BAA         MOV NL0, CSP
+; 528:       7D0702F8         STR CFP, [CSP], #32
+; 52C:       E14300D1         SUB NL1, NSP, #16
+; 530:       3F000091         MOV NSP, NL1
+; 534:       EC030AAA         MOV R2, R0
+; 538:       B80B00F9         STR NFP, [CFP, #16]
+; 53C:       F80301AA         MOV NFP, NL1
+; 540:       FD0300AA         MOV CFP, NL0
+; 544:       DDFFFF97         BL L0
+; 548:       B80B40F9         LDR NFP, [CFP, #16]
+; 54C:       020340F9         LDR NL2, [NFP]
+; 550:       40048A8B         ADD NL0, NL2, R0, ASR #1
+; 554:       0AF87FD3         LSL R0, NL0, #1
+; 558:       DDFFFF17         B L1
+; disassembly for MAIN
+; Size: 52 bytes. Origin: #x800391CEF4                        ; MAIN
+; EF4:       AA0A40F9         LDR R0, [THREAD, #16]           ; binding-stack-pointer
+; EF8:       AA0F00F9         STR R0, [CFP, #24]
+; EFC:       DFDD77F2         TST R4, #18446744073709551105
+; F00:       40000054         BEQ L0
+; F04:       E0CD21D4         BRK #3695                       ; OBJECT-NOT-UNSIGNED-BYTE-8-ERROR
+                                                              ; R4
+; F08: L0:   EA030EAA         MOV R0, R4
+; F0C:       36F8FF58         LDR LEXENV, #x800391CE10        ; #<SB-KERNEL:FDEFN BINARY-TREES-UPTO-SIZE>
+; F10:       570080D2         MOVZ NARGS, #2
+; F14:       DE9240F8         LDR LR, [LEXENV, #9]
+; F18:       DE130091         ADD LR, LR, #4
+; F1C:       C0031FD6         BR LR
+; F20:       E00120D4         BRK #15                         ; Invalid argument count trap
+; F24:       006321D4         BRK #2840                       ; UNBOUND-SYMBOL-ERROR
+                                                              ; R1

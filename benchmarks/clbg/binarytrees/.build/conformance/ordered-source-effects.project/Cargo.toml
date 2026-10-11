@@ -1,0 +1,12 @@
+[package]
+name="ordered-source-effects"
+version="0.0.0"
+edition="2024"
+[dependencies]
+mech-gpu={path="/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu",default-features=false,features=["sequence-cli"]}
+[patch.crates-io]
+mech-core={path="/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/core"}
+mech-engine={path="/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine"}
+mech-syntax={path="/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/syntax"}
+mech-stdlib={path="/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib"}
+[workspace]

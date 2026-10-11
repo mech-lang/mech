@@ -1,0 +1,3 @@
+trees.adb:66:07: warning: possible aliasing problem for type "Tree_Node" [enabled by default]
+trees.adb:66:07: warning: use -fno-strict-aliasing switch for references [enabled by default]
+trees.adb:66:07: warning: or use "pragma No_Strict_Aliasing (Tree_Node);" [enabled by default]

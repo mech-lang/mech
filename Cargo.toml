@@ -127,6 +127,8 @@ cli_core = []
 cli-product = ["cli_core", "build", "formatter", "serve", "bundle_web", "run"]
 cli = ["cli-product"]
 formatter_core = ["serde", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
+cranelift_build = ["build", "dep:mech-gpu", "mech-gpu/native-build", "dep:tempfile"]
+system_gmp = ["mech-gpu/system-gmp"]
 build = [
       "cli_core", "compiler",
       "dep:mech-build",

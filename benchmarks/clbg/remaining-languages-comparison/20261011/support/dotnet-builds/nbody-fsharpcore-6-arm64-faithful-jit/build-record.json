@@ -1,0 +1,59 @@
+{
+  "id": "nbody-fsharpcore-6-arm64-faithful-jit",
+  "key": "nbody:nbody-fsharpcore-6-arm64-faithful-jit",
+  "benchmark": "nbody",
+  "language": "fsharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-6-arm64-faithful.fs",
+  "source_sha256": "fd96bae4aed10610a74bc547e497bba12c23503ee2a879c47de3caa7b812d965",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/nbody-fsharpcore-6.fs",
+  "original_source_sha256": "a294824c2bf69565690a495f0e6c8b72d6e3a915828f46fdc70fc68cb3a6f909",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-fsharpcore-6.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:46:03 GMT\n\nMAKE:\ncp nbody.fsharpcore-6.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.fsproj (in 1.02 sec).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:15.02\n\n17.01s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+  "adaptations": [
+    "Use portable .NET Vector256 binary64 arithmetic, which splits into native ARM vectors, in place of AVX arithmetic."
+  ],
+  "local_adaptation": true,
+  "physical_loc": 111,
+  "normalized_loc": 111,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/nbody-fsharpcore-6-arm64-faithful-jit/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/nbody-fsharpcore-6-arm64-faithful-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app.dll",
+  "binary_sha256": "58d142021b8803a13775640c5c2aeed0a06dde385b2745c4f58debf65cce1b97",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app.dll",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app.pdb": "d3ab76bdcaa1b0778fd558a1f176820247c6f4a276e1113e781cab0086da1df0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/FSharp.Core.dll": "3e3eddb10b03c42748d592835f22438b73d9cd1ffd6f6cb339c610b26b1dd4fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app.dll": "58d142021b8803a13775640c5c2aeed0a06dde385b2745c4f58debf65cce1b97",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-jit/app.deps.json": "d6ed5ffb91f134eb8835ca7650a6c0227c70da663b9df2dbef6c036d226d818b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

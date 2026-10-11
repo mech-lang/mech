@@ -1,0 +1,164 @@
+{
+  "programs": [
+    {
+      "key": "nbody:nbody-roc-idiomatic",
+      "id": "nbody-roc-idiomatic",
+      "benchmark": "nbody",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-roc-idiomatic.roc",
+      "source_sha256": "c0add2328d3dda79b3e13a07a3a5689684d3c7fa95c063f7f662e9725cdb43da",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "spectralnorm:spectralnorm-roc-idiomatic",
+      "id": "spectralnorm-roc-idiomatic",
+      "benchmark": "spectralnorm",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/spectralnorm-roc-idiomatic.roc",
+      "source_sha256": "11a2101fbc31c0c63acc253dda464d582c13f2b33dba6a059fff4c08d624f908",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "binarytrees:binarytrees-roc-idiomatic",
+      "id": "binarytrees-roc-idiomatic",
+      "benchmark": "binarytrees",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-roc-idiomatic.roc",
+      "source_sha256": "1a58ea8ddede35e6c7bf9ed6ff391db116c3d947a46ba15ea099275dc705e613",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-roc-idiomatic",
+      "id": "fannkuchredux-roc-idiomatic",
+      "benchmark": "fannkuchredux",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fannkuchredux-roc-idiomatic.roc",
+      "source_sha256": "a8795e9c1a8df0f5bb7b5e9200c0870b10a4f16b46245260143aff8e84f19cee",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "knucleotide:knucleotide-roc-idiomatic",
+      "id": "knucleotide-roc-idiomatic",
+      "benchmark": "knucleotide",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/knucleotide-roc-idiomatic.roc",
+      "source_sha256": "f892c1459288fd551f19a37538bc1cebe2839e54f93647d3606dcdc9d1f045ed",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "mandelbrot:mandelbrot-roc-idiomatic",
+      "id": "mandelbrot-roc-idiomatic",
+      "benchmark": "mandelbrot",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/mandelbrot-roc-idiomatic.roc",
+      "source_sha256": "d5578829f3455e800b7145fb00165fdf80fa1f9011ce654f0110b40503d15749",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "fasta:fasta-roc-idiomatic",
+      "id": "fasta-roc-idiomatic",
+      "benchmark": "fasta",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fasta-roc-idiomatic.roc",
+      "source_sha256": "8c893e43e0089aa54bc0251df83710792906fc55375658b90657e179689925ed",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "revcomp:revcomp-roc-idiomatic",
+      "id": "revcomp-roc-idiomatic",
+      "benchmark": "revcomp",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/revcomp-roc-idiomatic.roc",
+      "source_sha256": "e50ce6847af8dea552cc8fab43a40c6f3f681a1ab81d5e3919185ce18b02b8a8",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "pidigits:pidigits-roc-idiomatic",
+      "id": "pidigits-roc-idiomatic",
+      "benchmark": "pidigits",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/pidigits-roc-idiomatic.roc",
+      "source_sha256": "90f9e6263c342c81898c1692d394b4d9b58a1060c61baf7c56d6fe303781d51b",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    },
+    {
+      "key": "regexredux:regexredux-roc-idiomatic",
+      "id": "regexredux-roc-idiomatic",
+      "benchmark": "regexredux",
+      "language": "roc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/regexredux-roc-idiomatic.roc",
+      "source_sha256": "a1d38589c1f04d1bc7af39161bdbd5241290255a21da48730900dc23ac534f70",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored Roc alpha4 workload. All arithmetic, collection updates, algorithm sequencing, general regex/big-integer helpers and formatting are in measured Roc source and included in LOC. General basic-cli process I/O only."
+      ],
+      "libraries": [
+        "basic-cli 0.20.0"
+      ]
+    }
+  ]
+}

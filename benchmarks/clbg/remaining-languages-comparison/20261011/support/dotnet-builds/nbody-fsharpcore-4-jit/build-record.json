@@ -1,0 +1,73 @@
+{
+  "id": "nbody-fsharpcore-4-jit",
+  "key": "nbody:nbody-fsharpcore-4-jit",
+  "benchmark": "nbody",
+  "language": "fsharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-4.fs",
+  "source_sha256": "64a6570863ecc8665e5217c12d722cf745878134fd9e10d890ab07fba76e7cf7",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/nbody-fsharpcore-4.fs",
+  "original_source_sha256": "64a6570863ecc8665e5217c12d722cf745878134fd9e10d890ab07fba76e7cf7",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-fsharpcore-4.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:41:58 GMT\n\nMAKE:\ncp nbody.fsharpcore-4.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.fsproj (in 744 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.48\n\n12.46s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 94,
+  "normalized_loc": 99,
+  "expansions": [
+    {
+      "line": 12,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 14,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 74,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/nbody-fsharpcore-4-jit/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/nbody-fsharpcore-4-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app.dll",
+  "binary_sha256": "e2e5e85bb92cc4626931db4627d2005b0dc54d9061b6ad3d4798451b52372f30",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app.dll",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app.pdb": "13702118391b1c0cd2f6525c1681358e1cd5c7796712b86bbb28284e526069bb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/FSharp.Core.dll": "3e3eddb10b03c42748d592835f22438b73d9cd1ffd6f6cb339c610b26b1dd4fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app.dll": "e2e5e85bb92cc4626931db4627d2005b0dc54d9061b6ad3d4798451b52372f30",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-4-jit/app.deps.json": "d6ed5ffb91f134eb8835ca7650a6c0227c70da663b9df2dbef6c036d226d818b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": "10.0.401",
+  "asset": {
+    "name": "dotnet-sdk-osx-arm64.tar.gz",
+    "rid": "osx-arm64",
+    "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+    "hash": "69f64eb00dc045398755c440b152225d544301a345a146a16e86a56a0c52b7c94b2c331520e976dbb821f18d31930aafbd25bb85961e3517e0665414ce0cbcff"
+  },
+  "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+  "sha256": "00c673767ee2538369f307d3c8a0ce06f16bc9e0ecf8ce767b64dd02b2230e98",
+  "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-sdk-10.0.401-osx-arm64.tar.gz",
+  "archive_sha256": "d143ccec4474dce17d7b778854598137a2599b81828bce51e809897fe8bdf035",
+  "official_sha512_verified": true
+}

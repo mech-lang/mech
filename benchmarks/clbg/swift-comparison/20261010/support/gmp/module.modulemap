@@ -1,0 +1,5 @@
+module gmp [system] {
+  header "/opt/homebrew/opt/gmp/include/gmp.h"
+  link "gmp"
+  export *
+}

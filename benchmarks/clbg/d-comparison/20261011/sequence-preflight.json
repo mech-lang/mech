@@ -1,0 +1,149 @@
+[
+  {
+    "id": "fasta-d-compact",
+    "benchmark": "fasta",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/compact.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-compact",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-compact",
+      "{n}"
+    ],
+    "build_status": "passed"
+  },
+  {
+    "id": "fasta-d-published",
+    "benchmark": "fasta",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/published.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-published",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-published",
+      "{n}"
+    ],
+    "small_validation": {
+      "bytes": 10245,
+      "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  },
+  {
+    "id": "knucleotide-d-compact",
+    "benchmark": "knucleotide",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/knucleotide/compact.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-compact",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-compact"
+    ],
+    "small_validation": {
+      "bytes": 242,
+      "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  },
+  {
+    "id": "knucleotide-d-published-rolling",
+    "benchmark": "knucleotide",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/knucleotide/published-rolling.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-published-rolling",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-published-rolling"
+    ],
+    "small_validation": {
+      "bytes": 242,
+      "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  },
+  {
+    "id": "regexredux-d-compact",
+    "benchmark": "regexredux",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/compact.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-compact",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-compact"
+    ],
+    "small_validation": {
+      "bytes": 262,
+      "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  },
+  {
+    "id": "regexredux-d-published-1",
+    "benchmark": "regexredux",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-1.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-1",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-1"
+    ],
+    "small_validation": {
+      "bytes": 262,
+      "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  },
+  {
+    "id": "regexredux-d-published-2",
+    "benchmark": "regexredux",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-2.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-2",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-2"
+    ],
+    "small_validation": {
+      "bytes": 262,
+      "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  },
+  {
+    "id": "regexredux-d-published-3",
+    "benchmark": "regexredux",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-3.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-3",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-3"
+    ],
+    "small_validation": {
+      "bytes": 262,
+      "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  },
+  {
+    "id": "revcomp-d-compact",
+    "benchmark": "revcomp",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/revcomp/compact.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-compact",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-compact"
+    ],
+    "small_validation": {
+      "bytes": 10245,
+      "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  },
+  {
+    "id": "revcomp-d-optimized",
+    "benchmark": "revcomp",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/revcomp/optimized.d",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-optimized",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-optimized"
+    ],
+    "small_validation": {
+      "bytes": 10245,
+      "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+      "reference_match": true
+    },
+    "build_status": "passed"
+  }
+]

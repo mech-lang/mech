@@ -1,0 +1,128 @@
+[
+  {
+    "key": "binarytrees:mojo-binarytrees-optimized",
+    "source_sha256": "1fed1bebe544393be931c82ac5e9aa449aa597ffd541ac4a5eb11d22db9bc27c",
+    "binary_sha256": "d368298171e70c7016044efa5e709fcab0dfde6f20896d8b584fc066a28655c3",
+    "full": true,
+    "result": {
+      "seconds": 0.5458095,
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "at": "2026-10-10T01:47:50.969646+00:00",
+    "formal_sample": false
+  },
+  {
+    "key": "regexredux:mojo-regexredux-optimized",
+    "source_sha256": "49217710f37322ee3d4df4ce88a46d97c83a57fd504526fa33a26c744ea6fabb",
+    "binary_sha256": "fad606f10e2bd76a699261a1b3ec4efb4b406c021bcb837020b1f844a29f3283",
+    "full": true,
+    "result": {
+      "seconds": 1.413488917,
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "at": "2026-10-10T01:47:52.552497+00:00",
+    "formal_sample": false
+  },
+  {
+    "key": "binarytrees:futhark-binarytrees-optimized",
+    "source_sha256": "8000e9548221e5f87ee87fa616303b303e64ce0408c4c04a1f695e4d0cd6a068",
+    "binary_sha256": "e38c952aa386dea8679d7db2be8f24f842da3dbad5e41466cddb5ac4b94a1847",
+    "full": true,
+    "result": {
+      "seconds": 0.434374166,
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "at": "2026-10-10T01:47:53.159870+00:00",
+    "formal_sample": false
+  },
+  {
+    "key": "knucleotide:futhark-knucleotide-optimized",
+    "source_sha256": "86279a96aff35f6dc90a7ffff727c33cf9da642e647856e341139836aea97dc6",
+    "binary_sha256": "0cc65c82edefc4e4e2d2d60b0ac2804c4faa74c919a0da9d29ce87e92630c99a",
+    "full": true,
+    "result": {
+      "seconds": 8.557457333,
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "at": "2026-10-10T01:48:01.889808+00:00",
+    "formal_sample": false
+  },
+  {
+    "key": "pidigits:futhark-pidigits-optimized",
+    "source_sha256": "724e938fc9837346d2721f28119aafd3e783815b0f857d48b144d1731ae3e363",
+    "binary_sha256": "c5f38d6de2135be6db3c41fd066e3c5f7cf6ef1b9607c547726f6d6a4483cde7",
+    "full": true,
+    "result": {
+      "seconds": 3.099338584,
+      "validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "at": "2026-10-10T01:48:05.162171+00:00",
+    "formal_sample": false
+  },
+  {
+    "key": "regexredux:futhark-regexredux-compact",
+    "source_sha256": "3cd6d69e2b47f68249c7ce0281819b3568553e6bb924ca1830464f5a40f34cd1",
+    "binary_sha256": "170d03526a00ace6c37f9169777d33262d2cafe0f69806d7e2fcdde8d97cbca0",
+    "full": true,
+    "result": {
+      "seconds": 2.817215958,
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "at": "2026-10-10T01:48:08.153366+00:00",
+    "formal_sample": false
+  },
+  {
+    "key": "regexredux:futhark-regexredux-optimized",
+    "source_sha256": "3d40dec6a287d4bd8dd802ee7e3f8c21afe75445d88e0f0bc7229adfdd33365d",
+    "binary_sha256": "3b703ef3959548a909628e19605cea118f9f834333101086bbd60a36f77bd329",
+    "full": true,
+    "result": {
+      "seconds": 2.814885334,
+      "validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "at": "2026-10-10T01:48:11.139903+00:00",
+    "formal_sample": false
+  }
+]

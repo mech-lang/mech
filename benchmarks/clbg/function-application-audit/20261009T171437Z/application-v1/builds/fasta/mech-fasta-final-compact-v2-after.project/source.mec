@@ -1,0 +1,32 @@
+More(lo<u64>, hi<u64>, r<f64>, p<[f64]>) => <bool> := lo + 1 < hi
+Search(lo<u64>, hi<u64>, r<f64>, p<[f64]>) = (low<u64>, high<u64>, random<f64>, probabilities<[f64]>) :=
+  mid := (lo + hi) / 2
+  left := r < sequence/get(p, mid)
+  low := control/select(left, lo, mid)
+  high := control/select(left, mid, hi)
+  random := r
+  probabilities := p.
+Choose(r<f64>, p<[f64]>, alphabet<[u8]>) = (byte<u64>) :=
+  (lo, hi, random, probabilities) := control/while((0, sequence/length(p), r, p), More, Search)
+  byte := sequence/get(alphabet, hi).
+Repeat(index<u64>) = (next<u64>, byte<u64>) :=
+  alu := bytes/from-text("GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA")
+  byte := sequence/get(alu, index + 1)
+  next := number/mod(index + 1, sequence/length(alu)).
+Iub(seed<u64>) = (next<u64>, byte<u64>) :=
+  next := number/mod(seed * 3877 + 29573, 139968)
+  r := number/to-f64(next) / 139968.0
+  p := sequence/cumulative-sum(sequence/f64-values((0.27, 0.12, 0.12, 0.27, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02)))
+  byte := Choose(r, p, bytes/from-text("acgtBDHKMNRSVWY")).
+Human(seed<u64>) = (next<u64>, byte<u64>) :=
+  next := number/mod(seed * 3877 + 29573, 139968)
+  r := number/to-f64(next) / 139968.0
+  p := sequence/cumulative-sum(sequence/f64-values((0.3029549426680, 0.1979883004921, 0.1975473066391, 0.3015094502008)))
+  byte := Choose(r, p, bytes/from-text("acgt")).
+n := number/bounded(io/argument-u64(1), 0, 1844674407370955161)
+io/write(">ONE Homo sapiens alu\n")
+repeat := io/write-scan(n * 2, 0, Repeat, 60, "\n", 65536)
+io/write(">TWO IUB ambiguity codes\n")
+seed := io/write-scan(n * 3, 42, Iub, 60, "\n", 65536)
+io/write(">THREE Homo sapiens frequency\n")
+last := io/write-scan(n * 5, seed, Human, 60, "\n", 65536)

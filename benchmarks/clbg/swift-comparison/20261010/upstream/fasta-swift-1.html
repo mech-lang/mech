@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fasta Swift program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fasta Swift program</h1>
+    <aside>
+      <p><a href="../description/fasta.html#fasta">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks Game</span>
+<span class="com"> https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"> contributed by Ralph Ganszky</span>
+<span class="com"> converted to Swift 3 by Sergo Beruashvili</span>
+<span class="com"> */</span>
+
+<span class="kwa">import</span> Glibc
+<span class="slc">//import Darwin</span>
+<span class="kwa">typealias</span> AminoAcid <span class="opt">= (</span>prob<span class="opt">:</span> <span class="kwb">Double</span><span class="opt">,</span> sym<span class="opt">:</span> UInt8<span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwc">IM</span> <span class="opt">=</span> <span class="num">139968</span>
+<span class="kwa">let</span> <span class="kwc">IA</span> <span class="opt">=</span> <span class="num">3877</span>
+<span class="kwa">let</span> <span class="kwc">IC</span> <span class="opt">=</span> <span class="num">29573</span>
+<span class="kwa">var</span> <span class="kwc">seed</span> <span class="opt">=</span> <span class="num">42</span>
+
+<span class="kwa">let</span> <span class="kwc">n</span><span class="opt">:</span> <span class="kwb">Int</span>
+<span class="kwa">if</span> CommandLine<span class="opt">.</span>arguments<span class="opt">.</span>count <span class="opt">&gt;</span> <span class="num">1</span> <span class="opt">{</span>
+    <span class="kwc">n</span> <span class="opt">=</span> <span class="kwb">Int</span><span class="opt">(</span>CommandLine<span class="opt">.</span>arguments<span class="opt">[</span><span class="num">1</span><span class="opt">])</span> ?? <span class="num">1000</span>
+<span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+    <span class="kwc">n</span> <span class="opt">=</span> <span class="num">1000</span>
+<span class="opt">}</span>
+
+<span class="kwa">let</span> <span class="kwc">bufferSize</span> <span class="opt">=</span> <span class="num">256</span><span class="opt">*</span><span class="num">1024</span>
+<span class="kwa">let</span> <span class="kwc">width</span> <span class="opt">=</span> <span class="num">60</span>
+
+<span class="kwa">let</span> <span class="kwc">aluString</span> <span class="opt">=</span> <span class="sng">&quot;GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGG&quot;</span> <span class="opt">+</span>
+    <span class="sng">&quot;GAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGA&quot;</span> <span class="opt">+</span>
+    <span class="sng">&quot;CCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAAT&quot;</span> <span class="opt">+</span>
+    <span class="sng">&quot;ACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCA&quot;</span> <span class="opt">+</span>
+    <span class="sng">&quot;GCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG&quot;</span> <span class="opt">+</span>
+    <span class="sng">&quot;AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC&quot;</span> <span class="opt">+</span>
+<span class="sng">&quot;AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA&quot;</span>
+<span class="kwa">var</span> <span class="kwc">alu</span> <span class="opt">=</span> <span class="kwc">aluString</span><span class="opt">.</span>utf8CString<span class="opt">.</span><span class="kwd">map</span><span class="opt">({</span> <span class="kwd">UInt8</span><span class="opt">(</span>$<span class="num">0</span><span class="opt">) })</span>
+<span class="kwc">alu</span><span class="opt">.</span><span class="kwd">popLast</span><span class="opt">()</span>
+
+<span class="kwa">var</span> <span class="kwc">iub</span> <span class="opt">= [</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.27</span><span class="opt">,</span> <span class="num">97</span><span class="opt">),</span> <span class="slc">// &quot;a&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.12</span><span class="opt">,</span> <span class="num">99</span><span class="opt">),</span> <span class="slc">// &quot;c&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.12</span><span class="opt">,</span> <span class="num">103</span><span class="opt">),</span> <span class="slc">// &quot;g&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.27</span><span class="opt">,</span> <span class="num">116</span><span class="opt">),</span> <span class="slc">// &quot;t&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">66</span><span class="opt">),</span> <span class="slc">// &quot;B&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">68</span><span class="opt">),</span> <span class="slc">// &quot;D&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">72</span><span class="opt">),</span> <span class="slc">// &quot;H&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">75</span><span class="opt">),</span> <span class="slc">// &quot;K&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">77</span><span class="opt">),</span> <span class="slc">// &quot;M&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">78</span><span class="opt">),</span> <span class="slc">// &quot;N&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">82</span><span class="opt">),</span> <span class="slc">// &quot;R&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">83</span><span class="opt">),</span> <span class="slc">// &quot;S&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">86</span><span class="opt">),</span> <span class="slc">// &quot;V&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">87</span><span class="opt">),</span> <span class="slc">// &quot;W&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.02</span><span class="opt">,</span> <span class="num">89</span><span class="opt">),</span> <span class="slc">// &quot;Y&quot;),</span>
+<span class="opt">]</span>
+
+<span class="kwa">var</span> <span class="kwc">homosapiens</span> <span class="opt">= [</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.3029549426680</span><span class="opt">,</span> <span class="num">97</span><span class="opt">),</span> <span class="slc">// &quot;a&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.1979883004921</span><span class="opt">,</span> <span class="num">99</span><span class="opt">),</span> <span class="slc">// &quot;c&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.1975473066391</span><span class="opt">,</span> <span class="num">103</span><span class="opt">),</span> <span class="slc">// &quot;g&quot;),</span>
+    <span class="kwd">AminoAcid</span><span class="opt">(</span><span class="num">0.3015094502008</span><span class="opt">,</span> <span class="num">116</span><span class="opt">),</span> <span class="slc">// &quot;t&quot;),</span>
+<span class="opt">]</span>
+
+<span class="kwa">func</span> <span class="kwd">write</span><span class="opt">(</span>array<span class="opt">: [</span>UInt8<span class="opt">],</span> ofLen len<span class="opt">:</span> <span class="kwb">Int</span><span class="opt">) {</span>
+    <span class="kwa">var</span> <span class="kwc">iov</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span>iovec<span class="opt">&gt;.</span><span class="kwd">allocate</span><span class="opt">(</span>capacity<span class="opt">:</span> <span class="num">1</span><span class="opt">)</span>
+    defer <span class="opt">{</span>
+        <span class="kwc">iov</span><span class="opt">.</span><span class="kwd">deallocate</span><span class="opt">()</span>
+    <span class="opt">}</span>
+    <span class="kwa">let</span> <span class="kwc">data</span> <span class="opt">=</span> array<span class="opt">.</span><span class="kwd">withUnsafeBufferPointer</span><span class="opt">({</span> p <span class="kwa">in</span> p <span class="opt">})</span>
+    <span class="kwc">iov</span><span class="opt">.</span>pointee<span class="opt">.</span>iov_base <span class="opt">=</span> <span class="kwd">UnsafeMutableRawPointer</span><span class="opt">(</span><span class="kwa">mutating</span><span class="opt">:</span> <span class="kwc">data</span><span class="opt">.</span>baseAddress<span class="opt">)</span>
+    <span class="kwc">iov</span><span class="opt">.</span>pointee<span class="opt">.</span>iov_len <span class="opt">=</span> len
+    <span class="kwd">writev</span><span class="opt">(</span>STDOUT_FILENO<span class="opt">,</span> <span class="kwc">iov</span><span class="opt">,</span> <span class="num">1</span><span class="opt">)</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">write</span><span class="opt">(</span>buffer<span class="opt">:</span> UnsafePointer<span class="opt">&lt;</span><span class="kwb">Int8</span><span class="opt">&gt;,</span> ofLen len<span class="opt">:</span> <span class="kwb">Int</span><span class="opt">) {</span>
+    <span class="kwa">var</span> <span class="kwc">iov</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span>iovec<span class="opt">&gt;.</span><span class="kwd">allocate</span><span class="opt">(</span>capacity<span class="opt">:</span> <span class="num">1</span><span class="opt">)</span>
+    defer <span class="opt">{</span>
+        <span class="kwc">iov</span><span class="opt">.</span><span class="kwd">deallocate</span><span class="opt">()</span>
+    <span class="opt">}</span>
+    <span class="kwc">iov</span><span class="opt">.</span>pointee<span class="opt">.</span>iov_base <span class="opt">=</span> <span class="kwd">UnsafeMutableRawPointer</span><span class="opt">(</span><span class="kwa">mutating</span><span class="opt">:</span> buffer<span class="opt">)</span>
+    <span class="kwc">iov</span><span class="opt">.</span>pointee<span class="opt">.</span>iov_len <span class="opt">=</span> len
+    <span class="kwd">writev</span><span class="opt">(</span>STDOUT_FILENO<span class="opt">,</span> <span class="kwc">iov</span><span class="opt">,</span> <span class="num">1</span><span class="opt">)</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">repeatFasta</span><span class="opt">(</span>gene<span class="opt">: [</span>UInt8<span class="opt">],</span> <span class="kwc">n</span><span class="opt">:</span> <span class="kwb">Int</span><span class="opt">) {</span>
+    <span class="kwa">let</span> <span class="kwc">gene2</span> <span class="opt">=</span> gene <span class="opt">+</span> gene
+    <span class="kwa">var</span> <span class="kwc">buffer</span> <span class="opt">= [</span>UInt8<span class="opt">](</span>repeating<span class="opt">:</span> <span class="num">10</span><span class="opt">,</span> count<span class="opt">:</span> <span class="kwc">bufferSize</span><span class="opt">)</span>
+    <span class="kwa">var</span> <span class="kwc">pos</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="kwa">var</span> <span class="kwc">rpos</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="kwa">var</span> <span class="kwc">cnt</span> <span class="opt">=</span> <span class="kwc">n</span>
+    <span class="kwa">var</span> <span class="kwc">lwidth</span> <span class="opt">=</span> <span class="kwc">width</span>
+    <span class="kwa">while</span> <span class="kwc">cnt</span> <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">{</span>
+        <span class="kwa">if</span> <span class="kwc">pos</span> <span class="opt">+</span> <span class="kwc">lwidth</span> <span class="opt">&gt;</span> <span class="kwc">buffer</span><span class="opt">.</span>count <span class="opt">{</span>
+            <span class="kwd">write</span><span class="opt">(</span>array<span class="opt">:</span> <span class="kwc">buffer</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">pos</span><span class="opt">)</span>
+            <span class="kwc">pos</span> <span class="opt">=</span> <span class="num">0</span>
+        <span class="opt">}</span>
+        <span class="kwa">if</span> <span class="kwc">rpos</span> <span class="opt">+</span> <span class="kwc">lwidth</span> <span class="opt">&gt;</span> gene<span class="opt">.</span>count <span class="opt">{</span>
+            <span class="kwc">rpos</span> <span class="opt">=</span> <span class="kwc">rpos</span> <span class="opt">%</span> gene<span class="opt">.</span>count
+        <span class="opt">}</span>
+        <span class="kwa">if</span> <span class="kwc">cnt</span> <span class="opt">&lt;</span> <span class="kwc">lwidth</span> <span class="opt">{</span>
+            <span class="kwc">lwidth</span> <span class="opt">=</span> <span class="kwc">cnt</span>
+        <span class="opt">}</span>
+        <span class="kwc">buffer</span><span class="opt">[</span><span class="kwc">pos</span><span class="opt">..&lt;</span><span class="kwc">pos</span><span class="opt">+</span><span class="kwc">lwidth</span><span class="opt">] =</span> <span class="kwc">gene2</span><span class="opt">[</span><span class="kwc">rpos</span><span class="opt">..&lt;</span><span class="kwc">rpos</span><span class="opt">+</span><span class="kwc">lwidth</span><span class="opt">]</span>
+        <span class="kwc">buffer</span><span class="opt">[</span><span class="kwc">pos</span><span class="opt">+</span><span class="kwc">lwidth</span><span class="opt">] =</span> <span class="num">10</span>
+        <span class="kwc">pos</span> <span class="opt">+=</span> <span class="kwc">lwidth</span> <span class="opt">+</span> <span class="num">1</span>
+        <span class="kwc">rpos</span> <span class="opt">+=</span> <span class="kwc">lwidth</span>
+        <span class="kwc">cnt</span> <span class="opt">-=</span> <span class="kwc">lwidth</span>
+    <span class="opt">}</span>
+    <span class="kwa">if</span> <span class="kwc">pos</span> <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">&amp;&amp;</span> <span class="kwc">pos</span> <span class="opt">&lt;</span> <span class="kwc">buffer</span><span class="opt">.</span>count <span class="opt">{</span>
+        <span class="kwc">buffer</span><span class="opt">[</span><span class="kwc">pos</span><span class="opt">] =</span> <span class="num">10</span>
+        <span class="kwd">write</span><span class="opt">(</span>array<span class="opt">:</span> <span class="kwc">buffer</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">pos</span><span class="opt">)</span>
+    <span class="opt">}</span> <span class="kwa">else if</span> <span class="kwc">pos</span> <span class="opt">==</span> <span class="kwc">buffer</span><span class="opt">.</span>count <span class="opt">{</span>
+        <span class="kwd">write</span><span class="opt">(</span>array<span class="opt">:</span> <span class="kwc">buffer</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">pos</span><span class="opt">)</span>
+        <span class="kwc">buffer</span><span class="opt">[</span><span class="num">0</span><span class="opt">] =</span> <span class="num">10</span>
+        <span class="kwd">write</span><span class="opt">(</span>array<span class="opt">:</span> <span class="kwc">buffer</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="num">1</span><span class="opt">)</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">search</span><span class="opt">(</span>rnd<span class="opt">:</span> <span class="kwb">Double</span><span class="opt">,</span> within arr<span class="opt">: [</span>AminoAcid<span class="opt">]) -&gt;</span> UInt8 <span class="opt">{</span>
+    <span class="kwa">var</span> <span class="kwc">low</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="kwa">var</span> <span class="kwc">high</span> <span class="opt">=</span> arr<span class="opt">.</span>count <span class="opt">-</span> <span class="num">1</span>
+    <span class="kwa">while</span> <span class="kwc">low</span> <span class="opt">&lt;=</span> <span class="kwc">high</span> <span class="opt">{</span>
+        <span class="kwa">let</span> <span class="kwc">mid</span> <span class="opt">=</span> <span class="kwc">low</span> <span class="opt">+ (</span><span class="kwc">high</span> <span class="opt">-</span> <span class="kwc">low</span><span class="opt">) /</span> <span class="num">2</span>
+        <span class="kwa">if</span> arr<span class="opt">[</span><span class="kwc">mid</span><span class="opt">].</span>prob <span class="opt">&gt;=</span> rnd <span class="opt">{</span>
+            <span class="kwc">high</span> <span class="opt">=</span> <span class="kwc">mid</span> <span class="opt">-</span> <span class="num">1</span>
+        <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+            <span class="kwc">low</span> <span class="opt">=</span> <span class="kwc">mid</span> <span class="opt">+</span> <span class="num">1</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> arr<span class="opt">[</span><span class="kwc">high</span><span class="opt">+</span><span class="num">1</span><span class="opt">].</span>sym
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">accumulateProbabilities</span><span class="opt">(</span> acid<span class="opt">:</span> inout <span class="opt">[</span>AminoAcid<span class="opt">]) {</span>
+    <span class="kwa">for</span> i <span class="kwa">in</span> <span class="num">1</span><span class="opt">..&lt;</span>acid<span class="opt">.</span>count <span class="opt">{</span>
+        acid<span class="opt">[</span>i<span class="opt">].</span>prob <span class="opt">+=</span> acid<span class="opt">[</span>i<span class="opt">-</span><span class="num">1</span><span class="opt">].</span>prob
+    <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">randomFasta</span><span class="opt">(</span> acid<span class="opt">:</span> inout <span class="opt">[</span>AminoAcid<span class="opt">],</span> _ <span class="kwc">n</span><span class="opt">:</span> <span class="kwb">Int</span><span class="opt">) {</span>
+    <span class="kwa">var</span> <span class="kwc">cnt</span> <span class="opt">=</span> <span class="kwc">n</span>
+    <span class="kwd">accumulateProbabilities</span><span class="opt">(</span>acid<span class="opt">: &amp;</span>acid<span class="opt">)</span>
+    <span class="kwa">var</span> <span class="kwc">buffer</span> <span class="opt">= [</span>UInt8<span class="opt">](</span>repeating<span class="opt">:</span> <span class="num">10</span><span class="opt">,</span> count<span class="opt">:</span> <span class="kwc">bufferSize</span><span class="opt">)</span>
+    <span class="kwa">var</span> <span class="kwc">pos</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="kwa">while</span> <span class="kwc">cnt</span> <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">{</span>
+        <span class="kwa">var</span> <span class="kwc">m</span> <span class="opt">=</span> <span class="kwc">cnt</span>
+        <span class="kwa">if</span> <span class="kwc">m</span> <span class="opt">&gt;</span> <span class="kwc">width</span> <span class="opt">{</span>
+            <span class="kwc">m</span> <span class="opt">=</span> <span class="kwc">width</span>
+        <span class="opt">}</span>
+        <span class="kwa">let</span> <span class="kwc">f</span> <span class="opt">=</span> <span class="num">1.0</span> <span class="opt">/</span> <span class="kwb">Double</span><span class="opt">(</span><span class="kwc">IM</span><span class="opt">)</span>
+        <span class="kwa">var</span> <span class="kwc">myrand</span> <span class="opt">=</span> <span class="kwc">seed</span>
+        <span class="kwa">for</span> _ <span class="kwa">in</span> <span class="num">0</span><span class="opt">..&lt;</span><span class="kwc">m</span> <span class="opt">{</span>
+            <span class="kwc">myrand</span> <span class="opt">= (</span><span class="kwc">myrand</span> <span class="opt">*</span> <span class="kwc">IA</span> <span class="opt">+</span> <span class="kwc">IC</span><span class="opt">) %</span> <span class="kwc">IM</span>
+            <span class="kwa">let</span> <span class="kwc">r</span> <span class="opt">=</span> <span class="kwb">Double</span><span class="opt">(</span><span class="kwc">myrand</span><span class="opt">) *</span> <span class="kwc">f</span>
+            <span class="kwc">buffer</span><span class="opt">[</span><span class="kwc">pos</span><span class="opt">] =</span> <span class="kwd">search</span><span class="opt">(</span>rnd<span class="opt">:</span> <span class="kwc">r</span><span class="opt">,</span> within<span class="opt">:</span> acid<span class="opt">)</span>
+            <span class="kwc">pos</span> <span class="opt">+=</span> <span class="num">1</span>
+            <span class="kwa">if</span> <span class="kwc">pos</span> <span class="opt">==</span> <span class="kwc">buffer</span><span class="opt">.</span>count <span class="opt">{</span>
+                <span class="kwd">write</span><span class="opt">(</span>array<span class="opt">:</span> <span class="kwc">buffer</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">pos</span><span class="opt">)</span>
+                <span class="kwc">pos</span> <span class="opt">=</span> <span class="num">0</span>
+            <span class="opt">}</span>
+        <span class="opt">}</span>
+        <span class="kwc">seed</span> <span class="opt">=</span> <span class="kwc">myrand</span>
+        <span class="kwc">buffer</span><span class="opt">[</span><span class="kwc">pos</span><span class="opt">] =</span> <span class="num">10</span>
+        <span class="kwc">pos</span> <span class="opt">+=</span> <span class="num">1</span>
+        <span class="kwa">if</span> <span class="kwc">pos</span> <span class="opt">==</span> <span class="kwc">buffer</span><span class="opt">.</span>count <span class="opt">{</span>
+            <span class="kwd">write</span><span class="opt">(</span>array<span class="opt">:</span> <span class="kwc">buffer</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">pos</span><span class="opt">)</span>
+            <span class="kwc">pos</span> <span class="opt">=</span> <span class="num">0</span>
+        <span class="opt">}</span>
+        <span class="kwc">cnt</span> <span class="opt">-=</span> <span class="kwc">m</span>
+    <span class="opt">}</span>
+    <span class="kwa">if</span> <span class="kwc">pos</span> <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">{</span>
+        <span class="kwd">write</span><span class="opt">(</span>array<span class="opt">:</span> <span class="kwc">buffer</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">pos</span><span class="opt">)</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwa">let</span> <span class="kwc">one</span> <span class="opt">=</span> <span class="sng">&quot;&gt;ONE Homo sapiens alu\n&quot;</span>
+<span class="kwa">let</span> <span class="kwc">oneStr</span> <span class="opt">=</span> <span class="kwc">one</span><span class="opt">.</span><span class="kwd">withCString</span><span class="opt">({</span> s <span class="kwa">in</span> s <span class="opt">})</span>
+<span class="kwd">write</span><span class="opt">(</span><span class="kwc">buffer</span><span class="opt">:</span> <span class="kwc">oneStr</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">one</span><span class="opt">.</span>utf8CString<span class="opt">.</span>count <span class="opt">-</span> <span class="num">1</span><span class="opt">)</span>
+<span class="kwd">repeatFasta</span><span class="opt">(</span>gene<span class="opt">:</span> <span class="kwc">alu</span><span class="opt">,</span> <span class="kwc">n</span><span class="opt">:</span> <span class="num">2</span><span class="opt">*</span><span class="kwc">n</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwc">two</span> <span class="opt">=</span> <span class="sng">&quot;&gt;TWO IUB ambiguity codes\n&quot;</span>
+<span class="kwa">let</span> <span class="kwc">twoStr</span> <span class="opt">=</span> <span class="kwc">two</span><span class="opt">.</span><span class="kwd">withCString</span><span class="opt">({</span> s <span class="kwa">in</span> s <span class="opt">})</span>
+<span class="kwd">write</span><span class="opt">(</span><span class="kwc">buffer</span><span class="opt">:</span> <span class="kwc">twoStr</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">two</span><span class="opt">.</span>utf8CString<span class="opt">.</span>count <span class="opt">-</span> <span class="num">1</span><span class="opt">)</span>
+<span class="kwd">randomFasta</span><span class="opt">(</span>acid<span class="opt">: &amp;</span><span class="kwc">iub</span><span class="opt">,</span><span class="num">3</span><span class="opt">*</span><span class="kwc">n</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwc">three</span> <span class="opt">=</span> <span class="sng">&quot;&gt;THREE Homo sapiens frequency\n&quot;</span>
+<span class="kwa">let</span> <span class="kwc">threeStr</span> <span class="opt">=</span> <span class="kwc">three</span><span class="opt">.</span><span class="kwd">withCString</span><span class="opt">({</span> s <span class="kwa">in</span> s <span class="opt">})</span>
+<span class="kwd">write</span><span class="opt">(</span><span class="kwc">buffer</span><span class="opt">:</span> <span class="kwc">threeStr</span><span class="opt">,</span> ofLen<span class="opt">:</span> <span class="kwc">three</span><span class="opt">.</span>utf8CString<span class="opt">.</span>count <span class="opt">-</span> <span class="num">1</span><span class="opt">)</span>
+<span class="kwd">randomFasta</span><span class="opt">(</span>acid<span class="opt">: &amp;</span><span class="kwc">homosapiens</span><span class="opt">,</span><span class="num">5</span><span class="opt">*</span><span class="kwc">n</span><span class="opt">)</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Swift version 6.0.3
+(swift-6.0.3-RELEASE)
+Target: x86_64-unknown-linux-gnu
+
+
+ Sun, 23 Feb 2025 00:37:38 GMT
+
+MAKE:
+/opt/src/swift-6.0.3-RELEASE/usr/bin/swiftc fasta.swift -Ounchecked -wmo  -o fasta.swift_run
+fasta.swift:34:5: warning: result of call to 'popLast()' is unused
+ 32 | &quot;AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA&quot;
+ 33 | var alu = aluString.utf8CString.map({ UInt8($0) })
+ 34 | alu.popLast()
+    |     `- warning: result of call to 'popLast()' is unused
+ 35 | 
+ 36 | var iub = [
+
+fasta.swift:62:9: warning: variable 'iov' was never mutated; consider changing to 'let' constant
+ 60 | 
+ 61 | func write(array: [UInt8], ofLen len: Int) {
+ 62 |     var iov = UnsafeMutablePointer&lt;iovec&gt;.allocate(capacity: 1)
+    |         `- warning: variable 'iov' was never mutated; consider changing to 'let' constant
+ 63 |     defer {
+ 64 |         iov.deallocate()
+
+fasta.swift:73:9: warning: variable 'iov' was never mutated; consider changing to 'let' constant
+ 71 | 
+ 72 | func write(buffer: UnsafePointer&lt;Int8&gt;, ofLen len: Int) {
+ 73 |     var iov = UnsafeMutablePointer&lt;iovec&gt;.allocate(capacity: 1)
+    |         `- warning: variable 'iov' was never mutated; consider changing to 'let' constant
+ 74 |     defer {
+ 75 |         iov.deallocate()
+
+13.34 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./fasta.swift_run 25000000
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA
+TCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT
+AAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG
+GCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG
+CCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT
+GGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA
+GGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA
+TTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG
+AATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA
+GCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT
+AATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC
+AGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG
+GTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC
+CGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG
+AGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT
+TGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA
+TGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT
+GTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG
+TTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT
+CTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG
+CGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG
+TCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA
+CTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG
+AGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG
+GGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC
+TGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA
+TACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA
+GGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT
+GCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC
+ACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT
+TCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC
+CGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG
+CTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG
+GGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC
+CAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT
+GGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC
+GCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA
+GGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA
+GACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA
+GGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG
+AAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT
+CCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA
+GTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA
+AAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC
+GGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT
+ACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG
+GAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC
+GCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC
+GGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG
+TCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA
+AAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG
+GAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT
+CCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC
+TGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG
+ACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC
+GTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA
+ACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA
+CAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA
+CTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA
+ACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG
+CCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG
+AGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC
+CGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG
+AGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC
+CCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG
+CTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG
+CCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG
+CCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC
+ACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA
+AAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC
+TGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC
+ACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG
+CTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG
+AGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT
+AGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA
+TCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC
+CTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA
+TCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG
+CCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT
+GGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG
+GGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG
+CGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG
+GGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG
+GTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT
+AATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT
+GCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT
+CAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG
+GGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC
+TCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT
+CGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG
+ATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG
+CGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG
+AGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA
+CAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG
+CAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC
+ACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC
+GCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC
+GAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG
+GGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT
+TGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG
+CGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA
+GCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG
+CCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC
+GCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG
+CGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA
+CTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG
+CCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA
+ACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC
+CAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT
+GAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA
+AGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG
+ATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC
+TAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA
+GGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC
+GCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG
+TGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC
+AGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA
+ATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA
+GAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC
+AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG
+TAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC
+CAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT
+GGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC
+CCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA
+GAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT
+TTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC
+ATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC
+TGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG
+GTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG
+TCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG
+GCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC
+GTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT
+ACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC
+GAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC
+GGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC
+CTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA
+ATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG
+AGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC
+TGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT
+CACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG
+TTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG
+CCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC
+GCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT
+GGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC
+CCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC
+TGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG
+CGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG
+AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG
+AGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG
+AGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT
+GAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA
+TCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC
+AGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA
+AAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG
+CGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC
+TACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG
+GGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT
+CGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG
+CGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG
+GTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA
+AAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA
+GGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC
+TCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC
+CTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA
+GACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG
+CGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG
+AACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG
+ACAGAGCGAGACTCCGTCTCAAAAAGGCCGG    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

@@ -1,0 +1,440 @@
+{
+  "status": "passed",
+  "created_at": "2026-10-10T03:04:38.421181+00:00",
+  "scope": "Diagnostic only; neither the explorer nor admitted upstream sources are modified.",
+  "workload": 25000000,
+  "sample_count": 5,
+  "required_power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "rustc": {
+    "path": "/Users/cim310/.cargo/bin/rustc",
+    "sha256": "aeb4105778ca1bd3c6b0e75768f581c656633cd51368fa61289b6a71696ac7e1",
+    "version": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n"
+  },
+  "protocol": "Fresh sequential processes, shuffled rounds, complete stdout to regular file; full output hashes checked after timing; AC normal power and compiler-load guards.",
+  "programs": {
+    "rust6-original": {
+      "id": "rust6-original",
+      "benchmark": "fasta",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust6-original.rs",
+      "source_sha256": "084510a16c91dd6b0d09e4ca27f367c42172109b7a6d9fb85f65867cacf2e7ab",
+      "binary_sha256": "d6c3d2b2f6b005ab197beb9bb3683bf478fbdc35f302340c3b599193e698c9e3",
+      "build_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust6-original.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust6-original"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust6-original",
+        "{n}"
+      ],
+      "samples_seconds": [
+        2.069739792,
+        1.992561583,
+        1.997073958,
+        2.018440708,
+        1.969358
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "correctness_1000": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "median_seconds": 1.997073958,
+      "sample_sd_seconds": 0.03795208888896053
+    },
+    "rust6-floating-count": {
+      "id": "rust6-floating-count",
+      "benchmark": "fasta",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust6-floating-count.rs",
+      "source_sha256": "aa027fc537760e918155402054205eeb4d5c221e38dbdabdf5b73124583f677a",
+      "binary_sha256": "3295cd07f2206c08f702099ac3cb17978737aa2dee550e47b90218e6ef2acee6",
+      "build_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust6-floating-count.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust6-floating-count"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust6-floating-count",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.840498042,
+        0.839664875,
+        0.854073208,
+        0.84955875,
+        0.840474625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "correctness_1000": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "median_seconds": 0.840498042,
+      "sample_sd_seconds": 0.00656141719474112
+    },
+    "rust7-original-integer": {
+      "id": "rust7-original-integer",
+      "benchmark": "fasta",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-original-integer.rs",
+      "source_sha256": "20fe129fdda92dff4e951ac49236713d99e89cdfa0afaa596321886ca8e15ca2",
+      "binary_sha256": "d9336eb765f9637dcad50e8082f2ad00919759cbf1f5abe1d25ffa5f735b5849",
+      "build_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "spin=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps/libspin-c0bfca583903e9dc.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-original-integer.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-original-integer"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-original-integer",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.537294292,
+        0.540668417,
+        0.533401667,
+        0.535087625,
+        0.53171775
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "correctness_1000": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "median_seconds": 0.535087625,
+      "sample_sd_seconds": 0.003490013408597701
+    },
+    "rust7-floating-16": {
+      "id": "rust7-floating-16",
+      "benchmark": "fasta",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-16.rs",
+      "source_sha256": "33eca0e8bfb39f98910c60469512646e2f135697bd8c892cbd94cf9292404db2",
+      "binary_sha256": "a3f50b8b859e7c925094d00c827ce3b20ae5af79efdada9bcbced01616e61cd7",
+      "build_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "spin=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps/libspin-c0bfca583903e9dc.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-16.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-16"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-16",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.542419958,
+        0.541320917,
+        0.567194959,
+        0.564502708,
+        0.563287167
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "correctness_1000": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "median_seconds": 0.563287167,
+      "sample_sd_seconds": 0.012750433405995996
+    },
+    "rust7-floating-active": {
+      "id": "rust7-floating-active",
+      "benchmark": "fasta",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-active.rs",
+      "source_sha256": "65d76e5487cf8ce85aa79d1e09461fe7f75b3ccd880772bbaecec3df28b5f03a",
+      "binary_sha256": "bb101fa8e28260172b9a8c44978cf900eb84ce9dd0c5b247d8cb8b9d2bd20d5d",
+      "build_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "spin=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/.build/rust-deps/release/deps/libspin-c0bfca583903e9dc.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-active.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-active"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/investigations/20261009-floating-cdf/rust7-floating-active",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.550562917,
+        0.559807167,
+        0.553258166,
+        0.559240084,
+        0.551938375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "correctness_1000": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "median_seconds": 0.553258166,
+      "sample_sd_seconds": 0.004277117413746048
+    },
+    "mech-current-floating": {
+      "id": "mech-current-floating",
+      "benchmark": "fasta",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.572612958,
+        0.55167075,
+        0.539613667,
+        0.541193292,
+        0.54118425
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "correctness_1000": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "median_seconds": 0.541193292,
+      "sample_sd_seconds": 0.013915041263391376
+    }
+  },
+  "orders": [
+    [
+      "rust7-original-integer",
+      "rust7-floating-active",
+      "rust6-original",
+      "rust7-floating-16",
+      "rust6-floating-count",
+      "mech-current-floating"
+    ],
+    [
+      "rust7-floating-active",
+      "rust7-original-integer",
+      "mech-current-floating",
+      "rust7-floating-16",
+      "rust6-floating-count",
+      "rust6-original"
+    ],
+    [
+      "rust6-original",
+      "mech-current-floating",
+      "rust6-floating-count",
+      "rust7-floating-active",
+      "rust7-original-integer",
+      "rust7-floating-16"
+    ],
+    [
+      "rust7-original-integer",
+      "rust6-original",
+      "rust6-floating-count",
+      "mech-current-floating",
+      "rust7-floating-16",
+      "rust7-floating-active"
+    ],
+    [
+      "rust7-original-integer",
+      "rust6-floating-count",
+      "rust6-original",
+      "mech-current-floating",
+      "rust7-floating-16",
+      "rust7-floating-active"
+    ]
+  ],
+  "finished_at": "2026-10-10T03:05:13.934024+00:00"
+}

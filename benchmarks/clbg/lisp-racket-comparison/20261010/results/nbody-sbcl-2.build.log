@@ -1,0 +1,107 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/nbody-sbcl-2.lisp" (written 10 OCT 2026 06:58:31 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/nbody-sbcl-2.lisp
+; in: DEFSTRUCT BODY
+;     (DEFSTRUCT
+;         (BODY (:TYPE (VECTOR DOUBLE-FLOAT)) (:CONC-NAME NIL)
+;          (:CONSTRUCTOR MAKE-BODY (X Y Z VX VY VZ MASS)))
+;       X
+;       Y
+;       Z
+;       VX
+;       VY
+;       VZ
+;       MASS)
+; --> DEFUN PROGN SB-IMPL::%DEFUN SB-IMPL::%DEFUN SB-INT:NAMED-LAMBDA 
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA X
+;         (STRUCTURE)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (DECLARE (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT (*)) STRUCTURE))
+;       (BLOCK X (THE (AND T DOUBLE-FLOAT) (ELT STRUCTURE 0))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA Y
+;         (STRUCTURE)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (DECLARE (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT (*)) STRUCTURE))
+;       (BLOCK Y (THE (AND T DOUBLE-FLOAT) (ELT STRUCTURE 1))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA Z
+;         (STRUCTURE)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (DECLARE (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT (*)) STRUCTURE))
+;       (BLOCK Z (THE (AND T DOUBLE-FLOAT) (ELT STRUCTURE 2))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA VX
+;         (STRUCTURE)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (DECLARE (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT (*)) STRUCTURE))
+;       (BLOCK VX (THE (AND T DOUBLE-FLOAT) (ELT STRUCTURE 3))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA VY
+;         (STRUCTURE)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (DECLARE (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT (*)) STRUCTURE))
+;       (BLOCK VY (THE (AND T DOUBLE-FLOAT) (ELT STRUCTURE 4))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA VZ
+;         (STRUCTURE)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (DECLARE (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT (*)) STRUCTURE))
+;       (BLOCK VZ (THE (AND T DOUBLE-FLOAT) (ELT STRUCTURE 5))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA MASS
+;         (STRUCTURE)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (DECLARE (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT (*)) STRUCTURE))
+;       (BLOCK MASS (THE (AND T DOUBLE-FLOAT) (ELT STRUCTURE 6))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; in: DEFUN ENERGY
+;     (DEFUN ENERGY (SYSTEM)
+;       (LET ((E 0.0d0))
+;         (DECLARE (DOUBLE-FLOAT E))
+;         (LOOP FOR (A . REST) ON SYSTEM
+;               DO (INCF E (* 0.5d0 # #)) (DOLIST (B REST)
+;                                           (LET* #
+;                                             #)))
+;         E))
+; --> SB-IMPL::%DEFUN SB-IMPL::%DEFUN SB-INT:NAMED-LAMBDA 
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA ENERGY
+;         (SYSTEM)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (BLOCK ENERGY
+;         (LET ((E 0.0d0))
+;           (DECLARE (DOUBLE-FLOAT E))
+;           (LOOP FOR (A . REST) ON SYSTEM
+;                 DO (INCF E #) (DOLIST # #))
+;           E)))
+; 
+; note: doing float to pointer coercion (cost 13) from E to "<return value>"
+; 
+; compilation unit finished
+;   printed 8 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/nbody-sbcl-2/program.fasl
+; compilation finished in 0:00:00.011

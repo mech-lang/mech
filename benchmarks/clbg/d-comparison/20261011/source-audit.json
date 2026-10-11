@@ -1,0 +1,2108 @@
+{
+  "status": "reviewed",
+  "frozen_at": "2026-10-11T15:54:15.973858+00:00",
+  "programs": [
+    {
+      "id": "nbody-d-modern-scalar",
+      "key": "nbody:d-modern-scalar",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody-1.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-1",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-1"
+      ],
+      "source_sha256": "90b3e6d294efc6a62d1aa7a2a8d5e14c6048e02a05e89e41a7fcd729d85919f7",
+      "binary_sha256": "b4c8cd2b08e7a48d991abe51fe06456a56fd77ef6d7bf750f59f7a295c9c4f43",
+      "adaptations": [
+        "Added explicit module declaration required by hyphenated local filename."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/nbody-1.d",
+      "upstream_sha256": "5b795bcc4905258f60ef51f0657c653ed1458edb97cc12bbd99e381eb19b23ad",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "loc": 135,
+      "physical_loc": 133,
+      "loc_expansions": [
+        {
+          "line": 104,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "nbody-d-modern-vector-arrays",
+      "key": "nbody:d-modern-vector-arrays",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody-2.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-2",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-2",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody-2.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody-2"
+      ],
+      "source_sha256": "08d821e6be8c21ff9d056eae4f21fb07b503ad6ede318f12300db545a4e3e2ef",
+      "binary_sha256": "fcfb0aacac4b1d84efda58c66e26bf46b594765ea3d166938f07bda5e7e130f3",
+      "adaptations": [
+        "Added explicit module declaration required by hyphenated local filename."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/2.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/nbody-2.d",
+      "upstream_sha256": "c93dcd7434e17bb556fce7c016726f1ccd8c95b4f95055c2cc12f92f59363e19",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "loc": 157,
+      "physical_loc": 157,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "nbody-d-archive-classless",
+      "key": "nbody:d-archive-classless",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-nbody.dlang-2.dlang.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-nbody.dlang-2.dlang",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-nbody.dlang-2.dlang",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-nbody.dlang-2.dlang.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-nbody.dlang-2.dlang"
+      ],
+      "source_sha256": "488b8fa838edd10300b3716876bb6047eb35812c541dfa37e37c57c7f927cc3f",
+      "binary_sha256": "0a9a5dd9ef6250b113414a3087de8347da00da6e4259c358204d3bbb602fb2b8",
+      "adaptations": [
+        "Updated D1 typedef/struct initializers/argument conversion to D2 alias/constructors/std.conv.",
+        "Added core.stdc.stdio printf import, explicit module name, replaced obsolete slice length with $.",
+        "Pass static planet array by ref to preserve original D1 typedef-reference behavior and mutation semantics."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/nbody/nbody.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-nbody.dlang-2.dlang.d",
+      "upstream_sha256": "69f140f59e4ae140944bcbf9f02d5aa7d1c579f987945b45d85dc244c8869f9a",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "loc": 111,
+      "physical_loc": 109,
+      "loc_expansions": [
+        {
+          "line": 67,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "nbody-d-compact-array",
+      "key": "nbody:d-compact-array",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_compact.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact"
+      ],
+      "source_sha256": "1ef30891371c778d3a01e693d686ec7cbda248e352766d858e5cca32dfcfeea0",
+      "binary_sha256": "1681f67a5d043c5ea909ce51aa018e2fe5546f893aca9898590950062afa89bb",
+      "adaptations": [
+        "Authored D2 compact equivalent of archived classless source using standard three-element array operations and std.numeric.dotProduct.",
+        "Kept all published constants as one constructor expression per body; independent program assignments remain separate statements.",
+        "Initialized floating-point accumulators explicitly to zero (D floating default is NaN)."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/nbody/nbody.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-nbody.dlang-2.dlang.d",
+      "upstream_sha256": "69f140f59e4ae140944bcbf9f02d5aa7d1c579f987945b45d85dc244c8869f9a",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "loc": 51,
+      "physical_loc": 51,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "nbody-d-unrolled",
+      "key": "nbody:d-unrolled",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_unrolled.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled-unrolled",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled-unrolled",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "-fp-contract=fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_unrolled.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled-unrolled"
+      ],
+      "source_sha256": "4c8f401ac737a0d6396d7dcd2b01fcc5c0f4ad1b6e4845ada37c96a1270dc61b",
+      "binary_sha256": "578ee9a5b835c0d28e6d551105b272e75d8a4ff8b5d86c82813bd8dd3d7e078a",
+      "adaptations": [
+        "Compact-array equivalent with compile-time static foreach unrolling of the complete five-body pair loops.",
+        "Fused multiply-add contraction enabled by compiler flag; all distances remain double-precision square roots."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/nbody/nbody.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-nbody.dlang-2.dlang.d",
+      "upstream_sha256": "69f140f59e4ae140944bcbf9f02d5aa7d1c579f987945b45d85dc244c8869f9a",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "loc": 51,
+      "physical_loc": 51,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "nbody-d-unrolled-precise",
+      "key": "nbody:d-unrolled-precise",
+      "benchmark": "nbody",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_unrolled.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_unrolled.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_unrolled"
+      ],
+      "source_sha256": "4c8f401ac737a0d6396d7dcd2b01fcc5c0f4ad1b6e4845ada37c96a1270dc61b",
+      "binary_sha256": "df1284ff9c6449ba72a441d892d9c5a3848077913642a1e713354938e0926831",
+      "adaptations": [
+        "Compact-array equivalent with compile-time static foreach unrolling of the complete five-body pair loops.",
+        "Ordinary precise floating-point compilation (no global fast-math or aggressive FMA contraction flag)."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All five bodies, all ten pair interactions on every step, floating-point positions/velocities and square roots; canonical momentum offset and two energy outputs. No integer rescaling or input shortcut."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/nbody/nbody.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-nbody.dlang-2.dlang.d",
+      "upstream_sha256": "69f140f59e4ae140944bcbf9f02d5aa7d1c579f987945b45d85dc244c8869f9a",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "loc": 51,
+      "physical_loc": 51,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "spectralnorm-d-modern",
+      "key": "spectralnorm:d-modern",
+      "benchmark": "spectralnorm",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectral-norm-1.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectral-norm-1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectral-norm-1",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectral-norm-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectral-norm-1"
+      ],
+      "source_sha256": "f9f2d7ec41dc70ca950f9bc1725a8a99bd3b8494083eb21c78db4ee95d62c642",
+      "binary_sha256": "2af8a0428d89f4fd83f6c9963f76f50c2caa1fa2778066cae64c048c9b797ca0",
+      "adaptations": [
+        "Added explicit module declaration required by hyphenated local filename."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ten alternating AtA power iterations (40 matrix-vector products), formula-derived integer denominator, complete n-by-n products with float64 values and canonical nine-decimal result."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/spectral-norm/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/spectral-norm-1.d",
+      "upstream_sha256": "227900f6a991edf626649adeee892fddac695b6c347a1f84867da305b1fb7d1e",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "loc": 56,
+      "physical_loc": 56,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "spectralnorm-d-archive",
+      "key": "spectralnorm:d-archive",
+      "benchmark": "spectralnorm",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-spectralnorm.dlang.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-spectralnorm.dlang",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-spectralnorm.dlang",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-spectralnorm.dlang.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-spectralnorm.dlang"
+      ],
+      "source_sha256": "06bc97fbd0be63e0700c6f5e47b056c0c298ae95e60e0617e5fe003115ffce31",
+      "binary_sha256": "2ac49adabf75c5fa38d9320d32558aca28201275d0aeb1dc2ec73a8156536301",
+      "adaptations": [
+        "Updated D1 char[][]/atoi/inout foreach to D2 string[]/std.conv.to/ref and added explicit module declaration."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ten alternating AtA power iterations (40 matrix-vector products), formula-derived integer denominator, complete n-by-n products with float64 values and canonical nine-decimal result."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/spectralnorm/spectralnorm.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-spectralnorm.dlang.d",
+      "upstream_sha256": "7ab83a8c91c3ede17aa732cb76fa35db603f23320cdc9ecb3de28c6c6cfe875f",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "loc": 55,
+      "physical_loc": 52,
+      "loc_expansions": [
+        {
+          "line": 15,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 16,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "spectralnorm-d-compact",
+      "key": "spectralnorm:d-compact",
+      "benchmark": "spectralnorm",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectralnorm_compact.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_compact",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectralnorm_compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_compact"
+      ],
+      "source_sha256": "835a19d6dcfb4da5ae9bd7782d1e7b8b7284f08bfac8a36fdd0315dbb82fc7d1",
+      "binary_sha256": "8a44e3e1d97d64edd2f255c3dcd8edd084db82969cf66e2b8323c3fabadbc49a",
+      "adaptations": [
+        "Authored compact D2 equivalent using one compile-time transpose-specialized multiply function.",
+        "Explicit zero initialization for floating-point accumulators; scratch vector reused across canonical products."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ten alternating AtA power iterations (40 matrix-vector products), formula-derived integer denominator, complete n-by-n products with float64 values and canonical nine-decimal result."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/spectralnorm/spectralnorm.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-spectralnorm.dlang.d",
+      "upstream_sha256": "7ab83a8c91c3ede17aa732cb76fa35db603f23320cdc9ecb3de28c6c6cfe875f",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "loc": 34,
+      "physical_loc": 34,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "spectralnorm-d-parallel-neon",
+      "key": "spectralnorm:d-parallel-neon",
+      "benchmark": "spectralnorm",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectralnorm_parallel.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_parallel",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_parallel",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/spectralnorm_parallel.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/spectralnorm_parallel"
+      ],
+      "source_sha256": "340720a60e55d75dedd2f337d6bc331d8876b45fc445efe8d325d998158ee409",
+      "binary_sha256": "c6ce8cec62df53fb82fe946f6219ba629f31a94a8b88bcb7aeb9b0c24644e631",
+      "adaptations": [
+        "Authored row-parallel equivalent with two-lane float64 SIMD division and independent-lane accumulation.",
+        "Formula-derived adjacent denominators are computed in integer arithmetic; all n columns are traversed with scalar tail for odd n.",
+        "Phobos task pool capped at seven worker threads plus the participating main thread (eight participants)."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ten alternating AtA power iterations (40 matrix-vector products), formula-derived integer denominator, complete n-by-n products with float64 values and canonical nine-decimal result."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/spectralnorm/spectralnorm.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-spectralnorm.dlang.d",
+      "upstream_sha256": "7ab83a8c91c3ede17aa732cb76fa35db603f23320cdc9ecb3de28c6c6cfe875f",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "loc": 46,
+      "physical_loc": 46,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "mandelbrot-d-modern-array-eight",
+      "key": "mandelbrot:d-modern-array-eight",
+      "benchmark": "mandelbrot",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/mandelbrot-1.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot-1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot-1",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/mandelbrot-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot-1"
+      ],
+      "source_sha256": "0c05ee3e9ddd2529daf5b67881932c5311050aa138bc9baacf05cebd415436d5",
+      "binary_sha256": "e197842055ef9f4a68a08ecca4f3a0761a94aefd61501b8cae3c5af227d58e49",
+      "adaptations": [
+        "Replaced modern repository MD5-only output with stdout.rawWrite(pixels); complete canonical PBM output is measured.",
+        "Removed blanket @safe annotation because std.stdio global stdout.rawWrite is classified @system.",
+        "Added explicit module name; algorithm and pixels unchanged.",
+        "Preserve requested n for PBM header, raster height and 2/n coordinates even when n is not divisible by8; allocate ceil(n/8) bytes per row and zero unused tail bits."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical 50-iteration double-precision escape calculation for every output pixel, with PBM header and complete packed row bitmap written to stdout. SIMD grouping shares early exit only when every lane has escaped."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/mandelbrot-1.d",
+      "upstream_sha256": "d48ddcb8cbf0069d1a0e00e281effd06dfbb2664df6efb34b018788e995ad389",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "odd_size_validation": [
+        {
+          "id": "mandelbrot-d-modern-array-eight",
+          "n": 21,
+          "bytes": 72,
+          "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+          "reference_match": true
+        },
+        {
+          "id": "mandelbrot-d-modern-array-eight",
+          "n": 101,
+          "bytes": 1324,
+          "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+          "reference_match": true
+        }
+      ],
+      "loc": 60,
+      "physical_loc": 60,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "mandelbrot-d-archive-complex",
+      "key": "mandelbrot:d-archive-complex",
+      "benchmark": "mandelbrot",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-mandelbrot.dlang-2.dlang.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-mandelbrot.dlang-2.dlang",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-mandelbrot.dlang-2.dlang",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/archive-mandelbrot.dlang-2.dlang.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/archive-mandelbrot.dlang-2.dlang"
+      ],
+      "source_sha256": "2d45bf063b38b40f0cc012c474b2de09ed61529a5030924f16de53c0bc147b07",
+      "binary_sha256": "d666aa3d8cb60b1f33440f70ffc9b8c4aa99295919557d3e17c085c825608c72",
+      "adaptations": [
+        "Updated obsolete built-in complex literals/cdouble to std.complex(Complex!double).",
+        "Updated argument conversion and byte cast for D2, used core.stdc.stdio.putchar for raw packed bytes.",
+        "Split two independent Z and C declarations onto separate lines and added module name."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical 50-iteration double-precision escape calculation for every output pixel, with PBM header and complete packed row bitmap written to stdout. SIMD grouping shares early exit only when every lane has escaped."
+      },
+      "source_url": "https://github.com/kragen/shootout/blob/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/mandelbrot/mandelbrot.dlang-2.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/archive-mandelbrot.dlang-2.dlang.d",
+      "upstream_sha256": "62aa3cec70ebb652678f0cea01fadb2c09584b57c07636ef9146647bfbffec0d",
+      "upstream_commit": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "odd_size_validation": [
+        {
+          "id": "mandelbrot-d-archive-complex",
+          "n": 21,
+          "bytes": 72,
+          "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+          "reference_match": true
+        },
+        {
+          "id": "mandelbrot-d-archive-complex",
+          "n": 101,
+          "bytes": 1324,
+          "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+          "reference_match": true
+        }
+      ],
+      "loc": 43,
+      "physical_loc": 40,
+      "loc_expansions": [
+        {
+          "line": 16,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 39,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 45,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "mandelbrot-d-parallel-array-eight",
+      "key": "mandelbrot:d-parallel-array-eight",
+      "benchmark": "mandelbrot",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/mandelbrot_parallel.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot_parallel",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot_parallel",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/mandelbrot_parallel.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/mandelbrot_parallel"
+      ],
+      "source_sha256": "30d7b398a03f742203b5504f0da738c791e0575e06a1eaef6218571090bf6966",
+      "binary_sha256": "4ee310f5cd019815371c603a9741395fb327e81f0c5854612c632522c9d5f61b",
+      "adaptations": [
+        "Same eight-pixel array algorithm with Phobos parallel row work capped at seven workers plus participating main thread.",
+        "Replaced MD5-only output with full raw PBM; coordinate ci is private to each row.",
+        "Preserve requested n for PBM header, raster height and 2/n coordinates even when n is not divisible by8; allocate ceil(n/8) bytes per row and zero unused tail bits."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical 50-iteration double-precision escape calculation for every output pixel, with PBM header and complete packed row bitmap written to stdout. SIMD grouping shares early exit only when every lane has escaped."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/mandelbrot-1.d",
+      "upstream_sha256": "d48ddcb8cbf0069d1a0e00e281effd06dfbb2664df6efb34b018788e995ad389",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "odd_size_validation": [
+        {
+          "id": "mandelbrot-d-parallel-array-eight",
+          "n": 21,
+          "bytes": 72,
+          "sha256": "07d31e68c51909a293f3154679f233095913a00d3dd4cef1a966ec8505969062",
+          "reference_match": true
+        },
+        {
+          "id": "mandelbrot-d-parallel-array-eight",
+          "n": 101,
+          "bytes": 1324,
+          "sha256": "3c6ebc49a0570a5ecaae5b199517794f70fae0185ab9f84bf2c53e58c099beb8",
+          "reference_match": true
+        }
+      ],
+      "loc": 62,
+      "physical_loc": 62,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fannkuchredux-d-compact-scalar",
+      "key": "fannkuchredux:d-compact-scalar",
+      "benchmark": "fannkuchredux",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/fannkuch-redux-1.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuch-redux-1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuch-redux-1",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/fannkuch-redux-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuch-redux-1"
+      ],
+      "source_sha256": "249b400dedd4cad911ad0c5edaaec21620cc689df0cb8620d9b0969daa65956d",
+      "binary_sha256": "3c9ae49261e24ad0a43731d7c2f60a48034b7e66a2f1387961aaf9284d29cec1",
+      "adaptations": [
+        "Added explicit module declaration required by hyphenated local filename."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Enumerates every n! permutation in canonical order, performs prefix reversals for all required pancake flips, and calculates alternating checksum and maximum flips; no hardcoded result or skipped permutation."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/fannkuch-redux-1.d",
+      "upstream_sha256": "96f28419b74c95b3cc018a963a306cae9d5bd8917e2bd172a0bd9e01132d2ead",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "loc": 50,
+      "physical_loc": 50,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fannkuchredux-d-parallel-neon",
+      "key": "fannkuchredux:d-parallel-neon",
+      "benchmark": "fannkuchredux",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/fannkuchredux_parallel_neon.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuchredux_parallel_neon",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuchredux_parallel_neon",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/fannkuchredux_parallel_neon.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/fannkuchredux_parallel_neon"
+      ],
+      "source_sha256": "3b4a50ac8ad91d3021efa0b1569dd2c07d15e8849a7083de50a9848abd55564a",
+      "binary_sha256": "37f33695cdf62ec018bda018427d289837c35285bbe34a1c4313c745b735591c",
+      "adaptations": [
+        "Replaced unavailable x86 inteli PSHUFB binding with native LDC float-independent 16-byte NEON TBL intrinsic; same mask tables/permutation/checksum algorithm.",
+        "Replaced vector construction/extraction helpers with core.simd ubyte16 casts and .array[0].",
+        "Capped Phobos pool at seven workers; split work into eight factorial-index blocks rather than hardware-dependent CPU count."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Enumerates every n! permutation in canonical order, performs prefix reversals for all required pancake flips, and calculates alternating checksum and maximum flips; no hardcoded result or skipped permutation."
+      },
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/2-im.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/numerical/fannkuch-redux-2-im.d",
+      "upstream_sha256": "f75a2fa6ccefb676af6751cfcb1de76def0a5feb0442c39e8e207bba2e293a76",
+      "upstream_commit": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "loc": 160,
+      "physical_loc": 160,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fasta-d-compact",
+      "key": "fasta:fasta-d-compact",
+      "benchmark": "fasta",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/compact.d",
+      "source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-compact",
+      "binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-compact"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/fasta-d-compact.build.log",
+      "source_url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fasta/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/hanabi1224-bench-algorithm-fasta-1.d",
+      "upstream_sha256": "188e974220c54c40bdfc51ed0a72366eb221ca0018f743972c0bc6aeb48822cd",
+      "upstream_revision": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "adaptations": [
+        "Restore canonical binary64 seed/139968 direct division and unscaled cumulative probabilities; no period cache or integer thresholds.",
+        "Locally authored compact form of the published D algorithm using std.algorithm probability search and range-generated ALU lines."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "binary64"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "loc": 29,
+      "physical_loc": 28,
+      "loc_expansions": [
+        {
+          "line": 8,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fasta-d-optimized",
+      "key": "fasta:fasta-d-optimized",
+      "benchmark": "fasta",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/optimized.d",
+      "source_sha256": "ee49f01c59476b6b49d724d4fb4f1d4b54ff64c5c0f1791106130a98deb05a37",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-optimized",
+      "binary_sha256": "8ff93d7f95362a1160a0c657b34b8675979f96a7df474a2289718b8ff32cdb6b",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-optimized",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/optimized.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-optimized"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/fasta-d-optimized.build.log",
+      "source_url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fasta/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/hanabi1224-bench-algorithm-fasta-1.d",
+      "upstream_sha256": "188e974220c54c40bdfc51ed0a72366eb221ca0018f743972c0bc6aeb48822cd",
+      "upstream_revision": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "adaptations": [
+        "Restore canonical binary64 seed/139968 direct division and unscaled cumulative probabilities; no period cache or integer thresholds.",
+        "Locally authored buffered form: native D byte buffer and statically known probability width; every PRNG step and binary64 division/comparison executed."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "binary64"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "loc": 55,
+      "physical_loc": 54,
+      "loc_expansions": [
+        {
+          "line": 17,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "fasta-d-published",
+      "key": "fasta:fasta-d-published",
+      "benchmark": "fasta",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/published.d",
+      "source_sha256": "f36f2de6a2fe64eba2eea992f650c025259a64b01b6f94a417fa3fad09babf4b",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-published",
+      "binary_sha256": "989aadfe277230b83e034131ebac958dfdb1a670307a66e142a68b15c3ba266b",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-published",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/published.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-published"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/fasta-d-published.build.log",
+      "source_url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fasta/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/hanabi1224-bench-algorithm-fasta-1.d",
+      "upstream_sha256": "188e974220c54c40bdfc51ed0a72366eb221ca0018f743972c0bc6aeb48822cd",
+      "upstream_revision": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "adaptations": [
+        "Restore canonical binary64 seed/139968 direct division and unscaled cumulative probabilities; no period cache or integer thresholds."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "binary64"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "loc": 90,
+      "physical_loc": 90,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "knucleotide-d-compact",
+      "key": "knucleotide:knucleotide-d-compact",
+      "benchmark": "knucleotide",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/knucleotide/compact.d",
+      "source_sha256": "38172acf82a69d17d8913ada28de921ce4580dc0a466ba3f359b22a11e9361e5",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-compact",
+      "binary_sha256": "7738ac61ba20e74dd130c65a591ec716f99b4b66566e07ebe0a640db24e4b54c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-compact"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/knucleotide/compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-compact"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/knucleotide-d-compact.build.log",
+      "source_url": "https://raw.githubusercontent.com/kragen/shootout/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/knucleotide/knucleotide.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/kragen-bench-knucleotide-knucleotide.dlang",
+      "upstream_sha256": "9d377f39f19a01c24f90370543d0c95fd84295a5600022c81a03282bfadc20de",
+      "upstream_revision": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "adaptations": [
+        "Read canonical stdin and select >THREE by header; accept arbitrary record line lengths, upper/lowercase; stop at subsequent header.",
+        "Construct all seven complete growing frequency maps for k=1,2,3,4,6,12,18; never count only requested keys.",
+        "Update D1 high-level map source to D2 std.algorithm, immutable string keys and exact modern writefln formatting.",
+        "Use lexical ascending tie break, as required by the existing complete-output reference.",
+        "Return empty complete maps when sequence is shorter than k."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "integer"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "loc": 33,
+      "physical_loc": 33,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "knucleotide-d-published-rolling",
+      "key": "knucleotide:knucleotide-d-published-rolling",
+      "benchmark": "knucleotide",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/knucleotide/published-rolling.d",
+      "source_sha256": "e6141bde1c5f79d44c9a59ef8196c285c8625a776c93244308477f506fb7a761",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-published-rolling",
+      "binary_sha256": "e015602285441c3c7d1374cbaacafa668a87f2751aec3c03c9a9a6c0616855ad",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-published-rolling"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/knucleotide/published-rolling.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/knucleotide-d-published-rolling"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/knucleotide-d-published-rolling.build.log",
+      "source_url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/knucleotide/1-m.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/hanabi1224-bench-algorithm-knucleotide-1-m.d",
+      "upstream_sha256": "09693ed2ad9c7b215de42420af4a1fc6d4f2130977c0ff98090d5cfb92405633",
+      "upstream_revision": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "adaptations": [
+        "Read canonical stdin and select >THREE by header; accept arbitrary record line lengths, upper/lowercase; stop at subsequent header.",
+        "Construct all seven complete growing frequency maps for k=1,2,3,4,6,12,18; never count only requested keys.",
+        "Remove Nullable wrapper from packed keys because modern Phobos Nullable no longer satisfies hash-key signature; use the same Code payload directly.",
+        "Sort equal-frequency results by decoded lexical nucleotide order and return empty maps for sequence shorter than k; tested tied and short inputs.",
+        "Replace file-name and fixed61-byte inputchunk assumptions with standard stdin FASTA parsing; retain all seven rolling maps and five independent worker tasks."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "integer"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "loc": 178,
+      "physical_loc": 177,
+      "loc_expansions": [
+        {
+          "line": 112,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "regexredux-d-compact",
+      "key": "regexredux:regexredux-d-compact",
+      "benchmark": "regexredux",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/compact.d",
+      "source_sha256": "f0f0377040a19a3c2b6225c888b9e7bc42e01f529746d3532e738234cb0d98e0",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-compact",
+      "binary_sha256": "cc8745ace093d9c53915ca25761a2d0f728cf491f9778c9a5d0b991ca110b675",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-compact"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-compact"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/regexredux-d-compact.build.log",
+      "source_url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/regex-redux/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/hanabi1224-bench-algorithm-regex-redux-1.d",
+      "upstream_sha256": "327320a70ef4ba5954904a88eb42d2e3cbdc33a86139ce84559f804f4dcb8642",
+      "upstream_revision": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "adaptations": [
+        "Replace file-name input with canonical stdin byChunk/join.",
+        "Run actual generic std.regex header/newline removal, all nine nonoverlapping pattern searches and all five sequential replacements. No hand-coded benchmarkmatcher.",
+        "All searches and replacements are case-sensitive, with default std.regex flags matching the canonical current regex-redux reference (no i flag); matchAll supplies nonoverlapping matches and replaceAll handles every replacement.",
+        "Locally authored compact equivalent using runtime regex compilation, with all pattern strings and replacements counted."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "integer"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "regexredux-d-published-1",
+      "key": "regexredux:regexredux-d-published-1",
+      "benchmark": "regexredux",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-1.d",
+      "source_sha256": "df31082ea05f0a73833a124954f0018ce39e4c9242576ffed5999ae76d471fda",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-1",
+      "binary_sha256": "3fca83d90dd8f58b26d2c47159a9211f2c811013382bbafdf1e4604cafa505f8",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-1"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-1.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-1"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/regexredux-d-published-1.build.log",
+      "source_url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/regex-redux/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/hanabi1224-bench-algorithm-regex-redux-1.d",
+      "upstream_sha256": "327320a70ef4ba5954904a88eb42d2e3cbdc33a86139ce84559f804f4dcb8642",
+      "upstream_revision": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "adaptations": [
+        "Replace file-name input with canonical stdin byChunk/join.",
+        "Run actual generic std.regex header/newline removal, all nine nonoverlapping pattern searches and all five sequential replacements. No hand-coded benchmarkmatcher.",
+        "All searches and replacements are case-sensitive, with default std.regex flags matching the canonical current regex-redux reference (no i flag); matchAll supplies nonoverlapping matches and replaceAll handles every replacement.",
+        "Use walkLength instead of materializing match ranges as an array; every match is still found by the same std.regex engine.",
+        "Add explicit valid module name for hyphenated filename."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "integer"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "loc": 37,
+      "physical_loc": 37,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "regexredux-d-published-2",
+      "key": "regexredux:regexredux-d-published-2",
+      "benchmark": "regexredux",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-2.d",
+      "source_sha256": "097acfcb8dcf654166f4362e3b9a9deea6e417ca23f86113ce0c13edd2b7936f",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-2",
+      "binary_sha256": "9fd5fc870907c3f564dcf679130fc7377812386ebb050ab209ca34e10f23962a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-2"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-2.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-2"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/regexredux-d-published-2.build.log",
+      "source_url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/regex-redux/2.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/hanabi1224-bench-algorithm-regex-redux-2.d",
+      "upstream_sha256": "2002616ebdc2a85bc44293a15ee820adef0ca78e0d603d8cdac7d8511a477f25",
+      "upstream_revision": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "adaptations": [
+        "Replace file-name input with canonical stdin byChunk/join.",
+        "Run actual generic std.regex header/newline removal, all nine nonoverlapping pattern searches and all five sequential replacements. No hand-coded benchmarkmatcher.",
+        "All searches and replacements are case-sensitive, with default std.regex flags matching the canonical current regex-redux reference (no i flag); matchAll supplies nonoverlapping matches and replaceAll handles every replacement.",
+        "Use walkLength instead of materializing match ranges as an array; every match is still found by the same std.regex engine.",
+        "Add explicit valid module name for hyphenated filename."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "integer"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "loc": 49,
+      "physical_loc": 49,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "regexredux-d-published-3",
+      "key": "regexredux:regexredux-d-published-3",
+      "benchmark": "regexredux",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-3.d",
+      "source_sha256": "f3d2e7cf3fefc1a0aa871a6c9e8173cd1b8da2153012ca48b0810d6874056df7",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-3",
+      "binary_sha256": "043441dec1740693428f47d4e8e9bc5b8fcb49abe2ddcc4b79ce10e8e04c79b5",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-3"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/published-3.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/regexredux-d-published-3"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/regexredux-d-published-3.build.log",
+      "source_url": "https://raw.githubusercontent.com/hanabi1224/Programming-Language-Benchmarks/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/regex-redux/3.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/hanabi1224-bench-algorithm-regex-redux-3.d",
+      "upstream_sha256": "f0bd511b963106a37cc389b01590c1a1ff7fe4fc3c16fe8ab315111b5a868613",
+      "upstream_revision": "ad18b203dd1769724f4eea94fc3ac1e99f6593e0",
+      "adaptations": [
+        "Replace file-name input with canonical stdin byChunk/join.",
+        "Run actual generic std.regex header/newline removal, all nine nonoverlapping pattern searches and all five sequential replacements. No hand-coded benchmarkmatcher.",
+        "All searches and replacements are case-sensitive, with default std.regex flags matching the canonical current regex-redux reference (no i flag); matchAll supplies nonoverlapping matches and replaceAll handles every replacement.",
+        "Use walkLength instead of materializing match ranges as an array; every match is still found by the same std.regex engine.",
+        "Add explicit valid module name for hyphenated filename."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "integer"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "loc": 58,
+      "physical_loc": 58,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "revcomp-d-compact",
+      "key": "revcomp:revcomp-d-compact",
+      "benchmark": "revcomp",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/revcomp/compact.d",
+      "source_sha256": "26ab20ca43fc24ce57ebb852690ea7c30f7fba97aaeeff3c84c3416c03811fb9",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-compact",
+      "binary_sha256": "2f165badf528ba1f6a94723d9d5d239d5daf629511ef1c015e06afc5c1a7d2d2",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-compact"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/revcomp/compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-compact"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/revcomp-d-compact.build.log",
+      "source_url": "https://raw.githubusercontent.com/kragen/shootout/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/revcomp/revcomp.dlang-3.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/kragen-bench-revcomp-revcomp.dlang-3.dlang",
+      "upstream_sha256": "bf79ff4b3323f0dc7f14b8481584cbde36e3df5ecce46277cd7dd523a2474c2e",
+      "upstream_revision": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "adaptations": [
+        "Update D1 source to D2 standard sequence/range APIs and preserve full uppercase IUB complement mapping and60-column output."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "integer"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "revcomp-d-optimized",
+      "key": "revcomp:revcomp-d-optimized",
+      "benchmark": "revcomp",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/revcomp/optimized.d",
+      "source_sha256": "2d89a9c6a8f3d1829c172e7ee38ab8b48fc7a8562f568c5e026acdb3ac9841da",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-optimized",
+      "binary_sha256": "fa16842025068ef4bf33bd353b8d4a2b2eef69d107ff5b254440e2f9094e72af",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-optimized"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/revcomp/optimized.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/revcomp-d-optimized"
+      ],
+      "build_status": "passed",
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/revcomp-d-optimized.build.log",
+      "source_url": "https://raw.githubusercontent.com/kragen/shootout/71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2/bench/revcomp/revcomp.dlang-4.dlang",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/upstream/sequences/kragen-bench-revcomp-revcomp.dlang-4.dlang",
+      "upstream_sha256": "47ef3475b03fffb3306fb898dff0d7ca16919148dfaeae43164b9159de0a9c1b",
+      "upstream_revision": "71aa4ec4cd15940c59f1a1bb71ac1ff1572a55c2",
+      "adaptations": [
+        "Update D1 source to D2 standard sequence/range APIs and preserve full uppercase IUB complement mapping and60-column output.",
+        "Locally authored buffered adaptation: read complete stdin with byChunk, lookup each reversed byte and rewrap each complete record in native D source."
+      ],
+      "execution_mode": "aot",
+      "runtime_environment": {},
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete canonical workload in D application source; ordinary D standard-library algorithms only.",
+        "arithmetic": "integer"
+      },
+      "loc_review": "Root applies shared comment-free normalization including all statements and initialized bindings packed on one line.",
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "binarytrees:d-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/binarytrees/compact.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-compact",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/binarytrees/compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-compact"
+      ],
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/binarytrees/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/binarytrees/hanabi-1.d",
+      "source_sha256": "a327516df7e15cefe6d35432c0070bb4a58e16c8e51ba6f483397db39143c667",
+      "binary_sha256": "a2d84fd7f8cb3f937816e2c59c7d8ade104e9b9aea6661356a52b5fd65dae7bb",
+      "upstream_sha256": "9fab2a89047a9c5544562387520ae0c1418259d223b757710a48fb1cc0c62d34",
+      "adaptations": [
+        "Shortened idiomatic D port of upstream Node class; one statement per line. Removed upstream gcopt=minPoolSize:300 override to use default GC. Constructors allocate all leaf/interior class instances."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Creates, traverses and reclaims every equal-size leaf/interior node; stretch deallocated before retained long-lived tree; no arithmetic node-count substitution."
+      },
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "allocator_policy": "default D GC",
+      "key": "binarytrees:d-compact",
+      "loc": 32,
+      "physical_loc": 32,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "binarytrees:d-fast",
+      "benchmark": "binarytrees",
+      "variant": "fast",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/binarytrees/fast.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-fast",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-fast",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/binarytrees/fast.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-fast"
+      ],
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/binarytrees/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/binarytrees/hanabi-1.d",
+      "source_sha256": "349c91f26b3f90612dd513037d3a7d6c228340a17207e2d7298d68c50a92ae2b",
+      "binary_sha256": "0f2b50653a748cffac9eb38350cb28ffaa4f8082d37c947cb84a5b8a3832eb92",
+      "upstream_sha256": "9fab2a89047a9c5544562387520ae0c1418259d223b757710a48fb1cc0c62d34",
+      "adaptations": [
+        "Independent strict D implementation, not imported specialized benchmark function. Phobos Region!Mallocator standard-library memory pool replaces default GC. Every node calls pool.allocate(Node.sizeof), leaf/interior same size16 bytes. Capacity formula reserves storage; never substitutes for node construction/traversal. deallocateAll resets only after complete tree check. Seven TaskPool workers plus caller at most8. No custom allocator code; all traversal/allocation calls in D source."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Creates, traverses and reclaims every equal-size leaf/interior node; stretch deallocated before retained long-lived tree; no arithmetic node-count substitution."
+      },
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "allocator_policy": "Phobos Region!Mallocator library pool; per-node equal-size logical allocations; entire tree live before bulk reclamation",
+      "key": "binarytrees:d-fast",
+      "loc": 49,
+      "physical_loc": 49,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "pidigits:d-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/compact.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact"
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-gcc-1.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/pidigits/pidigits-gcc-1.c",
+      "source_sha256": "e2a99730b9893a03bb3d9962b3e1bc3ff432e1142ddd854b88def9eb26ff74c6",
+      "binary_sha256": "e7221e8330cac37a650eb3ac09880315b0daa1ad1a7d8890ef581bd87b781644",
+      "upstream_sha256": "f719dddd30aad201aa3ce385b80d48ef3befce29b22c3a12a5aa7e7d743f948e",
+      "adaptations": [
+        "New independent strict D port of canonical Benchmark Game C #1; replacing upstream D Hanabi n1/n2 spelling with explicit extract(3)/extract(4) operations so source audit meets current work rule.",
+        "Uses Phobos std.bigint BigInt; all numerical algorithm and output in D."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical sequential unbounded spigot. Performs both extract(3) and extract(4) using exact arbitrary-precision division, every required next-term step, complete output and partial-line padding."
+      },
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "key": "pidigits:d-compact",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    },
+    {
+      "id": "pidigits:d-fast",
+      "benchmark": "pidigits",
+      "variant": "fast",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/fast.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/fast.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "-L-L/opt/homebrew/opt/gmp/lib",
+        "-L-lgmp"
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-gcc-1.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/pidigits/pidigits-gcc-1.c",
+      "source_sha256": "adad16c89fa4163f68c2fc3242d9f73b100ef4a441a42468b8d987bc38549b4a",
+      "binary_sha256": "3a21ed99dc9c1d395c911fcdb10bcb6e56f6812165aeede9198ee1c746b53548",
+      "upstream_sha256": "f719dddd30aad201aa3ce385b80d48ef3befce29b22c3a12a5aa7e7d743f948e",
+      "adaptations": [
+        "New independent strict D port of canonical Benchmark Game C #1; replacing upstream D Hanabi n1/n2 spelling with explicit extract(3)/extract(4) operations so source audit meets current work rule.",
+        "Uses direct standard GMP arithmetic declarations with ABI structure verified against installed gmp.h. All digit generation/control flow is D; no C/Rust host benchmark kernel. Completes partial final line unlike original C #1."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical sequential unbounded spigot. Performs both extract(3) and extract(4) using exact arbitrary-precision division, every required next-term step, complete output and partial-line padding."
+      },
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "key": "pidigits:d-fast",
+      "loc": 63,
+      "physical_loc": 63,
+      "loc_expansions": [],
+      "eligible_for_chart": true
+    }
+  ],
+  "controls": [
+    {
+      "id": "mech-control-pidigits",
+      "key": "pidigits:mech-control",
+      "benchmark": "pidigits",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+      "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 38,
+      "published_chart_key": "pidigits:mech-pi-final-advance-signed",
+      "previous_seconds": 0.300272042,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Sequential unbounded spigot written in Mech with general GMP-backed bigint operations. Both extract(3) and extract(4) are evaluated for each tested candidate. The advance variant uses the same impossible-candidate guard as the pinned Rust #4 source; no alternative pi algorithm or digit cache.",
+        "full_work": {
+          "digits": 10000,
+          "threads": 1
+        },
+        "evidence": [
+          {
+            "path": "pidigits/pidigits.mec",
+            "sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1"
+          },
+          {
+            "path": "pidigits/pidigits-advance.mec",
+            "sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e"
+          },
+          {
+            "path": "pidigits/upstream/pidigits-rust-4.rs",
+            "sha256": "fb6b33b1bf74612f8ce78d19e70f10f41650b02b72e4c73d2cb0480508fbef65"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html"
+      }
+    },
+    {
+      "id": "mech-control-spectralnorm",
+      "key": "spectralnorm:mech-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 12,
+      "published_chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "previous_seconds": 0.086075292,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Four source functions: coefficient, apply, apply-transpose, and step. Twenty power-method applications execute forty matrix-vector products. Coefficients are computed by emitted Mech arithmetic; no stored matrix or answer shortcut.",
+        "full_work": {
+          "n": 5500,
+          "power_applications": 20,
+          "matrix_vector_products": 40,
+          "weighted_contributions": 1210000000
+        },
+        "evidence": [
+          {
+            "path": "work-audit/20261009/sources/spectralnorm-four-functions.mec",
+            "sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html"
+      }
+    },
+    {
+      "id": "mech-control-nbody",
+      "key": "nbody:mech-control",
+      "benchmark": "nbody",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 25,
+      "published_chart_key": "nbody:pairwise-mass-tails",
+      "previous_seconds": 1.05385575,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Full symplectic pair integration is written in Mech. The generic reactive runner supplies iteration count and output formatting; it contains no gravity kernel.",
+        "full_work": {
+          "steps": 50000000,
+          "pairs_per_step": 10
+        },
+        "evidence": [
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+            "sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175"
+          },
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+            "sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa"
+          },
+          {
+            "path": "array-comparison/nbody-20261009/comparison-mech-compact.json",
+            "sha256": "30535144ef6ef3b40d3d7fed28ce44d4e7214bc964852c19429094d76935583e"
+          },
+          {
+            "path": "../../hosts/gpu/src/fused_f64/runner.rs",
+            "sha256": "1249907f7fcb777cf9f09ddd3e57268149b5aad2c4cb5a209a36b8ccf41318db"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html"
+      }
+    },
+    {
+      "id": "mech-control-mandelbrot",
+      "key": "mandelbrot:mech-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+      "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "loc": 29,
+      "published_chart_key": "mandelbrot:mech-program-simd-loop-fma",
+      "previous_seconds": 0.439738792,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "The Mech-defined callback performs double-precision escape iteration for every pixel, with a maximum of 50 iterations, and emits the complete PBM. Native SIMD and lane termination preserve that algorithm.",
+        "full_work": {
+          "width": 16000,
+          "height": 16000,
+          "maximum_iterations": 50
+        },
+        "evidence": [
+          {
+            "path": "mandelbrot/mandelbrot-compact-program.mec",
+            "sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169"
+          },
+          {
+            "path": "mandelbrot/mandelbrot-program.mec",
+            "sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html"
+      }
+    },
+    {
+      "id": "mech-control-regexredux",
+      "key": "regexredux:mech-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "loc": 24,
+      "published_chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "previous_seconds": 0.489611584,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine independent regex counts, each using its prescribed pattern, and five ordered regex substitutions. The general regex library handles each operation; there is no combined-pattern benchmark matcher.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "evidence": [
+          {
+            "path": "regexredux/regexredux.mec",
+            "sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html"
+      }
+    },
+    {
+      "id": "mech-control-binarytrees",
+      "key": "binarytrees:mech-control",
+      "benchmark": "binarytrees",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+      "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 26,
+      "published_chart_key": "binarytrees:mech-binarytrees-parallel",
+      "previous_seconds": 0.394411208,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed-library-pool",
+        "reason": "Full bottom-up construction and traversal of distinct ordinary nodes, including equally allocated leaves. Uses the general core library memory pool through memory/with-arena and memory/with-frame. This allocation strategy must be disclosed; it is not a default-GC comparison.",
+        "allocation_policy": "General core library pool; distinct 16-byte node slots; per-tree frame release.",
+        "full_work": {
+          "maximum_depth": 21,
+          "nodes_constructed_and_walked": 613766494
+        },
+        "evidence": [
+          {
+            "path": "binarytrees/binarytrees-parallel.mec",
+            "sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/runtime.rs",
+            "sha256": "50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b"
+          },
+          {
+            "path": "../../src/core/src/memory_runtime/allocation.rs",
+            "sha256": "03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c"
+          },
+          {
+            "path": "binarytrees/results/conformance.json",
+            "sha256": "51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c"
+          },
+          {
+            "path": "binarytrees/results/records-conformance.json",
+            "sha256": "5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html"
+      }
+    },
+    {
+      "id": "mech-control-fannkuchredux",
+      "key": "fannkuchredux:mech-control",
+      "benchmark": "fannkuchredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+      "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 59,
+      "published_chart_key": "fannkuchredux:mech-fannkuch-even",
+      "previous_seconds": 1.702457333,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "The Mech program enumerates all factorial permutations in the required factoradic order, performs actual prefix flips, and reduces the alternating checksum and maximum. Parallel ranges cover the full permutation domain.",
+        "full_work": {
+          "n": 12,
+          "permutations": 479001600
+        },
+        "evidence": [
+          {
+            "path": "fannkuchredux/fannkuchredux.mec",
+            "sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f"
+          },
+          {
+            "path": "fannkuchredux/fannkuchredux-even.mec",
+            "sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html"
+      }
+    },
+    {
+      "id": "mech-control-fasta",
+      "key": "fasta:mech-control",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 43,
+      "published_chart_key": "fasta:mech-fasta-final-expanded-v2",
+      "previous_seconds": 0.541193292,
+      "previous_report": "fasta/investigations/20261009-floating-cdf/results.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Strict comparison disables the general exact-integer-cutoff transform. Emitted objects retain floating division/comparison. Each random nucleotide advances the naive LCG. The only repeated-sequence cache is for the supplied fixed ALU string.",
+        "full_work": {
+          "n": 25000000,
+          "fixed_sequence_bytes": 50000000,
+          "random_nucleotides": 200000000,
+          "lcg_updates": 200000000
+        },
+        "required_build_environment": {
+          "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0"
+        },
+        "evidence": [
+          {
+            "path": "fasta/fasta.mec",
+            "sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066"
+          },
+          {
+            "path": "fasta/fasta-optimized.mec",
+            "sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/compiler.rs",
+            "sha256": "b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html"
+      }
+    },
+    {
+      "id": "mech-control-knucleotide",
+      "key": "knucleotide:mech-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "loc": 17,
+      "published_chart_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "previous_seconds": 0.51382825,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "All overlapping keys at all seven lengths perform a library hash-table entry lookup/update. No query-only search or indexed-count substitute. The runtime checks each merged histogram total against its window count.",
+        "full_work": {
+          "three_sequence_length": 125000000,
+          "window_lengths": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12,
+            18
+          ],
+          "hash_table_window_updates": 874999961
+        },
+        "evidence": [
+          {
+            "path": "knucleotide/knucleotide-compact.mec",
+            "sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/counts.rs",
+            "sha256": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/runtime.rs",
+            "sha256": "6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4"
+          },
+          {
+            "path": "array-comparison/all-20261009/investigation/confirmation.json",
+            "sha256": "64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html"
+      }
+    },
+    {
+      "id": "mech-control-revcomp",
+      "key": "revcomp:mech-control",
+      "benchmark": "revcomp",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after",
+      "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "loc": 7,
+      "published_chart_key": "revcomp:mech-revcomp-optimized",
+      "previous_seconds": 0.149272625,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Buffered growing record input; full record reversal, alphabet translation, and 60-column output. The implementation does not use file size to preallocate stdin.",
+        "full_work": {
+          "input_bytes": 254166745
+        },
+        "evidence": [
+          {
+            "path": "revcomp/revcomp.mec",
+            "sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/runtime.rs",
+            "sha256": "6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html"
+      }
+    }
+  ],
+  "runtime": {
+    "path": "/opt/homebrew/bin/ldc2",
+    "sha256": "9c09db63a8812f3310256516a3bf4e6be7cda7af418e5edb58efa0957b46a746",
+    "version": "LDC - the LLVM D compiler (1.43.0):\n  based on DMD v2.113.0 and LLVM 23.1.2\n  built with LDC - the LLVM D compiler (1.42.0)\n  Default target: arm64-apple-darwin25.2.0\n  Host CPU: apple-m3\n  https://dlang.org - https://wiki.dlang.org/LDC"
+  },
+  "libraries": {
+    "/opt/homebrew/Cellar/gmp/6.3.0/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9",
+    "/opt/homebrew/Cellar/gmp/6.3.0/include/gmp.h": "ba08e6d76e0945a858d6e3384eb1fbc1b8100799052cf4ab5c10befe6ee99ebc",
+    "/opt/homebrew/Cellar/ldc/1.43.0/include/dlang/ldc/std/experimental/allocator/building_blocks/region.d": "7c5ca2ffd1a8389b202854680e5881c0cb77b8939d87d94d6ccaa9ad9fe94120",
+    "/opt/homebrew/Cellar/ldc/1.43.0/include/dlang/ldc/std/bigint.d": "85c8e74f02cb32c1c4cf1d7ec1f9965ad951ace12a5ad1b2acd486e55a9edb91"
+  },
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/numerical-manifest.json": "ee3fca3451ec293a1d7d924fa5d8ada23141dfd5c3ad84299f09aaa9bc68fbda",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sequence-manifest.json": "6bdb1e547d74396743d97aa7af8720fac0e14409e61ba6e621050739703e71df",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/tree-digit-manifest.json": "37967cc0dd227ca3a10c18fd6121faa0966da7a297022f48b418de41a2b22455",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/prepare.py": "a7539343ca74e006d40360ac1440763ff84308f8fec4c83b3cd0e9cd388b5203",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/run.py": "aeba075313f0f3acd7f9816d3d3df3ac46c8a2684b8f8d4b70dbf2eacd3df1a4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/loc.py": "6f75cab639300be94366bbf4f329c2ce7aa2c58e6d2ab3c6bd708fb97c58df26",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/small-checks.json": "54d3887680080e2d9a09487fe1cd8317625ea5b5dcc65c5b1892a0e425f9f11a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/evidence/site-before.json": "2b3f77d16312e78bdcfa24754e4d8342c62ebd0cf2d360fa56fc2a92b5b8b862",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/allocation-audit.json": "0b27388b4639e48cd63060618b819cab4068fde090f92d9685fe747890a9c88f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/results/sequence-adversarial.json": "a3a9f524dce81e2246569d2a8e6dccc10ab931e51687117db20e6112efc9c893",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/pidigits-small-canaries.json": "53d8ec08b84bf3b00abe784db78e1af1072ba83469635dd8e7c570261afa2fcf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/numerical-odd-size-audit.json": "95a725b0ba00ca97a3eb77340aec97ca367e50eb8761aac0b0bdeb4b8c1a3a28",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/run.py": "6926e288a7b9b59b030c9226227df967aa1d92b3e395789467706e2241d987ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/run.py": "8b7f1b408fb5838dc6adc2404bcfa6146e48e770e602fbe78255454f3cacb8c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-input25000000.txt": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/input5000000.txt": "97197f5957a12f8a859ba7edff6d97994daa18afacd77db21fa68c6f2e447e38"
+  },
+  "excluded": [],
+  "workloads": {
+    "nbody": [
+      1000,
+      50000000
+    ],
+    "mandelbrot": [
+      200,
+      16000
+    ],
+    "knucleotide": [
+      1000,
+      25000000
+    ],
+    "spectralnorm": [
+      100,
+      5500
+    ],
+    "revcomp": [
+      1000,
+      25000000
+    ],
+    "fannkuchredux": [
+      7,
+      12
+    ],
+    "fasta": [
+      1000,
+      25000000
+    ],
+    "binarytrees": [
+      10,
+      21
+    ],
+    "regexredux": [
+      30,
+      5000000
+    ],
+    "pidigits": [
+      30,
+      10000
+    ]
+  },
+  "loc_policy": "Nonblank, noncomment D application LOC; packed independent statements and initialized bindings expanded. All application helpers and FFI counted; ordinary libraries excluded uniformly.",
+  "timing_boundary": "Three sequential shuffled fresh-process samples of the unchanged full workloads. Startup, runtime libraries, workers, input, computation, all output to regular files and shutdown included. Ahead-of-time compilation, output validation and hashing excluded. Native ARM64, at most eight workers, AC power and Low Power Mode off. Compiler/power overlap invalidates and retries a sample; no scaled timings."
+}

@@ -1,0 +1,72 @@
+{
+  "id": "knucleotide-fsharpcore-4-arm64-faithful-aot",
+  "key": "knucleotide:knucleotide-fsharpcore-4-arm64-faithful-aot",
+  "benchmark": "knucleotide",
+  "language": "fsharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharpcore-4-arm64-faithful.fs",
+  "source_sha256": "0feaa9e01a92aac802a978335d01a3e1d917d5eeb88c58f55cd7b338d00c3758",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/knucleotide-fsharpcore-4.fs",
+  "original_source_sha256": "fd1790c2cb50c3c73ffc90213302553137cc9037d6bfaa71ab4122a4ec53711e",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-fsharpcore-4.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:13:22 GMT\n\nMAKE:\ncp knucleotide.fsharpcore-4.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj (in 930 ms).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(42,41): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have compatible nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(44,12): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(42,41): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have compatible nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(44,12): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]\n    2 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.69\n\n12.66s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+  "adaptations": [
+    "Use complete collision-free two-bit keys through all 36 bits of the eighteen-base windows in the same growable dictionaries; every overlapping window still updates a map.",
+    "Retain exactly the selected FASTA record, normalize nucleotide case, include all overlapping windows, and use lexical frequency ties where applicable."
+  ],
+  "local_adaptation": true,
+  "physical_loc": 104,
+  "normalized_loc": 105,
+  "expansions": [
+    {
+      "line": 84,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharpcore-4-arm64-faithful-aot/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-4-arm64-faithful-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/knucleotide-fsharpcore-4-arm64-faithful-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-4-arm64-faithful-aot/app",
+  "binary_sha256": "7338c2a295ae80d8bd6716022c21f18c5c8d9a94bdefd80b11fc65c13858f6dd",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-4-arm64-faithful-aot/app"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-4-arm64-faithful-aot/app": "7338c2a295ae80d8bd6716022c21f18c5c8d9a94bdefd80b11fc65c13858f6dd"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 242,
+    "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 11.382,
+  "timing_selection_reasons": [
+    "Lowest officially published elapsed time at the prescribed full workload; local timing still required."
+  ]
+}

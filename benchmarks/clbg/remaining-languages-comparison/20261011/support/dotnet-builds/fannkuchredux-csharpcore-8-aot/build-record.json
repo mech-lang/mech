@@ -1,0 +1,95 @@
+{
+  "id": "fannkuchredux-csharpcore-8-aot",
+  "key": "fannkuchredux:fannkuchredux-csharpcore-8-aot",
+  "benchmark": "fannkuchredux",
+  "language": "csharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/fannkuchredux-csharpcore-8.cs",
+  "source_sha256": "d9d7a87488a1be0dd06c8823d53310104e82b5bca4c85af1b2c013607d0ed5ff",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/fannkuchredux-csharpcore-8.cs",
+  "original_source_sha256": "d9d7a87488a1be0dd06c8823d53310104e82b5bca4c85af1b2c013607d0ed5ff",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-csharpcore-8.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 07:08:46 GMT\n\nMAKE:\ncp fannkuchredux.csharpcore-8.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/fannkuchredux/tmp/program.csproj (in 804 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/fannkuchredux/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:05.66\n\n7.51s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 54,
+  "normalized_loc": 63,
+  "expansions": [
+    {
+      "line": 15,
+      "extra_lines": 3,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 21,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 22,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 30,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 37,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 56,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/fannkuchredux-csharpcore-8-aot/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-8-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/fannkuchredux-csharpcore-8-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-8-aot/app",
+  "binary_sha256": "093ea1250455a09028e7866a5f2c2617c1eabd4e1e386f8dba2170b3b77686f7",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-8-aot/app",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-csharpcore-8-aot/app": "093ea1250455a09028e7866a5f2c2617c1eabd4e1e386f8dba2170b3b77686f7"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 24,
+    "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 43.835,
+  "timing_selection_reasons": [
+    "Fewest normalized source lines among accepted candidates."
+  ]
+}

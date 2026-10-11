@@ -1,0 +1,8 @@
+Warning at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.fut:15:23-67:
+  Size expression with binding is replaced by unknown size.
+
+  For more information, see:
+    https://futhark.readthedocs.io/en/v0.27.1/error-index.html#size-expression-bind
+
+Warning at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/common.fut:5:8-9:
+  Unused name "x".

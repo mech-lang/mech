@@ -1,0 +1,21 @@
+History of releases and changes in lbn
+
+* lbn-102	2026-10-05
+- fixed bug in neg and abs
+- added error checking
+- added support for __le
+- added 0x prefix for hex
+- added support for __idiv ?
+- renamed divmod to quotrem
+- renamed isneg to isnegative
+- renamed number to new
+- moved rmod to mod
+- removed optional checks argument in isprime
+- updated README
+
+* lbn-101	2025-03-03
+- use OPENSSL_VERSION_TEXT instead of SHLIB_VERSION_NUMBER
+- added -Wno-deprecated-declarations to Makefile to avoid warnings
+
+* lbn-100	2023-05-30
+- first release

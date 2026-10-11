@@ -1,0 +1,702 @@
+{
+  "compiler_sha256": "c9cc5b03b32ed20faa4edd9472a53d2da446c411c0a97c16f81a275e0f924384",
+  "status": "first arena candidate",
+  "n": 21,
+  "threads": 8,
+  "samples": 3,
+  "sample_order": [
+    [
+      "mech-arena-binarytrees-parallel",
+      "mech-arena-binarytrees",
+      "binarytrees-rust-5",
+      "binarytrees-gcc-5-llvm",
+      "binarytrees-rust-5-thin"
+    ],
+    [
+      "mech-arena-binarytrees-parallel",
+      "mech-arena-binarytrees",
+      "binarytrees-gcc-5-llvm",
+      "binarytrees-rust-5-thin",
+      "binarytrees-rust-5"
+    ],
+    [
+      "mech-arena-binarytrees-parallel",
+      "binarytrees-gcc-5-llvm",
+      "mech-arena-binarytrees",
+      "binarytrees-rust-5",
+      "binarytrees-rust-5-thin"
+    ]
+  ],
+  "programs": [
+    {
+      "id": "binarytrees-gcc-5-llvm",
+      "language": "c",
+      "variant": 5,
+      "path": "upstream/binarytrees-gcc-5.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-gcc-5.html",
+      "sha256": "d7a13e4f3a7c50af0ef2efc8ef382d78b788e67385c0f4f09169849cb1b6fad2",
+      "upstream_starred": false,
+      "published_secs": 8.71,
+      "published_gz": 914,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 00:22:55 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -pthread binarytrees.gcc-5.c -o binarytrees.gcc-5.gcc_run \nrm binarytrees.gcc-5.c\n\n2.34s to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.gcc-5.gcc_run 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "algorithm": {
+        "strict": true,
+        "allocation": "individual",
+        "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+      },
+      "cc_backend": "llvm",
+      "executable_sha256": "bb0a0083168d4521395d8cac7b17749b67fe0a786db85c4f75b3a29b37423cf2",
+      "source": {
+        "paths": [
+          "upstream/binarytrees-gcc-5.c"
+        ],
+        "sha256": "d7a13e4f3a7c50af0ef2efc8ef382d78b788e67385c0f4f09169849cb1b6fad2",
+        "physical_lines": 145,
+        "nonblank_noncomment_lines": 113,
+        "normalized_bytes": 2300,
+        "gzip1_bytes": 901
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-gcc-5.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-gcc-5-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-gcc-5-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        3.431830833,
+        3.426234667,
+        3.394457042
+      ],
+      "runtime_environment": {},
+      "correctness_10": {
+        "exact_reference_match": true,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb"
+      },
+      "correctness_21": {
+        "exact_reference_match": true,
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1"
+      },
+      "median_seconds": 3.426234667
+    },
+    {
+      "id": "binarytrees-rust-5",
+      "language": "rust",
+      "variant": 5,
+      "path": "upstream/binarytrees-rust-5.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-rust-5.html",
+      "sha256": "fa543ffd0409c90174d96d3cc237ac1ff84affaceef9f215553e953755ef33c4",
+      "upstream_starred": false,
+      "published_secs": 1.07,
+      "published_gz": 771,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:35:29 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs binarytrees.rs -o binarytrees.rust-5.rust_run\n\n1.28 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.rust-5.rust_run 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "algorithm": {
+        "strict": true,
+        "allocation": "library-pool",
+        "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+      },
+      "executable_sha256": "67c7218d5ef64289d8db28ff5de2783a2dabacd00c5a3fda402ae29b656ba376",
+      "source": {
+        "paths": [
+          "upstream/binarytrees-rust-5.rs"
+        ],
+        "sha256": "fa543ffd0409c90174d96d3cc237ac1ff84affaceef9f215553e953755ef33c4",
+        "physical_lines": 91,
+        "nonblank_noncomment_lines": 69,
+        "normalized_bytes": 1724,
+        "gzip1_bytes": 748
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/rust-deps-bitcode/release/deps",
+        "--extern",
+        "bumpalo=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/rust-deps-bitcode/release/deps/libbumpalo-c3a9c4ee81b81056.rlib",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/rust-deps-bitcode/release/deps/librayon-e78dc3eef38dda17.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-rust-5.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-rust-5"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-rust-5"
+      ],
+      "worker_policy": "source Rayon/fixed thread policy",
+      "samples_seconds": [
+        0.794116375,
+        0.745554,
+        0.734975541
+      ],
+      "runtime_environment": {},
+      "correctness_10": {
+        "exact_reference_match": true,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb"
+      },
+      "dependency_build": {
+        "manifest_sha256": "7a241eb65ced974f6341be8952d40123841bbafbcd4e16b5ccf74eb8315d5dd6",
+        "lock_sha256": "4a399da2945f1de02bbb6a5460f61251d5b7a4150d705dd89c30547a279f4e31",
+        "rustflags": "-C target-cpu=native -C embed-bitcode=yes",
+        "rlib_sha256": {
+          "librayon_core-792b83f4ed8217d3.rlib": "8f477b24e396e20a895deb38e3567cf47d911b8f37a03ded8e7425427568ba6c",
+          "libbumpalo-c3a9c4ee81b81056.rlib": "e8e6e6e890c45ff63362e7f6b771a07d5c9d36047fe7fd29a209801eacedf922",
+          "libcrossbeam_deque-37675d97cc3e80df.rlib": "f36dc67de80112101ed064b490416b6d9965a856e74ebe70cba3fc2998419e8e",
+          "libcrossbeam_epoch-1a619486a30cc52b.rlib": "832a5b51b35eff01718233d47c956da367ba23aaeb910f801b4e77b5a3141a3d",
+          "librustc_hash-d54368210aee0b0c.rlib": "3f4ed692574c78a6571c2cdb7ddf205365616ea1fba0a47130ff3e1990a8a55f",
+          "libtoolshed-e360ee7529660cf1.rlib": "cf44aa4df9606293bdf3a6be6b523cb9b19399e1e8699dad5ea9238c0dafc520",
+          "libcrossbeam_utils-ce46a3f6ae7906b3.rlib": "c617b6e310b548b42e1cdda9c222cb5fd39ab81e52c9097261f7e3c77d5e079a",
+          "libeither-ff62c0c2ed10f20b.rlib": "c8cfc47cf97c985c885e553c121e8ea714016d5580fbb7ea673d96397002271d",
+          "libtyped_arena-5b417d02ae1d3545.rlib": "c2de70dcd88063280fa0b67501a94bf347dee4b0136decdedded9af8d58e9224",
+          "librayon-e78dc3eef38dda17.rlib": "bf0db72d731f468fae0591cd51601dd507a7ae6229925d6a5fc6d8fd95899157"
+        }
+      },
+      "correctness_21": {
+        "exact_reference_match": true,
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1"
+      },
+      "median_seconds": 0.745554
+    },
+    {
+      "id": "binarytrees-rust-5-thin",
+      "language": "rust",
+      "variant": 5,
+      "path": "upstream/binarytrees-rust-5.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-rust-5.html",
+      "sha256": "fa543ffd0409c90174d96d3cc237ac1ff84affaceef9f215553e953755ef33c4",
+      "upstream_starred": false,
+      "published_secs": 1.07,
+      "published_gz": 771,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:35:29 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs binarytrees.rs -o binarytrees.rust-5.rust_run\n\n1.28 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.rust-5.rust_run 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "algorithm": {
+        "strict": true,
+        "allocation": "library-pool",
+        "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+      },
+      "lto": "thin",
+      "executable_sha256": "af0410f483a77da7aac057a8a7b09fb2bf1722830c1f1bdfe6787041a66a237c",
+      "source": {
+        "paths": [
+          "upstream/binarytrees-rust-5.rs"
+        ],
+        "sha256": "fa543ffd0409c90174d96d3cc237ac1ff84affaceef9f215553e953755ef33c4",
+        "physical_lines": 91,
+        "nonblank_noncomment_lines": 69,
+        "normalized_bytes": 1724,
+        "gzip1_bytes": 748
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/rust-deps-bitcode/release/deps",
+        "--extern",
+        "bumpalo=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/rust-deps-bitcode/release/deps/libbumpalo-c3a9c4ee81b81056.rlib",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/rust-deps-bitcode/release/deps/librayon-e78dc3eef38dda17.rlib",
+        "-Clto=thin",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/upstream/binarytrees-rust-5.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-rust-5-thin"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-rust-5-thin"
+      ],
+      "worker_policy": "source Rayon/fixed thread policy",
+      "samples_seconds": [
+        0.707340125,
+        0.554111042,
+        0.747480625
+      ],
+      "runtime_environment": {},
+      "correctness_10": {
+        "exact_reference_match": true,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb"
+      },
+      "dependency_build": {
+        "manifest_sha256": "7a241eb65ced974f6341be8952d40123841bbafbcd4e16b5ccf74eb8315d5dd6",
+        "lock_sha256": "4a399da2945f1de02bbb6a5460f61251d5b7a4150d705dd89c30547a279f4e31",
+        "rustflags": "-C target-cpu=native -C embed-bitcode=yes",
+        "rlib_sha256": {
+          "librayon_core-792b83f4ed8217d3.rlib": "8f477b24e396e20a895deb38e3567cf47d911b8f37a03ded8e7425427568ba6c",
+          "libbumpalo-c3a9c4ee81b81056.rlib": "e8e6e6e890c45ff63362e7f6b771a07d5c9d36047fe7fd29a209801eacedf922",
+          "libcrossbeam_deque-37675d97cc3e80df.rlib": "f36dc67de80112101ed064b490416b6d9965a856e74ebe70cba3fc2998419e8e",
+          "libcrossbeam_epoch-1a619486a30cc52b.rlib": "832a5b51b35eff01718233d47c956da367ba23aaeb910f801b4e77b5a3141a3d",
+          "librustc_hash-d54368210aee0b0c.rlib": "3f4ed692574c78a6571c2cdb7ddf205365616ea1fba0a47130ff3e1990a8a55f",
+          "libtoolshed-e360ee7529660cf1.rlib": "cf44aa4df9606293bdf3a6be6b523cb9b19399e1e8699dad5ea9238c0dafc520",
+          "libcrossbeam_utils-ce46a3f6ae7906b3.rlib": "c617b6e310b548b42e1cdda9c222cb5fd39ab81e52c9097261f7e3c77d5e079a",
+          "libeither-ff62c0c2ed10f20b.rlib": "c8cfc47cf97c985c885e553c121e8ea714016d5580fbb7ea673d96397002271d",
+          "libtyped_arena-5b417d02ae1d3545.rlib": "c2de70dcd88063280fa0b67501a94bf347dee4b0136decdedded9af8d58e9224",
+          "librayon-e78dc3eef38dda17.rlib": "bf0db72d731f468fae0591cd51601dd507a7ae6229925d6a5fc6d8fd95899157"
+        }
+      },
+      "correctness_21": {
+        "exact_reference_match": true,
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1"
+      },
+      "median_seconds": 0.707340125
+    },
+    {
+      "id": "mech-arena-binarytrees",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/conformance/binarytrees"
+      ],
+      "runtime_environment": {},
+      "source_sha256": "8e016261589674548dc6bd632d820fc67941a7ed6471097ab2101180cc59ab7b",
+      "executable_sha256": "ad300743155e5e8820f63c69b704ec160a919cca9cfb207e278093fd52d733ca",
+      "samples_seconds": [
+        5.587270125,
+        5.600698167,
+        5.592640417
+      ],
+      "correctness_21": {
+        "exact_reference_match": true,
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1"
+      },
+      "median_seconds": 5.592640417
+    },
+    {
+      "id": "mech-arena-binarytrees-parallel",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/conformance/binarytrees-parallel"
+      ],
+      "runtime_environment": {},
+      "source_sha256": "164cd4ed463df8cd1bd5c45ede86c2bbc249d196b0cd86d2fa12f93fbda2a853",
+      "executable_sha256": "f9979c04d354b020c3fc59a9b2498abc6f7e9f530eb52d75ac0fb77e25a2392e",
+      "samples_seconds": [
+        1.291695792,
+        1.267583,
+        1.2653895
+      ],
+      "correctness_21": {
+        "exact_reference_match": true,
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1"
+      },
+      "median_seconds": 1.267583
+    }
+  ],
+  "compiler_snapshot": {
+    "path": "apple-m3-arena-first-21.compiler.tar.gz",
+    "sha256": "d65f944b42b38b4a2d56cf067f4e2692c0b49a24b3621eb8f2aa5b197f2d0b09",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "Cargo.lock": "3461224508c37a29f0ef79ea172672060b553b72b0ccf19d8307791292e8dad9",
+      "Cargo.toml": "b98e0c170b770803e732df39f37e2c4e5c4ce43c5a46d8650a5f3956c8bccaf4",
+      "benchmarks/clbg/binarytrees/README.md": "03989257cb2522593eb48de4ed10dfa85fd395fdfd1317ed005041ab27fc4af9",
+      "benchmarks/clbg/binarytrees/algorithm-audit.json": "9a90437251bb66f08df6833ba14ca889c114a01eaf1b2a4ab77bed1a9d3efbb5",
+      "benchmarks/clbg/binarytrees/audit.py": "1fa0a4079a10d2e31dc25536f5a1008b6c1b127274631ebf40a34a46fc99272d",
+      "benchmarks/clbg/binarytrees/binarytrees-parallel.mec": "164cd4ed463df8cd1bd5c45ede86c2bbc249d196b0cd86d2fa12f93fbda2a853",
+      "benchmarks/clbg/binarytrees/binarytrees.mec": "8e016261589674548dc6bd632d820fc67941a7ed6471097ab2101180cc59ab7b",
+      "benchmarks/clbg/binarytrees/compat/linux-affinity.h": "43078c12ef63ae63afddab5abf3977cf5755b4d7c0d17face448411aaedc2d08",
+      "benchmarks/clbg/binarytrees/compat/malloc.h": "0caee00402dedcf15334617c94dcf58ca1d87f9de26aef03e3c53e5b56ca35f8",
+      "benchmarks/clbg/binarytrees/conformance.py": "55c5f6e18e66cc4cf88de59fb51cab0c703657e9e1a9d043aa01d25c1a1ea565",
+      "benchmarks/clbg/binarytrees/experiments/individual-box/binarytrees-parallel.mec": "579df63ef2f9c3ea1e0d846c25571119a75e3fbcbc9116442b522644cf5703c6",
+      "benchmarks/clbg/binarytrees/experiments/individual-box/binarytrees.mec": "38c9626d0cd584f539fcad6295fd77f4602fb52bb82c98530a11d6573c980465",
+      "benchmarks/clbg/binarytrees/experiments/individual-box/conformance.py": "8e0c3c2e1eaf3761640371b638d722fc776a646a4d879a37d3ea953d82b49a1e",
+      "benchmarks/clbg/binarytrees/fetch_sources.py": "684d869d5f705ee13e3806d64ce4e86c04569a6a1c61f6579db8a80fc5964eaa",
+      "benchmarks/clbg/binarytrees/manifest.json": "57eeae3227400cb804aca2eaa32cc5f55726304fb6e6a863f967caa4e2929441",
+      "benchmarks/clbg/binarytrees/plot.py": "85198bbc123decf0000579dcaa53e8177d0ffd03c25389a8328264c61a7e0fdf",
+      "benchmarks/clbg/binarytrees/recover_builds.py": "85ba40e6b58f76643036a2eb54fccd70fadd3680cf6df94ff2717f9b79d55c01",
+      "benchmarks/clbg/binarytrees/reference-10.txt": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+      "benchmarks/clbg/binarytrees/reference-pins.json": "d3e730d71070d2d70da01560319bbce0144cea78cde75201a6bb0eda5cf3c81b",
+      "benchmarks/clbg/binarytrees/regressions.py": "b6d339b7e6bb3b1bec5e6d1bac1be7f023f5ac9ac3176f1442ee8a1438584586",
+      "benchmarks/clbg/binarytrees/run.py": "828ca08ca79a17fe1cec8b2786527ba2e22313801b9b98d1876f0acc437162d5",
+      "benchmarks/clbg/binarytrees/rust-deps/Cargo.lock": "4a399da2945f1de02bbb6a5460f61251d5b7a4150d705dd89c30547a279f4e31",
+      "benchmarks/clbg/binarytrees/rust-deps/Cargo.toml": "7a241eb65ced974f6341be8952d40123841bbafbcd4e16b5ccf74eb8315d5dd6",
+      "benchmarks/clbg/binarytrees/rust-deps/src/main.rs": "536e506bb90914c243a12b397b9a998f85ae2cbd9ba02dfd03a9e155ca5ca0f4",
+      "benchmarks/clbg/binarytrees/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-chapel-3.chpl": "4ab7b90a0e3927382a773c3da37af0f59e2e233c6706e2843611a438f524b0dc",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-chapel-4.chpl": "f02170797a8687ab63a7e0613df9fd5e9c5ac2630495fdc5bfcb1806c927aac6",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-chapel-5.chpl": "20b8863adfe2fed884e3800d895b9c7e728931894b0533a4476b35bbd93bc563",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gcc-1.c": "730e4c677c1913d48d81535890070c6ca04b9768fc5edccb7600d1d251ea15ea",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gcc-2.c": "634ee9a5c4b637e22f29c9f09f7ac7ea0479cbf22c649abfe3266d603633abbe",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gcc-3.c": "d9a532975e0a08590d711ae1335c6a976889af19589d234220333b84b97fe8ab",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gcc-5.c": "d7a13e4f3a7c50af0ef2efc8ef382d78b788e67385c0f4f09169849cb1b6fad2",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-go-1.go": "72d31464e6ef9df69c740c364e18099be00dbdca22a12bd04ed919f7e664e6c3",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-go-2.go": "dc8aa53d7241d3c1b8e7985bc59ff8816421964d74486b2fb1d204a882253b4d",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-go-3.go": "d5080000ec49cd138974ce7078af8681d71e40ac716b6f9aa66c410b6aa59d8a",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-go-5.go": "c46127330532363d37205d3e0e7d5973f1f2fa4cdbe7f0d23a75bb3bb519144f",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-go-6.go": "77c81c18bf4763b36d13ca6f4a2f6f61ace3e2e64d3316500917fbcd00b1a480",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-go-7.go": "517718cea273baeb7571d7b794bca01425f654e168113ad483ccee2afff1e21b",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-1.cpp": "7c8ff3d053e191ed2c68129b57f6483233a9c22baaabcb6ec7c25c4b8a251983",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-2.cpp": "88d980126647637c117f57cd6ab07218fc6ce6e3ed8800828b89f36972c2736c",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-3.cpp": "e59e23e9ff9d72d129d4fbfacad16efdffb3207ca8a7f3a5b7b2c348623f6727",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-4.cpp": "b023347b019e25d1254343d5fbc5d7d8c4ceb51f600d090172deccf9b618f734",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-5.cpp": "df5a211f8338cbdbc6b213382993d7b63b33b86344ff551b099e7a680598ffce",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-6.cpp": "0cf19324d00c58cc32a4782e7dc553249c65665e322d2b0d90be2d5cc9da3e2d",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-7.cpp": "7b1167dff0d8385bd459a066db6a6d3d7bc91bf0ec0cd765e339b6dc8f495a13",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-gpp-9.cpp": "a56ed4a3ab6f6c79500d31969cbdf3dfcf9aeffa1fe5a3e083f2fe545c08b25b",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-graalvmaot-2.java": "c6a7202fa3e271d49d0d3a45f75b2b01b687f67698765d04e7e6abbdc93cf0c1",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-graalvmaot-3.java": "c3df0b2c390ebc4996bc2793e140094860fc843afd133155139f6aec5c5d3ef9",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-graalvmaot-4.java": "38b113cc47b3fd0286adcb03c7bdfe6be5e9b6df3120d0e9b68a0e51e8267c1d",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-graalvmaot-6.java": "b8066408836014534f2e8c8fdf526685a42aa03886dd8822e6310b0dccc16a36",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-graalvmaot-7.java": "c28a0b7f1bfb705b5cf11c523362114e312df69acf531ee6a8a2f1ca86bab57f",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-julia-2.jl": "1ec2f5f556a272b084cdc824b942ecf30a6754bb17d0554e4b80610a694775bb",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-julia-3.jl": "5c3482ad38f73265c4b5016f325cb7eec632cb44deae8a6df5d10f55141ce5a2",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-julia-4.jl": "569cf0d66e3ee557e1d45e8d2442ac8688275c6a4542d502b4d561ddbf4c0a6f",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-julia-5.jl": "924b71236671ba090e0927aa4ea15abce443179a75d721b39346f48e3d8cd65c",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-rust-1.rs": "2bb471318d836aa874fecbcf2dd3da00c6bedee70ec20c141f9ca02bc25abe07",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-rust-2.rs": "e8812a78babb260271feb35f8707aa0e0164ad97d7b5a10edd5c47f51d0fbfc5",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-rust-3.rs": "8c06e331a6dc8acf64048579288b5581d15bb930040f59cf5336c864c56f51bb",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-rust-4.rs": "08b92abb43bd760193bd7fe6cd9b441d5350ceb73fbd69befccbef601da136b4",
+      "benchmarks/clbg/binarytrees/upstream/binarytrees-rust-5.rs": "fa543ffd0409c90174d96d3cc237ac1ff84affaceef9f215553e953755ef33c4",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "benchmarks/clbg/process.py": "c64b449018915b066d1a6fada7c92afacd9d90e24c7d4a0505fa0e71b787de80",
+      "hosts/gpu/Cargo.toml": "f32eb6407560d49e60e71c47ad1eba2de0228664b2ce412e347bcbd2bd1d6935",
+      "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+      "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+      "hosts/gpu/src/batched/mod.rs": "f2ce0842ed10633b024a7846f48ed25faec21949b58fefb742499adcb07df23b",
+      "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+      "hosts/gpu/src/bin/mech-native-map.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "hosts/gpu/src/control/application.rs.in": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3",
+      "hosts/gpu/src/control/compiler.rs": "f4b211d0f2f97b9f358f8068a6364a9afc77ada76ef1ddcd763099f436e3b89f",
+      "hosts/gpu/src/control/mod.rs": "5786b65421389854614bb14de53300c848e97b005b32130b6e27197ab28c08a2",
+      "hosts/gpu/src/control/runtime.rs": "b87c47fcc2794c0d8e5c2b2b8c9667f585df1816cf63a2959f866dc4178dc6c7",
+      "hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+      "hosts/gpu/src/fused_f64/map_runner.c": "1a6e8e14c1cb7d64061a29a0bffc5a7f4067bda87c2762eb0ab77ba3a23286c5",
+      "hosts/gpu/src/fused_f64/map_runner.rs": "f93ffdff7f74a0f6a8144d09bc8fb8b0f3d829fe1da133599319dd66d7b665ca",
+      "hosts/gpu/src/fused_f64/mod.rs": "3bafe44689d095dcf198564f4ef53c7bab448862294877f1747f93c35a06195c",
+      "hosts/gpu/src/fused_f64/native.rs": "7eccad1d7823290a503fb0e3dcbacc376d68d51a378c1156559a2ad2c58ad32c",
+      "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+      "hosts/gpu/src/fused_f64/runner.rs": "149d02e2024b04d7956a98d8efa63119182c65394cb7060b529f6397cf34cae8",
+      "hosts/gpu/src/lib.rs": "de880a06a1ee6d2ba08d08dacacae566e2d00ebb024e09b7e2090164a84e13c1",
+      "hosts/gpu/src/native_build.rs": "57aed9e3b31512d01e511384f660bdfcc824e77265306eb36ae525f9ebeeb9ac",
+      "hosts/gpu/src/sequence/application.rs.in": "ca29d7db1f71b2ae8727a0a36fce9acccdd29679cb1f3b213d75085fe8a566b5",
+      "hosts/gpu/src/sequence/bytes.rs": "ddf68d4222dcd6a5165b3c6dc0561816d96b2935681e8551755979e671f3174f",
+      "hosts/gpu/src/sequence/compiler.rs": "c086f8014e4d4f44529b9bd67a6d6683b22c99286248455213032d929c1ce289",
+      "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+      "hosts/gpu/src/sequence/mod.rs": "b8bcdc879335271c3fec98da844d28257b97eeea2d07d0bf26eaf869be4090cf",
+      "hosts/gpu/src/sequence/numeric.rs": "fae77d575e66339c222998eeba4a9e2293132340145647a617ad9b34661c644d",
+      "hosts/gpu/src/sequence/runtime.rs": "baf600fd328cce9f1a5eb94bb5ea9baae862ac4f4b4c852a6f151dbc2cec2a2a",
+      "scripts/unsafe-boundaries.allowlist": "b524a2c41adfb81d2176828ecf784f1721b9d24eccf7fe0b273bcbc9162bd1ad",
+      "src/cli/app/tests/mod.rs": "8ed9623c971678920f0f0d591dd92270ccbcca6c0432425251b8ab84b911800b",
+      "src/cli/commands/build.rs": "f1c616abe74e102fefd429edf72d8aa4fd07549ce58ee2eeb0d181ed38ab2056",
+      "src/engine/Cargo.toml": "53d1489619006a3d44b4a08cdf3da1188b31d9b9c9939c1ac24af0c8a43ed373",
+      "src/engine/src/lib.rs": "f2bd07c34820c1fd9a9ba0fdc4cbd7f9c7487ba53eaf5bf425284f0a1642ab8d",
+      "src/engine/src/native_sequence/control.rs": "b14ae30c3ec711e097ea26d190d4dcd1144b0c35537ff145aa0329a39b1d1dfc",
+      "src/engine/src/native_sequence/grid.rs": "937f5ae4fac23068149c03bf20f263475043b9f2f5b6ed3f5e0dee0f79a629ba",
+      "src/engine/src/native_sequence/mod.rs": "0ffe456b3a105f314321a3476805fbfe6c01de7d706a11548c60a5ae621709d9",
+      "src/engine/src/numeric_optimizations.rs": "bc6b27fbf6a8673d4ee7c74d37a541275a681b4ca30b0b9a1fd9bbee0531e773",
+      "src/engine/src/resident/numeric/mod.rs": "2f64443746ae660b0be42a8253495c763cbed9296a13f5622c549fe94a998862",
+      "src/stdlib/Cargo.toml": "7e7fee937d6587e6170210f392d67e356b391b74c607257a02ccceb20988ce0e",
+      "src/stdlib/src/lib.rs": "6982882a6334509093eed3aef07430c88d28ab9aa4254243a38736d40e62476b",
+      "src/stdlib/src/native_sequence.rs": "7e46d65adf2797e19fa7d5cb72a53a06b55ffa4a1f36d2aa30bea1721487fadc"
+    }
+  },
+  "conformance": {
+    "compiler_sha256": "c9cc5b03b32ed20faa4edd9472a53d2da446c411c0a97c16f81a275e0f924384",
+    "storage": "core MemoryDomain / RealizedMemoryPlan / PlannedArenaProjection<u64>",
+    "checks": [
+      [
+        "binarytrees",
+        0,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        1,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        2,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        3,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        4,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        5,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        6,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        7,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        8,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        9,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        10,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        11,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        12,
+        "byte-exact"
+      ],
+      [
+        "binarytrees",
+        15,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        0,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        1,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        2,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        3,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        4,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        5,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        6,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        7,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        8,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        9,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        10,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        11,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        12,
+        "byte-exact"
+      ],
+      [
+        "binarytrees-parallel",
+        15,
+        "byte-exact"
+      ],
+      [
+        "identity-and-aliases",
+        "distinct-leaves-and-child-links"
+      ],
+      [
+        "outside-arena",
+        "runtime-guard",
+        9
+      ],
+      [
+        "capacity-exhaustion",
+        "runtime-guard",
+        9
+      ],
+      [
+        "wrong-arity",
+        "runtime-guard",
+        9
+      ],
+      [
+        "allocation-arity",
+        "runtime-guard",
+        9
+      ],
+      [
+        "null-read",
+        "runtime-guard",
+        9
+      ],
+      [
+        "zero-capacity",
+        "runtime-guard",
+        9
+      ],
+      [
+        "capacity-overflow",
+        "runtime-guard",
+        9
+      ],
+      [
+        "frame-outside-arena",
+        "runtime-guard",
+        9
+      ],
+      [
+        "recursion-limit",
+        "runtime-guard",
+        8
+      ],
+      [
+        "shift-domain",
+        "runtime-guard",
+        2
+      ],
+      [
+        "integer-forgery",
+        "compile-rejected"
+      ],
+      [
+        "retired-per-node-api",
+        "compile-rejected"
+      ],
+      [
+        "reference-escape",
+        "compile-rejected"
+      ],
+      [
+        "cross-region-reference",
+        "compile-rejected"
+      ],
+      [
+        "frame-reference-escape",
+        "compile-rejected"
+      ],
+      [
+        "frame-reference-capture",
+        "compile-rejected"
+      ],
+      [
+        "entry-capture",
+        "compile-rejected"
+      ],
+      [
+        "transitive-worker-io",
+        "compile-rejected"
+      ],
+      [
+        "unscoped-worker-record",
+        "runtime-guard",
+        5
+      ],
+      [
+        "bounded-frame-reuse",
+        "100-leaf-allocations-in-one-record-capacity"
+      ],
+      [
+        "unframed-exhaustion",
+        "runtime-guard",
+        9
+      ],
+      [
+        "nested-independent-realizations",
+        "outer-reference-remains-live"
+      ],
+      [
+        "ordered-source-effects",
+        "unused-effects-and-loop-order"
+      ],
+      [
+        "distinct-effectful-branches",
+        "two-allocations"
+      ],
+      [
+        "distinct-effectful-loops",
+        "both-loops-executed"
+      ]
+    ],
+    "passed": 54
+  },
+  "regressions": {
+    "compiler_sha256": "c9cc5b03b32ed20faa4edd9472a53d2da446c411c0a97c16f81a275e0f924384",
+    "passed": 4,
+    "checks": [
+      {
+        "id": "mech-fasta-final-compact-v2",
+        "native_object_identical": true,
+        "full_output_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      {
+        "id": "mech-fasta-final-expanded-v2",
+        "native_object_identical": true,
+        "full_output_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+      },
+      {
+        "id": "fannkuchredux.mec",
+        "native_object_identical": true,
+        "correctness_n": 7
+      },
+      {
+        "id": "fannkuchredux-even.mec",
+        "native_object_identical": true,
+        "correctness_n": 7
+      }
+    ]
+  }
+}

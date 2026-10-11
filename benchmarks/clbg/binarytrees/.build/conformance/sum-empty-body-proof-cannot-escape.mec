@@ -1,0 +1,7 @@
+<row> := <{value<u64>}>
+Allocate(n<u64>) = (result<u64>) :=
+  h := memory/allocate({value: n})
+  result := 1.
+r := stats/sum([Allocate(i) | i <- 0..0])
+h := memory/allocate({value: 2})
+io/print("{}\n", r)

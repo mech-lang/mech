@@ -1,0 +1,133 @@
+# PODNAME: Alien::Build::Plugin::PkgConfig
+# ABSTRACT: PkgConfig Alien::Build plugins
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Plugin::PkgConfig - PkgConfig Alien::Build plugins
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ use alienfile;
+ plugin 'PkgConfig' => (
+   pkg_name => 'foo',
+ );
+
+=head1 DESCRIPTION
+
+PkgConfig plugins use C<pkg-config> or a compatible library to retrieve flags
+at probe and gather stages.
+
+=over 4
+
+=item L<Alien::Build::Plugin::PkgConfig::CommandLine>
+
+Use the command-line C<pkg-config> or C<pkgconf> to get compiler and linker flags.
+
+=item L<Alien::Build::Plugin::PkgConfig::LibPkgConf>
+
+Use the XS L<PkgConfig::LibPkgConf> to get compiler and linker flags.
+
+=item L<Alien::Build::Plugin::PkgConfig::MakeStatic>
+
+Convert .pc file to use static linkage by default.
+
+=item L<Alien::Build::Plugin::PkgConfig::MakeStatic>
+
+Choose the best plugin to do C<pkg-config> work.  The best choice is typically
+platform and configuration dependent.
+
+=item L<Alien::Build::Plugin::PkgConfig::PP>
+
+Use the pure-perl L<PkgConfig> to get compiler and linker flags.
+
+=back
+
+=head1 SEE ALSO
+
+L<Alien::Build>, L<Alien::Build::Plugin>
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

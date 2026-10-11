@@ -1,0 +1,98 @@
+[
+  {
+    "benchmark": "pidigits",
+    "d": {
+      "key": "pidigits:d-compact",
+      "seconds": 3.136244,
+      "samples_seconds": [
+        3.136910292,
+        3.132167833,
+        3.136244
+      ],
+      "stdev_seconds": 0.0025674241244171324,
+      "time_x_mech": 10.901819263623272,
+      "loc": 29,
+      "loc_x_mech": 0.8285714285714286,
+      "mech_seconds": 0.287680792,
+      "mech_loc": 35,
+      "source_sha256": "e2a99730b9893a03bb3d9962b3e1bc3ff432e1142ddd854b88def9eb26ff74c6",
+      "binary_sha256": "e7221e8330cac37a650eb3ac09880315b0daa1ad1a7d8890ef581bd87b781644"
+    },
+    "mech_key": "pidigits:mech-pi-final-compact-signed",
+    "mech_loc": 35,
+    "mech_files": [
+      "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1"
+    ],
+    "mech_source": {
+      "name": "pidigits.mec",
+      "path": "pidigits/pidigits.mec",
+      "sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "code": "<state> := <{k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>, scratch<bigint>}>\nExtract(s<state>, j<u64>) = (digit<u64>) :=\n  product := bigint/multiply-u64-into(s.scratch, s.q, j)\n  numerator := bigint/add-into(product, product, s.r)\n  digit := bigint/floor-u64(numerator, s.t).\nLabel(count<u64>) => <u64> := io/print(\"\\t:{}\\n\", count)\nNoLabel(count<u64>) => <u64> := 0\nMore(s<state>) => <bool> := s.count < s.n\nProduce(s<state>, digit<u64>) = (next<state>) :=\n  remainder := bigint/subtract-multiple-u64(s.r, s.t, digit)\n  r := bigint/multiply-u64-into(remainder, remainder, 10)\n  q := bigint/multiply-u64-into(s.q, s.q, 10)\n  output := io/print(\"{}\", digit)\n  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)\n  next := {k: s.k, count: s.count + 1, n: s.n, q: q, r: r, t: s.t, scratch: s.scratch}.\nConsume(s<state>, digit<u64>) = (next<state>) :=\n  numerator := bigint/add-multiple-u64(s.r, s.q, 2)\n  r := bigint/multiply-u64-into(numerator, numerator, 2 * s.k + 1)\n  q := bigint/multiply-u64-into(s.q, s.q, s.k)\n  t := bigint/multiply-u64-into(s.t, s.t, 2 * s.k + 1)\n  next := {k: s.k + 1, count: s.count, n: s.n, q: q, r: r, t: t, scratch: s.scratch}.\nStep(s<state>) = (next<state>) :=\n  first := Extract(s, 3)\n  second := Extract(s, 4)\n  next := control/if(first == second, Produce, Consume, (s, first)).\nNeedsSpace(column<u64>) => <bool> := column < 10\nSpace(column<u64>) = (next<u64>) :=\n  output := io/print(\" \")\n  next := column + 1.\nFinish(count<u64>) = (done<u64>) :=\n  column := control/while(number/mod(count, 10), NeedsSpace, Space)\n  done := Label(count).\ninitial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1), scratch: bigint/new(0)}\nstate := control/while(initial, More, Step)\nfinished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)\n"
+    },
+    "required_work_validated": true
+  },
+  {
+    "benchmark": "regexredux",
+    "d": {
+      "key": "regexredux:regexredux-d-compact",
+      "seconds": 1.757903542,
+      "samples_seconds": [
+        1.749552458,
+        1.757903542,
+        1.76027225
+      ],
+      "stdev_seconds": 0.005631242049015316,
+      "time_x_mech": 3.595557748588874,
+      "loc": 12,
+      "loc_x_mech": 0.5,
+      "mech_seconds": 0.488909834,
+      "mech_loc": 24,
+      "source_sha256": "f0f0377040a19a3c2b6225c888b9e7bc42e01f529746d3532e738234cb0d98e0",
+      "binary_sha256": "cc8745ace093d9c53915ca25761a2d0f728cf491f9778c9a5d0b991ca110b675"
+    },
+    "mech_key": "regexredux:mech-regex-final-reuse-signed",
+    "mech_loc": 24,
+    "mech_files": [
+      "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+    ],
+    "mech_source": {
+      "name": "regexredux.mec",
+      "path": "regexredux/regexredux.mec",
+      "sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "code": "Count(dna<string>, pattern<string>) = (line<string>) :=\n  count := regex/count-bytes(dna, pattern)\n  line := string/concat(string/concat(pattern, \" \"), string/concat(number/format(count, 0), \"\\n\")).\nraw := io/read()\ninitial := text/length(raw)\ndna := raw |> regex/replace-bytes(_, \">[^\\n]*\\n|\\n\", \"\")\ncleaned := text/length(dna)\nio/write(Count(dna, \"agggtaaa|tttaccct\"))\nio/write(Count(dna, \"[cgt]gggtaaa|tttaccc[acg]\"))\nio/write(Count(dna, \"a[act]ggtaaa|tttacc[agt]t\"))\nio/write(Count(dna, \"ag[act]gtaaa|tttac[agt]ct\"))\nio/write(Count(dna, \"agg[act]taaa|ttta[agt]cct\"))\nio/write(Count(dna, \"aggg[acg]aaa|ttt[cgt]ccct\"))\nio/write(Count(dna, \"agggt[cgt]aa|tt[acg]accct\"))\nio/write(Count(dna, \"agggta[cgt]a|t[acg]taccct\"))\nio/write(Count(dna, \"agggtaa[cgt]|[acg]ttaccct\"))\nfour := dna |> regex/replace-bytes(_, \"tHa[Nt]\", \"<4>\")\nthree := four |> regex/replace-bytes(_, \"aND|caN|Ha[DS]|WaS\", \"<3>\")\ntwo := three |> regex/replace-bytes(_, \"a[NSt]|BY\", \"<2>\")\nbars := two |> regex/replace-bytes(_, \"<[^>]*>\", \"|\")\nfinal := bars |> regex/replace-bytes(_, \"\\\\|[^|][^|]*\\\\|\", \"-\")\nio/write(string/concat(\"\\n\", string/concat(number/format(initial, 0), \"\\n\")))\nio/write(string/concat(number/format(cleaned, 0), \"\\n\"))\nio/write(string/concat(number/format(text/length(final), 0), \"\\n\"))\n"
+    },
+    "required_work_validated": true
+  },
+  {
+    "benchmark": "fasta",
+    "d": {
+      "key": "fasta:fasta-d-compact",
+      "seconds": 2.759285208,
+      "samples_seconds": [
+        2.757640791,
+        2.786720083,
+        2.759285208
+      ],
+      "stdev_seconds": 0.016334940550635512,
+      "time_x_mech": 5.027543248076988,
+      "loc": 29,
+      "loc_x_mech": 0.90625,
+      "mech_seconds": 0.548833709,
+      "mech_loc": 32,
+      "source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    "mech_key": "fasta:mech-fasta-final-compact-v2",
+    "mech_loc": 32,
+    "mech_files": [
+      "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066"
+    ],
+    "mech_source": {
+      "name": "fasta.mec",
+      "path": "fasta/fasta.mec",
+      "sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "code": "More(lo<u64>, hi<u64>, r<f64>, p<[f64]>) => <bool> := lo + 1 < hi\nSearch(lo<u64>, hi<u64>, r<f64>, p<[f64]>) = (low<u64>, high<u64>, random<f64>, probabilities<[f64]>) :=\n  mid := (lo + hi) / 2\n  left := r < sequence/get(p, mid)\n  low := control/select(left, lo, mid)\n  high := control/select(left, mid, hi)\n  random := r\n  probabilities := p.\nChoose(r<f64>, p<[f64]>, alphabet<[u8]>) = (byte<u64>) :=\n  (lo, hi, random, probabilities) := control/while((0, sequence/length(p), r, p), More, Search)\n  byte := sequence/get(alphabet, hi).\nRepeat(index<u64>) = (next<u64>, byte<u64>) :=\n  alu := bytes/from-text(\"GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA\")\n  byte := sequence/get(alu, index + 1)\n  next := number/mod(index + 1, sequence/length(alu)).\nIub(seed<u64>) = (next<u64>, byte<u64>) :=\n  next := number/mod(seed * 3877 + 29573, 139968)\n  r := number/to-f64(next) / 139968.0\n  p := sequence/cumulative-sum(sequence/f64-values((0.27, 0.12, 0.12, 0.27, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02)))\n  byte := Choose(r, p, bytes/from-text(\"acgtBDHKMNRSVWY\")).\nHuman(seed<u64>) = (next<u64>, byte<u64>) :=\n  next := number/mod(seed * 3877 + 29573, 139968)\n  r := number/to-f64(next) / 139968.0\n  p := sequence/cumulative-sum(sequence/f64-values((0.3029549426680, 0.1979883004921, 0.1975473066391, 0.3015094502008)))\n  byte := Choose(r, p, bytes/from-text(\"acgt\")).\nn := number/bounded(io/argument-u64(1), 0, 1844674407370955161)\nio/write(\">ONE Homo sapiens alu\\n\")\nrepeat := io/write-scan(n * 2, 0, Repeat, 60, \"\\n\", 65536)\nio/write(\">TWO IUB ambiguity codes\\n\")\nseed := io/write-scan(n * 3, 42, Iub, 60, \"\\n\", 65536)\nio/write(\">THREE Homo sapiens frequency\\n\")\nlast := io/write-scan(n * 5, seed, Human, 60, \"\\n\", 65536)\n"
+    },
+    "required_work_validated": true
+  }
+]

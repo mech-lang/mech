@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "rows": [
+    {
+      "source": "sources/binarytrees.fut",
+      "binary_sha256": "709de5bef28bb6a038ff0d47986455ca24d522f7de350130e94b79ec6b96e1b0",
+      "evidence": "results/binarytrees-futhark-machine-work.txt",
+      "evidence_sha256": "08e4060d7af599ddc7a6ca245e74aa9f2c3a93626af797cd328e3b313e3fe5b4",
+      "review": "The Clang-generated worker machine code retains per-tree construction stores and recursive checks inside its iteration backedge. This confirms the downstream C compiler also preserves required work.",
+      "status": "passed"
+    },
+    {
+      "source": "sources/binarytrees-optimized.fut",
+      "binary_sha256": "e38c952aa386dea8679d7db2be8f24f842da3dbad5e41466cddb5ac4b94a1847",
+      "evidence": "results/binarytrees-optimized-futhark-machine-work.txt",
+      "evidence_sha256": "b3842b733c8d2baaedd3d6df2f84e35887f46f3620ab0f5d50c62871819d0abd",
+      "review": "The Clang-generated worker machine code retains per-tree construction stores and recursive checks inside its iteration backedge. This confirms the downstream C compiler also preserves required work.",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>spectral-norm Haskell GHC&nbsp;#4 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>spectral-norm Haskell GHC&nbsp;#4 program</h1>
+    <aside>
+      <p><a href="../description/spectralnorm.html#spectralnorm">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--</span>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Modified by Gabriel Gonzalez</span>
+<span class="slc">-- Modified by Ryan Trinkle: 1) change from divInt# to uncheckedIShiftRA#</span>
+<span class="slc">--                           2) changed -optc-O to -optc-O3</span>
+<span class="slc">--                           3) added -optc-ffast-math</span>
+<span class="slc">-- Translation from Clean by Don Stewart</span>
+<span class="slc">-- Parallelized by Louis Wasserman</span>
+<span class="slc">--</span>
+<span class="slc">-- Should be compiled with:</span>
+<span class="slc">-- 	-threaded -funbox-strict-fields -O2 -fvia-c -optc-O3 </span>
+<span class="slc">-- 	-fexcess-precision -optc-ffast-math </span>
+<span class="slc">-- Should be run with:</span>
+<span class="slc">-- 	+RTS -N&lt;number of cores&gt;</span>
+
+<span class="kwb">import</span> System<span class="opt">.</span>Environment
+<span class="kwb">import</span> Foreign<span class="opt">.</span>Marshal<span class="opt">.</span>Array
+<span class="kwb">import</span> Foreign
+<span class="kwb">import</span> Text<span class="opt">.</span>Printf
+<span class="kwb">import</span> Control<span class="opt">.</span>Concurrent
+<span class="kwb">import</span> Control<span class="opt">.</span>Monad
+<span class="kwb">import</span> GHC<span class="opt">.</span>Base
+<span class="kwb">import</span> GHC<span class="opt">.</span>Conc
+
+<span class="kwa">type</span> Reals <span class="opt">=</span> Ptr Double
+
+main <span class="opt">=</span> <span class="kwd">do</span>
+    n <span class="opt">&lt;-</span> getArgs <span class="opt">&gt;&gt;=</span> readIO <span class="opt">.</span> head
+    allocaArray n <span class="opt">$</span> \ u <span class="opt">-&gt;</span> allocaArray n <span class="opt">$</span> \ v <span class="opt">-&gt;</span> <span class="kwd">do</span>
+      forM_ <span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">]</span> <span class="opt">$</span> \i <span class="opt">-&gt;</span> pokeElemOff u i <span class="num">1</span> <span class="opt">&gt;&gt;</span> pokeElemOff v i <span class="num">0</span>
+
+      powerMethod <span class="num">10</span> n u v
+      printf <span class="sng">&quot;%.9f</span><span class="esc">\n</span><span class="sng">&quot;</span> <span class="opt">=&lt;&lt;</span> eigenvalue n u v <span class="num">0 0 0</span>
+
+<span class="slc">------------------------------------------------------------------------</span>
+
+eigenvalue :: Int <span class="opt">-&gt;</span> Reals <span class="opt">-&gt;</span> Reals <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Double <span class="opt">-&gt;</span> Double <span class="opt">-&gt;</span> IO Double
+eigenvalue <span class="opt">!</span>n <span class="opt">!</span>u <span class="opt">!</span>v <span class="opt">!</span>i <span class="opt">!</span>vBv <span class="opt">!</span>vv
+    <span class="opt">|</span> i <span class="opt">&lt;</span> n     <span class="opt">=</span> <span class="kwd">do</span>	ui <span class="opt">&lt;-</span> peekElemOff u i
+			vi <span class="opt">&lt;-</span> peekElemOff v i
+			eigenvalue n u v <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">) (</span>vBv <span class="opt">+</span> ui <span class="opt">*</span> vi<span class="kwc">) (</span>vv <span class="opt">+</span> vi <span class="opt">*</span> vi<span class="kwc">)</span>
+    <span class="opt">|</span> otherwise <span class="opt">=</span> return <span class="opt">$!</span> sqrt <span class="opt">$!</span> vBv <span class="opt">/</span> vv
+
+<span class="slc">------------------------------------------------------------------------</span>
+
+<span class="slc">-- Essentially borrowed from the Java implementation.</span>
+<span class="kwa">data</span> CyclicBarrier <span class="opt">=</span> Cyclic <span class="opt">!</span>Int <span class="opt">!</span><span class="kwc">(</span>MVar <span class="kwc">(</span>Int<span class="kwc">, [</span>MVar <span class="kwc">()]))</span>
+
+await :: CyclicBarrier <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+await <span class="kwc">(</span>Cyclic k waitsVar<span class="kwc">)</span> <span class="opt">=</span> <span class="kwd">do</span>
+	<span class="kwc">(</span>x<span class="kwc">,</span> waits<span class="kwc">)</span> <span class="opt">&lt;-</span> takeMVar waitsVar
+	<span class="kwd">if</span> x <span class="opt">&lt;=</span> <span class="num">1</span> <span class="kwd">then do</span>
+		mapM_ <span class="kwc">(</span><span class="opt">`putMVar`</span> <span class="kwc">())</span> waits
+		putMVar waitsVar <span class="kwc">(</span>k<span class="kwc">, [])</span>
+	  <span class="kwd">else do</span>
+	  	var <span class="opt">&lt;-</span> newEmptyMVar
+	  	putMVar waitsVar <span class="kwc">(</span>x<span class="opt">-</span><span class="num">1</span><span class="kwc">,</span>var:waits<span class="kwc">)</span>
+	  	takeMVar var
+
+newCyclicBarrier :: Int <span class="opt">-&gt;</span> IO CyclicBarrier
+newCyclicBarrier k <span class="opt">=</span> liftM <span class="kwc">(</span>Cyclic k<span class="kwc">) (</span>newMVar <span class="kwc">(</span>k<span class="kwc">, []))</span>
+
+powerMethod :: Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Reals <span class="opt">-&gt;</span> Reals <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+powerMethod z n u v <span class="opt">=</span> allocaArray n <span class="opt">$</span> \ <span class="opt">!</span>t <span class="opt">-&gt;</span> <span class="kwd">do</span>
+	<span class="kwd">let</span> chunk <span class="opt">=</span> <span class="kwc">(</span>n <span class="opt">+</span> numCapabilities <span class="opt">-</span> <span class="num">1</span><span class="kwc">)</span> <span class="opt">`quotInt`</span> numCapabilities
+	<span class="opt">!</span>barrier <span class="opt">&lt;-</span> newCyclicBarrier <span class="opt">$!</span> <span class="kwc">(</span>n <span class="opt">+</span> chunk <span class="opt">-</span> <span class="num">1</span><span class="kwc">)</span> <span class="opt">`quotInt`</span> chunk
+	<span class="kwd">let</span> timesAtAv <span class="opt">!</span>s <span class="opt">!</span>d l r <span class="opt">=</span> <span class="kwd">do</span>
+		timesAv n s t l r
+		await barrier
+		timesAtv n t d l r
+		await barrier
+	<span class="kwd">let</span> thread <span class="opt">!</span>l <span class="opt">!</span>r <span class="opt">=</span> GHC<span class="opt">.</span>Base<span class="opt">.</span>foldr <span class="kwc">(</span><span class="opt">&gt;&gt;</span><span class="kwc">) (</span>return <span class="kwc">())</span> <span class="opt">$</span> replicate z <span class="opt">$</span> <span class="kwd">do</span>
+		timesAtAv u v l r
+		timesAtAv v u l r
+	<span class="kwd">let</span> go l <span class="opt">=</span> <span class="kwd">case</span> l <span class="opt">+</span> chunk <span class="kwd">of</span>
+		r <span class="opt">|</span> r <span class="opt">&lt;</span> n	<span class="opt">-&gt;</span> forkIO <span class="kwc">(</span>thread l r<span class="kwc">)</span> <span class="opt">&gt;&gt;</span> go r
+		  <span class="opt">|</span> otherwise	<span class="opt">-&gt;</span> thread l n
+	go <span class="num">0</span>
+
+timesAv :: Int <span class="opt">-&gt;</span> Reals <span class="opt">-&gt;</span> Reals <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+timesAv <span class="opt">!</span>n <span class="opt">!</span>u <span class="opt">!</span>au <span class="opt">!</span>l <span class="opt">!</span>r <span class="opt">=</span> go l <span class="kwb">where</span>
+    go :: Int <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+    go <span class="opt">!</span>i <span class="opt">=</span> when <span class="kwc">(</span>i <span class="opt">&lt;</span> r<span class="kwc">)</span> <span class="opt">$</span> <span class="kwd">do</span>
+	<span class="kwd">let</span> avsum <span class="opt">!</span>j <span class="opt">!</span>acc
+		<span class="opt">|</span> j <span class="opt">&lt;</span> n <span class="opt">=</span> <span class="kwd">do</span>
+			<span class="opt">!</span>uj <span class="opt">&lt;-</span> peekElemOff u j
+			avsum <span class="kwc">(</span>j<span class="opt">+</span><span class="num">1</span><span class="kwc">) (</span>acc <span class="opt">+</span> <span class="kwc">((</span>aij i j<span class="kwc">)</span> <span class="opt">*</span> uj<span class="kwc">))</span>
+		<span class="opt">|</span> otherwise <span class="opt">=</span> pokeElemOff au i acc <span class="opt">&gt;&gt;</span> go <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+	avsum <span class="num">0 0</span>
+
+timesAtv :: Int <span class="opt">-&gt;</span> Reals <span class="opt">-&gt;</span> Reals <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+timesAtv <span class="opt">!</span>n <span class="opt">!</span>u <span class="opt">!</span>a <span class="opt">!</span>l <span class="opt">!</span>r <span class="opt">=</span> go l
+  <span class="kwb">where</span>
+    go :: Int <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+    go <span class="opt">!</span>i <span class="opt">=</span> when <span class="kwc">(</span>i <span class="opt">&lt;</span> r<span class="kwc">)</span> <span class="opt">$</span> <span class="kwd">do</span>
+	<span class="kwd">let</span> atvsum <span class="opt">!</span>j <span class="opt">!</span>acc 
+		<span class="opt">|</span> j <span class="opt">&lt;</span> n	<span class="opt">=</span> <span class="kwd">do</span>	<span class="opt">!</span>uj <span class="opt">&lt;-</span> peekElemOff u j
+				atvsum <span class="kwc">(</span>j<span class="opt">+</span><span class="num">1</span><span class="kwc">) (</span>acc <span class="opt">+</span> <span class="kwc">((</span>aij j i<span class="kwc">)</span> <span class="opt">*</span> uj<span class="kwc">))</span>
+		<span class="opt">|</span> otherwise <span class="opt">=</span> pokeElemOff a i acc <span class="opt">&gt;&gt;</span> go <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+	atvsum <span class="num">0 0</span>
+
+<span class="slc">--</span>
+<span class="slc">-- manually unbox the inner loop:</span>
+<span class="slc">-- aij i j = 1 / fromIntegral ((i+j) * (i+j+1) `div` 2 + i + 1)</span>
+<span class="slc">--</span>
+aij <span class="kwc">(</span>I<span class="opt">#</span> i<span class="kwc">) (</span>I<span class="opt">#</span> j<span class="kwc">)</span> <span class="opt">=</span> D<span class="opt">#</span> <span class="kwc">(</span>
+    <span class="kwd">case</span> i <span class="opt">+#</span> j <span class="kwd">of</span>
+        n <span class="opt">-&gt;</span> <span class="num">1.0</span><span class="opt">## /##</span> int2Double<span class="opt">#</span> 
+        	<span class="kwc">(((</span>n <span class="opt">*#</span> <span class="kwc">(</span>n<span class="opt">+#</span><span class="num">1</span><span class="opt">#</span><span class="kwc">))</span> `uncheckedIShiftRA<span class="opt">#</span>` <span class="num">1</span><span class="opt">#</span><span class="kwc">)</span> <span class="opt">+#</span> <span class="kwc">(</span>i <span class="opt">+#</span> <span class="num">1</span><span class="opt">#</span><span class="kwc">)))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 09:37:36 GMT
+
+MAKE:
+mv spectralnorm.ghc-4.ghc spectralnorm.ghc-4.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XMagicHash spectralnorm.ghc-4.hs -o spectralnorm.ghc-4.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( spectralnorm.ghc-4.hs, spectralnorm.ghc-4.o )
+spectralnorm.ghc-4.hs:30:31: warning: [GHC-63394] [-Wx-partial]
+    In the use of ‘head’
+    (imported from Prelude, but defined in GHC.Internal.List):
+    &quot;This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use &quot;Data.List.NonEmpty&quot;.&quot;
+   |
+30 |     n &lt;- getArgs &gt;&gt;= readIO . head
+   |                               ^^^^
+
+spectralnorm.ghc-4.hs:41:21: warning: [GHC-94817] [-Wtabs]
+    Tab character found here, and in 68 further locations.
+    Suggested fix: Please use spaces instead.
+   |
+41 |     | i &lt; n     = do    ui &lt;- peekElemOff u i
+   |                     ^^^^
+
+[2 of 2] Linking spectralnorm.ghc-4.ghc_run
+rm spectralnorm.ghc-4.hs
+
+18.09 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./spectralnorm.ghc-4.ghc_run +RTS -N4 -RTS 5500
+
+PROGRAM OUTPUT:
+1.274224153
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

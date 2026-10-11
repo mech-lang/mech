@@ -1,0 +1,22 @@
+{
+  "source_url": "https://github.com/github-linguist/linguist/blob/master/lib/linguist/languages.yml",
+  "sha256": "183243e30496ba53f5f8743b0e39c9f0e0bccc5a32639f7b541cc2285db0e043",
+  "languages": {
+    "zig": {
+      "name": "Zig",
+      "color": "#ec915c"
+    },
+    "odin": {
+      "name": "Odin",
+      "color": "#60AFFE"
+    },
+    "roc": {
+      "name": "Roc",
+      "color": "#7c38f5"
+    },
+    "elm": {
+      "name": "Elm",
+      "color": "#60B5CC"
+    }
+  }
+}

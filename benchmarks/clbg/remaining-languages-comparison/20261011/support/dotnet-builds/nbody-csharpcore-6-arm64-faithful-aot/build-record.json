@@ -1,0 +1,71 @@
+{
+  "id": "nbody-csharpcore-6-arm64-faithful-aot",
+  "key": "nbody:nbody-csharpcore-6-arm64-faithful-aot",
+  "benchmark": "nbody",
+  "language": "csharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-6-arm64-faithful.cs",
+  "source_sha256": "603be6e0c78135fc00ce3109c020dfa486df06651ef88a4f3f2a149d61de7b9a",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/nbody-csharpcore-6.cs",
+  "original_source_sha256": "9d55448c326fc704809023bf44c5a487551af89ddb0b5af7544eed46f255a6f8",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-csharpcore-6.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 08:34:19 GMT\n\nMAKE:\ncp nbody.csharpcore-6.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.csproj (in 904 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:06.01\n\n7.89s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+  "adaptations": [
+    "Use portable .NET binary64 SIMD operations, lowered to native ARM vectors, in place of x86 AVX/SSE arithmetic; preserve the original algorithm and state."
+  ],
+  "local_adaptation": true,
+  "physical_loc": 165,
+  "normalized_loc": 165,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/nbody-csharpcore-6-arm64-faithful-aot/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-6-arm64-faithful-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/nbody-csharpcore-6-arm64-faithful-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-6-arm64-faithful-aot/app",
+  "binary_sha256": "0c2f29815acc650cc94094e77a91d855967802a69263b8b58683ef742682fb8b",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-6-arm64-faithful-aot/app",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-6-arm64-faithful-aot/app": "0c2f29815acc650cc94094e77a91d855967802a69263b8b58683ef742682fb8b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 26,
+    "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+    "energies": [
+      -0.169075164,
+      -0.169087605
+    ],
+    "tolerance": 1e-08,
+    "reference_match": true
+  },
+  "published_elapsed_hint": 4.851,
+  "timing_selection_reasons": [
+    "Additional ARM SIMD or complete rolling-map optimization candidate."
+  ]
+}

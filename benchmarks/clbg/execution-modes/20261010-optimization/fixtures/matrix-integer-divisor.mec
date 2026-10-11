@@ -1,0 +1,6 @@
+rows := 0..3
+columns := 0..33
+C(i<u64>, j<u64>) => <f64> := number/to-f64((i * 33 + j) / 3 + 1)
+A := [[C(i, j) | j <- columns]' | i <- rows]'
+x := [1.0 | j <- columns]'
+io/write(text/join-terminated(number/format(A ** x, 0), " "))

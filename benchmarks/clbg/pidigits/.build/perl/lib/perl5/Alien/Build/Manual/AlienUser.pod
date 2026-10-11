@@ -1,0 +1,296 @@
+# PODNAME: Alien::Build::Manual::AlienUser
+# ABSTRACT: Alien user documentation
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Manual::AlienUser - Alien user documentation
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ perldoc Alien::Build::Manual::AlienUser
+
+=head1 DESCRIPTION
+
+This document is intended for a user of an L<Alien::Base> based L<Alien>
+module's user.  Although specifically geared for L<Alien::Base>
+subclasses, it may have some useful hints for L<Alien> in general.
+
+Full working examples of how to use an L<Alien> module are also bundled
+with L<Alien::Build> in the distribution's C<example/user> directory.
+Those examples use L<Alien::xz>, which uses L<alienfile> + L<Alien::Build>
++ L<Alien::Base>.
+
+The following documentation will assume you are trying to use an L<Alien>
+called C<Alien::Foo> which provides the library C<libfoo> and the command
+line tool C<foo>.  Many L<Alien>s will only provide one or the other.
+
+The best interface to use for using L<Alien::Base> based aliens is
+L<Alien::Base::Wrapper>.  This allows you to combine multiple aliens together
+and handles a number of corner obscure corner cases that using L<Alien>s
+directly does not.  Also as of 0.64, L<Alien::Base::Wrapper> comes bundled
+with L<Alien::Build> and L<Alien::Base> anyway, so it is not an extra
+dependency.
+
+What follows are the main use cases.
+
+=head2 ExtUtils::MakeMaker
+
+ use ExtUtils::MakeMaker;
+ use Alien::Base::Wrapper ();
+ 
+ WriteMakefile(
+   Alien::Base::Wrapper->new('Alien::Foo')->mm_args2(
+     NAME => 'FOO::XS',
+     ...
+   ),
+ );
+
+L<Alien::Base::Wrapper> will take a hash of C<WriteMakefile> arguments
+and insert the appropriate compiler and linker flags for you.  This
+is recommended over doing this yourself as the exact incantation to
+get EUMM to work is tricky to get right.
+
+The C<mm_args2> method will also set your C<CONFIGURE_REQUIRES> for
+L<Alien::Base::Wrapper>, L<ExtUtils::MakeMaker> and any aliens that
+you specify.
+
+=head2 Module::Build
+
+ use Module::Build;
+ use Alien::Base::Wrapper qw( Alien::Foo !export );
+ use Alien::Foo;
+ 
+ my $build = Module::Build->new(
+   ...
+   configure_requires => {
+     'Alien::Base::Wrapper' => '0',
+     'Alien::Foo'           => '0',
+     ...
+   },
+   Alien::Base::Wrapper->mb_args,
+   ...
+ );
+ 
+ $build->create_build_script;
+
+For L<Module::Build> you can also use L<Alien::Base::Wrapper>, but
+you will have to specify the C<configure_requires> yourself.
+
+=head2 Inline::C / Inline::CPP
+
+ use Inline 0.56 with => 'Alien::Foo';
+
+L<Inline::C> and L<Inline::CPP> can be configured
+to use an L<Alien::Base> based L<Alien> with the C<with> keyword.
+
+=head2 ExtUtils::Depends
+
+ use ExtUtils::MakeMaker;
+ use ExtUtils::Depends;
+ 
+ my $pkg = ExtUtils::Depends->new("Alien::Foo");
+ 
+ WriteMakefile(
+   ...
+   $pkg->get_makefile_vars,
+   ...
+ );
+
+L<ExtUtils::Depends> works similar to L<Alien::Base::Wrapper>, but uses
+the L<Inline> interface under the covers.
+
+=head2 Dist::Zilla
+
+ [@Filter]
+ -bundle = @Basic
+ -remove = MakeMaker
+ 
+ [Prereqs / ConfigureRequires]
+ Alien::Foo = 0
+ 
+ [MakeMaker::Awesome]
+ header = use Alien::Base::Wrapper qw( Alien::Foo !export );
+ WriteMakefile_arg = Alien::Base::Wrapper->mm_args
+
+=head2 FFI::Platypus
+
+Requires C<Alien::Foo> always:
+
+ use FFI::Platypus;
+ use Alien::Foo;
+ 
+ my $ffi = FFI::Platypus->new(
+   lib => [ Alien::Foo->dynamic_libs ],
+ );
+
+Use C<Alien::Foo> in fallback mode:
+
+ use FFI::Platypus;
+ use FFI::CheckLib 0.28 qw( find_lib_or_die );
+ use Alien::Foo;
+ 
+ my $ffi = FFI::Platypus->new(
+   lib => [ find_lib_or_die lib => 'foo', alien => ['Alien::Foo'] ],
+ );
+
+If you are going to always require an L<Alien> you can just call C<dynamic_libs>
+and pass it into L<FFI::Platypus>' lib method.  You should consider
+using L<FFI::CheckLib> to use the L<Alien> in fallback mode instead.
+This way you only need to install the L<Alien> if the system doesn't
+provide it.
+
+For fallback mode to work correctly you need to be using L<FFI::CheckLib>
+0.28 or better.
+
+=head2 Inline::C
+
+ use Inline with => 'Alien::Foo';
+ use Inline C => <<~'END';
+   #include <foo.h>
+ 
+   const char *my_foo_wrapper()
+   {
+     foo();
+   }
+   END
+ 
+ sub exported_foo()
+ {
+   my_foo_wrapper();
+ }
+
+=head2 tool
+
+ use Alien::Foo;
+ use Env qw( @PATH );
+ 
+ unshift @PATH, Alien::Foo->bin_dir;
+ system 'foo', '--bar', '--baz';
+
+Some L<Alien>s provide tools instead of or in addition to a library.
+You need to add them to the C<PATH> environment variable though.
+(Unless the tool is already provided by the system, in which case
+it is already in the path and the C<bin_dir> method will return an
+empty list).
+
+=head1 ENVIRONMENT
+
+=over 4
+
+=item ALIEN_INSTALL_TYPE
+
+Although the recommended way for a consumer to use an L<Alien::Base> based L<Alien>
+is to declare it as a static configure and build-time dependency, some consumers
+may prefer to fallback on using an L<Alien> only when the consumer itself cannot
+detect the necessary package. In some cases the consumer may want the user to opt-in
+to using an L<Alien> before requiring it.
+
+To keep the interface consistent among Aliens, the consumer of the fallback opt-in
+L<Alien> may fallback on the L<Alien> if the environment variable C<ALIEN_INSTALL_TYPE>
+is set to any value. The rationale is that by setting this environment variable the
+user is aware that L<Alien> modules may be installed and have indicated consent.
+The actual implementation of this, by its nature would have to be in the consuming
+CPAN module.
+
+This behavior should be documented in the consumer's POD.
+
+See L<Alien::Build/ENVIRONMENT> for more details on the usage of this environment
+variable.
+
+=back
+
+=head1 SEE ALSO
+
+=over 4
+
+=item L<Alien::Build::Manual>
+
+Other L<Alien::Build> manuals.
+
+=back
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

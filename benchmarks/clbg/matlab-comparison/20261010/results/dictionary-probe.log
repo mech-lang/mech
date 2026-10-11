@@ -1,0 +1,12 @@
+type=1 variant=1 n=10000 seconds=0.051708708 entries=1009
+type=1 variant=2 n=10000 seconds=0.001797958 entries=1009
+type=1 variant=3 n=10000 seconds=0.003277625 entries=1009
+type=2 variant=1 n=10000 seconds=0.040177292 entries=1009
+type=2 variant=2 n=10000 seconds=0.012482458 entries=1009
+type=2 variant=3 n=10000 seconds=0.018861333 entries=1009
+type=1 variant=1 n=1000000 seconds=0.930234500 entries=100003
+type=1 variant=2 n=1000000 seconds=0.029734542 entries=100003
+type=1 variant=3 n=1000000 seconds=0.033399500 entries=100003
+type=2 variant=1 n=1000000 seconds=1.664748250 entries=100003
+type=2 variant=2 n=1000000 seconds=0.983885958 entries=100003
+type=2 variant=3 n=1000000 seconds=1.810603208 entries=100003

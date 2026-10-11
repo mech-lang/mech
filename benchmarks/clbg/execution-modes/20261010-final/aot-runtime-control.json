@@ -1,0 +1,23 @@
+{
+  "key": "knucleotide:mech-compact-final-std1-simd0-p4",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/aot-runtime-control/aot",
+  "binary_sha256": "6e5f9f91fa12ce15a226abf41d535d7385b303e53362c271db7123fddcea167d",
+  "original_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/knucleotide-mech-compact-final-std1-simd0-p4/aot",
+  "original_binary_sha256": "179bf9749bf0bdbdc6e6359de734aad2a88146ca37ed2b8cd12ab0c5a01ee7c7",
+  "native_object_sha256": "6bbb29e24b736879f6ea0223e4111e0289e3ca139a2bf6f36ac89f512e1f1d4f",
+  "identical_native_object": true,
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--offline",
+    "--manifest-path",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/aot-runtime-control/Cargo.toml"
+  ],
+  "build_environment": {
+    "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+    "RUSTFLAGS": "-D warnings -L native=/opt/homebrew/lib",
+    "C_INCLUDE_PATH": "/opt/homebrew/include",
+    "LIBRARY_PATH": "/opt/homebrew/lib"
+  }
+}

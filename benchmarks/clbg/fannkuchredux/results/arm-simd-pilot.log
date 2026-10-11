@@ -1,0 +1,16 @@
+full output passed mech-fannkuch-simd
+full output passed mech-fannkuch-cached
+full output passed fannkuchredux-rust6-neon
+full output passed fannkuchredux-rust6-neon-lto
+1/3 fannkuchredux-rust6-neon 2.497618
+1/3 mech-fannkuch-simd 3.891756
+1/3 fannkuchredux-rust6-neon-lto 2.470548
+1/3 mech-fannkuch-cached 3.066608
+2/3 mech-fannkuch-cached 3.021360
+2/3 mech-fannkuch-simd 3.898675
+2/3 fannkuchredux-rust6-neon-lto 2.441856
+2/3 fannkuchredux-rust6-neon 2.445812
+3/3 mech-fannkuch-cached 3.057924
+3/3 fannkuchredux-rust6-neon-lto 2.493406
+3/3 mech-fannkuch-simd 3.855563
+3/3 fannkuchredux-rust6-neon 2.466325

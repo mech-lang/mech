@@ -1,0 +1,122 @@
+Submodule 'build/bytecodeSubmodule' (https://github.com/dzaima/cbqnBytecode) registered for path 'build/bytecodeSubmodule'
+Cloning into '/private/tmp/mech-array-runtimes/CBQN/build/bytecodeSubmodule'...
+Submodule path 'build/bytecodeSubmodule': checked out '156b47caf895f6706811c5c34bbbbaf192b8018b'
+builtins/arithm.c
+builtins/arithd.c
+builtins/cmp.c
+builtins/sfns.c
+builtins/squeeze.c
+builtins/select.c
+builtins/slash.c
+builtins/group.c
+builtins/sort.c
+builtins/search.c
+builtins/selfsearch.c
+builtins/transpose.c
+builtins/fold.c
+builtins/scan.c
+builtins/md1.c
+builtins/md2.c
+builtins/compare.c
+builtins/cells.c
+builtins/fns.c
+builtins/sysfn.c
+builtins/internal.c
+builtins/inverse.c
+Using precompiled bytecode; see readme for how to build your own
+builtins/bit.c
+vm/vm.c
+vm/rtwrap.c
+core/tyarr.c
+core/harr.c
+core/fillarr.c
+core/stuff.c
+core/derv.c
+core/mm.c
+core/heap.c
+main.c
+core/ns.c
+utils/nfns.c
+vm/jit/nvm.c
+builtins/ffi/ffi.c
+utils/ryu.c
+utils/utf.c
+utils/hash.c
+utils/file.c
+utils/mut.c
+utils/each.c
+utils/bits.c
+vm/load.c
+
+Submodule 'build/singeliSubmodule' (https://github.com/mlochbaum/Singeli) registered for path 'build/singeliSubmodule'
+Cloning into '/private/tmp/mech-array-runtimes/CBQN/build/singeliSubmodule'...
+
+[0.1] versionInfo.c
+[0.1] genArithTables.bqn
+[0.2] monarith.singeli
+[0.2] arithm.c
+[0.4] squeeze.singeli
+[0.4] count.singeli
+[0.5] sfns.c
+[0.7] cmp.singeli
+[0.6] select.singeli
+[0.2] squeeze.c
+[0.3] slash.singeli
+[0.3] sort.singeli
+[0.4] group.singeli
+[0.4] cmp.c
+[0.4] bins.singeli
+[1.1] replicate.singeli
+[0.5] select.c
+[0.3] selfsearch.singeli
+[0.3] group.c
+[0.4] selfsearch.c
+[0.1] md1.c
+[1.1] search.singeli
+[0.9] transpose.singeli
+[0.1] md2.c
+[0.8] slash.c
+[0.9] sort.c
+[1.0] fold.singeli
+[0.2] fns.c
+[0.3] cells.c
+[0.4] transpose.c
+[0.4] equal.singeli
+[0.1] inverse.c
+[2.4] dyarith.singeli
+[0.7] search.c
+[0.2] internal.c
+[0.1] ffi.c
+[0.3] compare.c
+[0.4] sysfn.c
+[0.1] tyarr.c
+[0.1] harr.c
+[0.1] fillarr.c
+[0.1] derv.c
+[0.2] stuff.c
+[0.6] fold.c
+[0.1] heap.c
+[0.1] mm.c
+[0.1] ns.c
+[0.1] rtwrap.c
+[0.1] main.c
+[0.1] nvm.c
+[0.1] utf.c
+[0.1] ryu.c
+[0.7] bit_arith.singeli
+[0.2] hash.c
+[1.9] scan.singeli
+[0.2] file.c
+[0.8] arithd.c
+[0.0] nfns.c
+[0.2] bit.c
+[0.2] each.c
+[0.5] vm.c
+[0.9] load.c
+[0.5] scan.c
+[0.7] copy.singeli
+[0.6] bits.singeli
+[0.2] bits.c
+[0.4] mut.c
+[0.0] link
+68/68 in 5.0s

@@ -1,0 +1,128 @@
+{
+  "id": "mandelbrot-fsharpcore-2-jit",
+  "key": "mandelbrot:mandelbrot-fsharpcore-2-jit",
+  "benchmark": "mandelbrot",
+  "language": "fsharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/mandelbrot-fsharpcore-2.fs",
+  "source_sha256": "b354c22921985f469371501817c23e2b2b4de0cbe1544af8eaaf855a0de7dbed",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/mandelbrot-fsharpcore-2.fs",
+  "original_source_sha256": "b354c22921985f469371501817c23e2b2b4de0cbe1544af8eaaf855a0de7dbed",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-fsharpcore-2.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:33:22 GMT\n\nMAKE:\ncp mandelbrot.fsharpcore-2.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.fsproj (in 854 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.20\n\n12.10s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 84,
+  "normalized_loc": 98,
+  "expansions": [
+    {
+      "line": 31,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 35,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 36,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 37,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 38,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 59,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 89,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 90,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 94,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 97,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 100,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 101,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 103,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 104,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/mandelbrot-fsharpcore-2-jit/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/mandelbrot-fsharpcore-2-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit/app.dll",
+  "binary_sha256": "64ece7b176f48db2bfdbab2adc976b529fb3393eca9c475b11939809db57ab26",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit/app.dll",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit/app.pdb": "df857e5f3412c4a4e14115e6badeb5525d87c05cda115a6c1050f8cd2a1691bb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit/FSharp.Core.dll": "3e3eddb10b03c42748d592835f22438b73d9cd1ffd6f6cb339c610b26b1dd4fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit/app.dll": "64ece7b176f48db2bfdbab2adc976b529fb3393eca9c475b11939809db57ab26",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-fsharpcore-2-jit/app.deps.json": "d6ed5ffb91f134eb8835ca7650a6c0227c70da663b9df2dbef6c036d226d818b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

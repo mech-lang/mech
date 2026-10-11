@@ -1,0 +1,120 @@
+{
+   "abstract" : "a more sensible way to change directories",
+   "author" : [
+      "David Golden <dagolden@cpan.org>",
+      "Michael G. Schwern <schwern@pobox.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 6.008, CPAN::Meta::Converter version 2.150010, CPAN::Meta::Converter version 2.150013",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "File-chdir",
+   "no_index" : {
+      "directory" : [
+         "corpus",
+         "examples",
+         "t",
+         "xt"
+      ],
+      "package" : [
+         "DB"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.17"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "Dist::Zilla" : "5",
+            "Dist::Zilla::PluginBundle::DAGOLDEN" : "0.072",
+            "English" : "0",
+            "File::Spec" : "0",
+            "File::Temp" : "0",
+            "IO::Handle" : "0",
+            "IPC::Open3" : "0",
+            "Pod::Coverage::TrustPod" : "0",
+            "Pod::Wordlist" : "0",
+            "Software::License::Perl_5" : "0",
+            "Test::CPAN::Meta" : "0",
+            "Test::More" : "0",
+            "Test::Pod" : "1.41",
+            "Test::Pod::Coverage" : "1.08",
+            "Test::Portability::Files" : "0",
+            "Test::Spelling" : "0.12",
+            "Test::Version" : "1",
+            "blib" : "1.01",
+            "perl" : "5.006",
+            "warnings" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Carp" : "0",
+            "Cwd" : "3.16",
+            "Exporter" : "0",
+            "File::Spec::Functions" : "3.27",
+            "perl" : "5.006",
+            "strict" : "0",
+            "vars" : "0"
+         }
+      },
+      "test" : {
+         "recommends" : {
+            "CPAN::Meta" : "2.120900"
+         },
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0",
+            "File::Spec" : "0",
+            "Test::More" : "0",
+            "warnings" : "0"
+         }
+      }
+   },
+   "provides" : {
+      "File::chdir" : {
+         "file" : "lib/File/chdir.pm",
+         "version" : "0.1011"
+      },
+      "File::chdir::ARRAY" : {
+         "file" : "lib/File/chdir.pm",
+         "version" : "0.1011"
+      },
+      "File::chdir::SCALAR" : {
+         "file" : "lib/File/chdir.pm",
+         "version" : "0.1011"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/dagolden/File-chdir/issues"
+      },
+      "homepage" : "https://github.com/dagolden/File-chdir",
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/dagolden/File-chdir.git",
+         "web" : "https://github.com/dagolden/File-chdir"
+      }
+   },
+   "version" : "0.1011",
+   "x_authority" : "cpan:DAGOLDEN",
+   "x_contributors" : [
+      "David Golden <xdg@xdg.me>",
+      "Joel Berger <joel.a.berger@gmail.com>",
+      "Philippe Bruhat (BooK) <book@cpan.org>"
+   ],
+   "x_serialization_backend" : "JSON::PP version 4.16"
+}

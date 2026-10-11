@@ -1,0 +1,311 @@
+{
+  "programs": [
+    {
+      "key": "binarytrees:binarytrees-odin-1-faithful",
+      "id": "binarytrees-odin-1-faithful",
+      "benchmark": "binarytrees",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-odin-1-faithful.odin",
+      "source_sha256": "10bf407e160313aa933a19f4308fa68d4016327639b86b21772f6d8de76a001c",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/binarytrees/1.odin",
+      "upstream_sha256": "10bf407e160313aa933a19f4308fa68d4016327639b86b21772f6d8de76a001c",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/binarytrees/1.odin",
+      "local_adaptation": false,
+      "adaptations": []
+    },
+    {
+      "key": "binarytrees:binarytrees-zig-1-faithful",
+      "id": "binarytrees-zig-1-faithful",
+      "benchmark": "binarytrees",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-zig-1-faithful.zig",
+      "source_sha256": "a35ff4855c2efc3d6f88da11fc69d89509299754579f7c453c2a5a1a0bff11b7",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/binarytrees/1.zig",
+      "upstream_sha256": "ac5b349199f46f2de933fac20b0086f9ecb74b6d142b4ecdf84e9e3aa105c9ea",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/binarytrees/1.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC."
+      ]
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-zig-1-faithful",
+      "id": "fannkuchredux-zig-1-faithful",
+      "benchmark": "fannkuchredux",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fannkuchredux-zig-1-faithful.zig",
+      "source_sha256": "08e7118d12c6dadeea8b2882efc7da66723b9ecce037ac155461a3ec78d19cb0",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/fannkuch-redux/1.zig",
+      "upstream_sha256": "c1490e76b8cb649f854ba3e6427aeec8efc1f3fc32144e2de491f02f732e4762",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/1.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC."
+      ]
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-zig-2-m-faithful",
+      "id": "fannkuchredux-zig-2-m-faithful",
+      "benchmark": "fannkuchredux",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fannkuchredux-zig-2-m-faithful.zig",
+      "source_sha256": "9509b7bb4bfe23e80e8bcfe15d4c6dd54732889f2e9c45d5a2cd2100116f0f7f",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/fannkuch-redux/2-m.zig",
+      "upstream_sha256": "8b6316b89ba3a0e0f9af204b519536c8ebffeb7df4a1b2dffe197e5ea72a4b50",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/2-m.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Include the declared maximum N in factorial/shuffle dispatch. The upstream exclusive bound silently enumerated only 11! at N=12 in ReleaseFast; preserve disjoint parallel coverage and use a portable 16-byte SIMD vector."
+      ]
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-zig-2-faithful",
+      "id": "fannkuchredux-zig-2-faithful",
+      "benchmark": "fannkuchredux",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fannkuchredux-zig-2-faithful.zig",
+      "source_sha256": "1668efcd04d4ac761bad809dfa286ba0fa357675544f114c591e529bb48e072a",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/fannkuch-redux/2.zig",
+      "upstream_sha256": "e0f35c0f88041d97242cf320c68b441572927d5067f5f5f5c6770c22c2e3f972",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fannkuch-redux/2.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC."
+      ]
+    },
+    {
+      "key": "fasta:fasta-zig-1-faithful",
+      "id": "fasta-zig-1-faithful",
+      "benchmark": "fasta",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fasta-zig-1-faithful.zig",
+      "source_sha256": "af002e8fb9ef0dd24ea8cf8fb53e2eb4fd744649aea97e10250e92439ef9e2ab",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/fasta/1.zig",
+      "upstream_sha256": "fe67ca4eaf311bab39dc5be47c29ad15e338afc82c6a1e37b82675c419d4c37a",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/fasta/1.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Use unscaled binary64 cumulative probabilities and a fresh direct binary64 LCG division for every random symbol, instead of integer-scaled thresholds."
+      ]
+    },
+    {
+      "key": "knucleotide:knucleotide-zig-1-m-faithful",
+      "id": "knucleotide-zig-1-m-faithful",
+      "benchmark": "knucleotide",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/knucleotide-zig-1-m-faithful.zig",
+      "source_sha256": "88e5bbd6db9676219bd7b31d16fdcfff68b7f7f97eadf8f33c77f9fcce504b22",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/knucleotide/1-m.zig",
+      "upstream_sha256": "59375237263a039cf8a27bc87ea321880e506cb671c5a6ede6ff818c85642b17",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/knucleotide/1-m.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Read the complete THREE record from stdin, uppercase DNA, retain all seven full growable-map scans, and use lexical tie ordering and binary64 percentages."
+      ]
+    },
+    {
+      "key": "knucleotide:knucleotide-zig-1-faithful",
+      "id": "knucleotide-zig-1-faithful",
+      "benchmark": "knucleotide",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/knucleotide-zig-1-faithful.zig",
+      "source_sha256": "b99158c914eb8117470d41043f55de3a876ccd2535f99ec69edd0703fc3b9675",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/knucleotide/1.zig",
+      "upstream_sha256": "5ae416c5d2380d303ecf4d1e831fe2034d997afc137307b69eebdd2c2ecaa632",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/knucleotide/1.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Read the complete THREE record from stdin, uppercase DNA, retain all seven full growable-map scans, and use lexical tie ordering and binary64 percentages."
+      ]
+    },
+    {
+      "key": "mandelbrot:mandelbrot-odin-1-faithful",
+      "id": "mandelbrot-odin-1-faithful",
+      "benchmark": "mandelbrot",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/mandelbrot-odin-1-faithful.odin",
+      "source_sha256": "29444cd2e64d371d1120fbe0b581ffa8f41e1e4cff2efc9b58b7cf5cf345a888",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/mandelbrot/1.odin",
+      "upstream_sha256": "29ce02300839efe15d57692eb113a2f2176c88652e0841897a07265880a96808",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/1.odin",
+      "local_adaptation": true,
+      "adaptations": [
+        "Emit the complete PBM image instead of the MD5 checksum; pixel computation is retained."
+      ]
+    },
+    {
+      "key": "mandelbrot:mandelbrot-zig-1-faithful",
+      "id": "mandelbrot-zig-1-faithful",
+      "benchmark": "mandelbrot",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/mandelbrot-zig-1-faithful.zig",
+      "source_sha256": "4de9f0a4c50cf8b81c41f9d085f8c5c559767899af1d21641d03c8ba9751ba3a",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/mandelbrot/1.zig",
+      "upstream_sha256": "c2bb6bfc00634488865cc26c1418bcb339f0aecc6df0806616cbf9855b5b1a03",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/mandelbrot/1.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Emit the complete PBM pixel payload instead of its MD5 checksum.",
+        "Use equivalent portable vector comparisons and compile-time byte-packing indexes supported by Zig 0.17."
+      ]
+    },
+    {
+      "key": "nbody:nbody-odin-1-i-faithful",
+      "id": "nbody-odin-1-i-faithful",
+      "benchmark": "nbody",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-odin-1-i-faithful.odin",
+      "source_sha256": "214796bbe9a56ed1eb7e1c0ea20157bc56fc8e1dbc11440b23194bd9fe828dac",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/nbody/1-i.odin",
+      "upstream_sha256": "214796bbe9a56ed1eb7e1c0ea20157bc56fc8e1dbc11440b23194bd9fe828dac",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/1-i.odin",
+      "local_adaptation": false,
+      "adaptations": []
+    },
+    {
+      "key": "nbody:nbody-odin-1-faithful",
+      "id": "nbody-odin-1-faithful",
+      "benchmark": "nbody",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-odin-1-faithful.odin",
+      "source_sha256": "0dda8916082a8db5719bd20cf0bdeff10d804eaa3e59ed00f2d4ab51ff79f865",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/nbody/1.odin",
+      "upstream_sha256": "0dda8916082a8db5719bd20cf0bdeff10d804eaa3e59ed00f2d4ab51ff79f865",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/1.odin",
+      "local_adaptation": false,
+      "adaptations": []
+    },
+    {
+      "key": "nbody:nbody-zig-1-faithful",
+      "id": "nbody-zig-1-faithful",
+      "benchmark": "nbody",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-1-faithful.zig",
+      "source_sha256": "6f8a79cf735d27bceb9cdf31582c98f388f392bdba35861d79881ceaec8987e5",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/nbody/1.zig",
+      "upstream_sha256": "71a2b249c21863929e1a293b7a5335cbf315ad6ba14e6ecffb4047cf31b66dfe",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/1.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC."
+      ]
+    },
+    {
+      "key": "nbody:nbody-zig-2-faithful",
+      "id": "nbody-zig-2-faithful",
+      "benchmark": "nbody",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+      "source_sha256": "0d5f3bc93014a64edf43caa6a5e95619c8ce924e14bd30bd3598b329eb9e65e8",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/nbody/2.zig",
+      "upstream_sha256": "935c5b0d452446e4c15f79997b384005242d7c16eee23486e55d73ab12f280b9",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/2.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Use zero-padded four-lane position/velocity vectors to avoid the Zig 0.17 native global-initializer layout error for three-lane vectors; all three physical coordinates and pair interactions are retained.",
+        "Initialize vector-containing body records at runtime from a scalar seed table, avoiding the compiler global record-layout defect. This startup work is included in timing and LOC."
+      ]
+    },
+    {
+      "key": "nbody:nbody-zig-3-faithful",
+      "id": "nbody-zig-3-faithful",
+      "benchmark": "nbody",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-3-faithful.zig",
+      "source_sha256": "5d402cbcd847f9843471f8fb013e7f1b0cc0703f3bf5c73d29edbe65237b713e",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/nbody/3.zig",
+      "upstream_sha256": "80ca4011a1d4a079643a595843262f8329695cf20d3611bd5c2284e6e4604522",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/nbody/3.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Use zero-padded four-lane position/velocity vectors to avoid the Zig 0.17 native global-initializer layout error for three-lane vectors; all three physical coordinates and pair interactions are retained.",
+        "Initialize vector-containing body records at runtime from a scalar seed table, avoiding the compiler global record-layout defect. This startup work is included in timing and LOC."
+      ]
+    },
+    {
+      "key": "pidigits:pidigits-zig-1-faithful",
+      "id": "pidigits-zig-1-faithful",
+      "benchmark": "pidigits",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/pidigits-zig-1-faithful.zig",
+      "source_sha256": "7e9f7e35e5bcbf230658e6cde805685ae70662604d8ad88ad59516f860e3d7c0",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/pidigits/1.zig",
+      "upstream_sha256": "5f1db80db26869ee39c641127a2f75b45242c6b78d2b755e340c3dd5b3c75d43",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/pidigits/1.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC."
+      ]
+    },
+    {
+      "key": "spectralnorm:spectralnorm-odin-1-faithful",
+      "id": "spectralnorm-odin-1-faithful",
+      "benchmark": "spectralnorm",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/spectralnorm-odin-1-faithful.odin",
+      "source_sha256": "e3d385a251060bf6a379238c3c18d17ba66107bb9d89bd9e8ed90c290d419549",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/spectral-norm/1.odin",
+      "upstream_sha256": "64eb6fac5c07f6d266045c3ff6bc49cb861ed781563de885ec616fd555711a79",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/spectral-norm/1.odin",
+      "local_adaptation": true,
+      "adaptations": [
+        "Free the standard temporary vector after every complete A-transpose-A product."
+      ]
+    },
+    {
+      "key": "spectralnorm:spectralnorm-zig-1-faithful",
+      "id": "spectralnorm-zig-1-faithful",
+      "benchmark": "spectralnorm",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/spectralnorm-zig-1-faithful.zig",
+      "source_sha256": "5e9c708c646416684450cffc5c936466fec6d98a0dd1b8cb25eda8e3661ce0a9",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/spectral-norm/1.zig",
+      "upstream_sha256": "626d37cb6b0ce9dd19d748ceeaf45a694af4d99435c4bd1aad190dddab21a44d",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/spectral-norm/1.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Correct the final dot-product index from the stale loop variable i to j, so every final element participates."
+      ]
+    },
+    {
+      "key": "spectralnorm:spectralnorm-zig-2-m-faithful",
+      "id": "spectralnorm-zig-2-m-faithful",
+      "benchmark": "spectralnorm",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/spectralnorm-zig-2-m-faithful.zig",
+      "source_sha256": "4bafc2670d85538646976e90fc97a9f2ea97ca2a00300faceafeb01a1bd81aa4",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/spectral-norm/2-m.zig",
+      "upstream_sha256": "15bb6a480ad979a86eac668d5254760f073509ae4eacb0163e696c765ad8d393",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/spectral-norm/2-m.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Handle arbitrary matrix dimensions by padding output vector lanes while scanning exactly N source values and reducing only N final elements; no matrix remainder is dropped."
+      ]
+    },
+    {
+      "key": "spectralnorm:spectralnorm-zig-2-faithful",
+      "id": "spectralnorm-zig-2-faithful",
+      "benchmark": "spectralnorm",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/spectralnorm-zig-2-faithful.zig",
+      "source_sha256": "7cf00f1b98d968c73b441f78cff78fdbc536af2e6857d76c6677be5080e8114f",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/upstream/hanabi/bench/algorithm/spectral-norm/2.zig",
+      "upstream_sha256": "8ebc3b0fabb102660cd194685af8e3b9fa389d09f3b3594e368b32b7c86635c6",
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/spectral-norm/2.zig",
+      "local_adaptation": true,
+      "adaptations": [
+        "Port command-line access and buffered stdin/stdout to Zig 0.17 standard Io interfaces; all application I/O helper code counts toward LOC.",
+        "Handle arbitrary matrix dimensions by padding output vector lanes while scanning exactly N source values and reducing only N final elements; no matrix remainder is dropped."
+      ]
+    }
+  ]
+}

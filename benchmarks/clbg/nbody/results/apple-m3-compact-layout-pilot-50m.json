@@ -1,0 +1,107 @@
+{
+  "steps": 50000000,
+  "samples": 5,
+  "description": "Pilot generic odd-column coordinate packing; baseline binaries copied unchanged from previous full-cohort run. All Mech physics and source unchanged. No arithmetic reordering.",
+  "baseline_report": "apple-m3-v04-native-optimized-50m.json",
+  "generation_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+    "0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+    "emit-cranelift-simd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-compact-layout-sqrt.c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-compact-layout-sqrt.o",
+    "--output",
+    "energy",
+    "--fp-contract",
+    "--algebraic-powers"
+  ],
+  "compile_command": [
+    "/opt/homebrew/opt/llvm@22/bin/clang-22",
+    "-O3",
+    "-isysroot",
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-compact-layout-sqrt.c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-compact-layout-sqrt.o",
+    "-lm",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-compact-layout-sqrt"
+  ],
+  "full_state_checks": [
+    {
+      "steps": 0,
+      "full_state_bit_identical": true
+    },
+    {
+      "steps": 1,
+      "full_state_bit_identical": true
+    },
+    {
+      "steps": 1000,
+      "full_state_bit_identical": true
+    },
+    {
+      "steps": 10000,
+      "full_state_bit_identical": true
+    }
+  ],
+  "programs": [
+    {
+      "id": "mech-previous-layout",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/before-chapel-layout/mech-aot-simd-sqrt-v04",
+      "binary_sha256": "5f7ad0257461231ee4eb4e973c3ee96d06aa0aed3f5d2b1fcdb24f22bf7ab675",
+      "samples_seconds": [
+        2.013073625,
+        2.052013,
+        2.027385916,
+        2.026520083,
+        2.026151292
+      ],
+      "median_seconds": 2.026520083
+    },
+    {
+      "id": "mech-compact-layout",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-compact-layout-sqrt",
+      "binary_sha256": "f07b4268d305c4d05eb4f4c28eca49166ea26a3cc494f19a4cc27fdf11892c4e",
+      "samples_seconds": [
+        2.238359791,
+        2.233451417,
+        2.237076959,
+        2.243277917,
+        2.238909917
+      ],
+      "median_seconds": 2.238359791
+    },
+    {
+      "id": "chapel-3",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/before-chapel-layout/nbody-chapel-3",
+      "binary_sha256": "6cc212eda2d070e55026cdd63a3b76db7b1991e744af0ade88ac98736ae9bf4d",
+      "samples_seconds": [
+        1.706408792,
+        1.706094625,
+        1.703294875,
+        1.704441375,
+        1.703194208
+      ],
+      "median_seconds": 1.704441375
+    },
+    {
+      "id": "rust-3",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/before-chapel-layout/nbody-rust-3",
+      "binary_sha256": "f271b5e487c8fddbee29b3ba0b66cb6f7cc6268d27dc1c452c6943bbca213cc9",
+      "samples_seconds": [
+        1.975426791,
+        1.951306417,
+        1.955088334,
+        1.952277625,
+        1.9574915
+      ],
+      "median_seconds": 1.955088334
+    }
+  ],
+  "compiler_snapshot": {
+    "path": "apple-m3-compact-layout-pilot-50m.compiler.tar.gz",
+    "sha256": "d7571efbc836d2f78663a7ac647f5cb999df9c251450e947c137ecac961666ba",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "note": "Exact compiler/runtime/source/script snapshot; apply on this v0.4 base. Pinned competitor sources are separately hashed in manifest.json."
+  }
+}

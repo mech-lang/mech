@@ -1,0 +1,20 @@
+const assert = require('node:assert/strict');
+const probe = require('./tree-elm-audit.cjs').AllocationProbe;
+const root = probe.build(9, 1);
+const seen = new Set();
+const visit = node => {
+  if (node === probe.empty) return;
+  assert(!seen.has(node));
+  seen.add(node);
+  assert.deepEqual(Object.keys(node).sort(), ['$', 'a', 'b', 'c']);
+  if (node.b !== probe.empty) assert.notEqual(node.b, node.c);
+  visit(node.b);
+  visit(node.c);
+};
+visit(root);
+assert.equal(seen.size, 1023);
+assert.equal(probe.check(root), 1023);
+assert.notEqual(probe.build(0, 1), probe.build(0, 1));
+for (let i = 0; i < 100; i++) probe.check(probe.build(6, i + 1));
+assert.equal(probe.check(root), 1023);
+process.stdout.write(JSON.stringify({status: 'passed', distinctNodes: seen.size, equalLeafInteriorFields: true, freshIdenticalLeaves: true, longLivedRetained: true}) + '\n');

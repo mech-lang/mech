@@ -1,0 +1,58 @@
+Math::GMP - High speed arbitrary size integer math
+
+To install this package, you will need a version of the GMP library. You
+have different alternatives:
+
+- get it at the homepage of GMP:
+
+	http://www.gmplib.org/
+
+- install a pre-compiled package provided by your distribution
+
+- let Math::GMP download and install GMP for you (thanks to Alien::GMP)
+
+After installing GMP (if you want to do it yourself), do the following:
+
+	perl Makefile.PL
+	make
+	make test
+
+When all tests pass, install it (as root) with the following command:
+
+	make install
+
+Enjoy!
+
+If you have problems, please check the platform-specific notes below.
+
+
+** Notes for AIX **
+
+tswd13@yahoo.com notes on bug #11736 about installing on AIX 5.2:
+
+First, I had to modify the Makefile.PL so that it could see the gmp libraries by adding "-L/usr/local/lib" as below:
+
+'LIBS' => ['-L/usr/local/lib -lgmp'], # e.g., '-lm'
+
+Then, I had to change the following line in GMP.c and GMP.xs from:
+
+#include "gmp.h"
+to:
+#include </usr/local/include/gmp.h>
+
+Reinstalled gmp-4.1.4 with:
+
+./configure ABI=32 --disable-static
+
+
+** Notes for Mac OS X **
+
+Rob writes on bug #19262:
+
+Error:
+/usr/bin/ld: /usr/local/lib/libgmp.a(mode1o.o) has local relocation entries in non-writable section (__TEXT,__text)
+
+Solution:
+Edit the Makefile, adding the following to LDDLFLAGS:
+-read_only_relocs suppress
+

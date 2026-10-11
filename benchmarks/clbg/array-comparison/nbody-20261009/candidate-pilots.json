@@ -1,0 +1,151 @@
+{
+  "K upstream Amber": {
+    "command": [
+      "/tmp/mech-array-runtimes/amber/amber",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.amber.k"
+    ],
+    "samples": [
+      0.582747125,
+      0.60080475,
+      0.611008625
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.60080475
+  },
+  "K upstream Growler": {
+    "command": [
+      "/tmp/mech-array-runtimes/growler/k",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.growler.k"
+    ],
+    "samples": [
+      0.466645792,
+      0.480293291,
+      0.48572875
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.480293291
+  },
+  "K reciprocal": {
+    "command": [
+      "/tmp/mech-array-runtimes/amber/amber",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-reciprocal.k"
+    ],
+    "samples": [
+      0.617019292,
+      0.635191167,
+      0.62935425
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.62935425
+  },
+  "K fused distance": {
+    "command": [
+      "/tmp/mech-array-runtimes/amber/amber",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-fused-distance.k"
+    ],
+    "samples": [
+      0.665867625,
+      0.682357,
+      0.677622709
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.677622709
+  },
+  "K fused forces": {
+    "command": [
+      "/tmp/mech-array-runtimes/amber/amber",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-fused-forces.k"
+    ],
+    "samples": [],
+    "validation": [],
+    "error": "1 steps: [-0.169075164, -0.169124236] != [-0.169075164, -0.169074954]"
+  },
+  "BQN upstream": {
+    "command": [
+      "/tmp/mech-array-runtimes/CBQN/BQN",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.bqn"
+    ],
+    "samples": [
+      0.641743916,
+      0.637061875,
+      0.6459535
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.641743916
+  },
+  "BQN pairwise": {
+    "command": [
+      "/tmp/mech-array-runtimes/CBQN/BQN",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-pairwise.bqn"
+    ],
+    "samples": [
+      0.641065959,
+      0.653974625,
+      0.661569667
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.653974625
+  },
+  "BQN flat scaled": {
+    "command": [
+      "/tmp/mech-array-runtimes/CBQN/BQN",
+      "benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-flat-scaled.bqn"
+    ],
+    "samples": [
+      0.462822375,
+      0.463577375,
+      0.464805459
+    ],
+    "validation": [
+      1,
+      2,
+      10,
+      1000,
+      10000,
+      1000000
+    ],
+    "median_seconds": 0.463577375
+  }
+}

@@ -1,0 +1,438 @@
+THERE_BE_DRAGONS_HERE
+OCCodeError:OCUndeclaredVariableNotice UndefinedObject>>#DoIt 103:Undeclared variable named Double in DoIt->Double
+11 October 2026 12:44:55.255368 am
+
+VM: Mac OS - arm64 - 1000 - CoInterpreter
+StackToRegisterMappingCogit
+v12.0.5-beta+0.7884d2853 - Commit: 7884d2853 - Date: 2026-09-22 15:34:21 +0200
+
+Image: Pharo-14.0.0+SNAPSHOT.build.783.sha.3221b560a7cbcb4361c8be367d3efdc8e2303459 (64 Bit)
+
+OCUndeclaredVariableNotice(OCNotice)>>signalError
+	Receiver: OCUndeclaredVariableNotice(103:Undeclared variable named Double in DoIt)
+	Receiver's instance variables: 
+		messageText: 	'Undeclared variable named Double in DoIt'
+		node: 	OCVariableNode(Double)
+
+	Arguments and temporary variables: 
+x
+
+[ ] in OpalEvaluator>>evaluate:
+	Receiver: an OpalEvaluator
+	Receiver's instance variables: 
+		failBlock: 	nil
+		permitFaultyEvaluation: 	nil
+		compiler: 	an OpalCompiler
+		logged: 	false
+		bindings: 	#()
+		context: 	nil
+		receiver: 	nil
+
+	Arguments and temporary variables: 
+		temp1: 	OCUndeclaredVariableNotice(103:Undeclared variable named Double in [..]
+
+OrderedCollection>>do:
+	Receiver: an OrderedCollection(OCUndeclaredVariableNotice(103:Undeclared variable named Double i[..]
+	Receiver's instance variables: 
+		array: 	an Array(OCUndeclaredVariableNotice(103:Undeclared variable named Do[..]
+		firstIndex: 	1
+		lastIndex: 	1
+
+	Arguments and temporary variables: 
+		temp1: 	[ ] in OpalEvaluator>>#evaluate:
+		temp2: 	1
+		temp3: 	1
+
+OpalEvaluator>>evaluate:
+	Receiver: an OpalEvaluator
+	Receiver's instance variables: 
+		failBlock: 	nil
+		permitFaultyEvaluation: 	nil
+		compiler: 	an OpalCompiler
+		logged: 	false
+		bindings: 	#()
+		context: 	nil
+		receiver: 	nil
+
+	Arguments and temporary variables: 
+		temp1: 	'(Smalltalk allClasses select: [ :c | (c name includesSubstring: Fl[..]
+		temp2: 	an OCErrorCompilationResult
+
+[ ] in ClapCodeEvaluator>>evaluateExpression
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c na[..]
+		expression: 	an OrderedCollection('(Smalltalk allClasses select: [ :c | (c n[..]
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in ClapCodeEvaluator>>#evaluateExpression
+	Receiver's instance variables: 
+		outerContext: 	ClapCodeEvaluator>>evaluateExpression
+		compiledBlock: 	a CompiledBlock: [ OpalEvaluator new evaluate: self source ]
+		numArgs: 	0
+		receiver: 	a ClapCodeEvaluator
+
+	Arguments and temporary variables: 
+		temp1: 	Error
+		temp2: 	[ ] in ClapCodeEvaluator>>#evaluateExpression
+
+ClapCodeEvaluator>>evaluateExpression
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c na[..]
+		expression: 	an OrderedCollection('(Smalltalk allClasses select: [ :c | (c n[..]
+
+	Arguments and temporary variables: 
+x
+
+ClapCodeEvaluator>>evaluate
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c na[..]
+		expression: 	an OrderedCollection('(Smalltalk allClasses select: [ :c | (c n[..]
+
+	Arguments and temporary variables: 
+x
+
+ClapCodeEvaluator>>execute
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c na[..]
+		expression: 	an OrderedCollection('(Smalltalk allClasses select: [ :c | (c n[..]
+
+	Arguments and temporary variables: 
+		temp1: 	nil
+
+ClapCodeEvaluator(ClapApplication)>>executeOrPrintHelp
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c na[..]
+		expression: 	an OrderedCollection('(Smalltalk allClasses select: [ :c | (c n[..]
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapContext>>executeToExit:
+	Receiver: a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c name includesSubstring[..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '(Smalltalk allClasses select: [ :c | (c name includesS[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval (Smalltalk allClasses select: [ :c | (c na[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in ClapContext>>#executeToExit:
+	Receiver's instance variables: 
+		outerContext: 	ClapContext>>executeToExit:
+		compiledBlock: 	a CompiledBlock: [
+		self rememberSession.
+		self ifMismatch[..]
+		numArgs: 	0
+		receiver: 	a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c n[..]
+
+	Arguments and temporary variables: 
+		temp1: 	Exit
+		temp2: 	[ ] in ClapContext>>#executeToExit:
+
+ClapContext>>executeToExit:
+	Receiver: a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c name includesSubstring[..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '(Smalltalk allClasses select: [ :c | (c name includesS[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval (Smalltalk allClasses select: [ :c | (c na[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+		temp1: 	[ ] in ClapContext>>#execute
+
+ClapContext>>execute
+	Receiver: a ClapContext(#('eval' '(Smalltalk allClasses select: [ :c | (c name includesSubstring[..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '(Smalltalk allClasses select: [ :c | (c name includesS[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval (Smalltalk allClasses select: [ :c | (c na[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+x
+
+ClapContext class>>executeWithPragmaCommandsAndArguments:
+	Receiver: ClapContext
+	Receiver's instance variables: 
+		superclass: 	ClapExpression
+		methodDict: 	a MethodDictionary(#allValidations->ClapContext>>#allValidation[..]
+		format: 	65544
+		layout: 	a FixedLayout
+		protocols: 	an Array(Protocol (accessing) - 13 selector(s) Protocol (activat[..]
+		subclasses: 	nil
+		name: 	#ClapContext
+		classPool: 	nil
+		sharedPools: 	an OrderedCollection()
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	5839698
+		packageTag: 	a PackageTag(Activation)
+
+	Arguments and temporary variables: 
+		temp1: 	#('eval' '(Smalltalk allClasses select: [ :c | (c name includesSubs[..]
+
+ClapCommandLineHandler>>activateCommand
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in CommandLineHandler>>#activateAndHandleExit
+	Receiver's instance variables: 
+		outerContext: 	ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+		compiledBlock: 	a CompiledBlock: [ self activateCommand ]
+		numArgs: 	0
+		receiver: 	a ClapCommandLineHandler
+
+	Arguments and temporary variables: 
+		temp1: 	Exit
+		temp2: 	[ ] in CommandLineHandler>>#activateAndHandleExit
+
+ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activate
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+	Receiver: [ ] in CommandLineHandler>>#activate
+	Receiver's instance variables: 
+		outerContext: 	ClapCommandLineHandler(CommandLineHandler)>>activate
+		compiledBlock: 	a CompiledBlock: [ self activateAndHandleExit ]
+		numArgs: 	0
+		receiver: 	a ClapCommandLineHandler
+
+	Arguments and temporary variables: 
+x
+
+
+--- The full stack ---
+OCUndeclaredVariableNotice(OCNotice)>>signalError
+[ ] in OpalEvaluator>>evaluate:
+OrderedCollection>>do:
+OpalEvaluator>>evaluate:
+[ ] in ClapCodeEvaluator>>evaluateExpression
+FullBlockClosure(BlockClosure)>>on:do:
+ClapCodeEvaluator>>evaluateExpression
+ClapCodeEvaluator>>evaluate
+ClapCodeEvaluator>>execute
+ClapCodeEvaluator(ClapApplication)>>executeOrPrintHelp
+[ ] in ClapContext>>executeToExit:
+FullBlockClosure(BlockClosure)>>on:do:
+ClapContext>>executeToExit:
+ClapContext>>execute
+ClapContext class>>executeWithPragmaCommandsAndArguments:
+ClapCommandLineHandler>>activateCommand
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+FullBlockClosure(BlockClosure)>>on:do:
+ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activate
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+-------------------------------------------------------------------------------
+
+Processes and their stacks: 
+Process: a Process in [ ] in TFCallbackQueue>>forkCallbackProcess
+  stack:
+
+[ ] in TFCallbackQueue>>forkCallbackProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in AtomicSharedQueue>>waitForNewItems
+  stack:
+
+AtomicSharedQueue>>waitForNewItems
+AtomicSharedQueue>>next
+TKTWorkerProcess>>privateNextTask
+TKTWorkerProcess>>workerLoop
+MessageSend>>value
+[ ] in TKTPharoProcessProvider>>createProcessDoing:named:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in AtomicSharedQueue>>waitForNewItems
+  stack:
+
+AtomicSharedQueue>>waitForNewItems
+AtomicSharedQueue>>next
+TKTWorkerProcess>>privateNextTask
+TKTWorkerProcess>>workerLoop
+MessageSend>>value
+[ ] in TKTPharoProcessProvider>>createProcessDoing:named:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in DelayMicrosecondTicker>>waitForUserSignalled:orExpired:
+  stack:
+
+DelayMicrosecondTicker>>waitForUserSignalled:orExpired:
+[ ] in DelaySemaphoreScheduler(DelayBasicScheduler)>>runBackendLoopAtTimingPriority
+FullBlockClosure(BlockClosure)>>ensure:
+DelaySemaphoreScheduler(DelayBasicScheduler)>>runBackendLoopAtTimingPriority
+[ ] in DelaySemaphoreScheduler(DelayBasicScheduler)>>startTimerEventLoopPriority:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in MorphicRenderLoop>>doOneCycleWhile:
+  stack:
+
+MorphicRenderLoop>>doOneCycleWhile:
+[ ] in UndefinedObject(MorphicUIManager)>>spawnNewProcess
+[ ] in CleanBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in [ ] in Delay>>wait
+  stack:
+
+[ ] in Delay>>wait
+FullBlockClosure(BlockClosure)>>ifCurtailed:
+Delay>>wait
+Duration>>wait
+[ ] in OmDeferrer>>runMessageProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in SmalltalkImage>>lowSpaceWatcher
+  stack:
+
+SmalltalkImage>>lowSpaceWatcher
+[ ] in SmalltalkImage>>installLowSpaceWatcher
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in [ ] in FullBlockClosure(BlockClosure)>>newProcess
+  stack:
+
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in FinalizationProcess class>>finalizationProcess
+  stack:
+
+FinalizationProcess class>>finalizationProcess
+[ ] in FinalizationProcess class>>restartFinalizationProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in nil
+  stack:
+
+Array(SequenceableCollection)>>do:
+[ ] in UndefinedObject(NonInteractiveErrorHandler)>>quitFrom:withMessage:
+[ ] in SmalltalkImage>>logDuring:
+FullBlockClosure(BlockClosure)>>ensure:
+SmalltalkImage>>logDuring:
+[ ] in NonInteractiveErrorHandler>>quitFrom:withMessage:
+FullBlockClosure(BlockClosure)>>ensure:
+NonInteractiveErrorHandler>>quitFrom:withMessage:
+NonInteractiveErrorHandler>>handleError:log:
+NonInteractiveErrorHandler(ErrorHandler)>>handleError:
+Process>>handleError:
+OCCodeError(Exception)>>unhandledErrorAction
+UnhandledError>>defaultAction
+UndefinedObject>>handleSignal:
+Context>>handleSignal:
+Context>>handleSignal:
+Context>>handleSignal:
+UnhandledError(Exception)>>signal
+UnhandledError class>>signalForException:
+OCCodeError(Exception)>>raiseUnhandledError
+------------------------------
+

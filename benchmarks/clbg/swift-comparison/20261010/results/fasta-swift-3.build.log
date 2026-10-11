@@ -1,0 +1,18 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-3.swift:114:17: warning: 'assign(from:count:)' is deprecated: renamed to 'update(from:count:)'
+        blockIn.assign(from: beg, count: linewidth)
+                ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-3.swift:114:17: note: use 'update(from:count:)' instead
+        blockIn.assign(from: beg, count: linewidth)
+                ^~~~~~
+                update
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-3.swift:107:9: warning: variable 'blockNl' was never mutated; consider changing to 'let' constant
+    var blockNl = UnsafeMutablePointer<Int8>.allocate(capacity: (block.utf16.count)+s.utf16.count*linewidth-1)
+    ~~~ ^
+    let
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-3.swift:197:70: warning: 'index(of:)' is deprecated: renamed to 'firstIndex(of:)'
+                                deferedWrite.remove(at: deferedWrite.index(of: blk)!)
+                                                                     ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-3.swift:197:70: note: use 'firstIndex(of:)' instead
+                                deferedWrite.remove(at: deferedWrite.index(of: blk)!)
+                                                                     ^~~~~
+                                                                     firstIndex

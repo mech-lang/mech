@@ -1,0 +1,662 @@
+{
+  "status": "partial",
+  "comparisons": [
+    {
+      "benchmark": "pidigits",
+      "candidates": 2,
+      "fastest": {
+        "key": "pidigits:d-fast",
+        "seconds": 0.287968,
+        "samples_seconds": [
+          0.287362833,
+          0.287968,
+          0.291855459
+        ],
+        "stdev_seconds": 0.0024379722773391647,
+        "time_x_mech": 1.0009983565395635,
+        "loc": 63,
+        "loc_x_mech": 1.6578947368421053,
+        "mech_seconds": 0.287680792,
+        "mech_loc": 38,
+        "source_sha256": "adad16c89fa4163f68c2fc3242d9f73b100ef4a441a42468b8d987bc38549b4a",
+        "binary_sha256": "3a21ed99dc9c1d395c911fcdb10bcb6e56f6812165aeede9198ee1c746b53548"
+      },
+      "smallest": {
+        "key": "pidigits:d-compact",
+        "seconds": 3.136244,
+        "samples_seconds": [
+          3.136910292,
+          3.132167833,
+          3.136244
+        ],
+        "stdev_seconds": 0.0025674241244171324,
+        "time_x_mech": 10.901819263623272,
+        "loc": 29,
+        "loc_x_mech": 0.8285714285714286,
+        "mech_seconds": 0.287680792,
+        "mech_loc": 35,
+        "source_sha256": "e2a99730b9893a03bb3d9962b3e1bc3ff432e1142ddd854b88def9eb26ff74c6",
+        "binary_sha256": "e7221e8330cac37a650eb3ac09880315b0daa1ad1a7d8890ef581bd87b781644"
+      },
+      "same_source": false
+    },
+    {
+      "benchmark": "spectralnorm",
+      "candidates": 4,
+      "fastest": {
+        "key": "spectralnorm:d-parallel-neon",
+        "seconds": 0.099141542,
+        "samples_seconds": [
+          0.091775583,
+          0.099141542,
+          0.099992416
+        ],
+        "stdev_seconds": 0.004518437840364857,
+        "time_x_mech": 1.110816123093991,
+        "loc": 46,
+        "loc_x_mech": 3.8333333333333335,
+        "mech_seconds": 0.089251083,
+        "mech_loc": 12,
+        "source_sha256": "340720a60e55d75dedd2f337d6bc331d8876b45fc445efe8d325d998158ee409",
+        "binary_sha256": "c6ce8cec62df53fb82fe946f6219ba629f31a94a8b88bcb7aeb9b0c24644e631"
+      },
+      "smallest": {
+        "key": "spectralnorm:d-compact",
+        "seconds": 0.873923292,
+        "samples_seconds": [
+          0.873923292,
+          0.873620125,
+          0.873944875
+        ],
+        "stdev_seconds": 0.0001815849747262447,
+        "time_x_mech": 9.791738796043518,
+        "loc": 34,
+        "loc_x_mech": 2.8333333333333335,
+        "mech_seconds": 0.089251083,
+        "mech_loc": 12,
+        "source_sha256": "835a19d6dcfb4da5ae9bd7782d1e7b8b7284f08bfac8a36fdd0315dbb82fc7d1",
+        "binary_sha256": "8a44e3e1d97d64edd2f255c3dcd8edd084db82969cf66e2b8323c3fabadbc49a"
+      },
+      "same_source": false
+    },
+    {
+      "benchmark": "nbody",
+      "candidates": 6,
+      "fastest": {
+        "key": "nbody:d-unrolled",
+        "seconds": 1.16908875,
+        "samples_seconds": [
+          1.167697167,
+          1.16908875,
+          1.178825583
+        ],
+        "stdev_seconds": 0.006063333279982165,
+        "time_x_mech": 1.108145853246039,
+        "loc": 51,
+        "loc_x_mech": 2.04,
+        "mech_seconds": 1.054995375,
+        "mech_loc": 25,
+        "source_sha256": "4c8f401ac737a0d6396d7dcd2b01fcc5c0f4ad1b6e4845ada37c96a1270dc61b",
+        "binary_sha256": "578ee9a5b835c0d28e6d551105b272e75d8a4ff8b5d86c82813bd8dd3d7e078a"
+      },
+      "smallest": {
+        "key": "nbody:d-unrolled",
+        "seconds": 1.16908875,
+        "samples_seconds": [
+          1.167697167,
+          1.16908875,
+          1.178825583
+        ],
+        "stdev_seconds": 0.006063333279982165,
+        "time_x_mech": 1.108145853246039,
+        "loc": 51,
+        "loc_x_mech": 2.55,
+        "mech_seconds": 1.054995375,
+        "mech_loc": 20,
+        "source_sha256": "4c8f401ac737a0d6396d7dcd2b01fcc5c0f4ad1b6e4845ada37c96a1270dc61b",
+        "binary_sha256": "578ee9a5b835c0d28e6d551105b272e75d8a4ff8b5d86c82813bd8dd3d7e078a"
+      },
+      "same_source": true
+    },
+    {
+      "benchmark": "mandelbrot",
+      "candidates": 3,
+      "fastest": {
+        "key": "mandelbrot:d-parallel-array-eight",
+        "seconds": 0.448045375,
+        "samples_seconds": [
+          0.44748275,
+          0.448045375,
+          0.448743833
+        ],
+        "stdev_seconds": 0.000631759553585325,
+        "time_x_mech": 1.0167093325542378,
+        "loc": 62,
+        "loc_x_mech": 2.1379310344827585,
+        "mech_seconds": 0.440681875,
+        "mech_loc": 29,
+        "source_sha256": "30d7b398a03f742203b5504f0da738c791e0575e06a1eaef6218571090bf6966",
+        "binary_sha256": "4ee310f5cd019815371c603a9741395fb327e81f0c5854612c632522c9d5f61b"
+      },
+      "smallest": {
+        "key": "mandelbrot:d-archive-complex",
+        "seconds": 10.965438209,
+        "samples_seconds": [
+          10.958836208,
+          11.000811416,
+          10.965438209
+        ],
+        "stdev_seconds": 0.02257125117382763,
+        "time_x_mech": 24.88288906595035,
+        "loc": 43,
+        "loc_x_mech": 2.15,
+        "mech_seconds": 0.440681875,
+        "mech_loc": 20,
+        "source_sha256": "2d45bf063b38b40f0cc012c474b2de09ed61529a5030924f16de53c0bc147b07",
+        "binary_sha256": "d666aa3d8cb60b1f33440f70ffc9b8c4aa99295919557d3e17c085c825608c72"
+      },
+      "same_source": false
+    },
+    {
+      "benchmark": "regexredux",
+      "candidates": 4,
+      "fastest": {
+        "key": "regexredux:regexredux-d-published-3",
+        "seconds": 0.695072166,
+        "samples_seconds": [
+          0.695177209,
+          0.690555375,
+          0.695072166
+        ],
+        "stdev_seconds": 0.002638616572280716,
+        "time_x_mech": 1.42167761346359,
+        "loc": 58,
+        "loc_x_mech": 2.4166666666666665,
+        "mech_seconds": 0.488909834,
+        "mech_loc": 24,
+        "source_sha256": "f3d2e7cf3fefc1a0aa871a6c9e8173cd1b8da2153012ca48b0810d6874056df7",
+        "binary_sha256": "043441dec1740693428f47d4e8e9bc5b8fcb49abe2ddcc4b79ce10e8e04c79b5"
+      },
+      "smallest": {
+        "key": "regexredux:regexredux-d-compact",
+        "seconds": 1.757903542,
+        "samples_seconds": [
+          1.749552458,
+          1.757903542,
+          1.76027225
+        ],
+        "stdev_seconds": 0.005631242049015316,
+        "time_x_mech": 3.595557748588874,
+        "loc": 12,
+        "loc_x_mech": 0.5,
+        "mech_seconds": 0.488909834,
+        "mech_loc": 24,
+        "source_sha256": "f0f0377040a19a3c2b6225c888b9e7bc42e01f529746d3532e738234cb0d98e0",
+        "binary_sha256": "cc8745ace093d9c53915ca25761a2d0f728cf491f9778c9a5d0b991ca110b675"
+      },
+      "same_source": false
+    },
+    {
+      "benchmark": "binarytrees",
+      "candidates": 2,
+      "fastest": {
+        "key": "binarytrees:d-fast",
+        "seconds": 0.445237,
+        "samples_seconds": [
+          0.437262333,
+          0.445237,
+          0.447850167
+        ],
+        "stdev_seconds": 0.005515526332429426,
+        "time_x_mech": 1.1319889327530634,
+        "loc": 49,
+        "loc_x_mech": 1.8846153846153846,
+        "mech_seconds": 0.39332275,
+        "mech_loc": 26,
+        "source_sha256": "349c91f26b3f90612dd513037d3a7d6c228340a17207e2d7298d68c50a92ae2b",
+        "binary_sha256": "0f2b50653a748cffac9eb38350cb28ffaa4f8082d37c947cb84a5b8a3832eb92"
+      },
+      "smallest": {
+        "key": "binarytrees:d-compact",
+        "seconds": 11.216018667,
+        "samples_seconds": [
+          11.195698791,
+          11.226793417,
+          11.216018667
+        ],
+        "stdev_seconds": 0.015789597653190008,
+        "time_x_mech": 28.516068971347323,
+        "loc": 32,
+        "loc_x_mech": 1.2307692307692308,
+        "mech_seconds": 0.39332275,
+        "mech_loc": 26,
+        "source_sha256": "a327516df7e15cefe6d35432c0070bb4a58e16c8e51ba6f483397db39143c667",
+        "binary_sha256": "a2d84fd7f8cb3f937816e2c59c7d8ade104e9b9aea6661356a52b5fd65dae7bb"
+      },
+      "same_source": false
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "candidates": 2,
+      "fastest": {
+        "key": "fannkuchredux:d-parallel-neon",
+        "seconds": 2.435349625,
+        "samples_seconds": [
+          2.422495792,
+          2.435349625,
+          2.4988265
+        ],
+        "stdev_seconds": 0.04086749251409719,
+        "time_x_mech": 1.420397217941522,
+        "loc": 160,
+        "loc_x_mech": 2.711864406779661,
+        "mech_seconds": 1.714555333,
+        "mech_loc": 59,
+        "source_sha256": "3b4a50ac8ad91d3021efa0b1569dd2c07d15e8849a7083de50a9848abd55564a",
+        "binary_sha256": "37f33695cdf62ec018bda018427d289837c35285bbe34a1c4313c745b735591c"
+      },
+      "smallest": {
+        "key": "fannkuchredux:d-compact-scalar",
+        "seconds": 30.551845625,
+        "samples_seconds": [
+          30.518746541,
+          30.5727165,
+          30.551845625
+        ],
+        "stdev_seconds": 0.027214883364825474,
+        "time_x_mech": 17.819107401767358,
+        "loc": 50,
+        "loc_x_mech": 1.2820512820512822,
+        "mech_seconds": 1.714555333,
+        "mech_loc": 39,
+        "source_sha256": "249b400dedd4cad911ad0c5edaaec21620cc689df0cb8620d9b0969daa65956d",
+        "binary_sha256": "3c9ae49261e24ad0a43731d7c2f60a48034b7e66a2f1387961aaf9284d29cec1"
+      },
+      "same_source": false
+    },
+    {
+      "benchmark": "fasta",
+      "candidates": 3,
+      "fastest": {
+        "key": "fasta:fasta-d-optimized",
+        "seconds": 0.630612875,
+        "samples_seconds": [
+          0.63065075,
+          0.630612875,
+          0.625789542
+        ],
+        "stdev_seconds": 0.002795750315621234,
+        "time_x_mech": 1.149005362934076,
+        "loc": 55,
+        "loc_x_mech": 1.2790697674418605,
+        "mech_seconds": 0.548833709,
+        "mech_loc": 43,
+        "source_sha256": "ee49f01c59476b6b49d724d4fb4f1d4b54ff64c5c0f1791106130a98deb05a37",
+        "binary_sha256": "8ff93d7f95362a1160a0c657b34b8675979f96a7df474a2289718b8ff32cdb6b"
+      },
+      "smallest": {
+        "key": "fasta:fasta-d-compact",
+        "seconds": 2.759285208,
+        "samples_seconds": [
+          2.757640791,
+          2.786720083,
+          2.759285208
+        ],
+        "stdev_seconds": 0.016334940550635512,
+        "time_x_mech": 5.027543248076988,
+        "loc": 29,
+        "loc_x_mech": 0.90625,
+        "mech_seconds": 0.548833709,
+        "mech_loc": 32,
+        "source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+        "binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+      },
+      "same_source": false
+    }
+  ],
+  "pending": [
+    "knucleotide",
+    "revcomp"
+  ],
+  "failures": [],
+  "controls": {
+    "pidigits": {
+      "seconds": 0.287680792,
+      "loc": 38,
+      "samples": [
+        0.294873375,
+        0.287680792,
+        0.286752292
+      ],
+      "key": "pidigits:mech-control",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e"
+    },
+    "spectralnorm": {
+      "seconds": 0.089251083,
+      "loc": 12,
+      "samples": [
+        0.094534584,
+        0.089251083,
+        0.087694208
+      ],
+      "key": "spectralnorm:mech-control",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+    },
+    "nbody": {
+      "seconds": 1.054995375,
+      "loc": 25,
+      "samples": [
+        1.054995375,
+        1.056191416,
+        1.04989175
+      ],
+      "key": "nbody:mech-control",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa"
+    },
+    "mandelbrot": {
+      "seconds": 0.440681875,
+      "loc": 29,
+      "samples": [
+        0.43889725,
+        0.440681875,
+        0.440906666
+      ],
+      "key": "mandelbrot:mech-control",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90"
+    },
+    "regexredux": {
+      "seconds": 0.488909834,
+      "loc": 24,
+      "samples": [
+        0.488909834,
+        0.485051542,
+        0.489287542
+      ],
+      "key": "regexredux:mech-control",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+    },
+    "binarytrees": {
+      "seconds": 0.39332275,
+      "loc": 26,
+      "samples": [
+        0.420491834,
+        0.392369917,
+        0.39332275
+      ],
+      "key": "binarytrees:mech-control",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f"
+    },
+    "fannkuchredux": {
+      "seconds": 1.714555333,
+      "loc": 59,
+      "samples": [
+        1.714555333,
+        1.7534945,
+        1.68497175
+      ],
+      "key": "fannkuchredux:mech-control",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe"
+    },
+    "fasta": {
+      "seconds": 0.548833709,
+      "loc": 43,
+      "samples": [
+        0.553760708,
+        0.548811542,
+        0.548833709
+      ],
+      "key": "fasta:mech-control",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+    },
+    "knucleotide": {
+      "seconds": 0.531178792,
+      "loc": 17,
+      "samples": [
+        0.531178792
+      ],
+      "key": "knucleotide:mech-control",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139"
+    },
+    "revcomp": {
+      "seconds": null,
+      "loc": 7,
+      "samples": [],
+      "key": "revcomp:mech-control",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d"
+    }
+  },
+  "admitted_sources": 26,
+  "samples_completed": 105,
+  "samples_expected": 120,
+  "source_audit_sha256": "2cc9b1a4b3509dcf527cb5c97503164e4d1e2d287649c3cd69cfa1212d916d52",
+  "timing_report_sha256": "5de6ebc585bfff17a8b2e2144e79888536249b08a8a5c4b611b033b62967acab",
+  "loc_tool_sha256": "6f75cab639300be94366bbf4f329c2ce7aa2c58e6d2ab3c6bd708fb97c58df26",
+  "summary_script_sha256": "6cb00bd1e2633f45ed306fe0b10493a3cea2111c4694855fef4c5bde702e4e6e",
+  "preserved_explorer_sha256": "2b3f77d16312e78bdcfa24754e4d8342c62ebd0cf2d360fa56fc2a92b5b8b862",
+  "loc": {
+    "pidigits:d-compact": {
+      "physical_loc": 29,
+      "normalized_loc": 29,
+      "expansions": []
+    },
+    "pidigits:d-fast": {
+      "physical_loc": 63,
+      "normalized_loc": 63,
+      "expansions": []
+    },
+    "spectralnorm:d-modern": {
+      "physical_loc": 56,
+      "normalized_loc": 56,
+      "expansions": []
+    },
+    "spectralnorm:d-archive": {
+      "physical_loc": 52,
+      "normalized_loc": 55,
+      "expansions": [
+        {
+          "line": 15,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 16,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    "spectralnorm:d-compact": {
+      "physical_loc": 34,
+      "normalized_loc": 34,
+      "expansions": []
+    },
+    "spectralnorm:d-parallel-neon": {
+      "physical_loc": 46,
+      "normalized_loc": 46,
+      "expansions": []
+    },
+    "nbody:d-modern-scalar": {
+      "physical_loc": 133,
+      "normalized_loc": 135,
+      "expansions": [
+        {
+          "line": 104,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    "nbody:d-modern-vector-arrays": {
+      "physical_loc": 157,
+      "normalized_loc": 157,
+      "expansions": []
+    },
+    "nbody:d-archive-classless": {
+      "physical_loc": 109,
+      "normalized_loc": 111,
+      "expansions": [
+        {
+          "line": 67,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    "nbody:d-compact-array": {
+      "physical_loc": 51,
+      "normalized_loc": 51,
+      "expansions": []
+    },
+    "nbody:d-unrolled": {
+      "physical_loc": 51,
+      "normalized_loc": 51,
+      "expansions": []
+    },
+    "nbody:d-unrolled-precise": {
+      "physical_loc": 51,
+      "normalized_loc": 51,
+      "expansions": []
+    },
+    "mandelbrot:d-modern-array-eight": {
+      "physical_loc": 60,
+      "normalized_loc": 60,
+      "expansions": []
+    },
+    "mandelbrot:d-archive-complex": {
+      "physical_loc": 40,
+      "normalized_loc": 43,
+      "expansions": [
+        {
+          "line": 16,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 39,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 45,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    "mandelbrot:d-parallel-array-eight": {
+      "physical_loc": 62,
+      "normalized_loc": 62,
+      "expansions": []
+    },
+    "regexredux:regexredux-d-compact": {
+      "physical_loc": 12,
+      "normalized_loc": 12,
+      "expansions": []
+    },
+    "regexredux:regexredux-d-published-1": {
+      "physical_loc": 37,
+      "normalized_loc": 37,
+      "expansions": []
+    },
+    "regexredux:regexredux-d-published-2": {
+      "physical_loc": 49,
+      "normalized_loc": 49,
+      "expansions": []
+    },
+    "regexredux:regexredux-d-published-3": {
+      "physical_loc": 58,
+      "normalized_loc": 58,
+      "expansions": []
+    },
+    "binarytrees:d-compact": {
+      "physical_loc": 32,
+      "normalized_loc": 32,
+      "expansions": []
+    },
+    "binarytrees:d-fast": {
+      "physical_loc": 49,
+      "normalized_loc": 49,
+      "expansions": []
+    },
+    "fannkuchredux:d-compact-scalar": {
+      "physical_loc": 50,
+      "normalized_loc": 50,
+      "expansions": []
+    },
+    "fannkuchredux:d-parallel-neon": {
+      "physical_loc": 160,
+      "normalized_loc": 160,
+      "expansions": []
+    },
+    "fasta:fasta-d-compact": {
+      "physical_loc": 28,
+      "normalized_loc": 29,
+      "expansions": [
+        {
+          "line": 8,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    "fasta:fasta-d-optimized": {
+      "physical_loc": 54,
+      "normalized_loc": 55,
+      "expansions": [
+        {
+          "line": 17,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    "fasta:fasta-d-published": {
+      "physical_loc": 90,
+      "normalized_loc": 90,
+      "expansions": []
+    },
+    "knucleotide:knucleotide-d-compact": {
+      "physical_loc": 33,
+      "normalized_loc": 33,
+      "expansions": []
+    },
+    "knucleotide:knucleotide-d-published-rolling": {
+      "physical_loc": 177,
+      "normalized_loc": 178,
+      "expansions": [
+        {
+          "line": 112,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    "revcomp:revcomp-d-compact": {
+      "physical_loc": 20,
+      "normalized_loc": 20,
+      "expansions": []
+    },
+    "revcomp:revcomp-d-optimized": {
+      "physical_loc": 35,
+      "normalized_loc": 35,
+      "expansions": []
+    }
+  },
+  "ratio_policy": "Time \u00d7 Mech uses the freshly measured unchanged fastest Mech AOT control for both D profiles. Fastest LOC compares fastest sources; smallest LOC compares smallest sources. Below 1\u00d7 means faster or shorter than Mech. Explorer measurements of existing languages are preserved.",
+  "discarded_samples": 0,
+  "compiler": {
+    "path": "/opt/homebrew/bin/ldc2",
+    "sha256": "9c09db63a8812f3310256516a3bf4e6be7cda7af418e5edb58efa0957b46a746",
+    "version": "LDC - the LLVM D compiler (1.43.0):\n  based on DMD v2.113.0 and LLVM 23.1.2\n  built with LDC - the LLVM D compiler (1.42.0)\n  Default target: arm64-apple-darwin25.2.0\n  Host CPU: apple-m3\n  https://dlang.org - https://wiki.dlang.org/LDC"
+  },
+  "geometric_means": {
+    "fastest": {
+      "time_x_mech": 1.160527821078376,
+      "loc_x_mech": 2.138798573606979
+    },
+    "smallest": {
+      "time_x_mech": 8.491692839021846,
+      "loc_x_mech": 1.3197397253847059
+    }
+  }
+}

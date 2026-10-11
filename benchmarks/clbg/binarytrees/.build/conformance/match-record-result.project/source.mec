@@ -1,0 +1,2 @@
+r := (true ? | true => {x: 7, y: 1.25} | false => {x: 8, y: 2.5})
+io/print("{}\n", r.x)

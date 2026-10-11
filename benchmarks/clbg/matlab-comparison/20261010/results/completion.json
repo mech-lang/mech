@@ -1,0 +1,55 @@
+{
+  "status": "ready-for-browser-qa-and-publication",
+  "started_at": "2026-10-10T18:17:28.718888+00:00",
+  "measurement_pid": 53495,
+  "site": "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site",
+  "source_pins": {
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/build_data.py": "6394951eddf4d05ff23dd0b9d0c7aecaff20af779932d63de68ab8bf6e0fbe8a",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/augment_data.py": "b690ca0cbc50aeb3fdb35ad9ab10afcc0fe3e3c24d02f6993086f37f320c3613",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/functional_data.py": "c8761480f62ace1d6adb376d4458f24ac08a2c850b78e8e08b8e4950aba0bc75",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/matlab_data.py": "dc083d565c5ec11c75f3827dd72bb0c008d2b468fb4e8b58b0b0cf8d00d1d2ec",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify.mjs": "7eb9da0a0081c9281dbdf5f06feeeda7d8bbafbc13003d704bea500465dcb5f1",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify_previous.py": "107b2de3ab4cd9f569a72ed9fcf88054d0747b9ef9dad4f5cd8a88f23e69289a",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify_ui.cjs": "a2b3b777324a2c3aea0832eb08cb37f604555c5d9079d7d14e366f87586ff18c",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify_years.cjs": "7c6741bda70123bbc13c972147fac493c8565a8941a6bbf73c6fb4f79ffb0bf9",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify_axes.cjs": "da400b4d857d84d630ff92a3819433f1df2cccc1bc2363d8247612db23e02c7b",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/language-years.json": "aa2b057ab78d6c515425e7c110c447c63ab26d543684053ad5413581d5d4abd9",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/app.mjs": "b638c6f77b0007a2d255991b65847ed9fade1f4fc18efc4cc309cbd93e7fef9b",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/math.mjs": "79da0046ec6ee95e960a334c032efdf50bcb85753f3041b14aa01e11ee41d612",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/index.html": "0cab12e3b6c74ea623a303f87410b79bbd14b944722f5087e5799e22d4596865",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/export_chart.py": "bcfb3d33795cc94ecca1f2781da0f1fdb7cc4a61304797bbf771720a8f8377e3"
+  },
+  "completion_script_sha256": "7d021f59cf7c29192c0579a19fa70da2b6a5145679fe92ca6a030de579c93d88",
+  "previous_chart_sha256": "d8197409761c64ce436ce026deab300ceb385ad5b539496282e2fa8645bc4a28",
+  "steps": [
+    {
+      "script": "audit_loc_final.py",
+      "status": "passed"
+    },
+    {
+      "script": "summarize.py",
+      "status": "passed"
+    },
+    {
+      "script": "export_chart.py",
+      "status": "passed"
+    },
+    {
+      "script": "build_data.py",
+      "status": "passed"
+    },
+    {
+      "script": "verify.mjs",
+      "status": "passed"
+    },
+    {
+      "script": "verify_previous.py",
+      "status": "passed"
+    }
+  ],
+  "finished_at": "2026-10-10T19:28:04.410391+00:00",
+  "timing_report_sha256": "e82ab6aff97a93b49b8e74068f4a742150be1457e37976b1fffd02f6caf29aa8",
+  "summary_sha256": "c37d309ebc6343f47f8af19249109c2c21152830788d1dff48eeadf64d2cb2d3",
+  "chart_data_sha256": "8a3ff2b0f30003fc0dd3ba77c6b6dcdaa793f734f6981b290fa4836081895dd4",
+  "published": false
+}

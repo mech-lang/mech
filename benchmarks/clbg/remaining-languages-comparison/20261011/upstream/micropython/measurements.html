@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="all" >
+<meta name="description" content="Performance measurements for all the MicroPython toy benchmark programs." >
+<title>MicroPython performance measurements (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article,footer{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}code, h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}nav p{margin:0 .5em}ul{clear:left;margin:-0.3em 0 1.5em;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a,span{border-bottom: .1em solid #333;padding-bottom: .1em}.best{font-weight:bold}.message{font-size: .8em}table{color:#333;margin:1.3em auto 0;text-align:right}tbody::after{content:"-";display:block;line-height:2.6em;visibility:hidden}td{border-bottom: .15em dotted #eee;padding: .7em 0 0 1em}td a, th a{display:block}td:first-child,th:first-child{text-align:left;padding-left:0}th{font-weight:normal;padding:0 0 0 1em}@media only screen{th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7){display:none}}@media only screen and (min-width: 27em){th:nth-child(3),td:nth-child(3){display:table-cell}}@media only screen and (min-width: 38em){th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6){display:table-cell}}@media only screen and (min-width: 47em){th:nth-child(7),td:nth-child(7){display:table-cell}}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+
+<article>
+  <div>
+    <h1>all MicroPython programs & measurements</h1>
+    <aside>
+      <p>File system caches and swap are cleared before measurements are made for each program — so each program has a similiar initial context. That makes the first measurements different from later measurements.
+    </aside>
+  </div>
+  <section>
+    <table>
+      <tbody>
+      <tr>
+        <td colspan="7" class="message"><p>MicroPython v1.24.0<br>
+preview.44.ge9c898cb3<br>
+
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/binarytrees-micropython-2.html"><span>binary-trees&nbsp;&nbsp;#2</span></a>
+          <td>0.02
+          <td>0.510
+          <td>16,294
+          <td>344
+          <td>
+          <td>&nbsp;7
+        <tr>
+          <td><a href="../program/binarytrees-micropython-2.html"><span>binary-trees&nbsp;&nbsp;#2</span></a>
+          <td>134.98—143.73
+          <td>133.094
+          <td>1,079,497
+          <td>344
+          <td>
+          <td>&nbsp;21
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/fannkuchredux-micropython-8.html"><span>fannkuch-redux&nbsp;&nbsp;#8</span></a>
+          <td>15.86
+          <td>16.293
+          <td>3,613
+          <td>414
+          <td>
+          <td>&nbsp;10
+        <tr>
+          <td><a href="../program/fannkuchredux-micropython-8.html"><span>fannkuch-redux&nbsp;&nbsp;#8</span></a>
+          <td>2,796.85
+          <td>2,797.318
+          <td>3,613
+          <td>414
+          <td>
+          <td>&nbsp;12
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/fasta-micropython-8.html"><span>fasta&nbsp;&nbsp;#8</span></a>
+          <td>6.60
+          <td>7.019
+          <td>8,499
+          <td>730
+          <td>
+          <td>&nbsp;250,000
+        <tr>
+          <td><a href="../program/fasta-micropython-8.html"><span>fasta&nbsp;&nbsp;#8</span></a>
+          <td>637.95
+          <td>638.542
+          <td>267,743
+          <td>730
+          <td>
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <td><a href="../program/knucleotide-micropython-8.html"><span>k-nucleotide&nbsp;&nbsp;#8</span></a>
+          <td>
+          <td class="message">Timed&nbsp;Out
+          <td>
+          <td>
+          <td>
+          <td>&nbsp;250,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/mandelbrot-micropython-3.html"><span>mandelbrot&nbsp;&nbsp;#3</span></a>
+          <td>11.33
+          <td>11.945
+          <td>6,218
+          <td>319
+          <td>
+          <td>&nbsp;1,000
+        <tr>
+          <td><a href="../program/mandelbrot-micropython-3.html"><span>mandelbrot&nbsp;&nbsp;#3</span></a>
+          <td>2,769.52
+          <td>2,770.082
+          <td>38,892
+          <td>319
+          <td>
+          <td>&nbsp;16,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/mandelbrot-micropython-8.html"><span>mandelbrot&nbsp;&nbsp;#8</span></a>
+          <td>20.34—20.92
+          <td>20.309
+          <td>5,935
+          <td>392
+          <td>
+          <td>&nbsp;1,000
+        <tr>
+          <td><a href="../program/mandelbrot-micropython-8.html"><span>mandelbrot&nbsp;&nbsp;#8</span></a>
+          <td>
+          <td class="message">Timed&nbsp;Out
+          <td>
+          <td>
+          <td>
+          <td>&nbsp;16,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/nbody-micropython-8.html"><span>n-body&nbsp;&nbsp;#8</span></a>
+          <td>17.39
+          <td>17.877
+          <td>5,960
+          <td>1172
+          <td>
+          <td>&nbsp;500,000
+        <tr>
+          <td><a href="../program/nbody-micropython-8.html"><span>n-body&nbsp;&nbsp;#8</span></a>
+          <td>1,732.05
+          <td>1,732.372
+          <td>5,976
+          <td>1172
+          <td>
+          <td>&nbsp;50,000,000
+      <tbody>
+        <tr>
+          <td><a href="../program/revcomp-micropython-4.html"><span>reverse-complement&nbsp;&nbsp;#4</span></a>
+          <td>
+          <td class="message">Empty
+          <td>
+          <td>
+          <td>
+          <td>&nbsp;250,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/spectralnorm-micropython-8.html"><span>spectral-norm&nbsp;&nbsp;#8</span></a>
+          <td>6.90
+          <td>7.354
+          <td>1,079,759
+          <td>334
+          <td>
+          <td>&nbsp;500
+        <tr>
+          <td><a href="../program/spectralnorm-micropython-8.html"><span>spectral-norm&nbsp;&nbsp;#8</span></a>
+          <td>726.12
+          <td>726.321
+          <td>1,079,648
+          <td>334
+          <td>
+          <td>&nbsp;5,500
+    </table>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../how-programs-are-measured.html"><span>How programs are measured</span></a>
+    </ul>
+  </nav>
+</footer>
+

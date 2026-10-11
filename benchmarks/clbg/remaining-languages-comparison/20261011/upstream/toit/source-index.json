@@ -1,0 +1,52 @@
+[
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-toit-1.html",
+    "source": "upstream/toit/binarytrees-toit-1.toit",
+    "sha256": "61e1a2ca012cefe62a70b54a12a0a35731f5f68cde9ef2e52fd912102a18f602"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-toit-2.html",
+    "source": "upstream/toit/binarytrees-toit-2.toit",
+    "sha256": "5d7c8955a8533280976ac7a488a3ed8c4a15f1e83362f79cef8b3a4f6b885ea1"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-toit-8.html",
+    "source": "upstream/toit/fannkuchredux-toit-8.toit",
+    "sha256": "cfdf1d28a2e4bcab4bccbda1f6e3778472019500ac90edd6d9b5458f017a2aa5"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-toit-1.html",
+    "source": "upstream/toit/fasta-toit-1.toit",
+    "sha256": "6e7141a0fb2308eea68fce32499b7f9b79436adcd50fb612cf9ac7a573791fe2"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-toit-8.html",
+    "source": "upstream/toit/fasta-toit-8.toit",
+    "sha256": "ad3dbe3b97336266eb8077b589b79be09975053d3bff538412a5b7b6b7d62943"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-toit-8.html",
+    "source": "upstream/toit/knucleotide-toit-8.toit",
+    "sha256": "26f2ea105a83f9b49a1866b03c256cda98fc2c73e5326300fd6ce3250190643c"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-toit-8.html",
+    "source": "upstream/toit/mandelbrot-toit-8.toit",
+    "sha256": "81d0dc61682198b03f5f202f434ab747fd1ee64ad36e14d278d1156c53dc5433"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-toit-8.html",
+    "source": "upstream/toit/nbody-toit-8.toit",
+    "sha256": "80f67e75e951e0b9291dc7f3bcab08c78d21dfdc318c6998cf960bbded648239"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-toit-1.html",
+    "source": "upstream/toit/revcomp-toit-1.toit",
+    "sha256": "653d97a68580645407c7c990637430c1d9b0507547485647f86c993eb24d451c"
+  },
+  {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-toit-8.html",
+    "source": "upstream/toit/spectralnorm-toit-8.toit",
+    "sha256": "12498a8a6684768c45d511f88411eab517feeac23528832da51d566bfd60a712"
+  }
+]

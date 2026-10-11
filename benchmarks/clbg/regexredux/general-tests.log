@@ -1,0 +1,117 @@
+   Compiling serde_core v1.0.229
+   Compiling syn v2.0.119
+   Compiling syn v3.0.3
+   Compiling num-bigint v0.4.8
+   Compiling serde_json v1.0.151
+   Compiling cpufeatures v0.3.0
+   Compiling smallvec v1.15.2
+   Compiling aho-corasick v1.1.4
+   Compiling sha2 v0.11.0
+   Compiling regalloc2 v0.15.2
+   Compiling cpufeatures v0.2.17
+   Compiling cc v1.3.0
+   Compiling sha2 v0.10.9
+   Compiling num-rational v0.4.2
+   Compiling serde_derive v1.0.229
+   Compiling regex-automata v0.4.16
+   Compiling indexmap v2.14.0
+   Compiling synstructure v0.13.2
+   Compiling gimli v0.33.0
+   Compiling blake3 v1.8.5
+   Compiling bstr v1.13.0
+   Compiling nalgebra-macros v0.3.0
+   Compiling zerofrom-derive v0.1.7
+   Compiling serde v1.0.229
+   Compiling yoke-derive v0.8.2
+   Compiling nalgebra v0.34.2
+   Compiling zerovec-derive v0.11.3
+   Compiling bincode v2.0.1
+   Compiling displaydoc v0.2.6
+   Compiling zerofrom v0.1.8
+   Compiling grapheme_macro v2.0.0
+   Compiling yoke v0.8.3
+   Compiling bitflags v2.13.1
+   Compiling zerovec v0.11.6
+   Compiling notify-types v2.1.0
+   Compiling globset v0.4.19
+   Compiling zerotrie v0.2.4
+   Compiling getrandom v0.4.3
+   Compiling mach2 v0.4.3
+   Compiling tinystr v0.8.3
+   Compiling icu_locale_core v2.2.0
+   Compiling potential_utf v0.1.5
+   Compiling cranelift-codegen v0.131.3
+   Compiling icu_collections v2.2.0
+   Compiling fsevent-sys v4.1.0
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib)
+   Compiling toml_edit v0.23.10+spec-1.0.0
+   Compiling icu_provider v2.2.0
+   Compiling icu_properties v2.2.0
+   Compiling region v3.0.2
+   Compiling notify v8.2.0
+   Compiling grapheme v1.3.0
+   Compiling uuid v1.24.0
+   Compiling ignore v0.4.31
+   Compiling mech-core v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/core)
+   Compiling object v0.39.1
+   Compiling wasmtime-internal-jit-icache-coherence v44.0.3
+   Compiling regex v1.13.1
+   Compiling cranelift-module v0.131.3
+   Compiling cranelift-native v0.131.3
+   Compiling cranelift-frontend v0.131.3
+   Compiling mech-syntax v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/syntax)
+   Compiling mech-bytecode v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/bytecode)
+   Compiling mech-logic v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/logic)
+   Compiling mech-range v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/range)
+   Compiling mech-string v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/string)
+   Compiling mech-stats v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/stats)
+   Compiling mech-engine v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine)
+   Compiling mech-compare v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/compare)
+   Compiling mech-matrix v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/matrix)
+   Compiling cranelift-object v0.131.3
+   Compiling cranelift-jit v0.131.3
+   Compiling mech-compute v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/compute)
+   Compiling mech-runtime v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/runtime)
+   Compiling mech-combinatorics v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/set)
+   Compiling mech-math v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/math)
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 11m 02s
+     Running unittests src/lib.rs (benchmarks/clbg/nbody/mech-driver/target/release/deps/mech_gpu-ef7ddad041539b16)
+
+running 32 tests
+test batched::axis_tests::declared_access_axis_disambiguates_square_matrix_selection ... ok
+test batched::axis_tests::gpu_matrix_solve_guard_rejects_zero_and_nonfinite_results ... ok
+test batched::axis_tests::rectangular_axis_and_rectangle_modes_preserve_selector_order ... ok
+test batched::axis_tests::rectangular_linear_selection_uses_cardinality_and_preserves_duplicates ... ok
+test batched::axis_tests::scalar_instruction_expansion_is_admitted_before_cartesian_emission ... ok
+test batched::axis_tests::static_float_selectors_use_source_truncation_semantics ... ok
+test batched::axis_tests::static_range_endpoints_preserve_declared_index_conversion ... ok
+test control::bigint::tests::floor_division_and_session_retirement ... ok
+test control::bigint::tests::signed_arithmetic_aliasing_and_reused_storage ... ok
+test execution_plan::tests::invalid_binding_sizes_and_aliases_are_rejected ... ok
+test execution_plan::tests::physical_input_outputs_alias_input_only_when_no_output_binding_exists ... ok
+test execution_plan::tests::physical_revision_tracks_the_complete_allocation_contract ... ok
+test execution_plan::tests::publication_storage_owns_a_double_buffer_without_a_shader_read ... ok
+test execution_plan::tests::serialized_execution_plan_rejects_unknown_versions ... ok
+test memory::tests::accounting_only_test_registration_exercises_exact_device_lifecycle ... ok
+test memory::tests::adapter_buffer_limit_is_a_structured_plan_rejection ... ok
+test memory::tests::exact_gpu_binding_bytes_are_planned_before_creation ... ok
+test memory::tests::readback_staging_reuses_the_submission_transfer_scope ... ok
+test memory::tests::state_write_accounting_follows_the_selected_double_buffer_group ... ok
+test sequence::runtime::regex_tests::deferred_scalar_consumers_observe_the_same_value_once ... ok
+test sequence::runtime::regex_tests::invalid_patterns_are_reported_and_compilations_are_cached ... ok
+test sequence::runtime::regex_tests::nonoverlapping_bytes_empty_matches_and_literal_replacement ... ok
+test tests::empty_concatenation_wgsl_does_not_divide_by_zero ... ok
+test tests::horizontal_concatenation_has_cpu_wgsl_indexing_parity ... ok
+test tests::vertical_concatenation_has_cpu_wgsl_indexing_parity ... ok
+test batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing ... ok
+test batched::axis_tests::directly_published_inputs_define_fixed_shape_batch_storage ... ok
+test batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable ... ok
+test batched::axis_tests::published_static_selector_remains_materialized ... ok
+test batched::axis_tests::range_produced_gpu_selectors_use_bounded_source_typed_semantics ... ok
+test batched::axis_tests::tuple_published_static_selectors_share_the_interface_publication_contract ... ok
+test batched::axis_tests::generated_selector_family_survives_bytecode_and_gpu_static_lowering ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.92s
+

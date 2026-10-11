@@ -1,0 +1,7 @@
+More(a<u64>, b<u64>, i<u64>) => <bool> := i < 5
+Step(a<u64>, b<u64>, i<u64>) = (x<u64>, y<u64>, j<u64>) :=
+  x := b
+  y := a
+  j := i + 1.
+(a, b, i) := control/while((11, 29, 0), More, Step)
+io/print("{} {} {}\n", a, b, i)

@@ -1,0 +1,8 @@
+{
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+  "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-expanded-v2-after",
+  "binary_sha256": "2d7c1f7f26b522d02114a12444f2a40bab09b1237440ece17a30d471048cae1f",
+  "benchmark": "fasta",
+  "chart_key": "fasta:mech-fasta-final-expanded-v2"
+}

@@ -1,0 +1,2195 @@
+{
+  "status": "prepared",
+  "language": "smalltalk",
+  "implementation": "Pharo",
+  "release_year": 1972,
+  "image_version": "Pharo14.0 SNAPSHOT 3221b560a7, 2026-10-08",
+  "vm_version": "Pharo v12.0.5-beta commit 7884d2853, 2026-09-22",
+  "vm": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+  "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+  "base_image": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/base-image/Pharo14.0-SNAPSHOT-64bit-3221b560a7.image",
+  "base_image_sha256": "a8b11d6f2360b6704743221edee2c8ccad775b3a96d22d12831a9ca2c320e0b0",
+  "image_archive_sha256": "fb2db3ede5a139a6013b918c037a789417f548cfeb8b8a7a9bcf938ecb78e172",
+  "vm_archive_sha256": "a8bb54cf60814608540603c89e464ae92511d08834d71f5c3ecb22193571c9b2",
+  "install_urls": [
+    "https://pharo.org/download",
+    "https://get.pharo.org/64/140+vm",
+    "https://files.pharo.org/get-files/140/pharoImage-arm64.zip",
+    "https://files.pharo.org/get-files/140/pharo-vm-Darwin-arm64-stable.zip"
+  ],
+  "timings_policy": "No full timings in preparation. Full run_command includes cold native VM, loading compiled image, all computation/I/O, and shutdown; image fileIn/compile excluded.",
+  "source_policy": "All application classes, helpers, FFI, compute and application stream methods count in LOC. Generic eval entry expression only dispatches numeric argv to a compiled Smalltalk application and flushes/exits; no host executor.",
+  "runtimes": {
+    "pharo": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+      "sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "version": "v12.0.5-beta 7884d2853, Pharo14.0 SNAPSHOT 3221b560a7"
+    }
+  },
+  "libraries": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Info.plist": "c84d57eaf0b321f734ffb4c4ba4d248e2fda3e9998e7dfa38c001764a332a289",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/PharoSources.icns": "89d5c7b20b8d92255542452509cf2e5fe1e155e22c0d851c89973f9c0d1e8bd3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/pharo.signatures": "cc4b5d2515b0ad7810b547ed5567646f46a1be6b1251094caf61a575d3f3bae9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/Pharo.icns": "55e3e75664059787516694c5cc0646ab563b6ad51b40021fe4982c93c414a60d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/PharoImage.icns": "e45ed55471c17caca9cf87acde6a64e9e0671d35fa783850a0de8ac9a3d35718",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/Resources/PharoChanges.icns": "241248fd7059f68da58954ca2189d36a2c94c1361f470eb2d121ea86461ded4a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libB2DPlugin.dylib": "2028af177b1c1593a893c9896e5d99d9ba73fea520c84a4a72cb723ed0ed216d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libLocalePlugin.dylib": "a62fee9bda168bc447f243b007fe890c14330a8d11daeacf053a3d6efc63416c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libz.dylib": "cdcd6caa72a3865071c62562f3188b4d05ef11f10d54df86861a05e56fef0e04",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libLargeIntegers.dylib": "c8d97e79774b88f543fa20615bf29fde900a8a7e1b073d621857a7a93314b5c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libDSAPrims.dylib": "9b5dbfef117a9f511aed42c449fcacd578c2832ea59508f820d98812fed5dee6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libgit2-1.9.1.9.dylib": "27c468bc9246c622d54c69ddbba556106ca502bad90c36057931855aed00e669",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfreetype.dylib": "e0165c53d98f02b0c56d021e3f4ece623804ba6ce4649f2bfe67f57ad6ba9fea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfontconfig.dylib": "1eb8439741139cf2f72145a88fe5dee2e3e3f0318c8b61b1b5ba8bbe83a25db3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libFloatArrayPlugin.dylib": "4a52e7b1236e44a967641ab00de38144ddeb02445000b2543aab397908dc2558",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libgit2-1.9.dylib": "27c468bc9246c622d54c69ddbba556106ca502bad90c36057931855aed00e669",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssh2.1.0.1.dylib": "33eee6ca2c0f1e98f157feb5f427537c1df2195d1115b61dc9977288ae61212a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libharfbuzz-cairo.dylib": "9bbec62d86448740a532a1cd4400ad5a45ea25da4538f91b5cbcde4765c55191",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSqueakSSL.dylib": "d401857fdbb4376cbfe1ba54f684c66d6de0a06d272923b81b99c3a25fb81a08",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libcairo.2.dylib": "a550a39e8ac2c50d58b23b9df7485de9ab79fa811332533b9380582243361d28",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSurfacePlugin.dylib": "e864d6fd806556451fb1f77fa7967f94849ed4e7155539b2e316d9eb812678af",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libharfbuzz-cairo.0.dylib": "9bbec62d86448740a532a1cd4400ad5a45ea25da4538f91b5cbcde4765c55191",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libbz2.dylib": "b309062c08cf76fb5d2e565b5d043fd35d40373b8985c949d5c7a4abefd96bec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSocketPlugin.dylib": "5dcb8d27ed851f9534ef9842ea9533590907bb4347a984c70a2df6c4abcd63ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libgit2-1.9.1.9.0.dylib": "27c468bc9246c622d54c69ddbba556106ca502bad90c36057931855aed00e669",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL2-2.0.0.dylib": "2ca3a8e69016096d045bbd63a3581574e80a8edd118274d738022cfb655a486f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libFileAttributesPlugin.dylib": "6a301410858b843bb0c4db514129942f09168e94a79deac53f4a168e5b0145ad",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libBitBltPlugin.dylib": "6d5a1c4ae0173184bb564f4f9e6308be8651069f8e5afacfd840a91fb59e9736",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpng16.16.dylib": "5d9233da48c0434fd3ed45ef18dcea4eae0fa86c9e913c1ea32d7851a735bb02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssl.dylib": "4816432890925aed44c1d11e9ce9bf0ace8d127694c3c2f115bc613cf465ca6c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libJPEGReadWriter2Plugin.dylib": "827fcb226208fc9d8953af0e10123f8f4056b725b41d50e7c7b0af2397058836",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libTestLibrary.dylib": "74019d9f44172a1fcf97b3f01e0df4ac6ade09b426a11a371cf6b745d2bf3cb7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpixman-1.dylib": "9204dde32747e1bf314267efec44e7a1938922040898a076726e0cc5b61a53c3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssl.3.dylib": "4816432890925aed44c1d11e9ce9bf0ace8d127694c3c2f115bc613cf465ca6c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL3.0.dylib": "7b9e5c91603924e30a6447104b02683592fe8ca19484b2becaa5fc2f5f67c736",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libcairo.dylib": "a550a39e8ac2c50d58b23b9df7485de9ab79fa811332533b9380582243361d28",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libFilePlugin.dylib": "1ac325b43db316ad0afe4653301c60a8c179c9e608bb804ed2881d85b13cf756",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libMiscPrimitivePlugin.dylib": "8751731a1b82ce4883185fa4fd83b4d93f6180179fe4d315964a3ab9e8cf4bb6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssh2.1.dylib": "33eee6ca2c0f1e98f157feb5f427537c1df2195d1115b61dc9977288ae61212a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libUnixOSProcessPlugin.dylib": "78cab1555f4775d20c26ff43a9c797d8a232802f0b392f1863da88404b058282",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfreetype.6.dylib": "e0165c53d98f02b0c56d021e3f4ece623804ba6ce4649f2bfe67f57ad6ba9fea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libcrypto.3.dylib": "326b87e415b239946454407bce6222d9705319fb6846a8fce8aa879d78bc1644",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfreetype.6.20.6.dylib": "e0165c53d98f02b0c56d021e3f4ece623804ba6ce4649f2bfe67f57ad6ba9fea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpng.dylib": "5d9233da48c0434fd3ed45ef18dcea4eae0fa86c9e913c1ea32d7851a735bb02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libharfbuzz.0.dylib": "bb596db507e2246734e1145007b0ea580756883054bfb144304225505b85ef17",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL2.dylib": "2ca3a8e69016096d045bbd63a3581574e80a8edd118274d738022cfb655a486f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libssh2.dylib": "33eee6ca2c0f1e98f157feb5f427537c1df2195d1115b61dc9977288ae61212a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libUUIDPlugin.dylib": "e9f876bcf9a1a01e9c4575de3ee28219805bf05c093cb6ea02c3d5ffcfb6cd36",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libz.1.3.1.dylib": "cdcd6caa72a3865071c62562f3188b4d05ef11f10d54df86861a05e56fef0e04",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libcrypto.dylib": "326b87e415b239946454407bce6222d9705319fb6846a8fce8aa879d78bc1644",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libfontconfig.1.dylib": "1eb8439741139cf2f72145a88fe5dee2e3e3f0318c8b61b1b5ba8bbe83a25db3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libNewFilePlugin.dylib": "c78fea3fc78ca5cb105e43a6549c4a4249fd7464b9f1cceb04e637e425dac276",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libJPEGReaderPlugin.dylib": "b35faf40e39de75bc892621a7c969ba164fe7c6c33996330a30db5fc1ec7f118",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpng16.dylib": "5d9233da48c0434fd3ed45ef18dcea4eae0fa86c9e913c1ea32d7851a735bb02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libbz2.1.dylib": "b309062c08cf76fb5d2e565b5d043fd35d40373b8985c949d5c7a4abefd96bec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL3.dylib": "7b9e5c91603924e30a6447104b02683592fe8ca19484b2becaa5fc2f5f67c736",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libbz2.1.0.9.dylib": "b309062c08cf76fb5d2e565b5d043fd35d40373b8985c949d5c7a4abefd96bec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libharfbuzz.dylib": "bb596db507e2246734e1145007b0ea580756883054bfb144304225505b85ef17",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpixman-1.0.dylib": "9204dde32747e1bf314267efec44e7a1938922040898a076726e0cc5b61a53c3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libPharoVMCore.dylib": "3e0e63544cb6fd33ec2632dfaf721e5739bd43c597f2316c1e8b931b719248c2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libSDL2-2.0.dylib": "2ca3a8e69016096d045bbd63a3581574e80a8edd118274d738022cfb655a486f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libz.1.dylib": "cdcd6caa72a3865071c62562f3188b4d05ef11f10d54df86861a05e56fef0e04",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libtty.dylib": "a24783f9ee972a1f283acb6585f452b3a699f3cca21c1a874beb0757e54eafac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Plugins/libpng16.16.47.0.dylib": "5d9233da48c0434fd3ed45ef18dcea4eae0fa86c9e913c1ea32d7851a735bb02",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-published-1.image": "141cf34c5779e52dab1f1712d3ea9fc2dad34ae0f1da583fc33caee0ed16bcc3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-published-1.image": "0917ea349aa825ca8504a556606d7de28fb081134c1ccb6724b521a5fc59f4f6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-1.image": "6db9db0fc8cd91bb99b49aa93607e8fbbc2216ae1a2ff74700633404523cec1a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-2.image": "9e2c6b02a66cd919e5ae584f5a6c5f357e2c2e3a4cb045eac498e334ac81147e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-published-2.image": "3310c6082d26669a4e784d1708fa7ef95b1bce3e630e31a3929e5b86a41dbdfa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-1.image": "3d6b27d973e2bdea28f382dff19bef8156b56d0c07b0e80157fb864509e4a9c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-2.image": "1cc8462902d3b0ee8176b44d978d4db675beb2ef71baab2ec6df9003ebafc3a2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-published-1.image": "e36aa25fff55d2780c281d48ea2f67fa8160d42b54e7095c573e9c3e3643c74e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-published-1.image": "ca4714e82b0dda590444423ad10bfc6775d9a74422ae6ca1b23dd7979aff32da",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-published-2.image": "24aaf508ca55f3dc6434a04bd92f09932f7ffbc9863f76fb93be6ca219ba612a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-published-1.image": "e638a363d564eff847aaa53ac07e4e45b5dfd8c1780d0ba21c9bae37486ad739",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-arrays.image": "b611d089fdadcb1eb3a06aad196eb5f21cf0f15ba06052a4d41ac22345bfce8f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-compact.image": "e743eedffe9c1111aea623cf77e2a31e2998aee04d5405d155a7511070a015a9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-recurrence.image": "1b8880b7252a2ce593b2e4f7703ba4948db4efffd2d702b234ba3e3d26c453de",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-reuse.image": "025b28f6d437ec5278f9757b270e553f8aa7c036829e0fd00894459830097af9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-floatarrays.image": "29e1d57913b53a4b5d4b548da50725009bef901c72d070a1cbee5f8c0f3a28ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-buffered.image": "c1b45b68e1abef18ad561a016a27517b8270478561c558ba288e5fde71b5e282",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-packed.image": "1e88dfd91fcef8cfc5ff472e736ece60f4453267532055228986051d9c677214",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-regex.image": "a704222d8ad89d099166cf939c3179f6cad3b3a7457a58373d9aac9f970c77e8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-pcre2.image": "a0f4634e883ae9b8ed50e9639d46920b62f38deed5e213c562ba7215a21cd227",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-streaming.image": "35c3ba858e9544751fe0f2ac702ca9eda2b871f9f5ec2d642dc0088e865530de",
+    "/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib": "c3adcd954967b7e92812831fe12c614a9ca2d12221e897a87ee379df2ac004fd"
+  },
+  "programs": [
+    {
+      "id": "binarytrees-smalltalk-published-1",
+      "key": "binarytrees:binarytrees-smalltalk-published-1",
+      "benchmark": "binarytrees",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/binarytrees-smalltalk-published-1.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/binarytrees-pharo-1.st",
+      "upstream_sha256": "fe13cf306648d630a059f758eea915e620a56aef742f50a0ec58f967dcf1860f",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-pharo-1.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "9866da5626971533492e2920bc2fc6acf4ac0db748f0a5569a56fab4f173fdb7",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "589ea0a7c9dde362e31665c47db535c9278d072c2f81385b7f817c0128e86e1e",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-published-1.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-published-1.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/binarytrees-smalltalk-published-1.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/binarytrees-smalltalk-published-1.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "141cf34c5779e52dab1f1712d3ea9fc2dad34ae0f1da583fc33caee0ed16bcc3",
+      "binary_sha256": "141cf34c5779e52dab1f1712d3ea9fc2dad34ae0f1da583fc33caee0ed16bcc3",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 60,
+        "normalized_loc": 77,
+        "expansions": [
+          {
+            "line": 31,
+            "extra_lines": 3,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 32,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 43,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 44,
+            "extra_lines": 3,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 45,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 49,
+            "extra_lines": 3,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 50,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 10,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "fannkuchredux-smalltalk-published-1",
+      "key": "fannkuchredux:fannkuchredux-smalltalk-published-1",
+      "benchmark": "fannkuchredux",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/fannkuchredux-smalltalk-published-1.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/fannkuchredux-pharo-1.st",
+      "upstream_sha256": "d1ad484144dd20ef6836af4612a4d300fcad734a20228c0b626cc21335f162e7",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-pharo-1.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "1a8c275f4687616e28f3c64fc0f580bd775fd7e487eed621723b8144bd9253e3",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "558c9bc8bd77e48dbe97ec09364b9f0cffb3d48ffddb820d040d940152114fc0",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-published-1.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-published-1.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fannkuchredux-smalltalk-published-1.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fannkuchredux-smalltalk-published-1.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "0917ea349aa825ca8504a556606d7de28fb081134c1ccb6724b521a5fc59f4f6",
+      "binary_sha256": "0917ea349aa825ca8504a556606d7de28fb081134c1ccb6724b521a5fc59f4f6",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 84,
+        "normalized_loc": 88,
+        "expansions": [
+          {
+            "line": 24,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 47,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 96,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 97,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 7,
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 7
+      }
+    },
+    {
+      "id": "fasta-smalltalk-published-1",
+      "key": "fasta:fasta-smalltalk-published-1",
+      "benchmark": "fasta",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/fasta-smalltalk-published-1.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/fasta-pharo-1.st",
+      "upstream_sha256": "e7a29528f59efc8ca216370b52d8bc1b8fb3c8c90c975ff4767844d203a73cb3",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-pharo-1.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "0fcf0f9071ad1514f324699ad321a89daec557e19db9a13be55b2a009b5fce9f",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "c37a39087f5a4250b4eae0942770eb932e18f20312cd706d7fcd0b6b4742e383",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-1.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-1.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fasta-smalltalk-published-1.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fasta-smalltalk-published-1.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "6db9db0fc8cd91bb99b49aa93607e8fbbc2216ae1a2ff74700633404523cec1a",
+      "binary_sha256": "6db9db0fc8cd91bb99b49aa93607e8fbbc2216ae1a2ff74700633404523cec1a",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 148,
+        "normalized_loc": 152,
+        "expansions": [
+          {
+            "line": 74,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 88,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 97,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "fasta-smalltalk-published-2",
+      "key": "fasta:fasta-smalltalk-published-2",
+      "benchmark": "fasta",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/fasta-smalltalk-published-2.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/fasta-pharo-2.st",
+      "upstream_sha256": "2f96377c5c90b268ca663742d9204b8fcd37aa9b8a6f407714397eaa76060f7c",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-pharo-2.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "2d90fec24c64230a930586e2cc5517943de3f915d8eb84106d5ea9adb8b12085",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "44b22c06d2a2eb6d7ada3c28129eff335f24cff3486ef6cf9600e167de0ba167",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-2.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-2.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fasta-smalltalk-published-2.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fasta-smalltalk-published-2.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "9e2c6b02a66cd919e5ae584f5a6c5f357e2c2e3a4cb045eac498e334ac81147e",
+      "binary_sha256": "9e2c6b02a66cd919e5ae584f5a6c5f357e2c2e3a4cb045eac498e334ac81147e",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-published-2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 148,
+        "normalized_loc": 152,
+        "expansions": [
+          {
+            "line": 74,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 88,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 97,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "knucleotide-smalltalk-published-2",
+      "key": "knucleotide:knucleotide-smalltalk-published-2",
+      "benchmark": "knucleotide",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/knucleotide-smalltalk-published-2.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/knucleotide-pharo-2.st",
+      "upstream_sha256": "7259aecdfdd391f3092ec394d928ae61cfd86cbe0f94568dfcfbbdec6bd09e59",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-pharo-2.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk.",
+        "Use ascending lexical ordering for equal frequencies; retain every full string-key growable-map window for all seven k lengths."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "463b62299cabe98c489050f0462d11468aab8df51dcf5adca540bcf2785315ec",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "9e2782707ffc9ab831ff12475a34fe42022fe56111234304a10feab900fa4573",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-published-2.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-published-2.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/knucleotide-smalltalk-published-2.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/knucleotide-smalltalk-published-2.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "3310c6082d26669a4e784d1708fa7ef95b1bce3e630e31a3929e5b86a41dbdfa",
+      "binary_sha256": "3310c6082d26669a4e784d1708fa7ef95b1bce3e630e31a3929e5b86a41dbdfa",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-published-2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-published-2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 74,
+        "normalized_loc": 80,
+        "expansions": [
+          {
+            "line": 64,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 65,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 72,
+            "extra_lines": 3,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 2
+      }
+    },
+    {
+      "id": "mandelbrot-smalltalk-published-1",
+      "key": "mandelbrot:mandelbrot-smalltalk-published-1",
+      "benchmark": "mandelbrot",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/mandelbrot-smalltalk-published-1.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/mandelbrot-pharo-1.st",
+      "upstream_sha256": "cd5eb5255edbde49396c0296563792abb4354e16c78aa1c5a47d0f3aa598c1aa",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-pharo-1.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk.",
+        "Compute canonical z0=0, at most 50 iterates, and reject only squared norm >4; retain complete PBM bytes and row padding."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "941e5f2daf0be6cdc4b6169dacf6bfe82c3059a93d75a7ecb0d41a82734c72e1",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "6c9400cf7d44f7f560a581d7164b357d7fe76ca34bc879a68b7898fe626352dd",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-1.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-1.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/mandelbrot-smalltalk-published-1.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/mandelbrot-smalltalk-published-1.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "3d6b27d973e2bdea28f382dff19bef8156b56d0c07b0e80157fb864509e4a9c9",
+      "binary_sha256": "3d6b27d973e2bdea28f382dff19bef8156b56d0c07b0e80157fb864509e4a9c9",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 51,
+        "normalized_loc": 57,
+        "expansions": [
+          {
+            "line": 58,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 59,
+            "extra_lines": 4,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 32,
+        "bytes": 137,
+        "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+        "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 10
+      }
+    },
+    {
+      "id": "mandelbrot-smalltalk-published-2",
+      "key": "mandelbrot:mandelbrot-smalltalk-published-2",
+      "benchmark": "mandelbrot",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/mandelbrot-smalltalk-published-2.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/mandelbrot-pharo-2.st",
+      "upstream_sha256": "72cab80dd9297ca4f7b90a14c9e2907609f1c4bdcf9670e4e83da0a8e3f017e2",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-pharo-2.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk.",
+        "Compute canonical z0=0, at most 50 iterates, and reject only squared norm >4; retain complete PBM bytes and row padding."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "19adb7651dc7e8be6309b1c6cd23a8959299f44435807b463d18f8087ecc183a",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "d62050a303c01602c539606b1247626132fa51a0e4585e46b1b4e4436555fbe6",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-2.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-2.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/mandelbrot-smalltalk-published-2.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/mandelbrot-smalltalk-published-2.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "1cc8462902d3b0ee8176b44d978d4db675beb2ef71baab2ec6df9003ebafc3a2",
+      "binary_sha256": "1cc8462902d3b0ee8176b44d978d4db675beb2ef71baab2ec6df9003ebafc3a2",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/mandelbrot-smalltalk-published-2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 49,
+        "normalized_loc": 55,
+        "expansions": [
+          {
+            "line": 59,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 60,
+            "extra_lines": 4,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 32,
+        "bytes": 137,
+        "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+        "reference_sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 10
+      }
+    },
+    {
+      "id": "nbody-smalltalk-published-1",
+      "key": "nbody:nbody-smalltalk-published-1",
+      "benchmark": "nbody",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/nbody-smalltalk-published-1.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/nbody-pharo-1.st",
+      "upstream_sha256": "1b02c40b85292167a811843b9432f4b70642e67eee177da1aa97dbcc0dec9388",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-pharo-1.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "5dfb7e87a13dd7b06d5adb77560617b7423fa2cf47281c7783168e6bcc803486",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "fda64e3d9e6c531f2270f57245d4525f493390b376d7b8aa2b8a61ef81c952b5",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-published-1.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-published-1.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/nbody-smalltalk-published-1.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/nbody-smalltalk-published-1.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "e36aa25fff55d2780c281d48ea2f67fa8160d42b54e7095c573e9c3e3643c74e",
+      "binary_sha256": "e36aa25fff55d2780c281d48ea2f67fa8160d42b54e7095c573e9c3e3643c74e",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 168,
+        "normalized_loc": 175,
+        "expansions": [
+          {
+            "line": 168,
+            "extra_lines": 3,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 169,
+            "extra_lines": 2,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 200,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 202,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "pidigits-smalltalk-published-1",
+      "key": "pidigits:pidigits-smalltalk-published-1",
+      "benchmark": "pidigits",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/pidigits-smalltalk-published-1.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/pidigits-pharo-1.st",
+      "upstream_sha256": "156147d10672076861a9c7fbeac6522dc7fa69e576168bfe2bdad5c345c95ebb",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-pharo-1.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk.",
+        "Correct partial-line padding: exactly 10 minus remaining digits spaces, retaining arbitrary precision Pharo integers and the full spigot.",
+        "Replace the upstream remainder shortcut with both exact extract(3) and extract(4) divisions, as explicitly required by the current CLBG description."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "243615734d946dbb8534cfdb20c6ac951942ae02ffdba0cf364e4e52220a364c",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "c0a842d4bcc229b3ee5f439e980cf8f19ba344852642407fc55cf7bf1b5bfc89",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-published-1.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-published-1.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/pidigits-smalltalk-published-1.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/pidigits-smalltalk-published-1.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "image_sha256": "ca4714e82b0dda590444423ad10bfc6775d9a74422ae6ca1b23dd7979aff32da",
+      "binary_sha256": "ca4714e82b0dda590444423ad10bfc6775d9a74422ae6ca1b23dd7979aff32da",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 69,
+        "normalized_loc": 74,
+        "expansions": [
+          {
+            "line": 37,
+            "extra_lines": 3,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 56,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 57,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 103,
+        "bytes": 167,
+        "sha256": "d2f6289aa2de82787665dfa4c55b57f9ae7088d36e9cfc691949823681781bf3",
+        "reference_sha256": "d2f6289aa2de82787665dfa4c55b57f9ae7088d36e9cfc691949823681781bf3",
+        "exit_code": 0
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 6
+      }
+    },
+    {
+      "id": "revcomp-smalltalk-published-2",
+      "key": "revcomp:revcomp-smalltalk-published-2",
+      "benchmark": "revcomp",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/revcomp-smalltalk-published-2.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/revcomp-pharo-2.st",
+      "upstream_sha256": "1c6afab2a179174a1043a46d5cc8bb7fb731477f632178d2c37dda1b0efcc1e3",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-pharo-2.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk.",
+        "Published buffered Pharo implementation; computes and emits the complete three canonical FASTA records."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "f86f5bbdb3b177fb537ee1e8f4d311d1376f148d9bcb8023a89527310e0ff140",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "a91bc1da85e10c9d107f6fbedbfc384fc33b3769f213f415a7476844618cf4e6",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-published-2.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-published-2.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/revcomp-smalltalk-published-2.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/revcomp-smalltalk-published-2.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "24aaf508ca55f3dc6434a04bd92f09932f7ffbc9863f76fb93be6ca219ba612a",
+      "binary_sha256": "24aaf508ca55f3dc6434a04bd92f09932f7ffbc9863f76fb93be6ca219ba612a",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-published-2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-published-2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 50,
+        "normalized_loc": 51,
+        "expansions": [
+          {
+            "line": 57,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "spectralnorm-smalltalk-published-1",
+      "key": "spectralnorm:spectralnorm-smalltalk-published-1",
+      "benchmark": "spectralnorm",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/spectralnorm-smalltalk-published-1.st",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/smalltalk/spectralnorm-pharo-1.st",
+      "upstream_sha256": "cd5adae07edd54ed7fe513d4cbf5ebcdf4d2c54fb89bcb7f4662d40857542d9e",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-pharo-1.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use the Pharo 14 uppercase package-name and standard instance-side fileIn protocol syntax; all computation remains Smalltalk."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "273ca8021b9ae854850cbe9013f42490b2fd4b2fdf02936a4b55d59e1d4338c3",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "8acb0c3103232a40783d841a57080b53d4d4112f0c374469a06921eaa497ed38",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-published-1.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-published-1.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/spectralnorm-smalltalk-published-1.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/spectralnorm-smalltalk-published-1.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "e638a363d564eff847aaa53ac07e4e45b5dfd8c1780d0ba21c9bae37486ad739",
+      "binary_sha256": "e638a363d564eff847aaa53ac07e4e45b5dfd8c1780d0ba21c9bae37486ad739",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-published-1.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 61,
+        "normalized_loc": 62,
+        "expansions": [
+          {
+            "line": 34,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 30,
+        "bytes": 12,
+        "sha256": "bd01322781ac2e7492973559cfb23b4db14f8ea2ab3379eca13a2e8a2a0156d1",
+        "reference_sha256": "bd01322781ac2e7492973559cfb23b4db14f8ea2ab3379eca13a2e8a2a0156d1",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "binarytrees-smalltalk-arrays",
+      "key": "binarytrees:binarytrees-smalltalk-arrays",
+      "benchmark": "binarytrees",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/binarytrees-smalltalk-arrays.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Two-slot Array records allocate a distinct equal-size object for every interior and leaf; recursive construction/checks retained. The long-lived root is allocated before temporary iterations and checked after them."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "738697eb49fc072fe662a43f1e4d8c8e124b7297489f8487b40127b6164d7c13",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "924c7b3c7796de03a616b6c75e79de8605f3d69eaa8d7bbc87beca90ad59aaca",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-arrays.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-arrays.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/binarytrees-smalltalk-arrays.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/binarytrees-smalltalk-arrays.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "b611d089fdadcb1eb3a06aad196eb5f21cf0f15ba06052a4d41ac22345bfce8f",
+      "binary_sha256": "b611d089fdadcb1eb3a06aad196eb5f21cf0f15ba06052a4d41ac22345bfce8f",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-arrays.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/binarytrees-smalltalk-arrays.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 42,
+        "normalized_loc": 56,
+        "expansions": [
+          {
+            "line": 22,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 23,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 24,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 25,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 26,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 33,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 34,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 35,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 36,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 37,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 39,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 40,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 41,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 42,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 10,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "pidigits-smalltalk-compact",
+      "key": "pidigits:pidigits-smalltalk-compact",
+      "benchmark": "pidigits",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/pidigits-smalltalk-compact.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "The full arbitrary precision streaming pi spigot is written in one Smalltalk method, using standard Integer operations; no native benchmark routine or precomputed digits. Correct partial output-line padding."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "8dc7a19d622c659ee77eed3aab147e4d9a30ea208c9599372b6c2f17f21166ca",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "31bac3b5f93b2d8814e9388dd010e2fd192382882e8930541603749f7f3e0d99",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-compact.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-compact.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/pidigits-smalltalk-compact.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/pidigits-smalltalk-compact.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "e743eedffe9c1111aea623cf77e2a31e2998aee04d5405d155a7511070a015a9",
+      "binary_sha256": "e743eedffe9c1111aea623cf77e2a31e2998aee04d5405d155a7511070a015a9",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-compact.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/pidigits-smalltalk-compact.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 35,
+        "normalized_loc": 38,
+        "expansions": [
+          {
+            "line": 32,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 33,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 34,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 103,
+        "bytes": 167,
+        "sha256": "d2f6289aa2de82787665dfa4c55b57f9ae7088d36e9cfc691949823681781bf3",
+        "reference_sha256": "d2f6289aa2de82787665dfa4c55b57f9ae7088d36e9cfc691949823681781bf3",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 6
+      }
+    },
+    {
+      "id": "spectralnorm-smalltalk-recurrence",
+      "key": "spectralnorm:spectralnorm-smalltalk-recurrence",
+      "benchmark": "spectralnorm",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/spectralnorm-smalltalk-recurrence.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use standard Float64Array and exact integer recurrences for the implicit matrix denominator. Retain all 40 dense matrix-vector passes with independent dimension n; no cached matrix or eigenvalue."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "6e03161f65f3d7b273565aacfe23706e8675f8c90e0db649fde93c0f84c4401a",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "077eaec874ffbb04d8895d83504648f671cb9009537b1e3ca1eddc52d549a8bb",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-recurrence.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-recurrence.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/spectralnorm-smalltalk-recurrence.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/spectralnorm-smalltalk-recurrence.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "1b8880b7252a2ce593b2e4f7703ba4948db4efffd2d702b234ba3e3d26c453de",
+      "binary_sha256": "1b8880b7252a2ce593b2e4f7703ba4948db4efffd2d702b234ba3e3d26c453de",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-recurrence.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/spectralnorm-smalltalk-recurrence.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 36,
+        "normalized_loc": 37,
+        "expansions": [
+          {
+            "line": 36,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 30,
+        "bytes": 12,
+        "sha256": "bd01322781ac2e7492973559cfb23b4db14f8ea2ab3379eca13a2e8a2a0156d1",
+        "reference_sha256": "bd01322781ac2e7492973559cfb23b4db14f8ea2ab3379eca13a2e8a2a0156d1",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "fannkuchredux-smalltalk-reuse",
+      "key": "fannkuchredux:fannkuchredux-smalltalk-reuse",
+      "benchmark": "fannkuchredux",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/fannkuchredux-smalltalk-reuse.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Enumerate all n! permutations in canonical prefix-rotation order and preserve alternating checksum. Reuse a scratch array through the standard bulk copy primitive rather than allocate one array per permutation; no input-specific factorial truncation."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "ca4bb0e1790a38d64359d38309c6d5eff3ec1f4469b2187d8d483e4abac09192",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "62c2aa61891257e6691ce3723380833c5b12d6f74f01888667f2b6cf780e94f2",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-reuse.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-reuse.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fannkuchredux-smalltalk-reuse.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fannkuchredux-smalltalk-reuse.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "025b28f6d437ec5278f9757b270e553f8aa7c036829e0fd00894459830097af9",
+      "binary_sha256": "025b28f6d437ec5278f9757b270e553f8aa7c036829e0fd00894459830097af9",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-reuse.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fannkuchredux-smalltalk-reuse.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 49,
+        "normalized_loc": 56,
+        "expansions": [
+          {
+            "line": 42,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 44,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 45,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 46,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 47,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 48,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 49,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 7,
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 7
+      }
+    },
+    {
+      "id": "nbody-smalltalk-floatarrays",
+      "key": "nbody:nbody-smalltalk-floatarrays",
+      "benchmark": "nbody",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/nbody-smalltalk-floatarrays.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Complete five-body initialization, momentum offset, exact binary64 square roots/divisions and all ten pair updates per step in Smalltalk; uses ordinary Float64Array records and explicit general iteration, without C/SIMD benchmark kernels."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "f15d821d0361e2759b47655fdf1e0074f6afe66c2324fead4b8c011ee00ffd19",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "80c506667e54dced9a3180d548c7375c238989aa6b638e0dc89fbbd4ff20c415",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-floatarrays.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-floatarrays.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/nbody-smalltalk-floatarrays.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/nbody-smalltalk-floatarrays.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "29e1d57913b53a4b5d4b548da50725009bef901c72d070a1cbee5f8c0f3a28ac",
+      "binary_sha256": "29e1d57913b53a4b5d4b548da50725009bef901c72d070a1cbee5f8c0f3a28ac",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-floatarrays.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/nbody-smalltalk-floatarrays.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 65,
+        "normalized_loc": 67,
+        "expansions": [
+          {
+            "line": 62,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 65,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "fasta-smalltalk-buffered",
+      "key": "fasta:fasta-smalltalk-buffered",
+      "benchmark": "fasta",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/fasta-smalltalk-buffered.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Shared LCG state is advanced once for each of 8*n random symbols. Binary64 seed division and unscaled cumulative probabilities retained; general binary search through each CDF and reusable output bytes reduce polymorphic per-character stream overhead. Complete FASTA output emitted."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "a68f893d41634598752206cadb7cf249c8bc4356da4feeb66c3a80bb3dfa297f",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "12a64f83e172ce1e8edb14e78c8da840922dd09e57b5524110486ce8b21d3ba6",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-buffered.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-buffered.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fasta-smalltalk-buffered.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/fasta-smalltalk-buffered.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "c1b45b68e1abef18ad561a016a27517b8270478561c558ba288e5fde71b5e282",
+      "binary_sha256": "c1b45b68e1abef18ad561a016a27517b8270478561c558ba288e5fde71b5e282",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-buffered.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/fasta-smalltalk-buffered.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 68,
+        "normalized_loc": 72,
+        "expansions": [
+          {
+            "line": 22,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 45,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 59,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 64,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "knucleotide-smalltalk-packed",
+      "key": "knucleotide:knucleotide-smalltalk-packed",
+      "benchmark": "knucleotide",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/knucleotide-smalltalk-packed.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Exact two-bit ACGT keys up to 36 bits use standard native SmallInteger, seven ordinary growable Dictionary maps and every overlapping window. The standard Association API updates an existing value after one lookup; no five-motif-only scan or fixed input table. General FASTA record parsing stops at the next header and handles comments/CRLF."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "2a5605afe1f697f9d1dc202450ab87e3b25619f227cbf4a26a886a8fd52fbece",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "0c8c09d718e919eb7a658f28ead97e86ebb31133cea82dc4d34d7ce318bc9ace",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-packed.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-packed.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/knucleotide-smalltalk-packed.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/knucleotide-smalltalk-packed.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "1e88dfd91fcef8cfc5ff472e736ece60f4453267532055228986051d9c677214",
+      "binary_sha256": "1e88dfd91fcef8cfc5ff472e736ece60f4453267532055228986051d9c677214",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-packed.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/knucleotide-smalltalk-packed.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 70,
+        "normalized_loc": 76,
+        "expansions": [
+          {
+            "line": 63,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 64,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 65,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 69,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 70,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 71,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 3
+      }
+    },
+    {
+      "id": "regexredux-smalltalk-regex",
+      "key": "regexredux:regexredux-smalltalk-regex",
+      "benchmark": "regexredux",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/regexredux-smalltalk-regex.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Correct the upstream obsolete regex-DNA source: remove literal LF FASTA lines, count nine nonoverlapping patterns, perform all five ordered global substitutions through standard Pharo Regex. No specialized recognizer or benchmark executor."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "18757d7f3290b21314233be9ada4d402afb3116053bc055d22d5bba198ce8191",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "a7374d5290921768e5aab271df1613e487290fd3a36dd528a45e92305d202290",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-regex.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-regex.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/regexredux-smalltalk-regex.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/regexredux-smalltalk-regex.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "a704222d8ad89d099166cf939c3179f6cad3b3a7457a58373d9aac9f970c77e8",
+      "binary_sha256": "a704222d8ad89d099166cf939c3179f6cad3b3a7457a58373d9aac9f970c77e8",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-regex.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-regex.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 51,
+        "normalized_loc": 60,
+        "expansions": [
+          {
+            "line": 41,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 42,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 43,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 47,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 48,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 49,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 50,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 51,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 52,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 7
+      }
+    },
+    {
+      "id": "regexredux-smalltalk-pcre2",
+      "key": "regexredux:regexredux-smalltalk-pcre2",
+      "benchmark": "regexredux",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/regexredux-smalltalk-pcre2.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Use standard PCRE2 regular expression compilation, JIT, nonoverlapping matching and ordered global substitution through counted general UFFI bindings. Match/substitution orchestrations and complete error/overflow/memory handling are Smalltalk application source; no C benchmark executor or literal DNA recognizer. Input memory copied once through standard LibC memcpy to stable native storage."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "a1b3ea84469b638814d6fd2ca7d115df51fd547694a302a5ce3ef1ed6ff0f8a9",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "f2f25357050c83219e7455a90fdaf443030837e1956c51b18848fd79a65207a1",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-pcre2.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-pcre2.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/regexredux-smalltalk-pcre2.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/regexredux-smalltalk-pcre2.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "a0f4634e883ae9b8ed50e9639d46920b62f38deed5e213c562ba7215a21cd227",
+      "binary_sha256": "a0f4634e883ae9b8ed50e9639d46920b62f38deed5e213c562ba7215a21cd227",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-pcre2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-pcre2.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 142,
+        "normalized_loc": 151,
+        "expansions": [
+          {
+            "line": 130,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 131,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 132,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 139,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 140,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 141,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 142,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 143,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 144,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 7
+      }
+    },
+    {
+      "id": "revcomp-smalltalk-streaming",
+      "key": "revcomp:revcomp-smalltalk-streaming",
+      "benchmark": "revcomp",
+      "language": "smalltalk",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/revcomp-smalltalk-streaming.st",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Handle arbitrary FASTA records rather than hard-code ONE/TWO/THREE. General byte complement lookup, in-place symmetric reversal, and standard buffered bulk output retain complete headers, both cases and every sequence byte."
+      ],
+      "profile_candidates": [
+        "fastest",
+        "smallest"
+      ],
+      "source_sha256": "912b19ab132807bface0ba7fcf2fbe34b962258b220a536c3d9563bd114897c3",
+      "vm_sha256": "a531829494c651856497616b7f0897ea12c83df7bacb01538ae691511ae7ebef",
+      "loader_sha256": "9a38c7a173a2988cd5094b0a206b89fa3560b1e48b206e39a36d4164ab0c70d2",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-streaming.image",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-streaming.image",
+        "st",
+        "--no-source",
+        "--save",
+        "--quit",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/revcomp-smalltalk-streaming.loader.st"
+      ],
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/build-logs/revcomp-smalltalk-streaming.log",
+      "build_status": "passed",
+      "exit_code": 0,
+      "image_sha256": "35c3ba858e9544751fe0f2ac702ca9eda2b871f9f5ec2d642dc0088e865530de",
+      "binary_sha256": "35c3ba858e9544751fe0f2ac702ca9eda2b871f9f5ec2d642dc0088e865530de",
+      "run_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-streaming.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/vm/Pharo.app/Contents/MacOS/Pharo",
+        "--headless",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/revcomp-smalltalk-streaming.image",
+        "eval",
+        "BenchmarksGame do: {n}. Stdio stdout flush. Smalltalk exitSuccess"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk",
+      "execution": "Pharo native ARM64 Cog/Spur JIT, cold image process",
+      "loc": {
+        "physical_loc": 45,
+        "normalized_loc": 47,
+        "expansions": [
+          {
+            "line": 21,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          },
+          {
+            "line": 25,
+            "extra_lines": 1,
+            "reason": "Independent packed assignments or cascade actions."
+          }
+        ]
+      },
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "exit_code": 0
+      },
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Smalltalk",
+        "complete_output": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json",
+        "checks": 5
+      }
+    }
+  ],
+  "adversarial_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/adversarial-checks.json"
+}

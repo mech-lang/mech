@@ -1,0 +1,111 @@
+{
+   "abstract" : "Alien package for the GNU Multiple Precision library.",
+   "author" : [
+      "Richard Simões <rsimoes AT cpan DOT org>",
+      "Graham Ollis <plicease@cpan.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 6.012, CPAN::Meta::Converter version 2.150010, CPAN::Meta::Converter version 2.150013",
+   "license" : [
+      "lgpl_3_0"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "Alien-GMP",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Alien::Build" : "0.32",
+            "Alien::Build::MM" : "0.32",
+            "Devel::CheckLib" : "0",
+            "ExtUtils::MakeMaker" : "6.52"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Alien::Build" : "1.46",
+            "Alien::Build::MM" : "0.32",
+            "ExtUtils::CBuilder" : "0",
+            "ExtUtils::MakeMaker" : "6.52"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "File::Spec" : "0",
+            "FindBin" : "0",
+            "Test::CPAN::Changes" : "0",
+            "Test::EOL" : "0",
+            "Test::Fixme" : "0.07",
+            "Test::More" : "0.98",
+            "Test::NoTabs" : "0",
+            "Test::Pod" : "0",
+            "Test::Pod::Coverage" : "0",
+            "Test::Pod::Spelling::CommonMistakes" : "0",
+            "Test::Spelling" : "0",
+            "Test::Strict" : "0",
+            "YAML" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Alien::Base" : "1.46",
+            "Alien::Build" : "0.25",
+            "perl" : "5.006"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test2::V0" : "0.000060",
+            "Test::Alien" : "0"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/Perl5-Alien/Alien-GMP/issues"
+      },
+      "homepage" : "https://metacpan.org/pod/Alien::GMP",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/Perl5-Alien/Alien-GMP.git",
+         "web" : "https://github.com/Perl5-Alien/Alien-GMP"
+      },
+      "x_IRC" : "irc://irc.perl.org/#native"
+   },
+   "version" : "1.16",
+   "x_alienfile" : {
+      "generated_by" : "Dist::Zilla::Plugin::AlienBuild version 0.30",
+      "requires" : {
+         "share" : {
+            "Alien::Build::Plugin::Gather::IsolateDynamic" : "0.48",
+            "Alien::m4" : "0.08",
+            "Archive::Tar" : "0",
+            "Config" : "0",
+            "HTTP::Tiny" : "0.044",
+            "IO::Compress::Bzip2" : "0",
+            "IO::Socket::SSL" : "1.56",
+            "IO::Uncompress::Bunzip2" : "0",
+            "Mojo::DOM58" : "1.00",
+            "Net::SSLeay" : "1.49",
+            "Sort::Versions" : "0",
+            "URI" : "0",
+            "URI::Escape" : "0"
+         },
+         "system" : {
+            "Devel::CheckLib" : "0"
+         }
+      }
+   },
+   "x_contributors" : [
+      "Richard Simões (RSIMOES)",
+      "Graham Ollis <plicease@cpan.org>",
+      "Zakariyya Mughal (ZMUGHAL)",
+      "William N. Braswell, Jr. (WBRASWELL)"
+   ],
+   "x_generated_by_perl" : "v5.28.1",
+   "x_serialization_backend" : "JSON::PP version 4.16",
+   "x_use_unsafe_inc" : 0
+}

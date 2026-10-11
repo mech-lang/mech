@@ -1,0 +1,49 @@
+Extract(q<bigint>, r<bigint>, t<bigint>, scratch<bigint>, j<u64>) = (digit<u64>) :=
+  product := bigint/multiply-u64-into(scratch, q, j)
+  numerator := bigint/add-into(product, product, r)
+  digit := bigint/floor-u64(numerator, t).
+Label(count<u64>) = (done<u64>) :=
+  done := io/print("\t:{}\n", count).
+NoLabel(count<u64>) = (done<u64>) :=
+  done := 0.
+More(k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>, scratch<bigint>) = (more<bool>) :=
+  more := count < n.
+Produce(k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>, scratch<bigint>, digit<u64>) = (next<u64>, printed<u64>, limit<u64>, qq<bigint>, rr<bigint>, tt<bigint>, ss<bigint>) :=
+  remainder := bigint/subtract-multiple-u64(r, t, digit)
+  rr := bigint/multiply-u64-into(remainder, remainder, 10)
+  qq := bigint/multiply-u64-into(q, q, 10)
+  output := io/print("{}", digit)
+  printed := count + 1
+  label := control/if(number/mod(printed, 10) == 0, Label, NoLabel, printed)
+  next := k
+  limit := n
+  tt := t
+  ss := scratch.
+Consume(k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>, scratch<bigint>, digit<u64>) = (next<u64>, printed<u64>, limit<u64>, qq<bigint>, rr<bigint>, tt<bigint>, ss<bigint>) :=
+  numerator := bigint/add-multiple-u64(r, q, 2)
+  rr := bigint/multiply-u64-into(numerator, numerator, 2 * k + 1)
+  qq := bigint/multiply-u64-into(q, q, k)
+  tt := bigint/multiply-u64-into(t, t, 2 * k + 1)
+  next := k + 1
+  printed := count
+  limit := n
+  ss := scratch.
+ExtractStep(k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>, scratch<bigint>) = (next<u64>, printed<u64>, limit<u64>, qq<bigint>, rr<bigint>, tt<bigint>, ss<bigint>) :=
+  first := Extract(q, r, t, scratch, 3)
+  second := Extract(q, r, t, scratch, 4)
+  (next, printed, limit, qq, rr, tt, ss) := control/if(first == second, Produce, Consume, (k, count, n, q, r, t, scratch, first)).
+ConsumeStep(k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>, scratch<bigint>) = (next<u64>, printed<u64>, limit<u64>, qq<bigint>, rr<bigint>, tt<bigint>, ss<bigint>) :=
+  (next, printed, limit, qq, rr, tt, ss) := Consume(k, count, n, q, r, t, scratch, 0).
+Step(k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>, scratch<bigint>) = (next<u64>, printed<u64>, limit<u64>, qq<bigint>, rr<bigint>, tt<bigint>, ss<bigint>) :=
+  (next, printed, limit, qq, rr, tt, ss) := control/if(bigint/less-equal(q, r), ExtractStep, ConsumeStep, (k, count, n, q, r, t, scratch)).
+NeedsSpace(column<u64>) = (more<bool>) :=
+  more := column < 10.
+Space(column<u64>) = (next<u64>) :=
+  output := io/print(" ")
+  next := column + 1.
+Finish(count<u64>) = (done<u64>) :=
+  column := control/while(number/mod(count, 10), NeedsSpace, Space)
+  done := Label(count).
+n := io/argument-u64(1)
+(k, count, limit, q, r, t, scratch) := control/while((1, 0, n, bigint/new(1), bigint/new(0), bigint/new(1), bigint/new(0)), More, Step)
+finished := control/if(number/mod(count, 10) != 0, Finish, NoLabel, count)

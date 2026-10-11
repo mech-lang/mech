@@ -1,0 +1,13 @@
+A(i<f64>, j<f64>) = (value<f64>) :=
+  value := 1.0 / ((i + j) * (i + j + 1.0) / 2.0 + i + 1.0).
+MultiplyAv(v<[f64]:_>) = (out<[f64]:_>) :=
+  out := matrix/apply(v, sequence/length(v), A, "multiply").
+MultiplyAtv(v<[f64]:_>) = (out<[f64]:_>) :=
+  out := matrix/apply-transpose(v, sequence/length(v), A, "multiply").
+MultiplyAtAv(v<[f64]:_>) = (out<[f64]:_>) :=
+  out := MultiplyAtv(MultiplyAv(v)).
+seed := sequence/fill(io/argument-u64(1), 1.0)
+v := sequence/iterate(seed, 19, MultiplyAtAv)
+u := MultiplyAtAv(v)
+norm := math/sqrt(stats/dot(u, v) / stats/dot(v, v))
+io/write(string/concat(number/format(norm, 9), "\n"))

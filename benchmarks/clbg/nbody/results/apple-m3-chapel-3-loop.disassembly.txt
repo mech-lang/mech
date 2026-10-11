@@ -1,0 +1,205 @@
+_chpl_gen_main
+100030a74:     	str	d20, [sp, #0x158]
+100030a78:     	stp	q25, q17, [sp, #0x160]
+100030a7c:     	fsub.2d	v12, v25, v26
+100030a80:     	dup.2d	v6, v17[0]
+100030a84:     	fsub.2d	v1, v6, v27
+100030a88:     	fsub.2d	v16, v25, v18
+100030a8c:     	stp	q27, q16, [sp, #0x130]
+100030a90:     	zip1.2d	v11, v12, v16
+100030a94:     	zip2.2d	v16, v12, v16
+100030a98:     	fmul.2d	v29, v16, v16
+100030a9c:     	fsub.2d	v8, v25, v7
+100030aa0:     	fsub.2d	v6, v6, v0
+100030aa4:     	str	q6, [sp, #0x180]
+100030aa8:     	dup.2d	v6, v27[1]
+100030aac:     	fsub.2d	v31, v25, v3
+100030ab0:     	fsub.2d	v14, v27, v6
+100030ab4:     	dup.2d	v16, v27[0]
+100030ab8:     	fsub.2d	v30, v16, v0
+100030abc:     	fsub.2d	v25, v6, v0
+100030ac0:     	fsub.2d	v6, v26, v18
+100030ac4:     	str	q6, [sp, #0x110]
+100030ac8:     	fmul.2d	v6, v6, v6
+100030acc:     	dup.2d	v16, v6[1]
+100030ad0:     	fadd.2d	v6, v6, v16
+100030ad4:     	fmla.2d	v6, v14, v14
+100030ad8:     	fsqrt	d16, d6
+100030adc:     	fmul	d6, d16, d6
+100030ae0:     	fsub.2d	v16, v26, v7
+100030ae4:     	fsub.2d	v21, v26, v3
+100030ae8:     	dup.2d	v17, v18[1]
+100030aec:     	zip2.2d	v22, v7, v3
+100030af0:     	fsub.2d	v20, v17, v22
+100030af4:     	dup.2d	v17, v18[0]
+100030af8:     	zip1.2d	v22, v7, v3
+100030afc:     	fsub.2d	v22, v17, v22
+100030b00:     	stp	q22, q20, [sp, #0xf0]
+100030b04:     	fmul.2d	v17, v20, v20
+100030b08:     	fmla.2d	v17, v22, v22
+100030b0c:     	fmla.2d	v17, v25, v25
+100030b10:     	fsqrt.2d	v24, v17
+100030b14:     	fmul.2d	v17, v17, v24
+100030b18:     	zip1.2d	v24, v16, v21
+100030b1c:     	zip2.2d	v28, v16, v21
+100030b20:     	fmul.2d	v28, v28, v28
+100030b24:     	fmla.2d	v28, v24, v24
+100030b28:     	fmla.2d	v28, v30, v30
+100030b2c:     	fsqrt.2d	v24, v28
+100030b30:     	fmul.2d	v24, v28, v24
+100030b34:     	fmov	d20, x9
+100030b38:     	str	d20, [sp, #0x128]
+100030b3c:     	fdiv	d6, d20, d6
+100030b40:     	fdiv.2d	v17, v13, v17
+100030b44:     	fdiv.2d	v24, v13, v24
+100030b48:     	fmla.2d	v29, v11, v11
+100030b4c:     	mov.16b	v20, v1
+100030b50:     	str	q1, [sp, #0xe0]
+100030b54:     	fmla.2d	v29, v1, v1
+100030b58:     	fsqrt.2d	v15, v29
+100030b5c:     	fmul.2d	v29, v29, v15
+100030b60:     	fdiv.2d	v29, v13, v29
+100030b64:     	ldr	q1, [sp, #0xc0]
+100030b68:     	fmul.2d	v15, v20, v1[0]
+100030b6c:     	fmla.2d	v9, v15, v29
+100030b70:     	ldr	q28, [sp, #0x20]
+100030b74:     	fmul.2d	v14, v28, v14[0]
+100030b78:     	fmul.2d	v14, v14, v6[0]
+100030b7c:     	fadd.2d	v15, v9, v14
+100030b80:     	fsub.2d	v9, v9, v14
+100030b84:     	zip1.2d	v14, v30, v25
+100030b88:     	mov.d	v9[1], v15[1]
+100030b8c:     	ldr	q11, [sp, #0x60]
+100030b90:     	fmul.2d	v14, v14, v11[0]
+100030b94:     	zip1.2d	v15, v24, v17
+100030b98:     	fmls.2d	v9, v14, v15
+100030b9c:     	zip2.2d	v14, v30, v25
+100030ba0:     	mov.16b	v22, v3
+100030ba4:     	mov.16b	v3, v0
+100030ba8:     	mov.16b	v20, v26
+100030bac:     	mov.16b	v26, v25
+100030bb0:     	ldr	q27, [sp, #0x40]
+100030bb4:     	fmul.2d	v14, v14, v27[0]
+100030bb8:     	zip2.2d	v15, v24, v17
+100030bbc:     	fmls.2d	v9, v14, v15
+100030bc0:     	str	q8, [sp, #0xd0]
+100030bc4:     	mov.16b	v25, v31
+100030bc8:     	zip1.2d	v14, v8, v31
+100030bcc:     	zip2.2d	v15, v8, v31
+100030bd0:     	fmul.2d	v15, v15, v15
+100030bd4:     	fmla.2d	v15, v14, v14
+100030bd8:     	ldr	q0, [sp, #0x180]
+100030bdc:     	fmla.2d	v15, v0, v0
+100030be0:     	fsqrt.2d	v14, v15
+100030be4:     	fmul.2d	v14, v15, v14
+100030be8:     	fdiv.2d	v14, v13, v14
+100030bec:     	fmul.2d	v15, v8, v1[0]
+100030bf0:     	fmla.2d	v5, v15, v14[0]
+100030bf4:     	fmul.2d	v15, v0, v1[0]
+100030bf8:     	fmla.2d	v10, v15, v14
+100030bfc:     	ldr	q15, [sp, #0xb0]
+100030c00:     	fmul.2d	v30, v30, v15[1]
+100030c04:     	fmla.2d	v10, v30, v24
+100030c08:     	fmul.2d	v30, v12, v1[0]
+100030c0c:     	mov.16b	v28, v18
+100030c10:     	mov.16b	v18, v12
+100030c14:     	fmla.2d	v2, v30, v29[0]
+100030c18:     	ldr	q31, [sp, #0x90]
+100030c1c:     	ldr	q0, [sp, #0x110]
+100030c20:     	fmul.2d	v30, v0, v31[1]
+100030c24:     	fmls.2d	v2, v30, v6[0]
+100030c28:     	ldr	q8, [sp, #0x70]
+100030c2c:     	fmul.2d	v30, v16, v8[1]
+100030c30:     	fmls.2d	v2, v30, v24[0]
+100030c34:     	ldr	q30, [sp, #0xa0]
+100030c38:     	fmul.2d	v16, v16, v30[0]
+100030c3c:     	fmla.2d	v5, v16, v24[0]
+100030c40:     	ldr	q12, [sp, #0x50]
+100030c44:     	fmul.2d	v16, v21, v12[1]
+100030c48:     	fmls.2d	v2, v16, v24[1]
+100030c4c:     	fmul.2d	v16, v25, v1[0]
+100030c50:     	fmla.2d	v19, v16, v14[1]
+100030c54:     	fmul.2d	v16, v21, v30[0]
+100030c58:     	fmla.2d	v19, v16, v24[1]
+100030c5c:     	ldr	q21, [sp, #0x140]
+100030c60:     	fmul.2d	v16, v21, v1[0]
+100030c64:     	fmla.2d	v4, v16, v29[1]
+100030c68:     	fmul.2d	v16, v0, v30[0]
+100030c6c:     	fmla.2d	v4, v16, v6[0]
+100030c70:     	fmul.2d	v6, v26, v31[1]
+100030c74:     	mov.16b	v26, v20
+100030c78:     	mov.16b	v0, v3
+100030c7c:     	mov.16b	v3, v22
+100030c80:     	fmla.2d	v10, v6, v17
+100030c84:     	ldp	q16, q1, [sp, #0xf0]
+100030c88:     	zip2.2d	v6, v16, v1
+100030c8c:     	zip1.2d	v16, v16, v1
+100030c90:     	fmul.2d	v20, v16, v11[0]
+100030c94:     	fmls.2d	v4, v20, v17[0]
+100030c98:     	fsub.2d	v20, v7, v22
+100030c9c:     	ldr	q1, [sp, #0x80]
+100030ca0:     	fmul.2d	v16, v16, v1[0]
+100030ca4:     	fmla.2d	v5, v16, v17[0]
+100030ca8:     	fmul.2d	v16, v6, v27[0]
+100030cac:     	ldr	q27, [sp, #0x130]
+100030cb0:     	fmls.2d	v4, v16, v17[1]
+100030cb4:     	dup.2d	v16, v0[1]
+100030cb8:     	fsub.2d	v16, v0, v16
+100030cbc:     	fmul.2d	v6, v6, v31[1]
+100030cc0:     	fmla.2d	v19, v6, v17[1]
+100030cc4:     	fmul.2d	v6, v20, v20
+100030cc8:     	dup.2d	v17, v6[1]
+100030ccc:     	fadd.2d	v6, v6, v17
+100030cd0:     	fmla.2d	v6, v16, v16
+100030cd4:     	fsqrt	d17, d6
+100030cd8:     	fmul	d6, d17, d6
+100030cdc:     	fmul.2d	v17, v18, v15[1]
+100030ce0:     	mov.16b	v18, v28
+100030ce4:     	fmls.2d	v23, v17, v29[0]
+100030ce8:     	fmul.2d	v17, v21, v31[1]
+100030cec:     	fmls.2d	v23, v17, v29[1]
+100030cf0:     	ldr	q1, [sp, #0xd0]
+100030cf4:     	fmul.2d	v17, v1, v8[1]
+100030cf8:     	fmls.2d	v23, v17, v14[0]
+100030cfc:     	fmul.2d	v17, v25, v12[1]
+100030d00:     	ldr	q25, [sp, #0x160]
+100030d04:     	fmls.2d	v23, v17, v14[1]
+100030d08:     	ldr	d22, [sp, #0x128]
+100030d0c:     	fdiv	d6, d22, d6
+100030d10:     	ldr	q1, [sp]
+100030d14:     	ldr	q17, [sp, #0x180]
+100030d18:     	fmul.2d	v17, v1, v17
+100030d1c:     	fmul.2d	v17, v17, v14
+100030d20:     	fmul.2d	v21, v20, v12[1]
+100030d24:     	fmls.2d	v5, v21, v6[0]
+100030d28:     	fmul.2d	v20, v20, v8[1]
+100030d2c:     	fmla.2d	v19, v20, v6[0]
+100030d30:     	ldr	q1, [sp, #0x30]
+100030d34:     	fmul.2d	v16, v1, v16[0]
+100030d38:     	fmul.2d	v6, v16, v6[0]
+100030d3c:     	fsub.2d	v16, v10, v6
+100030d40:     	fadd.2d	v6, v10, v6
+100030d44:     	ldr	q1, [sp, #0x10]
+100030d48:     	ldr	q20, [sp, #0xe0]
+100030d4c:     	fmul.2d	v20, v1, v20
+100030d50:     	fmul.2d	v20, v20, v29
+100030d54:     	ldr	d1, [sp, #0x158]
+100030d58:     	fsub	d21, d1, d20
+100030d5c:     	mov	d20, v20[1]
+100030d60:     	fsub	d20, d21, d20
+100030d64:     	fsub	d20, d20, d17
+100030d68:     	mov	d17, v17[1]
+100030d6c:     	fsub	d20, d20, d17
+100030d70:     	ldr	q17, [sp, #0x170]
+100030d74:     	fmadd	d17, d20, d22, d17
+100030d78:     	mov.16b	v10, v16
+100030d7c:     	mov.d	v10[1], v6[1]
+100030d80:     	fmla.2d	v27, v9, v13
+100030d84:     	fmla.2d	v0, v10, v13
+100030d88:     	fmla.2d	v25, v23, v13
+100030d8c:     	fmla.2d	v26, v2, v13
+100030d90:     	fmla.2d	v18, v4, v13
+100030d94:     	fmla.2d	v7, v5, v13
+100030d98:     	fmla.2d	v3, v19, v13
+100030d9c:     	subs	x22, x22, #0x1
+100030da0:     	b.ne	0x100030a74 <_chpl_gen_main+0x364>

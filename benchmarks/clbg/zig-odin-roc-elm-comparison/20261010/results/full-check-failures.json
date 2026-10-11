@@ -1,0 +1,12 @@
+[
+  {
+    "id": "fannkuchredux-zig-2-m-faithful",
+    "source_sha256": "29ad6ab83d0779951c8318f29510716517f84f5af43da79624ebbed6ef2e20a5",
+    "binary_sha256": "074d374e1c804a29433e632d0ec88ccf2fdbc163cf217fea2903e2a34a6a8e61",
+    "n": 12,
+    "observed": "556355\nPfannkuchen(12) = 51\n",
+    "expected": "3968050\nPfannkuchen(12) = 65\n",
+    "status": "rejected",
+    "reason": "Exclusive maximum-N dispatch entered unreachable and silently reduced the required permutation count in ReleaseFast. No sample admitted."
+  }
+]

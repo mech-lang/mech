@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide OCaml&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide OCaml&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">(* The Computer Language Benchmarks Game</span>
+<span class="com"> * https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"> *</span>
+<span class="com"> * contributed by Troestler Christophe</span>
+<span class="com"> * modified by Mauricio Fernandez</span>
+<span class="com"> * optimized by Fabrice Le Fessant</span>
+<span class="com"> * modified by Roman Kashitsyn: use Bytes instead of String</span>
+<span class="com"> *)</span>
+
+<span class="kwa">let</span> <span class="kwd">tab</span> <span class="opt">=</span> <span class="kwc">Array</span><span class="opt">.</span>make <span class="num">256 0</span>
+<span class="kwa">let</span> <span class="kwd">_</span> <span class="opt">=</span>
+  <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code &#39;A&#39;<span class="opt">) &lt;-</span> <span class="num">0</span><span class="opt">;</span>
+  <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code &#39;a&#39;<span class="opt">) &lt;-</span> <span class="num">0</span><span class="opt">;</span>
+  <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code &#39;T&#39;<span class="opt">) &lt;-</span> <span class="num">1</span><span class="opt">;</span>
+  <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code &#39;t&#39;<span class="opt">) &lt;-</span> <span class="num">1</span><span class="opt">;</span>
+  <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code &#39;C&#39;<span class="opt">) &lt;-</span> <span class="num">2</span><span class="opt">;</span>
+  <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code &#39;c&#39;<span class="opt">) &lt;-</span> <span class="num">2</span><span class="opt">;</span>
+  <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code &#39;g&#39;<span class="opt">) &lt;-</span> <span class="num">3</span><span class="opt">;</span>
+  <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code &#39;G&#39;<span class="opt">) &lt;-</span> <span class="num">3</span>
+
+<span class="kwa">let</span> <span class="kwd">uppercase</span> line <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">len</span> <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>length line <span class="kwa">in</span>
+  <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">0</span> <span class="kwa">to</span> <span class="kwd">len</span> <span class="opt">-</span> <span class="num">1</span> <span class="kwa">do</span>
+    <span class="kwa">let</span> <span class="kwd">c</span> <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>get line i <span class="kwa">in</span>
+    <span class="kwc">Bytes</span><span class="opt">.</span>set line i <span class="opt">(</span><span class="kwc">Char</span><span class="opt">.</span>unsafe_chr <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code <span class="kwd">c</span><span class="opt">))</span>
+  <span class="kwa">done</span>
+
+<span class="com">(* Extract DNA sequence &quot;THREE&quot; from stdin *)</span>
+<span class="kwa">let</span> <span class="kwd">dna</span> <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">is_not_three</span> s <span class="opt">=</span> <span class="kwc">String</span><span class="opt">.</span>length s <span class="opt">&lt;</span> <span class="num">6</span> <span class="opt">||</span> <span class="kwc">String</span><span class="opt">.</span>sub s <span class="num">0 6</span> <span class="opt">&lt;&gt;</span> <span class="sng">&quot;&gt;THREE&quot;</span> <span class="kwa">in</span>
+  <span class="kwa">while</span> <span class="kwd">is_not_three</span><span class="opt">(</span>input_line stdin<span class="opt">)</span> <span class="kwa">do</span> <span class="opt">()</span> <span class="kwa">done</span><span class="opt">;</span>
+  <span class="kwa">let</span> <span class="kwd">buf</span> <span class="opt">=</span> <span class="kwc">Buffer</span><span class="opt">.</span>create <span class="num">130_000_000</span> <span class="kwa">in</span>
+  <span class="com">(* Skip possible comment *)</span>
+  <span class="opt">(</span><span class="kwa">try</span>
+     <span class="kwa">while true do</span>
+       <span class="kwa">let</span> <span class="kwd">line</span> <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>unsafe_of_string <span class="opt">(</span>input_line stdin<span class="opt">)</span> <span class="kwa">in</span>
+       <span class="kwa">if</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">line</span> <span class="num">0</span> <span class="opt">&lt;&gt;</span> &#39;<span class="opt">;</span>&#39; <span class="kwa">then begin</span>
+	 <span class="kwd">uppercase line</span><span class="opt">;</span>
+	 <span class="kwc">Buffer</span><span class="opt">.</span>add_bytes <span class="kwd">buf line</span><span class="opt">;</span>
+	 raise Exit
+       <span class="kwa">end</span>
+     <span class="kwa">done with</span> <span class="kwd">_</span> <span class="opt">-&gt; ());</span>
+  <span class="com">(* Read the DNA sequence *)</span>
+  <span class="opt">(</span><span class="kwa">try while true do</span>
+       <span class="kwa">let</span> <span class="kwd">line</span> <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>unsafe_of_string <span class="opt">(</span>input_line stdin<span class="opt">)</span> <span class="kwa">in</span>
+       <span class="kwa">if</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">line</span> <span class="num">0</span> <span class="opt">=</span> &#39;<span class="opt">&gt;</span>&#39; <span class="kwa">then</span> raise End_of_file<span class="opt">;</span>
+       <span class="kwd">uppercase line</span><span class="opt">;</span>
+       <span class="kwc">Buffer</span><span class="opt">.</span>add_bytes <span class="kwd">buf line</span>
+     <span class="kwa">done with</span> End_of_file <span class="opt">-&gt; ());</span>
+  <span class="kwc">Buffer</span><span class="opt">.</span>contents <span class="kwd">buf</span>
+
+
+<span class="kwa">module</span> K15 <span class="opt">=</span> <span class="kwa">struct</span>
+  <span class="kwa">type</span> t <span class="opt">=</span> <span class="kwb">int</span>
+  <span class="kwa">let</span> <span class="kwd">equal</span> k1 k2 <span class="opt">=</span> k1 <span class="opt">=</span> k2
+  <span class="kwa">let</span> <span class="kwd">hash</span> n <span class="opt">=</span> n
+<span class="kwa">end</span>
+
+<span class="kwa">module</span> K16 <span class="opt">=</span> <span class="kwa">struct</span>
+  <span class="kwa">type</span> t <span class="opt">=</span> <span class="kwb">int</span> <span class="opt">*</span> <span class="kwb">int</span>
+  <span class="kwa">let</span> <span class="kwd">equal</span> <span class="opt">(</span>a1<span class="opt">,</span>a2<span class="opt">) (</span>b1<span class="opt">,</span>b2<span class="opt">) =</span> a1 <span class="opt">=</span> b1 <span class="opt">&amp;&amp;</span> a2 <span class="opt">=</span> b2
+  <span class="kwa">let</span> <span class="kwd">hash</span> <span class="opt">(</span>a1<span class="opt">,</span> <span class="kwd">_</span><span class="opt">) =</span> a1
+<span class="kwa">end</span>
+
+<span class="kwa">type</span> entry <span class="opt">= {</span>
+  <span class="kwa">mutable</span> count <span class="opt">:</span> <span class="kwb">int</span><span class="opt">;</span>
+<span class="opt">}</span>
+
+<span class="kwa">let</span> <span class="kwd">threshold15</span> <span class="opt">=</span>
+  <span class="kwa">match</span> <span class="kwc">Sys</span><span class="opt">.</span>word_size <span class="kwa">with</span>
+    <span class="num">32</span> <span class="opt">-&gt;</span> <span class="num">15</span>
+  <span class="opt">|</span> <span class="num">64</span> <span class="opt">-&gt;</span> <span class="num">31</span>
+  <span class="opt">|</span> <span class="kwd">_</span> <span class="opt">-&gt;</span> <span class="kwa">assert false</span>
+<span class="kwa">let</span> <span class="kwd">threshold16</span> <span class="opt">=</span> <span class="kwd">threshold15</span> <span class="opt">+</span> <span class="num">1</span>
+
+<span class="kwa">let</span> <span class="kwd">c</span> <span class="opt">=</span> <span class="num">0x40000</span><span class="opt">-</span><span class="num">1</span>
+<span class="kwa">module</span> H15 <span class="opt">=</span> <span class="kwc">Hashtbl</span><span class="opt">.</span>Make<span class="opt">(</span>K15<span class="opt">)</span>
+<span class="kwa">module</span> H16 <span class="opt">=</span> <span class="kwc">Hashtbl</span><span class="opt">.</span>Make<span class="opt">(</span>K16<span class="opt">)</span>
+<span class="kwa">let</span> <span class="kwd">h15</span> <span class="opt">=</span> <span class="kwc">H15</span><span class="opt">.</span>create <span class="kwd">c</span>
+<span class="kwa">let</span> <span class="kwd">h16</span> <span class="opt">=</span> <span class="kwc">H16</span><span class="opt">.</span>create <span class="kwd">c</span>
+
+<span class="kwa">let rec</span> <span class="kwd">pack_word</span> n k h <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">b</span> <span class="opt">=</span> <span class="kwc">Char</span><span class="opt">.</span>code <span class="kwd">dna</span><span class="opt">.[</span>n<span class="opt">]</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">h</span> <span class="opt">=</span> <span class="kwd">h</span> <span class="opt">*</span> <span class="num">4</span> <span class="opt">+</span> <span class="kwd">b</span> <span class="kwa">in</span>
+  <span class="kwa">if</span> k <span class="opt">&gt;</span> <span class="num">1</span> <span class="kwa">then</span>
+    <span class="kwd">pack_word</span> <span class="opt">(</span>n<span class="opt">+</span><span class="num">1</span><span class="opt">) (</span>k<span class="opt">-</span><span class="num">1</span><span class="opt">)</span> <span class="kwd">h</span>
+  <span class="kwa">else</span> <span class="kwd">h</span>
+
+<span class="kwa">let</span> <span class="kwd">pack15</span> k n <span class="opt">=</span>
+  <span class="kwd">pack_word</span> n k <span class="num">0</span>
+
+<span class="kwa">let</span> <span class="kwd">pack16</span> k n <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">h1</span> <span class="opt">=</span> <span class="kwd">pack_word</span> n <span class="kwd">threshold15</span> <span class="num">0</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">h2</span> <span class="opt">=</span> <span class="kwd">pack_word</span> <span class="opt">(</span>n<span class="opt">+</span> <span class="kwd">threshold15</span><span class="opt">) (</span>k<span class="opt">-</span> <span class="kwd">threshold15</span><span class="opt">)</span> <span class="num">0</span> <span class="kwa">in</span>
+  <span class="opt">(</span><span class="kwd">h1</span><span class="opt">,</span> <span class="kwd">h2</span><span class="opt">)</span>
+
+<span class="kwa">let rec</span> <span class="kwd">pack_word_in dna</span> n k <span class="kwd">h</span> <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">b</span> <span class="opt">=</span> <span class="kwd">dna</span><span class="opt">.[</span>n<span class="opt">]</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">b</span> <span class="opt">=</span> <span class="kwd">tab</span><span class="opt">.(</span><span class="kwc">Char</span><span class="opt">.</span>code <span class="kwd">b</span><span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">h</span> <span class="opt">=</span> <span class="kwd">h</span> <span class="opt">*</span> <span class="num">4</span> <span class="opt">+</span> <span class="kwd">b</span> <span class="kwa">in</span>
+  <span class="kwa">if</span> k <span class="opt">&gt;</span> <span class="num">1</span> <span class="kwa">then</span>
+    <span class="kwd">pack_word_in dna</span> <span class="opt">(</span>n<span class="opt">+</span><span class="num">1</span><span class="opt">) (</span>k<span class="opt">-</span><span class="num">1</span><span class="opt">)</span> <span class="kwd">h</span>
+  <span class="kwa">else</span> <span class="kwd">h</span>
+
+<span class="kwa">let</span> <span class="kwd">pack_key15</span> seq <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">k</span> <span class="opt">=</span> <span class="kwc">String</span><span class="opt">.</span>length seq <span class="kwa">in</span>
+  <span class="kwd">pack_word_in</span> seq <span class="num">0</span> <span class="kwd">k</span> <span class="num">0</span>
+
+<span class="kwa">let</span> <span class="kwd">pack_key16</span> seq <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">k</span> <span class="opt">=</span> <span class="kwc">String</span><span class="opt">.</span>length seq <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">h1</span> <span class="opt">=</span> <span class="kwd">pack_word_in</span> seq <span class="num">0</span> <span class="kwd">threshold15</span> <span class="num">0</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">h2</span> <span class="opt">=</span> <span class="kwd">pack_word_in</span> seq <span class="kwd">threshold15</span> <span class="opt">(</span><span class="kwd">k</span><span class="opt">-</span> <span class="kwd">threshold15</span><span class="opt">)</span> <span class="num">0</span> <span class="kwa">in</span>
+  <span class="opt">(</span><span class="kwd">h1</span><span class="opt">,</span> <span class="kwd">h2</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwd">char</span> <span class="opt">= [|</span> &#39;A&#39;<span class="opt">;</span> &#39;T&#39;<span class="opt">;</span> &#39;C&#39;<span class="opt">;</span> &#39;G&#39; <span class="opt">|]</span>
+
+<span class="kwa">let rec</span> <span class="kwd">unpack h</span> s pos <span class="kwd">k</span> <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">pos</span> <span class="opt">=</span> <span class="kwd">pos</span> <span class="opt">-</span> <span class="num">1</span> <span class="kwa">in</span>
+  <span class="kwc">Bytes</span><span class="opt">.</span>set s <span class="kwd">pos char</span><span class="opt">.(</span><span class="kwd">h</span> <span class="kwa">land</span> <span class="num">3</span><span class="opt">);</span>
+  <span class="kwa">if</span> <span class="kwd">k</span> <span class="opt">&gt;</span> <span class="num">1</span> <span class="kwa">then</span>
+    <span class="kwd">unpack</span> <span class="opt">(</span><span class="kwd">h</span> <span class="kwa">lsr</span> <span class="num">2</span><span class="opt">)</span> s <span class="kwd">pos</span> <span class="opt">(</span><span class="kwd">k</span><span class="opt">-</span><span class="num">1</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwd">unpack15 k h1</span> <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">s</span> <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>create <span class="kwd">k</span> <span class="kwa">in</span>
+  <span class="kwd">unpack h1 s k k</span><span class="opt">;</span>
+  <span class="kwc">Bytes</span><span class="opt">.</span>unsafe_to_string <span class="kwd">s</span>
+
+<span class="kwa">let</span> <span class="kwd">unpack16 k</span> <span class="opt">(</span><span class="kwd">h1</span><span class="opt">,</span> <span class="kwd">h2</span><span class="opt">) =</span>
+  <span class="kwa">let</span> <span class="kwd">s</span> <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>create <span class="kwd">k</span> <span class="kwa">in</span>
+  <span class="kwd">unpack h1 s threshold15 threshold15</span><span class="opt">;</span>
+  <span class="kwd">unpack h2 s k</span> <span class="opt">(</span><span class="kwd">k</span><span class="opt">-</span> <span class="kwd">threshold15</span><span class="opt">);</span>
+  <span class="kwc">Bytes</span><span class="opt">.</span>unsafe_to_string <span class="kwd">s</span>
+
+<span class="kwa">let</span> <span class="kwd">count15 k</span> <span class="opt">=</span>
+  <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">0</span> <span class="kwa">to</span> <span class="kwc">String</span><span class="opt">.</span>length <span class="kwd">dna</span> <span class="opt">-</span> <span class="kwd">k</span> <span class="opt">-</span> <span class="num">1</span> <span class="kwa">do</span>
+    <span class="kwa">let</span> <span class="kwd">packed</span> <span class="opt">=</span> <span class="kwd">pack15 k</span> i <span class="kwa">in</span>
+    <span class="kwa">try</span>
+      <span class="kwa">let</span> <span class="kwd">key</span> <span class="opt">=</span> <span class="kwc">H15</span><span class="opt">.</span>find <span class="kwd">h15 packed</span> <span class="kwa">in</span>
+      <span class="kwd">key</span><span class="opt">.</span>count <span class="opt">&lt;-</span> <span class="kwd">key</span><span class="opt">.</span>count <span class="opt">+</span> <span class="num">1</span>
+    <span class="kwa">with</span> Not_found <span class="opt">-&gt;</span>
+      <span class="kwc">H15</span><span class="opt">.</span>add <span class="kwd">h15 packed</span> <span class="opt">{</span> count <span class="opt">=</span> <span class="num">1</span> <span class="opt">}</span>
+  <span class="kwa">done</span>
+
+<span class="kwa">let</span> <span class="kwd">count16 k</span> <span class="opt">=</span>
+  <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">0</span> <span class="kwa">to</span> <span class="kwc">String</span><span class="opt">.</span>length <span class="kwd">dna</span> <span class="opt">-</span> <span class="kwd">k</span> <span class="opt">-</span> <span class="num">1</span> <span class="kwa">do</span>
+    <span class="kwa">let</span> <span class="kwd">packed</span> <span class="opt">=</span> <span class="kwd">pack16 k</span> i <span class="kwa">in</span>
+    <span class="kwa">try</span>
+      <span class="kwa">let</span> <span class="kwd">key</span> <span class="opt">=</span> <span class="kwc">H16</span><span class="opt">.</span>find <span class="kwd">h16 packed</span> <span class="kwa">in</span>
+      <span class="kwd">key</span><span class="opt">.</span>count <span class="opt">&lt;-</span> <span class="kwd">key</span><span class="opt">.</span>count <span class="opt">+</span> <span class="num">1</span>
+    <span class="kwa">with</span> Not_found <span class="opt">-&gt;</span>
+      <span class="kwc">H16</span><span class="opt">.</span>add <span class="kwd">h16 packed</span> <span class="opt">{</span> count <span class="opt">=</span> <span class="num">1</span> <span class="opt">}</span>
+  <span class="kwa">done</span>
+
+<span class="kwa">let</span> <span class="kwd">count k</span> <span class="opt">=</span>
+  <span class="kwa">if</span> <span class="kwd">k</span> <span class="opt">&lt;</span> <span class="kwd">threshold16</span> <span class="kwa">then</span> <span class="kwd">count15 k</span> <span class="kwa">else</span> <span class="kwd">count16 k</span>
+
+<span class="kwa">let</span> <span class="kwd">compare_freq</span> <span class="opt">((</span>k1<span class="opt">:</span><span class="kwb">string</span><span class="opt">),(</span>f1<span class="opt">:</span><span class="kwb">float</span><span class="opt">)) (</span>k2<span class="opt">,</span> f2<span class="opt">) =</span>
+  <span class="kwa">if</span> f1 <span class="opt">&gt;</span> f2 <span class="kwa">then</span> <span class="opt">-</span><span class="num">1</span> <span class="kwa">else if</span> f1 <span class="opt">&lt;</span> f2 <span class="kwa">then</span> <span class="num">1</span> <span class="kwa">else</span> <span class="kwc">String</span><span class="opt">.</span>compare k1 k2
+
+<span class="kwa">let</span> <span class="kwd">write_frequencies15 k</span> <span class="opt">=</span>
+  <span class="kwd">count15 k</span><span class="opt">;</span>
+  <span class="kwa">let</span> <span class="kwd">tot</span> <span class="opt">=</span> <span class="kwb">float</span><span class="opt">(</span><span class="kwc">H15</span><span class="opt">.</span>fold <span class="opt">(</span><span class="kwa">fun</span> <span class="kwd">_</span> n t <span class="opt">-&gt;</span> n<span class="opt">.</span><span class="kwd">count</span> <span class="opt">+</span> t<span class="opt">)</span> <span class="kwd">h15</span> <span class="num">0</span><span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">frq</span> <span class="opt">=</span>
+    <span class="kwc">H15</span><span class="opt">.</span>fold <span class="opt">(</span><span class="kwa">fun</span> <span class="kwd">h</span> n l <span class="opt">-&gt;</span>
+	<span class="opt">(</span><span class="kwd">unpack15 k h</span><span class="opt">,</span> <span class="num">100</span><span class="opt">. *.</span> <span class="kwb">float</span> n<span class="opt">.</span><span class="kwd">count</span> <span class="opt">/.</span> <span class="kwd">tot</span><span class="opt">) ::</span> l<span class="opt">)</span> <span class="kwd">h15</span> <span class="opt">[]</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">frq</span> <span class="opt">=</span> <span class="kwc">List</span><span class="opt">.</span>sort <span class="kwd">compare_freq frq</span> <span class="kwa">in</span>
+  <span class="kwc">String</span><span class="opt">.</span>concat <span class="sng">&quot;&quot;</span>
+    <span class="opt">(</span><span class="kwc">List</span><span class="opt">.</span>map <span class="opt">(</span><span class="kwa">fun</span> <span class="opt">(</span><span class="kwd">k</span><span class="opt">,</span>f<span class="opt">) -&gt;</span> <span class="kwc">Printf</span><span class="opt">.</span>sprintf <span class="sng">&quot;</span><span class="ipl">%s</span> <span class="sng">%.3f</span><span class="esc">\n</span><span class="sng">&quot;</span> <span class="kwd">k</span> f<span class="opt">)</span> <span class="kwd">frq</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwd">write_frequencies16 k</span> <span class="opt">=</span>
+  <span class="kwd">count16 k</span><span class="opt">;</span>
+  <span class="kwa">let</span> <span class="kwd">tot</span> <span class="opt">=</span> <span class="kwb">float</span><span class="opt">(</span><span class="kwc">H16</span><span class="opt">.</span>fold <span class="opt">(</span><span class="kwa">fun</span> <span class="kwd">_</span> n t <span class="opt">-&gt;</span> n<span class="opt">.</span><span class="kwd">count</span> <span class="opt">+</span> t<span class="opt">)</span> <span class="kwd">h16</span> <span class="num">0</span><span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">frq</span> <span class="opt">=</span>
+    <span class="kwc">H16</span><span class="opt">.</span>fold <span class="opt">(</span><span class="kwa">fun</span> <span class="kwd">h</span> n l <span class="opt">-&gt;</span>
+	<span class="opt">(</span><span class="kwd">unpack16 k h</span><span class="opt">,</span> <span class="num">100</span><span class="opt">. *.</span> <span class="kwb">float</span> n<span class="opt">.</span><span class="kwd">count</span> <span class="opt">/.</span> <span class="kwd">tot</span><span class="opt">) ::</span> l<span class="opt">)</span> <span class="kwd">h16</span> <span class="opt">[]</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">frq</span> <span class="opt">=</span> <span class="kwc">List</span><span class="opt">.</span>sort <span class="kwd">compare_freq frq</span> <span class="kwa">in</span>
+  <span class="kwc">String</span><span class="opt">.</span>concat <span class="sng">&quot;&quot;</span>
+    <span class="opt">(</span><span class="kwc">List</span><span class="opt">.</span>map <span class="opt">(</span><span class="kwa">fun</span> <span class="opt">(</span><span class="kwd">k</span><span class="opt">,</span>f<span class="opt">) -&gt;</span> <span class="kwc">Printf</span><span class="opt">.</span>sprintf <span class="sng">&quot;</span><span class="ipl">%s</span> <span class="sng">%.3f</span><span class="esc">\n</span><span class="sng">&quot;</span> <span class="kwd">k</span> f<span class="opt">)</span> <span class="kwd">frq</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwd">write_count15 k</span> seq <span class="opt">=</span>
+  <span class="kwd">count15 k</span><span class="opt">;</span>
+  <span class="kwc">Printf</span><span class="opt">.</span>sprintf <span class="sng">&quot;</span><span class="ipl">%d</span><span class="sng"></span><span class="esc">\t</span><span class="sng"></span><span class="ipl">%s</span><span class="sng">&quot;</span> <span class="opt">(</span><span class="kwa">try</span> <span class="opt">(</span><span class="kwc">H15</span><span class="opt">.</span>find <span class="kwd">h15</span> <span class="opt">(</span><span class="kwd">pack_key15</span> seq<span class="opt">)).</span><span class="kwd">count</span> <span class="kwa">with</span> Not_found <span class="opt">-&gt;</span> <span class="num">0</span><span class="opt">)</span> seq
+
+<span class="kwa">let</span> <span class="kwd">write_count16 k</span> seq <span class="opt">=</span>
+  <span class="kwd">count16 k</span><span class="opt">;</span>
+  <span class="kwc">Printf</span><span class="opt">.</span>sprintf <span class="sng">&quot;</span><span class="ipl">%d</span><span class="sng"></span><span class="esc">\t</span><span class="sng"></span><span class="ipl">%s</span><span class="sng">&quot;</span> <span class="opt">(</span><span class="kwa">try</span> <span class="opt">(</span><span class="kwc">H16</span><span class="opt">.</span>find <span class="kwd">h16</span> <span class="opt">(</span><span class="kwd">pack_key16</span> seq<span class="opt">)).</span><span class="kwd">count</span> <span class="kwa">with</span> Not_found <span class="opt">-&gt;</span> <span class="num">0</span><span class="opt">)</span> seq
+
+<span class="kwa">let</span> <span class="kwd">write_frequencies k</span> <span class="opt">=</span>
+  <span class="kwa">if</span> <span class="kwd">k</span> <span class="opt">&lt;</span> <span class="kwd">threshold16</span> <span class="kwa">then</span> <span class="kwd">write_frequencies15 k</span>
+  <span class="kwa">else</span> <span class="kwd">write_frequencies16 k</span>
+
+<span class="kwa">let</span> <span class="kwd">write_count</span> seq <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">k</span> <span class="opt">=</span> <span class="kwc">String</span><span class="opt">.</span>length seq <span class="kwa">in</span>
+  <span class="kwa">if</span> <span class="kwd">k</span> <span class="opt">&lt;</span> <span class="kwd">threshold16</span> <span class="kwa">then</span> <span class="kwd">write_count15 k</span> seq
+  <span class="kwa">else</span> <span class="kwd">write_count16 k</span> seq
+
+<span class="kwa">type</span> t <span class="opt">=</span> Size <span class="kwa">of</span> <span class="kwb">int</span> <span class="opt">|</span> Dna <span class="kwa">of</span> <span class="kwb">string</span>
+
+<span class="kwa">let</span> <span class="kwd">invoke</span> <span class="opt">(</span>f <span class="opt">:</span> t <span class="opt">-&gt;</span> <span class="kwb">string</span><span class="opt">)</span> x <span class="opt">:</span> <span class="kwb">unit</span> <span class="opt">-&gt;</span> <span class="kwb">string</span> <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">input</span><span class="opt">,</span> output <span class="opt">=</span> <span class="kwc">Unix</span><span class="opt">.</span>pipe<span class="opt">()</span> <span class="kwa">in</span>
+  <span class="kwa">match</span> <span class="kwc">Unix</span><span class="opt">.</span>fork<span class="opt">()</span> <span class="kwa">with</span>
+  <span class="opt">| -</span><span class="num">1</span> <span class="opt">-&gt;</span> <span class="kwc">Unix</span><span class="opt">.</span>close <span class="kwd">input</span><span class="opt">;</span> <span class="kwc">Unix</span><span class="opt">.</span>close output<span class="opt">; (</span><span class="kwa">let</span> <span class="kwd">v</span> <span class="opt">=</span> f x <span class="kwa">in fun</span> <span class="opt">() -&gt;</span> <span class="kwd">v</span><span class="opt">)</span>
+  <span class="opt">|</span> <span class="num">0</span> <span class="opt">-&gt;</span>
+    <span class="kwc">Unix</span><span class="opt">.</span>close <span class="kwd">input</span><span class="opt">;</span>
+    <span class="kwa">let</span> <span class="kwd">output</span> <span class="opt">=</span> <span class="kwc">Unix</span><span class="opt">.</span>out_channel_of_descr <span class="kwd">output</span> <span class="kwa">in</span>
+    <span class="kwc">Marshal</span><span class="opt">.</span>to_channel <span class="kwd">output</span> <span class="opt">(</span>f x<span class="opt">) [];</span>
+    close_out <span class="kwd">output</span><span class="opt">;</span>
+    exit <span class="num">0</span>
+  <span class="opt">|</span> pid <span class="opt">-&gt;</span>
+    <span class="kwc">Unix</span><span class="opt">.</span>close <span class="kwd">output</span><span class="opt">;</span>
+    <span class="kwa">let</span> <span class="kwd">input</span> <span class="opt">=</span> <span class="kwc">Unix</span><span class="opt">.</span>in_channel_of_descr <span class="kwd">input</span> <span class="kwa">in fun</span> <span class="opt">() -&gt;</span>
+      <span class="kwa">let</span> <span class="kwd">v</span> <span class="opt">=</span> <span class="kwc">Marshal</span><span class="opt">.</span>from_channel <span class="kwd">input</span> <span class="kwa">in</span>
+      ignore <span class="opt">(</span><span class="kwc">Unix</span><span class="opt">.</span>waitpid <span class="opt">[]</span> pid<span class="opt">);</span>
+      close_in <span class="kwd">input</span><span class="opt">;</span>
+      <span class="kwd">v</span>
+
+<span class="kwa">let</span> <span class="kwd">parallelize</span> f l <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">list</span> <span class="opt">=</span> <span class="kwc">List</span><span class="opt">.</span>map <span class="opt">(</span><span class="kwd">invoke</span> f<span class="opt">) (</span><span class="kwc">List</span><span class="opt">.</span>rev l<span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwc">List</span><span class="opt">.</span>iter <span class="opt">(</span><span class="kwa">fun</span> g <span class="opt">-&gt;</span> print_endline <span class="opt">(</span>g <span class="opt">())) (</span><span class="kwc">List</span><span class="opt">.</span>rev <span class="kwd">list</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="opt">() =</span>
+  <span class="kwd">parallelize</span>
+    <span class="opt">(</span><span class="kwa">fun</span> i <span class="opt">-&gt;</span>
+       <span class="kwa">match</span> i <span class="kwa">with</span>
+	 Size i <span class="opt">-&gt;</span>
+         <span class="kwd">write_frequencies</span> i
+       <span class="opt">|</span> Dna <span class="kwd">k</span> <span class="opt">-&gt;</span>
+         <span class="kwd">write_count k</span>
+    <span class="opt">) [</span>Size <span class="num">1</span><span class="opt">;</span>
+       Size <span class="num">2</span><span class="opt">;</span>
+       Dna <span class="sng">&quot;GGT&quot;</span><span class="opt">;</span>
+       Dna <span class="sng">&quot;GGTA&quot;</span><span class="opt">;</span>
+       Dna <span class="sng">&quot;GGTATT&quot;</span><span class="opt">;</span>
+       Dna <span class="sng">&quot;GGTATTTTAATT&quot;</span><span class="opt">;</span>
+       Dna <span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span><span class="opt">]</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+OCaml native-code
+5.4.0+dev0-2024-08-25
+
+
+ Fri, 10 Jan 2025 00:37:25 GMT
+
+MAKE:
+mv knucleotide.ocaml-3.ocaml knucleotide.ocaml-3.ml
+~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge knucleotide.ocaml-3.ml -o knucleotide.ocaml-3.ocaml_run
+rm knucleotide.ocaml-3.ml
+
+1.50s to complete and log all make actions
+
+COMMAND LINE:
+ ./knucleotide.ocaml-3.ocaml_run 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

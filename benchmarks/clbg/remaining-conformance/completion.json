@@ -1,0 +1,477 @@
+{
+  "benchmarks": [
+    {
+      "benchmark": "regexredux",
+      "endpoints": [
+        {
+          "language": "mech",
+          "fastest": {
+            "id": "mech-regex-final-reuse-signed",
+            "seconds": 0.490315166,
+            "loc": 24,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "mech-regex-final-reuse-signed",
+            "seconds": 0.490315166,
+            "loc": 24,
+            "samples": 7
+          }
+        },
+        {
+          "language": "c",
+          "fastest": {
+            "id": "regexredux-gcc-5",
+            "seconds": 0.498568458,
+            "loc": 120,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "regexredux-gcc-2",
+            "seconds": 5.985836583,
+            "loc": 104,
+            "samples": 3
+          }
+        },
+        {
+          "language": "cpp",
+          "fastest": {
+            "id": "regexredux-gpp-2",
+            "seconds": 1.341305875,
+            "loc": 63,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "regexredux-gpp-1",
+            "seconds": 2.163190042,
+            "loc": 57,
+            "samples": 3
+          }
+        },
+        {
+          "language": "rust",
+          "fastest": {
+            "id": "regexredux-rust-6",
+            "seconds": 0.469501042,
+            "loc": 77,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "regexredux-rust-3",
+            "seconds": 0.489082916,
+            "loc": 43,
+            "samples": 3
+          }
+        },
+        {
+          "language": "chapel",
+          "fastest": {
+            "id": "regexredux-chapel-3",
+            "seconds": 1.35799775,
+            "loc": 38,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "regexredux-chapel-3",
+            "seconds": 1.35799775,
+            "loc": 38,
+            "samples": 7
+          }
+        },
+        {
+          "language": "julia",
+          "fastest": {
+            "id": "regexredux-julia-3",
+            "seconds": 1.764936083,
+            "loc": 45,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-julia-1",
+            "seconds": 2.954281875,
+            "loc": 40,
+            "samples": 3
+          }
+        },
+        {
+          "language": "go",
+          "fastest": {
+            "id": "regexredux-go-3",
+            "seconds": 8.377777834,
+            "loc": 87,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-go-1",
+            "seconds": 9.162419792,
+            "loc": 73,
+            "samples": 3
+          }
+        },
+        {
+          "language": "java",
+          "fastest": {
+            "id": "regexredux-graalvmaot-6",
+            "seconds": 2.211249833,
+            "loc": 51,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-graalvmaot-6",
+            "seconds": 2.211249833,
+            "loc": 51,
+            "samples": 3
+          }
+        },
+        {
+          "language": "python",
+          "fastest": {
+            "id": "regexredux-python3-2",
+            "seconds": 0.849046917,
+            "loc": 118,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-python3-1",
+            "seconds": 3.957441875,
+            "loc": 37,
+            "samples": 3
+          }
+        },
+        {
+          "language": "ruby",
+          "fastest": {
+            "id": "regexredux-ruby-3",
+            "seconds": 4.429142875,
+            "loc": 74,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-ruby-9",
+            "seconds": 11.376751542,
+            "loc": 23,
+            "samples": 3
+          }
+        },
+        {
+          "language": "perl",
+          "fastest": {
+            "id": "regexredux-perl-3",
+            "seconds": 4.023779541,
+            "loc": 64,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-perl-1",
+            "seconds": 7.897230125,
+            "loc": 28,
+            "samples": 3
+          }
+        },
+        {
+          "language": "lua",
+          "fastest": {
+            "id": "regexredux-lua-1",
+            "seconds": 2.044598958,
+            "loc": 38,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-lua-1",
+            "seconds": 2.044598958,
+            "loc": 38,
+            "samples": 3
+          }
+        },
+        {
+          "language": "luajit",
+          "fastest": {
+            "id": "regexredux-lua-1-luajit",
+            "seconds": 2.111873958,
+            "loc": 38,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-lua-1-luajit",
+            "seconds": 2.111873958,
+            "loc": 38,
+            "samples": 3
+          }
+        },
+        {
+          "language": "javascript",
+          "fastest": {
+            "id": "regexredux-node-3",
+            "seconds": 1.263283083,
+            "loc": 50,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-node-4",
+            "seconds": 1.540885667,
+            "loc": 32,
+            "samples": 3
+          }
+        },
+        {
+          "language": "php",
+          "fastest": {
+            "id": "regexredux-php-1",
+            "seconds": 0.937362041,
+            "loc": 61,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "regexredux-php-1",
+            "seconds": 0.937362041,
+            "loc": 61,
+            "samples": 3
+          }
+        }
+      ],
+      "broad_report_sha256": "656d00e73b15a28a273718440aaaabee5d52c53c9ce4e842bd3f6bb52f09e603"
+    },
+    {
+      "benchmark": "pidigits",
+      "endpoints": [
+        {
+          "language": "mech",
+          "fastest": {
+            "id": "mech-pi-final-advance-signed",
+            "seconds": 0.3043885,
+            "loc": 42,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "mech-pi-final-compact-signed",
+            "seconds": 0.396689875,
+            "loc": 39,
+            "samples": 7
+          }
+        },
+        {
+          "language": "c",
+          "fastest": {
+            "id": "pidigits-gcc-1",
+            "seconds": 0.303446875,
+            "loc": 45,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "pidigits-gcc-1",
+            "seconds": 0.303446875,
+            "loc": 45,
+            "samples": 7
+          }
+        },
+        {
+          "language": "cpp",
+          "fastest": {
+            "id": "pidigits-gpp-5",
+            "seconds": 0.303652167,
+            "loc": 84,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "pidigits-gpp-4",
+            "seconds": 0.492714417,
+            "loc": 50,
+            "samples": 7
+          }
+        },
+        {
+          "language": "rust",
+          "fastest": {
+            "id": "pidigits-rust-3",
+            "seconds": 0.303086375,
+            "loc": 175,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "pidigits-rust-4",
+            "seconds": 0.491783209,
+            "loc": 97,
+            "samples": 3
+          }
+        },
+        {
+          "language": "chapel",
+          "fastest": {
+            "id": "pidigits-chapel-2",
+            "seconds": 0.318883959,
+            "loc": 47,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "pidigits-chapel-2",
+            "seconds": 0.318883959,
+            "loc": 47,
+            "samples": 7
+          }
+        },
+        {
+          "language": "julia",
+          "fastest": {
+            "id": "pidigits-julia-3",
+            "seconds": 0.399957042,
+            "loc": 58,
+            "samples": 7
+          },
+          "smallest": {
+            "id": "pidigits-julia-4",
+            "seconds": 0.902621583,
+            "loc": 52,
+            "samples": 3
+          }
+        },
+        {
+          "language": "go",
+          "fastest": {
+            "id": "pidigits-go-4",
+            "seconds": 0.330099417,
+            "loc": 71,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "pidigits-go-3",
+            "seconds": 0.3446055,
+            "loc": 65,
+            "samples": 3
+          }
+        },
+        {
+          "language": "java",
+          "fastest": {
+            "id": "pidigits-graalvmaot-1",
+            "seconds": 4.165147042,
+            "loc": 97,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "pidigits-graalvmaot-1",
+            "seconds": 4.165147042,
+            "loc": 97,
+            "samples": 3
+          }
+        },
+        {
+          "language": "python",
+          "fastest": {
+            "id": "pidigits-python3-3",
+            "seconds": 0.440624166,
+            "loc": 52,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "pidigits-python3-4",
+            "seconds": 4.148829333,
+            "loc": 43,
+            "samples": 3
+          }
+        },
+        {
+          "language": "ruby",
+          "fastest": {
+            "id": "pidigits-ruby-1",
+            "seconds": 5.221127417,
+            "loc": 69,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "pidigits-ruby-1",
+            "seconds": 5.221127417,
+            "loc": 69,
+            "samples": 3
+          }
+        },
+        {
+          "language": "perl",
+          "fastest": {
+            "id": "pidigits-perl-4",
+            "seconds": 0.572744209,
+            "loc": 15,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "pidigits-perl-4",
+            "seconds": 0.572744209,
+            "loc": 15,
+            "samples": 3
+          }
+        },
+        {
+          "language": "luajit",
+          "fastest": {
+            "id": "pidigits-lua-1-luajit",
+            "seconds": 1.591081958,
+            "loc": 45,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "pidigits-lua-1-luajit",
+            "seconds": 1.591081958,
+            "loc": 45,
+            "samples": 3
+          }
+        },
+        {
+          "language": "javascript",
+          "fastest": {
+            "id": "pidigits-node-2",
+            "seconds": 5.897554625,
+            "loc": 47,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "pidigits-node-2",
+            "seconds": 5.897554625,
+            "loc": 47,
+            "samples": 3
+          }
+        },
+        {
+          "language": "php",
+          "fastest": {
+            "id": "pidigits-php-5",
+            "seconds": 0.412646709,
+            "loc": 42,
+            "samples": 3
+          },
+          "smallest": {
+            "id": "pidigits-php-5",
+            "seconds": 0.412646709,
+            "loc": 42,
+            "samples": 3
+          }
+        }
+      ],
+      "broad_report_sha256": "8cb4fe825e100a7d2db9bbb92f1526de024b1c0c0eb62fca86d5e2c5387e073e"
+    }
+  ],
+  "confirmed_report_sha256": "9100536b54d5afef70a51121db3b40bb646fe560f63e007939ed27bb2d7f24bf",
+  "general_feature_cases": 47,
+  "regression_checks": 11,
+  "library_tests": 33,
+  "compiler_admission_tests": 2,
+  "limitations": [
+    "New standard-library operations currently target the experimental Cranelift AOT admission path.",
+    "The broad engine unit-test feature closure has pre-existing String: CanonicalCellBacking failures; the standalone native-features crate tests changed compiler APIs directly.",
+    "Compact runtimes have smallest-only endpoints in the ten-task aggregate because their fastest versions were not sampled for the earlier eight tasks.",
+    "Lua 5.5 pidigits output did not match the reference with its pinned bn binding; no ten-task Lua geometric mean is shown."
+  ],
+  "paired_runtime_regression": {
+    "report": "runtime-regression-timings.json",
+    "accepted_samples": 42,
+    "current_over_previous_median": {
+      "mandelbrot": 0.9934051098767958,
+      "knucleotide": 0.9743023003944756,
+      "spectralnorm": 0.9917568104397279,
+      "revcomp": 0.99145584944691,
+      "fannkuchredux": 1.0065766088984405,
+      "fasta": 1.0039970228059345,
+      "binarytrees": 1.0011053172479993
+    },
+    "largest_median_increase_percent": 0.6576608898440472,
+    "note": "Three paired full-workload samples per runtime/benchmark; small differences are timing noise, not proof of identical performance."
+  }
+}

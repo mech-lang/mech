@@ -1,0 +1,4 @@
+.build/
+mech-driver/target/
+__pycache__/
+!mech-driver/Cargo.lock

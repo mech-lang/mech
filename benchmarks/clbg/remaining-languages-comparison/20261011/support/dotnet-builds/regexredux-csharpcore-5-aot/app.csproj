@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+<ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable><AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+<Optimize>true</Optimize><ServerGarbageCollection>true</ServerGarbageCollection><ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+<InvariantGlobalization>true</InvariantGlobalization><EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+<UseSharedCompilation>false</UseSharedCompilation><NuGetAudit>false</NuGetAudit><CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+<NoWarn>FS3370;FS3511;CS8981;CS8600</NoWarn><PublishAot>true</PublishAot><OptimizationPreference>Speed</OptimizationPreference><IlcOptimizationPreference>Speed</IlcOptimizationPreference></PropertyGroup><ItemGroup><Compile Include="/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-5.cs" /></ItemGroup></Project>

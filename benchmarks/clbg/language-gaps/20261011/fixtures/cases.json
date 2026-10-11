@@ -1,0 +1,148 @@
+[
+  {
+    "name": "value-operands",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-operands.mec",
+    "expected": "7 3 10 21 17 1\n1 1 1 1 1 1\n",
+    "error": false
+  },
+  {
+    "name": "value-loop-aliases",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-loop-aliases.mec",
+    "expected": "121393 196418 25 1\n",
+    "error": false
+  },
+  {
+    "name": "value-loop-long",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-loop-long.mec",
+    "expected": "100000 100000\n",
+    "error": false
+  },
+  {
+    "name": "value-mixed-sign-division",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-mixed-sign-division.mec",
+    "expected": "1 1 2\n",
+    "error": false
+  },
+  {
+    "name": "value-conversion-negative",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-conversion-negative.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "does not fit u64"
+  },
+  {
+    "name": "value-conversion-overflow",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-conversion-overflow.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "does not fit u64"
+  },
+  {
+    "name": "value-divide-zero",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-divide-zero.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "division by zero"
+  },
+  {
+    "name": "value-remainder-zero",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-remainder-zero.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "division by zero"
+  },
+  {
+    "name": "arrow-block-effects",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/arrow-block-effects.mec",
+    "expected": "touch:10\n7 10\n",
+    "error": false
+  },
+  {
+    "name": "arrow-block-last-binding",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/arrow-block-last-binding.mec",
+    "expected": "81\n",
+    "error": false
+  },
+  {
+    "name": "type-tag-binding",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/type-tag-binding.mec",
+    "expected": "7\n",
+    "error": false
+  },
+  {
+    "name": "type-tag-binding-negative",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/type-tag-binding-negative.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "does not fit u64"
+  },
+  {
+    "name": "type-tag-binding-overflow",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/type-tag-binding-overflow.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "does not fit u64"
+  },
+  {
+    "name": "value-rejects-mutation",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-rejects-mutation.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "immutable"
+  },
+  {
+    "name": "value-copied-to-cell",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-copied-to-cell.mec",
+    "expected": "8 16\n",
+    "error": false
+  },
+  {
+    "name": "value-nested-record-aliases",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/value-nested-record-aliases.mec",
+    "expected": "22 22 10 4\n",
+    "error": false
+  },
+  {
+    "name": "tag-conversion-values",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-values.mec",
+    "expected": "touch\n8 11 11 7 13\n",
+    "error": false
+  },
+  {
+    "name": "tag-conversion-negative-return",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-negative-return.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "does not fit u64"
+  },
+  {
+    "name": "tag-conversion-overflow-binding",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-overflow-binding.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": false,
+    "error_contains": "does not fit u64"
+  },
+  {
+    "name": "tag-conversion-invalid-kind",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-invalid-kind.mec",
+    "expected": null,
+    "error": true,
+    "compile_error": true,
+    "error_contains": null
+  },
+  {
+    "name": "tag-conversion-final-binding",
+    "path": "benchmarks/clbg/language-gaps/20261011/fixtures/tag-conversion-final-binding.mec",
+    "expected": "9\n",
+    "error": false
+  }
+]

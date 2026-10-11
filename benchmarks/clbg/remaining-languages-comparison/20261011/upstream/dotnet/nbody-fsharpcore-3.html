@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>n-body F#&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>n-body F#&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/nbody.html#nbody">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">// The Computer Language Benchmarks Game</span>
+<span class="slc">// https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">//</span>
+<span class="slc">// ported from C# version with local variable changes by Anthony Lloyd</span>
+
+<span class="ppc">#nowarn</span> <span class="pps">&quot;9&quot;</span><span class="ppc"></span>
+
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">N</span> <span class="opt">=</span> <span class="num">5</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">DT</span> <span class="opt">=</span> <span class="num">0.01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">DaysPeryear</span> <span class="opt">=</span> <span class="num">365.24</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Solarmass</span> <span class="opt">=</span> <span class="num">39.4784176043574</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Jx</span> <span class="opt">=</span> <span class="num">4.84143144246472090e+00</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Jy</span> <span class="opt">= -</span><span class="num">1.16032004402742839e+00</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Jz</span> <span class="opt">= -</span><span class="num">1.03622044471123109e-01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Jvx</span> <span class="opt">=</span> <span class="num">1.66007664274403694e-03</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Jvy</span> <span class="opt">=</span> <span class="num">7.69901118419740425e-03</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Jvz</span> <span class="opt">= -</span><span class="num">6.90460016972063023e-05</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Jmass</span> <span class="opt">=</span> <span class="num">9.54791938424326609e-04</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Sx</span> <span class="opt">=</span> <span class="num">8.34336671824457987e+00</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Sy</span> <span class="opt">=</span> <span class="num">4.12479856412430479e+00</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Sz</span> <span class="opt">= -</span><span class="num">4.03523417114321381e-01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Svx</span> <span class="opt">= -</span><span class="num">2.76742510726862411e-03</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Svy</span> <span class="opt">=</span> <span class="num">4.99852801234917238e-03</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Svz</span> <span class="opt">=</span> <span class="num">2.30417297573763929e-05</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Smass</span> <span class="opt">=</span> <span class="num">2.85885980666130812e-04</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Ux</span> <span class="opt">=</span> <span class="num">1.28943695621391310e+01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Uy</span> <span class="opt">= -</span><span class="num">1.51111514016986312e+01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Uz</span> <span class="opt">= -</span><span class="num">2.23307578892655734e-01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Uvx</span> <span class="opt">=</span> <span class="num">2.96460137564761618e-03</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Uvy</span> <span class="opt">=</span> <span class="num">2.37847173959480950e-03</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Uvz</span> <span class="opt">= -</span><span class="num">2.96589568540237556e-05</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Umass</span> <span class="opt">=</span> <span class="num">4.36624404335156298e-05</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Nx</span> <span class="opt">=</span> <span class="num">1.53796971148509165e+01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Ny</span> <span class="opt">= -</span><span class="num">2.59193146099879641e+01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Nz</span> <span class="opt">=</span> <span class="num">1.79258772950371181e-01</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Nvx</span> <span class="opt">=</span> <span class="num">2.68067772490389322e-03</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Nvy</span> <span class="opt">=</span> <span class="num">1.62824170038242295e-03</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Nvz</span> <span class="opt">= -</span><span class="num">9.51592254519715870e-05</span>
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">Nmass</span> <span class="opt">=</span> <span class="num">5.15138902046611451e-05</span>
+
+<span class="kwa">open</span> <span class="kwd">Microsoft</span><span class="opt">.</span><span class="kwd">FSharp</span><span class="opt">.</span><span class="kwd">NativeInterop</span>
+
+<span class="opt">[&lt;</span><span class="kwd">Struct</span><span class="opt">&gt;]</span>
+<span class="kwa">type</span> <span class="kwc">NBody</span> <span class="opt">=</span>
+      <span class="kwa">val mutable</span> <span class="kwc">X</span><span class="opt">:</span> <span class="kwb">float</span>
+      <span class="kwa">val mutable</span> <span class="kwc">Y</span><span class="opt">:</span> <span class="kwb">float</span>
+      <span class="kwa">val mutable</span> <span class="kwc">Z</span><span class="opt">:</span> <span class="kwb">float</span>
+      <span class="kwa">val mutable</span> <span class="kwc">VX</span><span class="opt">:</span> <span class="kwb">float</span>
+      <span class="kwa">val mutable</span> <span class="kwc">VY</span><span class="opt">:</span> <span class="kwb">float</span>
+      <span class="kwa">val mutable</span> <span class="kwc">VZ</span><span class="opt">:</span> <span class="kwb">float</span>
+      <span class="kwa">val mutable</span> <span class="kwc">Mass</span> <span class="opt">:</span> <span class="kwb">float</span>
+      <span class="kwa">new</span><span class="opt">(</span>x<span class="opt">,</span>y<span class="opt">,</span>z<span class="opt">,</span>vx<span class="opt">,</span>vy<span class="opt">,</span>vz<span class="opt">,</span>mass<span class="opt">) = {</span><span class="kwc">X</span><span class="opt">=</span>x<span class="opt">;</span><span class="kwc">Y</span><span class="opt">=</span>y<span class="opt">;</span><span class="kwc">Z</span><span class="opt">=</span>z<span class="opt">;</span><span class="kwc">VX</span><span class="opt">=</span>vx<span class="opt">;</span><span class="kwc">VY</span><span class="opt">=</span>vy<span class="opt">;</span><span class="kwc">VZ</span><span class="opt">=</span>vz<span class="opt">;</span><span class="kwc">Mass</span><span class="opt">=</span>mass<span class="opt">}</span>
+
+<span class="opt">[&lt;</span><span class="kwd">EntryPoint</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">main</span> args <span class="opt">=</span>
+
+    <span class="kwa">let</span> <span class="kwc">ptrBody</span> <span class="opt">=</span> <span class="kwd">NativePtr</span><span class="opt">.</span>stackalloc<span class="opt">&lt;</span><span class="kwc">NBody</span><span class="opt">&gt;</span> <span class="kwc">N</span>
+
+    <span class="slc">// sun</span>
+    <span class="kwc">NBody</span> <span class="opt">(</span>
+        <span class="num">0.0</span><span class="opt">,</span>
+        <span class="num">0.0</span><span class="opt">,</span>
+        <span class="num">0.0</span><span class="opt">,</span>
+        <span class="opt">(</span><span class="kwc">Jvx</span> <span class="opt">*</span> <span class="kwc">Jmass</span> <span class="opt">+</span> <span class="kwc">Svx</span> <span class="opt">*</span> <span class="kwc">Smass</span> <span class="opt">+</span> <span class="kwc">Uvx</span> <span class="opt">*</span> <span class="kwc">Umass</span> <span class="opt">+</span> <span class="kwc">Nvx</span> <span class="opt">*</span> <span class="kwc">Nmass</span><span class="opt">) * -</span><span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="opt">(</span><span class="kwc">Jvy</span> <span class="opt">*</span> <span class="kwc">Jmass</span> <span class="opt">+</span> <span class="kwc">Svy</span> <span class="opt">*</span> <span class="kwc">Smass</span> <span class="opt">+</span> <span class="kwc">Uvy</span> <span class="opt">*</span> <span class="kwc">Umass</span> <span class="opt">+</span> <span class="kwc">Nvy</span> <span class="opt">*</span> <span class="kwc">Nmass</span><span class="opt">) * -</span><span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="opt">(</span><span class="kwc">Jvz</span> <span class="opt">*</span> <span class="kwc">Jmass</span> <span class="opt">+</span> <span class="kwc">Svz</span> <span class="opt">*</span> <span class="kwc">Smass</span> <span class="opt">+</span> <span class="kwc">Uvz</span> <span class="opt">*</span> <span class="kwc">Umass</span> <span class="opt">+</span> <span class="kwc">Nvz</span> <span class="opt">*</span> <span class="kwc">Nmass</span><span class="opt">) * -</span><span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Solarmass</span>
+    <span class="opt">) |&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>set <span class="kwc">ptrBody</span> <span class="num">0</span>
+
+    <span class="kwc">NBody</span> <span class="opt">(</span> <span class="slc">// jupiter</span>
+        <span class="kwc">Jx</span><span class="opt">,</span>
+        <span class="kwc">Jy</span><span class="opt">,</span>
+        <span class="kwc">Jz</span><span class="opt">,</span>
+        <span class="kwc">Jvx</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Jvy</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Jvz</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Jmass</span> <span class="opt">*</span> <span class="kwc">Solarmass</span>
+     <span class="opt">) |&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>set <span class="kwc">ptrBody</span> <span class="num">1</span>
+
+    <span class="kwc">NBody</span> <span class="opt">(</span> <span class="slc">// saturn</span>
+        <span class="kwc">Sx</span><span class="opt">,</span>
+        <span class="kwc">Sy</span><span class="opt">,</span>
+        <span class="kwc">Sz</span><span class="opt">,</span>
+        <span class="kwc">Svx</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Svy</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Svz</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Smass</span> <span class="opt">*</span> <span class="kwc">Solarmass</span>
+    <span class="opt">) |&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>set <span class="kwc">ptrBody</span> <span class="num">2</span>
+
+    <span class="kwc">NBody</span> <span class="opt">(</span> <span class="slc">// uranus</span>
+        <span class="kwc">Ux</span><span class="opt">,</span>
+        <span class="kwc">Uy</span><span class="opt">,</span>
+        <span class="kwc">Uz</span><span class="opt">,</span>
+        <span class="kwc">Uvx</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Uvy</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Uvz</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Umass</span> <span class="opt">*</span> <span class="kwc">Solarmass</span>
+    <span class="opt">) |&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>set <span class="kwc">ptrBody</span> <span class="num">3</span>
+
+    <span class="kwc">NBody</span> <span class="opt">(</span> <span class="slc">// neptune</span>
+        <span class="kwc">Nx</span><span class="opt">,</span>
+        <span class="kwc">Ny</span><span class="opt">,</span>
+        <span class="kwc">Nz</span><span class="opt">,</span>
+        <span class="kwc">Nvx</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Nvy</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Nvz</span> <span class="opt">*</span> <span class="kwc">DaysPeryear</span><span class="opt">,</span>
+        <span class="kwc">Nmass</span> <span class="opt">*</span> <span class="kwc">Solarmass</span>
+    <span class="opt">) |&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>set <span class="kwc">ptrBody</span> <span class="num">4</span>
+
+    <span class="kwa">let inline</span> sqr x <span class="opt">=</span> x <span class="opt">*</span> x
+
+    <span class="kwa">let inline</span> energy<span class="opt">() =</span>
+        <span class="kwa">let mutable</span> <span class="kwc">e</span> <span class="opt">=</span> <span class="num">0.0</span>
+        <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">0</span> <span class="kwa">to</span> <span class="kwc">N</span><span class="opt">-</span><span class="num">1</span> <span class="kwa">do</span>
+            <span class="kwa">let</span> <span class="kwc">bi</span> <span class="opt">=</span> <span class="kwd">NativePtr</span><span class="opt">.</span>get <span class="kwc">ptrBody</span> i
+            <span class="kwc">e</span> <span class="opt">&lt;-</span> <span class="kwc">e</span> <span class="opt">+</span> <span class="num">0.5</span> <span class="opt">*</span> <span class="kwc">bi</span><span class="opt">.</span><span class="kwc">Mass</span> <span class="opt">* (</span>sqr <span class="kwc">bi</span><span class="opt">.</span><span class="kwc">VX</span> <span class="opt">+</span> sqr <span class="kwc">bi</span><span class="opt">.</span><span class="kwc">VY</span> <span class="opt">+</span> sqr <span class="kwc">bi</span><span class="opt">.</span><span class="kwc">VZ</span><span class="opt">)</span>
+            <span class="kwa">for</span> j <span class="opt">=</span> i<span class="opt">+</span><span class="num">1</span> <span class="kwa">to</span> <span class="kwc">N</span><span class="opt">-</span><span class="num">1</span> <span class="kwa">do</span>
+                <span class="kwa">let</span> <span class="kwc">bj</span> <span class="opt">=</span> <span class="kwd">NativePtr</span><span class="opt">.</span>get <span class="kwc">ptrBody</span> j
+                <span class="kwc">e</span> <span class="opt">&lt;-</span> <span class="kwc">e</span> <span class="opt">-</span> <span class="kwc">bi</span><span class="opt">.</span><span class="kwc">Mass</span> <span class="opt">*</span> <span class="kwc">bj</span><span class="opt">.</span><span class="kwc">Mass</span> <span class="opt">/</span>
+                         sqrt<span class="opt">(</span>sqr<span class="opt">(</span><span class="kwc">bi</span><span class="opt">.</span><span class="kwc">X</span><span class="opt">-</span><span class="kwc">bj</span><span class="opt">.</span><span class="kwc">X</span><span class="opt">) +</span> sqr<span class="opt">(</span><span class="kwc">bi</span><span class="opt">.</span><span class="kwc">Y</span><span class="opt">-</span><span class="kwc">bj</span><span class="opt">.</span><span class="kwc">Y</span><span class="opt">) +</span> sqr<span class="opt">(</span><span class="kwc">bi</span><span class="opt">.</span><span class="kwc">Z</span><span class="opt">-</span><span class="kwc">bj</span><span class="opt">.</span><span class="kwc">Z</span><span class="opt">))</span>
+        <span class="kwc">e</span>
+
+    energy<span class="opt">().</span><span class="kwd">ToString</span><span class="opt">(</span><span class="sng">&quot;F9&quot;</span><span class="opt">) |&gt;</span> stdout<span class="opt">.</span><span class="kwd">WriteLine</span>
+
+    <span class="kwa">let inline</span> getD2 dx dy dz <span class="opt">=</span>
+        <span class="kwa">let</span> <span class="kwc">d2</span> <span class="opt">=</span> sqr dx <span class="opt">+</span> sqr dy <span class="opt">+</span> sqr dz
+        <span class="kwc">d2</span> <span class="opt">*</span> sqrt <span class="kwc">d2</span>
+
+    <span class="kwa">let inline</span> moveNative <span class="kwc">i</span> j <span class="opt">=</span>
+        <span class="kwd">NativePtr</span><span class="opt">.</span>toNativeInt <span class="kwc">ptrBody</span> <span class="opt">+ (</span><span class="num">7n</span> <span class="opt">*</span> nativeint <span class="kwc">i</span> <span class="opt">+</span> j<span class="opt">) *</span> <span class="num">8n</span>
+        <span class="opt">|&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>ofNativeInt<span class="opt">&lt;</span><span class="kwb">float</span><span class="opt">&gt;</span>
+
+    <span class="kwa">let inline</span> getNative <span class="kwc">i</span> j <span class="opt">=</span> moveNative <span class="kwc">i</span> j <span class="opt">|&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>read
+
+    <span class="kwa">let inline</span> setNative <span class="kwc">i</span> j v <span class="opt">=</span> <span class="kwd">NativePtr</span><span class="opt">.</span>write <span class="opt">(</span>moveNative <span class="kwc">i</span> j<span class="opt">)</span> v
+
+    <span class="kwa">let inline</span> addNative <span class="kwc">i</span> j v <span class="opt">=</span>
+        <span class="kwa">let</span> <span class="kwc">p</span> <span class="opt">=</span> moveNative <span class="kwc">i</span> j
+        <span class="kwd">NativePtr</span><span class="opt">.</span>read <span class="kwc">p</span> <span class="opt">+</span> v <span class="opt">|&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>write <span class="kwc">p</span>
+
+    <span class="kwa">let inline</span> subNative <span class="kwc">i</span> j v <span class="opt">=</span>
+        <span class="kwa">let</span> <span class="kwc">p</span> <span class="opt">=</span> moveNative <span class="kwc">i</span> j
+        <span class="kwd">NativePtr</span><span class="opt">.</span>read <span class="kwc">p</span> <span class="opt">-</span> v <span class="opt">|&gt;</span> <span class="kwd">NativePtr</span><span class="opt">.</span>write <span class="kwc">p</span>
+
+    <span class="kwa">let mutable</span> <span class="kwc">advancements</span> <span class="opt">=</span> <span class="kwa">if</span> args<span class="opt">.</span><span class="kwd">Length</span><span class="opt">=</span><span class="num">0</span> <span class="kwa">then</span> <span class="num">1000</span> <span class="kwa">else</span> <span class="kwb">int</span> args<span class="opt">.[</span><span class="num">0</span><span class="opt">]</span>
+    <span class="kwa">while</span> <span class="opt">(</span><span class="kwc">advancements</span> <span class="opt">&lt;-</span> <span class="kwc">advancements</span> <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span> <span class="kwc">advancements</span><span class="opt">&gt;=</span><span class="num">0</span><span class="opt">)</span> <span class="kwa">do</span>
+        <span class="kwa">for</span> <span class="kwc">i</span> <span class="opt">=</span> <span class="num">0</span> <span class="kwa">to</span> <span class="kwc">N</span><span class="opt">-</span><span class="num">1</span> <span class="kwa">do</span>
+            <span class="kwa">let</span> <span class="kwc">biX</span> <span class="opt">=</span> getNative <span class="kwc">i</span> <span class="num">0n</span>
+            <span class="kwa">let</span> <span class="kwc">biY</span> <span class="opt">=</span> getNative <span class="kwc">i</span> <span class="num">1n</span>
+            <span class="kwa">let</span> <span class="kwc">biZ</span> <span class="opt">=</span> getNative <span class="kwc">i</span> <span class="num">2n</span>
+            <span class="kwa">let mutable</span> <span class="kwc">biVX</span> <span class="opt">=</span> getNative <span class="kwc">i</span> <span class="num">3n</span>
+            <span class="kwa">let mutable</span> <span class="kwc">biVY</span> <span class="opt">=</span> getNative <span class="kwc">i</span> <span class="num">4n</span>
+            <span class="kwa">let mutable</span> <span class="kwc">biVZ</span> <span class="opt">=</span> getNative <span class="kwc">i</span> <span class="num">5n</span>
+            <span class="kwa">let</span> <span class="kwc">biMass</span> <span class="opt">=</span> getNative <span class="kwc">i</span> <span class="num">6n</span>
+            <span class="kwa">for</span> j <span class="opt">=</span> <span class="kwc">i</span><span class="opt">+</span><span class="num">1</span> <span class="kwa">to</span> <span class="kwc">N</span><span class="opt">-</span><span class="num">1</span> <span class="kwa">do</span>
+                <span class="kwa">let</span> <span class="kwc">dx</span> <span class="opt">=</span> getNative <span class="kwc">j</span> <span class="num">0n</span> <span class="opt">-</span> <span class="kwc">biX</span>
+                <span class="kwa">let</span> <span class="kwc">dy</span> <span class="opt">=</span> getNative <span class="kwc">j</span> <span class="num">1n</span> <span class="opt">-</span> <span class="kwc">biY</span>
+                <span class="kwa">let</span> <span class="kwc">dz</span> <span class="opt">=</span> getNative <span class="kwc">j</span> <span class="num">2n</span> <span class="opt">-</span> <span class="kwc">biZ</span>
+                <span class="kwa">let</span> <span class="kwc">mag</span> <span class="opt">=</span> <span class="kwc">DT</span> <span class="opt">/</span> getD2 <span class="kwc">dx dy dz</span>
+                <span class="kwc">dx</span> <span class="opt">*</span> <span class="kwc">biMass</span> <span class="opt">*</span> <span class="kwc">mag</span> <span class="opt">|&gt;</span> subNative <span class="kwc">j</span> <span class="num">3n</span>
+                <span class="kwc">dy</span> <span class="opt">*</span> <span class="kwc">biMass</span> <span class="opt">*</span> <span class="kwc">mag</span> <span class="opt">|&gt;</span> subNative <span class="kwc">j</span> <span class="num">4n</span>
+                <span class="kwc">dz</span> <span class="opt">*</span> <span class="kwc">biMass</span> <span class="opt">*</span> <span class="kwc">mag</span> <span class="opt">|&gt;</span> subNative <span class="kwc">j</span> <span class="num">5n</span>
+                <span class="kwa">let</span> <span class="kwc">bjMass</span> <span class="opt">=</span> getNative <span class="kwc">j</span> <span class="num">6n</span> <span class="opt">*</span> <span class="kwc">mag</span>
+                <span class="kwc">biVX</span> <span class="opt">&lt;-</span> <span class="kwc">biVX</span> <span class="opt">+</span> <span class="kwc">dx</span> <span class="opt">*</span> <span class="kwc">bjMass</span>
+                <span class="kwc">biVY</span> <span class="opt">&lt;-</span> <span class="kwc">biVY</span> <span class="opt">+</span> <span class="kwc">dy</span> <span class="opt">*</span> <span class="kwc">bjMass</span>
+                <span class="kwc">biVZ</span> <span class="opt">&lt;-</span> <span class="kwc">biVZ</span> <span class="opt">+</span> <span class="kwc">dz</span> <span class="opt">*</span> <span class="kwc">bjMass</span>
+            <span class="kwc">biVX</span> <span class="opt">*</span> <span class="kwc">DT</span> <span class="opt">|&gt;</span> addNative <span class="kwc">i</span> <span class="num">0n</span>
+            <span class="kwc">biVY</span> <span class="opt">*</span> <span class="kwc">DT</span> <span class="opt">|&gt;</span> addNative <span class="kwc">i</span> <span class="num">1n</span>
+            <span class="kwc">biVZ</span> <span class="opt">*</span> <span class="kwc">DT</span> <span class="opt">|&gt;</span> addNative <span class="kwc">i</span> <span class="num">2n</span>
+            setNative <span class="kwc">i</span> <span class="num">3n</span> <span class="kwc">biVX</span>
+            setNative <span class="kwc">i</span> <span class="num">4n</span> <span class="kwc">biVY</span>
+            setNative <span class="kwc">i</span> <span class="num">5n</span> <span class="kwc">biVZ</span>
+
+    energy<span class="opt">().</span><span class="kwd">ToString</span><span class="opt">(</span><span class="sng">&quot;F9&quot;</span><span class="opt">) |&gt;</span> stdout<span class="opt">.</span><span class="kwd">WriteLine</span>
+
+    exit <span class="kwc">0</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+.NET SDK 9.0.100
+Host Version: 9.0.0
+Commit: 9d5a6a9aa4
+
+&lt;OutputType&gt;Exe
+&lt;TargetFramework&gt;net9.0
+&lt;ImplicitUsings&gt;enable
+&lt;Nullable&gt;enable
+&lt;AllowUnsafeBlocks&gt;true
+&lt;ServerGarbageCollection&gt;true
+&lt;ConcurrentGarbageCollection&gt;true
+&lt;PublishAot&gt;false
+
+
+ Thu, 06 Feb 2025 05:38:29 GMT
+
+MAKE:
+cp nbody.fsharpcore-3.fsharpcore Program.fs
+cp Include/fsharpcore/program.fsproj .
+/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release	
+  Determining projects to restore...
+  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.fsproj (in 2.06 sec).
+  program -&gt; /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/bin/Release/net9.0/linux-x64/program.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:11.52
+
+13.55s to complete and log all make actions
+
+COMMAND LINE:
+ ./bin/Release/net9.0/linux-x64/program 50000000
+
+PROGRAM OUTPUT:
+-0.169075164
+-0.169059907
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

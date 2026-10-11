@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fannkuch-redux Toit&nbsp;#8 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fannkuch-redux Toit&nbsp;#8 program</h1>
+    <aside>
+      <p><a href="../description/fannkuchredux.html#fannkuchredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks game</span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">   Naive transliteration from Rex Kerr&#39;s Scala program</span>
+<span class="com">   contributed by Isaac Gouy</span>
+<span class="com">*/</span>
+
+fannkuch n<span class="opt">/</span><span class="kwb">int</span> <span class="opt">-&gt;</span> <span class="kwb">int</span><span class="opt">:</span>
+   perm1 <span class="opt">:=</span> <span class="kwb">List</span> n
+   n<span class="opt">.</span>repeat<span class="opt">:</span> perm1<span class="opt">[</span>it<span class="opt">] =</span> it
+   perm <span class="opt">:=</span> <span class="kwb">List</span> n
+   count <span class="opt">:=</span> <span class="kwb">List</span> n   
+   f <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> flips <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> nperm <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> checksum <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> j <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> k <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> r <span class="opt">:=</span> <span class="num">0</span>
+
+   r <span class="opt">=</span> n
+   <span class="kwa">while</span> r <span class="opt">&gt;</span> <span class="num">0</span><span class="opt">:</span>   
+      i <span class="opt">:=</span> <span class="num">0</span>   
+      <span class="kwa">while</span> r <span class="opt">!=</span> <span class="num">1</span><span class="opt">:</span> count<span class="opt">[</span>r <span class="opt">-</span> <span class="num">1</span><span class="opt">] =</span> r<span class="opt">;</span> r <span class="opt">-=</span> <span class="num">1</span>    
+      <span class="kwa">while</span> i <span class="opt">&lt;</span> n<span class="opt">:</span> perm<span class="opt">[</span>i<span class="opt">] =</span> perm1<span class="opt">[</span>i<span class="opt">];</span> i <span class="opt">+=</span> <span class="num">1</span>   
+   
+      <span class="slc">// Count flips and update max and checksum</span>
+      f <span class="opt">=</span> <span class="num">0</span>   
+      k <span class="opt">=</span> perm<span class="opt">[</span><span class="num">0</span><span class="opt">]</span>
+      <span class="kwa">while</span> k <span class="opt">!=</span> <span class="num">0</span><span class="opt">:</span>
+         i <span class="opt">=</span> <span class="num">0</span>      
+         <span class="kwa">while</span> <span class="num">2</span><span class="opt">*</span>i <span class="opt">&lt;</span> k<span class="opt">:</span>      
+            t <span class="opt">:=</span> perm<span class="opt">[</span>i<span class="opt">];</span> perm<span class="opt">[</span>i<span class="opt">] =</span> perm<span class="opt">[</span>k <span class="opt">-</span> i<span class="opt">];</span> perm<span class="opt">[</span>k <span class="opt">-</span> i<span class="opt">] =</span> t       
+            i <span class="opt">+=</span> <span class="num">1</span>       
+      
+         k <span class="opt">=</span> perm<span class="opt">[</span><span class="num">0</span><span class="opt">]</span>  
+         f <span class="opt">+=</span> <span class="num">1</span>
+         
+      <span class="kwa">if</span> f <span class="opt">&gt;</span> flips<span class="opt">:</span> flips <span class="opt">=</span> f           
+      <span class="kwa">if</span> <span class="opt">(</span>nperm <span class="opt">&amp;</span> <span class="num">0x1</span><span class="opt">) ==</span> <span class="num">0</span><span class="opt">:</span>   
+         checksum <span class="opt">+=</span> f 
+      <span class="kwa">else</span><span class="opt">:</span> 
+         checksum <span class="opt">-=</span> f         
+         
+      <span class="slc">// Use incremental change to generate another permutation           </span>
+      more <span class="opt">:=</span> <span class="kwa">true</span>         
+      <span class="kwa">while</span> more<span class="opt">:</span>  
+         <span class="kwa">if</span> r <span class="opt">==</span> n<span class="opt">:</span>
+            print checksum                     
+            <span class="kwa">return</span> flips 
+            
+         p0 <span class="opt">:=</span> perm1<span class="opt">[</span><span class="num">0</span><span class="opt">]</span>
+         i <span class="opt">=</span> <span class="num">0</span>
+         <span class="kwa">while</span> i <span class="opt">&lt;</span> r<span class="opt">:</span>
+            j <span class="opt">=</span> i <span class="opt">+</span> <span class="num">1</span>
+            perm1<span class="opt">[</span>i<span class="opt">] =</span> perm1<span class="opt">[</span>j<span class="opt">]</span>
+            i <span class="opt">=</span> j
+            
+         perm1<span class="opt">[</span>r<span class="opt">] =</span> p0             
+      
+         count<span class="opt">[</span>r<span class="opt">] -=</span> <span class="num">1</span>        
+         <span class="kwa">if</span> count<span class="opt">[</span>r<span class="opt">] &gt;</span> <span class="num">0</span><span class="opt">:</span> more <span class="opt">=</span> <span class="kwa">false</span>
+         <span class="kwa">else</span><span class="opt">:</span> r <span class="opt">+=</span> <span class="num">1</span> 
+         
+      nperm <span class="opt">+=</span> <span class="num">1</span>
+
+   <span class="kwa">return</span> flips 
+                            
+main args<span class="opt">:</span>
+  n <span class="opt">:=</span> args<span class="opt">.</span>size <span class="opt">==</span> <span class="num">1</span> ? <span class="kwb">int</span><span class="opt">.</span>parse args<span class="opt">[</span><span class="num">0</span><span class="opt">] :</span> <span class="num">7</span>
+  print <span class="sng">&quot;Pfannkuchen($n) = $(fannkuch n)&quot;</span>    
+                  
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+v2.0.0-alpha.174
+
+
+
+ Sat, 18 Jan 2025 07:39:16 GMT
+
+MAKE:
+cp -r Include/toit/.packages .
+cp -r Include/toit/package.lock .
+cp -r Include/toit/package.yaml .	
+/opt/src/toit/bin/toit.compile -O2 --strip -o fannkuchredux.toit-8.toit_run fannkuchredux.toit-8.toit 
+
+1.03s to complete and log all make actions
+
+COMMAND LINE:
+ ./fannkuchredux.toit-8.toit_run 12
+
+PROGRAM OUTPUT:
+3968050
+Pfannkuchen(12) = 65
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

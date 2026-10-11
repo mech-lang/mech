@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "unchanged_sources": 613,
+  "unchanged_endpoint_measurements": 669,
+  "updated_endpoints": [
+    "nbody:chapel-3",
+    "nbody:compact-baseline",
+    "nbody:nbody-gpp-6-llvm-native",
+    "nbody:nbody-zig-2-faithful",
+    "nbody:pairwise-mass-tails",
+    "nbody:rust-3"
+  ],
+  "programs": 675
+}

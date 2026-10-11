@@ -1,0 +1,2 @@
+result := (stats/sum([twice | i <- 0..10, twice := i * 2, i > 5]))
+io/print("{}\n", result)

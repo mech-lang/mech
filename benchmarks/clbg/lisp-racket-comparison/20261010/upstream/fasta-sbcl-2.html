@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fasta Lisp SBCL&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fasta Lisp SBCL&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/fasta.html#fasta">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">;;   The Computer Language Benchmarks Game</span>
+<span class="slc">;;   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">;;; Contributed by Gustavo Henrique Milaré</span>
+
+<span class="slc">;;; This file was fetched from https://salsa.debian.org/benchmarksgame-team/benchmarksgame/ and modified.</span>
+<span class="slc">;;; These are the original creators:</span>
+
+<span class="slc">;;; contributed by Ralph Richard Cook</span>
+<span class="slc">;;; Optimizations by Nicolas Neuss</span>
+<span class="slc">;;; Includes code from the &#39;random&#39; benchmark</span>
+<span class="slc">;;; Credits from the &#39;random&#39; benchmark:</span>
+<span class="slc">;;; Chih-Chung Chang contributed better declarations to improve performance</span>
+<span class="slc">;;; Multi-lisp modifications by Brent Fulgham</span>
+
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="kwe">+im+</span>     <span class="num">139968</span><span class="opt">)</span>
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="kwe">+ia+</span>       <span class="num">3877</span><span class="opt">)</span>
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="kwe">+ic+</span>     <span class="num">29573</span><span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="opt">*</span>last-random<span class="opt">*</span> <span class="num">42</span><span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">inline</span> gen-random<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">gen-random</span> <span class="opt">(</span><span class="kwa">max</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> <span class="opt">(</span><span class="kwa">unsigned-byte</span> <span class="num">30</span><span class="opt">) *</span>last-random<span class="opt">*))</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">double-float</span> max<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">setq</span> <span class="opt">*</span>last-random<span class="opt">* (</span><span class="kwa">mod</span> <span class="opt">(+ (</span><span class="kwa">the</span> <span class="opt">(</span><span class="kwa">unsigned-byte</span> <span class="num">31</span><span class="opt">)</span>
+				<span class="opt">(* *</span>last-random<span class="opt">*</span> <span class="kwe">+ia+</span><span class="opt">))</span>
+			      <span class="kwe">+ic+</span><span class="opt">)</span>
+			   <span class="kwe">+im+</span><span class="opt">))</span>
+  <span class="opt">(/ (*</span> max <span class="opt">*</span>last-random<span class="opt">*)</span> <span class="kwe">+im+</span><span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="opt">+</span>line-length<span class="opt">+</span> <span class="num">60</span><span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">defstruct</span> <span class="opt">(</span><span class="kwa">freq</span> <span class="opt">(</span><span class="kwc">:predicate</span> freqp<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">c</span> <span class="opt">#</span><span class="esc">\x</span> <span class="kwc">:type</span> base-char<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">p</span> <span class="num">0.0</span>d0 <span class="kwc">:type</span> double-float<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">base-string</span> <span class="kwd">*alu*</span><span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="kwd">*alu*</span> <span class="opt">(</span><span class="kwa">concatenate</span> <span class="opt">&#39;</span>base-string
+  <span class="sng">&quot;GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGG&quot;</span>
+  <span class="sng">&quot;GAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGA&quot;</span>
+  <span class="sng">&quot;CCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAAT&quot;</span>
+  <span class="sng">&quot;ACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCA&quot;</span>
+  <span class="sng">&quot;GCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG&quot;</span>
+  <span class="sng">&quot;AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC&quot;</span>
+  <span class="sng">&quot;AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA&quot;</span><span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">simple-vector</span> <span class="kwd">*iub*</span> <span class="opt">*</span>homo-sapiens<span class="opt">*))</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="kwd">*iub*</span>
+  <span class="opt">(</span><span class="kwa">vector</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\a</span> <span class="kwc">:p</span> <span class="num">0.27</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\c</span> <span class="kwc">:p</span> <span class="num">0.12</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\g</span> <span class="kwc">:p</span> <span class="num">0.12</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\t</span> <span class="kwc">:p</span> <span class="num">0.27</span>d0<span class="opt">)</span>
+
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\B</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\D</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\H</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\K</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\M</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\N</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\R</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\S</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\V</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\W</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\Y</span> <span class="kwc">:p</span> <span class="num">0.02</span>d0<span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="opt">*</span>homo-sapiens<span class="opt">*</span>
+  <span class="opt">(</span><span class="kwa">vector</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\a</span> <span class="kwc">:p</span> <span class="num">0.3029549426680</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\c</span> <span class="kwc">:p</span> <span class="num">0.1979883004921</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\g</span> <span class="kwc">:p</span> <span class="num">0.1975473066391</span>d0<span class="opt">)</span>
+   <span class="opt">(</span><span class="kwa">make-freq</span> <span class="kwc">:c</span> <span class="opt">#</span><span class="esc">\t</span> <span class="kwc">:p</span> <span class="num">0.3015094502008</span>d0<span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">make-cumulative</span> <span class="opt">(</span><span class="kwa">freqs</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">cp</span> <span class="num">0.0</span>d0<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">double-float</span> cp<span class="opt">)</span>
+	     <span class="opt">(</span><span class="kwa">simple-vector</span> freqs<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">i</span> <span class="opt">(</span><span class="kwa">length</span> freqs<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">incf</span> cp <span class="opt">(</span><span class="kwa">freq-p</span> <span class="opt">(</span><span class="kwa">aref</span> freqs i<span class="opt">)))</span>
+      <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">freq-p</span> <span class="opt">(</span><span class="kwa">aref</span> freqs i<span class="opt">))</span> cp<span class="opt">))))</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">inline</span> select-random<span class="opt">))</span>
+
+<span class="opt">#+</span>nil
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">select-random</span> <span class="opt">(</span><span class="kwa">freqs</span> len<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> len<span class="opt">) (</span><span class="kwa">simple-vector</span> freqs<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">r</span> <span class="opt">(</span><span class="kwa">gen-random</span> <span class="num">1.0</span>d0<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">double-float</span> r<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">i</span> len<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(&lt;</span> r <span class="opt">(</span><span class="kwa">freq-p</span> <span class="opt">(</span><span class="kwa">aref</span> freqs i<span class="opt">)))</span>
+        <span class="opt">(</span><span class="kwa">return-from</span> select-random <span class="opt">(</span><span class="kwa">freq-c</span> <span class="opt">(</span><span class="kwa">aref</span> freqs i<span class="opt">)))))</span>
+    <span class="opt">(</span><span class="kwa">freq-c</span> <span class="opt">(</span><span class="kwa">aref</span> freqs <span class="opt">(</span><span class="kwa">1-</span> len<span class="opt">)))))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">select-random</span> <span class="opt">(</span><span class="kwa">freqs</span> len<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> len<span class="opt">) (</span><span class="kwa">simple-vector</span> freqs<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">r</span> <span class="opt">(</span><span class="kwa">gen-random</span> <span class="num">1.0</span>d0<span class="opt">))</span>
+	<span class="opt">(</span><span class="kwa">first</span> <span class="opt">(</span><span class="kwa">aref</span> freqs <span class="num">0</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">double-float</span> r<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(&lt;</span> r <span class="opt">(</span><span class="kwa">freq-p</span> first<span class="opt">))</span>
+	<span class="opt">(</span><span class="kwa">freq-c</span> first<span class="opt">)</span>
+	<span class="opt">(</span><span class="kwa">do</span><span class="opt">* ((</span><span class="kwa">lo</span> <span class="num">0</span><span class="opt">)</span>
+	      <span class="opt">(</span><span class="kwa">hi</span> <span class="opt">(</span><span class="kwa">1-</span> len<span class="opt">))</span>
+	      <span class="opt">(</span><span class="kwa">mid</span> <span class="opt">(</span><span class="kwa">truncate</span> <span class="opt">(+</span> lo hi<span class="opt">)</span> <span class="num">2</span><span class="opt">) (</span><span class="kwa">truncate</span> <span class="opt">(+</span> lo hi<span class="opt">)</span> <span class="num">2</span><span class="opt">))</span>
+	      <span class="opt">(</span><span class="kwa">freq</span> <span class="opt">(</span><span class="kwa">aref</span> freqs mid<span class="opt">) (</span><span class="kwa">aref</span> freqs mid<span class="opt">)))</span>
+	     <span class="opt">((&gt;=</span> lo mid<span class="opt">) (</span><span class="kwa">freq-c</span> <span class="opt">(</span><span class="kwa">aref</span> freqs hi<span class="opt">)))</span>
+	  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> lo hi mid<span class="opt">))</span>
+	  <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(&lt;</span> r <span class="opt">(</span><span class="kwa">freq-p</span> freq<span class="opt">))</span>
+	      <span class="opt">(</span><span class="kwa">setf</span> hi mid<span class="opt">)</span>
+	      <span class="opt">(</span><span class="kwa">setf</span> lo mid<span class="opt">))))))</span>
+
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="opt">+</span>buffer-size<span class="opt">+</span> <span class="num">30000</span><span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">make-random-fasta</span> <span class="opt">(</span><span class="kwa">id</span> desc freqs freqs-length n line-length<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> freqs-length n line-length<span class="opt">)</span>
+	   <span class="opt">(</span><span class="kwa">string</span> id desc<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">buf</span> <span class="opt">(</span><span class="kwa">make-string</span> <span class="opt">+</span>buffer-size<span class="opt">+</span> <span class="kwc">:element</span>-type <span class="opt">&#39;</span>base-char <span class="kwc">:initial</span>-element <span class="opt">#</span><span class="esc">\S</span>pace<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">index</span> <span class="num">0</span><span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> index<span class="opt">)</span>
+	     <span class="opt">(</span><span class="kwa">base-string</span> buf<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;&gt;~a ~a~%&quot;</span> id desc<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">do</span><span class="opt">* ((</span><span class="kwa">chars-remaining</span> n <span class="opt">(</span><span class="kwa">-</span> chars-remaining current-line-length<span class="opt">))</span>
+          <span class="opt">(</span><span class="kwa">current-line-length</span> <span class="num">0</span><span class="opt">))</span>
+         <span class="opt">((&lt;=</span> chars-remaining <span class="num">0</span><span class="opt">)</span> nil<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> chars-remaining current-line-length<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">setf</span> current-line-length <span class="opt">(</span><span class="kwa">min</span> chars-remaining line-length<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(&lt; (</span><span class="kwa">-</span> <span class="opt">+</span>buffer-size<span class="opt">+</span> index<span class="opt">)</span> current-line-length<span class="opt">)</span>
+        <span class="opt">(</span><span class="kwa">write-sequence</span> buf <span class="opt">*</span>standard-output<span class="opt">*</span> <span class="kwc">:end</span> index<span class="opt">)</span>
+        <span class="opt">(</span><span class="kwa">setf</span> index <span class="num">0</span><span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">i</span> current-line-length<span class="opt">)</span>
+        <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> i<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> buf index<span class="opt">) (</span><span class="kwa">select-random</span> freqs freqs-length<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">incf</span> index<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> buf index<span class="opt">) #</span><span class="esc">\N</span>ewline<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">incf</span> index<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(&gt;</span> index <span class="num">0</span><span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">write-sequence</span> buf <span class="opt">*</span>standard-output<span class="opt">*</span> <span class="kwc">:end</span> index<span class="opt">))))</span>
+
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">make-repeat-fasta</span> <span class="opt">(</span><span class="kwa">id</span> desc s n line-length<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> n line-length<span class="opt">)</span>
+	   <span class="opt">(</span><span class="kwa">string</span> id desc s<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">s-start</span> <span class="num">0</span><span class="opt">)</span>               <span class="slc">; this won&#39;t change</span>
+        <span class="opt">(</span><span class="kwa">s-end</span> <span class="opt">(</span><span class="kwa">length</span> s<span class="opt">))</span>        <span class="slc">; this won&#39;t change</span>
+        <span class="opt">(</span><span class="kwa">w-start</span> <span class="num">0</span><span class="opt">)</span>               <span class="slc">; this will cycle around</span>
+        <span class="opt">(</span><span class="kwa">w-end</span> <span class="num">0</span><span class="opt">)</span>                 <span class="slc">; this will cycle around</span>
+        <span class="opt">(</span><span class="kwa">current-line-length</span> <span class="num">0</span><span class="opt">))</span>  <span class="slc">; line-length or less for the last line</span>
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> s-start s-end w-start w-end current-line-length<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;&gt;~a ~a~%&quot;</span> id desc<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">do</span> <span class="opt">((</span><span class="kwa">chars-remaining</span> n <span class="opt">(</span><span class="kwa">-</span> chars-remaining current-line-length<span class="opt">)))</span>
+        <span class="opt">((&lt;=</span> chars-remaining <span class="num">0</span><span class="opt">)</span> nil<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> chars-remaining<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">setf</span> current-line-length <span class="opt">(</span><span class="kwa">min</span> chars-remaining line-length<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">setf</span> w-end <span class="opt">(+</span> w-start current-line-length<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(&gt;</span> w-end s-end<span class="opt">)</span>
+	<span class="opt">(</span><span class="kwa">decf</span> w-end s-end<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(&gt;</span> w-end w-start<span class="opt">)</span>
+          <span class="opt">(</span><span class="kwa">write-sequence</span> s <span class="opt">*</span>standard-output<span class="opt">*</span> <span class="kwc">:start</span> w-start <span class="kwc">:end</span> w-end<span class="opt">)</span>
+	<span class="opt">(</span><span class="kwa">progn</span>
+	  <span class="opt">(</span><span class="kwa">write-sequence</span> s <span class="opt">*</span>standard-output<span class="opt">*</span> <span class="kwc">:start</span> w-start <span class="kwc">:end</span> s-end<span class="opt">)</span>
+	  <span class="opt">(</span><span class="kwa">write-sequence</span> s <span class="opt">*</span>standard-output<span class="opt">*</span> <span class="kwc">:start</span> s-start <span class="kwc">:end</span> w-end<span class="opt">)))</span>
+      <span class="opt">(</span><span class="kwa">write-char</span> <span class="opt">#</span><span class="esc">\N</span>ewline<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">setf</span> w-start w-end<span class="opt">))))</span>
+
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">main</span> <span class="opt">()</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">n</span> <span class="opt">(</span><span class="kwa">or</span> <span class="opt">(</span><span class="kwa">ignore-errors</span>
+		 <span class="opt">(</span><span class="kwa">parse-integer</span> <span class="opt">(</span><span class="kwa">car</span> <span class="opt">(</span><span class="kwa">last</span> <span class="opt">#+</span>sbcl sb-ext<span class="opt">:*</span>posix-argv<span class="opt">*</span>
+					   <span class="opt">#+</span>cmu  extensions<span class="opt">:*</span>command-line-strings<span class="opt">*</span>
+					   <span class="opt">#+</span>gcl  si<span class="opt">::*</span>command-args<span class="opt">*</span>
+					   <span class="opt">#+</span>clisp nil<span class="opt">))))</span>
+	       <span class="num">1000</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> n<span class="opt">))</span>
+
+    <span class="opt">(</span><span class="kwa">make-cumulative</span> <span class="kwd">*iub*</span><span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">make-cumulative</span> <span class="opt">*</span>homo-sapiens<span class="opt">*)</span>
+
+    <span class="opt">(</span><span class="kwa">make-repeat-fasta</span> <span class="sng">&quot;ONE&quot;</span> <span class="sng">&quot;Homo sapiens alu&quot;</span>
+		       <span class="kwd">*alu*</span> <span class="opt">(</span><span class="kwa">the</span> fixnum <span class="opt">(*</span> n <span class="num">2</span><span class="opt">)) +</span>line-length<span class="opt">+)</span>
+    <span class="opt">(</span><span class="kwa">make-random-fasta</span> <span class="sng">&quot;TWO&quot;</span> <span class="sng">&quot;IUB ambiguity codes&quot;</span>
+		       <span class="kwd">*iub*</span> <span class="opt">(</span><span class="kwa">length</span> <span class="kwd">*iub*</span><span class="opt">) (</span><span class="kwa">the</span> fixnum <span class="opt">(*</span> n <span class="num">3</span><span class="opt">)) +</span>line-length<span class="opt">+)</span>
+    <span class="opt">(</span><span class="kwa">make-random-fasta</span> <span class="sng">&quot;THREE&quot;</span>  <span class="sng">&quot;Homo sapiens frequency&quot;</span>
+		       <span class="opt">*</span>homo-sapiens<span class="opt">* (</span><span class="kwa">length</span> <span class="opt">*</span>homo-sapiens<span class="opt">*)</span>
+		       <span class="opt">(</span><span class="kwa">the</span> fixnum <span class="opt">(*</span> n <span class="num">5</span><span class="opt">)) +</span>line-length<span class="opt">+)))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+SBCL 2.4.8
+
+
+ Mon, 13 Jan 2025 01:10:24 GMT
+
+MAKE:
+cp: 'fasta.sbcl-2.sbcl' and './fasta.sbcl-2.sbcl' are the same file
+SBCL built with: /opt/src/sbcl-2.4.8/bin/sbcl --userinit /dev/null --batch --eval '(load &quot;fasta.sbcl-2.sbcl_compile&quot;)'
+### START fasta.sbcl-2.sbcl_compile
+(handler-bind ((sb-ext:defconstant-uneql      (lambda (c) (abort c))))      (require :sb-concurrency)      (load (compile-file &quot;fasta.sbcl-2.sbcl&quot; ))) (save-lisp-and-die &quot;sbcl.core&quot; :purify t)
+### END fasta.sbcl-2.sbcl_compile
+
+; compiling file &quot;/home/dunham/all-benchmarksgame/benchmarksgame_i53330/fasta/tmp/fasta.sbcl-2.sbcl&quot; (written 26 APR 2018 12:47:51 PM):
+
+; wrote /home/dunham/all-benchmarksgame/benchmarksgame_i53330/fasta/tmp/fasta.sbcl-2.fasl
+; compilation finished in 0:00:00.135
+### START fasta.sbcl-2.sbcl_run
+(main) (quit)
+### END fasta.sbcl-2.sbcl_run
+
+
+2.52s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/sbcl-2.4.8/bin/sbcl --dynamic-space-size 500 --noinform --core sbcl.core --userinit /dev/null --load fasta.sbcl-2.sbcl_run 25000000
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA
+TCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT
+AAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG
+GCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG
+CCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT
+GGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA
+GGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA
+TTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG
+AATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA
+GCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT
+AATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC
+AGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG
+GTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC
+CGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG
+AGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT
+TGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA
+TGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT
+GTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG
+TTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT
+CTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG
+CGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG
+TCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA
+CTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG
+AGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG
+GGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC
+TGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA
+TACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA
+GGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT
+GCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC
+ACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT
+TCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC
+CGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG
+CTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG
+GGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC
+CAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT
+GGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC
+GCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA
+GGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA
+GACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA
+GGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG
+AAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT
+CCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA
+GTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA
+AAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC
+GGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT
+ACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG
+GAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC
+GCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC
+GGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG
+TCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA
+AAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG
+GAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT
+CCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC
+TGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG
+ACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC
+GTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA
+ACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA
+CAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA
+CTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA
+ACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG
+CCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG
+AGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC
+CGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG
+AGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC
+CCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG
+CTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG
+CCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG
+CCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC
+ACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA
+AAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC
+TGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC
+ACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG
+CTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG
+AGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT
+AGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA
+TCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC
+CTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA
+TCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG
+CCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT
+GGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG
+GGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG
+CGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG
+GGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG
+GTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT
+AATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT
+GCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT
+CAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG
+GGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC
+TCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT
+CGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG
+ATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG
+CGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG
+AGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA
+CAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG
+CAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC
+ACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC
+GCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC
+GAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG
+GGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT
+TGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG
+CGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA
+GCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG
+CCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC
+GCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG
+CGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA
+CTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG
+CCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA
+ACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC
+CAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT
+GAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA
+AGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG
+ATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC
+TAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA
+GGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC
+GCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG
+TGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC
+AGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA
+ATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA
+GAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC
+AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG
+TAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC
+CAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT
+GGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC
+CCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA
+GAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT
+TTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC
+ATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC
+TGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG
+GTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG
+TCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG
+GCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC
+GTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT
+ACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC
+GAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC
+GGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC
+CTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA
+ATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG
+AGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC
+TGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT
+CACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG
+TTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG
+CCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC
+GCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT
+GGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC
+CCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC
+TGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG
+CGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG
+AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG
+AGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG
+AGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT
+GAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA
+TCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC
+AGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA
+AAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG
+CGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC
+TACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG
+GGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT
+CGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG
+CGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG
+GTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA
+AAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA
+GGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC
+TCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC
+CTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA
+GACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG
+CGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG
+AACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG
+ACAGAGCGAGACTCCGTCTCAAAAAGGCCGG    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

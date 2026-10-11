@@ -1,0 +1,154 @@
+RUN 3 mandelbrot_optimized
+SAMPLE 3 mandelbrot_optimized 58.509729s
+RUN 3 mandelbrot_compact
+SAMPLE 3 mandelbrot_compact 39.253494s
+RUN 3 mech-control-mandelbrot
+SAMPLE 3 mech-control-mandelbrot 0.441946s
+RUN 1 regexredux_compact
+SAMPLE 1 regexredux_compact 31.871841s
+RUN 1 mech-control-regexredux
+SAMPLE 1 mech-control-regexredux 0.484192s
+RUN 1 regexredux_optimized
+SAMPLE 1 regexredux_optimized 31.667284s
+RUN 2 regexredux_optimized
+SAMPLE 2 regexredux_optimized 31.732256s
+RUN 2 mech-control-regexredux
+SAMPLE 2 mech-control-regexredux 0.488651s
+RUN 2 regexredux_compact
+SAMPLE 2 regexredux_compact 32.056613s
+RUN 3 regexredux_compact
+SAMPLE 3 regexredux_compact 31.646769s
+RUN 3 mech-control-regexredux
+SAMPLE 3 mech-control-regexredux 0.488685s
+RUN 3 regexredux_optimized
+SAMPLE 3 regexredux_optimized 31.694116s
+RUN 1 revcomp_compact
+SAMPLE 1 revcomp_compact 15.500681s
+RUN 1 revcomp_optimized
+SAMPLE 1 revcomp_optimized 3.437640s
+RUN 1 mech-control-revcomp
+SAMPLE 1 mech-control-revcomp 0.151581s
+RUN 2 mech-control-revcomp
+SAMPLE 2 mech-control-revcomp 0.152849s
+RUN 2 revcomp_optimized
+SAMPLE 2 revcomp_optimized 3.431456s
+RUN 2 revcomp_compact
+SAMPLE 2 revcomp_compact 15.413344s
+RUN 3 revcomp_compact
+SAMPLE 3 revcomp_compact 15.028976s
+RUN 3 revcomp_optimized
+SAMPLE 3 revcomp_optimized 3.466526s
+RUN 3 mech-control-revcomp
+SAMPLE 3 mech-control-revcomp 0.147025s
+RUN 1 mech-control-fasta
+SAMPLE 1 mech-control-fasta 0.594703s
+RUN 1 fasta_optimized
+SAMPLE 1 fasta_optimized 9.538952s
+RUN 1 fasta_compact
+SAMPLE 1 fasta_compact 20.708044s
+RUN 2 mech-control-fasta
+SAMPLE 2 mech-control-fasta 0.571125s
+RUN 2 fasta_compact
+SAMPLE 2 fasta_compact 20.819056s
+RUN 2 fasta_optimized
+SAMPLE 2 fasta_optimized 9.597693s
+RUN 3 fasta_compact
+SAMPLE 3 fasta_compact 20.581760s
+RUN 3 mech-control-fasta
+SAMPLE 3 mech-control-fasta 0.573853s
+RUN 3 fasta_optimized
+SAMPLE 3 fasta_optimized 9.513803s
+RUN 1 nbody_compact
+SAMPLE 1 nbody_compact 578.458858s
+RUN 1 mech-control-nbody
+SAMPLE 1 mech-control-nbody 1.061414s
+RUN 1 nbody_optimized
+SAMPLE 1 nbody_optimized 7.407204s
+RUN 2 nbody_optimized
+SAMPLE 2 nbody_optimized 7.457588s
+RUN 2 nbody_compact
+SAMPLE 2 nbody_compact 574.588075s
+RUN 2 mech-control-nbody
+SAMPLE 2 mech-control-nbody 1.053340s
+RUN 3 nbody_compact
+SAMPLE 3 nbody_compact 577.440907s
+RUN 3 nbody_optimized
+SAMPLE 3 nbody_optimized 7.399599s
+RUN 3 mech-control-nbody
+SAMPLE 3 mech-control-nbody 1.052400s
+RUN 1 mech-control-pidigits
+SAMPLE 1 mech-control-pidigits 0.312013s
+RUN 1 pidigits_compact
+SAMPLE 1 pidigits_compact 14.962734s
+RUN 1 pidigits_optimized
+SAMPLE 1 pidigits_optimized 13.917037s
+RUN 2 mech-control-pidigits
+SAMPLE 2 mech-control-pidigits 0.304867s
+RUN 2 pidigits_optimized
+SAMPLE 2 pidigits_optimized 13.988978s
+RUN 2 pidigits_compact
+SAMPLE 2 pidigits_compact 14.523255s
+WAIT between samples: UI verification in progress
+RUN 3 mech-control-pidigits
+SAMPLE 3 mech-control-pidigits 0.288012s
+RUN 3 pidigits_compact
+SAMPLE 3 pidigits_compact 15.154157s
+RUN 3 pidigits_optimized
+SAMPLE 3 pidigits_optimized 13.755879s
+RUN 1 mech-control-fannkuchredux
+SAMPLE 1 mech-control-fannkuchredux 1.693480s
+RUN 1 fannkuchredux_compact
+SAMPLE 1 fannkuchredux_compact 1422.844409s
+RUN 1 fannkuchredux_optimized
+SAMPLE 1 fannkuchredux_optimized 68.486035s
+RUN 2 fannkuchredux_optimized
+SAMPLE 2 fannkuchredux_optimized 67.802392s
+RUN 2 mech-control-fannkuchredux
+SAMPLE 2 mech-control-fannkuchredux 1.718410s
+RUN 2 fannkuchredux_compact
+SAMPLE 2 fannkuchredux_compact 1469.327710s
+WAIT between samples: UI verification in progress
+RUN 3 mech-control-fannkuchredux
+SAMPLE 3 mech-control-fannkuchredux 1.794663s
+RUN 3 fannkuchredux_compact
+SAMPLE 3 fannkuchredux_compact 1428.710342s
+RUN 3 fannkuchredux_optimized
+SAMPLE 3 fannkuchredux_optimized 68.431891s
+RUN 1 knucleotide_optimized
+SAMPLE 1 knucleotide_optimized 40.284715s
+RUN 1 mech-control-knucleotide
+SAMPLE 1 mech-control-knucleotide 0.518858s
+RUN 1 knucleotide_compact
+SAMPLE 1 knucleotide_compact 28.946615s
+RUN 2 knucleotide_compact
+SAMPLE 2 knucleotide_compact 27.597327s
+RUN 2 knucleotide_optimized
+SAMPLE 2 knucleotide_optimized 38.226065s
+RUN 2 mech-control-knucleotide
+SAMPLE 2 mech-control-knucleotide 0.509080s
+RUN 3 knucleotide_compact
+SAMPLE 3 knucleotide_compact 28.114040s
+RUN 3 knucleotide_optimized
+SAMPLE 3 knucleotide_optimized 37.535577s
+RUN 3 mech-control-knucleotide
+SAMPLE 3 mech-control-knucleotide 0.513409s
+RUN 1 mech-control-binarytrees
+SAMPLE 1 mech-control-binarytrees 0.408778s
+RUN 1 binarytrees_compact
+SAMPLE 1 binarytrees_compact 349.687974s
+RUN 1 binarytrees_optimized
+SAMPLE 1 binarytrees_optimized 423.767364s
+RUN 2 mech-control-binarytrees
+SAMPLE 2 mech-control-binarytrees 0.398035s
+RUN 2 binarytrees_optimized
+SAMPLE 2 binarytrees_optimized 424.852941s
+WAIT between samples: UI verification in progress
+RUN 2 binarytrees_compact
+SAMPLE 2 binarytrees_compact 350.602683s
+RUN 3 binarytrees_compact
+SAMPLE 3 binarytrees_compact 350.841090s
+RUN 3 binarytrees_optimized
+SAMPLE 3 binarytrees_optimized 430.377588s
+RUN 3 mech-control-binarytrees
+SAMPLE 3 mech-control-binarytrees 0.401070s
+REPORT /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/results/timings.json complete

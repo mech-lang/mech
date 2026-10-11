@@ -1,0 +1,1166 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T16:01:05.008220+00:00",
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "logical_cpus": 8,
+    "cpu": "Apple M3"
+  },
+  "toolchain_versions": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "julia": "julia version 1.13.1",
+    "go": "go version go1.27.1 darwin/arm64",
+    "java": "openjdk version \"27\" 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+    "gcc": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "gpp": "g++-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "llvm": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg"
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-scheduling-packing-25000000.compiler.tar.gz",
+    "sha256": "72a9a2ddfb6e8421a789e5743a0a3cf348f950729aa91a351a018700d4436ac3",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "benchmarks/clbg/knucleotide/README.md": "2b5b4fd8dae9b57f2101bb84e70827479e340b17b50b24c6c9f682165b772784",
+      "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+      "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+      "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+      "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+      "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+      "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "40c27b3910ad313b64137d9e01da97e31dc2aa7c4a51e8d59944c8262ab17de5",
+      "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+      "benchmarks/clbg/knucleotide/mech-driver/build.rs": "6fd9440686fbb0669d3c4895f6c3196968331a3d6080f27a2a3846ce1fb5074d",
+      "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "49bd600926d401152fcd94617e131c3f2aca93b58a667374c687d294605e0a6b",
+      "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "b189d5c5e004debdf90f731e567d877511ec291d216ec821deb79b5f25f1831b",
+      "benchmarks/clbg/knucleotide/plot.py": "e212153cbddf859c3fd3dd7081abe32b2588750e952dfbc3c8d4363f66d0300d",
+      "benchmarks/clbg/knucleotide/run.py": "08acf09cf9c981aa2bfb81c2e2a265c4d894aedffebeaef9ba1d575f05af126d",
+      "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+      "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+      "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+      "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+      "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+      "benchmarks/clbg/knucleotide/verify.py": "5c19bd54aa3e165af0e4526d615238d38539f505ea5f4d16a90dedafef9fe299",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "hosts/gpu/Cargo.toml": "4a9caef4aa419ded508f3869b96da7c5d696e75cd7a3df748c58dda2aeadd1ab",
+      "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+      "hosts/gpu/src/sequence/compiler.rs": "4e6a9766fc3126cbfdf31509ebf93690e4108907c018dee42c4efd3ed915156a",
+      "hosts/gpu/src/sequence/mod.rs": "0bae40fe86a48e9dbb4b9e19256a9a9b1102f59b3199375d720b2833de078b01",
+      "hosts/gpu/src/sequence/runtime.rs": "666c98c848416d15ff0511703b4f3bbb140fc31212df1e5a4095f0930b5b5ab8",
+      "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+    }
+  },
+  "protocol": {
+    "fasta_n": 25000000,
+    "three_letters": 125000000,
+    "total_hash_updates_per_program": 874999961,
+    "input": {
+      "fasta_n": 25000000,
+      "bytes": 254166745,
+      "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "three_letters": 125000000,
+      "generation_command": [
+        "benchmarks/clbg/knucleotide/.build/fasta",
+        "25000000"
+      ],
+      "small_input_matches_official": true
+    },
+    "samples": 5,
+    "seed": 20261007,
+    "sample_order": [
+      [
+        "mech-compact-batch4096",
+        "mech-parallel-dag-pack1-batch4096",
+        "mech-parallel-source-pack1-batch256",
+        "knucleotide-rust-7",
+        "mech-compact-dag-pack1-batch4096",
+        "mech-compact-source-pack1-batch256",
+        "mech-compact-dag-pack1-batch256",
+        "mech-parallel-dag-pack0-batch256",
+        "mech-parallel-dag-pack1-batch256",
+        "knucleotide-rust-6-panicabort",
+        "knucleotide-rust-6",
+        "mech-compact-dag-pack0-batch256",
+        "mech-parallel-batch256"
+      ],
+      [
+        "mech-compact-dag-pack0-batch256",
+        "knucleotide-rust-6-panicabort",
+        "mech-parallel-dag-pack1-batch4096",
+        "mech-compact-dag-pack1-batch256",
+        "mech-compact-dag-pack1-batch4096",
+        "mech-parallel-source-pack1-batch256",
+        "mech-parallel-dag-pack0-batch256",
+        "mech-compact-batch4096",
+        "mech-compact-source-pack1-batch256",
+        "knucleotide-rust-6",
+        "mech-parallel-batch256",
+        "mech-parallel-dag-pack1-batch256",
+        "knucleotide-rust-7"
+      ],
+      [
+        "mech-compact-dag-pack1-batch256",
+        "mech-parallel-source-pack1-batch256",
+        "mech-compact-batch4096",
+        "mech-parallel-dag-pack1-batch256",
+        "mech-compact-dag-pack1-batch4096",
+        "mech-compact-source-pack1-batch256",
+        "knucleotide-rust-6",
+        "mech-parallel-dag-pack1-batch4096",
+        "knucleotide-rust-6-panicabort",
+        "mech-compact-dag-pack0-batch256",
+        "mech-parallel-dag-pack0-batch256",
+        "knucleotide-rust-7",
+        "mech-parallel-batch256"
+      ],
+      [
+        "knucleotide-rust-6-panicabort",
+        "mech-parallel-batch256",
+        "knucleotide-rust-6",
+        "mech-compact-dag-pack1-batch256",
+        "mech-compact-batch4096",
+        "mech-compact-dag-pack0-batch256",
+        "mech-parallel-dag-pack0-batch256",
+        "mech-compact-dag-pack1-batch4096",
+        "mech-parallel-dag-pack1-batch256",
+        "mech-compact-source-pack1-batch256",
+        "mech-parallel-dag-pack1-batch4096",
+        "mech-parallel-source-pack1-batch256",
+        "knucleotide-rust-7"
+      ],
+      [
+        "mech-compact-batch4096",
+        "mech-parallel-dag-pack1-batch256",
+        "mech-parallel-source-pack1-batch256",
+        "knucleotide-rust-6",
+        "mech-parallel-dag-pack0-batch256",
+        "mech-compact-dag-pack0-batch256",
+        "knucleotide-rust-6-panicabort",
+        "mech-compact-dag-pack1-batch256",
+        "mech-compact-source-pack1-batch256",
+        "mech-parallel-batch256",
+        "mech-compact-dag-pack1-batch4096",
+        "mech-parallel-dag-pack1-batch4096",
+        "knucleotide-rust-7"
+      ]
+    ],
+    "requested_threads": 8,
+    "environment": {
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8",
+      "OMP_DYNAMIC": "FALSE",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "RAYON_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "timed_region": "Fresh process to exit including reading the same regular stdin file, encoding, every hash lookup/update, output and JIT initialization; AOT builds/input generation/validation excluded.",
+    "source_scope": "Mech .mec only; generic experimental collection compiler/runtime excluded. Competitors: complete unchanged upstream programs. New operations are not yet wired into the general v0.4 resident catalog.",
+    "source_metric": "Comment removal, whitespace collapse, UTF-8 gzip level1 mtime0; nonblank noncomment LOC also reported.",
+    "required_work": "All overlapping windows for k=1,2,3,4,6,12,18 counted using growing library hash maps; no periodicity shortcut or query-only counting.",
+    "correctness": "Every candidate must match unmodified Rust #7 full output byte-for-byte, checked against published full output. Official N=1000 failures are retained and flagged; strict endpoints additionally require passing the small reference."
+  },
+  "programs": [
+    {
+      "id": "knucleotide-rust-7",
+      "language": "rust",
+      "variant": 7,
+      "path": "upstream/knucleotide-rust-7.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-7.html",
+      "sha256": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+      "upstream_starred": false,
+      "published_secs": 2.57,
+      "published_gz": 1585,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 06:03:44 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-b6d48ee8822a84bd.rlib --extern hashbrown=/opt/src/rust-libs/libhashbrown-997dd4ca7d2b21ff.rlib knucleotide.rs -o knucleotide.rust-7.rust_run\n\n13.43 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-7.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-7.rs"
+        ],
+        "sha256": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+        "physical_lines": 188,
+        "nonblank_noncomment_lines": 163,
+        "normalized_bytes": 4002,
+        "gzip1_bytes": 1548
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "futures=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures-f93f5cc220f40f47.rlib",
+        "--extern",
+        "tokio_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libtokio_threadpool-a8446ba36124ba6c.rlib",
+        "--extern",
+        "itertools=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libitertools-63f8e103f3fb88a7.rlib",
+        "--extern",
+        "num=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum-1ca8ecfc42f84971.rlib",
+        "--extern",
+        "hashbrown=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-7"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-7"
+      ],
+      "worker_policy": "tokio ThreadPool::new()",
+      "samples_seconds": [
+        0.905657166,
+        0.959079375,
+        0.96048,
+        0.95118725,
+        0.910668375
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "b176b1d6b745dfada6f7192fdf9f0ed3cbced2b0ed8590978a0722a943fecb9c",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.95118725,
+      "min_seconds": 0.905657166,
+      "max_seconds": 0.96048
+    },
+    {
+      "id": "knucleotide-rust-6",
+      "language": "rust",
+      "variant": 6,
+      "path": "upstream/knucleotide-rust-6.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-6.html",
+      "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "upstream_starred": false,
+      "published_secs": 2.79,
+      "published_gz": 1697,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 05:37:26 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern num_traits=/opt/src/rust-libs/libnum_traits-51fca88a30a23b0b.rlib knucleotide.rs -o knucleotide.rust-6.rust_run\n\n14.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-6.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-6.rs"
+        ],
+        "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+        "physical_lines": 210,
+        "nonblank_noncomment_lines": 168,
+        "normalized_bytes": 3741,
+        "gzip1_bytes": 1656
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "fxhash=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfxhash-be129402f145c68a.rlib",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "num_traits=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_traits-cfbc20d38c0a2102.rlib",
+        "--extern",
+        "scoped_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libscoped_threadpool-526c83fe137b87d5.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6"
+      ],
+      "worker_policy": "scoped pool from num_cpus",
+      "samples_seconds": [
+        0.973185125,
+        1.034551167,
+        1.05857875,
+        0.944674166,
+        0.912429959
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "d872e56255506f001df4505ab02d85b6ca6301a96c83b2d6e053866d4e0662dc",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.973185125,
+      "min_seconds": 0.912429959,
+      "max_seconds": 1.05857875
+    },
+    {
+      "id": "mech-compact-batch4096",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 4096,
+      "upstream_starred": false,
+      "native_object_sha256": "937e4a1f9e58c84479d3fd81b46879923b2d477d89a915f96519db91e9b76161",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-batch4096"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; compact source waits between tasks",
+      "samples_seconds": [
+        3.930161,
+        3.9249925,
+        3.976004042,
+        3.926210708,
+        3.921621958
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "source",
+        "MECH_SEQUENCE_PACK8": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "executable_sha256": "4718bca1a8fa9e46457805455bb36532c051da5dba1e0134e3835d3d56b724b8",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 3.926210708,
+      "min_seconds": 3.921621958,
+      "max_seconds": 3.976004042
+    },
+    {
+      "id": "mech-parallel-batch256",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 256,
+      "upstream_starred": false,
+      "native_object_sha256": "1e5507c5199b409b645abe895543cebab9f5fc74c86bb4aa6598d8eb1a6619f4",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-batch256"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; compact source waits between tasks",
+      "samples_seconds": [
+        1.179411041,
+        1.322328542,
+        1.216797667,
+        1.340844125,
+        1.417931041
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "256",
+        "MECH_SEQUENCE_SCHEDULE": "source",
+        "MECH_SEQUENCE_PACK8": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "executable_sha256": "80b1fc332a5c04c54012c284d6e3b6d15acc3a96dd17030fd095e370ecc8dc78",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.322328542,
+      "min_seconds": 1.179411041,
+      "max_seconds": 1.417931041
+    },
+    {
+      "id": "knucleotide-rust-6-panicabort",
+      "language": "rust",
+      "variant": 6,
+      "path": "upstream/knucleotide-rust-6.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-6.html",
+      "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "upstream_starred": false,
+      "published_secs": 2.79,
+      "published_gz": 1697,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 05:37:26 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern num_traits=/opt/src/rust-libs/libnum_traits-51fca88a30a23b0b.rlib knucleotide.rs -o knucleotide.rust-6.rust_run\n\n14.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-6.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "panic_abort": true,
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-6.rs"
+        ],
+        "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+        "physical_lines": 210,
+        "nonblank_noncomment_lines": 168,
+        "normalized_bytes": 3741,
+        "gzip1_bytes": 1656
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "fxhash=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfxhash-be129402f145c68a.rlib",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "num_traits=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_traits-cfbc20d38c0a2102.rlib",
+        "--extern",
+        "scoped_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libscoped_threadpool-526c83fe137b87d5.rlib",
+        "-Cpanic=abort",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6-panicabort"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6-panicabort"
+      ],
+      "worker_policy": "scoped pool from num_cpus",
+      "samples_seconds": [
+        0.940862,
+        0.883857708,
+        0.893338916,
+        0.877853375,
+        0.896166125
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "922e72bf007d8465d9b6e100110a981ca57b1042585bbf04456ce537b0b84a2c",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.893338916,
+      "min_seconds": 0.877853375,
+      "max_seconds": 0.940862
+    },
+    {
+      "id": "mech-compact-dag-pack0-batch256",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 256,
+      "schedule": "dag",
+      "pack8": false,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "256",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "cfe0a9f81a6fe9323ad1c69f17ecfcbc52106f095189e61e74fd80759516ddcb",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-dag-pack0-batch256"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; DAG scheduling",
+      "samples_seconds": [
+        1.328929208,
+        1.244822833,
+        1.323825083,
+        1.384894417,
+        1.212144416
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "805527515ee22d7f2b6a1b4520345b96b01e21ff94ea2609c28bd213fb13c5d8",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.323825083,
+      "min_seconds": 1.212144416,
+      "max_seconds": 1.384894417
+    },
+    {
+      "id": "mech-compact-dag-pack1-batch256",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 256,
+      "schedule": "dag",
+      "pack8": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "256",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "dfa01c060743cf4c0f0142316ae0f24149e3ca70fa3b319fdcb8654772d55951",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-dag-pack1-batch256"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; DAG scheduling",
+      "samples_seconds": [
+        1.270434167,
+        1.158387458,
+        1.0944125,
+        1.230583917,
+        1.16249
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "b43eaf8b8204925cc2f1f234fc9ae0949fc96833185b4a0c07806e67eaec36ec",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.16249,
+      "min_seconds": 1.0944125,
+      "max_seconds": 1.270434167
+    },
+    {
+      "id": "mech-compact-dag-pack1-batch4096",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 4096,
+      "schedule": "dag",
+      "pack8": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "01647fdfc345d615880620c45ad3a2183098530d28ae4c2a0f8ab94f90222437",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-dag-pack1-batch4096"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; DAG scheduling",
+      "samples_seconds": [
+        1.072249208,
+        1.111461208,
+        1.086759667,
+        1.084311166,
+        1.095182833
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "157dccd8c8a315ec72d113905aebe329a6ddbc4fe325aadac773f70e42d64bbe",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.086759667,
+      "min_seconds": 1.072249208,
+      "max_seconds": 1.111461208
+    },
+    {
+      "id": "mech-compact-source-pack1-batch256",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 256,
+      "schedule": "source",
+      "pack8": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "256",
+        "MECH_SEQUENCE_SCHEDULE": "source",
+        "MECH_SEQUENCE_PACK8": "1",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "d2e72af06d10e85f2c8bc079d171303571662e676a5d849e34c4a29bf678d4fb",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-source-pack1-batch256"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; compact source waits between tasks",
+      "samples_seconds": [
+        3.2862565,
+        3.254197166,
+        3.262395625,
+        3.33572775,
+        3.393789208
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "68d0d83825e15f046fdd6d4f3c35bba16a94fc0cc7295ed205a7621954047db9",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 3.2862565,
+      "min_seconds": 3.254197166,
+      "max_seconds": 3.393789208
+    },
+    {
+      "id": "mech-parallel-dag-pack0-batch256",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 256,
+      "schedule": "dag",
+      "pack8": false,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "256",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "cfe0a9f81a6fe9323ad1c69f17ecfcbc52106f095189e61e74fd80759516ddcb",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-dag-pack0-batch256"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; DAG scheduling",
+      "samples_seconds": [
+        1.203679667,
+        1.333438667,
+        1.188284458,
+        1.193749208,
+        1.309049667
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "805527515ee22d7f2b6a1b4520345b96b01e21ff94ea2609c28bd213fb13c5d8",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.203679667,
+      "min_seconds": 1.188284458,
+      "max_seconds": 1.333438667
+    },
+    {
+      "id": "mech-parallel-dag-pack1-batch256",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 256,
+      "schedule": "dag",
+      "pack8": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "256",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "dfa01c060743cf4c0f0142316ae0f24149e3ca70fa3b319fdcb8654772d55951",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-dag-pack1-batch256"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; DAG scheduling",
+      "samples_seconds": [
+        1.088343542,
+        1.077239958,
+        1.257229458,
+        1.083908,
+        1.239662667
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "b43eaf8b8204925cc2f1f234fc9ae0949fc96833185b4a0c07806e67eaec36ec",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.088343542,
+      "min_seconds": 1.077239958,
+      "max_seconds": 1.257229458
+    },
+    {
+      "id": "mech-parallel-dag-pack1-batch4096",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 4096,
+      "schedule": "dag",
+      "pack8": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "01647fdfc345d615880620c45ad3a2183098530d28ae4c2a0f8ab94f90222437",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-dag-pack1-batch4096"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; DAG scheduling",
+      "samples_seconds": [
+        1.233049708,
+        1.161548167,
+        1.151356292,
+        1.289982375,
+        1.199864375
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "157dccd8c8a315ec72d113905aebe329a6ddbc4fe325aadac773f70e42d64bbe",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.199864375,
+      "min_seconds": 1.151356292,
+      "max_seconds": 1.289982375
+    },
+    {
+      "id": "mech-parallel-source-pack1-batch256",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 256,
+      "schedule": "source",
+      "pack8": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "256",
+        "MECH_SEQUENCE_SCHEDULE": "source",
+        "MECH_SEQUENCE_PACK8": "1",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "1c2c620ffb080bcea21d1a74b39f2283d363b8413c26fe6cec512afc6b895335",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-source-pack1-batch256"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; compact source waits between tasks",
+      "samples_seconds": [
+        1.06432925,
+        1.07902675,
+        1.085045208,
+        1.10106825,
+        1.121732583
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "a83c136a945fe8163fed388412634e4319b2f194c23a287c0062bb731298f92b",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.085045208,
+      "min_seconds": 1.06432925,
+      "max_seconds": 1.121732583
+    }
+  ],
+  "excluded": [
+    {
+      "id": "knucleotide-gpp-3-llvm-fastmath",
+      "path": "upstream/knucleotide-gpp-3.cpp",
+      "reason": "Command '['/opt/homebrew/opt/llvm@22/bin/clang-22', '-O3', '-mcpu=native', '-fomit-frame-pointer', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-llvm-fastmath', '-lm', '-pthread', '-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-femulated-tls', '-nostdinc++', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward', '-include', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-Wno-nullability-completeness', '/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib', '-ffast-math', '-funroll-loops', '-flto']' returned non-zero exit status 1.",
+      "diagnostic": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:95:66: warning: variable length arrays in C++ are a Clang extension [-Wvla-cxx-extension]\n   95 |    std::future<__gnu_pbds::cc_hash_table<T,unsigned,T::hash>> ft[N];\n      |                                                                  ^\n/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:95:66: note: read of non-const variable 'N' is not allowed in a constant expression\n/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:93:13: note: declared here\n   93 |    unsigned N = sysconf (_SC_NPROCESSORS_ONLN);\n      |             ^\n1 warning generated.\nUndefined symbols for architecture arm64:\n  \"std::__once_call\", referenced from:\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n  \"std::__once_callable\", referenced from:\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-e1a415.o\n      ...\nld: symbol(s) not found for architecture arm64\nclang-22: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    },
+    {
+      "id": "knucleotide-gpp-1-llvm-fastmath",
+      "path": "upstream/knucleotide-gpp-1.cpp",
+      "reason": "Command '['/opt/homebrew/opt/llvm@22/bin/clang-22', '-O3', '-mcpu=native', '-fomit-frame-pointer', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-llvm-fastmath', '-lm', '-pthread', '-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-femulated-tls', '-nostdinc++', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward', '-include', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-Wno-nullability-completeness', '/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib', '-ffast-math', '-funroll-loops', '-flto']' returned non-zero exit status 1.",
+      "diagnostic": "Undefined symbols for architecture arm64:\n  \"std::__once_call\", referenced from:\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n  \"std::__once_callable\", referenced from:\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-803387.o\n      ...\nld: symbol(s) not found for architecture arm64\nclang-22: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    }
+  ],
+  "endpoints": {
+    "time_baseline_seconds": 0.893338916,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 10,
+        "fastest": "mech-parallel-source-pack1-batch256",
+        "smallest": "mech-compact-dag-pack1-batch4096",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.001580080707568,
+        "fastest_size_over_smallest": 1.2,
+        "log2_tradeoff_distance": 0.2630442679735624,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.2,
+            "time_ratio": 1.2145952544621932
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.2165144129912726
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 3,
+        "fastest": "knucleotide-rust-6-panicabort",
+        "smallest": "knucleotide-rust-7",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.064755193089562,
+        "fastest_size_over_smallest": 1.069767441860465,
+        "log2_tradeoff_distance": 0.13289445273125597,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 6.318367346938776,
+            "time_ratio": 1.064755193089562
+          }
+        }
+      }
+    }
+  },
+  "nonheroic_endpoints": {
+    "time_baseline_seconds": 0.893338916,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 10,
+        "fastest": "mech-parallel-source-pack1-batch256",
+        "smallest": "mech-compact-dag-pack1-batch4096",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.001580080707568,
+        "fastest_size_over_smallest": 1.2,
+        "log2_tradeoff_distance": 0.2630442679735624,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.2,
+            "time_ratio": 1.2145952544621932
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.2165144129912726
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 3,
+        "fastest": "knucleotide-rust-6-panicabort",
+        "smallest": "knucleotide-rust-7",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.064755193089562,
+        "fastest_size_over_smallest": 1.069767441860465,
+        "log2_tradeoff_distance": 0.13289445273125597,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 6.318367346938776,
+            "time_ratio": 1.064755193089562
+          }
+        }
+      }
+    }
+  },
+  "strict_endpoints": {
+    "time_baseline_seconds": 0.893338916,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 10,
+        "fastest": "mech-parallel-source-pack1-batch256",
+        "smallest": "mech-compact-dag-pack1-batch4096",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.001580080707568,
+        "fastest_size_over_smallest": 1.2,
+        "log2_tradeoff_distance": 0.2630442679735624,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.2,
+            "time_ratio": 1.2145952544621932
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.2165144129912726
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 3,
+        "fastest": "knucleotide-rust-6-panicabort",
+        "smallest": "knucleotide-rust-7",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.064755193089562,
+        "fastest_size_over_smallest": 1.069767441860465,
+        "log2_tradeoff_distance": 0.13289445273125597,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 6.318367346938776,
+            "time_ratio": 1.064755193089562
+          }
+        }
+      }
+    }
+  }
+}

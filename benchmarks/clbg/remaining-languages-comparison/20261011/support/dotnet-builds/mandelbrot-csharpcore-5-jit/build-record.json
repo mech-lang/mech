@@ -1,0 +1,82 @@
+{
+  "id": "mandelbrot-csharpcore-5-jit",
+  "key": "mandelbrot:mandelbrot-csharpcore-5-jit",
+  "benchmark": "mandelbrot",
+  "language": "csharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-5.cs",
+  "source_sha256": "3805f984d6af2581afd2a31d03880e02b27748ee8526a97c4c451ddb1bff1589",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/mandelbrot-csharpcore-5.cs",
+  "original_source_sha256": "3805f984d6af2581afd2a31d03880e02b27748ee8526a97c4c451ddb1bff1589",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-csharpcore-5.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 08:01:49 GMT\n\nMAKE:\ncp mandelbrot.csharpcore-5.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj (in 1.7 sec).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/Program.cs(18,29): warning CS8618: Non-nullable field 'data' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/Program.cs(21,29): warning CS8618: Non-nullable field 'Crb' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/Program.cs(22,29): warning CS8618: Non-nullable field 'Cib' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/Program.cs(18,29): warning CS8618: Non-nullable field 'data' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/Program.cs(21,29): warning CS8618: Non-nullable field 'Crb' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/Program.cs(22,29): warning CS8618: Non-nullable field 'Cib' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj]\n    3 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.01\n\n11.86s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 66,
+  "normalized_loc": 72,
+  "expansions": [
+    {
+      "line": 38,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 42,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 44,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 45,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 62,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/mandelbrot-csharpcore-5-jit/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-5-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/mandelbrot-csharpcore-5-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-5-jit/app.dll",
+  "binary_sha256": "1c88552a923467c2c72faf535e459269635f972388ba679126ef5dc5f358b420",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-5-jit/app.dll",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-5-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-5-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-5-jit/app.pdb": "f49610e2bf2b6689d2ce95a1b75d58b99773ffea4f25994b79c2271afe9ed4f1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-5-jit/app.dll": "1c88552a923467c2c72faf535e459269635f972388ba679126ef5dc5f358b420",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-5-jit/app.deps.json": "6a462ac6276fa69b78e97b74d8228965ed0a0cd3ca99b82010e58d6384d0db61"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

@@ -1,0 +1,2 @@
+raw := io/read()
+io/write(regex/replace-bytes(raw, "", "-"))

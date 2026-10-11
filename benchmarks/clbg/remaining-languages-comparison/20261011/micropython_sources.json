@@ -1,0 +1,197 @@
+{
+  "status": "sources-pinned",
+  "programs": [
+    {
+      "id": "binarytrees-micropython-2",
+      "key": "binarytrees:binarytrees-micropython-2",
+      "benchmark": "binarytrees",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/binarytrees-micropython-2.py",
+      "source_sha256": "83abb69aff56cedfd7e61b38d312810ab049763d93040ca5fc1746df4702bc20",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/binarytrees-micropython-2.py",
+      "original_source_sha256": "83abb69aff56cedfd7e61b38d312810ab049763d93040ca5fc1746df4702bc20",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-micropython-2.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 24,
+      "normalized_loc": 24,
+      "expansions": []
+    },
+    {
+      "id": "fannkuchredux-micropython-8",
+      "key": "fannkuchredux:fannkuchredux-micropython-8",
+      "benchmark": "fannkuchredux",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fannkuchredux-micropython-8.py",
+      "source_sha256": "58073b310b1d424d78159dad93cb0c7b7dd94b1c70d155d5ce1a784de3a82150",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/fannkuchredux-micropython-8.py",
+      "original_source_sha256": "58073b310b1d424d78159dad93cb0c7b7dd94b1c70d155d5ce1a784de3a82150",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-micropython-8.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 45,
+      "normalized_loc": 49,
+      "expansions": [
+        {
+          "line": 18,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 19,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 27,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    {
+      "id": "fasta-micropython-8",
+      "key": "fasta:fasta-micropython-8",
+      "benchmark": "fasta",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/fasta-micropython-8.py",
+      "source_sha256": "771efad89370ddfe8fa173028ca83f16fc9bada198b74675f06e1a65436a2856",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/fasta-micropython-8.py",
+      "original_source_sha256": "771efad89370ddfe8fa173028ca83f16fc9bada198b74675f06e1a65436a2856",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-micropython-8.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 58,
+      "normalized_loc": 58,
+      "expansions": []
+    },
+    {
+      "id": "knucleotide-micropython-8",
+      "key": "knucleotide:knucleotide-micropython-8",
+      "benchmark": "knucleotide",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/knucleotide-micropython-8.py",
+      "source_sha256": "ffaacc7cfcf1acbf6a73982c0ec7689bec98d431f90b6e5e407bc2b03b473b0d",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/knucleotide-micropython-8.py",
+      "original_source_sha256": "ffaacc7cfcf1acbf6a73982c0ec7689bec98d431f90b6e5e407bc2b03b473b0d",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-micropython-8.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 40,
+      "normalized_loc": 40,
+      "expansions": []
+    },
+    {
+      "id": "mandelbrot-micropython-3",
+      "key": "mandelbrot:mandelbrot-micropython-3",
+      "benchmark": "mandelbrot",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-3.py",
+      "source_sha256": "26b2be1bb72913bac550ec95c3443ce68a0eb250adb858c2b3c9f7c9575ec3a4",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/mandelbrot-micropython-3.py",
+      "original_source_sha256": "26b2be1bb72913bac550ec95c3443ce68a0eb250adb858c2b3c9f7c9575ec3a4",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-micropython-3.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 32,
+      "normalized_loc": 32,
+      "expansions": []
+    },
+    {
+      "id": "mandelbrot-micropython-8",
+      "key": "mandelbrot:mandelbrot-micropython-8",
+      "benchmark": "mandelbrot",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/mandelbrot-micropython-8.py",
+      "source_sha256": "9aa6e981c0d1c58081e4aa9525c0a6df4d0c94641047126ebf2316292ca1ce09",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/mandelbrot-micropython-8.py",
+      "original_source_sha256": "9aa6e981c0d1c58081e4aa9525c0a6df4d0c94641047126ebf2316292ca1ce09",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-micropython-8.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 35,
+      "normalized_loc": 39,
+      "expansions": [
+        {
+          "line": 15,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 22,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 29,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 35,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    },
+    {
+      "id": "nbody-micropython-8",
+      "key": "nbody:nbody-micropython-8",
+      "benchmark": "nbody",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/nbody-micropython-8.py",
+      "source_sha256": "b0adb5671e270b37d1f398bfb8e77ad15bdc2d5898315a0d7e844ae5297088ab",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/nbody-micropython-8.py",
+      "original_source_sha256": "b0adb5671e270b37d1f398bfb8e77ad15bdc2d5898315a0d7e844ae5297088ab",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-micropython-8.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 108,
+      "normalized_loc": 108,
+      "expansions": []
+    },
+    {
+      "id": "revcomp-micropython-4",
+      "key": "revcomp:revcomp-micropython-4",
+      "benchmark": "revcomp",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/revcomp-micropython-4.py",
+      "source_sha256": "d8287ebc96eeabe3fab420fe86a097ba5ba86cbeaab6d11ae6c811943b4ef776",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/revcomp-micropython-4.py",
+      "original_source_sha256": "d8287ebc96eeabe3fab420fe86a097ba5ba86cbeaab6d11ae6c811943b4ef776",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/revcomp-micropython-4.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 15,
+      "normalized_loc": 15,
+      "expansions": []
+    },
+    {
+      "id": "spectralnorm-micropython-8",
+      "key": "spectralnorm:spectralnorm-micropython-8",
+      "benchmark": "spectralnorm",
+      "language": "micropython",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/micropython/spectralnorm-micropython-8.py",
+      "source_sha256": "cde130d4e454cf7643012f3ca56844b6e38d0f63025a8906d78f3bcb6b7c3574",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/micropython/spectralnorm-micropython-8.py",
+      "original_source_sha256": "cde130d4e454cf7643012f3ca56844b6e38d0f63025a8906d78f3bcb6b7c3574",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-micropython-8.html",
+      "adaptations": [],
+      "local_adaptation": false,
+      "physical_loc": 25,
+      "normalized_loc": 28,
+      "expansions": [
+        {
+          "line": 25,
+          "extra_lines": 2,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 34,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ]
+    }
+  ]
+}

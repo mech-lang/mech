@@ -1,0 +1,24 @@
+{
+  "status": "waiting-for-measurements",
+  "started_at": "2026-10-10T16:53:31.792363+00:00",
+  "measurement_pid": 36717,
+  "site": "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site",
+  "source_pins": {
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/build_data.py": "6394951eddf4d05ff23dd0b9d0c7aecaff20af779932d63de68ab8bf6e0fbe8a",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/augment_data.py": "b690ca0cbc50aeb3fdb35ad9ab10afcc0fe3e3c24d02f6993086f37f320c3613",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/functional_data.py": "c8761480f62ace1d6adb376d4458f24ac08a2c850b78e8e08b8e4950aba0bc75",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/matlab_data.py": "34eff4a25e30176c11fb1ec89be4af238d4199cc1184c7cf1246afb45150403d",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify.mjs": "b0b86aa13219c87d721195b3129b891a1baa560ff272f47ac005962813f4a194",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify_previous.py": "107b2de3ab4cd9f569a72ed9fcf88054d0747b9ef9dad4f5cd8a88f23e69289a",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify_ui.cjs": "96101618a89fbbf4db8d754f78b47203ec8b250c64e862d2de1ecf7e6a66d6bc",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify_years.cjs": "7c6741bda70123bbc13c972147fac493c8565a8941a6bbf73c6fb4f79ffb0bf9",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/verify_axes.cjs": "da400b4d857d84d630ff92a3819433f1df2cccc1bc2363d8247612db23e02c7b",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/language-years.json": "aa2b057ab78d6c515425e7c110c447c63ab26d543684053ad5413581d5d4abd9",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/app.mjs": "b638c6f77b0007a2d255991b65847ed9fade1f4fc18efc4cc309cbd93e7fef9b",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/math.mjs": "79da0046ec6ee95e960a334c032efdf50bcb85753f3041b14aa01e11ee41d612",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site/dist/index.html": "2fc6a7528c70d3558372162bfc431f29ca561cf11764224619fcd54734a2633b"
+  },
+  "completion_script_sha256": "c6ea0dd8c212664c56199d384850209c282d7ba3861356c0db64170f57ecfe5e",
+  "previous_chart_sha256": "d8197409761c64ce436ce026deab300ceb385ad5b539496282e2fa8645bc4a28",
+  "steps": []
+}

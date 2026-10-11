@@ -1,0 +1,12 @@
+mpz_t *		MPZ
+
+INPUT
+MPZ
+	$var = sv2gmp($arg);
+
+bool
+	$var = (bool)SvTRUE($arg);
+
+OUTPUT
+MPZ
+	sv_setref_pv($arg, \"Math::GMP\", (void*)$var);

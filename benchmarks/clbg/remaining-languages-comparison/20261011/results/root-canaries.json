@@ -1,0 +1,981 @@
+{
+  "status": "passed",
+  "passed": [
+    {
+      "id": "knucleotide-csharpcore-8-arm64-faithful-jit",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-8-arm64-faithful-jit",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-8-arm64-faithful-jit",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-8-arm64-faithful-jit",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-jit",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-jit",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-jit",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-jit",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-jit",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "pidigits-csharpcore-6-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-6-arm64-faithful-jit",
+      "n": 9,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-6-arm64-faithful-jit",
+      "n": 11,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-6-arm64-faithful-jit",
+      "n": 27,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-7-jit",
+      "n": 1,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-7-jit",
+      "n": 9,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-7-jit",
+      "n": 11,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-7-jit",
+      "n": 27,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "regexredux-csharpcore-5-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-csharpcore-5-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-csharpcore-5-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "spectralnorm-csharpcore-5-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-5-arm64-faithful-jit",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-5-arm64-faithful-jit",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-8-jit",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-8-jit",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-8-jit",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "knucleotide-fsharpcore-4-arm64-faithful-jit",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharpcore-4-arm64-faithful-jit",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharpcore-4-arm64-faithful-jit",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharpcore-4-arm64-faithful-jit",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "pidigits-fsharpcore-6-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-fsharpcore-6-arm64-faithful-jit",
+      "n": 9,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-fsharpcore-6-arm64-faithful-jit",
+      "n": 11,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-fsharpcore-6-arm64-faithful-jit",
+      "n": 27,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "regexredux-fsharpcore-2-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-2-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-2-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-6-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-6-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-6-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-4-jit",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-4-jit",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-4-jit",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "regexredux-csharpcore-2-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-csharpcore-2-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-csharpcore-2-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "knucleotide-fsharp-local-compact-jit",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-compact-jit",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-compact-jit",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-compact-jit",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-rolling-jit",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-rolling-jit",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-rolling-jit",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-rolling-jit",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-1-arm64-faithful-jit",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-1-arm64-faithful-jit",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-1-arm64-faithful-jit",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-1-arm64-faithful-jit",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-jit",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-jit",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-jit",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-jit",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-jit",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-jit",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-jit",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-jit",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-jit",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-jit",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-jit",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-jit",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-6-arm64-faithful-jit",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-6-arm64-faithful-jit",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-6-arm64-faithful-jit",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "knucleotide-csharpcore-8-arm64-faithful-aot",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-8-arm64-faithful-aot",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-8-arm64-faithful-aot",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-8-arm64-faithful-aot",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-aot",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-aot",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-aot",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-aot",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-7-aot",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "pidigits-csharpcore-6-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-6-arm64-faithful-aot",
+      "n": 9,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-6-arm64-faithful-aot",
+      "n": 11,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-6-arm64-faithful-aot",
+      "n": 27,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-7-aot",
+      "n": 1,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-7-aot",
+      "n": 9,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-7-aot",
+      "n": 11,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-csharpcore-7-aot",
+      "n": 27,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "regexredux-csharpcore-5-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-csharpcore-5-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-csharpcore-5-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "spectralnorm-csharpcore-5-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-5-arm64-faithful-aot",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-5-arm64-faithful-aot",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-8-aot",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-8-aot",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-csharpcore-8-aot",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "knucleotide-fsharpcore-4-arm64-faithful-aot",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharpcore-4-arm64-faithful-aot",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharpcore-4-arm64-faithful-aot",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharpcore-4-arm64-faithful-aot",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "pidigits-fsharpcore-6-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-fsharpcore-6-arm64-faithful-aot",
+      "n": 9,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-fsharpcore-6-arm64-faithful-aot",
+      "n": 11,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-fsharpcore-6-arm64-faithful-aot",
+      "n": 27,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "regexredux-fsharpcore-2-static-output-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-2-static-output-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-2-static-output-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-6-static-output-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-6-static-output-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-fsharpcore-6-static-output-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-4-static-output-aot",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-4-static-output-aot",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-4-static-output-aot",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "regexredux-csharpcore-2-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-csharpcore-2-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-csharpcore-2-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "knucleotide-fsharp-local-compact-static-output-aot",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-compact-static-output-aot",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-compact-static-output-aot",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-compact-static-output-aot",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-rolling-static-output-aot",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-rolling-static-output-aot",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-rolling-static-output-aot",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-fsharp-local-rolling-static-output-aot",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-1-arm64-faithful-aot",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-1-arm64-faithful-aot",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-1-arm64-faithful-aot",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-csharpcore-1-arm64-faithful-aot",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-aot",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-aot",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-aot",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-csharpcore-2-arm64-faithful-aot",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-aot",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-aot",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-aot",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-1-arm64-faithful-aot",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-aot",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-aot",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-aot",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-fsharpcore-6-arm64-faithful-aot",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-6-arm64-faithful-aot",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-6-arm64-faithful-aot",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-fsharpcore-6-arm64-faithful-aot",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "knucleotide-micropython-8-faithful",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-micropython-8-faithful",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-micropython-8-faithful",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-micropython-8-faithful",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "mandelbrot-micropython-3-faithful",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-3-faithful",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-3-faithful",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-3-faithful",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-3-faithful",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-8",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-8",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-8",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-8",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-8",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "spectralnorm-micropython-8",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-micropython-8",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-micropython-8",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "mandelbrot-micropython-local",
+      "n": 1,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-local",
+      "n": 7,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-local",
+      "n": 8,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-local",
+      "n": 9,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "mandelbrot-micropython-local",
+      "n": 31,
+      "benchmark": "mandelbrot"
+    },
+    {
+      "id": "spectralnorm-micropython-local",
+      "n": 1,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-micropython-local",
+      "n": 3,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "spectralnorm-micropython-local",
+      "n": 31,
+      "benchmark": "spectralnorm"
+    },
+    {
+      "id": "knucleotide-micropython-local",
+      "n": 40,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-micropython-local",
+      "n": 92,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-micropython-local",
+      "n": 418,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "knucleotide-micropython-local",
+      "n": 4,
+      "benchmark": "knucleotide"
+    },
+    {
+      "id": "pidigits-micropython-local",
+      "n": 1,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-micropython-local",
+      "n": 9,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-micropython-local",
+      "n": 11,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-micropython-local",
+      "n": 27,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-micropython-gmp",
+      "n": 1,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-micropython-gmp",
+      "n": 9,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-micropython-gmp",
+      "n": 11,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-micropython-gmp",
+      "n": 27,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "regexredux-micropython-pcre2",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-micropython-pcre2",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-micropython-pcre2",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-micropython-pcre2-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-micropython-pcre2-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-micropython-pcre2-jit",
+      "n": 1,
+      "benchmark": "regexredux"
+    }
+  ],
+  "failures": []
+}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>n-body Dart aot&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>n-body Dart aot&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/nbody.html#nbody">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks Game</span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">   contributed by Jos Hirth,</span>
+<span class="com">   transliterated from Isaac Gouy and Robert F. Tobler&#39;s C# program</span>
+<span class="com">   + null safety </span>
+<span class="com">*/</span>
+
+import <span class="sng">&#39;dart:math&#39;</span> as <span class="kwd">Math</span><span class="opt">;</span>
+
+<span class="kwa">void</span> <span class="kwb">main</span><span class="opt">(</span>args<span class="opt">) {</span>
+  <span class="kwb">int</span> n <span class="opt">=</span> args<span class="opt">.</span>length <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">?</span> <span class="kwb">int</span><span class="opt">.</span><span class="kwb">parse</span><span class="opt">(</span>args<span class="opt">[</span><span class="num">0</span><span class="opt">]) :</span> <span class="num">0</span><span class="opt">;</span>
+
+  NBodySystem system <span class="opt">=</span> <span class="kwb">NBodySystem</span><span class="opt">();</span>
+  <span class="kwb">print</span><span class="opt">(</span>system<span class="opt">.</span><span class="kwb">energy</span><span class="opt">().</span><span class="kwb">toStringAsFixed</span><span class="opt">(</span><span class="num">9</span><span class="opt">));</span>
+  <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> n<span class="opt">;</span> i<span class="opt">++) {</span>
+    system<span class="opt">.</span><span class="kwb">advance</span><span class="opt">(</span><span class="num">0.01</span><span class="opt">);</span>
+  <span class="opt">}</span>
+  <span class="kwb">print</span><span class="opt">(</span>system<span class="opt">.</span><span class="kwb">energy</span><span class="opt">().</span><span class="kwb">toStringAsFixed</span><span class="opt">(</span><span class="num">9</span><span class="opt">));</span>
+<span class="opt">}</span>
+
+<span class="kwa">class</span> <span class="kwd">Body</span> <span class="opt">{</span>
+  <span class="kwb">double</span> x<span class="opt">,</span> y<span class="opt">,</span> z<span class="opt">,</span> vx<span class="opt">,</span> vy<span class="opt">,</span> vz<span class="opt">,</span> mass<span class="opt">;</span>
+  <span class="kwd">Body</span><span class="opt">(</span>
+      <span class="opt">{</span><span class="kwa">this</span><span class="opt">.</span>x <span class="opt">=</span> <span class="num">0.0</span><span class="opt">,</span>
+      <span class="kwa">this</span><span class="opt">.</span>y <span class="opt">=</span> <span class="num">0.0</span><span class="opt">,</span>
+      <span class="kwa">this</span><span class="opt">.</span>z <span class="opt">=</span> <span class="num">0.0</span><span class="opt">,</span>
+      <span class="kwa">this</span><span class="opt">.</span>vx <span class="opt">=</span> <span class="num">0.0</span><span class="opt">,</span>
+      <span class="kwa">this</span><span class="opt">.</span>vy <span class="opt">=</span> <span class="num">0.0</span><span class="opt">,</span>
+      <span class="kwa">this</span><span class="opt">.</span>vz <span class="opt">=</span> <span class="num">0.0</span><span class="opt">,</span>
+      <span class="kwa">this</span><span class="opt">.</span>mass <span class="opt">=</span> <span class="num">0.0</span><span class="opt">});</span>
+<span class="opt">}</span>
+
+<span class="kwa">class</span> NBodySystem <span class="opt">{</span>
+  <span class="kwa">var</span> bodies<span class="opt">;</span>
+
+  <span class="kwa">static</span> <span class="kwb">double</span> solarmass <span class="opt">=</span> <span class="num">4</span> <span class="opt">*</span> <span class="kwd">Math</span><span class="opt">.</span>pi <span class="opt">*</span> <span class="kwd">Math</span><span class="opt">.</span>pi<span class="opt">;</span>
+  <span class="kwa">static</span> <span class="kwb">double</span> daysPeryear <span class="opt">=</span> <span class="num">365.24</span><span class="opt">;</span>
+
+  <span class="kwb">NBodySystem</span><span class="opt">() {</span>
+    bodies <span class="opt">= &lt;</span><span class="kwd">Body</span><span class="opt">&gt;[];</span>
+    bodies<span class="opt">.</span><span class="kwb">addAll</span><span class="opt">([</span>
+      <span class="slc">// Sun</span>
+
+      <span class="kwd">Body</span><span class="opt">(</span>x<span class="opt">:</span> <span class="num">0.0</span><span class="opt">,</span> y<span class="opt">:</span> <span class="num">0.0</span><span class="opt">,</span> z<span class="opt">:</span> <span class="num">0.0</span><span class="opt">,</span> vx<span class="opt">:</span> <span class="num">0.0</span><span class="opt">,</span> vy<span class="opt">:</span> <span class="num">0.0</span><span class="opt">,</span> vz<span class="opt">:</span> <span class="num">0.0</span><span class="opt">,</span> mass<span class="opt">:</span> solarmass<span class="opt">),</span>
+      <span class="slc">// Jupiter</span>
+
+      <span class="kwd">Body</span><span class="opt">(</span>
+          x<span class="opt">:</span> <span class="num">4.84143144246472090e+00</span><span class="opt">,</span>
+          y<span class="opt">: -</span><span class="num">1.16032004402742839e+00</span><span class="opt">,</span>
+          z<span class="opt">: -</span><span class="num">1.03622044471123109e-01</span><span class="opt">,</span>
+          vx<span class="opt">:</span> <span class="num">1.66007664274403694e-03</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          vy<span class="opt">:</span> <span class="num">7.69901118419740425e-03</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          vz<span class="opt">: -</span><span class="num">6.90460016972063023e-05</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          mass<span class="opt">:</span> <span class="num">9.54791938424326609e-04</span> <span class="opt">*</span> solarmass<span class="opt">),</span>
+      <span class="slc">// Saturn</span>
+
+      <span class="kwd">Body</span><span class="opt">(</span>
+          x<span class="opt">:</span> <span class="num">8.34336671824457987e+00</span><span class="opt">,</span>
+          y<span class="opt">:</span> <span class="num">4.12479856412430479e+00</span><span class="opt">,</span>
+          z<span class="opt">: -</span><span class="num">4.03523417114321381e-01</span><span class="opt">,</span>
+          vx<span class="opt">: -</span><span class="num">2.76742510726862411e-03</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          vy<span class="opt">:</span> <span class="num">4.99852801234917238e-03</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          vz<span class="opt">:</span> <span class="num">2.30417297573763929e-05</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          mass<span class="opt">:</span> <span class="num">2.85885980666130812e-04</span> <span class="opt">*</span> solarmass<span class="opt">),</span>
+      <span class="slc">// Uranus</span>
+
+      <span class="kwd">Body</span><span class="opt">(</span>
+          x<span class="opt">:</span> <span class="num">1.28943695621391310e+01</span><span class="opt">,</span>
+          y<span class="opt">: -</span><span class="num">1.51111514016986312e+01</span><span class="opt">,</span>
+          z<span class="opt">: -</span><span class="num">2.23307578892655734e-01</span><span class="opt">,</span>
+          vx<span class="opt">:</span> <span class="num">2.96460137564761618e-03</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          vy<span class="opt">:</span> <span class="num">2.37847173959480950e-03</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          vz<span class="opt">: -</span><span class="num">2.96589568540237556e-05</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          mass<span class="opt">:</span> <span class="num">4.36624404335156298e-05</span> <span class="opt">*</span> solarmass<span class="opt">),</span>
+      <span class="slc">// Neptune</span>
+
+      <span class="kwd">Body</span><span class="opt">(</span>
+          x<span class="opt">:</span> <span class="num">1.53796971148509165e+01</span><span class="opt">,</span>
+          y<span class="opt">: -</span><span class="num">2.59193146099879641e+01</span><span class="opt">,</span>
+          z<span class="opt">:</span> <span class="num">1.79258772950371181e-01</span><span class="opt">,</span>
+          vx<span class="opt">:</span> <span class="num">2.68067772490389322e-03</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          vy<span class="opt">:</span> <span class="num">1.62824170038242295e-03</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          vz<span class="opt">: -</span><span class="num">9.51592254519715870e-05</span> <span class="opt">*</span> daysPeryear<span class="opt">,</span>
+          mass<span class="opt">:</span> <span class="num">5.15138902046611451e-05</span> <span class="opt">*</span> solarmass<span class="opt">)</span>
+    <span class="opt">]);</span>
+
+    <span class="kwb">double</span> px <span class="opt">=</span> <span class="num">0.0</span><span class="opt">,</span> py <span class="opt">=</span> <span class="num">0.0</span><span class="opt">,</span> pz <span class="opt">=</span> <span class="num">0.0</span><span class="opt">;</span>
+    <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> b <span class="kwa">in</span> bodies<span class="opt">) {</span>
+      px <span class="opt">+=</span> b<span class="opt">.</span>vx <span class="opt">*</span> b<span class="opt">.</span>mass<span class="opt">;</span>
+      py <span class="opt">+=</span> b<span class="opt">.</span>vy <span class="opt">*</span> b<span class="opt">.</span>mass<span class="opt">;</span>
+      pz <span class="opt">+=</span> b<span class="opt">.</span>vz <span class="opt">*</span> b<span class="opt">.</span>mass<span class="opt">;</span>
+    <span class="opt">}</span>
+    <span class="opt">;</span>
+
+    <span class="kwa">var</span> sol <span class="opt">=</span> bodies<span class="opt">[</span><span class="num">0</span><span class="opt">];</span>
+    sol<span class="opt">.</span>vx <span class="opt">= -</span>px <span class="opt">/</span> solarmass<span class="opt">;</span>
+    sol<span class="opt">.</span>vy <span class="opt">= -</span>py <span class="opt">/</span> solarmass<span class="opt">;</span>
+    sol<span class="opt">.</span>vz <span class="opt">= -</span>pz <span class="opt">/</span> solarmass<span class="opt">;</span>
+  <span class="opt">}</span>
+
+  <span class="kwa">void</span> <span class="kwb">advance</span><span class="opt">(</span><span class="kwb">double</span> dt<span class="opt">) {</span>
+    <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> na <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> na <span class="opt">&lt;</span> bodies<span class="opt">.</span>length<span class="opt">;</span> na<span class="opt">++) {</span>
+      <span class="kwd">Body</span> a <span class="opt">=</span> bodies<span class="opt">[</span>na<span class="opt">];</span>
+      <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> nb <span class="opt">=</span> na <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span> nb <span class="opt">&lt;</span> bodies<span class="opt">.</span>length<span class="opt">;</span> nb<span class="opt">++) {</span>
+        <span class="kwd">Body</span> b <span class="opt">=</span> bodies<span class="opt">[</span>nb<span class="opt">];</span>
+
+        <span class="kwb">double</span> dx <span class="opt">=</span> a<span class="opt">.</span>x <span class="opt">-</span> b<span class="opt">.</span>x<span class="opt">,</span> dy <span class="opt">=</span> a<span class="opt">.</span>y <span class="opt">-</span> b<span class="opt">.</span>y<span class="opt">,</span> dz <span class="opt">=</span> a<span class="opt">.</span>z <span class="opt">-</span> b<span class="opt">.</span>z<span class="opt">;</span>
+        <span class="kwb">double</span> d2 <span class="opt">=</span> dx <span class="opt">*</span> dx <span class="opt">+</span> dy <span class="opt">*</span> dy <span class="opt">+</span> dz <span class="opt">*</span> dz<span class="opt">;</span>
+        <span class="kwb">double</span> mag <span class="opt">=</span> dt <span class="opt">/ (</span>d2 <span class="opt">*</span> <span class="kwd">Math</span><span class="opt">.</span><span class="kwb">sqrt</span><span class="opt">(</span>d2<span class="opt">));</span>
+
+        a<span class="opt">.</span>vx <span class="opt">-=</span> dx <span class="opt">*</span> b<span class="opt">.</span>mass <span class="opt">*</span> mag<span class="opt">;</span>
+        b<span class="opt">.</span>vx <span class="opt">+=</span> dx <span class="opt">*</span> a<span class="opt">.</span>mass <span class="opt">*</span> mag<span class="opt">;</span>
+
+        a<span class="opt">.</span>vy <span class="opt">-=</span> dy <span class="opt">*</span> b<span class="opt">.</span>mass <span class="opt">*</span> mag<span class="opt">;</span>
+        b<span class="opt">.</span>vy <span class="opt">+=</span> dy <span class="opt">*</span> a<span class="opt">.</span>mass <span class="opt">*</span> mag<span class="opt">;</span>
+
+        a<span class="opt">.</span>vz <span class="opt">-=</span> dz <span class="opt">*</span> b<span class="opt">.</span>mass <span class="opt">*</span> mag<span class="opt">;</span>
+        b<span class="opt">.</span>vz <span class="opt">+=</span> dz <span class="opt">*</span> a<span class="opt">.</span>mass <span class="opt">*</span> mag<span class="opt">;</span>
+      <span class="opt">}</span>
+    <span class="opt">}</span>
+    <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> b <span class="kwa">in</span> bodies<span class="opt">) {</span>
+      b<span class="opt">.</span>x <span class="opt">+=</span> dt <span class="opt">*</span> b<span class="opt">.</span>vx<span class="opt">;</span>
+      b<span class="opt">.</span>y <span class="opt">+=</span> dt <span class="opt">*</span> b<span class="opt">.</span>vy<span class="opt">;</span>
+      b<span class="opt">.</span>z <span class="opt">+=</span> dt <span class="opt">*</span> b<span class="opt">.</span>vz<span class="opt">;</span>
+    <span class="opt">}</span>
+  <span class="opt">}</span>
+
+  <span class="kwb">double energy</span><span class="opt">() {</span>
+    <span class="kwb">double</span> e <span class="opt">=</span> <span class="num">0.0</span><span class="opt">;</span>
+    <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> bodies<span class="opt">.</span>length<span class="opt">;</span> i<span class="opt">++) {</span>
+      <span class="kwa">var</span> bi <span class="opt">=</span> bodies<span class="opt">[</span>i<span class="opt">];</span>
+      e <span class="opt">+=</span> <span class="num">0.5</span> <span class="opt">*</span> bi<span class="opt">.</span>mass <span class="opt">* (</span>bi<span class="opt">.</span>vx <span class="opt">*</span> bi<span class="opt">.</span>vx <span class="opt">+</span> bi<span class="opt">.</span>vy <span class="opt">*</span> bi<span class="opt">.</span>vy <span class="opt">+</span> bi<span class="opt">.</span>vz <span class="opt">*</span> bi<span class="opt">.</span>vz<span class="opt">);</span>
+      <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> j <span class="opt">=</span> i <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span> j <span class="opt">&lt;</span> bodies<span class="opt">.</span>length<span class="opt">;</span> j<span class="opt">++) {</span>
+        <span class="kwa">var</span> bj <span class="opt">=</span> bodies<span class="opt">[</span>j<span class="opt">];</span>
+        <span class="kwb">double</span> dx <span class="opt">=</span> bi<span class="opt">.</span>x <span class="opt">-</span> bj<span class="opt">.</span>x<span class="opt">,</span> dy <span class="opt">=</span> bi<span class="opt">.</span>y <span class="opt">-</span> bj<span class="opt">.</span>y<span class="opt">,</span> dz <span class="opt">=</span> bi<span class="opt">.</span>z <span class="opt">-</span> bj<span class="opt">.</span>z<span class="opt">;</span>
+        e <span class="opt">-= (</span>bi<span class="opt">.</span>mass <span class="opt">*</span> bj<span class="opt">.</span>mass<span class="opt">) /</span> <span class="kwd">Math</span><span class="opt">.</span><span class="kwb">sqrt</span><span class="opt">(</span>dx <span class="opt">*</span> dx <span class="opt">+</span> dy <span class="opt">*</span> dy <span class="opt">+</span> dz <span class="opt">*</span> dz<span class="opt">);</span>
+      <span class="opt">}</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> e<span class="opt">;</span>
+  <span class="opt">}</span>
+<span class="opt">}</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Dart SDK version: 3.7.0 (stable)
+Wed Feb 5 04:53:58 2025
+
+
+
+ Sat, 22 Feb 2025 14:20:21 GMT
+
+MAKE:
+/opt/src/dart-sdk/bin/dart analyze 
+Analyzing tmp...
+No issues found!
+
+/opt/src/dart-sdk/bin/dart compile exe nbody.dartexe-2.dartexe -o nbody.dartexe-2.dartexe_run
+Generated: /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/nbody.dartexe-2.dartexe_run
+
+6.16 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./nbody.dartexe-2.dartexe_run 50000000
+
+PROGRAM OUTPUT:
+-0.169075164
+-0.169059907
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

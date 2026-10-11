@@ -1,0 +1,768 @@
+# PODNAME: Alien::Build::Manual::AlienAuthor
+# ABSTRACT: Alien author documentation
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Manual::AlienAuthor - Alien author documentation
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ perldoc Alien::Build::Manual::AlienAuthor
+
+=head1 DESCRIPTION
+
+B<Note>: Please read the entire document before you get started in
+writing your own L<alienfile>.  The section on dynamic vs. static
+libraries will likely save you a lot of grief if you read it now!
+
+This document is intended to teach L<Alien> authors how to build their
+own L<Alien> distribution using L<Alien::Build> and L<Alien::Base>.
+Such an L<Alien> distribution consists of three essential parts:
+
+=over 4
+
+=item An L<alienfile>
+
+This is a recipe for how to 1) detect an already installed version of
+the library or tool you are alienizing 2) download and build the library
+or tool that you are alienizing and 3) gather the configuration settings
+necessary for the use of that library or tool.
+
+=item An installer C<Makefile.PL> or C<Build.PL> or a C<dist.ini> if you are using L<Dist::Zilla>
+
+This is a thin layer between your L<alienfile> recipe, and the Perl
+installer (either L<ExtUtils::MakeMaker> or L<Module::Build>.
+
+=item A Perl class (.pm file) that inherits from L<Alien::Base>
+
+For most L<Alien>s this does not need to be customized at all, since
+L<Alien::Base> usually does what you need.
+
+=back
+
+For example if you were alienizing a library called libfoo, you might
+have these files:
+
+ Alien-Libfoo-1.00/Makefile.PL
+ Alien-Libfoo-1.00/alienfile
+ Alien-Libfoo-1.00/lib/Alien/Libfoo.pm
+
+This document will focus mainly on instructing you how to construct an
+L<alienfile>, but we will also briefly cover making a simple
+C<Makefile.PL> or C<dist.ini> to go along with it.  We will also touch
+on when you might want to extend your subclass to add non-standard
+functionality.
+
+=head2 Using commands
+
+Most software libraries and tools will come with instructions for how to
+install them in the form of commands that you are intended to type into
+a shell manually.  The easiest way to automate those instructions is to
+just put the commands in your L<alienfile>.  For example, lets suppose
+that libfoo is built using autoconf and provides a C<pkg-config> C<.pc>
+file.
+
+We will also later discuss plugins.  For common build systems like
+autoconf or CMake, it is usually better to use the appropriate plugin
+because they will handle corner cases better than a simple set of
+commands.  We're going to take a look at commands first because it's
+easier to understand the different phases with commands.
+
+(Aside, autoconf is a series of tools and macros used to configure
+(usually) a C or C++ library or tool by generating any number of
+Makefiles.  It is the C equivalent to L<ExtUtils::MakeMaker>, if you
+will.  Basically, if your library or tool instructions start with
+'./configure' it is most likely an autoconf based library or tool).
+
+(Aside2, C<pkg-config> is a standard-ish way to provide the compiler and
+linker flags needed for compiling and linking against the library.  If
+your tool installs a C<.pc> file, usually in C<$PREFIX/lib/pkgconfig>
+then, your tool uses C<pkg-config>).
+
+Here is the L<alienfile> that you might have:
+
+ use alienfile;
+ 
+ probe [ 'pkg-config --exists libfoo' ];
+ 
+ share {
+ 
+   start_url 'http://www.libfoo.org/src/libfoo-1.00.tar.gz';
+ 
+   download [ 'wget %{.meta.start_url}' ];
+ 
+   extract [ 'tar zxf %{.install.download}' ];
+ 
+   build [
+     [ './configure --prefix=%{.install.prefix} --disable-shared' ],
+     [ '%{make}' ],
+     [ '%{make} install' ],
+   ];
+ 
+ };
+ 
+ gather [
+   [ 'pkg-config --modversion libfoo', \'%{.runtime.version}' ],
+   [ 'pkg-config --cflags     libfoo', \'%{.runtime.cflags}'  ],
+   [ 'pkg-config --libs       libfoo', \'%{.runtime.libs}'    ],
+ ];
+
+There is a lot going on here, so lets decode it a little bit.  An
+L<alienfile> is just some Perl with some alien specific sugar.  The
+first line
+
+ use alienfile;
+
+imports the sugar into the L<alienfile>.  It also is a flag for the
+reader to see that this is an L<alienfile> and not some other kind of
+Perl script.
+
+The second line is the probe directive:
+
+ probe [ 'pkg-config --exists libfoo' ];
+
+is used to see if the library is already installed on the target system.
+If C<pkg-config> is in the path, and if libfoo is installed, this should
+exit with a success (0) and tell L<Alien::Build> to use the system
+library.  If either C<pkg-config> in the PATH, or if libfoo is not
+installed, then it will exist with non-success (!= 0) and tells
+L<Alien::Build> to download and build from source.
+
+You can provide as many probe directives as you want.  This is useful if
+there are different ways to probe for the system.  L<Alien::Build> will
+stop on the first successfully found system library found.  Say our
+library libfoo comes with a C<.pc> file for use with C<pkg-config> and
+also provides a C<foo-config> program to find the same values.  You
+could then specify this in your L<alienfile>
+
+ probe [ 'pkg-config --exists libfoo' ];
+ probe [ 'foo-config --version' ];
+
+Other directives can be specified multiple times if there are different
+methods that can be tried for the various steps.
+
+Sometimes it is easier to probe for a library from Perl rather than with
+a command.  For that you can use a code reference.  For example, another
+way to call C<pkg-config> would be from Perl:
+
+ probe sub {
+   my($build) = @_;  # $build is the Alien::Build instance.
+   system 'pkg-config --exists libfoo';
+   $? == 0 ? 'system' : 'share';
+ };
+
+The Perl code should return 'system' if the library is installed, and
+'share' if not.  (Other directives should return a true value on
+success, and a false value on failure).  You can also throw an exception with
+C<die> to indicate a failure.
+
+The next part of the L<alienfile> is the C<share> block, which is used
+to group the directives which are used to download and install the
+library or tool in the event that it is not already installed.
+
+ share {
+   start_url 'http://www.libfoo.org/src/libfoo-1.00.tar.gz';
+   download [ 'wget %{.meta.start_url}' ];
+   extract [ 'tar zxf %{.install.download}' ];
+   build [
+     [ './configure --prefix=%{.install.prefix} --disable-shared' ],
+     [ '%{make}' ],
+     [ '%{make} install' ],
+   ];
+ };
+
+The start_url specifies where to find the package that you are alienizing.
+It should be either a tarball (or zip file, or what have you) or an
+HTML index.  The download directive as you might imagine specifies how
+to download  the library or tool.  The extract directive specifies how
+to extract the archive once it is downloaded.  In the extract step, you
+can use the variable C<%{.install.download}> as a placeholder for the archive
+that was downloaded in the download step.  This is also accessible if
+you use a code reference from the L<Alien::Build> instance:
+
+ share {
+   ...
+   requires 'Archive::Extract';
+   extract sub {
+     my($build) = @_;
+     my $tarball = $build->install_prop->{download};
+     my $ae = Archive::Extract->new( archive => $tarball );
+     $ae->extract;
+     1;
+   }
+   ...
+ };
+
+The build directive specifies how to build the library or tool once it
+has been downloaded and extracted.  Note the special variable
+C<%{.install.prefix}> is the location where the library should be
+installed.  C<%{make}> is a helper which will be replaced by the
+appropriate C<make>, which may be called something different on some
+platforms (on Windows for example, it frequently may be called C<nmake>
+or C<dmake>).
+
+The final part of the L<alienfile> has a gather directive which
+specifies how to get the details on how to compile and link against the
+library.  For this, once again we use the C<pkg-config> command:
+
+ gather [
+   [ 'pkg-config --modversion libfoo', \'%{.runtime.version}' ],
+   [ 'pkg-config --cflags     libfoo', \'%{.runtime.cflags}'  ],
+   [ 'pkg-config --libs       libfoo', \'%{.runtime.libs}'    ],
+ ];
+
+The scalar reference as the final item in the command list tells
+L<Alien::Build> that the output from the command should be stored in the
+given variable.  The runtime variables are the ones that will be
+available to C<Alien::Libfoo> once it is installed.  (Install
+properties, which are the ones that we have seen up till now are thrown
+away once the L<Alien> distribution is installed.
+
+You can also provide a C<sys> block for directives that should be used
+when a system install is detected.  Normally you only need to do this if
+the gather step is different between share and system installs.  For
+example, the above is equivalent to:
+
+ build {
+   ...
+   gather [
+     [ 'pkg-config --modversion libfoo', \'%{.runtime.version}' ],
+     [ 'pkg-config --cflags     libfoo', \'%{.runtime.cflags}'  ],
+     [ 'pkg-config --libs       libfoo', \'%{.runtime.libs}'    ],
+   ];
+ };
+ 
+ sys {
+   gather [
+     [ 'pkg-config --modversion libfoo', \'%{.runtime.version}' ],
+     [ 'pkg-config --cflags     libfoo', \'%{.runtime.cflags}'  ],
+     [ 'pkg-config --libs       libfoo', \'%{.runtime.libs}'    ],
+   ];
+ };
+
+(Aside3, the reason it is called C<sys> and not C<system> is so that it
+does not conflict with the built in C<system> function)!
+
+=head2 Using plugins
+
+The first example is a good way of showing the full manual path that you
+can choose, but there is a lot of repetition, if you are doing many
+L<Alien>s that use autoconf and C<pkg-config> (which are quite common.
+L<alienfile> allows you to use plugins.  See L<Alien::Build::Plugin> for
+a list of some of the plugin categories.
+
+For now, I will just show you how to write the L<alienfile> for libfoo
+above using L<Alien::Build::Plugin::Build::Autoconf>,
+L<Alien::Build::Plugin::PkgConfig::Negotiate>,
+L<Alien::Build::Plugin::Download::Negotiate>, and
+L<Alien::Build::Plugin::Extract::Negotiate>
+
+ use alienfile;
+ 
+ plugin 'PkgConfig' => (
+   pkg_name => 'libfoo',
+ );
+ 
+ share {
+   start_url 'http://www.libfoo.org/src';
+   plugin 'Download' => (
+     filter => qr/^libfoo-[0-9\.]+\.tar\.gz$/,
+     version => qr/^libfoo-([0-9\.]+)\.tar\.gz$/,
+   );
+   plugin 'Extract' => 'tar.gz';
+   plugin 'Build::Autoconf';
+   build [
+     '%{configure} --disable-shared',
+     '%{make}',
+     '%{make} install',
+   ];
+ };
+
+The first plugin that we use is the C<pkg-config> negotiation plugin.  A
+negotiation plugin is one which doesn't do the actual work but selects
+the best one from a set of plugins depending on your platform and
+environment.  (In the case of
+L<Alien::Build::Plugin::PkgConfig::Negotiate>, it may choose to use
+command line tools, a pure Perl implementation (L<PkgConfig>), or
+libpkgconf, depending on what is available).  When using negotiation
+plugins you may omit the C<::Negotiate> suffix.  So as you can see using
+the plugin here is an advantage because it is more reliable than just
+specifying a command which may not be installed!
+
+Next we use the download negotiation plugin.  This is also better than
+the version above, because again, C<wget> my not be installed on the
+target system.  Also you can specify a URL which will be scanned for
+links, and use the most recent version.
+
+We use the Extract negotiation plugin to use either command line tools,
+or Perl libraries to extract from the archive once it is downloaded.
+
+Finally we use the Autoconf plugin
+(L<Alien::Build::Plugin::Build::Autoconf>).  This is a lot more
+sophisticated and reliable than in the previous example, for a number of
+reasons.  This version will even work on Windows assuming the library or
+tool you are alienizing supports that platform!
+
+Strictly speaking the build directive is not necessary, because the
+autoconf plugin provides a default which is reasonable.  The only reason
+that you would want to include it is if you need to provide additional
+flags to the configure step.
+
+ share {
+   ...
+   build [
+     '%{configure} --enable-bar --enable-baz --disable-shared',
+     '%{make}',
+     '%{make} install',
+   ];
+ };
+
+=head2 Multiple .pc files
+
+Some packages come with multiple libraries paired with multiple C<.pc>
+files.  In this case you want to provide the
+L<Alien::Build::Plugin::PkgConfig::Negotiate> with an array reference
+of package names.
+
+ plugin 'PkgConfig' => (
+   pkg_name => [ 'foo', 'bar', 'baz' ],
+ );
+
+All packages must be found in order for the C<system> install to succeed.
+Once installed the first C<pkg_name> will be used by default (in this
+example C<foo>), and you can retrieve any other C<pkg_name> using
+the L<Alien::Base alt method|Alien::Base/alt>.
+
+=head2 A note about dynamic vs. static libraries
+
+If you are using your L<Alien> to build an XS module, it is important
+that you use static libraries if possible.  If you have a package that
+refuses to build a static library, then you can use L<Alien::Role::Dino>.
+
+Actually let me back up a minute.  For a C<share> install it is best
+to use static libraries to build your XS extension.  This is because
+if your L<Alien> is ever upgraded to a new version it can break your
+existing XS modules.  For a C<system> install shared libraries are
+usually best because you can often get security patches without having
+to re-build anything in perl land.
+
+If you looked closely at the "Using commands" and "Using plugins"
+sections above, you may notice that we went out of our way where
+possible to tell Autotools to build only static libraries using the
+C<--disable-shared> command.  The Autoconf plugin also does this by
+default.
+
+Sometimes though you will have a package that builds both, or maybe
+you I<want> both static and dynamic libraries to work with XS and FFI.
+For that case, there is the L<Alien::Build::Plugin::Gather::IsolateDynamic>
+plugin.
+
+ use alienfile;
+ ...
+ plugin 'Gather::IsolateDynamic';
+
+What it does, is that it moves the dynamic libraries (usually .so on
+Unix and .DLL on Windows) to a place where they can be found by FFI,
+and where they won't be used by the compiler for building XS.  It usually
+doesn't do any harm to include this plugin, so if you are just starting
+out you might want to add it anyway.  Arguably it should have been the
+default behavior from the beginning.
+
+If you have already published an Alien that does not isolate its
+dynamic libraries, then you might get some fails from old upgraded
+aliens because the share directory isn't cleaned up by default (this is
+perhaps a design bug in the way that share directories work, but it
+is a long standing characteristic).  One work around for this is to
+use the C<clean_install> property on L<Alien::Build::MM>, which will
+clean out the share directory on upgrade, and possibly save you a lot
+of grief.
+
+=head2 Verifying and debugging your alienfile
+
+You could feed your alienfile directly into L<Alien::Build>, or
+L<Alien::Build::MM>, but it is sometimes useful to test your alienfile
+using the C<af> command (it does not come with L<Alien::Build>, you need
+to install L<App::af>).  By default C<af> will use the C<alienfile> in
+the current directory (just as C<make> uses the C<Makefile> in the
+current directory; just like C<make> you can use the C<-f> option to
+specify a different L<alienfile>).
+
+You can test your L<alienfile> in dry run mode:
+
+ % af install --dry-run
+ Alien::Build::Plugin::Core::Legacy> adding legacy hash to config
+ Alien::Build::Plugin::Core::Gather> mkdir -p /tmp/I2YXRyxb0r/_alien
+ ---
+ cflags: ''
+ cflags_static: ''
+ install_type: system
+ legacy:
+   finished_installing: 1
+   install_type: system
+   name: libfoo
+   original_prefix: /tmp/7RtAusykNN
+   version: 1.2.3
+ libs: '-lfoo '
+ libs_static: '-lfoo '
+ prefix: /tmp/7RtAusykNN
+ version: 1.2.3
+
+You can use the C<--type> option to force a share install (download and
+build from source):
+
+ % af install --type=share --dry-run
+ Alien::Build::Plugin::Core::Download> decoding html
+ Alien::Build::Plugin::Core::Download> candidate *https://www.libfoo.org/download/libfoo-1.2.4.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.2.3.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.2.2.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.2.1.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.2.0.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.1.9.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.1.8.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.1.7.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  ...
+ Alien::Build::Plugin::Core::Download> setting version based on archive to 1.2.4
+ Alien::Build::Plugin::Core::Download> downloaded libfoo-1.2.4.tar.gz
+ Alien::Build::CommandSequence> + ./configure --prefix=/tmp/P22WEXj80r --with-pic --disable-shared
+ ... snip ...
+ Alien::Build::Plugin::Core::Gather> mkdir -p /tmp/WsoLAQ889w/_alien
+ ---
+ cflags: ''
+ cflags_static: ''
+ install_type: share
+ legacy:
+   finished_installing: 1
+   install_type: share
+   original_prefix: /tmp/P22WEXj80r
+   version: 1.2.4
+ libs: '-L/tmp/P22WEXj80r/lib -lfoo '
+ libs_static: '-L/tmp/P22WEXj80r/lib -lfoo '
+ prefix: /tmp/P22WEXj80r
+ version: 1.2.4
+
+You can also use the C<--before> and C<--after> options to take a peek
+at what the build environment looks like at different stages as well,
+which can sometimes be useful:
+
+ % af install --dry-run --type=share --before build bash
+ Alien::Build::Plugin::Core::Download> decoding html
+ Alien::Build::Plugin::Core::Download> candidate *https://www.libfoo.org/download/libfoo-1.2.4.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.2.3.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.2.2.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.2.1.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.2.0.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.1.9.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.1.8.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  https://www.libfoo.org/download/libfoo-1.1.7.tar.gz
+ Alien::Build::Plugin::Core::Download> candidate  ...
+ Alien::Build::Plugin::Core::Download> setting version based on archive to 1.2.4
+ Alien::Build::Plugin::Core::Download> downloaded libfoo-1.2.4.tar.gz
+ App::af::install>  [ before build ] + bash
+ /tmp/fbVPu4LRTs/build_5AVn/libfoo-1.2.4$ ls
+ CHANGES Makefile autoconf.ac lib
+ /tmp/fbVPu4LRTs/build_5AVn/libfoo-1.2.4$
+
+There are a lot of other useful things that you can do with the C<af>
+command.  See L<af> for details.
+
+=head2 Integrating with MakeMaker
+
+Once you have a working L<alienfile> you can write your C<Makefile.PL>.
+
+ use ExtUtils::MakeMaker;
+ use Alien::Build::MM;
+ 
+ my $abmm = Alien::Build::MM->new;
+ 
+ WriteMakefile($abmm->mm_args(
+   ABSTRACT           => 'Discover or download and install libfoo',
+   DISTNAME           => 'Alien-Libfoo',
+   NAME               => 'Alien::Libfoo',
+   VERSION_FROM       => 'lib/Alien/Libfoo.pm',
+   CONFIGURE_REQUIRES => {
+     'Alien::Build::MM' => 0,
+   },
+   BUILD_REQUIRES => {
+     'Alien::Build::MM' => 0,
+   },
+   PREREQ_PM => {
+     'Alien::Base' => 0,
+   },
+   # If you are going to write the recommended
+   # tests you will will want these:
+   TEST_REQUIRES => {
+     'Test::Alien' => 0,
+     'Test2::V0'   => 0,
+   },
+ ));
+ 
+ sub MY::postamble {
+   $abmm->mm_postamble;
+ }
+
+The C<lib/Alien/Libfoo.pm> that goes along with it is very simple:
+
+ package Alien::Libfoo;
+ 
+ use strict;
+ use warnings;
+ use parent qw( Alien::Base );
+ 
+ 1;
+
+You are done and can install it normally:
+
+ % perl Makefile.PL
+ % make
+ % make test
+ % make install
+
+=head2 Integrating with Module::Build
+
+Please don't!  Okay if you have to there is L<Alien::Build::MB>.
+
+=head2 Non standard configuration
+
+L<Alien::Base> support most of the things that your L<Alien> will need,
+like compiler flags (cflags), linker flags (libs) and binary directory
+(bin_dir).  Your library or tool may have other configuration items
+which are not supported by default.  You can store the values in the
+L<alienfile> into the runtime properties:
+
+ gather [
+   # standard:
+   [ 'foo-config --version libfoo', \'%{.runtime.version}' ],
+   [ 'foo-config --cflags  libfoo', \'%{.runtime.cflags}'  ],
+   [ 'foo-config --libs    libfoo', \'%{.runtime.libs}'    ],
+   # non-standard
+   [ 'foo-config --bar-baz libfoo', \'%{.runtime.bar_baz}' ],
+ ];
+
+then you can expose them in your L<Alien::Base> subclass:
+
+ package Alien::Libfoo;
+ 
+ use strict;
+ use warnings;
+ use parent qw( Alien::Base );
+ 
+ sub bar_baz {
+   my($self) = @_;
+   $self->runtime_prop->{bar_baz},
+ };
+ 
+ 1;
+
+=head2 Testing
+
+(optional, but highly recommended)
+
+You should write a test using L<Test::Alien> to make sure that your
+alien will work with any XS modules that are going to use it:
+
+ use Test2::V0;
+ use Test::Alien;
+ use Alien::Libfoo;
+ 
+ alien_ok 'Alien::Libfoo';
+ 
+ xs_ok do { local $/; <DATA> }, with_subtest {
+   is Foo::something(), 1, 'Foo::something() returns 1';
+ };
+ 
+ done_testing;
+ 
+ __DATA__
+ #include "EXTERN.h"
+ #include "perl.h"
+ #include "XSUB.h"
+ #include <foo.h>
+ 
+ MODULE = Foo PACKAGE = Foo
+ 
+ int something()
+
+You can also use L<Test::Alien> to test tools instead of libraries:
+
+ use Test2::V0;
+ use Test::Alien;
+ use Alien::Libfoo;
+ 
+ alien_ok 'Alien::Libfoo';
+ run_ok(['foo', '--version'])
+   ->exit_is(0);
+ 
+ done_testing;
+
+You can also write tests specifically for L<FFI::Platypus>, if your
+alien is going to be used to write FFI bindings.  (the test below
+is the FFI equivalent to the XS example above).
+
+ use Test2::V0;
+ use Test::Alien;
+ use Alien::Libfoo;
+ 
+ alien_ok 'Alien::Libfoo';
+ ffi_ok { symbols => [ 'something' ] }, with_subtest {
+   # $ffi is an instance of FFI::Platypus with the lib
+   # set appropriately.
+   my($ffi) = @_;
+   my $something = $ffi->function( something => [] => 'int' );
+   is $something->call(), 1, 'Foo::something() returns 1';
+ };
+
+If you do use C<ffi_ok> you want to make sure that your alien reliably
+produces dynamic libraries.  If it isn't consistent (if for example
+some platforms tend not to provide or build dynamic libraries), you can
+check that C<dynamic_libs> doesn't return an empty list.
+
+ ...
+ alien_ok 'Alien::Libfoo';
+ SKIP: {
+   skip "This test requires a dynamic library"
+     unless Alien::Libfoo->dynamic_libs;
+   ffi_ok { symbols [ 'something' ] }, with_subtest {
+     ...
+   };
+ }
+
+More details on testing L<Alien> modules can be found in the
+L<Test::Alien> documentation.
+
+You can also run the tests that come with the package that you are alienizing,
+by using a C<test> block in your L<alienfile>.  Keep in mind that some packages
+use testing tools or have other prerequisites that will not be available on your
+users machines when they attempt to install your alien.  So you do not want to
+blindly add a test block without checking what the prereqs are.  For Autoconf
+style packages you typically test a package using the C<make check> command:
+
+ use alienfile;
+ 
+ plugin 'PkgConfig' => 'libfoo';
+ 
+ share {
+   ... # standard build steps.
+   test [ '%{make} check' ];
+ };
+
+=head2 Dist::Zilla
+
+(optional, mildly recommended)
+
+You can also use the L<Alien::Build> L<Dist::Zilla> plugin
+L<Dist::Zilla::Plugin::AlienBuild>:
+
+ name    = Alien-Libfoo
+ author  = E. Xavier Ample <example@cpan.org>
+ license = Perl_5
+ copyright_holder = E. Xavier Ample <example@cpan.org>
+ copyright_year   = 2017
+ version = 0.01
+ 
+ [@Basic]
+ [AlienBuild]
+
+The plugin takes care of a lot of details like making sure that the
+correct minimum versions of L<Alien::Build> and L<Alien::Base> are used.
+See the plugin documentation for additional details.
+
+=head2 Using your Alien
+
+Once you have installed you can use your Alien.  See
+L<Alien::Build::Manual::AlienUser> for guidance on that.
+
+=head1 SEE ALSO
+
+=over 4
+
+=item L<Alien::Build::Manual>
+
+Other L<Alien::Build> manuals.
+
+=back
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

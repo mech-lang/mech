@@ -1,0 +1,407 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T04:24:04.521276+00:00",
+  "git_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "tracked_dirty": [
+    " M Cargo.lock",
+    " M hosts/gpu/Cargo.toml",
+    " M hosts/gpu/src/batched/jit.rs",
+    " M hosts/gpu/src/batched/mod.rs",
+    " M hosts/gpu/src/lib.rs",
+    " M scripts/unsafe-boundaries.allowlist"
+  ],
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu": "Apple M3"
+  },
+  "toolchain_versions": {
+    "clang": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg",
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "go": "go version go1.27.1 darwin/arm64",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "java": "openjdk version \"27\" 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+    "c": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cpp": "g++-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-v04-native-optimized-jit-50m.compiler.tar.gz",
+    "sha256": "4447c7f689e2c037852bfdd3413856ace04d565a41af38c94eed2a8e96695478",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "note": "Exact compiler/runtime/source/script snapshot; apply on this v0.4 base. Pinned competitor sources are separately hashed in manifest.json."
+  },
+  "protocol": {
+    "steps": 50000000,
+    "samples": 3,
+    "seed": 20261006,
+    "timed_region": "fresh process launch through exit; includes runtime initialization/JIT/source compilation and energy output; excludes ahead-of-time builds",
+    "source_metric": "comments removed, whitespace runs collapsed, UTF-8, gzip level 1 with mtime=0; locally specified metric, not guaranteed byte-identical to CLBG gz",
+    "source_scope": "Mech .mec source includes all initialization, simulation, energy math, and explicit energy export; generic runtime/compiler/CLI excluded. Other languages use complete pinned submissions.",
+    "mech_size_scope": "mech-only",
+    "mech_mode": "jit-simd",
+    "mech_native_flags": [
+      "--fp-contract",
+      "--algebraic-powers"
+    ],
+    "c_tuning_flags": [],
+    "c_configurations": "native",
+    "experimental_compiler_sha256": {
+      "hosts/gpu/Cargo.toml": "0feeb6388428311681cfa0c193c9f92f5a0e96f46905ffa15ead56f10a01ad9f",
+      "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+      "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+      "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+      "hosts/gpu/src/fused_f64/mod.rs": "1cc857cd465a95733ec855dce99ecd8081a354e1e254e69037f0ec3a8b7ff4d4",
+      "hosts/gpu/src/fused_f64/native.rs": "2d547f7de59e87a53cc727d854cd2400435ffaf418f113c26841975218b9f163",
+      "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+      "hosts/gpu/src/fused_f64/runner.rs": "8dab3f068a05df75b8fede7b699aa8dff110404a5b554ef072be5a9d0e155901"
+    },
+    "aot_backport_source": "iros-workshop-benchmarks; scalar AOT commit b10593b75ec8b9283ae33e4ac330c00dda9957d7; autonomous f64/SIMD extension in this worktree",
+    "process_environment": {
+      "JULIA_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "1",
+      "GOMAXPROCS": "1"
+    },
+    "sample_order": [
+      [
+        "mech-jit-simd-power-v04",
+        "mech-jit-simd-sqrt-v04",
+        "nbody-rust-3",
+        "mech-jit-simd-factored-v04"
+      ],
+      [
+        "mech-jit-simd-sqrt-v04",
+        "nbody-rust-3",
+        "mech-jit-simd-factored-v04",
+        "mech-jit-simd-power-v04"
+      ],
+      [
+        "mech-jit-simd-factored-v04",
+        "nbody-rust-3",
+        "mech-jit-simd-power-v04",
+        "mech-jit-simd-sqrt-v04"
+      ]
+    ],
+    "expected_energy": [
+      -0.169075164,
+      -0.169059907
+    ],
+    "status": "full input; local protocol"
+  },
+  "programs": [
+    {
+      "id": "nbody-rust-3",
+      "language": "rust",
+      "variant": 3,
+      "path": "upstream/nbody-rust-3.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-rust-3.html",
+      "sha256": "34c935a74f929712bf8864697763c7d37806eb97ffdbad5e987346f5e761c994",
+      "published_secs": 3.46,
+      "published_gz": 1774,
+      "upstream_execution": "rust",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:03:10 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1  nbody.rs -o nbody.rust-3.rust_run\n\n10.62 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.rust-3.rust_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "rust",
+      "source": {
+        "paths": [
+          "upstream/nbody-rust-3.rs"
+        ],
+        "sha256": {
+          "upstream/nbody-rust-3.rs": "34c935a74f929712bf8864697763c7d37806eb97ffdbad5e987346f5e761c994"
+        },
+        "physical_lines": 239,
+        "nonblank_noncomment_lines": 196,
+        "normalized_bytes": 4449,
+        "gzip1_bytes": 1748
+      },
+      "compile_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-3"
+      ],
+      "generation_command": null,
+      "generated_c_sha256": null,
+      "native_object_sha256": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-3",
+        "50000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        1.95662225,
+        1.958156709,
+        1.955114125
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169059907\n",
+      "median_seconds": 1.95662225,
+      "min_seconds": 1.955114125,
+      "max_seconds": 1.958156709
+    },
+    {
+      "id": "mech-jit-simd-sqrt-v04",
+      "language": "mech",
+      "path": "nbody.mec",
+      "execution_mode": "experimental fused f64 Cranelift JIT with structured SIMD from v0.4 artifact",
+      "source": {
+        "paths": [
+          "nbody.mec"
+        ],
+        "sha256": {
+          "nbody.mec": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1364,
+        "gzip1_bytes": 735
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/Cargo.toml"
+      ],
+      "generation_command": null,
+      "generated_c_sha256": null,
+      "native_object_sha256": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "50000000",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "jit-simd",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        2.242499958,
+        2.248692708,
+        2.246242875
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "output_selection": "energy",
+      "runtime_support": "hosts/gpu/src/fused_f64/runner.rs and runner.c; generic execution/formatting only, excluded from program size",
+      "discarded_warmup_stdout": "-0.169075164\n-0.169059907\n",
+      "median_seconds": 2.246242875,
+      "min_seconds": 2.242499958,
+      "max_seconds": 2.248692708,
+      "mech_source_only_supplement": {
+        "paths": [
+          "nbody.mec"
+        ],
+        "sha256": {
+          "nbody.mec": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1364,
+        "gzip1_bytes": 735
+      }
+    },
+    {
+      "id": "mech-jit-simd-power-v04",
+      "language": "mech",
+      "path": "nbody-power.mec",
+      "execution_mode": "experimental fused f64 Cranelift JIT with structured SIMD from v0.4 artifact",
+      "source": {
+        "paths": [
+          "nbody-power.mec"
+        ],
+        "sha256": {
+          "nbody-power.mec": "a62941f0665a17fcbdff910a325b37971e44c284ff3f1109e3a6117d6c33694d"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1350,
+        "gzip1_bytes": 732
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/Cargo.toml"
+      ],
+      "generation_command": null,
+      "generated_c_sha256": null,
+      "native_object_sha256": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "50000000",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-power.mec",
+        "jit-simd",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        2.229403917,
+        2.229933542,
+        2.230917
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "output_selection": "energy",
+      "runtime_support": "hosts/gpu/src/fused_f64/runner.rs and runner.c; generic execution/formatting only, excluded from program size",
+      "discarded_warmup_stdout": "-0.169075164\n-0.169059907\n",
+      "median_seconds": 2.229933542,
+      "min_seconds": 2.229403917,
+      "max_seconds": 2.230917,
+      "mech_source_only_supplement": {
+        "paths": [
+          "nbody-power.mec"
+        ],
+        "sha256": {
+          "nbody-power.mec": "a62941f0665a17fcbdff910a325b37971e44c284ff3f1109e3a6117d6c33694d"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1350,
+        "gzip1_bytes": 732
+      }
+    },
+    {
+      "id": "mech-jit-simd-factored-v04",
+      "language": "mech",
+      "path": "nbody-factored.mec",
+      "execution_mode": "experimental fused f64 Cranelift JIT with structured SIMD from v0.4 artifact",
+      "source": {
+        "paths": [
+          "nbody-factored.mec"
+        ],
+        "sha256": {
+          "nbody-factored.mec": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1368,
+        "gzip1_bytes": 740
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/Cargo.toml"
+      ],
+      "generation_command": null,
+      "generated_c_sha256": null,
+      "native_object_sha256": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "50000000",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-factored.mec",
+        "jit-simd",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        2.310182041,
+        2.324905042,
+        2.319702334
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "output_selection": "energy",
+      "runtime_support": "hosts/gpu/src/fused_f64/runner.rs and runner.c; generic execution/formatting only, excluded from program size",
+      "discarded_warmup_stdout": "-0.169075164\n-0.169059907\n",
+      "median_seconds": 2.319702334,
+      "min_seconds": 2.310182041,
+      "max_seconds": 2.324905042,
+      "mech_source_only_supplement": {
+        "paths": [
+          "nbody-factored.mec"
+        ],
+        "sha256": {
+          "nbody-factored.mec": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1368,
+        "gzip1_bytes": 740
+      }
+    }
+  ],
+  "excluded": [],
+  "endpoints": {
+    "time_baseline_seconds": 1.95662225,
+    "size_baseline_bytes": 732,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 3,
+        "fastest": "mech-jit-simd-power-v04",
+        "smallest": "mech-jit-simd-power-v04",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.139685262191003
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.139685262191003
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 1,
+        "fastest": "nbody-rust-3",
+        "smallest": "nbody-rust-3",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.387978142076503,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 2.387978142076503,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  }
+}

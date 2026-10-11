@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "width": 1440,
+      "languages": [
+        "zig",
+        "odin",
+        "roc",
+        "elm"
+      ],
+      "complete_workloads": 10,
+      "source_and_samples": "passed",
+      "support_labels": "passed",
+      "groups_and_years": "passed",
+      "fixed_domains": true
+    },
+    {
+      "width": 390,
+      "languages": [
+        "zig",
+        "odin",
+        "roc",
+        "elm"
+      ],
+      "complete_workloads": 10,
+      "source_and_samples": "passed",
+      "support_labels": "passed",
+      "groups_and_years": "passed",
+      "fixed_domains": true
+    }
+  ],
+  "errors": []
+}

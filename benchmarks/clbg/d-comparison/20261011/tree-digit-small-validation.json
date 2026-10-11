@@ -1,0 +1,26 @@
+{
+  "binarytrees-compact": {
+    "returncode": 0,
+    "stdout": "stretch tree of depth 11\t check: 4095\n1024\t trees of depth 4\t check: 31744\n256\t trees of depth 6\t check: 32512\n64\t trees of depth 8\t check: 32704\n16\t trees of depth 10\t check: 32752\nlong lived tree of depth 10\t check: 2047\n",
+    "bytes": 223,
+    "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb"
+  },
+  "binarytrees-fast": {
+    "returncode": 0,
+    "stdout": "stretch tree of depth 11\t check: 4095\n1024\t trees of depth 4\t check: 31744\n256\t trees of depth 6\t check: 32512\n64\t trees of depth 8\t check: 32704\n16\t trees of depth 10\t check: 32752\nlong lived tree of depth 10\t check: 2047\n",
+    "bytes": 223,
+    "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb"
+  },
+  "pidigits-compact": {
+    "returncode": 0,
+    "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n",
+    "bytes": 45,
+    "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c"
+  },
+  "pidigits-fast": {
+    "returncode": 0,
+    "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n",
+    "bytes": 45,
+    "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c"
+  }
+}

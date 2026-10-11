@@ -1,0 +1,7 @@
+A(i<u64>, j<u64>) => <f64> := number/to-f64((i + j) * (i + j + 1) / 2 + i + 1)
+step(x<[f64]>) => <[f64]> := x |> matrix/apply(_, sequence/length(_), A, "divide") |> matrix/apply-transpose(_, sequence/length(_), A, "divide")
+seed := sequence/fill(io/argument-u64(1), 1.0)
+v := sequence/iterate(seed, 19, step)
+u := v |> step
+norm := math/sqrt(stats/dot(u, v) / stats/dot(v, v))
+io/write(string/concat(number/format(norm, 9), "\n"))

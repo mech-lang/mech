@@ -1,0 +1,7 @@
+<row> := <{value<f64>}>
+Test(n<f64>) = (result<f64>) :=
+  h := memory/allocate({value: n})
+  row := memory/read(h, <row>)
+  result := row.value.
+r := memory/with-arena(1, <row>, Test, 1.25)
+io/print("{}\n", control/select(r == 1.25, 1, 0))

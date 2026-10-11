@@ -1,0 +1,8 @@
+sequence := bytes/encode(text/record(io/read(), ">THREE", ">"), "ACGT", "ignore-ascii-case")
+io/write(format/frequencies(map/histogram(sequence/packed-windows(sequence, 2, 1)), "ACGT", 100, 3))
+io/write(format/frequencies(map/histogram(sequence/packed-windows(sequence, 2, 2)), "ACGT", 100, 3))
+io/write(format/lookup(map/histogram(sequence/packed-windows(sequence, 2, 3)), "GGT", "ACGT", "\t"))
+io/write(format/lookup(map/histogram(sequence/packed-windows(sequence, 2, 4)), "GGTA", "ACGT", "\t"))
+io/write(format/lookup(map/histogram(sequence/packed-windows(sequence, 2, 6)), "GGTATT", "ACGT", "\t"))
+io/write(format/lookup(map/histogram(sequence/packed-windows(sequence, 2, 12)), "GGTATTTTAATT", "ACGT", "\t"))
+io/write(format/lookup(map/histogram(sequence/packed-windows(sequence, 2, 18)), "GGTATTTTAATTTATAGT", "ACGT", "\t"))

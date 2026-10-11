@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>regex-redux C# program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>regex-redux C# program</h1>
+    <aside>
+      <p><a href="../description/regexredux.html#regexredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks Game</span>
+<span class="com"> * https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"> * </span>
+<span class="com"> * regex-dna program contributed by Isaac Gouy </span>
+<span class="com">*/</span>
+
+<span class="kwa">using</span> System<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Text<span class="opt">.</span>RegularExpressions<span class="opt">;</span>
+
+<span class="kwa">class</span> regexredux
+<span class="opt">{</span>
+   <span class="kwa">static void</span> <span class="kwd">Main</span><span class="opt">(</span><span class="kwa">string</span><span class="opt">[]</span> args<span class="opt">){</span>
+                   
+      <span class="slc">// read FASTA sequence</span>
+      String sequence <span class="opt">=</span> Console<span class="opt">.</span>In<span class="opt">.</span><span class="kwd">ReadToEnd</span><span class="opt">();</span>
+      <span class="kwa">int</span> initialLength <span class="opt">=</span> sequence<span class="opt">.</span>Length<span class="opt">;</span>
+
+      <span class="slc">// remove FASTA sequence descriptions and new-lines</span>
+      Regex r <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Regex</span><span class="opt">(</span><span class="sng">&quot;&gt;.*</span><span class="esc">\n</span><span class="sng">|</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">,</span> RegexOptions<span class="opt">.</span>Compiled<span class="opt">);</span>
+      sequence <span class="opt">=</span> r<span class="opt">.</span><span class="kwd">Replace</span><span class="opt">(</span>sequence<span class="opt">,</span><span class="sng">&quot;&quot;</span><span class="opt">);</span>
+      <span class="kwa">int</span> codeLength <span class="opt">=</span> sequence<span class="opt">.</span>Length<span class="opt">;</span>
+
+
+      <span class="slc">// regex match</span>
+      <span class="kwa">string</span><span class="opt">[]</span> variants <span class="opt">= {</span>
+         <span class="sng">&quot;agggtaaa|tttaccct&quot;</span>
+         <span class="opt">,</span><span class="sng">&quot;[cgt]gggtaaa|tttaccc[acg]&quot;</span>
+         <span class="opt">,</span><span class="sng">&quot;a[act]ggtaaa|tttacc[agt]t&quot;</span>
+         <span class="opt">,</span><span class="sng">&quot;ag[act]gtaaa|tttac[agt]ct&quot;</span>
+         <span class="opt">,</span><span class="sng">&quot;agg[act]taaa|ttta[agt]cct&quot;</span>
+         <span class="opt">,</span><span class="sng">&quot;aggg[acg]aaa|ttt[cgt]ccct&quot;</span>
+         <span class="opt">,</span><span class="sng">&quot;agggt[cgt]aa|tt[acg]accct&quot;</span>
+         <span class="opt">,</span><span class="sng">&quot;agggta[cgt]a|t[acg]taccct&quot;</span>
+         <span class="opt">,</span><span class="sng">&quot;agggtaa[cgt]|[acg]ttaccct&quot;</span>
+      <span class="opt">};</span> 
+
+      <span class="kwa">int</span> count<span class="opt">;</span>
+      <span class="kwa">foreach</span> <span class="opt">(</span><span class="kwa">string</span> v <span class="kwa">in</span> variants<span class="opt">){</span>
+         count <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+         r <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Regex</span><span class="opt">(</span>v<span class="opt">,</span> RegexOptions<span class="opt">.</span>Compiled<span class="opt">);</span>
+
+         <span class="kwa">for</span> <span class="opt">(</span>Match m <span class="opt">=</span> r<span class="opt">.</span><span class="kwd">Match</span><span class="opt">(</span>sequence<span class="opt">);</span> m<span class="opt">.</span>Success<span class="opt">;</span> m <span class="opt">=</span> m<span class="opt">.</span><span class="kwd">NextMatch</span><span class="opt">())</span> count<span class="opt">++;</span>
+         Console<span class="opt">.</span><span class="kwd">WriteLine</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">{0} {</span><span class="sng">1}&quot;</span><span class="opt">,</span> v<span class="opt">,</span> count<span class="opt">);</span>
+      <span class="opt">}</span>
+
+
+      <span class="slc">// regex substitution</span>
+      IUB<span class="opt">[]</span> codes <span class="opt">= {</span>
+          <span class="kwa">new</span> <span class="kwd">IUB</span><span class="opt">(</span><span class="sng">&quot;tHa[Nt]&quot;</span><span class="opt">,</span> <span class="sng">&quot;&lt;4&gt;&quot;</span><span class="opt">)</span>
+         <span class="opt">,</span><span class="kwa">new</span> <span class="kwd">IUB</span><span class="opt">(</span><span class="sng">&quot;aND|caN|Ha[DS]|WaS&quot;</span><span class="opt">,</span> <span class="sng">&quot;&lt;3&gt;&quot;</span><span class="opt">)</span>
+         <span class="opt">,</span><span class="kwa">new</span> <span class="kwd">IUB</span><span class="opt">(</span><span class="sng">&quot;a[NSt]|BY&quot;</span><span class="opt">,</span> <span class="sng">&quot;&lt;2&gt;&quot;</span><span class="opt">)</span>
+         <span class="opt">,</span><span class="kwa">new</span> <span class="kwd">IUB</span><span class="opt">(</span><span class="sng">&quot;&lt;[^&gt;]*&gt;&quot;</span><span class="opt">,</span> <span class="sng">&quot;|&quot;</span><span class="opt">)</span>
+         <span class="opt">,</span><span class="kwa">new</span> <span class="kwd">IUB</span><span class="opt">(</span><span class="sng">&quot;</span><span class="esc">\\</span><span class="sng">|[^|][^|]*</span><span class="esc">\\</span><span class="sng">|&quot;</span> <span class="opt">,</span> <span class="sng">&quot;-&quot;</span><span class="opt">)</span>
+      <span class="opt">};</span> 
+
+      <span class="kwa">foreach</span> <span class="opt">(</span>IUB iub <span class="kwa">in</span> codes<span class="opt">) {</span>
+         r <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Regex</span><span class="opt">(</span>iub<span class="opt">.</span>code<span class="opt">,</span> RegexOptions<span class="opt">.</span>Compiled<span class="opt">);</span>
+         sequence <span class="opt">=</span> r<span class="opt">.</span><span class="kwd">Replace</span><span class="opt">(</span>sequence<span class="opt">,</span>iub<span class="opt">.</span>alternatives<span class="opt">);</span>
+      <span class="opt">}</span>
+      Console<span class="opt">.</span><span class="kwd">WriteLine</span><span class="opt">(</span><span class="sng">&quot;</span><span class="esc">\n{</span><span class="sng">0}</span><span class="esc">\n{</span><span class="sng">1}</span><span class="esc">\n{</span><span class="sng">2}&quot;</span><span class="opt">,</span> 
+         initialLength<span class="opt">,</span> codeLength<span class="opt">,</span> sequence<span class="opt">.</span>Length<span class="opt">);</span>
+   <span class="opt">}</span>
+
+
+   <span class="kwa">struct</span> IUB 
+   <span class="opt">{</span>
+      <span class="kwa">public string</span> code<span class="opt">;</span>
+      <span class="kwa">public string</span> alternatives<span class="opt">;</span>
+
+      <span class="kwa">public</span> <span class="kwd">IUB</span><span class="opt">(</span><span class="kwa">string</span> code<span class="opt">,</span> <span class="kwa">string</span> alternatives<span class="opt">) {</span>
+         <span class="kwa">this</span><span class="opt">.</span>code <span class="opt">=</span> code<span class="opt">;</span>
+         <span class="kwa">this</span><span class="opt">.</span>alternatives <span class="opt">=</span> alternatives<span class="opt">;</span>
+      <span class="opt">}</span>
+   <span class="opt">}</span>
+<span class="opt">}</span>
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+.NET SDK 9.0.100
+Host Version: 9.0.0
+Commit: 9d5a6a9aa4
+
+&lt;OutputType&gt;Exe
+&lt;TargetFramework&gt;net9.0
+&lt;ImplicitUsings&gt;enable
+&lt;Nullable&gt;enable
+&lt;AllowUnsafeBlocks&gt;true
+&lt;ServerGarbageCollection&gt;true
+&lt;ConcurrentGarbageCollection&gt;true
+&lt;PublishAot&gt;false
+
+
+
+ Thu, 06 Feb 2025 08:42:59 GMT
+
+MAKE:
+cp regexredux.csharpcore Program.cs
+cp Include/csharpcore/program.csproj .
+/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release	
+  Determining projects to restore...
+  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.csproj (in 704 ms).
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/Program.cs(10,7): warning CS8981: The type name 'regexredux' only contains lower-cased ascii characters. Such names may become reserved for the language. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.csproj]
+  program -&gt; /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/bin/Release/net9.0/linux-x64/program.dll
+
+Build succeeded.
+
+/home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/Program.cs(10,7): warning CS8981: The type name 'regexredux' only contains lower-cased ascii characters. Such names may become reserved for the language. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.csproj]
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.13
+
+7.95s to complete and log all make actions
+
+COMMAND LINE:
+ ./bin/Release/net9.0/linux-x64/program 0 &lt; regexredux-input5000000.txt
+
+PROGRAM OUTPUT:
+agggtaaa|tttaccct 356
+[cgt]gggtaaa|tttaccc[acg] 1250
+a[act]ggtaaa|tttacc[agt]t 4252
+ag[act]gtaaa|tttac[agt]ct 2894
+agg[act]taaa|ttta[agt]cct 5435
+aggg[acg]aaa|ttt[cgt]ccct 1537
+agggt[cgt]aa|tt[acg]accct 1431
+agggta[cgt]a|t[acg]taccct 1608
+agggtaa[cgt]|[acg]ttaccct 2178
+
+50833411
+50000000
+27388361
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

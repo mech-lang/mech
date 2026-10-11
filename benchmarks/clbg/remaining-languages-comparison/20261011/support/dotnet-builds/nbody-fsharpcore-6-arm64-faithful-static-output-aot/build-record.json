@@ -1,0 +1,73 @@
+{
+  "id": "nbody-fsharpcore-6-arm64-faithful-static-output-aot",
+  "key": "nbody:nbody-fsharpcore-6-arm64-faithful-static-output-aot",
+  "benchmark": "nbody",
+  "language": "fsharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/nbody-fsharpcore-6-arm64-faithful-static-output.fs",
+  "source_sha256": "b57eb154572d52b1d2df68889150cfba0224cf546c85faeb25ceb48abc07dded",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/nbody-fsharpcore-6.fs",
+  "original_source_sha256": "a294824c2bf69565690a495f0e6c8b72d6e3a915828f46fdc70fc68cb3a6f909",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-fsharpcore-6.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:46:03 GMT\n\nMAKE:\ncp nbody.fsharpcore-6.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.fsproj (in 1.02 sec).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:15.02\n\n17.01s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+  "adaptations": [
+    "Use portable .NET Vector256 binary64 arithmetic, which splits into native ARM vectors, in place of AVX arithmetic.",
+    "Use ordinary statically resolved .NET number/text formatting, because this FSharp.Core printf path invokes generic methods through reflection that NativeAOT cannot create. All changed application output expressions count. Limit async scheduling to eight workers."
+  ],
+  "local_adaptation": true,
+  "physical_loc": 111,
+  "normalized_loc": 111,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/nbody-fsharpcore-6-arm64-faithful-static-output-aot/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-static-output-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/nbody-fsharpcore-6-arm64-faithful-static-output-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-static-output-aot/app",
+  "binary_sha256": "98be0726600b99667ea981c13e1dbbd491b0c700e59cd7ec3f8fb1e382441bc8",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-static-output-aot/app",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-fsharpcore-6-arm64-faithful-static-output-aot/app": "98be0726600b99667ea981c13e1dbbd491b0c700e59cd7ec3f8fb1e382441bc8"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 26,
+    "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+    "energies": [
+      -0.169075164,
+      -0.169087605
+    ],
+    "tolerance": 1e-08,
+    "reference_match": true
+  },
+  "published_elapsed_hint": 5.01,
+  "timing_selection_reasons": [
+    "Lowest officially published elapsed time at the prescribed full workload; local timing still required.",
+    "Additional ARM SIMD or complete rolling-map optimization candidate."
+  ]
+}

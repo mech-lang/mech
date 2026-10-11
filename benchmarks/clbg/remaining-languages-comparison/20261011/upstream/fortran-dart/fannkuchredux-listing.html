@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="all">
+<meta name="description" content="fannkuch-redux - Which programs are fastest? — How fast programs repeatedly access a tiny integer-sequence.">
+<title>fannkuch-redux - Which programs are fastest? (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article,footer{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}.external{border-bottom:.1em dashed #333}p a,span{border-bottom: .1em solid #333;padding-bottom: .1em}.best{font-weight:bold}.message{font-size: .8em}img{display:block;width:100%}table{color:#333;margin:1.3em auto 0;text-align:right}tbody::after{content:"-";display:block;line-height:2.6em;visibility:hidden}td{border-bottom: .15em dotted #eee;padding: .7em 0 0 1em}td a, th a{display:block}th{font-weight:normal;padding:0 0 0 1em}td:first-child{padding-left:0}td:nth-child(2),th:nth-child(2){text-align:left}
+
+@media only screen{th:nth-child(1),td:nth-child(1),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7){display:none}}
+@media only screen and (min-width:23em){th:nth-child(1),td:nth-child(1){display:table-cell}}@media only screen and (min-width:37em){th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6){display:table-cell}li{display:inline-block}}@media only screen and (min-width:43em){th:nth-child(7),td:nth-child(7){display:table-cell}}@media only screen and (min-width:60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+
+<article>
+
+  <div>
+     <h1>fannkuch-redux sorted-by "secs"</h1>
+     <aside>
+        
+        <p><a href="../description/fannkuchredux.html#fannkuchredux">description</a>
+     </aside>
+  </div>
+  
+    
+  <section>
+    <div>
+      <h2></h2> 
+        <p>Always look at the source code.<p>(Lumpers and Splitters.)<p>Some of these programs are single-thread and some are multi-thread: compare "secs" and "cpu secs". Some of these programs are un-optimised and some are heavily optimised: sort-by "gz" source code size. <p>Some of these programs are "naked ffi" and some put that in a library. Some of these programs are high-level and some are hand-written vector instructions.<p>Always look at the source code.
+                
+      <h2></h2>
+    </div>
+    <table>
+      <tr>
+        <th>&nbsp;
+        <th colspan="5">*&nbsp;possible hand-written vector instructions or "unsafe"
+      <tr>
+        <th colspan='6'>&nbsp;
+      <tr>
+        <th>&#215;
+        <th>source
+        <th class="best">secs
+        <th><a href="./fannkuchredux-mem.html"><span>mem</span></a>
+        <th><a href="./fannkuchredux-gz.html"><span>gz</span></a>
+        <th><a href="./fannkuchredux-cpu.html"><span>cpu secs</span></a>
+      <tr>
+        <td>1.0
+        <td><a href="../program/fannkuchredux-gcc-6.html"><span>* <strong>C</strong>&nbsp;gcc&nbsp;#6</span></a>
+        <td class="best">2.14
+        <td>2,712
+        <td>1582
+        <td>8.44
+      <tr>
+        <td>1.0
+        <td><a href="../program/fannkuchredux-csharpaot-5.html"><span>* <strong>C#</strong>&nbsp;naot&nbsp;#5</span></a>
+        <td class="best">2.16
+        <td>6,713
+        <td>1485
+        <td>8.57
+      <tr>
+        <td>1.6
+        <td><a href="../program/fannkuchredux-gpp-6.html"><span>* <strong>C++</strong>g++&nbsp;#6</span></a>
+        <td class="best">3.33
+        <td>5,800
+        <td>1535
+        <td>13.11
+      <tr>
+        <td>1.8
+        <td><a href="../program/fannkuchredux-rust-6.html"><span>* <strong>Rust</strong>&nbsp;#6</span></a>
+        <td class="best">3.81
+        <td>3,985
+        <td>1260
+        <td>15.05
+      <tr>
+        <td>3.2
+        <td><a href="../program/fannkuchredux-rust-4.html"><span>Rust&nbsp;#4</span></a>
+        <td>6.94
+        <td>3,985
+        <td>1026
+        <td>27.12
+      <tr>
+        <td>3.4
+        <td><a href="../program/fannkuchredux-gcc-5.html"><span>C gcc&nbsp;#5</span></a>
+        <td>7.28
+        <td>2,949
+        <td>917
+        <td>28.26
+      <tr>
+        <td>3.5
+        <td><a href="../program/fannkuchredux-rust-5.html"><span>Rust&nbsp;#5</span></a>
+        <td>7.41
+        <td>3,990
+        <td>1023
+        <td>28.89
+      <tr>
+        <td>3.7
+        <td><a href="../program/fannkuchredux-gpp-5.html"><span>C++ g++&nbsp;#5</span></a>
+        <td>7.86
+        <td>5,792
+        <td>987
+        <td>30.73
+      <tr>
+        <td>3.8
+        <td><a href="../program/fannkuchredux-csharpaot-9.html"><span>* C# naot&nbsp;#9</span></a>
+        <td>8.11
+        <td>6,377
+        <td>1232
+        <td>32.33
+      <tr>
+        <td>3.8
+        <td><a href="../program/fannkuchredux-swift-3.html"><span>* <strong>Swift</strong>&nbsp;#3</span></a>
+        <td class="best">8.20
+        <td>13,722
+        <td>1103
+        <td>32.41
+      <tr>
+        <td>3.9
+        <td><a href="../program/fannkuchredux-go-3.html"><span><strong>Go</strong>&nbsp;#3</span></a>
+        <td class="best">8.36
+        <td>3,846
+        <td>975
+        <td>33.33
+      <tr>
+        <td>3.9
+        <td><a href="../program/fannkuchredux-fsharpcore-6.html"><span><strong>F#</strong>&nbsp;#6</span></a>
+        <td class="best">8.37
+        <td>41,243
+        <td>1103
+        <td>32.47
+      <tr>
+        <td>4.0
+        <td><a href="../program/fannkuchredux-chapel-2.html"><span><strong>Chapel</strong>&nbsp;#2</span></a>
+        <td class="best">8.46
+        <td>9,650
+        <td>737
+        <td>33.54
+      <tr>
+        <td>4.0
+        <td><a href="../program/fannkuchredux-julia-2.html"><span>* <strong>Julia</strong>&nbsp;#2</span></a>
+        <td class="best">8.60
+        <td>333,173
+        <td>1077
+        <td>31.97
+      <tr>
+        <td>4.1
+        <td><a href="../program/fannkuchredux-ocaml-3.html"><span><strong>OCaml</strong>&nbsp;#3</span></a>
+        <td class="best">8.84
+        <td>36,123
+        <td>1024
+        <td>35.14
+      <tr>
+        <td>4.2
+        <td><a href="../program/fannkuchredux-gpp-4.html"><span>C++ g++&nbsp;#4</span></a>
+        <td>8.91
+        <td>5,710
+        <td>1445
+        <td>35.03
+      <tr>
+        <td>4.3
+        <td><a href="../program/fannkuchredux-ocaml-4.html"><span>OCaml&nbsp;#4</span></a>
+        <td>9.14
+        <td>11,338
+        <td>1018
+        <td>36.44
+      <tr>
+        <td>4.3
+        <td><a href="../program/fannkuchredux-gpp-2.html"><span>C++ g++&nbsp;#2</span></a>
+        <td>9.14
+        <td>5,698
+        <td>1446
+        <td>35.85
+      <tr>
+        <td>4.3
+        <td><a href="../program/fannkuchredux-gnat-3.html"><span><strong>Ada</strong>&nbsp;2012&nbsp;GNAT&nbsp;#3</span></a>
+        <td class="best">9.15
+        <td>7,684
+        <td>2120
+        <td>36.42
+      <tr>
+        <td>4.3
+        <td><a href="../program/fannkuchredux-rust-2.html"><span>Rust&nbsp;#2</span></a>
+        <td>9.19
+        <td>3,723
+        <td>1198
+        <td>36.04
+      <tr>
+        <td>4.3
+        <td><a href="../program/fannkuchredux-graalvmaot-1.html"><span><strong>Java</strong>&nbsp;naot</span></a>
+        <td class="best">9.26
+        <td>18,522
+        <td>1289
+        <td>36.59
+      <tr>
+        <td>4.4
+        <td><a href="../program/fannkuchredux-sbcl-4.html"><span><strong>Lisp</strong>&nbsp;SBCL&nbsp;#4</span></a>
+        <td class="best">9.41
+        <td>38,060
+        <td>1531
+        <td>36.94
+      <tr>
+        <td>4.4
+        <td><a href="../program/fannkuchredux-julia-3.html"><span>* Julia&nbsp;#3</span></a>
+        <td>9.44
+        <td>333,042
+        <td>896
+        <td>35.58
+      <tr>
+        <td>4.5
+        <td><a href="../program/fannkuchredux-ifx-3.html"><span>Intel&nbsp;<strong>Fortran</strong>&nbsp;#3</span></a>
+        <td class="best">9.67
+        <td>12,128
+        <td>1164
+        <td>38.54
+      <tr>
+        <td>4.5
+        <td><a href="../program/fannkuchredux-ghc-3.html"><span><strong>Haskell</strong>&nbsp;GHC&nbsp;#3</span></a>
+        <td class="best">9.69
+        <td>9,445
+        <td>1184
+        <td>37.99
+      <tr>
+        <td>4.6
+        <td><a href="../program/fannkuchredux-fsharpcore-5.html"><span>F#&nbsp;#5</span></a>
+        <td>9.75
+        <td>46,322
+        <td>927
+        <td>38.04
+      <tr>
+        <td>4.7
+        <td><a href="../program/fannkuchredux-csharpaot-6.html"><span>C# naot&nbsp;#6</span></a>
+        <td>10.14
+        <td>6,799
+        <td>1075
+        <td>40.45
+      <tr>
+        <td>4.8
+        <td><a href="../program/fannkuchredux-gcc-2.html"><span>* C gcc&nbsp;#2</span></a>
+        <td>10.18
+        <td>2,695
+        <td>1563
+        <td>39.92
+      <tr>
+        <td>4.9
+        <td><a href="../program/fannkuchredux-ghc-5.html"><span>* Haskell GHC&nbsp;#5</span></a>
+        <td>10.53
+        <td>9,347
+        <td>850
+        <td>41.69
+      <tr>
+        <td>4.9
+        <td><a href="../program/fannkuchredux-gpp-1.html"><span>C++ g++</span></a>
+        <td>10.53
+        <td>5,534
+        <td>1065
+        <td>41.31
+      <tr>
+        <td>5.0
+        <td><a href="../program/fannkuchredux-fpascal-1.html"><span>Free&nbsp;<strong>Pascal</strong></span></a>
+        <td class="best">10.66
+        <td>3,666
+        <td>1057
+        <td>42.37
+      <tr>
+        <td>5.2
+        <td><a href="../program/fannkuchredux-csharpaot-3.html"><span>C# naot&nbsp;#3</span></a>
+        <td>11.01
+        <td>6,472
+        <td>1117
+        <td>43.52
+      <tr>
+        <td>5.2
+        <td><a href="../program/fannkuchredux-node-5.html"><span><strong>Node.js</strong>&nbsp;#5</span></a>
+        <td class="best">11.07
+        <td>111,055
+        <td>1320
+        <td>43.74
+      <tr>
+        <td>5.6
+        <td><a href="../program/fannkuchredux-dartexe-5.html"><span><strong>Dart</strong>&nbsp;aot&nbsp;#5</span></a>
+        <td class="best">11.93
+        <td>10,613
+        <td>1227
+        <td>47.40
+      <tr>
+        <td>5.7
+        <td><a href="../program/fannkuchredux-ghc-6.html"><span>* Haskell GHC&nbsp;#6</span></a>
+        <td>12.09
+        <td>27,410
+        <td>1123
+        <td>46.41
+      <tr>
+        <td>5.7
+        <td><a href="../program/fannkuchredux-go-1.html"><span>Go</span></a>
+        <td>12.27
+        <td>4,903
+        <td>906
+        <td>49.03
+      <tr>
+        <td>5.8
+        <td><a href="../program/fannkuchredux-go-2.html"><span>Go&nbsp;#2</span></a>
+        <td>12.36
+        <td>16,966
+        <td>903
+        <td>49.33
+      <tr>
+        <td>6.6
+        <td><a href="../program/fannkuchredux-gcc-4.html"><span>* C gcc&nbsp;#4</span></a>
+        <td>14.05
+        <td>2,351
+        <td>1190
+        <td>14.04
+      <tr>
+        <td>6.6
+        <td><a href="../program/fannkuchredux-gpp-7.html"><span>* C++ g++&nbsp;#7</span></a>
+        <td>14.06
+        <td>2,449
+        <td>1156
+        <td>14.04
+      <tr>
+        <td>14
+        <td><a href="../program/fannkuchredux-racket-3.html"><span>* <strong>Racket</strong>&nbsp;#3</span></a>
+        <td class="best">30.37
+        <td>129,380
+        <td>1109
+        <td>112.19
+      <tr>
+        <td>14
+        <td><a href="../program/fannkuchredux-sbcl-5.html"><span>Lisp SBCL&nbsp;#5</span></a>
+        <td>30.88
+        <td>58,196
+        <td>689
+        <td>30.86
+      <tr>
+        <td>15
+        <td><a href="../program/fannkuchredux-csharpaot-2.html"><span>C# naot&nbsp;#2</span></a>
+        <td>31.30
+        <td>6,001
+        <td>584
+        <td>31.28
+      <tr>
+        <td>16
+        <td><a href="../program/fannkuchredux-graalvmaot-3.html"><span>Java naot&nbsp;#3</span></a>
+        <td>34.41
+        <td>17,514
+        <td>1264
+        <td>34.40
+      <tr>
+        <td>16
+        <td><a href="../program/fannkuchredux-swift-8.html"><span>Swift&nbsp;#8</span></a>
+        <td>34.68
+        <td>13,484
+        <td>470
+        <td>34.66
+      <tr>
+        <td>17
+        <td><a href="../program/fannkuchredux-sbcl-3.html"><span>Lisp SBCL&nbsp;#3</span></a>
+        <td>36.28
+        <td>37,208
+        <td>833
+        <td>36.26
+      <tr>
+        <td>17
+        <td><a href="../program/fannkuchredux-gcc-3.html"><span>C gcc&nbsp;#3</span></a>
+        <td>36.84
+        <td>2,343
+        <td>574
+        <td>36.83
+      <tr>
+        <td>18
+        <td><a href="../program/fannkuchredux-gpp-3.html"><span>C++ g++&nbsp;#3</span></a>
+        <td>37.89
+        <td>2,351
+        <td>600
+        <td>37.88
+      <tr>
+        <td>18
+        <td><a href="../program/fannkuchredux-gcc-8.html"><span>C gcc&nbsp;#8</span></a>
+        <td>39.34
+        <td>2,343
+        <td>483
+        <td>39.33
+      <tr>
+        <td>19
+        <td><a href="../program/fannkuchredux-gcc-1.html"><span>C gcc</span></a>
+        <td>39.65
+        <td>2,343
+        <td>514
+        <td>39.64
+      <tr>
+        <td>19
+        <td><a href="../program/fannkuchredux-ghc-4.html"><span>* Haskell GHC&nbsp;#4</span></a>
+        <td>40.21
+        <td>9,933
+        <td>671
+        <td>40.76
+      <tr>
+        <td>19
+        <td><a href="../program/fannkuchredux-ifx-1.html"><span>Intel Fortran</span></a>
+        <td>40.21
+        <td>2,179
+        <td>608
+        <td>40.20
+      <tr>
+        <td>19
+        <td><a href="../program/fannkuchredux-dartexe-3.html"><span>Dart aot&nbsp;#3</span></a>
+        <td>40.60
+        <td>8,757
+        <td>553
+        <td>40.60
+      <tr>
+        <td>20
+        <td><a href="../program/fannkuchredux-julia-1.html"><span>Julia</span></a>
+        <td>42.57
+        <td>309,928
+        <td>441
+        <td>42.59
+      <tr>
+        <td>21
+        <td><a href="../program/fannkuchredux-csharpaot-8.html"><span>C# naot&nbsp;#8</span></a>
+        <td>44.63
+        <td>6,091
+        <td>519
+        <td>44.62
+      <tr>
+        <td>21
+        <td><a href="../program/fannkuchredux-ghc-2.html"><span>* Haskell GHC&nbsp;#2</span></a>
+        <td>44.79
+        <td>28,713
+        <td>815
+        <td>131.11
+      <tr>
+        <td>21
+        <td><a href="../program/fannkuchredux-ocaml-2.html"><span>OCaml&nbsp;#2</span></a>
+        <td>45.79
+        <td>4,784
+        <td>478
+        <td>45.78
+      <tr>
+        <td>22
+        <td><a href="../program/fannkuchredux-go-8.html"><span>Go&nbsp;#8</span></a>
+        <td>46.15
+        <td>3,207
+        <td>500
+        <td>46.27
+      <tr>
+        <td>22
+        <td><a href="../program/fannkuchredux-graalvmaot-2.html"><span>Java naot&nbsp;#2</span></a>
+        <td>46.96
+        <td>16,175
+        <td>520
+        <td>46.95
+      <tr>
+        <td>22
+        <td><a href="../program/fannkuchredux-sbcl-2.html"><span>Lisp SBCL&nbsp;#2</span></a>
+        <td>48.05
+        <td>27,795
+        <td>525
+        <td>48.02
+      <tr>
+        <td>24
+        <td><a href="../program/fannkuchredux-ocaml-1.html"><span>OCaml</span></a>
+        <td>51.28
+        <td>4,796
+        <td>529
+        <td>51.27
+      <tr>
+        <td>24
+        <td><a href="../program/fannkuchredux-graalvmaot-8.html"><span>Java naot&nbsp;#8</span></a>
+        <td>51.93
+        <td>16,269
+        <td>517
+        <td>51.92
+      <tr>
+        <td>27
+        <td><a href="../program/fannkuchredux-dartexe-2.html"><span>Dart aot&nbsp;#2</span></a>
+        <td>57.48
+        <td>8,950
+        <td>510
+        <td>57.47
+      <tr>
+        <td>27
+        <td><a href="../program/fannkuchredux-node-8.html"><span>Node.js&nbsp;#8</span></a>
+        <td>58.32
+        <td>64,094
+        <td>452
+        <td>58.30
+      <tr>
+        <td>28
+        <td><a href="../program/fannkuchredux-dartexe-8.html"><span>Dart aot&nbsp;#8</span></a>
+        <td>60.61
+        <td>8,954
+        <td>508
+        <td>60.60
+      <tr>
+        <td>31
+        <td><a href="../program/fannkuchredux-erlang-1.html"><span><strong>Erlang</strong></span></a>
+        <td class="best">65.23
+        <td>64,389
+        <td>1044
+        <td>256.69
+      <tr>
+        <td>53
+        <td><a href="../program/fannkuchredux-racket-2.html"><span>* Racket&nbsp;#2</span></a>
+        <td>113.47
+        <td>126,419
+        <td>916
+        <td>113.40
+      <tr>
+        <td>61
+        <td><a href="../program/fannkuchredux-php-4.html"><span><strong>PHP</strong>&nbsp;#4</span></a>
+        <td class="best">130.83
+        <td>19,780
+        <td>1168
+        <td>8&nbsp;min
+      <tr>
+        <td>62
+        <td><a href="../program/fannkuchredux-php-3.html"><span>PHP&nbsp;#3</span></a>
+        <td>133.01
+        <td>19,767
+        <td>1166
+        <td>8&nbsp;min
+      <tr>
+        <td>66
+        <td><a href="../program/fannkuchredux-racket-1.html"><span>* Racket</span></a>
+        <td>141.45
+        <td>126,550
+        <td>655
+        <td>141.38
+      <tr>
+        <td>70
+        <td><a href="../program/fannkuchredux-fsharpcore-1.html"><span>F#</span></a>
+        <td>149.70
+        <td>46,936
+        <td>558
+        <td>107.42
+      <tr>
+        <td>72
+        <td><a href="../program/fannkuchredux-ruby-2.html"><span><strong>Ruby</strong>&nbsp;#2</span></a>
+        <td class="best">154.32
+        <td>23,679
+        <td>1462
+        <td>9&nbsp;min
+      <tr>
+        <td>136
+        <td><a href="../program/fannkuchredux-ghc-1.html"><span>Haskell GHC</span></a>
+        <td>291.63
+        <td>15,524
+        <td>567
+        <td>5&nbsp;min
+      <tr>
+        <td>146
+        <td><a href="../program/fannkuchredux-python3-4.html"><span><strong>Python&nbsp;3</strong>&nbsp;#4</span></a>
+        <td class="best">5&nbsp;min
+        <td>28,701
+        <td>960
+        <td>20&nbsp;min
+      <tr>
+        <td>202
+        <td><a href="../program/fannkuchredux-perl-2.html"><span><strong>Perl</strong>&nbsp;#2</span></a>
+        <td class="best">7&nbsp;min
+        <td>16,654
+        <td>577
+        <td>28&nbsp;min
+      <tr>
+        <td>217
+        <td><a href="../program/fannkuchredux-php-2.html"><span>PHP&nbsp;#2</span></a>
+        <td>7&nbsp;min
+        <td>16,339
+        <td>447
+        <td>7&nbsp;min
+      <tr>
+        <td>225
+        <td><a href="../program/fannkuchredux-pharo-1.html"><span>Pharo&nbsp;<strong>Smalltalk</strong></span></a>
+        <td class="best">8&nbsp;min
+        <td>143,667
+        <td>871
+        <td>8&nbsp;min
+      <tr>
+        <td>277
+        <td><a href="../program/fannkuchredux-php-1.html"><span>PHP</span></a>
+        <td>9&nbsp;min
+        <td>16,400
+        <td>488
+        <td>9&nbsp;min
+      <tr>
+        <td>283
+        <td><a href="../program/fannkuchredux-lua-1.html"><span><strong>Lua</strong></span></a>
+        <td class="best">10&nbsp;min
+        <td>3,330
+        <td>469
+        <td>10&nbsp;min
+      <tr>
+        <td>397
+        <td><a href="../program/fannkuchredux-php-8.html"><span>PHP&nbsp;#8</span></a>
+        <td>14&nbsp;min
+        <td>16,364
+        <td>458
+        <td>14&nbsp;min
+      <tr>
+        <td>442
+        <td><a href="../program/fannkuchredux-python3-6.html"><span>Python 3&nbsp;#6</span></a>
+        <td>15&nbsp;min
+        <td>11,874
+        <td>391
+        <td>15&nbsp;min
+      <tr>
+        <td>597
+        <td><a href="../program/fannkuchredux-perl-3.html"><span>Perl&nbsp;#3</span></a>
+        <td>21&nbsp;min
+        <td>7,512
+        <td>433
+        <td>21&nbsp;min
+      <tr>
+        <td>673
+        <td><a href="../program/fannkuchredux-ruby-1.html"><span>Ruby</span></a>
+        <td>23&nbsp;min
+        <td>17,695
+        <td>391
+        <td>23&nbsp;min
+      <tr>
+        <td>&nbsp;
+        <td><a href="../program/fannkuchredux-perl-1.html"><span>Perl</span></a>
+        <td>30&nbsp;min
+        <td>7,524
+        <td>463
+        <td>30&nbsp;min
+      <tr>
+        <td>&nbsp;
+        <td><a href="../program/fannkuchredux-ruby-8.html"><span>Ruby&nbsp;#8</span></a>
+        <td>34&nbsp;min
+        <td>17,691
+        <td>418
+        <td>34&nbsp;min
+      <tr>
+        <td>&nbsp;
+        <td><a href="../program/fannkuchredux-python3-8.html"><span>Python 3&nbsp;#8</span></a>
+        <td>40&nbsp;min
+        <td>11,874
+        <td>414
+        <td>40&nbsp;min
+      </table>
+      <nav>
+        <ul>
+          <li class="best">by secs
+          <li><a href="./fannkuchredux-mem.html"><span>by mem</span></a>
+          <li><a href="./fannkuchredux-gz.html"><span>by gz</span></a>
+          <li><a href="./fannkuchredux-cpu.html"><span>by cpu secs</span></a>
+        </ul>
+      </nav>
+  </section>
+</article>
+<footer>
+    <p>Isaac Gouy. (n. d.). The Computer Language Benchmarks Game. <a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/">https://benchmarksgame-team.pages.debian.net/benchmarksgame/</a>
+    <p><br>&nbsp;
+</footer>
+
+
+
+
+
+

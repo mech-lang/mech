@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement OCaml program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement OCaml program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">(* The Computer Language Benchmarks Game</span>
+<span class="com"> * https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"> *</span>
+<span class="com"> * Contributed by Paolo Ribeca</span>
+<span class="com"> * Modified by Roman Kashitsyn: use Bytes instead of String</span>
+<span class="com"> *)</span>
+
+<span class="kwa">let</span> <span class="kwd">chars_per_line</span> <span class="opt">=</span> <span class="num">60</span>
+<span class="kwa">and</span> lines_per_worker <span class="opt">=</span>
+  <span class="kwa">match</span> <span class="kwc">Sys</span><span class="opt">.</span>word_size <span class="kwa">with</span>
+  <span class="opt">|</span> <span class="num">32</span> <span class="opt">-&gt;</span> <span class="num">200000</span>
+  <span class="opt">|</span> <span class="num">64</span> <span class="opt">-&gt;</span> <span class="num">500000</span>
+  <span class="opt">|</span> _ <span class="opt">-&gt;</span> <span class="kwa">assert false</span>
+
+<span class="kwa">let</span> <span class="kwd">rc_table</span> <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">complements</span> <span class="opt">= [ (</span>&#39;a&#39;<span class="opt">,</span> &#39;t&#39;<span class="opt">); (</span>&#39;c&#39;<span class="opt">,</span> &#39;g&#39;<span class="opt">); (</span>&#39;m&#39;<span class="opt">,</span> &#39;k&#39;<span class="opt">); (</span>&#39;r&#39;<span class="opt">,</span> &#39;y&#39;<span class="opt">); (</span>&#39;w&#39;<span class="opt">,</span> &#39;w&#39;<span class="opt">);</span>
+                      <span class="opt">(</span>&#39;s&#39;<span class="opt">,</span> &#39;s&#39;<span class="opt">); (</span>&#39;v&#39;<span class="opt">,</span> &#39;b&#39;<span class="opt">); (</span>&#39;h&#39;<span class="opt">,</span> &#39;d&#39;<span class="opt">); (</span>&#39;n&#39;<span class="opt">,</span> &#39;n&#39;<span class="opt">) ]</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">buf</span> <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>make <span class="num">256</span> &#39;<span class="esc">\000</span>&#39; <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">set</span> <span class="opt">(</span>i<span class="opt">,</span> c<span class="opt">) =</span> <span class="kwc">Bytes</span><span class="opt">.</span><span class="kwd">set buf</span> <span class="opt">(</span><span class="kwc">Char</span><span class="opt">.</span>code i<span class="opt">) (</span><span class="kwc">Char</span><span class="opt">.</span>uppercase_ascii c<span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">set_case</span> <span class="opt">(</span>i<span class="opt">,</span> c<span class="opt">) =</span> <span class="kwd">set</span> <span class="opt">(</span>i<span class="opt">,</span> c<span class="opt">);</span> <span class="kwd">set</span> <span class="opt">(</span><span class="kwc">Char</span><span class="opt">.</span>uppercase_ascii i<span class="opt">,</span> c<span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">set_bidirect</span> <span class="opt">(</span>i<span class="opt">,</span> c<span class="opt">) =</span> <span class="kwd">set_case</span> <span class="opt">(</span>i<span class="opt">,</span> c<span class="opt">);</span> <span class="kwd">set_case</span> <span class="opt">(</span>c<span class="opt">,</span> i<span class="opt">)</span> <span class="kwa">in</span>
+  <span class="kwd">set_case</span> <span class="opt">(</span>&#39;u&#39;<span class="opt">,</span> &#39;A&#39;<span class="opt">);</span>
+  <span class="kwc">List</span><span class="opt">.</span>iter <span class="kwd">set_bidirect complements</span><span class="opt">;</span>
+  <span class="kwc">Bytes</span><span class="opt">.</span>unsafe_to_string <span class="kwd">buf</span>
+
+<span class="kwa">let</span> <span class="kwd">_</span> <span class="opt">=</span>
+  <span class="kwa">let</span> <span class="kwd">aug_chars_per_line</span> <span class="opt">=</span> <span class="kwd">chars_per_line</span> <span class="opt">+</span> <span class="num">1</span>
+  <span class="kwa">and</span> in_ack<span class="opt">,</span> out_ack <span class="opt">=</span> <span class="kwc">Unix</span><span class="opt">.</span>pipe <span class="opt">()</span> <span class="kwa">and</span> in_end<span class="opt">,</span> out_end <span class="opt">=</span> <span class="kwc">Unix</span><span class="opt">.</span>pipe <span class="opt">()</span>
+  <span class="kwa">and</span> put out_pipe <span class="opt">() =</span>
+    <span class="kwa">if</span> <span class="kwc">Unix</span><span class="opt">.</span>write out_pipe <span class="opt">(</span><span class="kwc">Bytes</span><span class="opt">.</span>of_string <span class="sng">&quot; &quot;</span><span class="opt">)</span> <span class="num">0 1</span> <span class="opt">&lt;&gt;</span> <span class="num">1</span> <span class="kwa">then</span>
+      failwith <span class="sng">&quot;Pipe problem&quot;</span>
+  <span class="kwa">and</span> get in_pipe <span class="opt">() =</span>
+    <span class="kwa">let</span> <span class="kwd">res</span> <span class="opt">= (</span><span class="kwc">Bytes</span><span class="opt">.</span>of_string <span class="sng">&quot; &quot;</span><span class="opt">)</span> <span class="kwa">in</span>
+    <span class="kwa">if</span> <span class="kwc">Unix</span><span class="opt">.</span>read in_pipe <span class="kwd">res</span> <span class="num">0 1</span> <span class="opt">&lt;&gt;</span> <span class="num">1</span> <span class="kwa">then</span>
+      failwith <span class="sng">&quot;Pipe problem&quot;</span> <span class="kwa">in</span>
+  <span class="kwa">let</span> <span class="kwd">put_ack</span> <span class="opt">=</span> put out_ack <span class="kwa">and</span> get_ack <span class="opt">=</span> get in_ack
+  <span class="kwa">and</span> put_end_ack <span class="opt">=</span> put out_end <span class="kwa">and</span> get_end_ack <span class="opt">=</span> get in_end <span class="kwa">in</span>
+  <span class="kwa">let rec</span> <span class="kwd">spawn</span> tag beg first <span class="opt">=</span>
+    <span class="kwa">let</span> <span class="kwd">output_tag</span> <span class="opt">() =</span>
+      print_string tag<span class="opt">;</span>
+      print_char &#39;<span class="esc">\n</span>&#39;<span class="opt">;</span>
+      flush stdout
+    <span class="kwa">and</span> <span class="kwd">buf</span> <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>create <span class="opt">(</span>lines_per_worker <span class="opt">*</span> <span class="kwd">chars_per_line</span> <span class="opt">+</span> <span class="num">2</span><span class="opt">)</span>
+    <span class="kwa">and</span> len <span class="opt">=</span> <span class="kwb">ref</span> <span class="opt">(</span><span class="kwc">String</span><span class="opt">.</span>length beg<span class="opt">)</span> <span class="kwa">in</span>
+    <span class="kwc">String</span><span class="opt">.</span>blit beg <span class="num">0</span> <span class="kwd">buf</span> <span class="num">0</span> <span class="opt">!</span>len<span class="opt">;</span>
+    <span class="kwa">let</span> <span class="kwd">process_buffer</span> <span class="opt">() =</span>
+      <span class="kwa">let</span> <span class="kwd">red_len</span> <span class="opt">= !</span>len <span class="opt">-</span> <span class="num">1</span> <span class="kwa">in</span>
+      <span class="kwa">let</span> <span class="kwd">mid_point</span> <span class="opt">=</span> <span class="kwd">red_len</span> <span class="opt">/</span> <span class="num">2</span> <span class="kwa">in</span>
+      <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">0</span> <span class="kwa">to</span> <span class="kwd">mid_point</span> <span class="kwa">do</span>
+        <span class="kwa">let</span> <span class="kwd">ri</span> <span class="opt">=</span> <span class="kwd">red_len</span> <span class="opt">-</span> i <span class="kwa">and</span> tmp <span class="opt">=</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">buf</span> i <span class="kwa">in</span>
+        <span class="kwc">Bytes</span><span class="opt">.</span><span class="kwd">set buf</span> i  <span class="kwd">rc_table</span><span class="opt">.[</span><span class="kwc">Char</span><span class="opt">.</span>code <span class="opt">(</span><span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">buf ri</span><span class="opt">)];</span>
+        <span class="kwc">Bytes</span><span class="opt">.</span><span class="kwd">set buf ri rc_table</span><span class="opt">.[</span><span class="kwc">Char</span><span class="opt">.</span>code tmp<span class="opt">]</span>
+      <span class="kwa">done</span>
+    <span class="kwa">and</span> write_by_cols rem eol <span class="opt">=</span>
+      <span class="kwa">let</span> <span class="kwd">len</span> <span class="opt">= !</span><span class="kwd">len</span> <span class="kwa">and</span> dne <span class="opt">=</span> <span class="kwb">ref</span> <span class="num">0</span> <span class="kwa">in</span>
+      <span class="kwa">if</span> rem <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then begin</span>
+        <span class="kwa">let</span> <span class="kwd">to_do</span> <span class="opt">=</span> min rem <span class="opt">(</span><span class="kwd">len</span> <span class="opt">- !</span>dne<span class="opt">)</span> <span class="kwa">in</span>
+        output stdout <span class="kwd">buf</span> <span class="opt">!</span>dne <span class="kwd">to_do</span><span class="opt">;</span>
+        output_char stdout &#39;<span class="esc">\n</span>&#39;<span class="opt">;</span>
+        dne <span class="opt">:= !</span>dne <span class="opt">+</span> <span class="kwd">to_do</span>
+      <span class="kwa">end</span><span class="opt">;</span>
+      <span class="kwa">while</span> <span class="kwd">len</span> <span class="opt">- !</span>dne <span class="opt">&gt;=</span> <span class="kwd">chars_per_line</span> <span class="kwa">do</span>
+        output stdout <span class="kwd">buf</span> <span class="opt">!</span>dne <span class="kwd">chars_per_line</span><span class="opt">;</span>
+        output_char stdout &#39;<span class="esc">\n</span>&#39;<span class="opt">;</span>
+        dne <span class="opt">:= !</span>dne <span class="opt">+</span> <span class="kwd">chars_per_line</span>
+      <span class="kwa">done</span><span class="opt">;</span>
+      <span class="kwa">let</span> <span class="kwd">rem</span> <span class="opt">=</span> <span class="kwd">len</span> <span class="opt">- !</span>dne <span class="kwa">in</span>
+      <span class="kwa">if</span> <span class="kwd">rem</span> <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then begin</span>
+        output stdout <span class="kwd">buf</span> <span class="opt">!</span>dne <span class="kwd">rem</span><span class="opt">;</span>
+        <span class="kwa">if</span> eol <span class="kwa">then</span>
+          output_char stdout &#39;<span class="esc">\n</span>&#39;
+      <span class="kwa">end</span><span class="opt">;</span>
+      flush stdout<span class="opt">;</span>
+      <span class="kwa">if</span> eol <span class="kwa">then</span>
+        <span class="num">0</span>
+      <span class="kwa">else</span>
+        <span class="kwd">rem</span> <span class="kwa">in</span>
+    <span class="kwa">try</span>
+      <span class="kwa">for</span> i <span class="opt">=</span> <span class="num">2</span> <span class="kwa">to</span> lines_per_worker <span class="kwa">do</span>
+        really_input stdin <span class="kwd">buf</span> <span class="opt">!</span><span class="kwd">len aug_chars_per_line</span><span class="opt">;</span>
+        <span class="kwa">let</span> <span class="kwd">new_len</span> <span class="opt">=</span> <span class="kwb">ref</span> <span class="opt">(!</span><span class="kwd">len</span> <span class="opt">+</span> <span class="kwd">chars_per_line</span><span class="opt">)</span> <span class="kwa">in</span>
+        <span class="kwa">if</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">buf</span> <span class="opt">!</span><span class="kwd">len</span> <span class="opt">=</span> &#39;<span class="opt">&gt;</span>&#39; <span class="opt">||</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">buf</span> <span class="opt">!</span><span class="kwd">new_len</span> <span class="opt">&lt;&gt;</span> &#39;<span class="esc">\n</span>&#39; <span class="kwa">then begin</span>
+          <span class="kwa">while</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">buf</span> <span class="opt">!</span><span class="kwd">len</span> <span class="opt">&lt;&gt;</span> &#39;<span class="opt">&gt;</span>&#39; <span class="kwa">do</span>
+            incr <span class="kwd">len</span>
+          <span class="kwa">done</span><span class="opt">;</span>
+          <span class="kwa">let</span> <span class="kwd">ptr</span> <span class="opt">=</span> <span class="kwb">ref</span> <span class="opt">!</span><span class="kwd">len</span> <span class="kwa">in</span>
+          <span class="com">(* Needed to patch the hideous bug in the output of the C program *)</span>
+          <span class="kwa">if</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">buf</span> <span class="opt">(!</span><span class="kwd">len</span> <span class="opt">-</span> <span class="num">1</span><span class="opt">) &lt;&gt;</span> &#39;<span class="esc">\n</span>&#39; <span class="kwa">then begin</span>
+            <span class="kwc">Bytes</span><span class="opt">.</span>blit <span class="kwd">buf</span> <span class="opt">!</span><span class="kwd">len buf</span> <span class="opt">(!</span><span class="kwd">len</span> <span class="opt">+</span> <span class="num">1</span><span class="opt">)</span> <span class="kwd">aug_chars_per_line</span><span class="opt">;</span>
+            <span class="kwc">Bytes</span><span class="opt">.</span><span class="kwd">set buf</span> <span class="opt">!</span><span class="kwd">len</span> &#39;<span class="esc">\n</span>&#39;<span class="opt">;</span>
+            incr <span class="kwd">new_len</span><span class="opt">;</span>
+            incr <span class="kwd">ptr</span>
+          <span class="kwa">end else</span>
+            decr <span class="kwd">len</span><span class="opt">;</span>
+          <span class="kwa">while</span> <span class="opt">!</span><span class="kwd">ptr</span> <span class="opt">&lt; !</span><span class="kwd">new_len</span> <span class="opt">&amp;&amp;</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">buf</span> <span class="opt">!</span><span class="kwd">ptr</span> <span class="opt">&lt;&gt;</span> &#39;<span class="esc">\n</span>&#39; <span class="kwa">do</span>
+            incr <span class="kwd">ptr</span>
+          <span class="kwa">done</span><span class="opt">;</span>
+          <span class="kwa">match</span> <span class="kwc">Unix</span><span class="opt">.</span>fork <span class="opt">()</span> <span class="kwa">with</span>
+          <span class="opt">|</span> <span class="num">0</span> <span class="opt">-&gt;</span>
+            <span class="kwa">let</span> <span class="kwd">aug_len</span> <span class="opt">= !</span><span class="kwd">len</span> <span class="opt">+</span> <span class="num">1</span> <span class="kwa">in</span>
+            <span class="kwa">if</span> <span class="opt">!</span><span class="kwd">ptr</span> <span class="opt">= !</span><span class="kwd">new_len</span> <span class="kwa">then</span>
+              <span class="kwd">spawn</span>
+                <span class="opt">(</span><span class="kwc">Bytes</span><span class="opt">.</span>unsafe_to_string <span class="opt">(</span><span class="kwc">Bytes</span><span class="opt">.</span>sub <span class="kwd">buf aug_len</span> <span class="opt">(!</span><span class="kwd">new_len</span> <span class="opt">-</span> <span class="kwd">aug_len</span><span class="opt">))</span>
+                 ^ input_line stdin<span class="opt">)</span>
+                <span class="sng">&quot;&quot;</span> <span class="kwa">true</span>
+            <span class="kwa">else</span>
+              <span class="kwa">let</span> <span class="kwd">aug_ptr</span> <span class="opt">= !</span><span class="kwd">ptr</span> <span class="opt">+</span> <span class="num">1</span> <span class="kwa">in</span>
+              <span class="kwd">spawn</span>
+                <span class="opt">(</span><span class="kwc">Bytes</span><span class="opt">.</span>unsafe_to_string <span class="opt">(</span><span class="kwc">Bytes</span><span class="opt">.</span>sub <span class="kwd">buf aug_len</span> <span class="opt">(!</span><span class="kwd">ptr</span> <span class="opt">-</span> <span class="kwd">aug_len</span><span class="opt">)))</span>
+                <span class="opt">((</span><span class="kwc">Bytes</span><span class="opt">.</span>unsafe_to_string <span class="opt">(</span><span class="kwc">Bytes</span><span class="opt">.</span>sub <span class="kwd">buf aug_ptr</span> <span class="opt">(!</span><span class="kwd">new_len</span> <span class="opt">- !</span><span class="kwd">ptr</span><span class="opt">))</span> ^ input_line stdin<span class="opt">))</span>
+                <span class="kwa">true</span>
+          <span class="opt">|</span> <span class="kwd">_</span> <span class="opt">-&gt;</span>
+            get_ack <span class="opt">();</span>
+            <span class="kwd">output_tag</span> <span class="opt">();</span>
+            <span class="kwd">process_buffer</span> <span class="opt">();</span>
+            <span class="kwa">let</span> <span class="kwd">rem</span> <span class="opt">=</span> write_by_cols <span class="num">0</span> first <span class="kwa">in</span>
+            <span class="kwa">if</span> first <span class="kwa">then</span>
+              <span class="kwd">put_ack</span> <span class="opt">();</span>
+            exit <span class="kwd">rem</span>
+        <span class="kwa">end</span><span class="opt">;</span>
+        <span class="kwd">len</span> <span class="opt">:= !</span><span class="kwd">new_len</span>
+      <span class="kwa">done</span><span class="opt">;</span>
+      <span class="kwa">match</span> <span class="kwc">Unix</span><span class="opt">.</span>fork <span class="opt">()</span> <span class="kwa">with</span>
+      <span class="opt">|</span> <span class="num">0</span> <span class="opt">-&gt;</span> <span class="kwd">spawn</span> tag <span class="sng">&quot;&quot;</span> <span class="kwa">false</span>
+      <span class="opt">|</span> pid <span class="opt">-&gt;</span>
+        <span class="kwd">process_buffer</span> <span class="opt">();</span>
+        <span class="kwa">match</span> <span class="kwc">Unix</span><span class="opt">.</span>waitpid <span class="opt">[]</span> pid <span class="kwa">with</span>
+        <span class="opt">|</span> <span class="kwd">_</span><span class="opt">,</span> <span class="kwc">Unix</span><span class="opt">.</span>WEXITED <span class="kwd">rem</span> <span class="opt">-&gt;</span>
+          <span class="kwa">let</span> <span class="kwd">rem</span> <span class="opt">=</span> write_by_cols <span class="opt">(</span><span class="kwd">chars_per_line</span> <span class="opt">-</span> <span class="kwd">rem</span><span class="opt">)</span> first <span class="kwa">in</span>
+          <span class="kwa">if</span> first <span class="kwa">then</span>
+            <span class="kwd">put_ack</span> <span class="opt">();</span>
+          exit <span class="kwd">rem</span>
+        <span class="opt">|</span> <span class="kwd">_</span> <span class="opt">-&gt;</span> <span class="kwa">assert false</span>
+    <span class="kwa">with</span> End_of_file <span class="opt">-&gt;</span>
+      <span class="kwa">while</span> <span class="kwc">Bytes</span><span class="opt">.</span>get <span class="kwd">buf</span> <span class="opt">!</span><span class="kwd">len</span> <span class="opt">&lt;&gt;</span> &#39;<span class="esc">\n</span>&#39; <span class="kwa">do</span>
+        incr <span class="kwd">len</span>
+      <span class="kwa">done</span><span class="opt">;</span>
+      get_ack <span class="opt">();</span>
+      put_end_ack <span class="opt">();</span>
+      <span class="kwd">output_tag</span> <span class="opt">();</span>
+      <span class="kwd">process_buffer</span> <span class="opt">();</span>
+      <span class="kwa">let</span> <span class="kwd">rem</span> <span class="opt">=</span> write_by_cols <span class="num">0</span> first <span class="kwa">in</span>
+      <span class="kwa">if</span> first <span class="kwa">then</span>
+        <span class="kwd">put_ack</span> <span class="opt">();</span>
+      exit <span class="kwd">rem</span> <span class="kwa">in</span>
+  <span class="kwa">match</span> <span class="kwc">Unix</span><span class="opt">.</span>fork <span class="opt">()</span> <span class="kwa">with</span>
+  <span class="opt">|</span> <span class="num">0</span> <span class="opt">-&gt;</span>
+    <span class="kwd">put_ack</span> <span class="opt">();</span>
+    <span class="kwd">spawn</span> <span class="opt">(</span>read_line <span class="opt">())</span> <span class="sng">&quot;&quot;</span> <span class="kwa">true</span>
+  <span class="opt">|</span> <span class="kwd">_</span> <span class="opt">-&gt;</span>
+    get_end_ack <span class="opt">();</span>
+    get_ack <span class="opt">();</span>
+    exit <span class="num">0</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+OCaml native-code
+5.4.0+dev0-2024-08-25
+
+
+ Fri, 10 Jan 2025 01:04:23 GMT
+
+MAKE:
+mv revcomp.ocaml revcomp.ml
+~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge revcomp.ml -o revcomp.ocaml_run
+rm revcomp.ml
+
+1.50s to complete and log all make actions
+
+COMMAND LINE:
+ ./revcomp.ocaml_run 0 &lt; revcomp-input100000001.txt
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

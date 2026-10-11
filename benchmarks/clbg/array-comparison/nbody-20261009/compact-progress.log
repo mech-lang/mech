@@ -1,0 +1,69 @@
+Validated all five endpoints at 1 steps
+Validated all five endpoints at 2 steps
+Validated all five endpoints at 10 steps
+Validated all five endpoints at 1000 steps
+Validated all five endpoints at 10000 steps
+Validated all five endpoints at 1000000 steps
+Full reference validated: [-0.169075164, -0.169059907]
+Round 1/5 BQN (CBQN, optimized): 18.816210s, output valid
+Round 1/5 BQN (CBQN, compact): 31.446608s, output valid
+Round 1/5 Mech (AOT, compact): 1.118166s, output valid
+Round 1/5 K (Growler, compact/optimized): 23.183338s, output valid
+Round 1/5 Mech (AOT, optimized): 1.054695s, output valid
+Round 2/5 K (Growler, compact/optimized): 23.340016s, output valid
+Round 2/5 Mech (AOT, compact): 1.248951s, output valid
+Round 2/5 Mech (AOT, optimized): 1.055933s, output valid
+Round 2/5 BQN (CBQN, compact): 31.362123s, output valid
+Round 2/5 BQN (CBQN, optimized): 18.940399s, output valid
+Round 3/5 Mech (AOT, compact): 1.123816s, output valid
+Round 3/5 K (Growler, compact/optimized): 23.383074s, output valid
+Round 3/5 BQN (CBQN, compact): 31.389509s, output valid
+Round 3/5 BQN (CBQN, optimized): 18.818422s, output valid
+Round 3/5 Mech (AOT, optimized): 1.052734s, output valid
+Round 4/5 BQN (CBQN, optimized): 18.840257s, output valid
+Round 4/5 Mech (AOT, optimized): 1.058119s, output valid
+Round 4/5 BQN (CBQN, compact): 31.506541s, output valid
+Round 4/5 K (Growler, compact/optimized): 23.322431s, output valid
+Round 4/5 Mech (AOT, compact): 1.123993s, output valid
+Round 5/5 Mech (AOT, optimized): 1.052591s, output valid
+Round 5/5 Mech (AOT, compact): 1.122734s, output valid
+Round 5/5 BQN (CBQN, compact): 31.417153s, output valid
+Round 5/5 BQN (CBQN, optimized): 18.839978s, output valid
+Round 5/5 K (Growler, compact/optimized): 23.398880s, output valid
+[
+  {
+    "label": "Mech (AOT, compact)",
+    "normalized_loc": 32,
+    "median_seconds": 1.123815792,
+    "sample_stdev_seconds": 0.05674429197846539,
+    "time_over_mech_compact": 1.0
+  },
+  {
+    "label": "Mech (AOT, optimized)",
+    "normalized_loc": 37,
+    "median_seconds": 1.054695166,
+    "sample_stdev_seconds": 0.002316119306277147,
+    "time_over_mech_compact": 0.938494701273961
+  },
+  {
+    "label": "K (Growler, compact/optimized)",
+    "normalized_loc": 36,
+    "median_seconds": 23.340015583,
+    "sample_stdev_seconds": 0.08533666819064376,
+    "time_over_mech_compact": 20.76854209484182
+  },
+  {
+    "label": "BQN (CBQN, compact)",
+    "normalized_loc": 26,
+    "median_seconds": 31.417152792,
+    "sample_stdev_seconds": 0.055652129375729255,
+    "time_over_mech_compact": 27.955785116783623
+  },
+  {
+    "label": "BQN (CBQN, optimized)",
+    "normalized_loc": 39,
+    "median_seconds": 18.839977541,
+    "sample_stdev_seconds": 0.051236664812462,
+    "time_over_mech_compact": 16.764293289980746
+  }
+]

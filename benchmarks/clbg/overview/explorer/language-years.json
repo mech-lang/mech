@@ -1,0 +1,227 @@
+{
+  "policy": "First release or public introduction, including early previews. Mech uses 2026 for the benchmark version under test, as requested, rather than its historical introduction year. Runtime variants inherit their language's year; dates and their basis are recorded individually.",
+  "languages": {
+    "c": {
+      "year": 1972,
+      "name": "C",
+      "source": "https://www.nokia.com/bell-labs/about/dennis-m-ritchie/chist.html",
+      "note": "Conventional introduction year; Ritchie dates C's most formative period to 1972."
+    },
+    "matlab": {
+      "year": 1984,
+      "name": "MATLAB",
+      "source": "https://www.mathworks.com/company/technical-articles/a-brief-history-of-matlab.html",
+      "note": "PC-MATLAB debuted publicly in December 1984; earlier academic matrix-calculator development is excluded."
+    },
+    "lisp": {
+      "year": 1984,
+      "name": "Common Lisp",
+      "source": "https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node2.html",
+      "note": "Common Lisp: The Language first edition was published in 1984 and became the de facto standard; this comparison uses the Common Lisp family implemented by SBCL, not the earlier Lisp lineage."
+    },
+    "cpp": {
+      "year": 1985,
+      "name": "C++",
+      "source": "https://stroustrup.com/bs_faq.html",
+      "note": "First commercial implementation in October 1985; earlier C with Classes work is excluded."
+    },
+    "perl": {
+      "year": 1987,
+      "name": "Perl",
+      "source": "https://perldoc.perl.org/perlhist",
+      "note": "Perl 1.000 released on December 18, 1987."
+    },
+    "haskell": {
+      "year": 1990,
+      "name": "Haskell",
+      "source": "https://www.microsoft.com/en-us/research/wp-content/uploads/2016/07/history.pdf",
+      "note": "Haskell 1.0 report released on April 1, 1990, per the language designers' history."
+    },
+    "erlang": {
+      "year": 1990,
+      "name": "Erlang",
+      "source": "https://erlang.org/course/history.html",
+      "note": "Presented publicly at ISS'90, followed by a fast implementation release to users in 1991. Uses the existing public-introduction policy; earlier internal experimentation is excluded."
+    },
+    "python": {
+      "year": 1991,
+      "name": "Python",
+      "source": "https://legacy.python.org/doc/essays/ppt/jpf001/tsld006.htm",
+      "note": "First public release in February 1991."
+    },
+    "lua": {
+      "year": 1993,
+      "name": "Lua",
+      "source": "https://www.lua.org/news.html",
+      "note": "Public introduction in 1993; first downloadable release followed in 1994. LuaJIT uses Lua's year."
+    },
+    "k": {
+      "year": 1993,
+      "name": "K",
+      "source": "https://www.timestored.com/kdb-guides/history-of-kdb-arthur-whitney",
+      "note": "First K version supplied commercially in 1993; Growler uses K's year."
+    },
+    "java": {
+      "year": 1995,
+      "name": "Java",
+      "source": "https://education.oracle.com/file/general/4955_BriefHistoryOfJava_7.pdf",
+      "note": "Java's public debut in 1995; later JVM and AOT releases share this language year."
+    },
+    "javascript": {
+      "year": 1995,
+      "name": "JavaScript",
+      "source": "https://developer.mozilla.org/en-US/docs/Glossary/JavaScript",
+      "note": "Introduced in Netscape Navigator in 1995."
+    },
+    "php": {
+      "year": 1995,
+      "name": "PHP",
+      "source": "https://www.php.net/manual/en/history.php.php",
+      "note": "PHP Tools source released publicly in June 1995."
+    },
+    "ruby": {
+      "year": 1995,
+      "name": "Ruby",
+      "source": "https://www.ruby-lang.org/en/about/",
+      "note": "First public release in 1995."
+    },
+    "racket": {
+      "year": 1995,
+      "name": "Racket",
+      "source": "https://blog.racket-lang.org/2020/05/racket-is-25.html",
+      "note": "First public MzScheme release in September 1995. The PLT Scheme family was renamed Racket in 2010; this uses the earliest public family year."
+    },
+    "ocaml": {
+      "year": 1996,
+      "name": "OCaml",
+      "source": "https://ocaml.org/history",
+      "note": "Objective Caml was released in 1996; the official name became OCaml in 2011."
+    },
+    "chapel": {
+      "year": 2008,
+      "name": "Chapel",
+      "source": "https://chapel-lang.org/presentations/ChapelForCUG13-final.pdf",
+      "note": "First public release, v0.8, in November 2008, per Chapel's release timeline."
+    },
+    "go": {
+      "year": 2009,
+      "name": "Go",
+      "source": "https://go.dev/blog/10years",
+      "note": "First open-source public release in November 2009."
+    },
+    "rust": {
+      "year": 2010,
+      "name": "Rust",
+      "source": "https://users.rust-lang.org/t/why-is-vec-in-different-namespace-than-linkedlist/50235",
+      "note": "Public introduction in July 2010; numbered 0.1 and stable 1.0 releases followed in 2012 and 2015."
+    },
+    "julia": {
+      "year": 2012,
+      "name": "Julia",
+      "source": "https://julialang.org/blog/2012/02/why-we-created-julia/",
+      "note": "Public introduction on February 14, 2012."
+    },
+    "swift": {
+      "year": 2014,
+      "name": "Swift",
+      "source": "https://www.apple.com/newsroom/2014/06/02Apple-Releases-iOS-8-SDK-With-Over-4-000-New-APIs/",
+      "note": "Public beta introduced on June 2, 2014, with Apple's iOS 8 SDK."
+    },
+    "futhark": {
+      "year": 2017,
+      "name": "Futhark",
+      "source": "https://futhark-lang.org/blog/2017-10-04-futhark-0.1.0-released.html",
+      "note": "First compiler release, 0.1.0, on October 4, 2017; earlier research development is excluded."
+    },
+    "mech": {
+      "year": 2026,
+      "name": "Mech",
+      "source": "https://github.com/mech-lang/mech",
+      "note": "2026 benchmark development version under test, per the requested comparison policy. AOT, JIT, and interpreted modes share this year; it is not a claim about Mech's first public introduction."
+    },
+    "bqn": {
+      "year": 2020,
+      "name": "BQN",
+      "source": "https://mlochbaum.github.io/BQN/commentary/history.html",
+      "note": "Public development and introduction in 2020; CBQN uses BQN's year."
+    },
+    "mojo": {
+      "year": 2023,
+      "name": "Mojo",
+      "source": "https://www.modular.com/blog/a-unified-extensible-platform-to-superpower-your-ai",
+      "note": "Public preview announced on May 2, 2023."
+    },
+    "zig": {
+      "year": 2016,
+      "name": "Zig",
+      "source": "https://andrewkelley.me/post/intro-to-zig.html",
+      "note": "Public introduction in February 2016 in the creator\u2019s introduction to Zig."
+    },
+    "odin": {
+      "year": 2016,
+      "name": "Odin",
+      "source": "https://odin-lang.org/docs/faq/",
+      "note": "Public development began in July 2016, per the official language FAQ."
+    },
+    "roc": {
+      "year": 2020,
+      "name": "Roc",
+      "source": "https://github.com/roc-lang/roc/blob/8c43c66aa36d1654972746cbdb271a4166e6bba7/roc-for-elm-programmers.md",
+      "note": "Uses 2020 for its early public development and introduction, consistent with the creator\u2019s 2020 guide. Earlier internal design is excluded; Roc has not released a stable 0.1. The measured compiler is the established alpha4 LLVM release from September 2025."
+    },
+    "elm": {
+      "year": 2012,
+      "name": "Elm",
+      "source": "https://elm-lang.org/news",
+      "note": "Initial public release 0.1 in April 2012, per the official release history."
+    },
+    "csharp": {
+      "year": 2000,
+      "name": "C#",
+      "source": "https://news.microsoft.com/source/2000/06/26/microsoft-introduces-highly-productive-net-programming-language-c/",
+      "note": "Microsoft publicly introduced C# on June 26, 2000, with an early technical preview announced for July."
+    },
+    "fsharp": {
+      "year": 2002,
+      "name": "F#",
+      "source": "https://fsharp.org/history/hopl-final/hopl-fsharp.pdf",
+      "note": "Don Syme dates the first public F# v0.1 release to June 4, 2002 in his language history, page 19."
+    },
+    "ada": {
+      "year": 1980,
+      "name": "Ada",
+      "source": "https://www.adaic.org/learn/materials/intro/part1/",
+      "note": "Conventional first-release year, Ada 80; the later Ada 83 standard is not used as the introduction date."
+    },
+    "pascal": {
+      "year": 1970,
+      "name": "Pascal",
+      "source": "https://inf.ethz.ch/department/history/meilensteine-forschung/50years-pascal.html",
+      "note": "Niklaus Wirth records Pascal publication in 1970. This benchmark uses Free Pascal; its compiler release year does not replace the language year."
+    },
+    "fortran": {
+      "year": 1957,
+      "name": "Fortran",
+      "source": "https://www.ibm.com/history/fortran",
+      "note": "IBM records the commercial release of Fortran and its first compiler in 1957."
+    },
+    "dart": {
+      "year": 2011,
+      "name": "Dart",
+      "source": "https://developers.googleblog.com/en/dart-a-language-for-structured-web-programming/",
+      "note": "Google publicly introduced Dart on October 10, 2011; AOT and JIT variants inherit this year."
+    },
+    "smalltalk": {
+      "year": 1972,
+      "name": "Smalltalk",
+      "source": "https://computerhistory.org/blog/introducing-the-smalltalk-zoo-48-years-of-smalltalk-history-at-chm/",
+      "note": "Smalltalk-72 first appeared in 1972, according to the Computer History Museum archive with Dan Ingalls. The current benchmark uses Pharo."
+    },
+    "d": {
+      "year": 2001,
+      "name": "D",
+      "source": "https://forum.dlang.org/thread/dnhvoi%24dja%241%40digitaldaemon.com?page=6",
+      "note": "First public DMD alpha release in December 2001, as recorded by Walter Bright. The LDC compiler version does not replace the language introduction year."
+    }
+  }
+}

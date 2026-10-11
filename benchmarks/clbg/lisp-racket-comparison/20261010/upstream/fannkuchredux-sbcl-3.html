@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fannkuch-redux Lisp SBCL&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fannkuch-redux Lisp SBCL&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/fannkuchredux.html#fannkuchredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">;;   The Computer Language Benchmarks Game</span>
+<span class="slc">;;   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">;;;</span>
+<span class="slc">;;; By Jon Smith (rev 3) added some more declarations.</span>
+<span class="slc">;;; Tranlated from OCaml implementation by ?, who translated it from</span>
+<span class="slc">;;; the Scala implementation by Otto Bommer.</span>
+<span class="slc">;;; </span>
+<span class="slc">;;; This is a single core implementation. </span>
+<span class="slc">;;; I am sure that this program can be improved upon quite a lot.</span>
+<span class="slc">;;; Most likely it will involve knowing how sbcl does its optimizations.</span>
+<span class="slc">;;; As you can see, I simply used fixnums everywhere. There may be a better choice.</span>
+<span class="slc">;;;</span>
+<span class="slc">;;; To compile</span>
+<span class="slc">;;; sbcl --load fannkuch.lisp --eval &quot;(save-lisp-and-die \&quot;fannkuch.core\&quot; :purify t :toplevel (lambda () (main) (quit)))&quot;</span>
+<span class="slc">;;; To run</span>
+<span class="slc">;;; sbcl --noinform --core fannkuch.core %A</span>
+
+<span class="slc">;(setf *efficiency-note-cost-threshold* 1)</span>
+<span class="slc">;(setf *efficiency-note-limit* 8)</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">space</span> <span class="num">1</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">sb</span> <span class="opt">(</span><span class="kwa">a</span><span class="opt">) `(</span><span class="kwa">the</span> fixnum <span class="opt">,</span>a<span class="opt">))</span>
+<span class="opt">(</span><span class="kwa">deftype</span> sb <span class="opt">() &#39;</span>fixnum<span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">setlambda</span><span class="opt">(</span><span class="kwa">n</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> fixnum n<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">copy</span> <span class="opt">(</span><span class="kwa">gensym</span><span class="opt">))</span>
+	<span class="opt">(</span><span class="kwa">perm</span> <span class="opt">(</span><span class="kwa">gensym</span><span class="opt">)))</span>
+  <span class="opt">`(</span><span class="kwa">lambda</span> <span class="opt">(,</span>perm <span class="opt">,</span>copy<span class="opt">)</span>
+     <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">space</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">type</span> <span class="opt">(</span><span class="kwa">simple-array</span> sb <span class="opt">(,</span>n<span class="opt">)) ,</span>copy <span class="opt">,</span>perm<span class="opt">))</span>
+     <span class="opt">,&#64;(</span><span class="kwa">loop</span> for i of-type fixnum from <span class="num">0</span> below n collect
+	    <span class="opt">`(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> <span class="opt">,</span>copy <span class="opt">,</span>i<span class="opt">) (</span><span class="kwa">aref</span> <span class="opt">,</span>perm <span class="opt">,</span>i<span class="opt">))))))</span>
+
+<span class="opt">(</span><span class="kwa">defmacro</span> <span class="kwb">countfliplambda</span> <span class="opt">(</span><span class="kwa">n</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> fixnum n<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">copy</span> <span class="opt">(</span><span class="kwa">gensym</span><span class="opt">))</span>
+	<span class="opt">(</span><span class="kwa">c</span> <span class="opt">(</span><span class="kwa">gensym</span><span class="opt">))</span>
+	<span class="opt">(</span><span class="kwa">z</span> <span class="opt">(</span><span class="kwa">gensym</span><span class="opt">)))</span>
+    <span class="opt">`(</span><span class="kwa">lambda</span> <span class="opt">(,</span>copy <span class="opt">&amp;</span>aux <span class="opt">(,</span>c <span class="num">0</span><span class="opt">))</span>
+       <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">space</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">))</span>
+		<span class="opt">(</span><span class="kwa">type</span> sb <span class="opt">,</span>c<span class="opt">)</span>
+		<span class="opt">(</span><span class="kwa">type</span> <span class="opt">(</span><span class="kwa">simple-array</span> sb <span class="opt">(,</span>n<span class="opt">)) ,</span>copy<span class="opt">))</span>
+       <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((,</span>z <span class="opt">(</span><span class="kwa">aref</span> <span class="opt">,</span>copy <span class="num">0</span><span class="opt">)))</span>
+	 <span class="opt">(</span><span class="kwa">loop</span> until <span class="opt">(= ,</span>z <span class="num">0</span><span class="opt">)</span> do
+	      <span class="opt">(</span><span class="kwa">progn</span>
+		<span class="opt">(</span><span class="kwa">case</span> <span class="opt">,</span>z 
+		  <span class="opt">,&#64;(</span><span class="kwa">loop</span> for i of-type sb from <span class="num">1</span> to <span class="opt">(</span><span class="kwa">-</span> n <span class="num">1</span><span class="opt">)</span> collect
+			 <span class="opt">`(,</span>i
+			   <span class="opt">,&#64;(</span><span class="kwa">loop</span> for j of-type sb from <span class="num">0</span> to <span class="opt">(</span><span class="kwa">ash</span> i -<span class="num">1</span><span class="opt">)</span>
+				if <span class="opt">(</span><span class="kwa">not</span> <span class="opt">(=</span> j <span class="opt">(</span><span class="kwa">-</span> i j<span class="opt">)))</span>
+				collect <span class="opt">`(</span><span class="kwa">rotatef</span> <span class="opt">(</span><span class="kwa">aref</span> <span class="opt">,</span>copy <span class="opt">,</span>j<span class="opt">)</span> 
+						  <span class="opt">(</span><span class="kwa">aref</span> <span class="opt">,</span>copy <span class="opt">,(</span><span class="kwa">-</span> i j<span class="opt">)))))))</span>
+		<span class="opt">(</span><span class="kwa">incf</span> <span class="opt">,</span>c<span class="opt">)</span>
+		<span class="opt">(</span><span class="kwa">setf</span> <span class="opt">,</span>z <span class="opt">(</span><span class="kwa">aref</span> <span class="opt">,</span>copy <span class="num">0</span><span class="opt">)))))</span>
+       <span class="opt">,</span>c<span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">fannkuch</span> <span class="opt">(</span><span class="kwa">n</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> sb n<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">csum</span> <span class="num">0</span><span class="opt">)</span>
+	<span class="opt">(</span><span class="kwa">fmax</span> <span class="num">0</span><span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> sb csum fmax<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">perm</span> <span class="opt">(</span><span class="kwa">make-array</span> n <span class="kwc">:element</span>-type <span class="opt">&#39;</span>fixnum<span class="opt">))</span>
+	  <span class="opt">(</span><span class="kwa">copy</span> <span class="opt">(</span><span class="kwa">make-array</span> n <span class="kwc">:element</span>-type <span class="opt">&#39;</span>fixnum<span class="opt">))</span>
+	  <span class="opt">(</span><span class="kwa">num</span> <span class="num">0</span><span class="opt">)</span>
+	  <span class="opt">(</span><span class="kwa">cflip</span> <span class="opt">(</span><span class="kwa">the</span> <span class="opt">(</span><span class="kwa">function</span> <span class="opt">((</span><span class="kwa">simple-array</span> sb <span class="opt">(*)))) (</span><span class="kwa">eval</span> <span class="opt">`(</span><span class="kwa">countfliplambda</span> <span class="opt">,</span>n<span class="opt">))))</span>
+	  <span class="opt">(</span><span class="kwa">copyfn</span> <span class="opt">(</span><span class="kwa">the</span> <span class="opt">(</span><span class="kwa">function</span> <span class="opt">((</span><span class="kwa">simple-array</span> sb <span class="opt">(*)) (</span><span class="kwa">simple-array</span> sb <span class="opt">(*)))) (</span><span class="kwa">eval</span> <span class="opt">`(</span><span class="kwa">setlambda</span> <span class="opt">,</span>n<span class="opt">)))))</span>
+      <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> <span class="opt">(</span><span class="kwa">simple-array</span> sb <span class="opt">(*))</span> perm copy<span class="opt">)</span>
+	       <span class="opt">(</span><span class="kwa">type</span> sb num<span class="opt">))</span>
+
+      <span class="opt">(</span><span class="kwa">loop</span> for i from <span class="num">0</span> to <span class="opt">(</span><span class="kwa">-</span> n <span class="num">1</span><span class="opt">)</span> do <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> perm i<span class="opt">)</span> i<span class="opt">))</span>
+      
+      <span class="opt">(</span><span class="kwa">labels</span> <span class="opt">((</span><span class="kwa">do-iter</span> <span class="opt">(</span><span class="kwa">ht</span><span class="opt">)</span>
+		 <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> sb ht<span class="opt">))</span>
+		 <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(=</span> ht <span class="num">1</span><span class="opt">)</span>
+		     <span class="opt">(</span><span class="kwa">progn</span>
+		       <span class="opt">(</span><span class="kwa">funcall</span> copyfn perm copy<span class="opt">)</span>
+		       <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">c</span> <span class="opt">(</span><span class="kwa">funcall</span> cflip copy<span class="opt">)))</span>
+			 <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> sb c<span class="opt">))</span>
+			 <span class="opt">(</span><span class="kwa">setf</span> csum <span class="opt">(</span><span class="kwa">sb</span> <span class="opt">(+</span> csum  <span class="opt">(</span><span class="kwa">sb</span> <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">evenp</span> num<span class="opt">)</span> c <span class="opt">(</span><span class="kwa">-</span> c<span class="opt">))))))</span>
+			 <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(&gt;</span> c fmax<span class="opt">)</span>
+			   <span class="opt">(</span><span class="kwa">setf</span> fmax c<span class="opt">)))</span>
+		       <span class="opt">(</span><span class="kwa">incf</span> num<span class="opt">))</span>
+		     <span class="opt">(</span><span class="kwa">loop</span> for i of-type sb from <span class="num">1</span> to ht do
+			  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">m</span> <span class="opt">(</span><span class="kwa">-</span> ht <span class="num">1</span><span class="opt">)))</span> 
+			    <span class="opt">(</span><span class="kwa">do-iter</span> m<span class="opt">)</span>
+			    <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">temp</span> <span class="opt">(</span><span class="kwa">aref</span> perm <span class="num">0</span><span class="opt">)))</span>
+			      <span class="opt">(</span><span class="kwa">loop</span> for i from <span class="num">1</span> to m do
+				   <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> perm <span class="opt">(</span><span class="kwa">-</span> i <span class="num">1</span><span class="opt">)) (</span><span class="kwa">aref</span> perm i<span class="opt">)))</span>
+			      <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> perm m<span class="opt">)</span> temp<span class="opt">)))))))</span>
+
+	<span class="opt">(</span><span class="kwa">do-iter</span> n<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;~s~%Pfannkuchen(~s) = ~s~%&quot;</span> csum n fmax<span class="opt">)))</span>
+
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">main</span> <span class="opt">()</span>  
+  <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ((</span><span class="kwa">args</span> <span class="opt">(</span><span class="kwa">cdr</span> sb-ext<span class="opt">:*</span>posix-argv<span class="opt">*))</span>
+         <span class="opt">(</span><span class="kwa">n</span> <span class="opt">(</span><span class="kwa">parse-integer</span> <span class="opt">(</span><span class="kwa">car</span> args<span class="opt">))))</span>
+    <span class="opt">(</span><span class="kwa">fannkuch</span> n<span class="opt">)))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+SBCL 2.4.8
+
+
+ Mon, 13 Jan 2025 00:11:06 GMT
+
+MAKE:
+cp: 'fannkuchredux.sbcl-3.sbcl' and './fannkuchredux.sbcl-3.sbcl' are the same file
+SBCL built with: /opt/src/sbcl-2.4.8/bin/sbcl --userinit /dev/null --batch --eval '(load &quot;fannkuchredux.sbcl-3.sbcl_compile&quot;)'
+### START fannkuchredux.sbcl-3.sbcl_compile
+(handler-bind ((sb-ext:defconstant-uneql      (lambda (c) (abort c))))      (require :sb-concurrency)      (load (compile-file &quot;fannkuchredux.sbcl-3.sbcl&quot; ))) (save-lisp-and-die &quot;sbcl.core&quot; :purify t)
+### END fannkuchredux.sbcl-3.sbcl_compile
+
+; compiling file &quot;/home/dunham/all-benchmarksgame/benchmarksgame_i53330/fannkuchredux/tmp/fannkuchredux.sbcl-3.sbcl&quot; (written 26 APR 2018 12:47:38 PM):
+
+; wrote /home/dunham/all-benchmarksgame/benchmarksgame_i53330/fannkuchredux/tmp/fannkuchredux.sbcl-3.fasl
+; compilation finished in 0:00:00.111
+### START fannkuchredux.sbcl-3.sbcl_run
+(main) (quit)
+### END fannkuchredux.sbcl-3.sbcl_run
+
+
+2.57s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/sbcl-2.4.8/bin/sbcl  --noinform --core sbcl.core --userinit /dev/null --load fannkuchredux.sbcl-3.sbcl_run 12
+
+PROGRAM OUTPUT:
+3968050
+Pfannkuchen(12) = 65
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

@@ -1,0 +1,12 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/knucleotide-swift-1.swift:61:20: error: 'characters' is unavailable: Please use String directly
+    let cSeq = seq.characters
+                   ^~~~~~~~~~
+Swift.String:5:16: note: 'characters' was obsoleted in Swift 5.0
+    public var characters: String { get set }
+               ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/knucleotide-swift-1.swift:73:21: error: 'characters' is unavailable: Please use String directly
+    while numberStr.characters.count < Int(log10(num)) + 2 + precision {
+                    ^~~~~~~~~~
+Swift.String:5:16: note: 'characters' was obsoleted in Swift 5.0
+    public var characters: String { get set }
+               ^

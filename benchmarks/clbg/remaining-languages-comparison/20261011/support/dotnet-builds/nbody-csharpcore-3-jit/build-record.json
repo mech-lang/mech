@@ -1,0 +1,112 @@
+{
+  "id": "nbody-csharpcore-3-jit",
+  "key": "nbody:nbody-csharpcore-3-jit",
+  "benchmark": "nbody",
+  "language": "csharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/nbody-csharpcore-3.cs",
+  "source_sha256": "12d7ae3a1a0dc7877b576c197704393d56c92d4af88ad67d022ca8e126190935",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/nbody-csharpcore-3.cs",
+  "original_source_sha256": "12d7ae3a1a0dc7877b576c197704393d56c92d4af88ad67d022ca8e126190935",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-csharpcore-3.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 08:29:45 GMT\n\nMAKE:\ncp nbody.csharpcore-3.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.csproj (in 736 ms).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/Program.cs(20,26): warning CS8618: Non-nullable field 'bi' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/Program.cs(20,30): warning CS8618: Non-nullable field 'bj' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.csproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/Program.cs(20,26): warning CS8618: Non-nullable field 'bi' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/Program.cs(20,30): warning CS8618: Non-nullable field 'bj' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/program.csproj]\n    2 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:05.74\n\n7.62s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 100,
+  "normalized_loc": 118,
+  "expansions": [
+    {
+      "line": 77,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 79,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 81,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 84,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 89,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 90,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 93,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 94,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 95,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 98,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 109,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/nbody-csharpcore-3-jit/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-3-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/nbody-csharpcore-3-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-3-jit/app.dll",
+  "binary_sha256": "a01a05062ced4c52ebb12dc88bd98053f3df35af9810e6def277e2c8414cd669",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-3-jit/app.dll",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-3-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-3-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-3-jit/app.pdb": "466e784b5a4d2e33b82c485160109c851a9f99335d4a906b6f99a7da5817ddc7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-3-jit/app.dll": "a01a05062ced4c52ebb12dc88bd98053f3df35af9810e6def277e2c8414cd669",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/nbody-csharpcore-3-jit/app.deps.json": "6a462ac6276fa69b78e97b74d8228965ed0a0cd3ca99b82010e58d6384d0db61"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

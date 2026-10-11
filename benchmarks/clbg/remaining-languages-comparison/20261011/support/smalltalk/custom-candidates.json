@@ -1,0 +1,162 @@
+[
+  {
+    "id": "binarytrees-smalltalk-arrays",
+    "key": "binarytrees:binarytrees-smalltalk-arrays",
+    "benchmark": "binarytrees",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/binarytrees-smalltalk-arrays.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Two-slot Array records allocate a distinct equal-size object for every interior and leaf; recursive construction/checks retained. The long-lived root is allocated before temporary iterations and checked after them."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "pidigits-smalltalk-compact",
+    "key": "pidigits:pidigits-smalltalk-compact",
+    "benchmark": "pidigits",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/pidigits-smalltalk-compact.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "The full arbitrary precision streaming pi spigot is written in one Smalltalk method, using standard Integer operations; no native benchmark routine or precomputed digits. Correct partial output-line padding."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "spectralnorm-smalltalk-recurrence",
+    "key": "spectralnorm:spectralnorm-smalltalk-recurrence",
+    "benchmark": "spectralnorm",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/spectralnorm-smalltalk-recurrence.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Use standard Float64Array and exact integer recurrences for the implicit matrix denominator. Retain all 40 dense matrix-vector passes with independent dimension n; no cached matrix or eigenvalue."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "fannkuchredux-smalltalk-reuse",
+    "key": "fannkuchredux:fannkuchredux-smalltalk-reuse",
+    "benchmark": "fannkuchredux",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/fannkuchredux-smalltalk-reuse.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Enumerate all n! permutations in canonical prefix-rotation order and preserve alternating checksum. Reuse a scratch array through the standard bulk copy primitive rather than allocate one array per permutation; no input-specific factorial truncation."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "nbody-smalltalk-floatarrays",
+    "key": "nbody:nbody-smalltalk-floatarrays",
+    "benchmark": "nbody",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/nbody-smalltalk-floatarrays.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Complete five-body initialization, momentum offset, exact binary64 square roots/divisions and all ten pair updates per step in Smalltalk; uses ordinary Float64Array records and explicit general iteration, without C/SIMD benchmark kernels."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "fasta-smalltalk-buffered",
+    "key": "fasta:fasta-smalltalk-buffered",
+    "benchmark": "fasta",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/fasta-smalltalk-buffered.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Shared LCG state is advanced once for each of 8*n random symbols. Binary64 seed division and unscaled cumulative probabilities retained; general binary search through each CDF and reusable output bytes reduce polymorphic per-character stream overhead. Complete FASTA output emitted."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "knucleotide-smalltalk-packed",
+    "key": "knucleotide:knucleotide-smalltalk-packed",
+    "benchmark": "knucleotide",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/knucleotide-smalltalk-packed.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Exact two-bit ACGT keys up to 36 bits use standard native SmallInteger, seven ordinary growable Dictionary maps and every overlapping window. The standard Association API updates an existing value after one lookup; no five-motif-only scan or fixed input table. General FASTA record parsing stops at the next header and handles comments/CRLF."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "regexredux-smalltalk-regex",
+    "key": "regexredux:regexredux-smalltalk-regex",
+    "benchmark": "regexredux",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/regexredux-smalltalk-regex.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Correct the upstream obsolete regex-DNA source: remove literal LF FASTA lines, count nine nonoverlapping patterns, perform all five ordered global substitutions through standard Pharo Regex. No specialized recognizer or benchmark executor."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "regexredux-smalltalk-pcre2",
+    "key": "regexredux:regexredux-smalltalk-pcre2",
+    "benchmark": "regexredux",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/regexredux-smalltalk-pcre2.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Use standard PCRE2 regular expression compilation, JIT, nonoverlapping matching and ordered global substitution through counted general UFFI bindings. Match/substitution orchestrations and complete error/overflow/memory handling are Smalltalk application source; no C benchmark executor or literal DNA recognizer. Input memory copied once through standard LibC memcpy to stable native storage."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  },
+  {
+    "id": "revcomp-smalltalk-streaming",
+    "key": "revcomp:revcomp-smalltalk-streaming",
+    "benchmark": "revcomp",
+    "language": "smalltalk",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/smalltalk/revcomp-smalltalk-streaming.st",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+    "local_adaptation": true,
+    "adaptations": [
+      "Handle arbitrary FASTA records rather than hard-code ONE/TWO/THREE. General byte complement lookup, in-place symmetric reversal, and standard buffered bulk output retain complete headers, both cases and every sequence byte."
+    ],
+    "profile_candidates": [
+      "fastest",
+      "smallest"
+    ]
+  }
+]

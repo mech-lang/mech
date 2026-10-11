@@ -1,0 +1,13 @@
+independent permutations passed simd
+independent permutations passed scalar
+independent permutations passed coarse
+independent permutations passed paired
+independent permutations passed cached
+independent permutations passed simd-stack-index
+independent permutations passed paired-stack-index
+independent permutations passed cached-stack-index
+rejection passed callback-io
+rejection passed recursion
+rejection passed capture
+rejection passed wrong-loop-state
+rejection passed array-range-argument

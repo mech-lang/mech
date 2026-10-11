@@ -1,0 +1,3 @@
+x := bigint/new(7) + 1
+y := bigint/multiply-u64-into(x, x, 2)
+io/print("{}\n", bigint/floor-u64(y, bigint/new(1)))

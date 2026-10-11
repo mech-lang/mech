@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>spectral-norm Racket&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>spectral-norm Racket&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/spectralnorm.html#spectralnorm">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="opt">#</span>lang racket<span class="opt">/</span>base
+<span class="slc">;; The Computer Language Benchmarks Game</span>
+<span class="slc">;; https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">;; Translated from Mike Pall&#39;s Lua version.</span>
+<span class="slc">;; Parallelized by Sam Tobin-Hochstadt</span>
+
+<span class="opt">(</span><span class="kwa">require</span> racket<span class="opt">/</span>cmdline racket<span class="opt">/</span>future
+         racket<span class="opt">/</span>require <span class="opt">(</span><span class="kwa">for-syntax</span> racket<span class="opt">/</span>base<span class="opt">)</span>
+         <span class="opt">(</span><span class="kwa">filtered-in</span> <span class="opt">(</span>λ <span class="opt">(</span><span class="kwa">name</span><span class="opt">) (</span><span class="kwa">regexp-replace</span> <span class="opt">#</span>rx<span class="sng">&quot;unsafe-&quot;</span> name <span class="sng">&quot;&quot;</span><span class="opt">))</span>
+                      racket<span class="opt">/</span>unsafe<span class="opt">/</span>ops<span class="opt">)</span>
+         <span class="opt">(</span><span class="kwa">only-in</span> racket<span class="opt">/</span>flonum make-flvector<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">define-syntax-rule</span> <span class="opt">(</span><span class="kwa">for</span><span class="opt">/</span>par k <span class="opt">([</span>i N<span class="opt">])</span> b<span class="opt">)</span>  
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>stride <span class="opt">(</span><span class="kwa">fxquotient</span> N k<span class="opt">)])</span>
+    <span class="opt">(</span><span class="kwa">define</span> fs 
+      <span class="opt">(</span><span class="kwa">for</span><span class="opt">/</span>list <span class="opt">([</span>n k<span class="opt">])</span>
+        <span class="opt">(</span><span class="kwa">future</span> <span class="opt">(</span>λ <span class="opt">() (</span><span class="kwa">for</span> <span class="opt">([</span>i <span class="opt">(</span><span class="kwa">in-range</span> <span class="opt">(</span><span class="kwa">fx</span><span class="opt">*</span> n stride<span class="opt">) (</span><span class="kwa">fxmin</span> N <span class="opt">(</span><span class="kwa">fx</span><span class="opt">* (</span><span class="kwa">fx</span><span class="opt">+</span> n <span class="num">1</span><span class="opt">)</span> stride<span class="opt">)))])</span> b<span class="opt">)))))</span>
+    <span class="opt">(</span><span class="kwa">for-each</span> touch fs<span class="opt">)))</span>
+
+
+<span class="slc">;; the big let improves performance by about 20%</span>
+<span class="opt">(</span><span class="kwa">let</span><span class="opt">* ()</span>
+  <span class="opt">(</span><span class="kwa">define</span> N <span class="opt">(</span><span class="kwa">command-line</span> <span class="opt">#</span><span class="kwc">:args</span> <span class="opt">(</span><span class="kwa">n</span><span class="opt">) (</span><span class="kwa">string-</span><span class="opt">&gt;</span>number n<span class="opt">)))</span>
+  <span class="opt">(</span><span class="kwa">define</span> C <span class="opt">(</span><span class="kwa">processor-count</span><span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">A</span> i j<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>ij <span class="opt">(</span><span class="kwa">fx</span><span class="opt">+</span> i j<span class="opt">)])</span>
+      <span class="opt">(</span><span class="kwa">fl</span><span class="opt">/</span> <span class="num">1.0</span> <span class="opt">(</span><span class="kwa">fl</span><span class="opt">+ (</span><span class="kwa">fl</span><span class="opt">* (</span><span class="kwa">fl</span><span class="opt">* (</span><span class="kwa">fx-</span><span class="opt">&gt;</span>fl ij<span class="opt">)</span>
+                              <span class="opt">(</span><span class="kwa">fx-</span><span class="opt">&gt;</span>fl <span class="opt">(</span><span class="kwa">fx</span><span class="opt">+</span> ij <span class="num">1</span><span class="opt">)))</span>
+                         <span class="num">0.5</span><span class="opt">)</span> 
+                    <span class="opt">(</span><span class="kwa">fx-</span><span class="opt">&gt;</span>fl <span class="opt">(</span><span class="kwa">fx</span><span class="opt">+</span> i <span class="num">1</span><span class="opt">))))))</span>
+  <span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">Av</span> x y N<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">for</span><span class="opt">/</span>par C <span class="opt">([</span>i N<span class="opt">])</span>
+      <span class="opt">(</span><span class="kwa">flvector-set</span><span class="opt">!</span>
+       y i
+       <span class="opt">(</span><span class="kwa">let</span> L <span class="opt">([</span>a <span class="num">0.0</span><span class="opt">] [</span>j <span class="num">0</span><span class="opt">])</span>
+         <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">fx</span><span class="opt">=</span> j N<span class="opt">)</span> a
+             <span class="opt">(</span><span class="kwa">L</span> <span class="opt">(</span><span class="kwa">fl</span><span class="opt">+</span> a <span class="opt">(</span><span class="kwa">fl</span><span class="opt">* (</span><span class="kwa">flvector-ref</span> x j<span class="opt">) (</span><span class="kwa">A</span> i j<span class="opt">)))</span>
+                <span class="opt">(</span><span class="kwa">fx</span><span class="opt">+</span> j <span class="num">1</span><span class="opt">)))))))</span>
+  <span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">Atv</span> x y N<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">for</span><span class="opt">/</span>par C <span class="opt">([</span>i N<span class="opt">])</span>
+      <span class="opt">(</span><span class="kwa">flvector-set</span><span class="opt">!</span>
+       y i
+       <span class="opt">(</span><span class="kwa">let</span> L <span class="opt">([</span>a <span class="num">0.0</span><span class="opt">] [</span>j <span class="num">0</span><span class="opt">])</span>
+         <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">fx</span><span class="opt">=</span> j N<span class="opt">)</span> a
+             <span class="opt">(</span><span class="kwa">L</span> <span class="opt">(</span><span class="kwa">fl</span><span class="opt">+</span> a <span class="opt">(</span><span class="kwa">fl</span><span class="opt">* (</span><span class="kwa">flvector-ref</span> x j<span class="opt">) (</span><span class="kwa">A</span> j i<span class="opt">)))</span>
+                <span class="opt">(</span><span class="kwa">fx</span><span class="opt">+</span> j <span class="num">1</span><span class="opt">)))))))</span>
+  <span class="opt">(</span><span class="kwa">define</span> <span class="opt">(</span><span class="kwa">AtAv</span> x y t N<span class="opt">) (</span><span class="kwa">Av</span> x t N<span class="opt">) (</span><span class="kwa">Atv</span> t y N<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">define</span> u <span class="opt">(</span><span class="kwa">make-flvector</span> N <span class="num">1.0</span><span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">define</span> v <span class="opt">(</span><span class="kwa">make-flvector</span> N<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">define</span> t <span class="opt">(</span><span class="kwa">make-flvector</span> N<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">for</span> <span class="opt">([</span>i <span class="opt">(</span><span class="kwa">in-range</span> <span class="num">10</span><span class="opt">)])</span>
+    <span class="opt">(</span><span class="kwa">AtAv</span> u v t N<span class="opt">) (</span><span class="kwa">AtAv</span> v u t N<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">displayln</span> <span class="opt">(</span><span class="kwa">real-</span><span class="opt">&gt;</span>decimal-string 
+              <span class="opt">(</span><span class="kwa">flsqrt</span> 
+               <span class="opt">(</span><span class="kwa">let</span> L <span class="opt">([</span>vBv <span class="num">0.0</span><span class="opt">] [</span>vv <span class="num">0.0</span><span class="opt">] [</span>i <span class="num">0</span><span class="opt">])</span>
+                 <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">fx</span><span class="opt">=</span> i N<span class="opt">) (</span><span class="kwa">fl</span><span class="opt">/</span> vBv vv<span class="opt">)</span>
+                     <span class="opt">(</span><span class="kwa">let</span> <span class="opt">([</span>ui <span class="opt">(</span><span class="kwa">flvector-ref</span> u i<span class="opt">)] [</span>vi <span class="opt">(</span><span class="kwa">flvector-ref</span> v i<span class="opt">)])</span>
+                       <span class="opt">(</span><span class="kwa">L</span> <span class="opt">(</span><span class="kwa">fl</span><span class="opt">+</span> vBv <span class="opt">(</span><span class="kwa">fl</span><span class="opt">*</span> ui vi<span class="opt">))</span>
+                          <span class="opt">(</span><span class="kwa">fl</span><span class="opt">+</span> vv <span class="opt">(</span><span class="kwa">fl</span><span class="opt">*</span> vi vi<span class="opt">))</span>
+                          <span class="opt">(</span><span class="kwa">fx</span><span class="opt">+</span> i <span class="num">1</span><span class="opt">))))))</span>
+              <span class="num">9</span><span class="opt">)))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Racket v8.15 [cs].
+
+
+ Fri, 07 Feb 2025 23:57:53 GMT
+
+COMMAND LINE:
+ /opt/src/./racket-8.15/bin/racket spectralnorm.racket-3.racket 5500
+
+PROGRAM OUTPUT:
+1.274224153
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

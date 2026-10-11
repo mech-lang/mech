@@ -1,0 +1,9 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-6.cs(132,9): warning CA2022: Avoid inexact read with 'System.IO.BufferedStream.Read(byte[], int, int)' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2022) [/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-csharpcore-6-jit/app.csproj]
+
+Build succeeded.
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-6.cs(132,9): warning CA2022: Avoid inexact read with 'System.IO.BufferedStream.Read(byte[], int, int)' (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2022) [/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-csharpcore-6-jit/app.csproj]
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.08

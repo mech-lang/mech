@@ -1,0 +1,2275 @@
+{
+  "kernel": "stateful diagonal half-plane; independent of Mandelbrot",
+  "images": [
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 1,
+      "simd": false,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 1,
+      "simd": true,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 2,
+      "simd": false,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 2,
+      "simd": true,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 7,
+      "simd": false,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 7,
+      "simd": true,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 8,
+      "simd": false,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 8,
+      "simd": true,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 9,
+      "simd": false,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 9,
+      "simd": true,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 63,
+      "simd": false,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 63,
+      "simd": true,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 64,
+      "simd": false,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 1,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "3c24ce82ae466adae17b9624538fb1f97298da93ad858a3df4f4160aeea860c9"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 1,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "e7c976eda0e550cfad13e327fb771b9126e0c8afad8f9eb63e5e75788bd9f699"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 7,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "9e836a0de903ef1a84c38c4453b911e1ef8803e7929bd599591bc2db5ced1125"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 7,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "9bed6482d74cd5571fcc52d20c7591b1971f4d15f3ec48d90ceece904ac7af33"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 8,
+      "height": 3,
+      "threads": 1,
+      "bytes": 10,
+      "sha256": "0efbd9e4885214561a9694ed545ff0835ca1c07ef875ea167a391ed749d62c7e"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 8,
+      "height": 5,
+      "threads": 4,
+      "bytes": 12,
+      "sha256": "b530dd5a7a5b4c5bdefe7f4391b4c71d5ed174c78ee2ea3a08671eb28cf8d33a"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 9,
+      "height": 3,
+      "threads": 1,
+      "bytes": 13,
+      "sha256": "ab40f2980086b22ab802ae014befaafdddb8b1d1b302bd736abbe58fea3c4aec"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 9,
+      "height": 5,
+      "threads": 4,
+      "bytes": 17,
+      "sha256": "cec65a4f324d278e8e38015a2ee0a48ecddb384b29afdfdc165d9b37c24910c7"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 13,
+      "height": 3,
+      "threads": 1,
+      "bytes": 14,
+      "sha256": "3e03e1110b0cbfdffd03836b823f15ab8faa7fd211b16827bcccd967d11f2bf6"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 13,
+      "height": 5,
+      "threads": 4,
+      "bytes": 18,
+      "sha256": "5ff9edfd3664d3ef37268bff5f0432d045699105efbf7b24fe9f5beefa969fa3"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 63,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "45bc1833b9c0f83ff1e76ecf84620691c56b2fd1dc1373ce191b9d31be178510"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 63,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "b5c6988e98cdd392a9783f13a138036aab06b70675a441944abbddbec70a448b"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 64,
+      "height": 3,
+      "threads": 1,
+      "bytes": 32,
+      "sha256": "67de4fae24c779b5d1024da0590657e8afeadd2a644d48c9d7131b02937467ae"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 64,
+      "height": 5,
+      "threads": 4,
+      "bytes": 48,
+      "sha256": "6b13c7cfc7a81a2fc9729355d81db8ae6ec2300e3a7a17ea030c07d9d3c24a93"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 65,
+      "height": 3,
+      "threads": 1,
+      "bytes": 35,
+      "sha256": "ad2ea3fe0e602df19bb3eec7d5958ede7cf5bc1a281cbe26802154abe773fc4c"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 65,
+      "height": 5,
+      "threads": 4,
+      "bytes": 53,
+      "sha256": "c2c3a0b6f3b8eadfd281eab18b8a9f0a8f4bebddd6de4fbef6d3b01828afcfd3"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 129,
+      "height": 3,
+      "threads": 1,
+      "bytes": 60,
+      "sha256": "774253f41438f150589faf1b80c9d595cf9ebacae31a412139d200057f1c9038"
+    },
+    {
+      "lanes": 64,
+      "simd": true,
+      "width": 129,
+      "height": 5,
+      "threads": 4,
+      "bytes": 94,
+      "sha256": "239d5af52a7de2627ac1082d9fff361afeaec6a89431b0dd10167d0e1af86a28"
+    }
+  ],
+  "exact_byte_output": true,
+  "argument_errors_rejected": true
+}

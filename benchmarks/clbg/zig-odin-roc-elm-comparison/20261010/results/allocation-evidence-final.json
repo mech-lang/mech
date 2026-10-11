@@ -1,0 +1,176 @@
+{
+  "status": "passed",
+  "elm": {
+    "status": "passed",
+    "compiled_sha256": "015abadf0ba0b77a6f95c25290df42acd90b278becebf44d617bf1cbfdc9eb9e",
+    "cases": [
+      {
+        "n": 9,
+        "maximum": 9,
+        "distinctNodes": 51550,
+        "nodesExpected": 51550,
+        "traversedNodes": 51550,
+        "temporaryTrees": 672,
+        "temporaryChecks": 672,
+        "finalLongLivedChecks": 1,
+        "leafCount": 26112,
+        "interiorCount": 25438,
+        "equalLeafInteriorFields": true,
+        "freshIdenticalLeaves": true,
+        "actualRunCheckOrder": true,
+        "output_sha256": "fc6ca49b3987467168c413810504d644350f21504f5a51ed658e9f879832ddaf"
+      },
+      {
+        "n": 10,
+        "maximum": 10,
+        "distinctNodes": 135854,
+        "nodesExpected": 135854,
+        "traversedNodes": 135854,
+        "temporaryTrees": 1360,
+        "temporaryChecks": 1360,
+        "finalLongLivedChecks": 1,
+        "leafCount": 68608,
+        "interiorCount": 67246,
+        "equalLeafInteriorFields": true,
+        "freshIdenticalLeaves": true,
+        "actualRunCheckOrder": true,
+        "output_sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb"
+      }
+    ],
+    "reason": "The actual compiled run was instrumented without modifying the measured binary. Every constructor call returns a distinct equal-field node; every node is traversed, both children are distinct, and the long-lived root is checked exactly once after every temporary tree. Generated depths carries the root in every tail-loop iteration until its terminal branch.",
+    "source_sha256": "bbfcad255e6f35e7de8273f76ca744ada503ad46e7d031b52a7505e12dc41014"
+  },
+  "roc": {
+    "source_sha256": "1a58ea8ddede35e6c7bf9ed6ff391db116c3d947a46ba15ea099275dc705e613",
+    "ir_sha256": "cbb92f3013da259dbaee459b8d44b6f05e63bc8d1fda7a99043a0a6b24293c42",
+    "constructor_specializations": 2,
+    "leaf_bytes": 32,
+    "interior_bytes": 32,
+    "child_slots": 2,
+    "reason": "Optimized LLVM IR retains a 32-byte allocation in both leaf and interior branches of both constructor specializations. Left construction is tail-looped with its own fresh node at each depth; right construction remains recursive. Each node has a refcount, dynamic marker and two pointer slots.",
+    "long_lived_created_line": 3164,
+    "temporary_constructor_line": 3279,
+    "long_lived_checked_line": 3476,
+    "long_lived_retained_through_temporary_loop": true,
+    "lifetime_reason": "The optimized main constructs the long-lived pointer before entering temporary loops, and passes that same pointer to its final check after both loops. The 32-byte leaf/interior allocations survive optimization in both constructor specializations."
+  },
+  "native_arenas": {
+    "status": "passed",
+    "programs": [
+      {
+        "key": "binarytrees:binarytrees-zig-arena-compact",
+        "status": "passed",
+        "source_sha256": "81af06556379389ee22cfdd45c50dab1e6134769f6def30ca67763d3d8415594",
+        "binary_sha256": "fbd8963380553b14a5818f27b736b015808fada96f1bd3d624b4ab760568a254",
+        "instrumentation_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/audit-binarytrees-zig-arena-compact.zig",
+        "instrumentation_source_sha256": "d2ff5c9e8e3bd88cd62a28fd17f39e56b022d23c10be5f8c77a2579c13c39151",
+        "instrumentation_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/audit-binarytrees-zig-arena-compact",
+        "instrumentation_binary_sha256": "0d84908ee53499a03277f49b69ae923d2f083d1c5b43a30294119fa4105db5b3",
+        "cases": [
+          {
+            "n": 9,
+            "node_bytes": 16,
+            "allocation_requests": 51550,
+            "expected_allocation_requests": 51550,
+            "complete_output_unchanged": true,
+            "distinct_children": true
+          },
+          {
+            "n": 10,
+            "node_bytes": 16,
+            "allocation_requests": 135854,
+            "expected_allocation_requests": 135854,
+            "complete_output_unchanged": true,
+            "distinct_children": true
+          }
+        ]
+      },
+      {
+        "key": "binarytrees:binarytrees-zig-arena-parallel",
+        "status": "passed",
+        "source_sha256": "e73f078c62f6b500f9d6d22e8e750be5df5cf5ca100bd5182b6d58291ab32de9",
+        "binary_sha256": "f45afea369309ef69ed96157b158717f100cb0ce50c0126490f8b0b417ac8813",
+        "instrumentation_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/audit-binarytrees-zig-arena-parallel.zig",
+        "instrumentation_source_sha256": "b91928ee3605d2ebe2454da45cf0975859c55bb2c367c899121635a30fbcffd1",
+        "instrumentation_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/audit-binarytrees-zig-arena-parallel",
+        "instrumentation_binary_sha256": "280e5e83ed7d2a5330aa9abe2a91c5a8d13408af7e218945de89bad5198cc665",
+        "cases": [
+          {
+            "n": 9,
+            "node_bytes": 16,
+            "allocation_requests": 51550,
+            "expected_allocation_requests": 51550,
+            "complete_output_unchanged": true,
+            "distinct_children": true
+          },
+          {
+            "n": 10,
+            "node_bytes": 16,
+            "allocation_requests": 135854,
+            "expected_allocation_requests": 135854,
+            "complete_output_unchanged": true,
+            "distinct_children": true
+          }
+        ]
+      },
+      {
+        "key": "binarytrees:binarytrees-odin-arena-compact",
+        "status": "passed",
+        "source_sha256": "017ac5f09bf7911f3eb578552aa67c7a9fd7c72eca7fcdf85dd70d360316b794",
+        "binary_sha256": "b58ba8b7479034451f8e84bdebd8fbadf6ee6c195947bcfd0755fbee9ce69b08",
+        "instrumentation_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/audit-binarytrees-odin-arena-compact.odin",
+        "instrumentation_source_sha256": "4f42d2396ec5941f22bda839c111c5c919c5683f6e00af1f085a013deabdfd8b",
+        "instrumentation_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/audit-binarytrees-odin-arena-compact",
+        "instrumentation_binary_sha256": "24af6ec740e18f58be7040623c9034519038c0a376d7d96b703f713c36fa2986",
+        "cases": [
+          {
+            "n": 9,
+            "node_bytes": 16,
+            "allocation_requests": 51550,
+            "expected_allocation_requests": 51550,
+            "complete_output_unchanged": true,
+            "distinct_children": true
+          },
+          {
+            "n": 10,
+            "node_bytes": 16,
+            "allocation_requests": 135854,
+            "expected_allocation_requests": 135854,
+            "complete_output_unchanged": true,
+            "distinct_children": true
+          }
+        ]
+      },
+      {
+        "key": "binarytrees:binarytrees-odin-arena-parallel",
+        "status": "passed",
+        "source_sha256": "1d68787e2bb6a45c7749bfd016d69ce9c64379205017bb8a78aa206805abeb2a",
+        "binary_sha256": "043ae5c82b75a5ea57efff4b6b903925647b9cadcab1244879157ea8d47fa2d9",
+        "instrumentation_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/audit-binarytrees-odin-arena-parallel.odin",
+        "instrumentation_source_sha256": "0bc945a4b2f32ffe55c9f4370453362ea45b1d4639b5f586f668317c9c0ebc79",
+        "instrumentation_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/audit-binarytrees-odin-arena-parallel",
+        "instrumentation_binary_sha256": "1d38c3418f51472e7a8657cc6b476ac70cbd290c05e3ee96d7e5297b9b6348e3",
+        "cases": [
+          {
+            "n": 9,
+            "node_bytes": 16,
+            "allocation_requests": 51550,
+            "expected_allocation_requests": 51550,
+            "complete_output_unchanged": true,
+            "distinct_children": true
+          },
+          {
+            "n": 10,
+            "node_bytes": 16,
+            "allocation_requests": 135854,
+            "expected_allocation_requests": 135854,
+            "complete_output_unchanged": true,
+            "distinct_children": true
+          }
+        ]
+      }
+    ],
+    "reason": "Untimed derivative builds count every explicit create/new request using a shared atomic counter, assert distinct interior children, verify the unchanged complete output, and retain equal-size 16-byte leaves/interiors. Measurements use the uninstrumented pinned binaries. General arenas reset only after construction and pointer traversal, and long-lived storage uses a separate arena."
+  },
+  "superseded_evidence": "The original manual Elm allocation probe proved node identity but did not exercise actual run ordering. Its lifetime assertion is superseded by the actual compiled-run instrumented checks and the corrected source below."
+}

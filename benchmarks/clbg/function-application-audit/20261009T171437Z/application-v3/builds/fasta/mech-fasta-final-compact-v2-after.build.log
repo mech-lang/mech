@@ -1,0 +1,5 @@
+     Locking 204 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+   Compiling fasta v0.0.0 (/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-mjl4uL)
+    Finished `release` profile [optimized] target(s) in 0.63s
+[Output] Cranelift AOT Mech application written to: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fasta/mech-fasta-final-compact-v2-after

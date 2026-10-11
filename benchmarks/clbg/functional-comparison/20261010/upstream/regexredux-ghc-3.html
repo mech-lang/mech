@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>regex-redux Haskell GHC&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>regex-redux Haskell GHC&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/regexredux.html#regexredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- contributed by Jaro Reinders</span>
+<span class="slc">--</span>
+<span class="slc">-- adapted from the C implementation that was:</span>
+<span class="slc">--   contributed by Jeremy Zerfas</span>
+<span class="slc">--   modified by Zoltan Herczeg</span>
+
+<span class="kwb">import</span> Foreign<span class="opt">.</span>C<span class="opt">.</span>Types
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Storable <span class="kwb">as</span> V
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Storable<span class="opt">.</span>Mutable <span class="kwb">as</span> M
+<span class="kwb">import</span> Foreign<span class="opt">.</span>Ptr
+<span class="kwb">import</span> Foreign<span class="opt">.</span>Marshal<span class="opt">.</span>Alloc
+<span class="kwb">import</span> Data<span class="opt">.</span>Word
+<span class="kwb">import</span> Control<span class="opt">.</span>Monad
+<span class="kwb">import</span> Foreign<span class="opt">.</span>Storable
+<span class="kwb">import</span> System<span class="opt">.</span>IO
+<span class="kwb">import</span> Control<span class="opt">.</span>Concurrent
+<span class="kwb">import</span> Data<span class="opt">.</span>Foldable
+<span class="kwb">import</span> Data<span class="opt">.</span>Char
+
+<span class="slc">-- first some foreign imports (Haskell does not have a proper pcre2 binding!)</span>
+
+<span class="kwb">foreign import</span> capi <span class="sng">&quot;pcre2.h value PCRE2_JIT_COMPLETE&quot;</span>
+  c_PCRE2_JIT_COMPLETE :: CUInt
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_get_ovector_pointer_8&quot;</span>
+  c_pcre2_get_ovector_pointer :: Ptr MatchData <span class="opt">-&gt;</span> IO <span class="kwc">(</span>Ptr CSize<span class="kwc">)</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_compile_8&quot;</span>
+  c_pcre2_compile :: Ptr CChar <span class="opt">-&gt;</span> CSize <span class="opt">-&gt;</span> CInt <span class="opt">-&gt;</span> Ptr CInt <span class="opt">-&gt;</span> Ptr CSize
+    <span class="opt">-&gt;</span> Ptr <span class="kwc">()</span> <span class="opt">-&gt;</span> IO <span class="kwc">(</span>Ptr Code<span class="kwc">)</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_jit_compile_8&quot;</span>
+  c_pcre2_jit_compile :: Ptr Code <span class="opt">-&gt;</span> CUInt <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+
+<span class="slc">-- This one is marked unsafe for extra performance.</span>
+<span class="slc">-- See https://wiki.haskell.org/Performance/FFI</span>
+<span class="kwb">foreign import</span> ccall unsafe <span class="sng">&quot;pcre2.h pcre2_jit_match_8&quot;</span>
+  c_pcre2_jit_match :: Ptr Code <span class="opt">-&gt;</span> Ptr CChar <span class="opt">-&gt;</span> CSize <span class="opt">-&gt;</span> CSize <span class="opt">-&gt;</span> CUInt
+    <span class="opt">-&gt;</span> Ptr MatchData <span class="opt">-&gt;</span> Ptr MatchContext <span class="opt">-&gt;</span> IO CInt
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_code_free_8&quot;</span>
+  c_pcre2_code_free :: Ptr Code <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_match_context_create_8&quot;</span>
+  c_pcre2_match_context_create :: Ptr GeneralContext <span class="opt">-&gt;</span> IO <span class="kwc">(</span>Ptr MatchContext<span class="kwc">)</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_jit_stack_create_8&quot;</span>
+  c_pcre2_jit_stack_create :: CSize <span class="opt">-&gt;</span> CSize <span class="opt">-&gt;</span> Ptr <span class="kwc">()</span> <span class="opt">-&gt;</span> IO <span class="kwc">(</span>Ptr JitStack<span class="kwc">)</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_jit_stack_assign_8&quot;</span>
+  c_pcre2_jit_stack_assign :: Ptr MatchContext <span class="opt">-&gt;</span> Ptr <span class="kwc">()</span> <span class="opt">-&gt;</span> Ptr JitStack
+    <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_match_data_create_8&quot;</span>
+  c_pcre2_match_data_create :: CUInt <span class="opt">-&gt;</span> Ptr GeneralContext
+    <span class="opt">-&gt;</span> IO <span class="kwc">(</span>Ptr MatchData<span class="kwc">)</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_match_context_free_8&quot;</span>
+  c_pcre2_match_context_free :: Ptr MatchContext <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_jit_stack_free_8&quot;</span>
+  c_pcre2_jit_stack_free :: Ptr JitStack <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+
+<span class="kwb">foreign import</span> ccall <span class="sng">&quot;pcre2.h pcre2_match_data_free_8&quot;</span>
+  c_pcre2_match_data_free :: Ptr MatchData <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+
+<span class="kwa">data</span> MatchData
+<span class="kwa">data</span> MatchContext
+<span class="kwa">data</span> Code
+<span class="kwa">data</span> GeneralContext
+<span class="kwa">data</span> JitStack
+
+<span class="kwa">data</span> GrowString <span class="opt">=</span> GrowString
+  <span class="com">{-# UNPACK #-}</span> <span class="opt">!</span><span class="kwc">(</span>M<span class="opt">.</span>IOVector Word8<span class="kwc">)</span>
+  <span class="com">{-# UNPACK #-}</span> <span class="opt">!</span>Int
+
+<span class="slc">-- Freeze and trim</span>
+freezeGrowString :: GrowString <span class="opt">-&gt;</span> IO <span class="kwc">(</span>V<span class="opt">.</span>Vector Word8<span class="kwc">)</span>
+freezeGrowString <span class="kwc">(</span>GrowString dat siz<span class="kwc">)</span> <span class="opt">=</span> V<span class="opt">.</span>unsafeFreeze <span class="kwc">(</span>M<span class="opt">.</span>slice <span class="num">0</span> siz dat<span class="kwc">)</span>
+
+<span class="slc">-- Function for searching a srcString for a pattern, replacing it with some</span>
+<span class="slc">-- specified replacement, and storing the result in dstString.</span>
+<span class="slc">--</span>
+<span class="slc">-- dstString might be reallocated so this function returns a new GrowString.</span>
+<span class="slc">-- For optimal performance you should not use the old GrowString anymore.</span>
+replace :: V<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> V<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> V<span class="opt">.</span>Vector Word8
+  <span class="opt">-&gt;</span> GrowString <span class="opt">-&gt;</span> Ptr MatchContext <span class="opt">-&gt;</span> Ptr MatchData <span class="opt">-&gt;</span> IO GrowString
+replace <span class="opt">!</span>pattern <span class="opt">!</span>replacement <span class="opt">!</span>srcString <span class="opt">!</span>dstString <span class="opt">!</span>mcontext <span class="opt">!</span>mdata <span class="opt">=</span>
+  alloca <span class="opt">$</span> \errorCode <span class="opt">-&gt;</span> alloca <span class="opt">$</span> \errorOffset <span class="opt">-&gt;</span> <span class="kwd">do</span>
+    match <span class="opt">&lt;-</span> c_pcre2_get_ovector_pointer mdata
+
+    <span class="slc">-- Compile and study pattern.</span>
+    regex <span class="opt">&lt;-</span> V<span class="opt">.</span>unsafeWith pattern <span class="opt">$</span> \patternPtr <span class="opt">-&gt;</span> c_pcre2_compile
+      <span class="kwc">(</span>castPtr patternPtr<span class="kwc">) (</span>fromIntegral <span class="kwc">(</span>V<span class="opt">.</span>length pattern<span class="kwc">))</span> <span class="num">0</span> errorCode
+      errorOffset nullPtr
+    c_pcre2_jit_compile regex c_PCRE2_JIT_COMPLETE
+
+    <span class="slc">-- Find each match of the pattern in srcString and append the characters</span>
+    <span class="slc">-- preceding each match and the replacement text to dstString.</span>
+    <span class="kwd">let</span>
+      go <span class="opt">!</span>pos <span class="opt">!</span>dstString <span class="opt">=</span> <span class="kwd">do</span>
+        <span class="opt">!</span>x <span class="opt">&lt;-</span> V<span class="opt">.</span>unsafeWith srcString <span class="opt">$</span> \srcStringPtr <span class="opt">-&gt;</span>
+          c_pcre2_jit_match regex <span class="kwc">(</span>castPtr srcStringPtr<span class="kwc">)</span>
+            <span class="kwc">(</span>fromIntegral srcStringLen<span class="kwc">) (</span>fromIntegral pos<span class="kwc">)</span> <span class="num">0</span> mdata mcontext
+        <span class="kwd">if</span> <span class="kwc">(</span>x <span class="opt">&gt;=</span> <span class="num">0</span><span class="kwc">)</span> <span class="kwd">then do</span>
+          <span class="opt">!</span>match0 <span class="opt">&lt;-</span> fromIntegral <span class="opt">&lt;$&gt;</span> peekElemOff match <span class="num">0</span>
+
+          <span class="slc">-- Allocate more memory for dstString if there is not enough space</span>
+          <span class="slc">-- for the characters preceding the match and the replacement text.</span>
+          <span class="kwd">let</span>
+            growLoop str<span class="opt">&#64;</span><span class="kwc">(</span>GrowString <span class="opt">!</span>dat <span class="opt">!</span>siz<span class="kwc">)</span>
+              <span class="opt">|</span> siz <span class="opt">+</span> match0 <span class="opt">-</span> pos <span class="opt">+</span> replacementSize <span class="opt">&gt;</span> M<span class="opt">.</span>length dat <span class="opt">=</span> <span class="kwd">do</span>
+                <span class="opt">!</span>dat&#39; <span class="opt">&lt;-</span> M<span class="opt">.</span>grow dat <span class="kwc">(</span>M<span class="opt">.</span>length dat<span class="kwc">)</span> :: IO <span class="kwc">(</span>M<span class="opt">.</span>IOVector Word8<span class="kwc">)</span>
+                growLoop <span class="kwc">(</span>GrowString dat&#39; siz<span class="kwc">)</span>
+              <span class="opt">|</span> otherwise <span class="opt">=</span> return str
+          <span class="kwc">(</span>GrowString dat siz<span class="kwc">)</span> <span class="opt">&lt;-</span> growLoop dstString
+
+          <span class="slc">-- Append the characters preceding the match and the replacement text</span>
+          <span class="slc">-- to dstString and update the size of dstString.</span>
+          <span class="kwd">let</span>
+            <span class="opt">!</span>siz&#39; <span class="opt">=</span> siz <span class="opt">+</span> match0 <span class="opt">-</span> pos
+            <span class="opt">!</span>siz&#39;&#39; <span class="opt">=</span> siz&#39; <span class="opt">+</span> replacementSize
+          V<span class="opt">.</span>copy <span class="kwc">(</span>M<span class="opt">.</span>slice siz  <span class="kwc">(</span>match0 <span class="opt">-</span> pos<span class="kwc">)</span>  dat<span class="kwc">)</span>
+            <span class="kwc">(</span>V<span class="opt">.</span>slice pos <span class="kwc">(</span>match0 <span class="opt">-</span> pos<span class="kwc">)</span> srcString<span class="kwc">)</span>
+          V<span class="opt">.</span>copy <span class="kwc">(</span>M<span class="opt">.</span>slice siz&#39; replacementSize dat<span class="kwc">)</span> replacement
+
+          <span class="slc">-- Find the new pos to continue after the current match.</span>
+          <span class="opt">!</span>pos&#39; <span class="opt">&lt;-</span> fromIntegral <span class="opt">&lt;$&gt;</span> peekElemOff match <span class="num">1</span>
+
+          go pos&#39; <span class="kwc">(</span>GrowString dat siz&#39;&#39;<span class="kwc">)</span>
+        <span class="kwd">else</span> return <span class="kwc">(</span>pos<span class="kwc">,</span> dstString<span class="kwc">)</span>
+    <span class="kwc">(</span><span class="opt">!</span>pos<span class="kwc">,</span> <span class="opt">!</span>dstString&#39;<span class="kwc">)</span> <span class="opt">&lt;-</span> go <span class="num">0</span> dstString
+
+    c_pcre2_code_free regex
+
+    <span class="slc">-- Allocate more memory for dstString if there is not enough space for the</span>
+    <span class="slc">-- characters following the last match (or the entire srcString if there</span>
+    <span class="slc">-- was no match).</span>
+    <span class="kwd">let</span>
+      growLoop str<span class="opt">&#64;</span><span class="kwc">(</span>GrowString <span class="opt">!</span>dat <span class="opt">!</span>siz<span class="kwc">)</span>
+        <span class="opt">|</span> siz <span class="opt">+</span> srcStringLen <span class="opt">-</span> pos <span class="opt">&gt;</span> M<span class="opt">.</span>length dat <span class="opt">=</span> <span class="kwd">do</span>
+          dat&#39; <span class="opt">&lt;-</span> M<span class="opt">.</span>grow dat <span class="kwc">(</span>M<span class="opt">.</span>length dat<span class="kwc">)</span> :: IO <span class="kwc">(</span>M<span class="opt">.</span>IOVector Word8<span class="kwc">)</span>
+          growLoop <span class="kwc">(</span>GrowString dat&#39; siz<span class="kwc">)</span>
+        <span class="opt">|</span> otherwise <span class="opt">=</span> return str
+    <span class="kwc">(</span>GrowString dat siz<span class="kwc">)</span> <span class="opt">&lt;-</span> growLoop dstString&#39;
+
+    <span class="slc">-- Append the characters following the last match (or the entire srcString</span>
+    <span class="slc">-- if there was no match) to dstString and update the size of dstString.</span>
+    V<span class="opt">.</span>copy <span class="kwc">(</span>M<span class="opt">.</span>slice siz <span class="kwc">(</span>srcStringLen <span class="opt">-</span> pos<span class="kwc">)</span> dat<span class="kwc">)</span>
+      <span class="kwc">(</span>V<span class="opt">.</span>slice pos <span class="kwc">(</span>srcStringLen <span class="opt">-</span> pos<span class="kwc">)</span> srcString<span class="kwc">)</span>
+
+    return <span class="kwc">(</span>GrowString dat <span class="kwc">(</span>siz <span class="opt">+</span> srcStringLen <span class="opt">-</span> pos<span class="kwc">))</span>
+  <span class="kwb">where</span>
+    srcStringLen <span class="opt">=</span> V<span class="opt">.</span>length srcString
+    replacementSize <span class="opt">=</span> V<span class="opt">.</span>length replacement
+
+main :: IO <span class="kwc">()</span>
+main <span class="opt">=</span> <span class="kwd">do</span>
+  <span class="kwd">let</span>
+    f <span class="opt">=</span> V<span class="opt">.</span>fromList <span class="opt">.</span> map <span class="kwc">(</span>fromIntegral <span class="opt">.</span> ord<span class="kwc">)</span>
+    countInfo <span class="opt">=</span> map f
+      <span class="kwc">[</span> <span class="sng">&quot;agggtaaa|tttaccct&quot;</span>
+      <span class="kwc">,</span> <span class="sng">&quot;[cgt]gggtaaa|tttaccc[acg]&quot;</span>
+      <span class="kwc">,</span> <span class="sng">&quot;a[act]ggtaaa|tttacc[agt]t&quot;</span>
+      <span class="kwc">,</span> <span class="sng">&quot;ag[act]gtaaa|tttac[agt]ct&quot;</span>
+      <span class="kwc">,</span> <span class="sng">&quot;agg[act]taaa|ttta[agt]cct&quot;</span>
+      <span class="kwc">,</span> <span class="sng">&quot;aggg[acg]aaa|ttt[cgt]ccct&quot;</span>
+      <span class="kwc">,</span> <span class="sng">&quot;agggt[cgt]aa|tt[acg]accct&quot;</span>
+      <span class="kwc">,</span> <span class="sng">&quot;agggta[cgt]a|t[acg]taccct&quot;</span>
+      <span class="kwc">,</span> <span class="sng">&quot;agggtaa[cgt]|[acg]ttaccct&quot;</span>
+      <span class="kwc">]</span>
+    replaceInfo <span class="opt">=</span> map <span class="kwc">(</span>\<span class="kwc">(</span>a<span class="kwc">,</span>b<span class="kwc">)</span> <span class="opt">-&gt;</span> <span class="kwc">(</span>f a<span class="kwc">,</span> f b<span class="kwc">))</span>
+      <span class="kwc">[ (</span><span class="sng">&quot;tHa[Nt]&quot;</span><span class="kwc">,</span> <span class="sng">&quot;&lt;4&gt;&quot;</span><span class="kwc">)</span>
+      <span class="kwc">, (</span><span class="sng">&quot;aND|caN|Ha[DS]|WaS&quot;</span><span class="kwc">,</span> <span class="sng">&quot;&lt;3&gt;&quot;</span><span class="kwc">)</span>
+      <span class="kwc">, (</span><span class="sng">&quot;a[NSt]|BY&quot;</span><span class="kwc">,</span> <span class="sng">&quot;&lt;2&gt;&quot;</span><span class="kwc">)</span>
+      <span class="kwc">, (</span><span class="sng">&quot;&lt;[^&gt;]*&gt;&quot;</span><span class="kwc">,</span> <span class="sng">&quot;|&quot;</span><span class="kwc">)</span>
+      <span class="kwc">, (</span><span class="sng">&quot;</span><span class="esc">\\</span><span class="sng">|[^|][^|]*</span><span class="esc">\\</span><span class="sng">|&quot;</span><span class="kwc">,</span> <span class="sng">&quot;-&quot;</span><span class="kwc">)</span>
+      <span class="kwc">]</span>
+
+  input <span class="opt">&lt;-</span> <span class="kwc">(</span>\x <span class="opt">-&gt;</span> GrowString x <span class="num">0</span><span class="kwc">)</span> <span class="opt">&lt;$&gt;</span> M<span class="opt">.</span>new <span class="num">16384</span>
+  sequences <span class="opt">&lt;-</span> <span class="kwc">(</span>\x <span class="opt">-&gt;</span> GrowString x <span class="num">0</span><span class="kwc">)</span> <span class="opt">&lt;$&gt;</span> M<span class="opt">.</span>new <span class="num">16384</span>
+
+  <span class="slc">-- Read in input from stdin until we reach the end or encounter an error.</span>
+  <span class="kwd">let</span>
+    readLoop <span class="kwc">(</span>GrowString <span class="opt">!</span>dat <span class="opt">!</span>siz<span class="kwc">)</span> <span class="opt">=</span> <span class="kwd">do</span>
+      bytesRead <span class="opt">&lt;-</span> M<span class="opt">.</span>unsafeWith <span class="kwc">(</span>M<span class="opt">.</span>slice siz <span class="kwc">(</span>M<span class="opt">.</span>length dat <span class="opt">-</span> siz<span class="kwc">)</span> dat<span class="kwc">)</span>
+        <span class="opt">$</span> \inputPtr <span class="opt">-&gt;</span> hGetBuf stdin inputPtr <span class="kwc">(</span>M<span class="opt">.</span>length dat <span class="opt">-</span> siz<span class="kwc">)</span>
+      <span class="kwd">if</span> bytesRead <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwd">then do</span>
+        <span class="slc">-- update the size of input to reflect the newly read input and if</span>
+        <span class="slc">-- we&#39;ve reached the full capacity of the input string then also double</span>
+        <span class="slc">-- its size.</span>
+        dat&#39; <span class="opt">&lt;-</span> <span class="kwd">if</span> <span class="kwc">(</span>siz <span class="opt">+</span> bytesRead <span class="opt">==</span> M<span class="opt">.</span>length dat<span class="kwc">)</span>
+          <span class="kwd">then</span> M<span class="opt">.</span>grow dat <span class="kwc">(</span>M<span class="opt">.</span>length dat<span class="kwc">)</span> :: IO <span class="kwc">(</span>M<span class="opt">.</span>IOVector Word8<span class="kwc">)</span>
+          <span class="kwd">else</span> return dat
+        readLoop <span class="kwc">(</span>GrowString dat&#39; <span class="kwc">(</span>siz <span class="opt">+</span> bytesRead<span class="kwc">))</span>
+      <span class="kwd">else</span> return <span class="kwc">(</span>GrowString dat siz<span class="kwc">)</span>
+  input&#39; <span class="opt">&lt;-</span> freezeGrowString <span class="opt">=&lt;&lt;</span> readLoop input
+  <span class="kwd">let</span> <span class="opt">!</span>inputSiz <span class="opt">=</span> V<span class="opt">.</span>length input&#39;
+
+  <span class="kwd">let</span>
+    threadInit <span class="opt">=</span> <span class="kwd">do</span>
+      mcontext <span class="opt">&lt;-</span> c_pcre2_match_context_create nullPtr
+      stack <span class="opt">&lt;-</span> c_pcre2_jit_stack_create <span class="num">16384 16384</span> nullPtr
+      c_pcre2_jit_stack_assign mcontext nullPtr stack
+      mdata <span class="opt">&lt;-</span> c_pcre2_match_data_create <span class="num">16</span> nullPtr
+      return <span class="kwc">(</span>mcontext<span class="kwc">,</span> stack<span class="kwc">,</span> mdata<span class="kwc">)</span>
+  <span class="kwc">(</span>mcontext<span class="kwc">,</span> stack<span class="kwc">,</span> mdata<span class="kwc">)</span> <span class="opt">&lt;-</span> threadInit
+
+  <span class="slc">-- Find all sequence descriptions and new lines in input, replace them with</span>
+  <span class="slc">-- empty strings, and store the result in the sequences string.</span>
+  sequences&#39;<span class="opt">&#64;</span><span class="kwc">(</span>GrowString seqDat seqSiz<span class="kwc">)</span> <span class="opt">&lt;-</span>
+    replace <span class="kwc">(</span>f <span class="sng">&quot;&gt;.*</span><span class="esc">\\</span><span class="sng">n|</span><span class="esc">\\</span><span class="sng">n&quot;</span><span class="kwc">) (</span>f <span class="sng">&quot;&quot;</span><span class="kwc">)</span> input&#39; sequences mcontext mdata
+
+  <span class="slc">-- Work on performing all the replacements serially.</span>
+  replaceVar <span class="opt">&lt;-</span> newEmptyMVar
+  <span class="slc">-- Fork this thread explicitely to capability 0 to discourage the scheduler</span>
+  <span class="slc">-- from interrupting this thread.</span>
+  forkOn <span class="num">0</span> <span class="opt">$</span> <span class="kwd">do</span>
+    <span class="slc">-- We&#39;ll use two strings when doing all the replacements, searching for</span>
+    <span class="slc">-- patterns in prereplaceString and using postreplaceString to store the</span>
+    <span class="slc">-- string after the replacements have been made. After each iteration these</span>
+    <span class="slc">-- two then get swapped. Start out with both strings having the same</span>
+    <span class="slc">-- capacity as the sequences string and also copy the sequences string into</span>
+    <span class="slc">-- prereplaceString for the initial iteration.</span>
+    prereplaceString <span class="opt">&lt;-</span> <span class="kwc">(</span>\x <span class="opt">-&gt;</span> GrowString x seqSiz<span class="kwc">)</span> <span class="opt">&lt;$&gt;</span> M<span class="opt">.</span>clone seqDat
+    postreplaceString <span class="opt">&lt;-</span> <span class="kwc">(</span>\x <span class="opt">-&gt;</span> GrowString x <span class="num">0</span><span class="kwc">)</span> <span class="opt">&lt;$&gt;</span> M<span class="opt">.</span>new <span class="kwc">(</span>M<span class="opt">.</span>length seqDat<span class="kwc">)</span>
+
+    <span class="slc">-- Iterate through all the replacement patterns and their replacements in</span>
+    <span class="slc">-- replaceInfo</span>
+    <span class="kwd">let</span>
+      cons <span class="kwc">(</span>pre<span class="opt">&#64;</span><span class="kwc">(</span>GrowString dat _<span class="kwc">),</span>post<span class="kwc">) (</span>a<span class="kwc">,</span>b<span class="kwc">)</span> <span class="opt">=</span> <span class="kwd">do</span>
+        dat&#39; <span class="opt">&lt;-</span> freezeGrowString pre
+        post&#39; <span class="opt">&lt;-</span> replace a b dat&#39; post mcontext mdata
+        <span class="kwd">let</span> pre&#39; <span class="opt">=</span> <span class="kwc">(</span>GrowString dat <span class="num">0</span><span class="kwc">)</span>
+        <span class="slc">-- Swap pre and post in the next iteration.</span>
+        return <span class="kwc">(</span>post&#39;<span class="kwc">,</span> pre&#39;<span class="kwc">)</span>
+    <span class="slc">-- If any replacements were made, they&#39;ll be in the fst element of the</span>
+    <span class="slc">-- tuple instead of the second because of the swap done at the end of each</span>
+    <span class="slc">-- iteration.</span>
+    <span class="kwc">(</span>GrowString _ <span class="opt">!</span>siz<span class="kwc">,</span> _<span class="kwc">)</span> <span class="opt">&lt;-</span> foldlM cons
+      <span class="kwc">(</span>prereplaceString<span class="kwc">,</span> postreplaceString<span class="kwc">)</span> replaceInfo
+
+    c_pcre2_match_context_free mcontext
+    c_pcre2_jit_stack_free stack
+    c_pcre2_match_data_free mdata
+
+    putMVar replaceVar siz
+
+  <span class="slc">-- Iterate through all the count patterns in countInfo and perform the</span>
+  <span class="slc">-- counting for each one on a different thread if available.</span>
+  first <span class="opt">&lt;-</span> newMVar <span class="kwc">()</span>
+  rest <span class="opt">&lt;-</span> replicateM <span class="kwc">(</span>length countInfo<span class="kwc">)</span> newEmptyMVar
+
+  for_ <span class="kwc">(</span>zip3 countInfo <span class="kwc">(</span>first : rest<span class="kwc">)</span> rest<span class="kwc">)</span> <span class="opt">$</span> \<span class="kwc">(</span>pattern<span class="kwc">,</span> prev<span class="kwc">,</span> next<span class="kwc">)</span> <span class="opt">-&gt;</span>
+    forkIO <span class="opt">$</span> <span class="kwd">do</span>
+      <span class="kwc">(</span>mcontext<span class="kwc">,</span> stack<span class="kwc">,</span> mdata<span class="kwc">)</span> <span class="opt">&lt;-</span> threadInit
+      match <span class="opt">&lt;-</span> c_pcre2_get_ovector_pointer mdata
+
+      <span class="slc">-- Compile and study pattern.</span>
+      regex <span class="opt">&lt;-</span> alloca <span class="opt">$</span> \errorCode <span class="opt">-&gt;</span> alloca <span class="opt">$</span> \errorOffset <span class="opt">-&gt;</span>
+        V<span class="opt">.</span>unsafeWith pattern <span class="opt">$</span> \patternPtr <span class="opt">-&gt;</span> c_pcre2_compile
+          <span class="kwc">(</span>castPtr patternPtr<span class="kwc">) (</span>fromIntegral <span class="kwc">(</span>V<span class="opt">.</span>length pattern<span class="kwc">))</span> <span class="num">0</span> errorCode
+          errorOffset nullPtr
+      c_pcre2_jit_compile regex c_PCRE2_JIT_COMPLETE
+
+      <span class="slc">-- Find each match of the pattern in the sequences string and increment</span>
+      <span class="slc">-- count for each match.</span>
+      <span class="kwd">let</span>
+        go <span class="opt">!</span>count <span class="opt">!</span>pos <span class="opt">=</span> <span class="kwd">do</span>
+          x <span class="opt">&lt;-</span> M<span class="opt">.</span>unsafeWith dat <span class="opt">$</span> \datPtr <span class="opt">-&gt;</span> c_pcre2_jit_match regex
+            <span class="kwc">(</span>castPtr datPtr<span class="kwc">) (</span>fromIntegral siz<span class="kwc">)</span> pos <span class="num">0</span> mdata mcontext
+          <span class="kwd">if</span> x <span class="opt">&gt;=</span> <span class="num">0</span> <span class="kwd">then do</span>
+            <span class="slc">-- Find the new pos to continue searching after the current match.</span>
+            pos&#39; <span class="opt">&lt;-</span> peekElemOff match <span class="num">1</span>
+            go <span class="kwc">(</span>count <span class="opt">+</span> <span class="num">1</span><span class="kwc">)</span> pos&#39;
+          <span class="kwd">else</span> return count
+          <span class="kwb">where</span>
+            <span class="kwc">(</span>GrowString dat siz<span class="kwc">)</span> <span class="opt">=</span> sequences&#39;
+      count <span class="opt">&lt;-</span> go <span class="num">0 0</span>
+
+      c_pcre2_code_free regex
+
+      <span class="slc">-- Print the count for each pattern in the correct order.</span>
+      takeMVar prev
+      V<span class="opt">.</span>unsafeWith pattern <span class="opt">$</span> \patternPtr <span class="opt">-&gt;</span>
+        hPutBuf stdout patternPtr <span class="kwc">(</span>V<span class="opt">.</span>length pattern<span class="kwc">)</span>
+      putStr <span class="sng">&quot; &quot;</span>
+      print count
+      putMVar next <span class="kwc">()</span>
+
+      c_pcre2_match_context_free mcontext
+      c_pcre2_jit_stack_free stack
+      c_pcre2_match_data_free mdata
+
+  siz <span class="opt">&lt;-</span> takeMVar <span class="kwc">(</span>replaceVar<span class="kwc">)</span>
+
+  takeMVar <span class="kwc">(</span>last rest<span class="kwc">)</span>
+
+  <span class="slc">-- Print the size of the original input, the size of the input without the</span>
+  <span class="slc">-- sequence descriptions &amp; new lines, and the size after having made all the</span>
+  <span class="slc">-- replacements.</span>
+  putStrLn <span class="sng">&quot;&quot;</span>
+  print inputSiz
+  print seqSiz
+  print siz
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 09:22:10 GMT
+
+MAKE:
+mv regexredux.ghc-3.ghc regexredux.ghc-3.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XForeignFunctionInterface -XCApiFFI -lpcre2-8 -optc &quot;-DPCRE2_CODE_UNIT_WIDTH=8&quot; regexredux.ghc-3.hs -o regexredux.ghc-3.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( regexredux.ghc-3.hs, regexredux.ghc-3.o )
+[2 of 2] Linking regexredux.ghc-3.ghc_run
+rm regexredux.ghc-3.hs
+
+20.33 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./regexredux.ghc-3.ghc_run +RTS -N4 -H250M -RTS 0 &lt; regexredux-input5000000.txt
+
+PROGRAM OUTPUT:
+agggtaaa|tttaccct 356
+[cgt]gggtaaa|tttaccc[acg] 1250
+a[act]ggtaaa|tttacc[agt]t 4252
+ag[act]gtaaa|tttac[agt]ct 2894
+agg[act]taaa|ttta[agt]cct 5435
+aggg[acg]aaa|ttt[cgt]ccct 1537
+agggt[cgt]aa|tt[acg]accct 1431
+agggta[cgt]a|t[acg]taccct 1608
+agggtaa[cgt]|[acg]ttaccct 2178
+
+50833411
+50000000
+27388361
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

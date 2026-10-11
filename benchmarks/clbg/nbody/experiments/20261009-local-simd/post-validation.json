@@ -1,0 +1,114 @@
+[
+  {
+    "id": "compact-baseline",
+    "steps": 0,
+    "complete_state_bit_identical": true
+  },
+  {
+    "id": "compact-baseline",
+    "steps": 1,
+    "complete_state_bit_identical": true
+  },
+  {
+    "id": "compact-baseline",
+    "steps": 1000,
+    "complete_state_bit_identical": true
+  },
+  {
+    "id": "compact-baseline",
+    "steps": 10000,
+    "complete_state_bit_identical": true
+  },
+  {
+    "id": "pairwise-baseline",
+    "steps": 0,
+    "complete_state_bit_identical": true
+  },
+  {
+    "id": "pairwise-baseline",
+    "steps": 1,
+    "complete_state_bit_identical": true
+  },
+  {
+    "id": "pairwise-baseline",
+    "steps": 1000,
+    "complete_state_bit_identical": true
+  },
+  {
+    "id": "pairwise-baseline",
+    "steps": 10000,
+    "complete_state_bit_identical": true
+  },
+  {
+    "id": "compact-baseline",
+    "steps": 0,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 3.465003555274769e-16
+  },
+  {
+    "id": "compact-baseline",
+    "steps": 1,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 3.462799593712276e-16
+  },
+  {
+    "id": "compact-baseline",
+    "steps": 1000,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 5.9287611933976234e-15
+  },
+  {
+    "id": "compact-baseline",
+    "steps": 10000,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 1.6789902801406242e-12
+  },
+  {
+    "id": "pairwise-mass-tails",
+    "steps": 0,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 3.465003555274769e-16
+  },
+  {
+    "id": "pairwise-mass-tails",
+    "steps": 1,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 3.462799593712276e-16
+  },
+  {
+    "id": "pairwise-mass-tails",
+    "steps": 1000,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 5.9287611933976234e-15
+  },
+  {
+    "id": "pairwise-mass-tails",
+    "steps": 10000,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 2.8703706078658797e-12
+  },
+  {
+    "id": "pairwise-reassociate-tails",
+    "steps": 0,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 3.465003555274769e-16
+  },
+  {
+    "id": "pairwise-reassociate-tails",
+    "steps": 1,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 3.462799593712276e-16
+  },
+  {
+    "id": "pairwise-reassociate-tails",
+    "steps": 1000,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 5.9287611933976234e-15
+  },
+  {
+    "id": "pairwise-reassociate-tails",
+    "steps": 10000,
+    "reference": "instrumented pinned Rust #3, untimed",
+    "max_scaled_error": 2.8703706078658797e-12
+  }
+]

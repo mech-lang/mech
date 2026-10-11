@@ -1,0 +1,1 @@
+{"arguments":1,"dynamic_byte_index_lowering":"stack","format":"","outputs":0,"pipelined_scan_functions":["Human","Iub"],"scan_cache":true,"scan_pipeline_policy":"auto","simd":true,"stream_output":true}

@@ -1,0 +1,730 @@
+{
+  "hardware": {
+    "cpu": "Apple M3",
+    "machine": "arm64",
+    "logical_cpus": 8
+  },
+  "toolchains": {
+    "python": {
+      "path": "/opt/homebrew/bin/python3",
+      "sha256": "e401ac7a95cda75dee34a0cfe1e4faf0a6df1a501cf67887f177fb78cd4eb60a",
+      "version": "Python 3.14.8"
+    },
+    "ruby": {
+      "path": "/opt/homebrew/opt/ruby/bin/ruby",
+      "sha256": "0abc5dafa91bf31774888e70580d9b7d2739006beecf37795d3a2c3d383b974f",
+      "version": "ruby 4.0.7 (2026-09-15 revision 229531a6cf) +PRISM [arm64-darwin25]"
+    },
+    "perl": {
+      "path": "/opt/homebrew/opt/perl/bin/perl",
+      "sha256": "f5a6f790025fcad00635666270e78340ff718f1899747bb9da91f2580c2465ae",
+      "version": "This is perl 5, version 44, subversion 0 (v5.44.0) built for darwin-thread-multi-2level\n\nCopyright 1987-2026, Larry Wall\n\nPerl may be copied only under the terms of either the Artistic License or the\nGNU General Public License, which may be found in the Perl 5 source kit.\n\nComplete documentation for Perl, including FAQ lists, should be found on\nthis system using \"man perl\" or \"perldoc perl\".  If you have access to the\nInternet, point your browser at https://www.perl.org/, the Perl Home Page."
+    },
+    "lua": {
+      "path": "/opt/homebrew/bin/lua",
+      "sha256": "83ea84efb4f7692a4452cfedf9325cc1f342edc6cf0d50b262add4eab1b75bea",
+      "version": "Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio"
+    },
+    "javascript": {
+      "path": "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "sha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+      "version": "v24.19.0"
+    },
+    "luajit": {
+      "path": "/tmp/mech-clbg-luajit/src/luajit",
+      "sha256": "ffe74a185b665faae02da56c194493c82d921afae03f3421b3d0a270886dd4c3",
+      "version": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/"
+    },
+    "php": {
+      "path": "/opt/homebrew/opt/php/bin/php",
+      "sha256": "f8848966f5c44297449ee1fd00a5c2512f33c3858ce5f5194be14658ded73f31",
+      "version": "PHP 8.5.11 (cli) (built: Sep 22 2026 13:32:06) (NTS)\nCopyright (c) The PHP Group\nBuilt by Homebrew\nZend Engine v4.5.11, Copyright (c) Zend Technologies\n    with Zend OPcache v8.5.11, Copyright (c), by Zend Technologies"
+    }
+  },
+  "inputs": {
+    "manifest_sha256": "2181a2060b8660084bec003054e22740a21f64cbe6317e60eaffdfeff1106b35",
+    "previous_report_sha256": "f0318ba0df5bb95cd694c399bf6e9b62387500762b2a6c19dfa5738e71316def",
+    "python_launcher_sha256": "fe340a2ec22ec89eafc00747ac0ba997981fbfa436393e5b508eec137225ecf4",
+    "portability_assets": {
+      "linux_cpuinfo.rb": "a4e022091c255872b4f38ab0df4a0b24e15a22bbc573fae8e692b7ced4658be8",
+      "CLBGLinuxCPUInfo.pm": "4655a357875910927e1b472405d70ca76e5ff3881939ccc4063873734a84a641",
+      "cpuinfo.txt": "f64d705ccebae07e177bf42eabf6adcc4f1ab93dcbdf32edf282fff058e7e1cb",
+      "cpuinfo-4.txt": "5f57413cb695c9bb806a794e35b3db83061aa5739c6ffd5cf82df39604963c7a"
+    }
+  },
+  "protocol": {
+    "workloads": {
+      "nbody": [
+        1000,
+        50000000
+      ],
+      "mandelbrot": [
+        200,
+        16000
+      ],
+      "knucleotide": [
+        1000,
+        25000000
+      ],
+      "spectralnorm": [
+        100,
+        5500
+      ],
+      "revcomp": [
+        1000,
+        25000000
+      ],
+      "fannkuchredux": [
+        7,
+        12
+      ],
+      "fasta": [
+        1000,
+        25000000
+      ],
+      "binarytrees": [
+        10,
+        21
+      ]
+    },
+    "samples": 3,
+    "seed": 20261009,
+    "timeout_seconds": 1800,
+    "power_profile": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "selection": "Runtime-policy checks for published-fastest Ruby fannkuch-redux and PHP binary-trees entries that failed the primary preflight, plus the next listed parallel Python Mandelbrot form after the 64-worker source showed high output-assembly cost on this host. Complete listed sources remain unchanged.",
+    "fastest_claim": "Fastest measured among this selected cohort, not an exhaustive local sweep of every scripting source. Published-fastest variants are explicitly covered or excluded with reasons.",
+    "source_metric": "Nonblank, noncomment physical LOC of the complete unchanged listed program. General runtime libraries excluded.",
+    "timed_region": "Sequential fresh process through exit, including interpreter/JIT startup, workers and complete stdout to a regular file. Output validation is outside timing.",
+    "python_runtime": "New parallel Python invocations explicitly use the fork multiprocessing start policy assumed by the upstream Linux programs. The general launcher is included in process timing.",
+    "linux_cpu_probe": "New Ruby and Perl invocations redirect only /proc/cpuinfo reads to a pinned eight-logical-CPU fixture on macOS. These general portability preloads are timed; complete benchmark sources are unchanged.",
+    "normalization": "Raw process medians on the same Apple M3 with AC power and Low Power Mode off. Earlier compact medians are preserved. Each new benchmark batch includes three fresh samples of a preserved native control to audit drift; no rescaling.",
+    "environment": {
+      "RAYON_NUM_THREADS": "8",
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8",
+      "OMP_DYNAMIC": "FALSE",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "OPENBLAS_NUM_THREADS": "1",
+      "PYTHONHASHSEED": "0"
+    },
+    "compiler_guard": "Before samples wait for no competing compiler >=5% CPU. Inspect compiler executable names and power at both boundaries and every 10 seconds; discard affected samples.",
+    "policies": "Ruby exposes four workers through the general CPU-probe preload; this avoids fractional partition rounding at n=7 under the source\u2019s weighted partitioner. PHP disables JIT to check child-process correctness. These are general runtime settings, not benchmark kernels."
+  },
+  "schema_version": 1,
+  "created_at": "2026-10-09T12:39:01.581622+00:00",
+  "status": "complete",
+  "programs": [
+    {
+      "id": "fannkuchredux-ruby-2-cpu4",
+      "upstream_id": "fannkuchredux-ruby-2",
+      "benchmark": "fannkuchredux",
+      "language": "ruby",
+      "variant": 2,
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-ruby-2.html",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/fannkuchredux-ruby-2.rb",
+      "sha256": "45d77609445db3378a7aba02d855a4e89b0cec9c6f85b4b09b182d88785db328",
+      "source": {
+        "physical_lines": 221,
+        "nonblank_noncomment_lines": 174
+      },
+      "command": [
+        "/opt/homebrew/opt/ruby/bin/ruby",
+        "--yjit",
+        "-W0",
+        "-r",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fast-scripting/linux_cpuinfo.rb",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/fannkuchredux-ruby-2.rb",
+        "{n}"
+      ],
+      "published_time": "154.32",
+      "samples_seconds": [
+        65.650161708,
+        68.743930625,
+        69.053209583
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "exact_reference_match": true,
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "exact_reference_match": true,
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "exact_reference_match": true,
+          "reference_match": true
+        }
+      ],
+      "runtime_environment": {
+        "CLBG_CPUINFO_FILE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fast-scripting/cpuinfo-4.txt"
+      },
+      "algorithm": {
+        "strict": true,
+        "reason": "Unmodified listed source; prescribed computation and output."
+      },
+      "endpoint_scope": "fastest measured in selected listed cohort",
+      "runtime_policy": "cpu4",
+      "correctness_small": [
+        {
+          "bytes": 24,
+          "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+          "exact_reference_match": true,
+          "reference_match": true
+        },
+        {
+          "bytes": 24,
+          "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+          "exact_reference_match": true,
+          "reference_match": true
+        },
+        {
+          "bytes": 24,
+          "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+          "exact_reference_match": true,
+          "reference_match": true
+        }
+      ],
+      "median_seconds": 68.743930625,
+      "min_seconds": 65.650161708,
+      "max_seconds": 69.053209583
+    },
+    {
+      "id": "binarytrees-php-7-nojit",
+      "upstream_id": "binarytrees-php-7",
+      "benchmark": "binarytrees",
+      "language": "php",
+      "variant": 7,
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-php-7.html",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/binarytrees-php-7.php",
+      "sha256": "3f658c4f70e23e30e68d8bca2313ca567ba348407ef6a17e2663edc65f0815f8",
+      "source": {
+        "physical_lines": 89,
+        "nonblank_noncomment_lines": 69
+      },
+      "command": [
+        "/opt/homebrew/opt/php/bin/php",
+        "-d",
+        "opcache.jit=off",
+        "-n",
+        "-d",
+        "memory_limit=-1",
+        "-d",
+        "opcache.enable_cli=1",
+        "-d",
+        "opcache.jit_buffer_size=64M",
+        "-d",
+        "opcache.jit=off",
+        "-d",
+        "short_open_tag=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/binarytrees-php-7.php",
+        "{n}"
+      ],
+      "published_time": "22.24",
+      "samples_seconds": [
+        8.263008625,
+        8.374909084,
+        8.723009458
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "runtime_environment": {
+        "CLBG_CPUINFO_FILE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fast-scripting/cpuinfo.txt"
+      },
+      "algorithm": {
+        "strict": false,
+        "reason": "PHP leaves use constant array literals, which may share copy-on-write backing storage. Allocation parity with ordinary-node leaves is not assumed; recursive construction and full output are validated."
+      },
+      "endpoint_scope": "fastest measured in selected listed cohort",
+      "runtime_policy": "nojit",
+      "correctness_small": [
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        },
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        },
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        }
+      ],
+      "median_seconds": 8.374909084,
+      "min_seconds": 8.263008625,
+      "max_seconds": 8.723009458
+    },
+    {
+      "id": "binarytrees-php-4-nojit",
+      "upstream_id": "binarytrees-php-4",
+      "benchmark": "binarytrees",
+      "language": "php",
+      "variant": 4,
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-php-4.html",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/binarytrees-php-4.php",
+      "sha256": "d0b207c6faa5ad11480b18eb653066b15c4dabf9c7fc1cdae9a97ba07bf3b126",
+      "source": {
+        "physical_lines": 86,
+        "nonblank_noncomment_lines": 69
+      },
+      "command": [
+        "/opt/homebrew/opt/php/bin/php",
+        "-d",
+        "opcache.jit=off",
+        "-n",
+        "-d",
+        "memory_limit=-1",
+        "-d",
+        "opcache.enable_cli=1",
+        "-d",
+        "opcache.jit_buffer_size=64M",
+        "-d",
+        "opcache.jit=off",
+        "-d",
+        "short_open_tag=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/binarytrees-php-4.php",
+        "{n}"
+      ],
+      "published_time": "24.74",
+      "samples_seconds": [
+        9.086431375,
+        9.15366225,
+        9.445144209
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "runtime_environment": {
+        "CLBG_CPUINFO_FILE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fast-scripting/cpuinfo.txt"
+      },
+      "algorithm": {
+        "strict": false,
+        "reason": "PHP leaves use constant array literals, which may share copy-on-write backing storage. Allocation parity with ordinary-node leaves is not assumed; recursive construction and full output are validated."
+      },
+      "endpoint_scope": "fastest measured in selected listed cohort",
+      "runtime_policy": "nojit",
+      "correctness_small": [
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        },
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        },
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        }
+      ],
+      "median_seconds": 9.15366225,
+      "min_seconds": 9.086431375,
+      "max_seconds": 9.445144209
+    },
+    {
+      "id": "binarytrees-php-6-nojit",
+      "upstream_id": "binarytrees-php-6",
+      "benchmark": "binarytrees",
+      "language": "php",
+      "variant": 6,
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-php-6.html",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/binarytrees-php-6.php",
+      "sha256": "d5cf4e54604c30cbae93cf1a4bf0d3b26ca7c517ffce0aa87342e86dc6988aa9",
+      "source": {
+        "physical_lines": 101,
+        "nonblank_noncomment_lines": 80
+      },
+      "command": [
+        "/opt/homebrew/opt/php/bin/php",
+        "-d",
+        "opcache.jit=off",
+        "-n",
+        "-d",
+        "memory_limit=-1",
+        "-d",
+        "opcache.enable_cli=1",
+        "-d",
+        "opcache.jit_buffer_size=64M",
+        "-d",
+        "opcache.jit=off",
+        "-d",
+        "short_open_tag=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/binarytrees-php-6.php",
+        "{n}"
+      ],
+      "published_time": "38.32",
+      "samples_seconds": [
+        13.33502775,
+        12.872396333,
+        12.954169042
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "runtime_environment": {
+        "CLBG_CPUINFO_FILE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fast-scripting/cpuinfo.txt"
+      },
+      "algorithm": {
+        "strict": true,
+        "reason": "Unmodified listed source; prescribed computation and output."
+      },
+      "endpoint_scope": "fastest measured in selected listed cohort",
+      "runtime_policy": "nojit",
+      "correctness_small": [
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        },
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        },
+        {
+          "bytes": 223,
+          "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+          "reference_match": true
+        }
+      ],
+      "median_seconds": 12.954169042,
+      "min_seconds": 12.872396333,
+      "max_seconds": 13.33502775
+    },
+    {
+      "id": "mandelbrot-python3-5-fork",
+      "upstream_id": "mandelbrot-python3-5",
+      "benchmark": "mandelbrot",
+      "language": "python",
+      "variant": 5,
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-python3-5.html",
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/mandelbrot-python3-5.py",
+      "sha256": "72f21f55dab03a8d5e1c701c598affcd658653fbae277198f8e5b3d00a156bb3",
+      "source": {
+        "physical_lines": 50,
+        "nonblank_noncomment_lines": 33
+      },
+      "command": [
+        "/opt/homebrew/bin/python3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fast-scripting/python_fork.py",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/upstream/mandelbrot-python3-5.py",
+        "{n}"
+      ],
+      "published_time": "260.63",
+      "samples_seconds": [
+        83.754828458,
+        84.683279875,
+        84.279465
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "runtime_environment": {
+        "CLBG_CPUINFO_FILE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fast-scripting/cpuinfo.txt"
+      },
+      "algorithm": {
+        "strict": true,
+        "reason": "Unmodified listed source; prescribed computation and output."
+      },
+      "endpoint_scope": "fastest measured in selected listed cohort",
+      "runtime_policy": "fork",
+      "correctness_small": [
+        {
+          "bytes": 5011,
+          "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+          "reference_match": true
+        },
+        {
+          "bytes": 5011,
+          "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+          "reference_match": true
+        },
+        {
+          "bytes": 5011,
+          "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+          "reference_match": true
+        }
+      ],
+      "median_seconds": 84.279465,
+      "min_seconds": 83.754828458,
+      "max_seconds": 84.683279875
+    }
+  ],
+  "controls": [
+    {
+      "id": "fannkuchredux-rust6-neon",
+      "benchmark": "fannkuchredux",
+      "language": "rust",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust6-neon",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.733811917,
+        1.82230825,
+        1.799683208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "exact_reference_match": true,
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "exact_reference_match": true,
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "exact_reference_match": true,
+          "reference_match": true
+        }
+      ],
+      "preserved_median_seconds": 1.742618666,
+      "executable_sha256": "b450704027931d9222ff88c04a70f8aef880380890a82f7557010a2fa1854236",
+      "median_seconds": 1.799683208,
+      "min_seconds": 1.733811917,
+      "max_seconds": 1.82230825,
+      "drift_ratio": 1.0327464310542396
+    },
+    {
+      "id": "binarytrees-rust-2-thin",
+      "benchmark": "binarytrees",
+      "language": "rust",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/.build/binarytrees-rust-2-thin",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.362150834,
+        0.3591825,
+        0.381825167
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "preserved_median_seconds": 0.361014791,
+      "executable_sha256": "228d99ebf8ced1ca786a15f10d1275d19be44e99d887b8ab7d6edb258b7094bc",
+      "median_seconds": 0.362150834,
+      "min_seconds": 0.3591825,
+      "max_seconds": 0.381825167,
+      "drift_ratio": 1.0031468045861864
+    },
+    {
+      "id": "mandelbrot-rust-4",
+      "benchmark": "mandelbrot",
+      "language": "rust",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-rust-4",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.421288916,
+        0.444026833,
+        0.439416667
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "preserved_median_seconds": 0.422513291,
+      "executable_sha256": "93a231a89c13a34bda6d419c9d7b53807b0bf040f7185ac1778b28abcba77e24",
+      "median_seconds": 0.439416667,
+      "min_seconds": 0.421288916,
+      "max_seconds": 0.444026833,
+      "drift_ratio": 1.0400067320012425
+    }
+  ],
+  "excluded": [],
+  "selection_audit": [],
+  "completed_benchmarks": [
+    "fannkuchredux",
+    "binarytrees",
+    "mandelbrot"
+  ],
+  "discarded_samples": [],
+  "primary_report_sha256": "509f2f5932391e819ee2eef19aef777bbb9b16cac3babc66e61178416368fbb2",
+  "system_v_shared_memory_limits": {
+    "shmmax": 4194304,
+    "shmall": 1024,
+    "shmmni": 32,
+    "shmseg": 8
+  },
+  "updated_at": "2026-10-09T12:48:59.694279+00:00",
+  "benchmark_power_profiles": {
+    "fannkuchredux": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "binarytrees": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "mandelbrot": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    }
+  },
+  "active_sample": {
+    "benchmark": "mandelbrot",
+    "id": "mandelbrot-python3-5-fork"
+  },
+  "sample_order": {
+    "fannkuchredux": [
+      [
+        "fannkuchredux-ruby-2-cpu4",
+        "fannkuchredux-rust6-neon"
+      ],
+      [
+        "fannkuchredux-ruby-2-cpu4",
+        "fannkuchredux-rust6-neon"
+      ],
+      [
+        "fannkuchredux-rust6-neon",
+        "fannkuchredux-ruby-2-cpu4"
+      ]
+    ],
+    "binarytrees": [
+      [
+        "binarytrees-php-6-nojit",
+        "binarytrees-php-7-nojit",
+        "binarytrees-rust-2-thin",
+        "binarytrees-php-4-nojit"
+      ],
+      [
+        "binarytrees-php-6-nojit",
+        "binarytrees-rust-2-thin",
+        "binarytrees-php-4-nojit",
+        "binarytrees-php-7-nojit"
+      ],
+      [
+        "binarytrees-rust-2-thin",
+        "binarytrees-php-7-nojit",
+        "binarytrees-php-4-nojit",
+        "binarytrees-php-6-nojit"
+      ]
+    ],
+    "mandelbrot": [
+      [
+        "mandelbrot-rust-4",
+        "mandelbrot-python3-5-fork"
+      ],
+      [
+        "mandelbrot-rust-4",
+        "mandelbrot-python3-5-fork"
+      ],
+      [
+        "mandelbrot-rust-4",
+        "mandelbrot-python3-5-fork"
+      ]
+    ]
+  }
+}

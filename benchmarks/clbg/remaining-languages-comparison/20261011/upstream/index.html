@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="index,follow,archive">
+<meta name="description" content="Fastest program measurements by programming language implementation.">
+<title>Measured : Which programming language is fastest? (Benchmarks Game)</title>
+<link rel="shortcut icon" href="./darkfavicon.ico">
+<link href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html" rel="canonical">
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,header{margin:auto;max-width:31em;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3,h1,h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3{color:white;background-color:#2c001e}h3 a{color:white;background-color:#2c001e;border-bottom:.1em solid #fff}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}nav{padding-bottom: .5em}nav li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: 1em .5em .3em}ul{clear:left;margin:0 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}.external{border-bottom:.1em dashed #333}p a,span{border-bottom: .1em solid #333;padding-bottom: .1em}blockquote{margin-top: .3em}blockquote p{display:inline}blockquote:before,q:before{content:open-quote}blockquote:after,q:after{content:close-quote}body{quotes:'\201C''\201D''\2018''\2019''\2039''\203A'}@media only screen and (min-width: 33em){li{display:inline-block}}@media only screen and (min-width: 60em){article,header{font-size:1.25em}}table{color:#333;margin:1.3em auto 0;text-align:right}tbody::after{content:"-";display:block;line-height:2.6em;visibility:hidden}#sitemapa{text-align:left}td{border-bottom: .15em dotted #eee;padding: .7em 0 0 1em}td a, th a{display:block}th{font-weight:normal;padding:0 0 0 1em}td:first-child{padding-left:0}td:nth-child(2),th:nth-child(2){text-align:left}
+
+@media only screen{th:nth-child(1),td:nth-child(1),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7){display:none}}
+@media only screen and (min-width:23em){th:nth-child(1),td:nth-child(1){display:table-cell}}@media only screen and (min-width:37em){th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6){display:table-cell}li{display:inline-block}}@media only screen and (min-width:43em){th:nth-child(7),td:nth-child(7){display:table-cell}}@media only screen and (min-width:60em){article,footer,header{font-size:1.25em}}
+--></style>
+<header>
+<!--Isaac Gouy. (n. d.). The Computer Language Benchmarks Game. <a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/">https://benchmarksgame-team.pages.debian.net/benchmarksgame/</a>-->  
+  <h3>The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</h3>
+</header>
+<article> 
+  <h1>Measured : <q>Which programming language is fastest?</q></h1><br>
+  <section>
+    <div>    
+   <blockquote cite="rethinking"><p>&hellip;&nbsp;and the computer language benchmarks game are examples of micro benchmarks. These are easy to use, easy to measure, but far from realistic. They are nonetheless valuable tools.</blockquote>    
+   <blockquote cite="4chan"><p>My question is if anyone here has any experience with simplistic benchmarking and could tell me which things to test for in order to get a simple idea of each language's general performance?</blockquote>         
+    </div> 
+  </section>
+
+  <section>    
+    <h2 id="tasks">Programs sorted-by measurement</h2>   
+      <p id="insignificant-io"><br>Insignificant io</p> 
+      <nav><ul>       
+        <li><a href="./performance/fannkuchredux.html"><span>fannkuch-redux</span></a>         
+        <li><a href="./performance/nbody.html"><span>n-body</span></a>         
+        <li><a href="./performance/spectralnorm.html"><span>spectral-norm</span></a>        
+      </ul></nav>     
+      <p id="significant-io">Significant io</p> 
+      <nav><ul>
+        <li><a href="./performance/mandelbrot.html"><span>mandelbrot</span></a>         
+        <li><a href="./performance/fasta.html"><span>fasta</span></a>         
+        <li><a href="./performance/knucleotide.html"><span>k-nucleotide</span></a>         
+        <li><a href="./performance/revcomp.html"><span>reverse-complement</span></a>        
+      </ul></nav>   
+      <p id="contentious">[ Contentious. Different approaches &amp; libraries. ]</p> 
+      <nav><ul>
+        <li><a href="./performance/binarytrees.html"><span>binary-trees</span></a>         
+        <li><a href="./performance/pidigits.html"><span>pidigits</span></a>         
+        <li><a href="./performance/regexredux.html"><span>regex-redux</span></a>        
+      </ul></nav>   
+    </section>  
+  
+  <section>
+    <div>    
+    <h2 id="summary"><q>Fastest</q> grouped-by language implementation</h2><br> 
+      <p>Explore the program measurements with <a href="./box-plot-summary-charts.html">box plot charts — medians, dispersion, skew</a>.</p><br>
+      <a href="./box-plot-summary-charts.html"><p id="fastest-more-elapsed"><img src="./download/fastest-more-elapsed.svg" alt="Benchmark program elapsed seconds compared to the fastest for more programming language implementations." title=""></p></a>         
+     </div>     
+  </section>       
+  <section>  
+    <h2 id="top-search-comparisons">A versus B program measurements</h2><br>
+      <p>Side-by-side comparison tables for the most popular searches.
+    <nav>
+      <ul>  
+        <li><a href="./fastest/go.html"><span>Go</span></a>    
+        <li><a href="./fastest/java.html"><span>Java</span></a> 
+        <li><a href="./fastest/python.html"><span>Python</span></a>  
+        <li><a href="./fastest/csharp.html"><span>C#</span></a>   
+        <li><a href="./fastest/cpp.html"><span>C++</span></a>     
+        <li><a href="./fastest/rust.html"><span>Rust</span></a> 
+        <li><a href="./fastest/swift.html"><span>Swift</span></a>            
+      </ul>
+    </nav>       
+  </section>   
+  <section>  
+    <h2 id="more-similar">What-if programs were more similar?</h2>      
+      <nav><ul>       
+        <li><a href="./performance/comparable.html"><span>more similar</span></a>        
+        <li><a href="./energy-efficiency.html"><span>energy efficiency</span></a>  
+        <li><a href="./performance/nbodyinprocess.html"><span>startup warmup</span></a>        
+        <li><a href="./sometimes-people-just-make-up-stuff.html"><span>a history</span></a>  
+        <li><a href="./how-programs-are-measured.html"><span>how programs are measured</span></a>          
+        <li><a href="./why-measure-toy-benchmark-programs.html"><span>toy programs</span></a>         
+        <li><a href="https://salsa.debian.org/benchmarksgame-team/benchmarksgame"><span>project repo</span></a>         
+        <li><a href="./license.html"><span>license</span></a>        
+      </ul></nav>          
+  </section>   
+  
+
+    
+  <section>  
+    <h2 id="sitemap-comparisons">More Measurements & Comparisons</h2>  
+      <p><a class="external" href="https://arxiv.org/abs/2410.05460">Concern has been expressed</a> that short labels (like <q>Java</q>) demonstrate a confusion between <q>programming language</q> and <q>language implementation</q>. These short labels are just short. Each refers to a specific version of a <q>programming language implementation</q>.
+      <nav><ul>
+        <li><a href="./measurements/gcc.html">——&nbsp;<span><b>C gcc</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/gcc-gnat.html"><span>Ada</span></a>         
+        <li><a href="./fastest/gcc-icx.html"><span>Intel C</span></a>              
+        <li><a href="./fastest/gcc-clang.html"><span>C clang</span></a> 
+        <li><a href="./fastest/cpp.html"><span>C++</span></a>        
+        <li><a href="./fastest/gcc-ifx.html"><span>Fortran</span></a>
+        <li><a href="./fastest/gcc-fpascal.html"><span>Pascal</span></a>
+        <li><a href="./fastest/rust-gcc.html"><span>Rust</span></a>               
+      </ul></nav>      
+    
+      <nav><ul>
+        <li><a href="./measurements/icx.html">——&nbsp;<span><b>Intel C</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/gcc-icx.html"><span>C gcc</span></a>          
+        <li><a href="./fastest/icx-clang.html"><span>C clang</span></a>          
+        <li><a href="./fastest/rust-icx.html"><span>Rust</span></a>
+      </ul></nav>      
+    
+      <nav><ul>
+        <li><a href="./measurements/clang.html">——&nbsp;<span><b>C clang</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/gcc-clang.html"><span>C gcc</span></a>          
+        <li><a href="./fastest/icx-clang.html"><span>Intel C</span></a> 
+        <li><a href="./fastest/clang-chapel.html"><span>Chapel</span></a>         
+        <li><a href="./fastest/clang-ghc.html"><span>Haskell</span></a>              
+        <li><a href="./fastest/clang-julia.html"><span>Julia</span></a> 
+        <li><a href="./fastest/clang-sbcl.html"><span>Lisp</span></a>        
+        <li><a href="./fastest/clang-ocaml.html"><span>OCaml</span></a>
+        <li><a href="./fastest/rust.html"><span>Rust</span></a>
+        <li><a href="./fastest/swift.html"><span>Swift</span></a>               
+      </ul></nav>  
+    
+      <nav><ul>
+        <li><a href="./measurements/chapel.html">——&nbsp;<span><b>Chapel</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/clang-chapel.html"><span>C clang</span></a>          
+        <li><a href="./fastest/chapel-ifx.html"><span>Fortran</span></a>          
+        <li><a href="./fastest/chapel-julia.html"><span>Julia</span></a>
+      </ul></nav>            
+    
+      <nav><ul>
+        <li><a href="./measurements/gpp.html">——&nbsp;<span><b>C++</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/gcc-gpp.html"><span>C gcc</span></a>          
+        <li><a href="./fastest/csharpcore-gpp.html"><span>C#</span></a>          
+        <li><a href="./fastest/gpp-csharpaot.html"><span>C# naot</span></a>                    
+        <li><a href="./fastest/gpp-go.html"><span>Go</span></a> 
+        <li><a href="./fastest/gpp-javavm.html"><span>Java</span></a>        
+        <li><a href="./fastest/gpp-graalvmaot.html"><span>Java naot</span></a>
+        <li><a href="./fastest/gpp-rust.html"><span>Rust</span></a>
+        <li><a href="./fastest/rust-gpp.html"><span>Swift</span></a>               
+      </ul></nav>     
+    
+      <nav><ul>
+        <li><a href="./measurements/csharpcore.html">——&nbsp;<span><b>C#</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/csharpcore-gpp.html"><span>C++</span></a>          
+        <li><a href="./fastest/csharpcore-csharpaot.html"><span>C# naot</span></a>            
+        <li><a href="./fastest/csharpcore-fsharpcore.html"><span>F#</span></a> 
+        <li><a href="./fastest/csharpcore-go.html"><span>Go</span></a>        
+        <li><a href="./fastest/csharpcore-graalvmaot.html"><span>Java naot</span></a>
+        <li><a href="./fastest/node-csharpcore.html"><span>JavaScript</span></a>
+        <li><a href="./fastest/csharpcore-swift.html"><span>Swift</span></a>               
+      </ul></nav>       
+    
+      <nav><ul>
+        <li><a href="./measurements/csharpaot.html">——&nbsp;<span><b>C# naot</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/gpp-csharpaot.html"><span>C++</span></a>        
+        <li><a href="./fastest/csharpcore-csharpaot.html"><span>C#</span></a>
+        <li><a href="./fastest/go-csharpaot.html"><span>Go</span></a>
+        <li><a href="./fastest/swift-csharpaot.html"><span>Swift</span></a>               
+      </ul></nav>     
+
+      <nav><ul>
+        <li><a href="./measurements/dartexe.html">——&nbsp;<span><b>Dart</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/dartexe-dartjit.html"><span>Dart jit</span></a>    
+        <li><a href="./fastest/node-dartexe.html"><span>JavaScript</span></a>           
+      </ul></nav>          
+       
+      <nav><ul>
+        <li><a href="./measurements/erlang.html">——&nbsp;<span><b>Erlang</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/node-erlang.html"><span>JavaScript</span></a>   
+        <li><a href="./fastest/python3-erlang.html"><span>Python</span></a>   
+        <li><a href="./fastest/ruby-erlang.html"><span>Ruby</span></a>         
+      </ul></nav>         
+
+      <nav><ul>
+        <li><a href="./measurements/ifx.html">——&nbsp;<span><b>Fortran</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/gcc-ifx.html"><span>C gcc</span></a>   
+        <li><a href="./fastest/chapel-ifx.html"><span>Chapel</span></a>   
+        <li><a href="./fastest/julia-ifx.html"><span>Julia</span></a>         
+      </ul></nav>   
+
+      <nav><ul>
+        <li><a href="./measurements/fsharpcore.html">——&nbsp;<span><b>F#</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/csharpcore-fsharpcore.html"><span>C#</span></a>   
+        <li><a href="./fastest/ocaml-fsharpcore.html"><span>OCaml</span></a>           
+      </ul></nav>     
+
+      <nav><ul>
+        <li><a href="./measurements/go.html">——&nbsp;<span><b>Go</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/go-gpp.html"><span>C++</span></a>            
+        <li><a href="./fastest/csharpaot-go.html"><span>C# naot</span></a> 
+        <li><a href="./fastest/go.html"><span>Java naot</span></a>        
+        <li><a href="./fastest/go-node.html"><span>JavaScript</span></a>
+        <li><a href="./fastest/go-rust.html"><span>Rust</span></a>
+        <li><a href="./fastest/go-swift.html"><span>Swift</span></a>               
+      </ul></nav>          
+ 
+      <nav><ul>
+        <li><a href="./measurements/ghc.html">——&nbsp;<span><b>Haskell</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/clang-ghc.html"><span>C clang</span></a>                   
+      </ul></nav>         
+                
+      <nav><ul>
+        <li><a href="./measurements/javavm.html">——&nbsp;<span><b>Java</b></span>&nbsp;——</a>    
+        <li><a href="./fastest/javavm-csharpcore.html"><span>C#</span></a>           
+        <li><a href="./fastest/javavm-gpp.html"><span>C++</span></a>   
+        <li><a href="./fastest/javavm-go.html"><span>Go</span></a>   
+        <li><a href="./fastest/javavm-javaxint.html"><span>Java -Xint</span></a>   
+        <li><a href="./fastest/java.html"><span>Java naot</span></a>   
+        <li><a href="./fastest/javavm-node.html"><span>JavaScript</span></a>           
+        <li><a href="./fastest/javavm-swift.html"><span>Swift</span></a>              
+      </ul></nav>         
+
+      <nav><ul>
+        <li><a href="./measurements/javaxint.html">——&nbsp;<span><b>Java -Xint</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/javavm-javaxint.html"><span>Java</span></a>         
+        <li><a href="./fastest/python3-javaxint.html"><span>Python</span></a>              
+      </ul></nav> 
+
+      <nav><ul>
+        <li><a href="./measurements/graalvmaot.html">——&nbsp;<span><b>Java naot</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/gpp-graalvmaot.html"><span>C++</span></a> 
+        <li><a href="./fastest/csharpaot-graalvmaot.html"><span>C# naot</span></a>         
+        <li><a href="./fastest/javavm-graalvmaot.html"><span>Java</span></a>              
+      </ul></nav>   
+        
+      <nav><ul>
+        <li><a href="./measurements/node.html">——&nbsp;<span><b>JavaScript</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/node-gcc.html"><span>C gcc</span></a>   
+        <li><a href="./fastest/node-csharpcore.html"><span>C#</span></a>           
+        <li><a href="./fastest/node-dartexe.html"><span>Dart</span></a>   
+        <li><a href="./fastest/node-erlang.html"><span>Erlang</span></a>   
+        <li><a href="./fastest/node-javavm.html"><span>Java</span></a>   
+        <li><a href="./fastest/node-lua.html"><span>Lua</span></a>   
+        <li><a href="./fastest/node-ruby.html"><span>Ruby</span></a>           
+        <li><a href="./fastest/node-rust.html"><span>Rust</span></a>              
+      </ul></nav>         
+
+      <nav><ul>
+        <li><a href="./measurements/julia.html">——&nbsp;<span><b>Julia</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/chapel-julia.html"><span>Chapel</span></a> 
+        <li><a href="./fastest/clang-julia.html"><span>C clang</span></a>         
+        <li><a href="./fastest/julia-ifx.html"><span>Fortran</span></a>              
+      </ul></nav>   
+
+      <nav><ul>
+        <li><a href="./measurements/sbcl.html">——&nbsp;<span><b>Lisp</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/clang-sbcl.html"><span>C clang</span></a>         
+        <li><a href="./fastest/sbcl-racket.html"><span>Racket</span></a>              
+      </ul></nav>    
+   
+      <nav><ul>
+        <li><a href="./measurements/lua.html">——&nbsp;<span><b>Lua</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/node-lua.html"><span>JavaScript</span></a>         
+        <li><a href="./fastest/perl-lua.html"><span>Perl</span></a> 
+        <li><a href="./fastest/python3-lua.html"><span>Python</span></a>         
+        <li><a href="./fastest/ruby-lua.html"><span>Ruby</span></a>              
+      </ul></nav>         
+      
+      <nav><ul>
+        <li><a href="./measurements/ocaml.html">——&nbsp;<span><b>OCaml</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/clang-ocaml.html"><span>C clang</span></a>         
+        <li><a href="./fastest/ocaml-fsharpcore.html"><span>F#</span></a>              
+      </ul></nav>      
+    
+      <nav><ul>
+        <li><a href="./measurements/fpascal.html">——&nbsp;<span><b>Pascal</b></span>&nbsp;——</a>        
+        <li><a href="./fastest/gcc-fpascal.html"><span>C gcc</span></a>              
+      </ul></nav>        
+        
+      <nav><ul>
+        <li><a href="./measurements/perl.html">——&nbsp;<span><b>Perl</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/perl-lua.html"><span>Lua</span></a>         
+        <li><a href="./fastest/ruby-perl.html"><span>Ruby</span></a>              
+      </ul></nav>          
+         
+      <nav><ul>
+        <li><a href="./measurements/php.html">——&nbsp;<span><b>PHP</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/javavm-php.html"><span>Java</span></a> 
+        <li><a href="./fastest/python3-php.html"><span>Python</span></a>         
+        <li><a href="./fastest/ruby-php.html"><span>Ruby</span></a>              
+      </ul></nav>          
+  
+      <nav><ul>
+        <li><a href="./measurements/python3.html">——&nbsp;<span><b>Python</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/python3-gpp.html"><span>C++ g++</span></a>                
+        <li><a href="./fastest/python3-erlang.html"><span>Erlang</span></a> 
+        <li><a href="./fastest/python3-go.html"><span>Go</span></a>            
+        <li><a href="./fastest/python.html"><span>Java</span></a> 
+        <li><a href="./fastest/python3-javaxint.html"><span>Java -Xint</span></a>        
+        <li><a href="./fastest/python3-node.html"><span>JavaScript</span></a>
+        <li><a href="./fastest/python3-lua.html"><span>Lua</span></a>
+        <li><a href="./fastest/python3-php.html"><span>PHP</span></a>
+        <li><a href="./fastest/ruby-python3.html"><span>Ruby</span></a>               
+      </ul></nav>   
+        
+      <nav><ul>
+        <li><a href="./measurements/racket.html">——&nbsp;<span><b>Racket</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/sbcl-racket.html"><span>Lisp</span></a>              
+      </ul></nav>         
+
+      <nav><ul>
+        <li><a href="./measurements/ruby.html">——&nbsp;<span><b>Ruby</b></span>&nbsp;——</a> 
+        <li><a href="./fastest/ruby-erlang.html"><span>Erlang</span></a> 
+        <li><a href="./fastest/node-ruby.html"><span>JavaScript</span></a>        
+        <li><a href="./fastest/ruby-lua.html"><span>Lua</span></a>
+        <li><a href="./fastest/ruby-perl.html"><span>Perl</span></a>
+        <li><a href="./fastest/ruby-php.html"><span>PHP</span></a>
+        <li><a href="./fastest/ruby-python3.html"><span>Python</span></a>               
+      </ul></nav> 
+        
+      <nav><ul>
+        <li><a href="./measurements/rust.html">——&nbsp;<span><b>Rust</b></span>&nbsp;——</a>
+        <li><a href="./fastest/rust.html"><span>C clang</span></a>         
+        <li><a href="./fastest/rust-gcc.html"><span>C gcc</span></a> 
+        <li><a href="./fastest/rust-icx.html"><span>Intel C</span></a>        
+        <li><a href="./fastest/rust-gpp.html"><span>C++ g++</span></a>
+        <li><a href="./fastest/rust-go.html"><span>Go</span></a>
+        <li><a href="./fastest/node-rust.html"><span>JavaScript</span></a>
+        <li><a href="./fastest/swift-rust.html"><span>Swift</span></a>               
+      </ul></nav> 
+        
+      <nav><ul>
+        <li><a href="./measurements/pharo.html">——&nbsp;<span><b>Smalltalk</b></span>&nbsp;——</a>
+        <li><a href="./fastest/pharo-javaxint.html"><span>Java -Xint</span></a>     
+        <li><a href="./fastest/pharo-python3.html"><span>Python</span></a>          
+      </ul></nav>        
+        
+      <nav><ul>
+        <li><a href="./measurements/swift.html">——&nbsp;<span><b>Swift</b></span>&nbsp;——</a>
+        <li><a href="./fastest/swift-clang.html"><span>C clang</span></a> 
+        <li><a href="./fastest/swift-gpp.html"><span>C++ g++</span></a>        
+        <li><a href="./fastest/swift-csharpaot.html"><span>C# naot</span></a>
+        <li><a href="./fastest/swift-go.html"><span>Go</span></a>
+        <li><a href="./fastest/swift-graalvmaot.html"><span>Java naot</span></a>
+        <li><a href="./fastest/swift-rust.html"><span>Rust</span></a>               
+      </ul></nav>   
+           
+      <nav><ul>
+        <li><a href="./measurements/toit.html">——&nbsp;<span><b>Toit</b></span>&nbsp;——</a>
+        <li><a href="./fastest/toit-micropython.html"><span>Micro Python</span></a>             
+      </ul></nav>   
+   
+  </section>     
+</article>  
+

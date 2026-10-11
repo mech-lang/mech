@@ -1,0 +1,4 @@
+Again(n<u64>) = (result<u64>) :=
+  result := Again(n).
+r := Again(0)
+io/print("{}\n", r)

@@ -1,0 +1,26 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-optimized.mojo:53:23: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            var bi = p[i]
+                     ~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-optimized.mojo:54:23: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            var bj = p[j]
+                     ~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-optimized.mojo:58:14: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            p[i].vel = bi.vel - d * (bj.mass * mag)
+            ~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-optimized.mojo:59:14: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            p[j].vel = bj.vel + d * (bi.mass * mag)
+            ~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-optimized.mojo:62:10: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        p[i].pos += p[i].vel * dt
+        ~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-optimized.mojo:62:22: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        p[i].pos += p[i].vel * dt
+                    ~^~~
+<unknown>:0: note: '__getitem__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-92fe2ee.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

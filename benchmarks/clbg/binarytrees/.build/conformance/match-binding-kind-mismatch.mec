@@ -1,0 +1,2 @@
+result := (7 ? | x<f64> => 1)
+io/print("{}\n", result)

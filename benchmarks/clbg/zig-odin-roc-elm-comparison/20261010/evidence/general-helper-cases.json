@@ -1,0 +1,6 @@
+{
+  "arithmetic_property_cases": 200,
+  "regex_cases": 8,
+  "reference": "Python arbitrary-precision integer arithmetic and re; seeded arbitrary magnitudes/signs; complete non-overlap matching and replacement.",
+  "source_sha256": "460ed48d9b363be175bac35cd907aeb0bdd01fd46de52ab1c8ec7c8359a6cc6f"
+}

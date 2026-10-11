@@ -1,0 +1,55 @@
+{
+  "captured_at": "2026-10-10T19:17:14.363991-04:00",
+  "groups": {
+    "WindowServer": {
+      "processes": 1,
+      "rss_mib": 32.8,
+      "cpu_percent": 6.9
+    },
+    "ChatGPT and Codex": {
+      "processes": 47,
+      "rss_mib": 2714.2,
+      "cpu_percent": 2.0
+    },
+    "Opera": {
+      "processes": 8,
+      "rss_mib": 1179.3,
+      "cpu_percent": 0.1
+    },
+    "Animated wallpaper": {
+      "processes": 1,
+      "rss_mib": 25.6,
+      "cpu_percent": 5.9
+    },
+    "MathWorks background services": {
+      "processes": 4,
+      "rss_mib": 239.9,
+      "cpu_percent": 0.0
+    }
+  },
+  "benchmark_or_compiler_processes": [
+    {
+      "pid": 95077,
+      "parent": 93842,
+      "cpu_percent": 37.3,
+      "rss_mib": 77.0,
+      "command": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/support/racket/bin/racket"
+    }
+  ],
+  "memory_pressure": "The system has 17179869184 (1048576 pages with a page size of 16384).\nSystem-wide memory free percentage: 78%",
+  "power_settings": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         2\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           1\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                0\n tcpkeepalive         1\n disksleep            10\n",
+  "notes": [
+    "RSS totals are approximate and can double-count shared pages.",
+    "Current SBCL/Racket benchmark activity belongs to the sequential Lisp/Racket measurement session, not a leftover run.",
+    "No applications were terminated during this read-only audit."
+  ],
+  "swap_activity": {
+    "sample_interval_seconds": 2,
+    "swapins_delta": 0,
+    "swapouts_delta": 0,
+    "observed_local_time": "2026-10-10T19:17:16-04:00",
+    "method": "Two samples from top -l 2 -s 2 -n 0"
+  },
+  "disk_images_mounted": 0,
+  "disk_image_check": "hdiutil info listed no images"
+}

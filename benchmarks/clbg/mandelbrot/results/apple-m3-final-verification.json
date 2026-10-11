@@ -1,0 +1,91 @@
+{
+  "created_at": "2026-10-07T14:13:52.100075+00:00",
+  "measurement_report": "apple-m3-peeled-native-16000.json",
+  "winning_program": "mech-unrolled-simd-loop-fma-add-packed-bits",
+  "source": {
+    "paths": [
+      "mandelbrot-unrolled-add.mec"
+    ],
+    "sha256": "443c345e72e35e042ddb9c0c2b084e6bca2986ae67a204146a8cc4bb69773de0",
+    "physical_lines": 27,
+    "nonblank_noncomment_lines": 26,
+    "normalized_bytes": 786,
+    "gzip1_bytes": 338
+  },
+  "native_object_sha256": "8df7f54782c766ebcb13f43f15a2832cb71fc056319ac923abd0fd65147e7f39",
+  "generated_c_sha256": "a1df17075f109638e264b08ad75a3c82239e82390a5ed241d4a9877916c22721",
+  "final_artifacts_match_measured_winner": true,
+  "compiler_snapshot": {
+    "path": "apple-m3-final-verification.compiler.tar.gz",
+    "sha256": "49051548334626268fbd5d5c1b7a0ab81ca67ab7d6399d1cc138c3562a476825",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "Cargo.lock": "485b0d49f68971d287e1ca89156904b6ce90b281230b9445f16248eabd7cfe50",
+      "benchmarks/clbg/mandelbrot/.gitignore": "b2b592f9ecd265530206ebf051c0bdecc9277580c00a692f428139948d588fc7",
+      "benchmarks/clbg/mandelbrot/README.md": "d236aa2a778c77cce7419fb5d9c492a00622ac013639617d7858425d78ba0bf8",
+      "benchmarks/clbg/mandelbrot/confirm.py": "e210eac69e20f2580bda7cf78c0d6b845a5a8d25afd54e844c9b8775e030f433",
+      "benchmarks/clbg/mandelbrot/fetch_sources.py": "be17c0caf00753b83bce3f239f6b263e277f72649626095feafa07c76fedbf77",
+      "benchmarks/clbg/mandelbrot/fix_worker_metadata.py": "0e3bb9873f13be6a97439a9719b11e00da602d76199ab36a41ada7b76486b979",
+      "benchmarks/clbg/mandelbrot/mandelbrot-compact.mec": "89ebdc902c202c58cc29ff02a2d1ce5f78e8257257dd2755498e2f13ba1b3b50",
+      "benchmarks/clbg/mandelbrot/mandelbrot-unrolled-10.mec": "dbd2ee3618de1252a9c37c8f07f89838c8b17dff28923de888c7001f6bc45f5d",
+      "benchmarks/clbg/mandelbrot/mandelbrot-unrolled-add.mec": "443c345e72e35e042ddb9c0c2b084e6bca2986ae67a204146a8cc4bb69773de0",
+      "benchmarks/clbg/mandelbrot/mandelbrot-unrolled.mec": "2914b1f966a61f74ddc3d2462dae7b45365aa70e4a5c63ac7af04f910a8835b1",
+      "benchmarks/clbg/mandelbrot/mandelbrot.mec": "fa906382c589e92c47ba9fb0db79059b7282df013317a565d740d5dafb8859cf",
+      "benchmarks/clbg/mandelbrot/manifest.json": "d624e575bee09fe48681b43f637253901c27a010ed4d3c97481982c0eb800484",
+      "benchmarks/clbg/mandelbrot/mech-driver/Cargo.lock": "154b7ba0463000cbbbac81972010c547d436f609a9f8fe67388141e35a7d58d7",
+      "benchmarks/clbg/mandelbrot/mech-driver/Cargo.toml": "7444dfff4d0901708e6c768acc1cb2fbc422da26da42833cd1ff0be9d5f3f89a",
+      "benchmarks/clbg/mandelbrot/mech-driver/src/compiled-main.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "benchmarks/clbg/mandelbrot/mech-driver/tests/native_map.rs": "4d805d90196ee1f3981c84644340b00fd79a8f14e05573e9cfad535ad74b5183",
+      "benchmarks/clbg/mandelbrot/native_study.py": "3f2824fbaa03a43fe525eec0a3de42bbcd0547473caf328fc6d20bef68d40330",
+      "benchmarks/clbg/mandelbrot/plot.py": "614afa1e64f0c41062cd68a5933e57ca5ee3a244587f586ab1502f1fcb7bc828",
+      "benchmarks/clbg/mandelbrot/plot_native.py": "d7f4392fab345d953473db72ff48aa193888c5cc5ffea35821797671272770d9",
+      "benchmarks/clbg/mandelbrot/run.py": "a4bb6c2f1a7eb81ea6af83a103a757899ef3b847b6eb50bd4ccebd8f211a5774",
+      "benchmarks/clbg/mandelbrot/rust-deps/Cargo.lock": "e5714b40ec94e81bfc1c8ee35d335a5251d066929a53c6f032ddfe42e4bb0507",
+      "benchmarks/clbg/mandelbrot/rust-deps/Cargo.toml": "0366149a6d15d57506dffefa08a7c76767f254ae0f7fca896398c609584d590e",
+      "benchmarks/clbg/mandelbrot/rust-deps/src/lib.rs": "768ac763a3411618658567bb9289aa94919b85b62beaa1d23dd7718e75a8e4bb",
+      "benchmarks/clbg/mandelbrot/upstream/mandelbrot-200.pbm": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "hosts/gpu/Cargo.toml": "3decea17f58d2d5eb31e0cc57f33cbef38ed8fb10baabfd7b155cf5896e3d800",
+      "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+      "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+      "hosts/gpu/src/batched/mod.rs": "f2ce0842ed10633b024a7846f48ed25faec21949b58fefb742499adcb07df23b",
+      "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+      "hosts/gpu/src/bin/mech-native-map.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "hosts/gpu/src/fused_f64/map_runner.c": "1a6e8e14c1cb7d64061a29a0bffc5a7f4067bda87c2762eb0ab77ba3a23286c5",
+      "hosts/gpu/src/fused_f64/map_runner.rs": "8a4c1ad0cfd2868b6e3decfd2cab812e44f11a2cdb8ce8030b2ac8028ea9ac1f",
+      "hosts/gpu/src/fused_f64/mod.rs": "593323137d4dba4119085b528f103de7ae0c435400ff9e44cd399737ba0eda27",
+      "hosts/gpu/src/fused_f64/native.rs": "1bcc11028a63327005947c2e54799d62b2bd93496dcb03e6be898e98a7538616",
+      "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+      "hosts/gpu/src/fused_f64/runner.rs": "149d02e2024b04d7956a98d8efa63119182c65394cb7060b529f6397cf34cae8",
+      "hosts/gpu/src/lib.rs": "47466a637d602459eee869f8010ae3add5f4ca05bbc860f41ebccf7d78bcfb51",
+      "scripts/unsafe-boundaries.allowlist": "45612f4a2959d88578839297c839f405ad33456cb752c24872f6962860025dcc",
+      "src/engine/src/resident/numeric/mod.rs": "e7d2470fb7602ec3658b93b43b64b259a3f28ac453eda3b53f9da8db7c765c39"
+    }
+  },
+  "checks": {
+    "mandelbrot_native_tests": {
+      "passed": 10
+    },
+    "nbody_native_regressions": {
+      "passed": 18
+    },
+    "resident_boolean_access_test": "passed earlier in this benchmark session; resident code unchanged since that check",
+    "packed_aot_partial_widths": [
+      1,
+      7,
+      13,
+      17
+    ],
+    "partial_images_and_padding_match_independent_scalar": true,
+    "unsafe_boundary_audit": "passed on all tracked and nonignored untracked Rust sources",
+    "git_diff_check": "passed",
+    "full_output_match": {
+      "bytes": 32000015,
+      "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "exact_reference_match": true,
+      "different_pixels": 0
+    }
+  },
+  "note": "First-turn peeling was removed after its slower measured result. This final source regenerates the identical winning native object and generic runtime."
+}

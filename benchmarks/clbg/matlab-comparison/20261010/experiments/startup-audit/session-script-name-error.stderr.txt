@@ -1,0 +1,7 @@
+{Error using evalin
+Unrecognized function or variable 'session'.
+
+Error in run (line 100)
+evalin('caller', strcat(scriptStem, ';'));
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+} 

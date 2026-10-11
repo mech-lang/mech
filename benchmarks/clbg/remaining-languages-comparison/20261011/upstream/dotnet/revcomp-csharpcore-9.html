@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement C#&nbsp;#9 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement C#&nbsp;#9 program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+﻿<span class="slc">//* The Computer Language Benchmarks Game</span>
+<span class="slc">//   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+
+<span class="slc">//   Contributed by Peperud</span>
+<span class="slc">//   Modified to reduce memory use by Anthony Lloyd</span>
+<span class="slc">//   Rewritten with simd. Start reverse after loading the first block</span>
+<span class="slc">//   Contributed by Thom Kiesewetter</span>
+<span class="slc">//*</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Buffers<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Runtime<span class="opt">.</span>CompilerServices<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Runtime<span class="opt">.</span>Intrinsics<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Runtime<span class="opt">.</span>Intrinsics<span class="opt">.</span>X86<span class="opt">;</span>
+
+<span class="kwa">public static class</span> Program
+<span class="opt">{</span>
+    <span class="kwa">public delegate int</span> SpanFunc<span class="opt">&lt;</span>T<span class="opt">&gt;(</span>Span<span class="opt">&lt;</span>T<span class="opt">&gt;</span> span<span class="opt">);</span>
+
+    <span class="kwa">private const byte</span> GT <span class="opt">= (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;&gt;&#39;</span><span class="opt">,</span> LF <span class="opt">=</span> <span class="num">10</span><span class="opt">;</span>
+    <span class="kwa">private const int</span> LineLength <span class="opt">=</span> <span class="num">61</span><span class="opt">;</span>
+    <span class="kwa">private const int</span> BUFFER_SIZE <span class="opt">=</span> <span class="num">1024</span> <span class="opt">*</span> <span class="num">1024</span> <span class="opt">*</span> <span class="num">1</span><span class="opt">;</span>
+    <span class="kwa">private const int</span> writeStart <span class="opt">=</span> <span class="num">64</span><span class="opt">;</span>
+    <span class="kwa">private static readonly byte</span><span class="opt">[][]</span> blocks <span class="opt">=</span> <span class="kwa">new byte</span><span class="opt">[</span><span class="num">10000</span><span class="opt">][];</span>
+    <span class="kwa">private static int</span> _index<span class="opt">;</span>
+    <span class="kwa">public static</span> Thread TaskStep2 <span class="opt">=</span> <span class="kwa">null</span><span class="opt">!;</span>
+    <span class="kwa">public static</span> Thread TaskStep3 <span class="opt">=</span> <span class="kwa">null</span><span class="opt">!;</span>
+    <span class="kwa">private static readonly</span> List<span class="opt">&lt;</span>Sequence<span class="opt">&gt;</span> Sequences <span class="opt">=</span> <span class="kwa">new</span><span class="opt">();</span>
+    <span class="kwa">private static int</span> _pageIndex<span class="opt">;</span>
+    <span class="kwa">private static int</span> _sequenceIndex<span class="opt">;</span>
+
+    <span class="kwa">private static readonly byte</span><span class="opt">[]</span> _complements <span class="opt">=</span> 
+        <span class="slc">//ABCDEFGHIJKLMNOPQRSTUVWXYZ</span>
+        <span class="sng">&quot; TVGH  CD  M KN   YSAABW R      &quot;</span><span class="opt">.</span><span class="kwd">ToASCII</span><span class="opt">();</span>
+
+    <span class="kwa">private static int</span> _sequenceStep2Done <span class="opt">= -</span><span class="num">1</span><span class="opt">;</span>
+
+    <span class="kwa">private static byte</span><span class="opt">[]</span> _writeBlock <span class="opt">=</span> <span class="kwa">null</span><span class="opt">!;</span>
+
+    <span class="slc">// Vectors is used to remove line feeds from the input and swap the bytes in reverse order</span>
+    <span class="slc">//{</span>
+    <span class="slc">//    0, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,</span>
+    <span class="slc">//    1, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 0,</span>
+    <span class="slc">//    2, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 1, 0,</span>
+    <span class="slc">//    3, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 2, 1, 0,</span>
+    <span class="slc">//    4, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 3, 2, 1, 0,</span>
+    <span class="slc">//    5, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    6, 15, 14, 13, 12, 11, 10, 9, 8, 7, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    7, 15, 14, 13, 12, 11, 10, 9, 8, 6, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    8, 15, 14, 13, 12, 11, 10, 9, 7, 6, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    9, 15, 14, 13, 12, 11, 10, 8, 7, 6, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    10, 15, 14, 13, 12, 11, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    11, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    12, 15, 14, 13, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    13, 15, 14, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    14, 15, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,</span>
+    <span class="slc">//    15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0</span>
+    <span class="slc">//};</span>
+    <span class="kwa">private static readonly byte</span><span class="opt">[]</span> _vectors <span class="opt">=</span> <span class="kwa">new byte</span><span class="opt">[(</span><span class="num">61</span> <span class="opt">+</span> <span class="num">16</span><span class="opt">) *</span> <span class="num">16</span><span class="opt">];</span>
+    <span class="kwa">private static readonly</span> ArrayPool<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">&gt;</span> bytePool <span class="opt">=</span> ArrayPool<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">&gt;.</span>Shared<span class="opt">;</span>
+
+
+    <span class="opt">[</span><span class="kwd">MethodImpl</span><span class="opt">(</span>MethodImplOptions<span class="opt">.</span>AggressiveOptimization<span class="opt">)]</span>
+    <span class="kwa">public static void</span> <span class="kwd">Main</span><span class="opt">(</span><span class="kwa">string</span><span class="opt">[]</span> args<span class="opt">)</span>
+    <span class="opt">{</span>
+        TaskStep2 <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Thread</span><span class="opt">(</span>Step2<span class="opt">)</span>
+            { IsBackground <span class="opt">=</span> <span class="kwa">true</span><span class="opt">,</span> Priority <span class="opt">=</span> ThreadPriority<span class="opt">.</span>Highest <span class="opt">};</span>
+        TaskStep2<span class="opt">.</span><span class="kwd">Start</span><span class="opt">();</span>
+        TaskStep3 <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Thread</span><span class="opt">(</span>Step3<span class="opt">)</span>
+            { IsBackground <span class="opt">=</span> <span class="kwa">true</span><span class="opt">,</span> Priority <span class="opt">=</span> ThreadPriority<span class="opt">.</span>Highest <span class="opt">};</span>
+        TaskStep3<span class="opt">.</span><span class="kwd">Start</span><span class="opt">();</span>
+        <span class="kwa">int</span> bufferPos<span class="opt">;</span>
+        SpanFunc<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">&gt;</span> Read <span class="opt">=</span> Console<span class="opt">.</span><span class="kwd">OpenStandardInput</span><span class="opt">().</span>Read<span class="opt">;</span>
+        <span class="kwa">do</span>
+        <span class="opt">{</span>
+            <span class="kwa">var</span> buffer <span class="opt">=</span> bytePool<span class="opt">.</span><span class="kwd">Rent</span><span class="opt">(</span>BUFFER_SIZE<span class="opt">);</span>
+            <span class="slc">//var buffer = new byte[BUFFER_SIZE];</span>
+            bufferPos <span class="opt">=</span> <span class="kwd">ReadBlock</span><span class="opt">(</span>Read<span class="opt">,</span> buffer<span class="opt">);</span>
+            blocks<span class="opt">[</span>_index<span class="opt">] =</span> buffer<span class="opt">;</span>
+            _index<span class="opt">++;</span>
+        <span class="opt">}</span> <span class="kwa">while</span> <span class="opt">(</span>bufferPos <span class="opt">==</span> BUFFER_SIZE<span class="opt">);</span>
+
+        TaskStep3<span class="opt">.</span><span class="kwd">Join</span><span class="opt">();</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">private static void</span> <span class="kwd">Step2</span><span class="opt">()</span>
+    <span class="opt">{</span>
+        <span class="kwd">SetupLFSkipsAndReverseTable</span><span class="opt">();</span>
+
+        _pageIndex <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        <span class="kwa">var</span> blockOffset <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        <span class="kwa">while</span> <span class="opt">(</span><span class="kwa">true</span><span class="opt">)</span>
+        <span class="opt">{</span>
+            <span class="kwa">while</span> <span class="opt">(</span>_pageIndex <span class="opt">==</span> _index<span class="opt">)</span> Thread<span class="opt">.</span><span class="kwd">Sleep</span><span class="opt">(</span><span class="num">0</span><span class="opt">);</span>
+            <span class="kwa">var</span> seq <span class="opt">=</span> <span class="kwa">new</span> Sequence
+            <span class="opt">{</span>
+                pages <span class="opt">=</span> <span class="kwa">new</span> List<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">[]&gt;(),</span> Header <span class="opt">=</span> <span class="kwd">GetHeader</span><span class="opt">(</span><span class="kwa">ref</span> blockOffset<span class="opt">)</span>
+            <span class="opt">};</span>
+            Sequences<span class="opt">.</span><span class="kwd">Add</span><span class="opt">(</span>seq<span class="opt">);</span>
+            <span class="kwd">ReadSequence</span><span class="opt">(</span><span class="kwa">ref</span> blockOffset<span class="opt">);</span>
+            _sequenceStep2Done<span class="opt">++;</span>
+            <span class="kwa">if</span> <span class="opt">(</span>blocks<span class="opt">[</span>_pageIndex<span class="opt">][</span>blockOffset<span class="opt">] ==</span> <span class="num">0</span><span class="opt">)</span>
+                <span class="kwa">return</span><span class="opt">;</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">private static void</span> <span class="kwd">SetupLFSkipsAndReverseTable</span><span class="opt">()</span>
+    <span class="opt">{</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> <span class="num">16</span> <span class="opt">+</span> <span class="num">61</span><span class="opt">;</span> i<span class="opt">++)</span> <span class="slc">// linefeed skips</span>
+            _vectors<span class="opt">[</span>i<span class="opt">] = (</span><span class="kwa">byte</span><span class="opt">)(</span>i <span class="opt">&lt;</span> <span class="num">61</span> <span class="opt">?</span> <span class="num">16</span> <span class="opt">:</span> <span class="num">15</span><span class="opt">);</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> <span class="num">16</span> <span class="opt">*</span> <span class="num">16</span><span class="opt">;</span> i <span class="opt">&lt;</span> <span class="num">61</span> <span class="opt">*</span> <span class="num">16</span><span class="opt">;</span> i<span class="opt">++)</span>
+            _vectors<span class="opt">[</span>i<span class="opt">] = (</span><span class="kwa">byte</span><span class="opt">)(</span><span class="num">15</span> <span class="opt">-</span> i <span class="opt">%</span> <span class="num">16</span><span class="opt">);</span>
+        <span class="kwa">var</span> offset <span class="opt">=</span> _vectors<span class="opt">.</span><span class="kwd">AsSpan</span><span class="opt">()[(</span><span class="num">61</span> <span class="opt">*</span> <span class="num">16</span><span class="opt">)..];</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> <span class="num">16</span><span class="opt">;</span> i<span class="opt">++)</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> j <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> j <span class="opt">&lt;</span> <span class="num">16</span><span class="opt">;</span> j<span class="opt">++)</span>
+            offset<span class="opt">[</span>i <span class="opt">*</span> <span class="num">16</span> <span class="opt">+</span> j<span class="opt">] =</span>
+                <span class="opt">(</span><span class="kwa">byte</span><span class="opt">)(</span>j <span class="opt">==</span> <span class="num">0</span> <span class="opt">?</span> i <span class="opt">:</span> j <span class="opt">&lt;</span> <span class="num">16</span> <span class="opt">-</span> i <span class="opt">?</span> <span class="num">16</span> <span class="opt">-</span> j <span class="opt">:</span> <span class="num">15</span> <span class="opt">-</span> j<span class="opt">);</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">private static void</span> <span class="kwd">ReadSequence</span><span class="opt">(</span><span class="kwa">ref int</span> offset<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">var</span> lfPosition <span class="opt">=</span> <span class="num">60</span><span class="opt">;</span>
+        <span class="kwa">while</span> <span class="opt">(</span><span class="kwa">true</span><span class="opt">)</span>
+        <span class="opt">{</span>
+            <span class="kwa">var</span> block <span class="opt">=</span> blocks<span class="opt">[</span>_pageIndex<span class="opt">];</span>
+            <span class="slc">//var reverseBlock = new byte[BUFFER_SIZE];</span>
+            <span class="kwa">var</span> reverseBlock <span class="opt">=</span> bytePool<span class="opt">.</span><span class="kwd">Rent</span><span class="opt">(</span>BUFFER_SIZE<span class="opt">);</span>
+            Sequences<span class="opt">[</span>^<span class="num">1</span><span class="opt">].</span>pages<span class="opt">.</span><span class="kwd">Add</span><span class="opt">(</span>reverseBlock<span class="opt">);</span>
+            <span class="kwd">ParsePage</span><span class="opt">(</span>block<span class="opt">,</span> reverseBlock<span class="opt">,</span> <span class="kwa">ref</span> lfPosition<span class="opt">,</span> <span class="kwa">ref</span> offset<span class="opt">);</span>
+            <span class="kwa">if</span> <span class="opt">(</span>offset <span class="opt">!=</span> BUFFER_SIZE<span class="opt">)</span> <span class="kwa">return</span><span class="opt">;</span>
+            offset <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+            bytePool<span class="opt">.</span><span class="kwd">Return</span><span class="opt">(</span>block<span class="opt">);</span>
+            _pageIndex<span class="opt">++;</span>
+            <span class="kwa">while</span> <span class="opt">(</span>_pageIndex <span class="opt">==</span> _index<span class="opt">)</span> Thread<span class="opt">.</span><span class="kwd">Sleep</span><span class="opt">(</span><span class="num">0</span><span class="opt">);</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="com">/* The page is read in block of 16 bytes.</span>
+<span class="com">     * The first tree SimD statement will reverse the input and remove the linefeed. The offset should guarantee that we start and the beginning of a line</span>
+<span class="com">     * We keep track of the linefeed position. If there is a line feed in 16 byte block. The linefeed is moved at the first position of the 16 byte block</span>
+<span class="com">     * and is overwritten in the next 16 byte write (lfSkip=15)</span>
+<span class="com">     * To find the complement: The same shuffle trick as other programs is used.</span>
+<span class="com">     * - Take only the 5 lower bits of the ascii.</span>
+<span class="com">     * - 1e shuffle with 4 lower bits from the ascii to select the complements of the letter o-z</span>
+<span class="com">     * - 2e shuffle with 4 lower bits from the ascii to select the complements of the letter a-n</span>
+<span class="com">     * - compare to find all byte positions from the 1e shuffle 0-z</span>
+<span class="com">     * - blend the three vectors to select all from 2e shuffle + overwrite all selected from 1e shuffle.</span>
+<span class="com">     *</span>
+<span class="com">     * At the end of the block:</span>
+<span class="com">     * - calc the next lfPosition in for the next block</span>
+<span class="com">     * - copy the remainder bytes</span>
+<span class="com">     * - The write block is oversized because the line feeds are removed. So save the first position where the content start at the beginning of the block.</span>
+<span class="com">     * We need this later when we write to output</span>
+<span class="com">     */</span>
+    <span class="kwa">private static unsafe void</span> <span class="kwd">ParsePage</span><span class="opt">(</span><span class="kwa">byte</span><span class="opt">[]</span> block<span class="opt">,</span> <span class="kwa">byte</span><span class="opt">[]</span> reverseBlock<span class="opt">,</span>
+        <span class="kwa">ref int</span> lfPosition<span class="opt">,</span> <span class="kwa">ref int</span> offset<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">fixed</span> <span class="opt">(</span><span class="kwa">byte</span><span class="opt">*</span> readBlockPtr <span class="opt">= &amp;</span>block<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> writeBlockPrt <span class="opt">=</span>
+                   <span class="opt">&amp;</span>reverseBlock<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> vectorsPtr <span class="opt">= &amp;</span>_vectors<span class="opt">[</span><span class="num">0</span><span class="opt">])</span>
+        <span class="opt">{</span>
+            <span class="kwa">var</span> writePtr <span class="opt">=</span> writeBlockPrt <span class="opt">+</span> reverseBlock<span class="opt">.</span>Length <span class="opt">-</span> <span class="num">16</span><span class="opt">;</span>
+            <span class="kwa">var</span> readPtr <span class="opt">=</span> readBlockPtr <span class="opt">+</span> offset<span class="opt">;</span>
+            <span class="kwa">var</span> endPtr <span class="opt">=</span> readBlockPtr <span class="opt">+</span> block<span class="opt">.</span>Length<span class="opt">;</span>
+            <span class="kwa">while</span> <span class="opt">(</span>readPtr <span class="opt">+</span> Math<span class="opt">.</span><span class="kwd">Max</span><span class="opt">(</span><span class="num">16</span><span class="opt">,</span> lfPosition<span class="opt">) &lt;</span> endPtr <span class="opt">&amp;&amp;</span>
+                   <span class="opt">*(</span>readPtr <span class="opt">+</span> lfPosition<span class="opt">) ==</span> LF<span class="opt">)</span>
+            <span class="opt">{</span>
+                <span class="kwa">var</span> swapSelector <span class="opt">=</span>
+                    Sse2<span class="opt">.</span><span class="kwd">LoadVector128</span><span class="opt">(</span>vectorsPtr <span class="opt">+</span> <span class="num">16</span> <span class="opt">*</span> lfPosition<span class="opt">);</span>
+                <span class="kwa">var</span> org <span class="opt">=</span> Sse2<span class="opt">.</span><span class="kwd">LoadVector128</span><span class="opt">(</span>readPtr<span class="opt">);</span>
+                <span class="kwa">var</span> swap <span class="opt">=</span> Ssse3<span class="opt">.</span><span class="kwd">Shuffle</span><span class="opt">(</span>org<span class="opt">,</span> swapSelector<span class="opt">);</span>
+                <span class="kwa">var</span> complementSelector <span class="opt">=</span>
+                    Sse2<span class="opt">.</span><span class="kwd">And</span><span class="opt">(</span>swap<span class="opt">,</span> Vector128<span class="opt">.</span><span class="kwd">Create</span><span class="opt">((</span><span class="kwa">byte</span><span class="opt">)</span><span class="num">0x1F</span><span class="opt">));</span>
+                <span class="kwa">var</span> blendMask <span class="opt">=</span> Sse2<span class="opt">.</span><span class="kwd">CompareGreaterThan</span><span class="opt">(</span>
+                    complementSelector<span class="opt">.</span><span class="kwd">AsSByte</span><span class="opt">(),</span>
+                    Vector128<span class="opt">.</span><span class="kwd">Create</span><span class="opt">((</span><span class="kwa">byte</span><span class="opt">)</span><span class="num">0xF</span><span class="opt">).</span><span class="kwd">AsSByte</span><span class="opt">());</span>
+                <span class="kwa">var</span> lookupHigh <span class="opt">=</span> Vector128<span class="opt">.</span><span class="kwd">Create</span><span class="opt">(</span><span class="num">0</span><span class="opt">,</span> <span class="num">0</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;Y&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;S&#39;</span><span class="opt">,</span>
+                    <span class="opt">(</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;A&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;A&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;B&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;W&#39;</span><span class="opt">,</span> <span class="num">0</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;R&#39;</span><span class="opt">,</span> <span class="num">0</span><span class="opt">,</span>
+                    <span class="num">0</span><span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="num">0</span><span class="opt">);</span>
+                <span class="kwa">var</span> r2 <span class="opt">=</span> Ssse3<span class="opt">.</span><span class="kwd">Shuffle</span><span class="opt">(</span>lookupHigh<span class="opt">,</span> complementSelector<span class="opt">);</span>
+                <span class="kwa">var</span> lookupLow <span class="opt">=</span> Vector128<span class="opt">.</span><span class="kwd">Create</span><span class="opt">(</span><span class="num">0</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;T&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;V&#39;</span><span class="opt">,</span>
+                    <span class="opt">(</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;G&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;H&#39;</span><span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="num">0</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;C&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;D&#39;</span><span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="num">0</span><span class="opt">,</span>
+                    <span class="opt">(</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;M&#39;</span><span class="opt">,</span> <span class="num">0</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;K&#39;</span><span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="sng">&#39;N&#39;</span><span class="opt">,</span> <span class="num">0</span><span class="opt">);</span>
+                <span class="kwa">var</span> r1 <span class="opt">=</span> Ssse3<span class="opt">.</span><span class="kwd">Shuffle</span><span class="opt">(</span>lookupLow<span class="opt">,</span> complementSelector<span class="opt">);</span>
+                <span class="kwa">var</span> result <span class="opt">=</span> Sse41<span class="opt">.</span><span class="kwd">BlendVariable</span><span class="opt">(</span>r1<span class="opt">,</span> r2<span class="opt">,</span> blendMask<span class="opt">.</span><span class="kwd">AsByte</span><span class="opt">());</span>
+                Sse2<span class="opt">.</span><span class="kwd">Store</span><span class="opt">(</span>writePtr<span class="opt">,</span> result<span class="opt">.</span><span class="kwd">AsByte</span><span class="opt">());</span>
+                <span class="kwa">int</span> lfSkip <span class="opt">= *(</span>vectorsPtr <span class="opt">+</span> lfPosition<span class="opt">);</span>
+                readPtr <span class="opt">+=</span> <span class="num">16</span><span class="opt">;</span>
+                writePtr <span class="opt">-=</span> lfSkip<span class="opt">;</span>
+                lfPosition <span class="opt">-=</span> <span class="num">16</span><span class="opt">;</span>
+                <span class="kwa">if</span> <span class="opt">(</span>lfPosition <span class="opt">&lt;</span> <span class="num">16</span><span class="opt">)</span> lfPosition <span class="opt">+=</span> LineLength<span class="opt">;</span>
+            <span class="opt">}</span>
+
+            <span class="kwa">if</span> <span class="opt">(</span>readPtr <span class="opt">+</span> Math<span class="opt">.</span><span class="kwd">Max</span><span class="opt">(</span><span class="num">16</span><span class="opt">,</span> lfPosition<span class="opt">) &gt;=</span> endPtr<span class="opt">)</span> <span class="slc">//end of page</span>
+            <span class="opt">{</span>
+                lfPosition <span class="opt">-= (</span><span class="kwa">int</span><span class="opt">)(</span>endPtr <span class="opt">-</span> readPtr<span class="opt">);</span>
+                <span class="kwa">if</span> <span class="opt">(</span>lfPosition <span class="opt">&lt;</span> <span class="num">16</span><span class="opt">)</span> lfPosition <span class="opt">+=</span> LineLength<span class="opt">;</span>
+            <span class="opt">}</span>
+            <span class="kwa">else</span> <span class="slc">//end of sequence</span>
+            <span class="opt">{</span>
+                lfPosition <span class="opt">=</span> <span class="num">60</span><span class="opt">;</span>
+            <span class="opt">}</span>
+
+            writePtr <span class="opt">+=</span> <span class="num">15</span><span class="opt">;</span>
+            <span class="kwa">byte value</span><span class="opt">;</span>
+            <span class="kwa">while</span> <span class="opt">(</span>readPtr <span class="opt">&lt;</span> endPtr <span class="opt">&amp;&amp; (</span><span class="kwa">value</span> <span class="opt">= *</span>readPtr<span class="opt">) !=</span> <span class="num">0</span> <span class="opt">&amp;&amp;</span> <span class="kwa">value</span> <span class="opt">!=</span> GT<span class="opt">)</span>
+            <span class="opt">{</span>
+                <span class="kwa">if</span> <span class="opt">(</span><span class="kwa">value</span> <span class="opt">!=</span> LF<span class="opt">)</span>
+                <span class="opt">{</span>
+                    <span class="kwa">value</span> <span class="opt">=</span> _complements<span class="opt">[(</span><span class="kwa">byte</span><span class="opt">)(</span><span class="kwa">value</span> <span class="opt">&amp;</span> <span class="num">0x1f</span><span class="opt">)];</span>
+                    <span class="opt">*</span>writePtr <span class="opt">=</span> <span class="kwa">value</span><span class="opt">;</span>
+                    writePtr<span class="opt">--;</span>
+                <span class="opt">}</span>
+
+                readPtr<span class="opt">++;</span>
+            <span class="opt">}</span>
+
+            <span class="slc">// Save position of content start</span>
+            <span class="kwa">var</span> startContent <span class="opt">= (</span><span class="kwa">int</span><span class="opt">)(</span>writePtr <span class="opt">+</span> <span class="num">1</span> <span class="opt">-</span> writeBlockPrt<span class="opt">);</span>
+            <span class="opt">*(</span><span class="kwa">int</span><span class="opt">*)</span>writeBlockPrt <span class="opt">=</span> startContent<span class="opt">;</span>
+
+            <span class="slc">// calculate offset for normal blocks this is 0. But not at the end of a sequence</span>
+            offset <span class="opt">= (</span><span class="kwa">int</span><span class="opt">)(</span>readPtr <span class="opt">-</span> readBlockPtr<span class="opt">);</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">private static byte</span><span class="opt">[]</span> <span class="kwd">GetHeader</span><span class="opt">(</span><span class="kwa">ref int</span> offset<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">var</span> block <span class="opt">=</span> blocks<span class="opt">[</span>_pageIndex<span class="opt">];</span>
+        <span class="kwa">var</span> start <span class="opt">=</span> offset<span class="opt">;</span>
+        <span class="kwa">var</span> end <span class="opt">=</span> Array<span class="opt">.</span><span class="kwd">IndexOf</span><span class="opt">(</span>block<span class="opt">,</span> LF<span class="opt">,</span> start<span class="opt">);</span>
+        offset <span class="opt">=</span> end <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+        <span class="kwa">return</span> block<span class="opt">[</span>start<span class="opt">..(</span>end <span class="opt">+</span> <span class="num">1</span><span class="opt">)];</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">private static void</span> <span class="kwd">Step3</span><span class="opt">()</span>
+    <span class="opt">{</span>
+        <span class="kwd">CreateWriteTemplate</span><span class="opt">();</span>
+        <span class="kwa">var</span> output <span class="opt">=</span> Console<span class="opt">.</span><span class="kwd">OpenStandardOutput</span><span class="opt">();</span>
+        Action<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">[],</span> <span class="kwa">int</span><span class="opt">,</span> <span class="kwa">int</span><span class="opt">&gt;</span> Write <span class="opt">=</span> output<span class="opt">.</span>Write<span class="opt">;</span>
+
+        _sequenceIndex <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        <span class="kwa">while</span> <span class="opt">(</span><span class="kwa">true</span><span class="opt">)</span>
+        <span class="opt">{</span>
+            <span class="kwa">while</span> <span class="opt">(</span>_sequenceStep2Done <span class="opt">&lt;</span> _sequenceIndex<span class="opt">)</span>
+            <span class="opt">{</span>
+                Thread<span class="opt">.</span><span class="kwd">Sleep</span><span class="opt">(</span><span class="num">0</span><span class="opt">);</span>
+                <span class="kwa">if</span> <span class="opt">(!</span>TaskStep2<span class="opt">.</span>IsAlive<span class="opt">)</span>
+                <span class="opt">{</span>
+                    output<span class="opt">.</span><span class="kwd">Dispose</span><span class="opt">();</span>
+                    <span class="kwa">return</span><span class="opt">;</span>
+                <span class="opt">}</span>
+            <span class="opt">}</span>
+
+            <span class="kwd">WriteSequence</span><span class="opt">(</span>Sequences<span class="opt">[</span>_sequenceIndex<span class="opt">],</span> Write<span class="opt">);</span>
+            _sequenceIndex<span class="opt">++;</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">private static unsafe void</span> <span class="kwd">WriteSequence</span><span class="opt">(</span>Sequence sequence<span class="opt">,</span>
+        Action<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">[],</span> <span class="kwa">int</span><span class="opt">,</span> <span class="kwa">int</span><span class="opt">&gt;</span> Write<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwd">Write</span><span class="opt">(</span>sequence<span class="opt">.</span>Header<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> sequence<span class="opt">.</span>Header<span class="opt">.</span>Length<span class="opt">);</span>
+        <span class="kwa">var</span> firstLinePosition <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        <span class="kwa">var</span> pages <span class="opt">=</span> sequence<span class="opt">.</span>pages<span class="opt">;</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> pages<span class="opt">.</span>Count <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span> i <span class="opt">&gt;=</span> <span class="num">0</span><span class="opt">;</span> i<span class="opt">--)</span>
+        <span class="opt">{</span>
+            <span class="kwa">var</span> page <span class="opt">=</span> pages<span class="opt">[</span>i<span class="opt">];</span>
+            <span class="kwa">fixed</span> <span class="opt">(</span><span class="kwa">byte</span><span class="opt">*</span> readBlockPtr <span class="opt">= &amp;</span>page<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> writeBlockPtr <span class="opt">=</span>
+                       <span class="opt">&amp;</span>_writeBlock<span class="opt">[</span><span class="num">0</span><span class="opt">])</span>
+            <span class="opt">{</span>
+                <span class="kwa">var</span> writePtr <span class="opt">=</span> writeBlockPtr <span class="opt">+</span> writeStart<span class="opt">;</span>
+                <span class="kwa">var</span> start <span class="opt">= *(</span><span class="kwa">int</span><span class="opt">*)</span>readBlockPtr<span class="opt">;</span>
+                <span class="kwa">var</span> readPtr <span class="opt">=</span> readBlockPtr <span class="opt">+</span> start<span class="opt">;</span>
+                <span class="kwa">var</span> endPtr <span class="opt">=</span> readBlockPtr <span class="opt">+</span> BUFFER_SIZE <span class="opt">-</span> <span class="num">60</span><span class="opt">;</span>
+                <span class="kwa">if</span> <span class="opt">(</span>firstLinePosition <span class="opt">&gt;</span>
+                    <span class="num">0</span><span class="opt">)</span> <span class="slc">// write the remainder of the first line and repair the LF</span>
+                <span class="opt">{</span>
+                    Avx<span class="opt">.</span><span class="kwd">Store</span><span class="opt">(</span>writePtr <span class="opt">+</span> firstLinePosition <span class="opt">+</span> <span class="num">28</span><span class="opt">,</span>
+                        Avx<span class="opt">.</span><span class="kwd">LoadDquVector256</span><span class="opt">(</span>readPtr <span class="opt">+</span> <span class="num">28</span><span class="opt">));</span>
+                    Avx<span class="opt">.</span><span class="kwd">Store</span><span class="opt">(</span>writePtr <span class="opt">+</span> firstLinePosition<span class="opt">,</span>
+                        Avx<span class="opt">.</span><span class="kwd">LoadDquVector256</span><span class="opt">(</span>readPtr<span class="opt">));</span>
+                    <span class="opt">*(</span>writePtr <span class="opt">+</span> <span class="num">60</span><span class="opt">) =</span> LF<span class="opt">;</span>
+                    writePtr <span class="opt">+=</span> <span class="num">61</span><span class="opt">;</span>
+                    readPtr <span class="opt">+=</span> <span class="num">60</span> <span class="opt">-</span> firstLinePosition<span class="opt">;</span>
+                <span class="opt">}</span>
+
+                <span class="kwa">while</span> <span class="opt">(</span>readPtr <span class="opt">&lt;</span> endPtr<span class="opt">)</span>
+                <span class="opt">{</span>
+                    Avx<span class="opt">.</span><span class="kwd">Store</span><span class="opt">(</span>writePtr <span class="opt">+</span> <span class="num">28</span><span class="opt">,</span>
+                        Avx<span class="opt">.</span><span class="kwd">LoadDquVector256</span><span class="opt">(</span>readPtr <span class="opt">+</span> <span class="num">28</span><span class="opt">));</span>
+                    Avx<span class="opt">.</span><span class="kwd">Store</span><span class="opt">(</span>writePtr<span class="opt">,</span> Avx<span class="opt">.</span><span class="kwd">LoadDquVector256</span><span class="opt">(</span>readPtr<span class="opt">));</span>
+                    readPtr <span class="opt">+=</span> <span class="num">60</span><span class="opt">;</span>
+                    writePtr <span class="opt">+=</span> <span class="num">61</span><span class="opt">;</span>
+                <span class="opt">}</span>
+
+                <span class="kwd">Write</span><span class="opt">(</span>_writeBlock<span class="opt">,</span> writeStart<span class="opt">,</span>
+                    <span class="opt">(</span><span class="kwa">int</span><span class="opt">)(</span>writePtr <span class="opt">- (</span>writeBlockPtr <span class="opt">+</span> writeStart<span class="opt">)));</span>
+                firstLinePosition <span class="opt">= (</span><span class="kwa">int</span><span class="opt">)(</span>endPtr <span class="opt">+</span> <span class="num">60</span> <span class="opt">-</span> readPtr<span class="opt">);</span>
+                writePtr <span class="opt">=</span> writeBlockPtr <span class="opt">+</span> firstLinePosition<span class="opt">;</span>
+                Avx<span class="opt">.</span><span class="kwd">Store</span><span class="opt">(</span>writePtr<span class="opt">,</span> Avx<span class="opt">.</span><span class="kwd">LoadDquVector256</span><span class="opt">(</span>endPtr <span class="opt">+</span> <span class="num">60</span> <span class="opt">-</span> <span class="num">64</span><span class="opt">));</span>
+                Avx<span class="opt">.</span><span class="kwd">Store</span><span class="opt">(</span>writePtr <span class="opt">+</span> <span class="num">32</span><span class="opt">,</span>
+                    Avx<span class="opt">.</span><span class="kwd">LoadDquVector256</span><span class="opt">(</span>endPtr <span class="opt">+</span> <span class="num">60</span> <span class="opt">-</span> <span class="num">32</span><span class="opt">));</span>
+                bytePool<span class="opt">.</span><span class="kwd">Return</span><span class="opt">(</span>page<span class="opt">);</span>
+            <span class="opt">}</span>
+        <span class="opt">}</span>
+
+        <span class="kwa">if</span> <span class="opt">(</span>firstLinePosition <span class="opt">&gt;</span> <span class="num">0</span><span class="opt">)</span>
+            <span class="kwd">Write</span><span class="opt">(</span>_writeBlock<span class="opt">,</span> <span class="num">64</span><span class="opt">,</span> firstLinePosition<span class="opt">);</span>
+        <span class="kwd">Write</span><span class="opt">(</span><span class="kwa">new</span><span class="opt">[] {</span> LF <span class="opt">},</span> <span class="num">0</span><span class="opt">,</span> <span class="num">1</span><span class="opt">);</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">private static void</span> <span class="kwd">CreateWriteTemplate</span><span class="opt">()</span>
+    <span class="opt">{</span>
+        _writeBlock <span class="opt">=</span> <span class="kwa">new byte</span><span class="opt">[</span>BUFFER_SIZE <span class="opt">+</span> <span class="num">64</span> <span class="opt">+</span> <span class="num">64</span><span class="opt">];</span>
+        <span class="kwa">var</span> j <span class="opt">=</span> writeStart <span class="opt">+</span> <span class="num">60</span><span class="opt">;</span>
+        <span class="kwa">while</span> <span class="opt">(</span>j <span class="opt">&lt;</span> _writeBlock<span class="opt">.</span>Length<span class="opt">)</span>
+        <span class="opt">{</span>
+            _writeBlock<span class="opt">[</span>j<span class="opt">] =</span> LF<span class="opt">;</span>
+            j <span class="opt">+=</span> <span class="num">61</span><span class="opt">;</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="opt">[</span><span class="kwd">MethodImpl</span><span class="opt">(</span>MethodImplOptions<span class="opt">.</span>AggressiveInlining<span class="opt">)]</span>
+    <span class="kwa">private static int</span> <span class="kwd">ReadBlock</span><span class="opt">(</span>SpanFunc<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">&gt;</span> Read<span class="opt">,</span> <span class="kwa">byte</span><span class="opt">[]</span> buffer<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">var</span> bufferPos <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+        <span class="kwa">var</span> buf <span class="opt">=</span> buffer<span class="opt">.</span><span class="kwd">AsSpan</span><span class="opt">();</span>
+        <span class="kwa">while</span> <span class="opt">(</span><span class="kwa">true</span><span class="opt">)</span>
+        <span class="opt">{</span>
+            <span class="kwa">var</span> bytesRead1 <span class="opt">=</span> <span class="kwd">Read</span><span class="opt">(</span>buf<span class="opt">);</span>
+            bufferPos <span class="opt">+=</span> bytesRead1<span class="opt">;</span>
+            <span class="kwa">if</span> <span class="opt">(</span>bufferPos <span class="opt">==</span> BUFFER_SIZE <span class="opt">||</span> bytesRead1 <span class="opt">==</span> <span class="num">0</span><span class="opt">)</span> <span class="kwa">return</span> bufferPos<span class="opt">;</span>
+            Array<span class="opt">.</span><span class="kwd">Fill</span><span class="opt">(</span>buffer<span class="opt">, (</span><span class="kwa">byte</span><span class="opt">)</span><span class="num">0</span><span class="opt">,</span> bytesRead1<span class="opt">,</span> buffer<span class="opt">.</span>Length <span class="opt">-</span> bytesRead1<span class="opt">);</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">public static byte</span><span class="opt">[]</span> <span class="kwd">ToASCII</span><span class="opt">(</span><span class="kwa">this string</span> s<span class="opt">)</span>
+    <span class="opt">{</span>
+        <span class="kwa">var</span> r <span class="opt">=</span> <span class="kwa">new byte</span><span class="opt">[</span>s<span class="opt">.</span>Length<span class="opt">];</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> s<span class="opt">.</span>Length<span class="opt">;</span> i<span class="opt">++)</span>
+            r<span class="opt">[</span>i<span class="opt">] = (</span><span class="kwa">byte</span><span class="opt">)</span>s<span class="opt">[</span>i<span class="opt">];</span>
+
+        <span class="kwa">return</span> r<span class="opt">;</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwa">public class</span> Sequence
+<span class="opt">{</span>
+    <span class="kwa">public byte</span><span class="opt">[]</span> Header <span class="opt">=</span> <span class="kwa">null</span><span class="opt">!;</span>
+    <span class="kwa">public</span> List<span class="opt">&lt;</span><span class="kwa">byte</span><span class="opt">[]&gt;</span> pages <span class="opt">=</span> <span class="kwa">new</span><span class="opt">();</span>
+<span class="opt">}</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+.NET SDK 9.0.100
+Host Version: 9.0.0
+Commit: 9d5a6a9aa4
+
+&lt;OutputType&gt;Exe
+&lt;TargetFramework&gt;net9.0
+&lt;ImplicitUsings&gt;enable
+&lt;Nullable&gt;enable
+&lt;AllowUnsafeBlocks&gt;true
+&lt;ServerGarbageCollection&gt;true
+&lt;ConcurrentGarbageCollection&gt;true
+&lt;PublishAot&gt;false
+
+
+
+ Thu, 06 Feb 2025 09:58:31 GMT
+
+MAKE:
+cp revcomp.csharpcore-9.csharpcore Program.cs
+cp Include/csharpcore/program.csproj .
+/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release	
+  Determining projects to restore...
+  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/revcomp/tmp/program.csproj (in 752 ms).
+  program -&gt; /home/dunham/all-benchmarksgame/benchmarksgame_i53330/revcomp/tmp/bin/Release/net9.0/linux-x64/program.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:10.23
+
+12.35s to complete and log all make actions
+
+COMMAND LINE:
+ ./bin/Release/net9.0/linux-x64/program 0 &lt; revcomp-input100000001.txt
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

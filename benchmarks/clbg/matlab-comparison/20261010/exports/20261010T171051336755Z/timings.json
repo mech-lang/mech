@@ -1,0 +1,1737 @@
+{
+  "status": "partial",
+  "created_at": "2026-10-10T16:22:18.861321+00:00",
+  "sample_count": 3,
+  "programs": {
+    "spectralnorm:matlab-compact": {
+      "key": "spectralnorm:matlab-compact",
+      "id": "spectralnorm_compact",
+      "benchmark": "spectralnorm",
+      "language": "matlab",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/spectralnorm_compact.m",
+      "source_sha256": "70a95adaf05139b83bc30f68583f000d2548f3c5643779ae81b8c5a5f25d6e44",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "spectralnorm_compact({n})"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 28,
+        "normalized_loc": 28,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 28,
+      "physical_loc": 28,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Four separate coefficient/multiply/transpose/composition functions. Forty complete N-by-N products recompute every coefficient; bounded broadcasting is ordinary array evaluation, with no cached coefficient matrix.",
+        "full_work": {
+          "n": 5500,
+          "matrix_products": 40,
+          "coefficient_evaluations": 1210000000
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html"
+      },
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        4.380777875,
+        4.421620417,
+        4.484240542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 4.421620417,
+      "sample_stdev_seconds": 0.05211192562614698
+    },
+    "spectralnorm:matlab-optimized": {
+      "key": "spectralnorm:matlab-optimized",
+      "id": "spectralnorm_optimized",
+      "benchmark": "spectralnorm",
+      "language": "matlab",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/spectralnorm_optimized.m",
+      "source_sha256": "c8a384fd73173769e2f9f2a7d94cfac63aea8712fe58dfa2a7319c60f0dc1b7e",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "spectralnorm_optimized({n})"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 35,
+        "normalized_loc": 35,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Four separate coefficient/multiply/transpose/composition functions. Forty complete N-by-N products recompute every coefficient; bounded broadcasting is ordinary array evaluation, with no cached coefficient matrix.",
+        "full_work": {
+          "n": 5500,
+          "matrix_products": 40,
+          "coefficient_evaluations": 1210000000
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html"
+      },
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        3.091588667,
+        3.212994917,
+        3.265576
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 3.212994917,
+      "sample_stdev_seconds": 0.08923362583033395
+    },
+    "mandelbrot:matlab-compact": {
+      "key": "mandelbrot:matlab-compact",
+      "id": "mandelbrot_compact",
+      "benchmark": "mandelbrot",
+      "language": "matlab",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/mandelbrot_compact.m",
+      "source_sha256": "a25151b82cb0b010cbfba1ba63e9cbaa9955ba8192b9503a5dd298c3cf27c763",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "mandelbrot_compact({n})"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 18,
+        "normalized_loc": 18,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 18,
+      "physical_loc": 18,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Every pixel uses the ordinary recurrence and escape test for at most fifty iterations. No analytic interior, periodicity, or symmetry shortcut; complete packed PBM output is checked.",
+        "full_work": {
+          "n": 16000,
+          "pixels": 256000000,
+          "max_iterations": 50
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html"
+      },
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        39.197757875,
+        39.390634958,
+        39.253494167
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 39.253494167,
+      "sample_stdev_seconds": 0.09926034786409207
+    },
+    "mandelbrot:matlab-optimized": {
+      "key": "mandelbrot:matlab-optimized",
+      "id": "mandelbrot_optimized",
+      "benchmark": "mandelbrot",
+      "language": "matlab",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/mandelbrot_optimized.m",
+      "source_sha256": "28a6594978613aecec61760f2099c15730a27a173d91f4f0400c2ffc72db4711",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "mandelbrot_optimized({n})"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 29,
+        "normalized_loc": 29,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Every pixel uses the ordinary recurrence and escape test for at most fifty iterations. No analytic interior, periodicity, or symmetry shortcut; complete packed PBM output is checked.",
+        "full_work": {
+          "n": 16000,
+          "pixels": 256000000,
+          "max_iterations": 50
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html"
+      },
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        58.384771041,
+        58.619654625,
+        58.509728792
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 58.509728792,
+      "sample_stdev_seconds": 0.11752193151947447
+    },
+    "regexredux:matlab-compact": {
+      "key": "regexredux:matlab-compact",
+      "id": "regexredux_compact",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/regexredux_compact.m",
+      "source_sha256": "cefbed6d631f9cb83da8a3dde423ec666678fd6aec98a4a942fddcf172fbd483",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "regexredux_compact()"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 16,
+        "normalized_loc": 16,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 16,
+      "physical_loc": 16,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine separate case-insensitive non-overlapping regex searches, then five ordered case-sensitive regex substitutions. Whole input, cleaned length and final length are validated.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html"
+      },
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        31.871841375,
+        32.056613,
+        31.646769042
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "median_seconds": 31.871841375,
+      "sample_stdev_seconds": 0.2052519502125412
+    },
+    "regexredux:matlab-optimized": {
+      "key": "regexredux:matlab-optimized",
+      "id": "regexredux_optimized",
+      "benchmark": "regexredux",
+      "language": "matlab",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/regexredux_optimized.m",
+      "source_sha256": "0a6b33da5a01bd571fabe43ede4a5dcce6e8a9a5e6e0d36ad8e501e21985cd01",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "regexredux_optimized()"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 19,
+        "normalized_loc": 19,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 19,
+      "physical_loc": 19,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine separate case-insensitive non-overlapping regex searches, then five ordered case-sensitive regex substitutions. Whole input, cleaned length and final length are validated.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html"
+      },
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        31.667283625,
+        31.732256166,
+        31.694115792
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "median_seconds": 31.694115792,
+      "sample_stdev_seconds": 0.03264987084908682
+    },
+    "revcomp:matlab-compact": {
+      "key": "revcomp:matlab-compact",
+      "id": "revcomp_compact",
+      "benchmark": "revcomp",
+      "language": "matlab",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/revcomp_compact.m",
+      "source_sha256": "7663f250329dcf7807f4860fa99e3ce54c35bacad89daaa9d16a0501f3ebe9e7",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "revcomp_compact()"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 24,
+        "normalized_loc": 24,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Read every complete FASTA record, preserve headers, uppercase and reverse every nucleotide with the complete complement map, and emit all output in sixty-column lines.",
+        "full_work": {
+          "input_bytes": 254166745,
+          "records": 3,
+          "nucleotides": 250000000
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html"
+      },
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        15.500680958,
+        15.413343625,
+        15.028976458
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "median_seconds": 15.413343625,
+      "sample_stdev_seconds": 0.2509551965734812
+    },
+    "revcomp:matlab-optimized": {
+      "key": "revcomp:matlab-optimized",
+      "id": "revcomp_optimized",
+      "benchmark": "revcomp",
+      "language": "matlab",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/revcomp_optimized.m",
+      "source_sha256": "598047d327f956e991e51c2b3b2ca649ef67f008f5d74951b0090b1874ebe259",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/bin/sh",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "revcomp_optimized()"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 32,
+        "normalized_loc": 32,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 32,
+      "physical_loc": 32,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Read every complete FASTA record, preserve headers, uppercase and reverse every nucleotide with the complete complement map, and emit all output in sixty-column lines.",
+        "full_work": {
+          "input_bytes": 254166745,
+          "records": 3,
+          "nucleotides": 250000000
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html"
+      },
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        3.437639542,
+        3.431456417,
+        3.46652625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "median_seconds": 3.437639542,
+      "sample_stdev_seconds": 0.01871971385327398
+    },
+    "fasta:matlab-compact": {
+      "key": "fasta:matlab-compact",
+      "id": "fasta_compact",
+      "benchmark": "fasta",
+      "language": "matlab",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/fasta_compact.m",
+      "source_sha256": "929a6f552e47e3c4237466b266ebcc7df0b8a45c8335fbfe614550215e4429b2",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "fasta_compact({n})"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 30,
+        "normalized_loc": 30,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 30,
+      "physical_loc": 30,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Every random base consumes a fresh sequential LCG update and direct double division by 139968. Cumulative probabilities remain unscaled floating point. Ordinary discretize performs interval selection; no cached LCG cycle, lookup table, or integer probability scaling.",
+        "full_work": {
+          "n": 25000000,
+          "nucleotides": 250000000,
+          "lcg_updates": 200000000
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html"
+      },
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        20.708044416,
+        20.819055666,
+        20.581760125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 20.708044416,
+      "sample_stdev_seconds": 0.11872966040436785
+    },
+    "fasta:matlab-optimized": {
+      "key": "fasta:matlab-optimized",
+      "id": "fasta_optimized",
+      "benchmark": "fasta",
+      "language": "matlab",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/fasta_optimized.m",
+      "source_sha256": "98ce9f7ad215d22b161b1b6500206c5778189812b8534a348ae044513036341d",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "fasta_optimized({n})"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 33,
+        "normalized_loc": 33,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 33,
+      "physical_loc": 33,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Every random base consumes a fresh sequential LCG update and direct double division by 139968. Cumulative probabilities remain unscaled floating point. Ordinary discretize performs interval selection; no cached LCG cycle, lookup table, or integer probability scaling.",
+        "full_work": {
+          "n": 25000000,
+          "nucleotides": 250000000,
+          "lcg_updates": 200000000
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html"
+      },
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "samples_seconds": [
+        9.538952334,
+        9.597692708,
+        9.513803083
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 9.538952334,
+      "sample_stdev_seconds": 0.04305110441123325
+    },
+    "nbody:matlab-compact": {
+      "key": "nbody:matlab-compact",
+      "id": "nbody_compact",
+      "benchmark": "nbody",
+      "language": "matlab",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/nbody_compact.m",
+      "source_sha256": "133b0f5ff697569e6b6639f1713d4c3cd6ca623917e8c3627eb5255a6725456f",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "nbody_compact({n})"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 30,
+        "normalized_loc": 30,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 30,
+      "physical_loc": 30,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "All fifty million sequential timesteps, ten symmetric pair interactions and all five position updates per step, with both energies. Exact canonical constants, timestep and momentum adjustment; no precomputed final state.",
+        "full_work": {
+          "steps": 50000000,
+          "pair_interactions": 500000000,
+          "position_updates": 250000000
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html"
+      },
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "samples_seconds": [
+        578.458858167,
+        574.588074709,
+        577.440906917
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "median_seconds": 577.440906917,
+      "sample_stdev_seconds": 2.0065659276944277
+    },
+    "nbody:matlab-optimized": {
+      "key": "nbody:matlab-optimized",
+      "id": "nbody_optimized",
+      "benchmark": "nbody",
+      "language": "matlab",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/nbody_optimized.m",
+      "source_sha256": "dedbc68eb8c2522e3cfeb02e451821da2e34fa9a0c054822e3225cda9dc49044",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+      "source_provenance": "Local MATLAB implementation of the official required algorithm; no published MATLAB timing or source ranking is claimed.",
+      "local_adaptation": true,
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "nbody_optimized({n})"
+      ],
+      "runtime_environment": {
+        "MATLAB_JAVA": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home"
+      },
+      "loc_audit": {
+        "physical_loc": 59,
+        "normalized_loc": 59,
+        "expansions": [],
+        "metric": "statement-normalized",
+        "policy": "Nonblank/noncomment physical lines, plus independent statements packed with semicolons/commas. Matrix/cell/record separators and strings are excluded. Semantic declarations and all local application helpers count. No compressed-source metric."
+      },
+      "loc": 59,
+      "physical_loc": 59,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "All fifty million sequential timesteps, ten symmetric pair interactions and all five position updates per step, with both energies. Exact canonical constants, timestep and momentum adjustment; no precomputed final state.",
+        "full_work": {
+          "steps": 50000000,
+          "pair_interactions": 500000000,
+          "position_updates": 250000000
+        },
+        "native_benchmark_kernel": false,
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html"
+      },
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "samples_seconds": [
+        7.4072045,
+        7.457587875,
+        7.39959875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "median_seconds": 7.4072045,
+      "sample_stdev_seconds": 0.03151473340021224
+    },
+    "spectralnorm:mech-control": {
+      "id": "mech-control-spectralnorm",
+      "key": "spectralnorm:mech-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 12,
+      "published_chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "previous_seconds": 0.086075292,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Four source functions: coefficient, apply, apply-transpose, and step. Twenty power-method applications execute forty matrix-vector products. Coefficients are computed by emitted Mech arithmetic; no stored matrix or answer shortcut.",
+        "full_work": {
+          "n": 5500,
+          "power_applications": 20,
+          "matrix_vector_products": 40,
+          "weighted_contributions": 1210000000
+        },
+        "evidence": [
+          {
+            "path": "work-audit/20261009/sources/spectralnorm-four-functions.mec",
+            "sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html"
+      },
+      "samples_seconds": [
+        0.095848208,
+        0.093529917,
+        0.087685875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 0.093529917,
+      "sample_stdev_seconds": 0.004206165713595028
+    },
+    "nbody:mech-control": {
+      "id": "mech-control-nbody",
+      "key": "nbody:mech-control",
+      "benchmark": "nbody",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 25,
+      "published_chart_key": "nbody:pairwise-mass-tails",
+      "previous_seconds": 1.05385575,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Full symplectic pair integration is written in Mech. The generic reactive runner supplies iteration count and output formatting; it contains no gravity kernel.",
+        "full_work": {
+          "steps": 50000000,
+          "pairs_per_step": 10
+        },
+        "evidence": [
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+            "sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175"
+          },
+          {
+            "path": "array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+            "sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa"
+          },
+          {
+            "path": "array-comparison/nbody-20261009/comparison-mech-compact.json",
+            "sha256": "30535144ef6ef3b40d3d7fed28ce44d4e7214bc964852c19429094d76935583e"
+          },
+          {
+            "path": "../../hosts/gpu/src/fused_f64/runner.rs",
+            "sha256": "1249907f7fcb777cf9f09ddd3e57268149b5aad2c4cb5a209a36b8ccf41318db"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html"
+      },
+      "samples_seconds": [
+        1.061413875,
+        1.05333975,
+        1.052399666
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "median_seconds": 1.05333975,
+      "sample_stdev_seconds": 0.004955320647855253
+    },
+    "mandelbrot:mech-control": {
+      "id": "mech-control-mandelbrot",
+      "key": "mandelbrot:mech-control",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+      "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "loc": 29,
+      "published_chart_key": "mandelbrot:mech-program-simd-loop-fma",
+      "previous_seconds": 0.439738792,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "The Mech-defined callback performs double-precision escape iteration for every pixel, with a maximum of 50 iterations, and emits the complete PBM. Native SIMD and lane termination preserve that algorithm.",
+        "full_work": {
+          "width": 16000,
+          "height": 16000,
+          "maximum_iterations": 50
+        },
+        "evidence": [
+          {
+            "path": "mandelbrot/mandelbrot-compact-program.mec",
+            "sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169"
+          },
+          {
+            "path": "mandelbrot/mandelbrot-program.mec",
+            "sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html"
+      },
+      "samples_seconds": [
+        0.448487417,
+        0.46665425,
+        0.441945875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 0.448487417,
+      "sample_stdev_seconds": 0.012801883898657768
+    },
+    "revcomp:mech-control": {
+      "id": "mech-control-revcomp",
+      "key": "revcomp:mech-control",
+      "benchmark": "revcomp",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after",
+      "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "loc": 7,
+      "published_chart_key": "revcomp:mech-revcomp-optimized",
+      "previous_seconds": 0.149272625,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Buffered growing record input; full record reversal, alphabet translation, and 60-column output. The implementation does not use file size to preallocate stdin.",
+        "full_work": {
+          "input_bytes": 254166745
+        },
+        "evidence": [
+          {
+            "path": "revcomp/revcomp.mec",
+            "sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d"
+          },
+          {
+            "path": "../../hosts/gpu/src/sequence/runtime.rs",
+            "sha256": "6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html"
+      },
+      "samples_seconds": [
+        0.151580959,
+        0.152848625,
+        0.147024959
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "median_seconds": 0.151580959,
+      "sample_stdev_seconds": 0.003062656765160806
+    },
+    "fasta:mech-control": {
+      "id": "mech-control-fasta",
+      "key": "fasta:mech-control",
+      "benchmark": "fasta",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "loc": 43,
+      "published_chart_key": "fasta:mech-fasta-final-expanded-v2",
+      "previous_seconds": 0.541193292,
+      "previous_report": "fasta/investigations/20261009-floating-cdf/results.json",
+      "algorithm": {
+        "strict": true,
+        "status": "corrected",
+        "reason": "Strict comparison disables the general exact-integer-cutoff transform. Emitted objects retain floating division/comparison. Each random nucleotide advances the naive LCG. The only repeated-sequence cache is for the supplied fixed ALU string.",
+        "full_work": {
+          "n": 25000000,
+          "fixed_sequence_bytes": 50000000,
+          "random_nucleotides": 200000000,
+          "lcg_updates": 200000000
+        },
+        "required_build_environment": {
+          "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0"
+        },
+        "evidence": [
+          {
+            "path": "fasta/fasta.mec",
+            "sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066"
+          },
+          {
+            "path": "fasta/fasta-optimized.mec",
+            "sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602"
+          },
+          {
+            "path": "../../hosts/gpu/src/control/compiler.rs",
+            "sha256": "b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286"
+          },
+          {
+            "path": "work-audit/20261009/timings.json",
+            "sha256": "9c85e39d8d72357ee9f0867cdebb0968eba37f3577d013d3d21f661027abc33a"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html"
+      },
+      "samples_seconds": [
+        0.594703083,
+        0.571124709,
+        0.573853291
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 0.573853291,
+      "sample_stdev_seconds": 0.012897665852508991
+    },
+    "regexredux:mech-control": {
+      "id": "mech-control-regexredux",
+      "key": "regexredux:mech-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "loc": 24,
+      "published_chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "previous_seconds": 0.489611584,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine independent regex counts, each using its prescribed pattern, and five ordered regex substitutions. The general regex library handles each operation; there is no combined-pattern benchmark matcher.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "evidence": [
+          {
+            "path": "regexredux/regexredux.mec",
+            "sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html"
+      },
+      "samples_seconds": [
+        0.484192458,
+        0.488650792,
+        0.488684875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "eligible_for_chart": true,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "median_seconds": 0.488650792,
+      "sample_stdev_seconds": 0.0025839154465118214
+    }
+  },
+  "completed_benchmarks": [
+    "spectralnorm",
+    "mandelbrot",
+    "regexredux",
+    "revcomp",
+    "fasta",
+    "nbody"
+  ],
+  "orders": {
+    "spectralnorm": [
+      [
+        "spectralnorm:matlab-compact",
+        "spectralnorm:mech-control",
+        "spectralnorm:matlab-optimized"
+      ],
+      [
+        "spectralnorm:matlab-compact",
+        "spectralnorm:matlab-optimized",
+        "spectralnorm:mech-control"
+      ],
+      [
+        "spectralnorm:mech-control",
+        "spectralnorm:matlab-compact",
+        "spectralnorm:matlab-optimized"
+      ]
+    ],
+    "mandelbrot": [
+      [
+        "mandelbrot:mech-control",
+        "mandelbrot:matlab-compact",
+        "mandelbrot:matlab-optimized"
+      ],
+      [
+        "mandelbrot:mech-control",
+        "mandelbrot:matlab-optimized",
+        "mandelbrot:matlab-compact"
+      ],
+      [
+        "mandelbrot:matlab-optimized",
+        "mandelbrot:matlab-compact",
+        "mandelbrot:mech-control"
+      ]
+    ],
+    "regexredux": [
+      [
+        "regexredux:matlab-compact",
+        "regexredux:mech-control",
+        "regexredux:matlab-optimized"
+      ],
+      [
+        "regexredux:matlab-optimized",
+        "regexredux:mech-control",
+        "regexredux:matlab-compact"
+      ],
+      [
+        "regexredux:matlab-compact",
+        "regexredux:mech-control",
+        "regexredux:matlab-optimized"
+      ]
+    ],
+    "revcomp": [
+      [
+        "revcomp:matlab-compact",
+        "revcomp:matlab-optimized",
+        "revcomp:mech-control"
+      ],
+      [
+        "revcomp:mech-control",
+        "revcomp:matlab-optimized",
+        "revcomp:matlab-compact"
+      ],
+      [
+        "revcomp:matlab-compact",
+        "revcomp:matlab-optimized",
+        "revcomp:mech-control"
+      ]
+    ],
+    "fasta": [
+      [
+        "fasta:mech-control",
+        "fasta:matlab-optimized",
+        "fasta:matlab-compact"
+      ],
+      [
+        "fasta:mech-control",
+        "fasta:matlab-compact",
+        "fasta:matlab-optimized"
+      ],
+      [
+        "fasta:matlab-compact",
+        "fasta:mech-control",
+        "fasta:matlab-optimized"
+      ]
+    ],
+    "nbody": [
+      [
+        "nbody:matlab-compact",
+        "nbody:mech-control",
+        "nbody:matlab-optimized"
+      ],
+      [
+        "nbody:matlab-optimized",
+        "nbody:matlab-compact",
+        "nbody:mech-control"
+      ],
+      [
+        "nbody:matlab-compact",
+        "nbody:matlab-optimized",
+        "nbody:mech-control"
+      ]
+    ],
+    "pidigits": [
+      [
+        "pidigits:mech-control",
+        "pidigits:matlab-compact",
+        "pidigits:matlab-optimized"
+      ],
+      [
+        "pidigits:mech-control",
+        "pidigits:matlab-optimized",
+        "pidigits:matlab-compact"
+      ]
+    ]
+  },
+  "discarded": [],
+  "machine": "Apple M3",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.2\nBuildVersion:\t\t25C56",
+  "power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "workloads": {
+    "nbody": [
+      1000,
+      50000000
+    ],
+    "mandelbrot": [
+      200,
+      16000
+    ],
+    "knucleotide": [
+      1000,
+      25000000
+    ],
+    "spectralnorm": [
+      100,
+      5500
+    ],
+    "revcomp": [
+      1000,
+      25000000
+    ],
+    "fannkuchredux": [
+      7,
+      12
+    ],
+    "fasta": [
+      1000,
+      25000000
+    ],
+    "binarytrees": [
+      10,
+      21
+    ],
+    "regexredux": [
+      30,
+      5000000
+    ],
+    "pidigits": [
+      30,
+      10000
+    ]
+  },
+  "runtimes": {
+    "launcher": {
+      "path": "/Applications/MATLAB_R2026b.app/bin/matlab",
+      "sha256": "6410f261f4a31011ef767412a3541f94e1900cec158951a5e400a6cd776d710f"
+    },
+    "engine": {
+      "path": "/Applications/MATLAB_R2026b.app/bin/maca64/MATLAB",
+      "sha256": "ed2d96026421bb1f5d0deed46b1cfefa6011e8f5e7eef678675abe64ae0df764"
+    },
+    "input_routing": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh",
+      "sha256": "a517cc4d3838fc6a44c8075fa044701a2f87aa8d9169cd19d67718ae6effb084",
+      "role": "runtime-support",
+      "policy": "Only duplicates redirected stdin to descriptor 3 before MATLAB batch startup; no input parsing or benchmark computation."
+    },
+    "java": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home/lib/server/libjvm.dylib",
+      "sha256": "c0c9cc842a9d33857be8262157d19ee9c1e15caf99a9bde784033b351b5dd117",
+      "home": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home",
+      "version": "openjdk version \"25.0.4.1\" 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)"
+    },
+    "java_modules": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home/lib/modules",
+      "sha256": "384c6a1944553e693145640a486fd1c46382904b8512586f6a7926f27715a743"
+    }
+  },
+  "runtime_policy": "MATLAB R2026b 26.2.0.3386108 \u00b7 native Apple Silicon \u00b7 standard JIT enabled \u00b7 eight automatic computation threads \u00b7 base MATLAB only; no Parallel Computing Toolbox, Coder, or MEX benchmark executor.",
+  "timing_boundary": "Fresh-process wall time includes launcher/licensing checks, MATLAB initialization, first-use JIT, complete input, computation, complete output to a regular file and teardown. Setup and validation excluded.",
+  "source_pins": {
+    "prepare.py": "6f2ee6d0bf42fc89dddf3d6f5933ea9519826ea3b1b20850830c00c5e73edeac",
+    "run.py": "7e99a7a5e32d9293c02634d0db72898a6f81c4324c76830f13ae87f774b02bb1",
+    "loc.py": "1661787c9518fa2be023ef5846d23aa72f93ebf7f5d9327b5b05abbd9cb318bf",
+    "audit.py": "c16f81d86cd0f6da8f0e6868fa6ff9688f85666653811b058a4c6cb761ac558c",
+    "source-audit.json": "e9ca8da0e5c262cdb362905b92293771d08007d5494e771c7d36edbfb35b1145",
+    "results/builds.json": "83914b9556c873996087830c88c6cbc3052aa1a05da6ec12022d76cb8c1e4a62",
+    "results/small-checks.json": "a3a08196649abb326346ef3a172cfe3e3f3527ab7ba78d1b7bb0d45af3f47490",
+    "evidence/run-before-ui-pauses.py": "f4faef048b1b07937aa025f95a7e4a4555e21787458c2452522de42439b12c3c"
+  },
+  "protocol": "Three shuffled sequential fresh-process full-workload samples per compact/optimized MATLAB source and unchanged Mech AOT control. Every complete output is validated after timing; the first full sample also establishes full validation. Startup, licensing checks, JIT, input, computation, full output and teardown are included. Base MATLAB standard operations, no native benchmark executors. AC power, Low Power Mode off; compiler and power changes invalidate samples. Sources, runtimes, work audit and normalized LOC are pinned.",
+  "runner_revisions": [
+    {
+      "at": "2026-10-10T16:26:17.080137+00:00",
+      "previous_sha256": "f4faef048b1b07937aa025f95a7e4a4555e21787458c2452522de42439b12c3c",
+      "current_sha256": "7e99a7a5e32d9293c02634d0db72898a6f81c4324c76830f13ae87f774b02bb1",
+      "previous_source": "evidence/run-before-ui-pauses.py",
+      "reason": "Added a wait between complete samples for chart verification requested during measurement. Active full sample completed and was saved before the original source-pin guard stopped scheduling. Work, sources, runtimes, execution timer and output validation are unchanged; all earlier samples retain the original runner provenance."
+    }
+  ],
+  "measurement_status": "running",
+  "measurement_snapshot_sha256": "af40144dbcdbd32057c8916a9055bbf9a693fe3a828d6d7e247c95f6c21edc9e",
+  "exported_at": "20261010T171051336755Z"
+}

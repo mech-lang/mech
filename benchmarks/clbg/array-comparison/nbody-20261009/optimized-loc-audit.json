@@ -1,0 +1,12 @@
+{
+  "language": "bqn",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-flat-cached-reduce.bqn",
+  "source_sha256": "b708420c4430cc2017dc264ada534e48acf68edea72b0cad9723e6503b50a843",
+  "physical_loc": 82,
+  "normalized_loc": 82,
+  "expansions": [],
+  "normalization": "One assignment or executable statement per line. Existing data and expression wrapping retained. Comments and blanks excluded.",
+  "published_source": "sources/nbody.bqn",
+  "variant": "Locally optimized pure BQN: cached pairs, gathers, scaled state, two array reductions.",
+  "hot_loop_matches": "sources/nbody-flat-two-reductions.bqn"
+}

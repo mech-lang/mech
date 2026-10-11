@@ -1,0 +1,273 @@
+{
+  "source_counting": "Nonblank/noncomment physical LOC, retaining explicit Mech computation",
+  "changes": [
+    {
+      "path": "mandelbrot/mandelbrot-program.mec",
+      "baseline_source": "mandelbrot/mandelbrot-program.mec",
+      "before_sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+      "after_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "before_loc": 29,
+      "after_loc": 29,
+      "expression_functions": [],
+      "application_stages": 2
+    },
+    {
+      "path": "mandelbrot/mandelbrot-compact-program.mec",
+      "baseline_source": "mandelbrot/mandelbrot-compact-program.mec",
+      "before_sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+      "after_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "before_loc": 20,
+      "after_loc": 20,
+      "expression_functions": [],
+      "application_stages": 2
+    },
+    {
+      "path": "knucleotide/knucleotide.mec",
+      "baseline_source": "knucleotide/knucleotide.mec",
+      "before_sha256": "bd8bf9563a71927b82993c2f1aff7b54c81124e0c208eb994e696daecadb48bf",
+      "after_sha256": "6cc51495dd8ec1d88cf7799d41c536b56c6fed31c89c44ea75ddee334813e566",
+      "before_loc": 24,
+      "after_loc": 24,
+      "expression_functions": [],
+      "application_stages": 4
+    },
+    {
+      "path": "knucleotide/knucleotide-compact.mec",
+      "baseline_source": "knucleotide/knucleotide-compact.mec",
+      "before_sha256": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+      "after_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "before_loc": 17,
+      "after_loc": 17,
+      "expression_functions": [],
+      "application_stages": 4
+    },
+    {
+      "path": "revcomp/revcomp.mec",
+      "baseline_source": "revcomp/revcomp.mec",
+      "before_sha256": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+      "after_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "before_loc": 10,
+      "after_loc": 7,
+      "expression_functions": [],
+      "application_stages": 5
+    },
+    {
+      "path": "revcomp/revcomp-buffered.mec",
+      "baseline_source": "revcomp/revcomp-buffered.mec",
+      "before_sha256": "21e5dc61b4475368e29c32afe0696fe096ddac667fefec2bd729fc34a0e36a43",
+      "after_sha256": "9afe7d2d2ec2996a00f692e41ba81a5cbfe737550b606719522b9e0e0b1ce93d",
+      "before_loc": 10,
+      "after_loc": 7,
+      "expression_functions": [],
+      "application_stages": 6
+    },
+    {
+      "path": "fannkuchredux/fannkuchredux.mec",
+      "baseline_source": "fannkuchredux/fannkuchredux.mec",
+      "before_sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "after_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "before_loc": 43,
+      "after_loc": 39,
+      "expression_functions": [
+        "NeedsFlip",
+        "NeedsDigit",
+        "NeedsCarry",
+        "More"
+      ],
+      "application_stages": 0
+    },
+    {
+      "path": "fannkuchredux/fannkuchredux-even.mec",
+      "baseline_source": "fannkuchredux/fannkuchredux-even.mec",
+      "before_sha256": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+      "after_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "before_loc": 64,
+      "after_loc": 59,
+      "expression_functions": [
+        "NeedsFlip",
+        "NeedsDigit",
+        "NeedsCarry",
+        "More",
+        "PairNeedsFlip"
+      ],
+      "application_stages": 0
+    },
+    {
+      "path": "fasta/fasta.mec",
+      "baseline_source": "fasta/fasta.mec",
+      "before_sha256": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+      "after_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "before_loc": 33,
+      "after_loc": 32,
+      "expression_functions": [
+        "More"
+      ],
+      "application_stages": 0
+    },
+    {
+      "path": "fasta/fasta-optimized.mec",
+      "baseline_source": "fasta/fasta-optimized.mec",
+      "before_sha256": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+      "after_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "before_loc": 44,
+      "after_loc": 43,
+      "expression_functions": [
+        "Count"
+      ],
+      "application_stages": 0
+    },
+    {
+      "path": "binarytrees/binarytrees.mec",
+      "baseline_source": "binarytrees/binarytrees.mec",
+      "before_sha256": "f4d803ec19b32b26c695f9a509468639d7dc57b35678ff1b0f1d8024a2e218d6",
+      "after_sha256": "5a03182ece4f7707cfd63c5288a465690e143dda96c39ecee27ac350d187255f",
+      "before_loc": 29,
+      "after_loc": 26,
+      "expression_functions": [
+        "AllocatedChunk"
+      ],
+      "application_stages": 2
+    },
+    {
+      "path": "binarytrees/binarytrees-parallel.mec",
+      "baseline_source": "binarytrees/binarytrees-parallel.mec",
+      "before_sha256": "d64191b398fea60eaf678c6f345952c9af4e68c93f0efe708a37aa3ed4bf8b9f",
+      "after_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "before_loc": 29,
+      "after_loc": 26,
+      "expression_functions": [
+        "AllocatedChunk"
+      ],
+      "application_stages": 2
+    },
+    {
+      "path": "regexredux/regexredux.mec",
+      "baseline_source": "regexredux/regexredux.mec",
+      "before_sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+      "after_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "before_loc": 24,
+      "after_loc": 24,
+      "expression_functions": [],
+      "application_stages": 6
+    },
+    {
+      "path": "pidigits/pidigits.mec",
+      "baseline_source": "pidigits/pidigits.mec",
+      "before_sha256": "065d63d6a3099076a261bd5d6d57c6c882a088f101a4dfede9c6e1a454c6a4b5",
+      "after_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "before_loc": 39,
+      "after_loc": 35,
+      "expression_functions": [
+        "Label",
+        "NoLabel",
+        "More",
+        "NeedsSpace"
+      ],
+      "application_stages": 0
+    },
+    {
+      "path": "pidigits/pidigits-advance.mec",
+      "baseline_source": "pidigits/pidigits-advance.mec",
+      "before_sha256": "b85d1022a3ef6d1b3a4847c51eb2ff9042e815cad67348fade5a8c10285cd67b",
+      "after_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "before_loc": 42,
+      "after_loc": 38,
+      "expression_functions": [
+        "Label",
+        "NoLabel",
+        "More",
+        "NeedsSpace"
+      ],
+      "application_stages": 0
+    },
+    {
+      "path": "pidigits/pidigits-gated.mec",
+      "baseline_source": "pidigits/pidigits-gated.mec",
+      "before_sha256": "31c27c6497a16ebc6b11f7eb7820fc567744cb4ca15de548923f6dcd33731b7c",
+      "after_sha256": "67ff52e6ab9be4f10bd33034458fedf3538f335a7e0fdaeab0f8924b4a5a4ac2",
+      "before_loc": 41,
+      "after_loc": 36,
+      "expression_functions": [
+        "Label",
+        "NoLabel",
+        "More",
+        "Step",
+        "NeedsSpace"
+      ],
+      "application_stages": 0
+    },
+    {
+      "path": "function-application-audit/20261009T171437Z/migrated-endpoints/binarytrees/binarytrees.mec",
+      "baseline_source": "binarytrees/experiments/callback-forms/binarytrees.mec",
+      "before_sha256": "13217d8ef89347f723f2fd2e3eb9f38432f432d6719063505b2f99a41d34fc5b",
+      "after_sha256": "83312a83180907ef7ab54b41f2338c8a331704b75823d467431f01fbc4584a31",
+      "before_loc": 50,
+      "after_loc": 42,
+      "expression_functions": [
+        "Leaf",
+        "Make",
+        "One",
+        "CountChildren",
+        "More",
+        "MoreDepths"
+      ],
+      "application_stages": 2
+    },
+    {
+      "path": "function-application-audit/20261009T171437Z/migrated-endpoints/binarytrees/binarytrees-parallel.mec",
+      "baseline_source": "binarytrees/experiments/callback-forms/binarytrees-parallel.mec",
+      "before_sha256": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+      "after_sha256": "b082939ae89649d93c08d48548cbe30938ccabd06bdf9b0f58fa2b0118147bba",
+      "before_loc": 50,
+      "after_loc": 42,
+      "expression_functions": [
+        "Leaf",
+        "Make",
+        "One",
+        "CountChildren",
+        "More",
+        "MoreDepths"
+      ],
+      "application_stages": 2
+    },
+    {
+      "path": "spectralnorm/spectralnorm.mec",
+      "baseline_source": "spectralnorm/spectralnorm.mec",
+      "before_sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+      "after_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "before_loc": 13,
+      "after_loc": 9,
+      "expression_functions": [
+        "step"
+      ],
+      "application_stages": 1,
+      "ordinary_matrix_forms": true
+    },
+    {
+      "path": "spectralnorm/spectralnorm-integer.mec",
+      "baseline_source": "spectralnorm/spectralnorm-integer.mec",
+      "before_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "after_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "before_loc": 13,
+      "after_loc": 9,
+      "expression_functions": [
+        "step"
+      ],
+      "application_stages": 1,
+      "ordinary_matrix_forms": true
+    },
+    {
+      "path": "spectralnorm/spectralnorm-compact.mec",
+      "baseline_source": "spectralnorm/spectralnorm-compact.mec",
+      "before_sha256": "8544df02d4799b3bba1c743c32df0ecab2750fe645e88ba444e9ad11457d632b",
+      "after_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "before_loc": 13,
+      "after_loc": 9,
+      "expression_functions": [
+        "step"
+      ],
+      "application_stages": 1,
+      "ordinary_matrix_forms": true
+    }
+  ]
+}

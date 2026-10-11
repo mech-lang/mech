@@ -1,0 +1,665 @@
+{
+  "status": "faithful-sources-reviewed",
+  "policy": "Nonblank, noncomment physical LOC plus separately audited packed statements, inline/chained assignments and imperative function headers; no compressed-size metric. Structural separators are unchanged. Runtime/library bindings are pinned and shown separately; all benchmark algorithms remain in the listed source.",
+  "rows": [
+    {
+      "benchmark": "spectralnorm",
+      "language": "k",
+      "file": "spectralnorm.growler.k",
+      "sha256": "024de5de397b0783b21444cd45b11602acae0aadf0907286c2ef8da09010ca09",
+      "physical_loc": 7,
+      "normalized_loc": 11,
+      "expansions": [
+        {
+          "line": 2,
+          "extra_lines": 1,
+          "original": "i:!n:. `argv 2",
+          "units": [
+            "i assignment",
+            "nested n assignment"
+          ]
+        },
+        {
+          "line": 3,
+          "extra_lines": 1,
+          "original": " A: {1%1+x+0.5*s*1+s:x+i}'i",
+          "units": [
+            "A assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 4,
+          "extra_lines": 1,
+          "original": "TA: {1%1+i+0.5*s*1+s:x+i}'i",
+          "units": [
+            "TA assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 6,
+          "extra_lines": 1,
+          "original": "u:B v:19 B/n#1.0",
+          "units": [
+            "u assignment",
+            "nested v assignment"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 5 [0.0;A] and [0.0;TA] use argument delimiters.",
+        "A and TA are matrix-value bindings of applied lambdas, not named function declarations."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/spectralnorm/spectralnorm.growler.k",
+      "algorithm": {
+        "strict": false,
+        "status": "interface-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+        "reason": "Published compact source materializes matrix values and does not implement the four separate functions required by the task. Preserve these measurements for investigation, exclude from strict comparison until a faithful implementation is measured."
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "bqn",
+      "file": "spectralnorm.bqn",
+      "sha256": "f4de9792cb13aee9fcb911be9cdf65fd9a65c9727607c0f12b6fdbc9bf9c30a1",
+      "physical_loc": 8,
+      "normalized_loc": 12,
+      "expansions": [
+        {
+          "line": 1,
+          "extra_lines": 3,
+          "original": "i1h\u21900.5\u00d7i1\u21901+i\u2190\u2195n\u2190\u2022ParseFloat\u2291\u2022args",
+          "units": [
+            "i1h assignment",
+            "nested i1 assignment",
+            "nested i assignment",
+            "nested n assignment"
+          ]
+        },
+        {
+          "line": 3,
+          "extra_lines": 1,
+          "original": "a \u2190 \u2349b \u22c4 a\u203fb<\u02d8\u00a8\u21a9",
+          "units": [
+            "a assignment",
+            "a/b modifying assignment after statement diamond"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 3 a\u203fb modification is one destructuring modification statement, not two packed assignments."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/spectralnorm/spectralnorm.bqn",
+      "algorithm": {
+        "strict": false,
+        "status": "interface-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+        "reason": "Published compact source materializes matrix values and does not implement the four separate functions required by the task. Preserve these measurements for investigation, exclude from strict comparison until a faithful implementation is measured."
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "k",
+      "file": "knucleotide.growler.k",
+      "sha256": "6cbab2064c6bedb3b9d29ae4372ff0f666e414ccc948f382e0f4d0ef0025d010",
+      "physical_loc": 10,
+      "normalized_loc": 25,
+      "expansions": [
+        {
+          "line": 3,
+          "extra_lines": 5,
+          "original": "x:1:\"/dev/stdin\";h:(&x=\">\")2;s:1+h+(x@h+!200)?\"\\n\";N:#x;K:262144;P:\"ggtattttaatttatagt\"",
+          "units": [
+            "x assignment",
+            "h assignment",
+            "s assignment",
+            "N assignment",
+            "K assignment",
+            "P assignment"
+          ]
+        },
+        {
+          "line": 4,
+          "extra_lines": 6,
+          "original": "f:{[S;o]b:x@o+!K&N-o;b:b@&b>\"\\n\";d:(S 0),b;L:#S 0;p:(-1_4*c)+1_c:\"acgt\"?d",
+          "units": [
+            "f function binding/header",
+            "b assignment",
+            "b reassignment",
+            "d assignment",
+            "L assignment",
+            "p assignment",
+            "nested c assignment"
+          ]
+        },
+        {
+          "line": 5,
+          "extra_lines": 1,
+          "original": " g:&p=10;g:g@&g<$[N>o+K;0|(#d)-17;#d]",
+          "units": [
+            "g assignment",
+            "g reassignment"
+          ]
+        },
+        {
+          "line": 7,
+          "extra_lines": 2,
+          "original": "Z:f/[(();16#0;16#0;0;0);s+K*!-_-(N-s)%K];c2:Z 1;n:Z 3",
+          "units": [
+            "Z assignment",
+            "c2 assignment",
+            "n assignment"
+          ]
+        },
+        {
+          "line": 8,
+          "extra_lines": 1,
+          "original": "fm:{[k;c;n]{x,\" \",(-3_r),\".\",-3#r:$_0.5+1e5*y}'[k;c%n]@>c}",
+          "units": [
+            "fm function binding",
+            "formatter-local nested r assignment"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 4 [S;o] delimits function parameters.",
+        "Line 5 $[condition;then;else] is a conditional form.",
+        "Line 6 tuple semicolons delimit returned elements; [d;x;y] and [g;2+!16] delimit parameters/arguments.",
+        "Line 7 initial state (();16#0;16#0;0;0) is a tuple and its outer square brackets delimit scan arguments.",
+        "Line 8 [k;c;n] and [k;c%n] delimit parameters/arguments.",
+        "Lines 9 and 10 fm brackets delimit arguments.",
+        "Line 12 semicolon in the tuple separates output columns."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/knucleotide/knucleotide.growler.k",
+      "algorithm": {
+        "strict": false,
+        "status": "work-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+        "reason": "Uses a small indexed pair histogram and selective searches for requested longer strings. Omits library hash-table lookup/update for every overlapping window at k=1,2,3,4,6,12,18. Correct output does not establish work parity."
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "bqn",
+      "file": "knucleotide.bqn",
+      "sha256": "a0d4d974545aa3c87798b27c99668ea270514158d5e66e61c5456d8582d9628b",
+      "physical_loc": 46,
+      "normalized_loc": 51,
+      "expansions": [
+        {
+          "line": 17,
+          "extra_lines": 2,
+          "original": "vsi \u2190 {p\u203fc: \u27e8n\u2190\u2260p, s\u2190z\u2290n\u2193c \u22c4 \u2260s\u27e9}\u00a8 <\u02d8 2\u21952\u2193vs",
+          "units": [
+            "vsi assignment",
+            "lambda-local n assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 25,
+          "extra_lines": 1,
+          "original": "  tn\u2190\u2260tail \u2190 inp\u2193\u02dccn\u00d7\ud835\udd68",
+          "units": [
+            "tn assignment",
+            "nested tail assignment"
+          ]
+        },
+        {
+          "line": 54,
+          "extra_lines": 2,
+          "original": "J0 \u2190 {a\u203fb: a\u21a9\u230a0.5+1e5\u00d7a \u22c4 \u223e\u27e8b,\" \",\u2022Repr \u230aa\u00f71e3,\".\",\"000\"\u00ab\u02dc\u2022Repr 1e3|a\u27e9}",
+          "units": [
+            "J0 function binding/header",
+            "a modifying assignment",
+            "return expression after statement diamond"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 1 semicolon separates alternative function cases, not sequential statements.",
+        "Line 17 both comma and diamond are list-element delimiters inside \u27e8\u27e9; the third element \u2260s is not a separate sequential statement.",
+        "Function case/destructuring headers do not create extra assignment statements."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/knucleotide/knucleotide.bqn",
+      "algorithm": {
+        "strict": false,
+        "status": "work-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+        "reason": "Uses a small indexed pair histogram and selective searches for requested longer strings. Omits library hash-table lookup/update for every overlapping window at k=1,2,3,4,6,12,18. Correct output does not establish work parity."
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "bqn",
+      "file": "spectralnorm-faithful.bqn",
+      "sha256": "5e6955104b07d3c2fdda9b5ee29c80ced059c064bd386db33d941f6c2b29d380",
+      "physical_loc": 9,
+      "normalized_loc": 13,
+      "expansions": [
+        {
+          "line": 4,
+          "extra_lines": 2,
+          "reason": "Av binding, vector binding, return"
+        },
+        {
+          "line": 5,
+          "extra_lines": 2,
+          "reason": "Atv binding, vector binding, return"
+        }
+      ],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Four separate coefficient, multiplication, transposed multiplication, and composed multiplication functions; coefficients evaluated during all 40 products, without precomputed matrices.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": []
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "k",
+      "file": "spectralnorm-faithful.growler.k",
+      "sha256": "e11bed3fa13db2205376e495075515b1f9b2dba311cff5a29b1ebe8eeeef5e96",
+      "physical_loc": 9,
+      "normalized_loc": 9,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Four separate coefficient, multiplication, transposed multiplication, and composed multiplication functions; coefficients evaluated during all 40 products, without precomputed matrices.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": []
+    },
+    {
+      "benchmark": "regexredux",
+      "language": "bqn",
+      "file": "regexredux.bqn",
+      "sha256": "9e22411c1b3bdf8c575d4560a505bf321957984733cb73f7154c5c94f1cd1e5c",
+      "physical_loc": 14,
+      "normalized_loc": 16,
+      "expansions": [
+        {
+          "line": 10,
+          "extra_lines": 2,
+          "reason": "Substitute binding, sequence assignment, return"
+        }
+      ],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read full input; header/newline removal; nine independent regex traversals; five ordered global substitutions. PCRE2 JIT is ordinary library regex compilation, not a combined benchmark kernel.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.bqn",
+        "stdlib/libarray-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "regexredux",
+      "language": "k",
+      "file": "regexredux.growler.k",
+      "sha256": "ecd140449ba3b7b24686397d33dd42e7c18c7385f71b896385cb9da4eac6cc27",
+      "physical_loc": 14,
+      "normalized_loc": 15,
+      "expansions": [
+        {
+          "line": 10,
+          "extra_lines": 1,
+          "reason": "substitute binding plus sequence assignment"
+        }
+      ],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read full input; header/newline removal; nine independent regex traversals; five ordered global substitutions. PCRE2 JIT is ordinary library regex compilation, not a combined benchmark kernel.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.k",
+        "stdlib/libgrowler-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "pidigits",
+      "language": "bqn",
+      "file": "pidigits.bqn",
+      "sha256": "1c5f861102122ffab59f27cd6cef72cf0ba38dd3f8e17275e53c67dc5b054eb7",
+      "physical_loc": 37,
+      "normalized_loc": 41,
+      "expansions": [
+        {
+          "line": 11,
+          "extra_lines": 4,
+          "reason": "Extract binding, multiply, add, divide, return"
+        }
+      ],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Sequential, unbounded LFT spigot in the language; generic GMP operations; both extract(3) and extract(4) checked before each emitted digit, with the published q>r guard.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.bqn",
+        "stdlib/libarray-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "pidigits",
+      "language": "k",
+      "file": "pidigits.growler.k",
+      "sha256": "4c703cb97e540f1a2289194323885c35b339b4e08f4e47eaa37f8cb6ce0a1899",
+      "physical_loc": 35,
+      "normalized_loc": 35,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Sequential, unbounded LFT spigot in the language; generic GMP operations; both extract(3) and extract(4) checked before each emitted digit, with the published q>r guard.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.k",
+        "stdlib/libgrowler-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "bqn",
+      "file": "mandelbrot.bqn",
+      "sha256": "4b351ad41c01af5ae8ffbd0b993946e0d905718a2a236a65d7af3ba47fa52c4b",
+      "physical_loc": 21,
+      "normalized_loc": 21,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Each pixel has up to fifty escape iterations; vector form performs all fifty and retains an AND of membership; output contains the full PBM, including padding.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": []
+    },
+    {
+      "benchmark": "mandelbrot",
+      "language": "k",
+      "file": "mandelbrot.growler.k",
+      "sha256": "c5f27e7330bcfa62b0d451d7add567ebec1e1800fbc2ff1fa461e3bb9d90331e",
+      "physical_loc": 15,
+      "normalized_loc": 15,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Each pixel has up to fifty escape iterations; vector form performs all fifty and retains an AND of membership; output contains the full PBM, including padding.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": []
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "bqn",
+      "file": "revcomp.bqn",
+      "sha256": "171d8aaeb599bf62a8a6e6a9ab5a04b7794ba31d5e31386d46acdd2e0a80256b",
+      "physical_loc": 16,
+      "normalized_loc": 16,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read stdin via growing line/stream buffers, preserve headers, complement and reverse all complete sequences, then wrap at sixty columns. No file-size preallocation or mmap.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": []
+    },
+    {
+      "benchmark": "revcomp",
+      "language": "k",
+      "file": "revcomp.growler.k",
+      "sha256": "c753f654d9ff5f524b29a607e7c645c5ec0ae038ded01ac0e822a9aa72a36075",
+      "physical_loc": 15,
+      "normalized_loc": 15,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read stdin via growing line/stream buffers, preserve headers, complement and reverse all complete sequences, then wrap at sixty columns. No file-size preallocation or mmap.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": []
+    },
+    {
+      "benchmark": "fasta",
+      "language": "bqn",
+      "file": "fasta.bqn",
+      "sha256": "531d039ae5f9aa34f9db35e4df9efc723dc64098e3b1828c7b4fba972e35085e",
+      "physical_loc": 24,
+      "normalized_loc": 24,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Fixed ALU repetition plus every one of 200,000,000 random-sequence LCG updates; divide by 139968.0 and compare original cumulative floating-point probabilities; no random-period caching or integer cutoff substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": []
+    },
+    {
+      "benchmark": "fasta",
+      "language": "k",
+      "file": "fasta.growler.k",
+      "sha256": "75b7447977f0827f80293017e76bbd9e0336d8411e9f530f5d1a584975272230",
+      "physical_loc": 20,
+      "normalized_loc": 20,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Fixed ALU repetition plus every one of 200,000,000 random-sequence LCG updates; divide by 139968.0 and compare original cumulative floating-point probabilities; no random-period caching or integer cutoff substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": []
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "bqn",
+      "file": "binarytrees.bqn",
+      "sha256": "d8b7d5734f2be70b308ecc29c4841f1a5f6c8b7075180a95e8e73e6b18efa378",
+      "physical_loc": 16,
+      "normalized_loc": 16,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Fresh two-slot boxed pairs for all nodes, including leaves, in the language; every tree is traversed and reclaimed. Generic process map applies the same depth function in at most eight interpreter workers. No shared leaf or closed-form check.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.bqn",
+        "stdlib/libarray-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "binarytrees",
+      "language": "k",
+      "file": "binarytrees.growler.k",
+      "sha256": "2f8ebb6f9689b55462bdc78827aa64f1e72a892c49ed79b01ff57dd105df3e67",
+      "physical_loc": 16,
+      "normalized_loc": 16,
+      "expansions": [],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Fresh two-slot boxed pairs for all nodes, including leaves, in the language; every tree is traversed and reclaimed. Generic process map applies the same depth function in at most eight interpreter workers. No shared leaf or closed-form check.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.k",
+        "stdlib/libgrowler-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "bqn",
+      "file": "knucleotide-faithful.bqn",
+      "sha256": "84810c4d5567d1554416698e3e83ec5ca7d587d6a21b0be331915c4962326716",
+      "physical_loc": 36,
+      "normalized_loc": 39,
+      "expansions": [
+        {
+          "line": 16,
+          "extra_lines": 1,
+          "reason": "hash-table update, then fold accumulator"
+        },
+        {
+          "line": 24,
+          "extra_lines": 2,
+          "reason": "Fixed binding, s binding, return"
+        }
+      ],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read lines and extract THREE; all seven widths (1,2,3,4,6,12,18); each reading frame divided into eight ranges, each growing its own real hash table from default capacity. Every one of 874,999,961 overlapping keys is looked up and updated in BQN or K; only after updates are requested counts returned and combined. BQN uses built-in HashMap; K uses the unmodified khash library through one-key get/set bindings, never a native key-counting loop.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.bqn",
+        "stdlib/libarray-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "k",
+      "file": "knucleotide-faithful.growler.k",
+      "sha256": "283dd1369624cd98c02a57963fe741fd405e4ddde7d4444491842b0fb38708b1",
+      "physical_loc": 47,
+      "normalized_loc": 52,
+      "expansions": [
+        {
+          "line": 9,
+          "extra_lines": 2,
+          "reason": "inc binding, hash-table update, return"
+        },
+        {
+          "line": 34,
+          "extra_lines": 3,
+          "reason": "fixed binding, s binding, s assignment, return"
+        }
+      ],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read lines and extract THREE; all seven widths (1,2,3,4,6,12,18); each reading frame divided into eight ranges, each growing its own real hash table from default capacity. Every one of 874,999,961 overlapping keys is looked up and updated in BQN or K; only after updates are requested counts returned and combined. BQN uses built-in HashMap; K uses the unmodified khash library through one-key get/set bindings, never a native key-counting loop.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.k",
+        "stdlib/libgrowler-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "bqn",
+      "file": "fannkuchredux.bqn",
+      "sha256": "bf4a836b7f4b5d9ba4871e522de5d0d039dee9aadc3b0d9912cceb64ac5e3846",
+      "physical_loc": 47,
+      "normalized_loc": 50,
+      "expansions": [
+        {
+          "line": 5,
+          "extra_lines": 2,
+          "reason": "Flip binding, size binding, return"
+        },
+        {
+          "line": 23,
+          "extra_lines": 1,
+          "reason": "increment flips, then flip the permutation"
+        }
+      ],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "All 479,001,600 permutations in canonical rotation order; independent ranks initialized with factoradic rotations; complete prefix reversal and alternating checksum for every permutation, in eight language processes. Generic fork support contains no permutation or flip logic.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.bqn",
+        "stdlib/libarray-standard.dylib"
+      ]
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "language": "k",
+      "file": "fannkuchredux.growler.k",
+      "sha256": "0eac75d0147894943a866d9ebbe50d502f49d4e9e3f3439a6894b6ac22b07017",
+      "physical_loc": 53,
+      "normalized_loc": 57,
+      "expansions": [
+        {
+          "line": 12,
+          "extra_lines": 2,
+          "reason": "flip binding, size binding, return"
+        },
+        {
+          "line": 13,
+          "extra_lines": 2,
+          "reason": "flipcount binding, flips assignment, return"
+        }
+      ],
+      "upstream": null,
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "All 479,001,600 permutations in canonical rotation order; independent ranks initialized with factoradic rotations; complete prefix reversal and alternating checksum for every permutation, in eight language processes. Generic fork support contains no permutation or flip logic.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/standard.k",
+        "stdlib/libgrowler-standard.dylib"
+      ]
+    }
+  ],
+  "runtimes": {
+    "bqn": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/binaries/bqn-ffi",
+      "sha256": "d566f7aa8d89e490b2eac3ecfeb427e0c5eb18ca604d3ec411be5847968bb798",
+      "commit": "c893d3e7828899a50150df03ad33c9052fa51d3c"
+    },
+    "k": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/binaries/growler-ffi",
+      "sha256": "c7fa33fa14016569350e3a22af5873346841447c509d6a46f379af9d75cf81a7",
+      "commit": "48067b30de7c63f2d457727245ba34f7a714d1ce"
+    }
+  },
+  "libraries": {
+    "stdlib/libarray-standard.dylib": "94933e0c3dbff12f7c440888e548c79ea187ab4930bdb950c031ceca7cca8fa6",
+    "stdlib/standard.k": "5cae2f96a6e8feeeb253a3c03ab7838e539b60bba9d574938e7488b0e6d51601",
+    "stdlib/standard.bqn": "06d9fac57b6ded281284cee43b949df39e6158432fd14b3937f43fb273944b12",
+    "stdlib/libgrowler-standard.dylib": "07f908307c4199bb47220b199156ac8b3955f7ef2ae063b0900b222f82324c4f",
+    "stdlib/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+    "stdlib/native.c": "3246275bfd0148b9dfa874907bda1f3142612142ab6cf1b17a70da9c19ce4187"
+  },
+  "runtime_support": "Generic GMP arithmetic, PCRE2 compile/count/replace, khash one-key get/set, and a process map that executes language callbacks. No input-specific constants, parsing, encoding, or benchmark computation in native bindings. Process map is reused unchanged by three benchmarks in both languages."
+}

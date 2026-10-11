@@ -1,0 +1,8 @@
+{
+  "queries": [
+    "Futhark \"benchmarks game\" spectralnorm pidigits",
+    "github Futhark \"fannkuch\" \"knucleotide\"",
+    "github Mojo \"regexredux\" \"binarytrees\" benchmark"
+  ],
+  "finding": "No additional matching Mojo/Futhark CLBG sources located in this final search. The pinned community Mojo N-body/Spectral Norm sources and official project repositories remain the research inputs."
+}

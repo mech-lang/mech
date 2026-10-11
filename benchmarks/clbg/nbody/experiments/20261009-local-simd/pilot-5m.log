@@ -1,0 +1,46 @@
+CODEGEN compact-baseline {"disassembly_path": "compact-baseline.disassembly.txt", "loop_start_hex": "0x100003488", "loop_backedge_hex": "0x10000396c", "static_instructions": 314, "stack_load_instructions": 89, "stack_store_instructions": 33, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-baseline {"disassembly_path": "pairwise-baseline.disassembly.txt", "loop_start_hex": "0x10000358c", "loop_backedge_hex": "0x100003974", "static_instructions": 251, "stack_load_instructions": 58, "stack_store_instructions": 22, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN compact-local {"disassembly_path": "compact-local.disassembly.txt", "loop_start_hex": "0x1000034d8", "loop_backedge_hex": "0x100003970", "static_instructions": 295, "stack_load_instructions": 77, "stack_store_instructions": 24, "fused_instructions": 80, "sqrt_instructions": 10, "divide_instructions": 10, "loop_calls": []}
+CODEGEN pairwise-local {"disassembly_path": "pairwise-local.disassembly.txt", "loop_start_hex": "0x100003578", "loop_backedge_hex": "0x100003978", "static_instructions": 257, "stack_load_instructions": 48, "stack_store_instructions": 17, "fused_instructions": 80, "sqrt_instructions": 10, "divide_instructions": 10, "loop_calls": []}
+CODEGEN compact-local-scheduled {"disassembly_path": "compact-local-scheduled.disassembly.txt", "loop_start_hex": "0x1000034d8", "loop_backedge_hex": "0x100003970", "static_instructions": 295, "stack_load_instructions": 77, "stack_store_instructions": 24, "fused_instructions": 80, "sqrt_instructions": 10, "divide_instructions": 10, "loop_calls": []}
+CODEGEN pairwise-local-scheduled {"disassembly_path": "pairwise-local-scheduled.disassembly.txt", "loop_start_hex": "0x100003578", "loop_backedge_hex": "0x100003978", "static_instructions": 257, "stack_load_instructions": 48, "stack_store_instructions": 17, "fused_instructions": 80, "sqrt_instructions": 10, "divide_instructions": 10, "loop_calls": []}
+SAMPLE 1 compact-local-scheduled 0.118662667
+SAMPLE 1 chapel-3 0.117295667
+SAMPLE 1 pairwise-local-scheduled 0.119703708
+SAMPLE 1 nbody-gcc-8-llvm-fastmath 0.154342125
+SAMPLE 1 pairwise-baseline 0.116426041
+SAMPLE 1 compact-baseline 0.121627958
+SAMPLE 1 nbody-gpp-6-llvm-native 0.097680042
+SAMPLE 1 compact-local 0.117213333
+SAMPLE 1 rust-3 0.115066750
+SAMPLE 1 pairwise-local 0.116344083
+SAMPLE 2 compact-baseline 0.122183917
+SAMPLE 2 pairwise-local-scheduled 0.116768084
+SAMPLE 2 pairwise-baseline 0.118043042
+SAMPLE 2 pairwise-local 0.118045959
+SAMPLE 2 nbody-gcc-8-llvm-fastmath 0.152945292
+SAMPLE 2 chapel-3 0.121780792
+SAMPLE 2 compact-local 0.119726500
+SAMPLE 2 nbody-gpp-6-llvm-native 0.096502875
+SAMPLE 2 compact-local-scheduled 0.119187208
+SAMPLE 2 rust-3 0.110742791
+SAMPLE 3 compact-local 0.120881750
+SAMPLE 3 pairwise-local-scheduled 0.115349583
+SAMPLE 3 nbody-gcc-8-llvm-fastmath 0.156748791
+SAMPLE 3 compact-local-scheduled 0.119494083
+SAMPLE 3 chapel-3 0.123358000
+SAMPLE 3 pairwise-baseline 0.117007625
+SAMPLE 3 pairwise-local 0.119410375
+SAMPLE 3 rust-3 0.115333584
+SAMPLE 3 nbody-gpp-6-llvm-native 0.097989708
+SAMPLE 3 compact-baseline 0.124579459
+RESULT nbody-gpp-6-llvm-native 0.097680042 202 LOC
+RESULT rust-3 0.115066750 196 LOC
+RESULT pairwise-local-scheduled 0.116768084 38 LOC
+RESULT pairwise-baseline 0.117007625 38 LOC
+RESULT pairwise-local 0.118045959 38 LOC
+RESULT compact-local-scheduled 0.119187208 32 LOC
+RESULT compact-local 0.119726500 32 LOC
+RESULT chapel-3 0.121780792 79 LOC
+RESULT compact-baseline 0.122183917 32 LOC
+RESULT nbody-gcc-8-llvm-fastmath 0.154342125 127 LOC

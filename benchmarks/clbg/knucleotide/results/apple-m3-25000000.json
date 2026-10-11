@@ -1,0 +1,3504 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T15:48:49.883814+00:00",
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "logical_cpus": 8,
+    "cpu": "Apple M3"
+  },
+  "toolchain_versions": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "julia": "julia version 1.13.1",
+    "go": "go version go1.27.1 darwin/arm64",
+    "java": "openjdk version \"27\" 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+    "gcc": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "gpp": "g++-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "llvm": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg"
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-25000000.compiler.tar.gz",
+    "sha256": "2bf3967ca88a5600cd4339fab908a73c1019d5278f3e56cb3162381b56d9580c",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "benchmarks/clbg/knucleotide/README.md": "2b5b4fd8dae9b57f2101bb84e70827479e340b17b50b24c6c9f682165b772784",
+      "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+      "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+      "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+      "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+      "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+      "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "40c27b3910ad313b64137d9e01da97e31dc2aa7c4a51e8d59944c8262ab17de5",
+      "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+      "benchmarks/clbg/knucleotide/mech-driver/build.rs": "6ae2352d860b443b75b8ed9cf48cf62215fb6294d0ea8bf0406e91804804a896",
+      "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "49bd600926d401152fcd94617e131c3f2aca93b58a667374c687d294605e0a6b",
+      "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "455ba57a2cd9e6aab9bc787a738940ec47fcf9df4ccedf6fad592213445eca59",
+      "benchmarks/clbg/knucleotide/plot.py": "e212153cbddf859c3fd3dd7081abe32b2588750e952dfbc3c8d4363f66d0300d",
+      "benchmarks/clbg/knucleotide/run.py": "e8083d73771048c1bba881b5c70ec1eb022f17b0fb227a95fe1dbd90fc4762ad",
+      "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+      "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+      "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+      "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+      "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+      "benchmarks/clbg/knucleotide/verify.py": "0e662dd1082bede471d118967ff6a747e9b2ed026cdf1c858217304e7e03006e",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "hosts/gpu/Cargo.toml": "4a9caef4aa419ded508f3869b96da7c5d696e75cd7a3df748c58dda2aeadd1ab",
+      "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+      "hosts/gpu/src/sequence/compiler.rs": "5149e394a8775e8b0d44703574d0c3de1c327c3e66922e9a3756ad7ee44cf7d0",
+      "hosts/gpu/src/sequence/mod.rs": "0bae40fe86a48e9dbb4b9e19256a9a9b1102f59b3199375d720b2833de078b01",
+      "hosts/gpu/src/sequence/runtime.rs": "666c98c848416d15ff0511703b4f3bbb140fc31212df1e5a4095f0930b5b5ab8",
+      "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+    }
+  },
+  "protocol": {
+    "fasta_n": 25000000,
+    "three_letters": 125000000,
+    "total_hash_updates_per_program": 874999961,
+    "input": {
+      "fasta_n": 25000000,
+      "bytes": 254166745,
+      "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "three_letters": 125000000,
+      "generation_command": [
+        "benchmarks/clbg/knucleotide/.build/fasta",
+        "25000000"
+      ],
+      "small_input_matches_official": true
+    },
+    "samples": 3,
+    "seed": 20261007,
+    "sample_order": [
+      [
+        "knucleotide-gpp-2-gcc-fastmath",
+        "knucleotide-rust-7",
+        "knucleotide-go-8",
+        "knucleotide-chapel-4",
+        "knucleotide-gpp-1-gcc-native",
+        "knucleotide-chapel-3",
+        "knucleotide-rust-9",
+        "knucleotide-gpp-1-llvm-fastmath-nolto",
+        "knucleotide-go-7",
+        "knucleotide-graalvmaot-3",
+        "knucleotide-gpp-2-llvm-fastmath",
+        "mech-parallel-batch1",
+        "mech-parallel-batch256",
+        "knucleotide-gpp-3-llvm-fastmath-nolto",
+        "knucleotide-rust-5",
+        "knucleotide-graalvmaot-5",
+        "knucleotide-gcc-1-llvm-native",
+        "knucleotide-graalvmaot-1",
+        "knucleotide-gpp-3-gcc-fastmath",
+        "knucleotide-julia-7",
+        "knucleotide-gpp-3-gcc-native",
+        "knucleotide-graalvmaot-6",
+        "knucleotide-go-4",
+        "knucleotide-gcc-1-gcc-native",
+        "mech-parallel-batch4096",
+        "knucleotide-rust-6",
+        "knucleotide-go-6",
+        "knucleotide-gpp-2-llvm-native",
+        "knucleotide-gpp-1-gcc-fastmath",
+        "knucleotide-gpp-2-gcc-native",
+        "knucleotide-rust-1",
+        "knucleotide-graalvmaot-4",
+        "knucleotide-julia-1",
+        "knucleotide-gpp-1-llvm-native",
+        "knucleotide-graalvmaot-8",
+        "knucleotide-gcc-1-llvm-fastmath",
+        "knucleotide-rust-4",
+        "knucleotide-gcc-1-gcc-fastmath",
+        "knucleotide-gpp-3-llvm-native",
+        "mech-compact-batch4096",
+        "knucleotide-julia-6",
+        "knucleotide-rust-3",
+        "knucleotide-go-3",
+        "knucleotide-rust-2"
+      ],
+      [
+        "knucleotide-go-3",
+        "mech-parallel-batch4096",
+        "knucleotide-gpp-3-gcc-native",
+        "knucleotide-graalvmaot-1",
+        "knucleotide-gpp-2-llvm-fastmath",
+        "knucleotide-gpp-1-gcc-native",
+        "knucleotide-gpp-2-llvm-native",
+        "knucleotide-gcc-1-llvm-fastmath",
+        "knucleotide-chapel-3",
+        "knucleotide-gcc-1-gcc-fastmath",
+        "knucleotide-gpp-2-gcc-native",
+        "knucleotide-rust-5",
+        "knucleotide-go-4",
+        "knucleotide-gcc-1-gcc-native",
+        "knucleotide-go-7",
+        "knucleotide-rust-2",
+        "knucleotide-gpp-3-llvm-fastmath-nolto",
+        "knucleotide-gpp-3-gcc-fastmath",
+        "knucleotide-go-8",
+        "knucleotide-graalvmaot-4",
+        "knucleotide-rust-7",
+        "knucleotide-julia-7",
+        "knucleotide-gpp-1-llvm-native",
+        "knucleotide-rust-1",
+        "knucleotide-graalvmaot-6",
+        "knucleotide-rust-4",
+        "mech-parallel-batch1",
+        "knucleotide-rust-3",
+        "knucleotide-julia-1",
+        "knucleotide-go-6",
+        "knucleotide-rust-9",
+        "knucleotide-graalvmaot-3",
+        "knucleotide-gpp-1-llvm-fastmath-nolto",
+        "knucleotide-chapel-4",
+        "mech-parallel-batch256",
+        "knucleotide-gpp-3-llvm-native",
+        "mech-compact-batch4096",
+        "knucleotide-gpp-1-gcc-fastmath",
+        "knucleotide-rust-6",
+        "knucleotide-julia-6",
+        "knucleotide-gcc-1-llvm-native",
+        "knucleotide-graalvmaot-5",
+        "knucleotide-gpp-2-gcc-fastmath",
+        "knucleotide-graalvmaot-8"
+      ],
+      [
+        "knucleotide-rust-2",
+        "mech-parallel-batch1",
+        "knucleotide-go-6",
+        "knucleotide-gcc-1-llvm-native",
+        "knucleotide-julia-6",
+        "knucleotide-rust-4",
+        "knucleotide-rust-7",
+        "knucleotide-graalvmaot-3",
+        "knucleotide-gpp-3-llvm-fastmath-nolto",
+        "knucleotide-chapel-3",
+        "knucleotide-rust-1",
+        "knucleotide-graalvmaot-1",
+        "knucleotide-go-3",
+        "knucleotide-gpp-3-gcc-native",
+        "knucleotide-chapel-4",
+        "knucleotide-julia-1",
+        "knucleotide-graalvmaot-4",
+        "knucleotide-gpp-1-gcc-fastmath",
+        "knucleotide-graalvmaot-5",
+        "mech-parallel-batch256",
+        "knucleotide-gpp-2-gcc-fastmath",
+        "knucleotide-rust-5",
+        "mech-parallel-batch4096",
+        "knucleotide-rust-9",
+        "knucleotide-gpp-1-llvm-native",
+        "knucleotide-gpp-3-gcc-fastmath",
+        "knucleotide-gpp-1-llvm-fastmath-nolto",
+        "knucleotide-gpp-3-llvm-native",
+        "knucleotide-gcc-1-gcc-fastmath",
+        "knucleotide-graalvmaot-8",
+        "knucleotide-gpp-1-gcc-native",
+        "mech-compact-batch4096",
+        "knucleotide-go-8",
+        "knucleotide-gcc-1-gcc-native",
+        "knucleotide-gpp-2-llvm-native",
+        "knucleotide-go-7",
+        "knucleotide-gcc-1-llvm-fastmath",
+        "knucleotide-gpp-2-gcc-native",
+        "knucleotide-rust-6",
+        "knucleotide-julia-7",
+        "knucleotide-gpp-2-llvm-fastmath",
+        "knucleotide-rust-3",
+        "knucleotide-go-4",
+        "knucleotide-graalvmaot-6"
+      ]
+    ],
+    "requested_threads": 8,
+    "environment": {
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8",
+      "OMP_DYNAMIC": "FALSE",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "RAYON_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "timed_region": "Fresh process to exit including reading the same regular stdin file, encoding, every hash lookup/update, output and JIT initialization; AOT builds/input generation/validation excluded.",
+    "source_scope": "Mech .mec only; generic experimental collection compiler/runtime excluded. Competitors: complete unchanged upstream programs. New operations are not yet wired into the general v0.4 resident catalog.",
+    "source_metric": "Comment removal, whitespace collapse, UTF-8 gzip level1 mtime0; nonblank noncomment LOC also reported.",
+    "required_work": "All overlapping windows for k=1,2,3,4,6,12,18 counted using growing library hash maps; no periodicity shortcut or query-only counting.",
+    "correctness": "Every candidate must match unmodified Rust #7 full output byte-for-byte, checked against published full output. Official N=1000 failures are retained and flagged; strict endpoints additionally require passing the small reference."
+  },
+  "programs": [
+    {
+      "id": "knucleotide-gpp-2-gcc-native",
+      "language": "cpp",
+      "variant": 2,
+      "path": "upstream/knucleotide-gpp-2.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-2.html",
+      "sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+      "upstream_starred": false,
+      "published_secs": 2.02,
+      "published_gz": 1634,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:52:05 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++17 knucleotide.gpp-2.c++ -o knucleotide.gpp-2.c++.o &&  \\\n        /usr/bin/g++ knucleotide.gpp-2.c++.o -o knucleotide.gpp-2.gpp_run -lpthread \nrm knucleotide.gpp-2.c++\n\n7.41s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp-2.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-2",
+      "cc_backend": "gcc",
+      "cc_tune": "native",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-2.cpp"
+        ],
+        "sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+        "physical_lines": 220,
+        "nonblank_noncomment_lines": 144,
+        "normalized_bytes": 4060,
+        "gzip1_bytes": 1587
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-2-gcc-native",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-ffp-contract=off"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-2-gcc-native"
+      ],
+      "worker_policy": "fixed 4 std::thread workers per histogram",
+      "samples_seconds": [
+        1.359548875,
+        1.32540325,
+        1.342764125
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "a076bb1d71a56b5129b67334574332784844ea6cfa96cb897d850a1af80693e7",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.342764125,
+      "min_seconds": 1.32540325,
+      "max_seconds": 1.359548875
+    },
+    {
+      "id": "knucleotide-gpp-2-gcc-fastmath",
+      "language": "cpp",
+      "variant": 2,
+      "path": "upstream/knucleotide-gpp-2.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-2.html",
+      "sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+      "upstream_starred": false,
+      "published_secs": 2.02,
+      "published_gz": 1634,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:52:05 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++17 knucleotide.gpp-2.c++ -o knucleotide.gpp-2.c++.o &&  \\\n        /usr/bin/g++ knucleotide.gpp-2.c++.o -o knucleotide.gpp-2.gpp_run -lpthread \nrm knucleotide.gpp-2.c++\n\n7.41s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp-2.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-2",
+      "cc_backend": "gcc",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-2.cpp"
+        ],
+        "sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+        "physical_lines": 220,
+        "nonblank_noncomment_lines": 144,
+        "normalized_bytes": 4060,
+        "gzip1_bytes": 1587
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-2-gcc-fastmath",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-2-gcc-fastmath"
+      ],
+      "worker_policy": "fixed 4 std::thread workers per histogram",
+      "samples_seconds": [
+        1.285587292,
+        1.311507916,
+        1.313596958
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "9b51017aaf72416943080b8b71394e02edadf8610cb8fec4a1482ffa5e18cee2",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.311507916,
+      "min_seconds": 1.285587292,
+      "max_seconds": 1.313596958
+    },
+    {
+      "id": "knucleotide-rust-7",
+      "language": "rust",
+      "variant": 7,
+      "path": "upstream/knucleotide-rust-7.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-7.html",
+      "sha256": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+      "upstream_starred": false,
+      "published_secs": 2.57,
+      "published_gz": 1585,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 06:03:44 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-b6d48ee8822a84bd.rlib --extern hashbrown=/opt/src/rust-libs/libhashbrown-997dd4ca7d2b21ff.rlib knucleotide.rs -o knucleotide.rust-7.rust_run\n\n13.43 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-7.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-7.rs"
+        ],
+        "sha256": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+        "physical_lines": 188,
+        "nonblank_noncomment_lines": 163,
+        "normalized_bytes": 4002,
+        "gzip1_bytes": 1548
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "futures=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures-f93f5cc220f40f47.rlib",
+        "--extern",
+        "tokio_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libtokio_threadpool-a8446ba36124ba6c.rlib",
+        "--extern",
+        "itertools=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libitertools-63f8e103f3fb88a7.rlib",
+        "--extern",
+        "num=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum-1ca8ecfc42f84971.rlib",
+        "--extern",
+        "hashbrown=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-7"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-7"
+      ],
+      "worker_policy": "tokio ThreadPool::new()",
+      "samples_seconds": [
+        0.915840959,
+        1.036135333,
+        1.022651708
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "b176b1d6b745dfada6f7192fdf9f0ed3cbced2b0ed8590978a0722a943fecb9c",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.022651708,
+      "min_seconds": 0.915840959,
+      "max_seconds": 1.036135333
+    },
+    {
+      "id": "knucleotide-rust-6",
+      "language": "rust",
+      "variant": 6,
+      "path": "upstream/knucleotide-rust-6.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-6.html",
+      "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "upstream_starred": false,
+      "published_secs": 2.79,
+      "published_gz": 1697,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 05:37:26 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern num_traits=/opt/src/rust-libs/libnum_traits-51fca88a30a23b0b.rlib knucleotide.rs -o knucleotide.rust-6.rust_run\n\n14.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-6.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-6.rs"
+        ],
+        "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+        "physical_lines": 210,
+        "nonblank_noncomment_lines": 168,
+        "normalized_bytes": 3741,
+        "gzip1_bytes": 1656
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "fxhash=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfxhash-be129402f145c68a.rlib",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "num_traits=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_traits-cfbc20d38c0a2102.rlib",
+        "--extern",
+        "scoped_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libscoped_threadpool-526c83fe137b87d5.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6"
+      ],
+      "worker_policy": "scoped pool from num_cpus",
+      "samples_seconds": [
+        0.926362,
+        0.845165333,
+        0.920018916
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "d872e56255506f001df4505ab02d85b6ca6301a96c83b2d6e053866d4e0662dc",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.920018916,
+      "min_seconds": 0.845165333,
+      "max_seconds": 0.926362
+    },
+    {
+      "id": "knucleotide-rust-3",
+      "language": "rust",
+      "variant": 3,
+      "path": "upstream/knucleotide-rust-3.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-3.html",
+      "sha256": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+      "upstream_starred": false,
+      "published_secs": 3.28,
+      "published_gz": 1549,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 05:38:25 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-63ba8d8ec25ba6fe.rlib --extern hashbrown=/opt/src/rust-libs/libhashbrown-997dd4ca7d2b21ff.rlib knucleotide.rs -o knucleotide.rust-3.rust_run\n\n11.91 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-3.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-3.rs"
+        ],
+        "sha256": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+        "physical_lines": 180,
+        "nonblank_noncomment_lines": 155,
+        "normalized_bytes": 3291,
+        "gzip1_bytes": 1501
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "hashbrown=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-3"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-3"
+      ],
+      "worker_policy": "7 std::thread histogram jobs",
+      "samples_seconds": [
+        0.969216833,
+        0.971036333,
+        0.980787625
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "59d6f9db5158d0ca2fc6d487340b929c0446d44b6b09021612440870a7f70148",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.971036333,
+      "min_seconds": 0.969216833,
+      "max_seconds": 0.980787625
+    },
+    {
+      "id": "knucleotide-gcc-1-gcc-native",
+      "language": "c",
+      "variant": 1,
+      "path": "upstream/knucleotide-gcc-1.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gcc-1.html",
+      "sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+      "upstream_starred": false,
+      "published_secs": 3.58,
+      "published_gz": 1512,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 03:53:30 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp -IInclude knucleotide.c -o knucleotide.gcc_run \nrm knucleotide.c\n\n2.82s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gcc_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gcc-1",
+      "cc_backend": "gcc",
+      "cc_tune": "native",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gcc-1.c"
+        ],
+        "sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+        "physical_lines": 247,
+        "nonblank_noncomment_lines": 135,
+        "normalized_bytes": 5457,
+        "gzip1_bytes": 1484
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gcc-1-gcc-native",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-fopenmp",
+        "-ffp-contract=off"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gcc-1-gcc-native"
+      ],
+      "worker_policy": "OpenMP requests 8 workers, 7 sections",
+      "samples_seconds": [
+        2.028151333,
+        1.866093125,
+        1.988056375
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "0810e8221a56b8297e38a47ee8a77fd2fd844fc9efa6a1d782009f1b69068c5a",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.988056375,
+      "min_seconds": 1.866093125,
+      "max_seconds": 2.028151333
+    },
+    {
+      "id": "knucleotide-gcc-1-gcc-fastmath",
+      "language": "c",
+      "variant": 1,
+      "path": "upstream/knucleotide-gcc-1.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gcc-1.html",
+      "sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+      "upstream_starred": false,
+      "published_secs": 3.58,
+      "published_gz": 1512,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 03:53:30 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp -IInclude knucleotide.c -o knucleotide.gcc_run \nrm knucleotide.c\n\n2.82s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gcc_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gcc-1",
+      "cc_backend": "gcc",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gcc-1.c"
+        ],
+        "sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+        "physical_lines": 247,
+        "nonblank_noncomment_lines": 135,
+        "normalized_bytes": 5457,
+        "gzip1_bytes": 1484
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gcc-1-gcc-fastmath",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-fopenmp",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gcc-1-gcc-fastmath"
+      ],
+      "worker_policy": "OpenMP requests 8 workers, 7 sections",
+      "samples_seconds": [
+        1.953389583,
+        1.867583542,
+        1.856809083
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "76d71d99feff73ba89e3ebecce4fddc954a92c246300a701319f3d43bf5d50af",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.867583542,
+      "min_seconds": 1.856809083,
+      "max_seconds": 1.953389583
+    },
+    {
+      "id": "knucleotide-gcc-1-llvm-native",
+      "language": "c",
+      "variant": 1,
+      "path": "upstream/knucleotide-gcc-1.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gcc-1.html",
+      "sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+      "upstream_starred": false,
+      "published_secs": 3.58,
+      "published_gz": 1512,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 03:53:30 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp -IInclude knucleotide.c -o knucleotide.gcc_run \nrm knucleotide.c\n\n2.82s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gcc_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gcc-1",
+      "cc_backend": "llvm",
+      "cc_tune": "native",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gcc-1.c"
+        ],
+        "sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+        "physical_lines": 247,
+        "nonblank_noncomment_lines": 135,
+        "normalized_bytes": 5457,
+        "gzip1_bytes": 1484
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gcc-1-llvm-native",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-fopenmp",
+        "-I/opt/homebrew/opt/libomp/include",
+        "-L/opt/homebrew/opt/libomp/lib",
+        "-Wl,-rpath,/opt/homebrew/opt/libomp/lib",
+        "-ffp-contract=off"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gcc-1-llvm-native"
+      ],
+      "worker_policy": "OpenMP requests 8 workers, 7 sections",
+      "samples_seconds": [
+        2.072933959,
+        2.012208917,
+        1.895127167
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "64b0c046c0f0c3b417706ab5f814cf20f7a430d3a84d735ed9fe6951fb0b189f",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.012208917,
+      "min_seconds": 1.895127167,
+      "max_seconds": 2.072933959
+    },
+    {
+      "id": "knucleotide-gcc-1-llvm-fastmath",
+      "language": "c",
+      "variant": 1,
+      "path": "upstream/knucleotide-gcc-1.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gcc-1.html",
+      "sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+      "upstream_starred": false,
+      "published_secs": 3.58,
+      "published_gz": 1512,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 03:53:30 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp -IInclude knucleotide.c -o knucleotide.gcc_run \nrm knucleotide.c\n\n2.82s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gcc_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gcc-1",
+      "cc_backend": "llvm",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gcc-1.c"
+        ],
+        "sha256": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+        "physical_lines": 247,
+        "nonblank_noncomment_lines": 135,
+        "normalized_bytes": 5457,
+        "gzip1_bytes": 1484
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gcc-1-llvm-fastmath",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-fopenmp",
+        "-I/opt/homebrew/opt/libomp/include",
+        "-L/opt/homebrew/opt/libomp/lib",
+        "-Wl,-rpath,/opt/homebrew/opt/libomp/lib",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gcc-1-llvm-fastmath"
+      ],
+      "worker_policy": "OpenMP requests 8 workers, 7 sections",
+      "samples_seconds": [
+        2.289631125,
+        2.085442667,
+        2.037884708
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "a0b444c0034a2d3ee2f929aa054677549c838333ab0e020807a200b1c57a059f",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.085442667,
+      "min_seconds": 2.037884708,
+      "max_seconds": 2.289631125
+    },
+    {
+      "id": "knucleotide-rust-5",
+      "language": "rust",
+      "variant": 5,
+      "path": "upstream/knucleotide-rust-5.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-5.html",
+      "sha256": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+      "upstream_starred": false,
+      "published_secs": 3.88,
+      "published_gz": 1745,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 05:39:33 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-63ba8d8ec25ba6fe.rlib --extern indexmap=/opt/src/rust-libs/libindexmap-6c4ab76d613a3ff2.rlib knucleotide.rs -o knucleotide.rust-5.rust_run\n\n12.40 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-5.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-5.rs"
+        ],
+        "sha256": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+        "physical_lines": 195,
+        "nonblank_noncomment_lines": 173,
+        "normalized_bytes": 3821,
+        "gzip1_bytes": 1693
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "futures=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures-f93f5cc220f40f47.rlib",
+        "--extern",
+        "futures_cpupool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures_cpupool-e3e2183b00737dbd.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-5"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-5"
+      ],
+      "worker_policy": "futures CpuPool::new_num_cpus()",
+      "samples_seconds": [
+        2.10989575,
+        1.996631291,
+        1.993354208
+      ],
+      "correctness_1000": {
+        "exact_reference_match": false,
+        "exit_code": 101,
+        "diagnostic": "\nthread 'main' (2415192) panicked at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs:135:48:\nno entry found for key\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "executable_sha256": "de043fc0d1a515fbf44e653d7e83771ea194530ffea407ae26c4cd40c8122f66",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.996631291,
+      "min_seconds": 1.993354208,
+      "max_seconds": 2.10989575
+    },
+    {
+      "id": "knucleotide-gpp-3-gcc-native",
+      "language": "cpp",
+      "variant": 3,
+      "path": "upstream/knucleotide-gpp-3.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-3.html",
+      "sha256": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+      "upstream_starred": false,
+      "published_secs": 4.19,
+      "published_gz": 1280,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:56:31 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++14 knucleotide.gpp-3.c++ -o knucleotide.gpp-3.c++.o &&  \\\n        /usr/bin/g++ knucleotide.gpp-3.c++.o -o knucleotide.gpp-3.gpp_run -Wl,--no-as-needed -lpthread \nrm knucleotide.gpp-3.c++\n\n5.17s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp-3.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-3",
+      "cc_backend": "gcc",
+      "cc_tune": "native",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-3.cpp"
+        ],
+        "sha256": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+        "physical_lines": 154,
+        "nonblank_noncomment_lines": 134,
+        "normalized_bytes": 3144,
+        "gzip1_bytes": 1241
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-gcc-native",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-ffp-contract=off"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-gcc-native"
+      ],
+      "worker_policy": "8 std::async per-frame jobs for each histogram",
+      "samples_seconds": [
+        2.01060775,
+        1.826838083,
+        1.668783458
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "45d3fce3ce56760ccd27eff6b9ec9390645f5c5b8444e7aa56a83579e83aa7ae",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.826838083,
+      "min_seconds": 1.668783458,
+      "max_seconds": 2.01060775
+    },
+    {
+      "id": "knucleotide-gpp-3-gcc-fastmath",
+      "language": "cpp",
+      "variant": 3,
+      "path": "upstream/knucleotide-gpp-3.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-3.html",
+      "sha256": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+      "upstream_starred": false,
+      "published_secs": 4.19,
+      "published_gz": 1280,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:56:31 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++14 knucleotide.gpp-3.c++ -o knucleotide.gpp-3.c++.o &&  \\\n        /usr/bin/g++ knucleotide.gpp-3.c++.o -o knucleotide.gpp-3.gpp_run -Wl,--no-as-needed -lpthread \nrm knucleotide.gpp-3.c++\n\n5.17s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp-3.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-3",
+      "cc_backend": "gcc",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-3.cpp"
+        ],
+        "sha256": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+        "physical_lines": 154,
+        "nonblank_noncomment_lines": 134,
+        "normalized_bytes": 3144,
+        "gzip1_bytes": 1241
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-gcc-fastmath",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-gcc-fastmath"
+      ],
+      "worker_policy": "8 std::async per-frame jobs for each histogram",
+      "samples_seconds": [
+        1.647198875,
+        1.665484958,
+        1.845303
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "8ed01dd1c6223b44eb4c3cb9b1849d1dde48479ae205033c27a15e01ab020234",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.665484958,
+      "min_seconds": 1.647198875,
+      "max_seconds": 1.845303
+    },
+    {
+      "id": "knucleotide-chapel-4",
+      "language": "chapel",
+      "variant": 4,
+      "path": "upstream/knucleotide-chapel-4.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-chapel-4.html",
+      "sha256": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+      "upstream_starred": false,
+      "published_secs": 4.99,
+      "published_gz": 1074,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 17:54:09 GMT\n\nMAKE:\nmv knucleotide.chapel-4.chapel knucleotide.chapel-4.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast knucleotide.chapel-4.chpl -o knucleotide.chapel-4.chapel_run\nrm knucleotide.chapel-4.chpl\n\n28.96 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.chapel-4.chapel_run --n=0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-chapel-4.chpl"
+        ],
+        "sha256": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+        "physical_lines": 144,
+        "nonblank_noncomment_lines": 92,
+        "normalized_bytes": 2362,
+        "gzip1_bytes": 1057
+      },
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-chapel-4",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-chapel-4"
+      ],
+      "worker_policy": "Chapel runtime requests 8 workers; per-frame parallel map reduction",
+      "samples_seconds": [
+        3.080595333,
+        3.100359625,
+        2.762692667
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "0aafeef1d200630f5dfe3b15121952d6ed905821da297cda41333bd1a0e45b48",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "warning: QTHREADS: Reduced numThreadsPerLocale=8 to 4 to prevent oversubscription of the system.\n",
+      "median_seconds": 3.080595333,
+      "min_seconds": 2.762692667,
+      "max_seconds": 3.100359625
+    },
+    {
+      "id": "knucleotide-chapel-3",
+      "language": "chapel",
+      "variant": 3,
+      "path": "upstream/knucleotide-chapel-3.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-chapel-3.html",
+      "sha256": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+      "upstream_starred": false,
+      "published_secs": 5.99,
+      "published_gz": 1044,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 17:55:53 GMT\n\nMAKE:\nmv knucleotide.chapel-3.chapel knucleotide.chapel-3.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast knucleotide.chapel-3.chpl -o knucleotide.chapel-3.chapel_run\nrm knucleotide.chapel-3.chpl\n\n28.36 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.chapel-3.chapel_run --n=0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-chapel-3.chpl"
+        ],
+        "sha256": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+        "physical_lines": 137,
+        "nonblank_noncomment_lines": 87,
+        "normalized_bytes": 2275,
+        "gzip1_bytes": 1026
+      },
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-chapel-3",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-chapel-3"
+      ],
+      "worker_policy": "Chapel runtime requests 8 workers; per-frame parallel map reduction",
+      "samples_seconds": [
+        3.786914625,
+        3.776415042,
+        3.448011167
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "3b316870c3aad0831c3ad47798589497f3a35939a042645caf73a16078f960c2",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "warning: QTHREADS: Reduced numThreadsPerLocale=8 to 4 to prevent oversubscription of the system.\n",
+      "median_seconds": 3.776415042,
+      "min_seconds": 3.448011167,
+      "max_seconds": 3.786914625
+    },
+    {
+      "id": "knucleotide-rust-2",
+      "language": "rust",
+      "variant": 2,
+      "path": "upstream/knucleotide-rust-2.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-2.html",
+      "sha256": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+      "upstream_starred": false,
+      "published_secs": 6.0,
+      "published_gz": 1350,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:56:38 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-a159b6b8f92a32e9.rlib --extern indexmap=/opt/src/rust-libs/libindexmap-28a5b5c9a6c1d4f5.rlib knucleotide.rs -o knucleotide.rust-2.rust_run\n\n11.85 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-2.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-2.rs"
+        ],
+        "sha256": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+        "physical_lines": 127,
+        "nonblank_noncomment_lines": 104,
+        "normalized_bytes": 2640,
+        "gzip1_bytes": 1307
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "fnv=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfnv-7ac777ac1b0a7235.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-2"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-2"
+      ],
+      "worker_policy": "7 std::thread histogram jobs",
+      "samples_seconds": [
+        2.8228875,
+        2.756929,
+        2.719722209
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "481c9a50ddbf9b35bfd4b99f56702ea1e10783bbd7bff7e03213fd400396037e",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.756929,
+      "min_seconds": 2.719722209,
+      "max_seconds": 2.8228875
+    },
+    {
+      "id": "knucleotide-graalvmaot-1",
+      "language": "java",
+      "variant": 1,
+      "path": "upstream/knucleotide-graalvmaot-1.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-graalvmaot-1.html",
+      "sha256": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+      "upstream_starred": false,
+      "published_secs": 6.25,
+      "published_gz": 1821,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 02:29:00 GMT\n\nMAKE:\nmv knucleotide.graalvmaot knucleotide.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .:/opt/src/java-libs/fastutil-8.3.1.jar  knucleotide.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp .:/opt/src/java-libs/fastutil-8.3.1.jar -O3 -march=native knucleotide -o knucleotide.graalvmaot_run\n\n150.33 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.graalvmaot_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-graalvmaot-1.java"
+        ],
+        "sha256": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+        "physical_lines": 181,
+        "nonblank_noncomment_lines": 140,
+        "normalized_bytes": 4756,
+        "gzip1_bytes": 1794
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-1:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-1/knucleotide.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-Xmx4g",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-1:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "knucleotide"
+      ],
+      "worker_policy": "ActiveProcessorCount=8; source executor/parallel-stream policy",
+      "samples_seconds": [
+        2.26008075,
+        2.364250666,
+        2.546955542
+      ],
+      "execution_mode": "OpenJDK JIT; unmodified upstream GraalVM AOT source",
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": {
+        "knucleotide$Result.class": "5b3323813562be179b5e81ae752b43dd0765d5f33724a684c8275c4c5ef87dc8",
+        "knucleotide.class": "8ebed5731b7979eed6418c46af3cf54ffc09e035aba16902ab4fc6afd4b407a2"
+      },
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.364250666,
+      "min_seconds": 2.26008075,
+      "max_seconds": 2.546955542
+    },
+    {
+      "id": "knucleotide-rust-9",
+      "language": "rust",
+      "variant": 9,
+      "path": "upstream/knucleotide-rust-9.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-9.html",
+      "sha256": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+      "upstream_starred": false,
+      "published_secs": 6.33,
+      "published_gz": 1850,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 18:45:51 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-b6d48ee8822a84bd.rlib --extern indexmap=/opt/src/rust-libs/libindexmap-6c4ab76d613a3ff2.rlib knucleotide.rs -o knucleotide.rust-9.rust_run\n\n14.41 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-9.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-9.rs"
+        ],
+        "sha256": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+        "physical_lines": 219,
+        "nonblank_noncomment_lines": 193,
+        "normalized_bytes": 4788,
+        "gzip1_bytes": 1807
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "futures=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures-f93f5cc220f40f47.rlib",
+        "--extern",
+        "tokio_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libtokio_threadpool-a8446ba36124ba6c.rlib",
+        "--extern",
+        "indexmap=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libindexmap-44c633771be767cb.rlib",
+        "--extern",
+        "itertools=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libitertools-63f8e103f3fb88a7.rlib",
+        "--extern",
+        "num=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum-1ca8ecfc42f84971.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-9"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-9"
+      ],
+      "worker_policy": "tokio ThreadPool::new()",
+      "samples_seconds": [
+        2.172318417,
+        2.112055708,
+        2.113278959
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "dc32a549cbf282017b706a3d029dea6ccdc458efd0ce88fe5fa48d8345f41496",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.113278959,
+      "min_seconds": 2.112055708,
+      "max_seconds": 2.172318417
+    },
+    {
+      "id": "knucleotide-rust-4",
+      "language": "rust",
+      "variant": 4,
+      "path": "upstream/knucleotide-rust-4.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-4.html",
+      "sha256": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+      "upstream_starred": false,
+      "published_secs": 6.69,
+      "published_gz": 1755,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 05:35:36 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-63ba8d8ec25ba6fe.rlib --extern indexmap=/opt/src/rust-libs/libindexmap-6c4ab76d613a3ff2.rlib knucleotide.rs -o knucleotide.rust-4.rust_run\n\n13.13 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-4.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-4.rs"
+        ],
+        "sha256": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+        "physical_lines": 196,
+        "nonblank_noncomment_lines": 174,
+        "normalized_bytes": 3838,
+        "gzip1_bytes": 1706
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "futures=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures-f93f5cc220f40f47.rlib",
+        "--extern",
+        "futures_cpupool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures_cpupool-e3e2183b00737dbd.rlib",
+        "--extern",
+        "indexmap=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libindexmap-44c633771be767cb.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-4"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-4"
+      ],
+      "worker_policy": "futures CpuPool::new_num_cpus()",
+      "samples_seconds": [
+        2.480510209,
+        2.408673084,
+        2.421029083
+      ],
+      "correctness_1000": {
+        "exact_reference_match": false,
+        "exit_code": 101,
+        "diagnostic": "\nthread 'main' (2416558) panicked at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs:136:48:\nIndexMap: key not found\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "executable_sha256": "1b75793cde4daff2e67ee931d6ab8192dac9c28e01c0650b894876c0f5863241",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.421029083,
+      "min_seconds": 2.408673084,
+      "max_seconds": 2.480510209
+    },
+    {
+      "id": "knucleotide-julia-6",
+      "language": "julia",
+      "variant": 6,
+      "path": "upstream/knucleotide-julia-6.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-julia-6.html",
+      "sha256": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+      "upstream_starred": false,
+      "published_secs": 6.98,
+      "published_gz": 965,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 07:35:05 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.12 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- knucleotide.julia-6.julia 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-julia-6.jl"
+        ],
+        "sha256": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+        "physical_lines": 156,
+        "nonblank_noncomment_lines": 84,
+        "normalized_bytes": 2020,
+        "gzip1_bytes": 934
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl"
+      ],
+      "worker_policy": "Julia requests 8 threads; histogram tasks",
+      "samples_seconds": [
+        2.92049075,
+        2.672832333,
+        2.653740708
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": {},
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.672832333,
+      "min_seconds": 2.653740708,
+      "max_seconds": 2.92049075
+    },
+    {
+      "id": "knucleotide-gpp-1-gcc-native",
+      "language": "cpp",
+      "variant": 1,
+      "path": "upstream/knucleotide-gpp-1.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-1.html",
+      "sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+      "upstream_starred": false,
+      "published_secs": 7.04,
+      "published_gz": 1452,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:52:50 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge   knucleotide.c++ -o knucleotide.c++.o &&  \\\n        /usr/bin/g++ knucleotide.c++.o -o knucleotide.gpp_run -lpthread \nrm knucleotide.c++\n\n6.55s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-1",
+      "cc_backend": "gcc",
+      "cc_tune": "native",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-1.cpp"
+        ],
+        "sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+        "physical_lines": 209,
+        "nonblank_noncomment_lines": 165,
+        "normalized_bytes": 3919,
+        "gzip1_bytes": 1411
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-gcc-native",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-ffp-contract=off"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-gcc-native"
+      ],
+      "worker_policy": "6 std::async histogram jobs plus main-thread histogram",
+      "samples_seconds": [
+        1.317562042,
+        1.307589,
+        1.464482917
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "8b0158247caabe8e414d794913943e8b2a7331f13b74150c3485e067a0fe66a1",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.317562042,
+      "min_seconds": 1.307589,
+      "max_seconds": 1.464482917
+    },
+    {
+      "id": "knucleotide-gpp-1-gcc-fastmath",
+      "language": "cpp",
+      "variant": 1,
+      "path": "upstream/knucleotide-gpp-1.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-1.html",
+      "sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+      "upstream_starred": false,
+      "published_secs": 7.04,
+      "published_gz": 1452,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:52:50 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge   knucleotide.c++ -o knucleotide.c++.o &&  \\\n        /usr/bin/g++ knucleotide.c++.o -o knucleotide.gpp_run -lpthread \nrm knucleotide.c++\n\n6.55s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-1",
+      "cc_backend": "gcc",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-1.cpp"
+        ],
+        "sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+        "physical_lines": 209,
+        "nonblank_noncomment_lines": 165,
+        "normalized_bytes": 3919,
+        "gzip1_bytes": 1411
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-gcc-fastmath",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-gcc-fastmath"
+      ],
+      "worker_policy": "6 std::async histogram jobs plus main-thread histogram",
+      "samples_seconds": [
+        1.296625583,
+        1.458718375,
+        1.449101
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "583c9680780a56067f51b20c8456cddb72c461ed4c050466a940e080d227b9a0",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.449101,
+      "min_seconds": 1.296625583,
+      "max_seconds": 1.458718375
+    },
+    {
+      "id": "knucleotide-go-7",
+      "language": "go",
+      "variant": 7,
+      "path": "upstream/knucleotide-go-7.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-go-7.html",
+      "sha256": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+      "upstream_starred": false,
+      "published_secs": 7.58,
+      "published_gz": 1613,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 02:24:37 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o knucleotide.go-7.go_run knucleotide.go-7.go\n\n5.42s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.go-7.go_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-go-7.go"
+        ],
+        "sha256": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+        "physical_lines": 333,
+        "nonblank_noncomment_lines": 230,
+        "normalized_bytes": 4925,
+        "gzip1_bytes": 1580
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-7",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-7"
+      ],
+      "worker_policy": "GOMAXPROCS=8; source partitions using NumCPU=8",
+      "samples_seconds": [
+        2.222307916,
+        2.278448708,
+        2.180007583
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "bce00d9063c8724105540e674c4c8e1b530083aabddde331021ce83888a62800",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.222307916,
+      "min_seconds": 2.180007583,
+      "max_seconds": 2.278448708
+    },
+    {
+      "id": "knucleotide-go-3",
+      "language": "go",
+      "variant": 3,
+      "path": "upstream/knucleotide-go-3.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-go-3.html",
+      "sha256": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+      "upstream_starred": false,
+      "published_secs": 8.2,
+      "published_gz": 1729,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 02:16:55 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o knucleotide.go-3.go_run knucleotide.go-3.go\n\n5.63s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.go-3.go_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-go-3.go"
+        ],
+        "sha256": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+        "physical_lines": 277,
+        "nonblank_noncomment_lines": 219,
+        "normalized_bytes": 4641,
+        "gzip1_bytes": 1700
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-3"
+      ],
+      "worker_policy": "GOMAXPROCS=8; source partitions using NumCPU=8",
+      "samples_seconds": [
+        2.557194,
+        2.511837,
+        2.626680333
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "01f8b0502eb4cf7d16078fa5aef4a464ce8c9dad8928d81b587385c8f1ab2198",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.557194,
+      "min_seconds": 2.511837,
+      "max_seconds": 2.626680333
+    },
+    {
+      "id": "knucleotide-go-6",
+      "language": "go",
+      "variant": 6,
+      "path": "upstream/knucleotide-go-6.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-go-6.html",
+      "sha256": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+      "upstream_starred": false,
+      "published_secs": 8.3,
+      "published_gz": 1596,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 02:11:26 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o knucleotide.go-6.go_run knucleotide.go-6.go\n\n5.79s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.go-6.go_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-go-6.go"
+        ],
+        "sha256": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+        "physical_lines": 234,
+        "nonblank_noncomment_lines": 202,
+        "normalized_bytes": 4328,
+        "gzip1_bytes": 1569
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-6",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-6"
+      ],
+      "worker_policy": "GOMAXPROCS=8; source partitions using NumCPU=8",
+      "samples_seconds": [
+        2.48854225,
+        2.5111895,
+        2.400438666
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "fdf6ad8ab75cf0d8abb925bd6a4ab474104adaaf6f194a41346dc18d5abf4380",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.48854225,
+      "min_seconds": 2.400438666,
+      "max_seconds": 2.5111895
+    },
+    {
+      "id": "knucleotide-graalvmaot-3",
+      "language": "java",
+      "variant": 3,
+      "path": "upstream/knucleotide-graalvmaot-3.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-graalvmaot-3.html",
+      "sha256": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+      "upstream_starred": false,
+      "published_secs": 8.31,
+      "published_gz": 1642,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 02:20:12 GMT\n\nMAKE:\nmv knucleotide.graalvmaot-3.graalvmaot knucleotide.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .:/opt/src/java-libs/fastutil-8.3.1.jar  knucleotide.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp .:/opt/src/java-libs/fastutil-8.3.1.jar -O3 -march=native knucleotide -o knucleotide.graalvmaot-3.graalvmaot_run\n\n150.99 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.graalvmaot-3.graalvmaot_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-graalvmaot-3.java"
+        ],
+        "sha256": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+        "physical_lines": 165,
+        "nonblank_noncomment_lines": 125,
+        "normalized_bytes": 4420,
+        "gzip1_bytes": 1626
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-3:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-3/knucleotide.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-Xmx4g",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-3:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "knucleotide"
+      ],
+      "worker_policy": "ActiveProcessorCount=8; source executor/parallel-stream policy",
+      "samples_seconds": [
+        3.485775542,
+        3.580484625,
+        3.487421042
+      ],
+      "execution_mode": "OpenJDK JIT; unmodified upstream GraalVM AOT source",
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": {
+        "knucleotide$ByteString.class": "c6de5c54f2b4f2f25142bc694e05fdd37db591e481a53118da4b48f41fc28706",
+        "knucleotide.class": "e59ada99ca2b01bcdd477719118bb29311f1f66445c45a4e14ff93223d91dcc0",
+        "knucleotide$1.class": "3e0810e486a3dfb2187d6d7d714211a1ea5fccaf5f7d2c54b26d50d830d75bca"
+      },
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 3.487421042,
+      "min_seconds": 3.485775542,
+      "max_seconds": 3.580484625
+    },
+    {
+      "id": "knucleotide-graalvmaot-6",
+      "language": "java",
+      "variant": 6,
+      "path": "upstream/knucleotide-graalvmaot-6.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-graalvmaot-6.html",
+      "sha256": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+      "upstream_starred": false,
+      "published_secs": 8.35,
+      "published_gz": 1614,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 02:24:36 GMT\n\nMAKE:\nmv knucleotide.graalvmaot-6.graalvmaot knucleotide.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .:/opt/src/java-libs/fastutil-8.3.1.jar  knucleotide.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp .:/opt/src/java-libs/fastutil-8.3.1.jar -O3 -march=native knucleotide -o knucleotide.graalvmaot-6.graalvmaot_run\n\n150.20 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.graalvmaot-6.graalvmaot_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-graalvmaot-6.java"
+        ],
+        "sha256": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+        "physical_lines": 154,
+        "nonblank_noncomment_lines": 121,
+        "normalized_bytes": 4334,
+        "gzip1_bytes": 1598
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-6:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-6",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-6/knucleotide.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-Xmx4g",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-6:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "knucleotide"
+      ],
+      "worker_policy": "ActiveProcessorCount=8; source executor/parallel-stream policy",
+      "samples_seconds": [
+        3.451212125,
+        3.551850167,
+        3.346795042
+      ],
+      "execution_mode": "OpenJDK JIT; unmodified upstream GraalVM AOT source",
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": {
+        "knucleotide$ByteString.class": "d8b22eec8631689e0a6ca06e66cab575c5799e6446595dce6fa9d323bfa97110",
+        "knucleotide.class": "40cc028ce3dff28676bb95a5002c2ca4895751c38bd51dc5c61d282a2a373de4",
+        "knucleotide$1.class": "5c83dcbbd19794552628cf7bbaf5e5107f5f875e3205e6a3264ba1ebe8558f99"
+      },
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 3.451212125,
+      "min_seconds": 3.346795042,
+      "max_seconds": 3.551850167
+    },
+    {
+      "id": "knucleotide-go-4",
+      "language": "go",
+      "variant": 4,
+      "path": "upstream/knucleotide-go-4.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-go-4.html",
+      "sha256": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+      "upstream_starred": false,
+      "published_secs": 9.27,
+      "published_gz": 1552,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 02:22:15 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o knucleotide.go-4.go_run knucleotide.go-4.go\n\n5.11s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.go-4.go_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-go-4.go"
+        ],
+        "sha256": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+        "physical_lines": 224,
+        "nonblank_noncomment_lines": 190,
+        "normalized_bytes": 4160,
+        "gzip1_bytes": 1523
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-4",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-4"
+      ],
+      "worker_policy": "GOMAXPROCS=8; source partitions using NumCPU=8",
+      "samples_seconds": [
+        2.504694542,
+        2.619784791,
+        2.51447175
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "39231ad82c19155420a4c45a866fa39997e5ee8c906398f3f1d9c567dfff7134",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.51447175,
+      "min_seconds": 2.504694542,
+      "max_seconds": 2.619784791
+    },
+    {
+      "id": "knucleotide-julia-7",
+      "language": "julia",
+      "variant": 7,
+      "path": "upstream/knucleotide-julia-7.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-julia-7.html",
+      "sha256": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+      "upstream_starred": false,
+      "published_secs": 9.93,
+      "published_gz": 1379,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 08:04:14 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.07 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- knucleotide.julia-7.julia 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-julia-7.jl"
+        ],
+        "sha256": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+        "physical_lines": 149,
+        "nonblank_noncomment_lines": 108,
+        "normalized_bytes": 2961,
+        "gzip1_bytes": 1341
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl"
+      ],
+      "worker_policy": "Julia requests 8 threads; histogram tasks",
+      "samples_seconds": [
+        5.215842375,
+        5.098775209,
+        5.156573542
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "e05d5885bd17b92535d0c1e02558c34d8eb10246792b3618644677fb67c035ff",
+        "exact_reference_match": false
+      },
+      "executable_sha256": {},
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 5.156573542,
+      "min_seconds": 5.098775209,
+      "max_seconds": 5.215842375
+    },
+    {
+      "id": "knucleotide-rust-1",
+      "language": "rust",
+      "variant": 1,
+      "path": "upstream/knucleotide-rust-1.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-1.html",
+      "sha256": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+      "upstream_starred": false,
+      "published_secs": 21.08,
+      "published_gz": 1086,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:51:35 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-ada39ec68f280726.rlib --extern indexmap=/opt/src/rust-libs/libindexmap-28a5b5c9a6c1d4f5.rlib knucleotide.rs -o knucleotide.rust_run\nwarning: unused `Result` that must be used\n   --> knucleotide.rs:120:9\n    |\n120 | /         thread.join().map(|value| {\n121 | |             results.insert(key, value)\n122 | |         });\n    | |__________^\n    |\n    = note: this `Result` may be an `Err` variant, which should be handled\n    = note: `#[warn(unused_must_use)]` on by default\nhelp: use `let _ = ...` to ignore the resulting value\n    |\n120 |         let _ = thread.join().map(|value| {\n    |         +++++++\n\nwarning: 1 warning emitted\n\nrm knucleotide.rs\n\n12.16 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-1.rs"
+        ],
+        "sha256": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+        "physical_lines": 135,
+        "nonblank_noncomment_lines": 92,
+        "normalized_bytes": 2848,
+        "gzip1_bytes": 1060
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-1"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-1"
+      ],
+      "worker_policy": "7 std::thread histogram jobs",
+      "samples_seconds": [
+        13.713661333,
+        13.647029,
+        13.825084333
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "f52fea3df37b4c6059801bd625c85ffcb5b3ac811a0a8205ebae200bdc85531e",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 13.713661333,
+      "min_seconds": 13.647029,
+      "max_seconds": 13.825084333
+    },
+    {
+      "id": "knucleotide-graalvmaot-5",
+      "language": "java",
+      "variant": 5,
+      "path": "upstream/knucleotide-graalvmaot-5.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-graalvmaot-5.html",
+      "sha256": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+      "upstream_starred": false,
+      "published_secs": 22.53,
+      "published_gz": 2225,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 02:02:33 GMT\n\nMAKE:\nmv knucleotide.graalvmaot-5.graalvmaot knucleotide.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .:/opt/src/java-libs/fastutil-8.3.1.jar  knucleotide.java\nNote: knucleotide.java uses unchecked or unsafe operations.\nNote: Recompile with -Xlint:unchecked for details.\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp .:/opt/src/java-libs/fastutil-8.3.1.jar -O3 -march=native knucleotide -o knucleotide.graalvmaot-5.graalvmaot_run\n\n152.81 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.graalvmaot-5.graalvmaot_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-graalvmaot-5.java"
+        ],
+        "sha256": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+        "physical_lines": 309,
+        "nonblank_noncomment_lines": 266,
+        "normalized_bytes": 6276,
+        "gzip1_bytes": 2204
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-5:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-5",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-5/knucleotide.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-Xmx4g",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-5:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "knucleotide"
+      ],
+      "worker_policy": "ActiveProcessorCount=8; source executor/parallel-stream policy",
+      "samples_seconds": [
+        7.187717292,
+        7.144711542,
+        7.04571925
+      ],
+      "execution_mode": "OpenJDK JIT; unmodified upstream GraalVM AOT source",
+      "correctness_1000": {
+        "exact_reference_match": false,
+        "exit_code": 1,
+        "diagnostic": "Exception in thread \"main\" java.lang.NullPointerException: Cannot read field \"count\" because the return value of \"java.util.Map.get(Object)\" is null\n\tat knucleotide.main(knucleotide.java:104)\n"
+      },
+      "executable_sha256": {
+        "knucleotide$Key.class": "fee0ce556978e4eb2f79a4d45a51ced6af2001022e9a0c83912783fc18e4f299",
+        "knucleotide$Value.class": "b8dc37fc354936091cfb512976d208ad8734abbe30b15eb7d27f8c5112054d33",
+        "knucleotide$LineInputStream.class": "62f4861950b5ff2827c180f02bad8d05cdee7a3eec63fd3ac7b112acb39ea405",
+        "knucleotide.class": "63507e00a94332553cbbea88a29303808099922719b2f5a4f83669495338c623",
+        "knucleotide$1.class": "c2e7d34338fd29d6edd081eb7381962acfd7b7d19c2265ee6c554b131f5ed25c"
+      },
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 7.144711542,
+      "min_seconds": 7.04571925,
+      "max_seconds": 7.187717292
+    },
+    {
+      "id": "knucleotide-graalvmaot-4",
+      "language": "java",
+      "variant": 4,
+      "path": "upstream/knucleotide-graalvmaot-4.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-graalvmaot-4.html",
+      "sha256": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+      "upstream_starred": false,
+      "published_secs": 36.76,
+      "published_gz": 1887,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 02:09:54 GMT\n\nMAKE:\nmv knucleotide.graalvmaot-4.graalvmaot knucleotide.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .:/opt/src/java-libs/fastutil-8.3.1.jar  knucleotide.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp .:/opt/src/java-libs/fastutil-8.3.1.jar -O3 -march=native knucleotide -o knucleotide.graalvmaot-4.graalvmaot_run\n\n150.92 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.graalvmaot-4.graalvmaot_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-graalvmaot-4.java"
+        ],
+        "sha256": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+        "physical_lines": 271,
+        "nonblank_noncomment_lines": 231,
+        "normalized_bytes": 5337,
+        "gzip1_bytes": 1866
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-4:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-4",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-4/knucleotide.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-Xmx4g",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-4:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "knucleotide"
+      ],
+      "worker_policy": "serial",
+      "samples_seconds": [
+        19.607867416,
+        19.333696167,
+        17.966307459
+      ],
+      "execution_mode": "OpenJDK JIT; unmodified upstream GraalVM AOT source",
+      "correctness_1000": {
+        "exact_reference_match": false,
+        "exit_code": 1,
+        "diagnostic": "Exception in thread \"main\" java.lang.NullPointerException: Cannot read field \"count\" because the return value of \"java.util.Map.get(Object)\" is null\n\tat knucleotide.main(knucleotide.java:96)\n"
+      },
+      "executable_sha256": {
+        "knucleotide$Key.class": "3f82d591f22d66f80c2850881a314a3f01498e5c04ba0dbcde107cb829a7b5c1",
+        "knucleotide$Value.class": "3297b3d2aad93afa88b81f4ad036d17b7a9b9857a6220dde66a9b00967b713fb",
+        "knucleotide$LineInputStream.class": "cae83e3b1a9713c61d15aa822c9226dd6322f3fe13622347df905226f3fa2fb9",
+        "knucleotide.class": "136ae3c688fbfc5783abd9aa8546a47c073a6762d9384877d44a362cdf7de7d3",
+        "knucleotide$1.class": "cf419dd643395dc34fca335cce8de4e72db9c055c10e32f778b0f6f4e54d006b"
+      },
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 19.333696167,
+      "min_seconds": 17.966307459,
+      "max_seconds": 19.607867416
+    },
+    {
+      "id": "knucleotide-go-8",
+      "language": "go",
+      "variant": 8,
+      "path": "upstream/knucleotide-go-8.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-go-8.html",
+      "sha256": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+      "upstream_starred": false,
+      "published_secs": 61.38,
+      "published_gz": 752,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 02:26:51 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o knucleotide.go-8.go_run knucleotide.go-8.go\n\n5.20s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.go-8.go_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-go-8.go"
+        ],
+        "sha256": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+        "physical_lines": 98,
+        "nonblank_noncomment_lines": 80,
+        "normalized_bytes": 1618,
+        "gzip1_bytes": 741
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-go-8"
+      ],
+      "worker_policy": "GOMAXPROCS=8; source goroutine histogram jobs",
+      "samples_seconds": [
+        25.669711625,
+        25.711848208,
+        25.5829595
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "d115616381ab77d2b8b86996bcb4c91cef61a50bbd419ae1803a40678d517524",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 25.669711625,
+      "min_seconds": 25.5829595,
+      "max_seconds": 25.711848208
+    },
+    {
+      "id": "knucleotide-graalvmaot-8",
+      "language": "java",
+      "variant": 8,
+      "path": "upstream/knucleotide-graalvmaot-8.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-graalvmaot-8.html",
+      "sha256": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+      "upstream_starred": false,
+      "published_secs": 85.57,
+      "published_gz": 786,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 01:42:20 GMT\n\nMAKE:\nmv knucleotide.graalvmaot-8.graalvmaot knucleotide.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .:/opt/src/java-libs/fastutil-8.3.1.jar  knucleotide.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp .:/opt/src/java-libs/fastutil-8.3.1.jar -O3 -march=native knucleotide -o knucleotide.graalvmaot-8.graalvmaot_run\n\n149.27 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.graalvmaot-8.graalvmaot_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-graalvmaot-8.java"
+        ],
+        "sha256": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+        "physical_lines": 79,
+        "nonblank_noncomment_lines": 64,
+        "normalized_bytes": 1681,
+        "gzip1_bytes": 775
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-8:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-8/knucleotide.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-Xmx4g",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-graalvmaot-8:/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/fastutil-8.3.1.jar",
+        "knucleotide"
+      ],
+      "worker_policy": "ActiveProcessorCount=8; parallel streams",
+      "samples_seconds": [
+        37.595981,
+        36.741483167,
+        36.702843291
+      ],
+      "execution_mode": "OpenJDK JIT; unmodified upstream GraalVM AOT source",
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": {
+        "knucleotide.class": "86e47aa64a50648ca8583af22a9d2b1a466848199bff7dc8d41fba28405083d5"
+      },
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 36.741483167,
+      "min_seconds": 36.702843291,
+      "max_seconds": 37.595981
+    },
+    {
+      "id": "knucleotide-julia-1",
+      "language": "julia",
+      "variant": 1,
+      "path": "upstream/knucleotide-julia-1.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-julia-1.html",
+      "sha256": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+      "upstream_starred": false,
+      "published_secs": 132.79,
+      "published_gz": 703,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 07:37:03 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- knucleotide.julia 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-julia-1.jl"
+        ],
+        "sha256": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+        "physical_lines": 94,
+        "nonblank_noncomment_lines": 74,
+        "normalized_bytes": 1388,
+        "gzip1_bytes": 682
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl"
+      ],
+      "worker_policy": "serial",
+      "samples_seconds": [
+        65.861435334,
+        65.701224875,
+        65.61570125
+      ],
+      "correctness_1000": {
+        "exact_reference_match": false,
+        "exit_code": 1,
+        "diagnostic": "ERROR: LoadError: KeyError: key \"GGTATTTTAATT\" not found\nStacktrace:\n [1] getindex\n   @ ./dict.jl:479 [inlined]\n [2] count_one\n   @ ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl:27 [inlined]\n [3] perf_k_nucleotide()\n   @ Main ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl:90\n [4] top-level scope\n   @ ~/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl:94\n [5] include(mod::Module, _path::String)\n   @ Base ./Base.jl:309\n [6] exec_options(opts::Base.JLOptions)\n   @ Base ./client.jl:344\n [7] _start()\n   @ Base ./client.jl:577\nin expression starting at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl:94\n"
+      },
+      "executable_sha256": {},
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 65.701224875,
+      "min_seconds": 65.61570125,
+      "max_seconds": 65.861435334
+    },
+    {
+      "id": "knucleotide-gpp-2-llvm-native",
+      "language": "cpp",
+      "variant": 2,
+      "path": "upstream/knucleotide-gpp-2.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-2.html",
+      "sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+      "upstream_starred": false,
+      "published_secs": 2.02,
+      "published_gz": 1634,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:52:05 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++17 knucleotide.gpp-2.c++ -o knucleotide.gpp-2.c++.o &&  \\\n        /usr/bin/g++ knucleotide.gpp-2.c++.o -o knucleotide.gpp-2.gpp_run -lpthread \nrm knucleotide.gpp-2.c++\n\n7.41s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp-2.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-2",
+      "cc_backend": "llvm",
+      "cc_tune": "native",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-2.cpp"
+        ],
+        "sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+        "physical_lines": 220,
+        "nonblank_noncomment_lines": 144,
+        "normalized_bytes": 4060,
+        "gzip1_bytes": 1587
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-2-llvm-native",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-nostdinc++",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-Wno-nullability-completeness",
+        "/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib",
+        "-ffp-contract=off"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-2-llvm-native"
+      ],
+      "worker_policy": "fixed 4 std::thread workers per histogram",
+      "samples_seconds": [
+        1.150583833,
+        1.15963525,
+        1.121450833
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "5f46066e6d9cbe0f57a39bb2e60e76044880664e8a388e29b85b2325dba04680",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.150583833,
+      "min_seconds": 1.121450833,
+      "max_seconds": 1.15963525
+    },
+    {
+      "id": "knucleotide-gpp-2-llvm-fastmath",
+      "language": "cpp",
+      "variant": 2,
+      "path": "upstream/knucleotide-gpp-2.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-2.html",
+      "sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+      "upstream_starred": false,
+      "published_secs": 2.02,
+      "published_gz": 1634,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:52:05 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++17 knucleotide.gpp-2.c++ -o knucleotide.gpp-2.c++.o &&  \\\n        /usr/bin/g++ knucleotide.gpp-2.c++.o -o knucleotide.gpp-2.gpp_run -lpthread \nrm knucleotide.gpp-2.c++\n\n7.41s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp-2.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-2",
+      "cc_backend": "llvm",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-2.cpp"
+        ],
+        "sha256": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+        "physical_lines": 220,
+        "nonblank_noncomment_lines": 144,
+        "normalized_bytes": 4060,
+        "gzip1_bytes": 1587
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-2-llvm-fastmath",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-nostdinc++",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-Wno-nullability-completeness",
+        "/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-2-llvm-fastmath"
+      ],
+      "worker_policy": "fixed 4 std::thread workers per histogram",
+      "samples_seconds": [
+        1.1818995,
+        1.13299225,
+        1.094208333
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "c479d2c382f764a62f87b8ceaaef4dbd460885b3a9e8a16989593bd3882a8ff2",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.13299225,
+      "min_seconds": 1.094208333,
+      "max_seconds": 1.1818995
+    },
+    {
+      "id": "knucleotide-gpp-3-llvm-native",
+      "language": "cpp",
+      "variant": 3,
+      "path": "upstream/knucleotide-gpp-3.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-3.html",
+      "sha256": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+      "upstream_starred": false,
+      "published_secs": 4.19,
+      "published_gz": 1280,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:56:31 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++14 knucleotide.gpp-3.c++ -o knucleotide.gpp-3.c++.o &&  \\\n        /usr/bin/g++ knucleotide.gpp-3.c++.o -o knucleotide.gpp-3.gpp_run -Wl,--no-as-needed -lpthread \nrm knucleotide.gpp-3.c++\n\n5.17s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp-3.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-3",
+      "cc_backend": "llvm",
+      "cc_tune": "native",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-3.cpp"
+        ],
+        "sha256": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+        "physical_lines": 154,
+        "nonblank_noncomment_lines": 134,
+        "normalized_bytes": 3144,
+        "gzip1_bytes": 1241
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-llvm-native",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-femulated-tls",
+        "-nostdinc++",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-Wno-nullability-completeness",
+        "/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib",
+        "-ffp-contract=off"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-llvm-native"
+      ],
+      "worker_policy": "8 std::async per-frame jobs for each histogram",
+      "samples_seconds": [
+        1.615945083,
+        1.620194459,
+        1.636718625
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "a509a1a6296c77f6a285d4f05669d5055aabbbc4b9c75118af8f28ebf4c0aafd",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.620194459,
+      "min_seconds": 1.615945083,
+      "max_seconds": 1.636718625
+    },
+    {
+      "id": "knucleotide-gpp-1-llvm-native",
+      "language": "cpp",
+      "variant": 1,
+      "path": "upstream/knucleotide-gpp-1.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-1.html",
+      "sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+      "upstream_starred": false,
+      "published_secs": 7.04,
+      "published_gz": 1452,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:52:50 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge   knucleotide.c++ -o knucleotide.c++.o &&  \\\n        /usr/bin/g++ knucleotide.c++.o -o knucleotide.gpp_run -lpthread \nrm knucleotide.c++\n\n6.55s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-1",
+      "cc_backend": "llvm",
+      "cc_tune": "native",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-1.cpp"
+        ],
+        "sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+        "physical_lines": 209,
+        "nonblank_noncomment_lines": 165,
+        "normalized_bytes": 3919,
+        "gzip1_bytes": 1411
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-llvm-native",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-femulated-tls",
+        "-nostdinc++",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-Wno-nullability-completeness",
+        "/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib",
+        "-ffp-contract=off"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-llvm-native"
+      ],
+      "worker_policy": "6 std::async histogram jobs plus main-thread histogram",
+      "samples_seconds": [
+        1.423291125,
+        1.247998375,
+        1.296601291
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "9c07b7dec6cfcdcb5a8b6c0d8c3a030ad14e440cc425039b33eb3022ab0c8687",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.296601291,
+      "min_seconds": 1.247998375,
+      "max_seconds": 1.423291125
+    },
+    {
+      "id": "mech-compact-batch4096",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 4096,
+      "upstream_starred": false,
+      "native_object_sha256": "937e4a1f9e58c84479d3fd81b46879923b2d477d89a915f96519db91e9b76161",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-batch4096"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; compact source waits between tasks",
+      "samples_seconds": [
+        3.969476125,
+        3.96559525,
+        3.938168667
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "executable_sha256": "4718bca1a8fa9e46457805455bb36532c051da5dba1e0134e3835d3d56b724b8",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 3.96559525,
+      "min_seconds": 3.938168667,
+      "max_seconds": 3.969476125
+    },
+    {
+      "id": "mech-parallel-batch4096",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 4096,
+      "upstream_starred": false,
+      "native_object_sha256": "fa92362e75b34bd958df0a9e777fb09c1515bd22e8bb04ef8df4928918232d2b",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-batch4096"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; compact source waits between tasks",
+      "samples_seconds": [
+        1.366848625,
+        1.184203333,
+        1.3820515
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "executable_sha256": "629ef8d939434ea0b96741a84c69d796a31f7445e202d77335b3a5dc5fa365d6",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.366848625,
+      "min_seconds": 1.184203333,
+      "max_seconds": 1.3820515
+    },
+    {
+      "id": "mech-parallel-batch1",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 1,
+      "upstream_starred": false,
+      "native_object_sha256": "3f629e49b96639abe15edc408f77677e0f33d14d272e47a4a9dd9babd38bc518",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-batch1"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; compact source waits between tasks",
+      "samples_seconds": [
+        1.489941541,
+        1.447350333,
+        1.623641875
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "1",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "executable_sha256": "951c12ed3dd7a593f79a2f82609777480eeff0460205084caf3f0142e4a956be",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.489941541,
+      "min_seconds": 1.447350333,
+      "max_seconds": 1.623641875
+    },
+    {
+      "id": "mech-parallel-batch256",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 256,
+      "upstream_starred": false,
+      "native_object_sha256": "1e5507c5199b409b645abe895543cebab9f5fc74c86bb4aa6598d8eb1a6619f4",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-batch256"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; compact source waits between tasks",
+      "samples_seconds": [
+        1.223563583,
+        1.277245625,
+        1.356788166
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "256",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "executable_sha256": "80b1fc332a5c04c54012c284d6e3b6d15acc3a96dd17030fd095e370ecc8dc78",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.277245625,
+      "min_seconds": 1.223563583,
+      "max_seconds": 1.356788166
+    },
+    {
+      "id": "knucleotide-gpp-3-llvm-fastmath-nolto",
+      "language": "cpp",
+      "variant": 3,
+      "path": "upstream/knucleotide-gpp-3.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-3.html",
+      "sha256": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+      "upstream_starred": false,
+      "published_secs": 4.19,
+      "published_gz": 1280,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:56:31 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++14 knucleotide.gpp-3.c++ -o knucleotide.gpp-3.c++.o &&  \\\n        /usr/bin/g++ knucleotide.gpp-3.c++.o -o knucleotide.gpp-3.gpp_run -Wl,--no-as-needed -lpthread \nrm knucleotide.gpp-3.c++\n\n5.17s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp-3.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-3",
+      "cc_backend": "llvm",
+      "cc_tune": "fastmath-nolto",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-3.cpp"
+        ],
+        "sha256": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+        "physical_lines": 154,
+        "nonblank_noncomment_lines": 134,
+        "normalized_bytes": 3144,
+        "gzip1_bytes": 1241
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-llvm-fastmath-nolto",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-femulated-tls",
+        "-nostdinc++",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-Wno-nullability-completeness",
+        "/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib",
+        "-ffast-math",
+        "-funroll-loops"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-llvm-fastmath-nolto"
+      ],
+      "worker_policy": "8 std::async per-frame jobs for each histogram",
+      "samples_seconds": [
+        2.010246125,
+        1.662427334,
+        1.707208542
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "1de72e65eaebe62377d82cbc7553f3de4ce89d86d33829314626b3e769a9ca22",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.707208542,
+      "min_seconds": 1.662427334,
+      "max_seconds": 2.010246125
+    },
+    {
+      "id": "knucleotide-gpp-1-llvm-fastmath-nolto",
+      "language": "cpp",
+      "variant": 1,
+      "path": "upstream/knucleotide-gpp-1.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-gpp-1.html",
+      "sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+      "upstream_starred": false,
+      "published_secs": 7.04,
+      "published_gz": 1452,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:52:50 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge   knucleotide.c++ -o knucleotide.c++.o &&  \\\n        /usr/bin/g++ knucleotide.c++.o -o knucleotide.gpp_run -lpthread \nrm knucleotide.c++\n\n6.55s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.gpp_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "upstream_id": "knucleotide-gpp-1",
+      "cc_backend": "llvm",
+      "cc_tune": "fastmath-nolto",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-gpp-1.cpp"
+        ],
+        "sha256": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+        "physical_lines": 209,
+        "nonblank_noncomment_lines": 165,
+        "normalized_bytes": 3919,
+        "gzip1_bytes": 1411
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-llvm-fastmath-nolto",
+        "-lm",
+        "-pthread",
+        "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-femulated-tls",
+        "-nostdinc++",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25",
+        "-isystem",
+        "/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-Wno-nullability-completeness",
+        "/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib",
+        "-ffast-math",
+        "-funroll-loops"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-llvm-fastmath-nolto"
+      ],
+      "worker_policy": "6 std::async histogram jobs plus main-thread histogram",
+      "samples_seconds": [
+        1.29040775,
+        1.351666375,
+        1.28920725
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "425bd9725b8764ee83b5665daea0b1358718bc133a9ddf2519c289b87b3da1ca",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.29040775,
+      "min_seconds": 1.28920725,
+      "max_seconds": 1.351666375
+    }
+  ],
+  "excluded": [
+    {
+      "id": "knucleotide-gpp-3-llvm-fastmath",
+      "path": "upstream/knucleotide-gpp-3.cpp",
+      "reason": "Command '['/opt/homebrew/opt/llvm@22/bin/clang-22', '-O3', '-mcpu=native', '-fomit-frame-pointer', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-llvm-fastmath', '-lm', '-pthread', '-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-femulated-tls', '-nostdinc++', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward', '-include', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-Wno-nullability-completeness', '/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib', '-ffast-math', '-funroll-loops', '-flto']' returned non-zero exit status 1.",
+      "diagnostic": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:95:66: warning: variable length arrays in C++ are a Clang extension [-Wvla-cxx-extension]\n   95 |    std::future<__gnu_pbds::cc_hash_table<T,unsigned,T::hash>> ft[N];\n      |                                                                  ^\n/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:95:66: note: read of non-const variable 'N' is not allowed in a constant expression\n/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:93:13: note: declared here\n   93 |    unsigned N = sysconf (_SC_NPROCESSORS_ONLN);\n      |             ^\n1 warning generated.\nUndefined symbols for architecture arm64:\n  \"std::__once_call\", referenced from:\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n  \"std::__once_callable\", referenced from:\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-e1a415.o\n      ...\nld: symbol(s) not found for architecture arm64\nclang-22: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    },
+    {
+      "id": "knucleotide-gpp-1-llvm-fastmath",
+      "path": "upstream/knucleotide-gpp-1.cpp",
+      "reason": "Command '['/opt/homebrew/opt/llvm@22/bin/clang-22', '-O3', '-mcpu=native', '-fomit-frame-pointer', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-llvm-fastmath', '-lm', '-pthread', '-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-femulated-tls', '-nostdinc++', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward', '-include', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-Wno-nullability-completeness', '/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib', '-ffast-math', '-funroll-loops', '-flto']' returned non-zero exit status 1.",
+      "diagnostic": "Undefined symbols for architecture arm64:\n  \"std::__once_call\", referenced from:\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n  \"std::__once_callable\", referenced from:\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-803387.o\n      ...\nld: symbol(s) not found for architecture arm64\nclang-22: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    }
+  ],
+  "endpoints": {
+    "time_baseline_seconds": 0.920018916,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 4,
+        "fastest": "knucleotide-gcc-1-gcc-fastmath",
+        "smallest": "knucleotide-gcc-1-gcc-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.057142857142857,
+            "time_ratio": 2.02994037353032
+          },
+          "smallest": {
+            "size_ratio": 6.057142857142857,
+            "time_ratio": 2.02994037353032
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 2,
+        "fastest": "knucleotide-chapel-4",
+        "smallest": "knucleotide-chapel-3",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.2258718311834824,
+        "fastest_size_over_smallest": 1.030214424951267,
+        "log2_tradeoff_distance": 0.296930077203216,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.314285714285714,
+            "time_ratio": 3.3484043419385525
+          },
+          "smallest": {
+            "size_ratio": 4.187755102040816,
+            "time_ratio": 4.104714562194936
+          }
+        }
+      },
+      "cpp": {
+        "candidate_count": 12,
+        "fastest": "knucleotide-gpp-2-llvm-fastmath",
+        "smallest": "knucleotide-gpp-3-llvm-native",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.4300137172165122,
+        "fastest_size_over_smallest": 1.2788074133763094,
+        "log2_tradeoff_distance": 0.6262333859965792,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.477551020408163,
+            "time_ratio": 1.2314879947533601
+          },
+          "smallest": {
+            "size_ratio": 5.0653061224489795,
+            "time_ratio": 1.7610447250847612
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 5,
+        "fastest": "knucleotide-go-7",
+        "smallest": "knucleotide-go-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 11.550924802177594,
+        "fastest_size_over_smallest": 2.1322537112010798,
+        "log2_tradeoff_distance": 3.695097227011398,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.448979591836735,
+            "time_ratio": 2.4155024177785496
+          },
+          "smallest": {
+            "size_ratio": 3.024489795918367,
+            "time_ratio": 27.901286787238192
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 6,
+        "fastest": "knucleotide-graalvmaot-1",
+        "smallest": "knucleotide-graalvmaot-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 15.540434732820332,
+        "fastest_size_over_smallest": 2.3148387096774194,
+        "log2_tradeoff_distance": 4.139047539028102,
+        "points": {
+          "fastest": {
+            "size_ratio": 7.322448979591837,
+            "time_ratio": 2.569784843423806
+          },
+          "smallest": {
+            "size_ratio": 3.163265306122449,
+            "time_ratio": 39.93557363661858
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 3,
+        "fastest": "knucleotide-julia-6",
+        "smallest": "knucleotide-julia-1",
+        "same_entry": false,
+        "smallest_time_over_fastest": 24.581124698254687,
+        "fastest_size_over_smallest": 1.3695014662756597,
+        "log2_tradeoff_distance": 4.641700711208877,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.8122448979591836,
+            "time_ratio": 2.9051928025792897
+          },
+          "smallest": {
+            "size_ratio": 2.783673469387755,
+            "time_ratio": 71.41290655267353
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 4,
+        "fastest": "mech-parallel-batch256",
+        "smallest": "mech-compact-batch4096",
+        "same_entry": false,
+        "smallest_time_over_fastest": 3.1048023750326017,
+        "fastest_size_over_smallest": 1.2,
+        "log2_tradeoff_distance": 1.655530749338377,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.2,
+            "time_ratio": 1.3882819176730927
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 4.310340995206233
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 8,
+        "fastest": "knucleotide-rust-6",
+        "smallest": "knucleotide-rust-1",
+        "same_entry": false,
+        "smallest_time_over_fastest": 14.905847145647167,
+        "fastest_size_over_smallest": 1.5622641509433963,
+        "log2_tradeoff_distance": 3.9505905434464066,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 4.326530612244898,
+            "time_ratio": 14.905847145647167
+          }
+        }
+      }
+    }
+  },
+  "nonheroic_endpoints": {
+    "time_baseline_seconds": 0.920018916,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 4,
+        "fastest": "knucleotide-gcc-1-gcc-fastmath",
+        "smallest": "knucleotide-gcc-1-gcc-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.057142857142857,
+            "time_ratio": 2.02994037353032
+          },
+          "smallest": {
+            "size_ratio": 6.057142857142857,
+            "time_ratio": 2.02994037353032
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 2,
+        "fastest": "knucleotide-chapel-4",
+        "smallest": "knucleotide-chapel-3",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.2258718311834824,
+        "fastest_size_over_smallest": 1.030214424951267,
+        "log2_tradeoff_distance": 0.296930077203216,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.314285714285714,
+            "time_ratio": 3.3484043419385525
+          },
+          "smallest": {
+            "size_ratio": 4.187755102040816,
+            "time_ratio": 4.104714562194936
+          }
+        }
+      },
+      "cpp": {
+        "candidate_count": 12,
+        "fastest": "knucleotide-gpp-2-llvm-fastmath",
+        "smallest": "knucleotide-gpp-3-llvm-native",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.4300137172165122,
+        "fastest_size_over_smallest": 1.2788074133763094,
+        "log2_tradeoff_distance": 0.6262333859965792,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.477551020408163,
+            "time_ratio": 1.2314879947533601
+          },
+          "smallest": {
+            "size_ratio": 5.0653061224489795,
+            "time_ratio": 1.7610447250847612
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 5,
+        "fastest": "knucleotide-go-7",
+        "smallest": "knucleotide-go-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 11.550924802177594,
+        "fastest_size_over_smallest": 2.1322537112010798,
+        "log2_tradeoff_distance": 3.695097227011398,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.448979591836735,
+            "time_ratio": 2.4155024177785496
+          },
+          "smallest": {
+            "size_ratio": 3.024489795918367,
+            "time_ratio": 27.901286787238192
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 6,
+        "fastest": "knucleotide-graalvmaot-1",
+        "smallest": "knucleotide-graalvmaot-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 15.540434732820332,
+        "fastest_size_over_smallest": 2.3148387096774194,
+        "log2_tradeoff_distance": 4.139047539028102,
+        "points": {
+          "fastest": {
+            "size_ratio": 7.322448979591837,
+            "time_ratio": 2.569784843423806
+          },
+          "smallest": {
+            "size_ratio": 3.163265306122449,
+            "time_ratio": 39.93557363661858
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 3,
+        "fastest": "knucleotide-julia-6",
+        "smallest": "knucleotide-julia-1",
+        "same_entry": false,
+        "smallest_time_over_fastest": 24.581124698254687,
+        "fastest_size_over_smallest": 1.3695014662756597,
+        "log2_tradeoff_distance": 4.641700711208877,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.8122448979591836,
+            "time_ratio": 2.9051928025792897
+          },
+          "smallest": {
+            "size_ratio": 2.783673469387755,
+            "time_ratio": 71.41290655267353
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 4,
+        "fastest": "mech-parallel-batch256",
+        "smallest": "mech-compact-batch4096",
+        "same_entry": false,
+        "smallest_time_over_fastest": 3.1048023750326017,
+        "fastest_size_over_smallest": 1.2,
+        "log2_tradeoff_distance": 1.655530749338377,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.2,
+            "time_ratio": 1.3882819176730927
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 4.310340995206233
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 8,
+        "fastest": "knucleotide-rust-6",
+        "smallest": "knucleotide-rust-1",
+        "same_entry": false,
+        "smallest_time_over_fastest": 14.905847145647167,
+        "fastest_size_over_smallest": 1.5622641509433963,
+        "log2_tradeoff_distance": 3.9505905434464066,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 4.326530612244898,
+            "time_ratio": 14.905847145647167
+          }
+        }
+      }
+    }
+  },
+  "strict_endpoints": {
+    "time_baseline_seconds": 0.920018916,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 4,
+        "fastest": "knucleotide-gcc-1-gcc-fastmath",
+        "smallest": "knucleotide-gcc-1-gcc-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.057142857142857,
+            "time_ratio": 2.02994037353032
+          },
+          "smallest": {
+            "size_ratio": 6.057142857142857,
+            "time_ratio": 2.02994037353032
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 2,
+        "fastest": "knucleotide-chapel-4",
+        "smallest": "knucleotide-chapel-3",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.2258718311834824,
+        "fastest_size_over_smallest": 1.030214424951267,
+        "log2_tradeoff_distance": 0.296930077203216,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.314285714285714,
+            "time_ratio": 3.3484043419385525
+          },
+          "smallest": {
+            "size_ratio": 4.187755102040816,
+            "time_ratio": 4.104714562194936
+          }
+        }
+      },
+      "cpp": {
+        "candidate_count": 12,
+        "fastest": "knucleotide-gpp-2-llvm-fastmath",
+        "smallest": "knucleotide-gpp-3-llvm-native",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.4300137172165122,
+        "fastest_size_over_smallest": 1.2788074133763094,
+        "log2_tradeoff_distance": 0.6262333859965792,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.477551020408163,
+            "time_ratio": 1.2314879947533601
+          },
+          "smallest": {
+            "size_ratio": 5.0653061224489795,
+            "time_ratio": 1.7610447250847612
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 5,
+        "fastest": "knucleotide-go-7",
+        "smallest": "knucleotide-go-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 11.550924802177594,
+        "fastest_size_over_smallest": 2.1322537112010798,
+        "log2_tradeoff_distance": 3.695097227011398,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.448979591836735,
+            "time_ratio": 2.4155024177785496
+          },
+          "smallest": {
+            "size_ratio": 3.024489795918367,
+            "time_ratio": 27.901286787238192
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 4,
+        "fastest": "knucleotide-graalvmaot-1",
+        "smallest": "knucleotide-graalvmaot-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 15.540434732820332,
+        "fastest_size_over_smallest": 2.3148387096774194,
+        "log2_tradeoff_distance": 4.139047539028102,
+        "points": {
+          "fastest": {
+            "size_ratio": 7.322448979591837,
+            "time_ratio": 2.569784843423806
+          },
+          "smallest": {
+            "size_ratio": 3.163265306122449,
+            "time_ratio": 39.93557363661858
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 1,
+        "fastest": "knucleotide-julia-6",
+        "smallest": "knucleotide-julia-6",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.8122448979591836,
+            "time_ratio": 2.9051928025792897
+          },
+          "smallest": {
+            "size_ratio": 3.8122448979591836,
+            "time_ratio": 2.9051928025792897
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 4,
+        "fastest": "mech-parallel-batch256",
+        "smallest": "mech-compact-batch4096",
+        "same_entry": false,
+        "smallest_time_over_fastest": 3.1048023750326017,
+        "fastest_size_over_smallest": 1.2,
+        "log2_tradeoff_distance": 1.655530749338377,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.2,
+            "time_ratio": 1.3882819176730927
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 4.310340995206233
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 6,
+        "fastest": "knucleotide-rust-6",
+        "smallest": "knucleotide-rust-1",
+        "same_entry": false,
+        "smallest_time_over_fastest": 14.905847145647167,
+        "fastest_size_over_smallest": 1.5622641509433963,
+        "log2_tradeoff_distance": 3.9505905434464066,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 4.326530612244898,
+            "time_ratio": 14.905847145647167
+          }
+        }
+      }
+    }
+  }
+}

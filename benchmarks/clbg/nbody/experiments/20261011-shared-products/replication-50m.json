@@ -1,0 +1,473 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-11T14:44:44.968370+00:00",
+  "steps": 50000000,
+  "samples": 7,
+  "required_power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "programs": [
+    {
+      "id": "pairwise-before",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-current-before",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before"
+      ],
+      "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+      "binary_sha256": "d2120116edfc33d4a791bd751bff6db100661ef7836051419563da006d646a24",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.045306375,
+        1.050248625,
+        1.054018666,
+        1.056075458,
+        1.052533708,
+        1.058222917,
+        1.055058625
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-before.disassembly.txt",
+        "loop_start_hex": "0x1000034f0",
+        "loop_backedge_hex": "0x100003954",
+        "static_instructions": 282,
+        "stack_load_instructions": 59,
+        "stack_store_instructions": 21,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.054018666,
+      "stdev_seconds": 0.004261483960942517
+    },
+    {
+      "id": "rust-3",
+      "language": "rust",
+      "loc": 196,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference",
+        "{n}"
+      ],
+      "binary_sha256": "f22eda84ff2640cc3830589c20739917f8282474af30b5184e8202cfe1941d6b",
+      "samples_seconds": [
+        1.051998458,
+        1.079804209,
+        1.093898833,
+        1.097762334,
+        1.082174375,
+        1.099598875,
+        1.087958166
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.087958166,
+      "stdev_seconds": 0.01626633111240049
+    },
+    {
+      "id": "chapel-3",
+      "language": "chapel",
+      "loc": 79,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+        "--n={n}"
+      ],
+      "binary_sha256": "a57be549397679c1cf1ef9c4702a3e3de3863899ee11b328bc06d8e996772f7d",
+      "samples_seconds": [
+        0.939464875,
+        0.949229,
+        0.970248083,
+        0.972418791,
+        0.97505675,
+        0.970035917,
+        0.970621334
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 0.970248083,
+      "stdev_seconds": 0.013738468880919289
+    },
+    {
+      "id": "nbody-gpp-6-llvm-native",
+      "language": "cpp",
+      "loc": 202,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-gpp-6-llvm-native",
+        "{n}"
+      ],
+      "binary_sha256": "0c211e6499d12227c8d424673c1e8d123ae0eb301f9368addd6a2de7c192297b",
+      "samples_seconds": [
+        0.887781875,
+        0.891003917,
+        0.952817125,
+        0.898935541,
+        0.90258375,
+        0.907089917,
+        0.899343417
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 0.899343417,
+      "stdev_seconds": 0.02181302177394816
+    },
+    {
+      "id": "compact-regions8",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions8",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-regions",
+        "8"
+      ],
+      "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8"
+      ],
+      "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+      "binary_sha256": "946b2b49b0a6a2aae7476104cc29f2c33026bf032d9ccf1461921c4c2abbedea",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8",
+        "{n}"
+      ],
+      "preserves_bits": true,
+      "samples_seconds": [
+        1.086641042,
+        1.084876709,
+        1.088786375,
+        1.094040875,
+        1.090478292,
+        1.091892292,
+        1.090561583
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "compact-regions8.disassembly.txt",
+        "loop_start_hex": "0x1000034fc",
+        "loop_backedge_hex": "0x100003968",
+        "static_instructions": 284,
+        "stack_load_instructions": 74,
+        "stack_store_instructions": 26,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.090478292,
+      "stdev_seconds": 0.0031197771645605312
+    },
+    {
+      "id": "nbody-zig-2-faithful",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+      "source_sha256": "0d5f3bc93014a64edf43caa6a5e95619c8ce924e14bd30bd3598b329eb9e65e8",
+      "loc": 117,
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/zig/zig-aarch64-macos-0.17.0/zig",
+        "build-exe",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+        "-O",
+        "ReleaseFast",
+        "-mcpu=native",
+        "-fllvm",
+        "-lc",
+        "-femit-bin=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/nbody-zig-2-faithful"
+      ],
+      "binary_sha256": "8f1eb83ecca6beb33caca90237f07864c83d8050e566abba7abd1cd231990a66",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/nbody-zig-2-faithful",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.983906459,
+        0.984636416,
+        1.0038415,
+        1.006515291,
+        1.019501708,
+        1.01531375,
+        1.009757917
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.006515291,
+      "stdev_seconds": 0.014045049317143595
+    },
+    {
+      "id": "pairwise-seed8",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/driver-seed8",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails",
+        "--simplify-square-seeds",
+        "--schedule-regions",
+        "8"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8"
+      ],
+      "driver_sha256": "74ac7e189a33d5b26814861e7726dc5bb10ec294682704a1b6b0f6daa0468e01",
+      "object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+      "binary_sha256": "462a91334f74b3b942c9b7fba3ba1443a1f737c8d504d25b3c8d074f80b03609",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8",
+        "{n}"
+      ],
+      "state_control": "pairwise-before",
+      "preserves_bits": true,
+      "samples_seconds": [
+        1.02965075,
+        1.041882209,
+        1.039486459,
+        1.042079458,
+        1.034882542,
+        1.039196875,
+        1.040053125
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-seed8.disassembly.txt",
+        "loop_start_hex": "0x100003500",
+        "loop_backedge_hex": "0x10000394c",
+        "static_instructions": 276,
+        "stack_load_instructions": 51,
+        "stack_store_instructions": 23,
+        "fused_instructions": 60,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.039486459,
+      "stdev_seconds": 0.004449397139749162
+    }
+  ],
+  "state_checks": [
+    {
+      "id": "pairwise-seed8",
+      "control": "pairwise-before",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-seed8",
+      "control": "pairwise-before",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-seed8",
+      "control": "pairwise-before",
+      "steps": 1000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-seed8",
+      "control": "pairwise-before",
+      "steps": 10000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    }
+  ],
+  "expected_energy": [
+    -0.169075164,
+    -0.169059907
+  ],
+  "discarded_samples": [],
+  "sample_order": [
+    [
+      "rust-3",
+      "chapel-3",
+      "pairwise-seed8",
+      "compact-regions8",
+      "nbody-zig-2-faithful",
+      "pairwise-before",
+      "nbody-gpp-6-llvm-native"
+    ],
+    [
+      "nbody-zig-2-faithful",
+      "chapel-3",
+      "compact-regions8",
+      "pairwise-seed8",
+      "pairwise-before",
+      "nbody-gpp-6-llvm-native",
+      "rust-3"
+    ],
+    [
+      "nbody-gpp-6-llvm-native",
+      "pairwise-seed8",
+      "rust-3",
+      "chapel-3",
+      "nbody-zig-2-faithful",
+      "compact-regions8",
+      "pairwise-before"
+    ],
+    [
+      "nbody-gpp-6-llvm-native",
+      "chapel-3",
+      "pairwise-seed8",
+      "pairwise-before",
+      "rust-3",
+      "compact-regions8",
+      "nbody-zig-2-faithful"
+    ],
+    [
+      "chapel-3",
+      "nbody-zig-2-faithful",
+      "rust-3",
+      "pairwise-before",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-seed8",
+      "compact-regions8"
+    ],
+    [
+      "compact-regions8",
+      "rust-3",
+      "pairwise-seed8",
+      "chapel-3",
+      "nbody-zig-2-faithful",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-before"
+    ],
+    [
+      "rust-3",
+      "pairwise-seed8",
+      "nbody-gpp-6-llvm-native",
+      "chapel-3",
+      "nbody-zig-2-faithful",
+      "pairwise-before",
+      "compact-regions8"
+    ]
+  ],
+  "compiler_sha256": {
+    "hosts/gpu/Cargo.toml": "cc569b29f75657e1ec2e641eece8f188306bd96f1b71d87d19ca59348c5165c0",
+    "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+    "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+    "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+    "hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+    "hosts/gpu/src/fused_f64/map_runner.c": "1a6e8e14c1cb7d64061a29a0bffc5a7f4067bda87c2762eb0ab77ba3a23286c5",
+    "hosts/gpu/src/fused_f64/map_runner.rs": "fd70647e126f8b03272423d5e30e4d47804c26d10bb38dfdeafc9eba7b3a9419",
+    "hosts/gpu/src/fused_f64/mod.rs": "c34e939be71b5db73b9dff23c03ec0db748f874ad7a9f90ec263a8570574971c",
+    "hosts/gpu/src/fused_f64/native.rs": "37d0c34abd60b137e77770584960f679aef836c3269034280055b5dd68628579",
+    "hosts/gpu/src/fused_f64/resident.rs": "ead9028913cef1d380a938642c66aeab39b18a206a82b176d65ca5ff9841ef97",
+    "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+    "hosts/gpu/src/fused_f64/runner.rs": "0fd44bfc3e2fb9ea48a9582abaf7084b8cd2e11599f7332d29ba3dba571a26d7"
+  },
+  "probe_sha256": "ce072459390f78b147c3ddb97ea8ec082957f4b6c5a9342659b3969d53e66f40",
+  "programs_manifest_sha256": "e4780abbdf7c5dde78d99bac462544fe1c3243494d7de1d88b2cb8ff957a2ab4",
+  "protocol": "Fresh sequential processes through exit; full input, initial/final output and startup counted; builds, full validation and one full-workload warmup excluded. Seeded shuffled rounds; AC/LPM and competing compiler checks. LOC only.",
+  "finished_at": "2026-10-11T14:45:43.722779+00:00"
+}

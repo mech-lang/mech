@@ -1,0 +1,228 @@
+{
+  "status": "complete",
+  "purpose": "Paired confirmation of unchanged histogram and grid execution after small cohort timing shifts.",
+  "programs": {
+    "knucleotide:mech-compact-final-std1-simd0-p4:jit": {
+      "samples": {
+        "before": [
+          0.64803025,
+          0.585464667,
+          0.601867708
+        ],
+        "after": [
+          0.710976584,
+          0.633006125,
+          0.718821542
+        ]
+      },
+      "medians": {
+        "before": 0.601867708,
+        "after": 0.710976584
+      },
+      "after_over_before": 1.1812838179382767,
+      "runs": [
+        {
+          "label": "before",
+          "round": 1,
+          "seconds": 0.64803025,
+          "wall_seconds": 0.64803025,
+          "prepare_seconds": 0.082802916,
+          "kernel_seconds": 0.5118245,
+          "validation": {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "after",
+          "round": 1,
+          "seconds": 0.710976584,
+          "wall_seconds": 0.710976584,
+          "prepare_seconds": 0.083974,
+          "kernel_seconds": 0.6169415,
+          "validation": {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "before",
+          "round": 2,
+          "seconds": 0.585464667,
+          "wall_seconds": 0.585464667,
+          "prepare_seconds": 0.081216459,
+          "kernel_seconds": 0.491421333,
+          "validation": {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "after",
+          "round": 2,
+          "seconds": 0.633006125,
+          "wall_seconds": 0.633006125,
+          "prepare_seconds": 0.081847958,
+          "kernel_seconds": 0.536107792,
+          "validation": {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "after",
+          "round": 3,
+          "seconds": 0.718821542,
+          "wall_seconds": 0.718821542,
+          "prepare_seconds": 0.081994792,
+          "kernel_seconds": 0.6239025,
+          "validation": {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "before",
+          "round": 3,
+          "seconds": 0.601867708,
+          "wall_seconds": 0.601867708,
+          "prepare_seconds": 0.082466958,
+          "kernel_seconds": 0.50444875,
+          "validation": {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        }
+      ]
+    },
+    "mandelbrot:mech-program-simd-loop-fma:resident": {
+      "samples": {
+        "before": [
+          10.577876375,
+          11.074581041,
+          11.426784333
+        ],
+        "after": [
+          10.416061208,
+          11.116814125,
+          11.276336666
+        ]
+      },
+      "medians": {
+        "before": 11.074581041,
+        "after": 11.116814125
+      },
+      "after_over_before": 1.0038135152782435,
+      "runs": [
+        {
+          "label": "after",
+          "round": 1,
+          "seconds": 10.416061208,
+          "wall_seconds": 10.758332417,
+          "prepare_seconds": 0.327535167,
+          "kernel_seconds": 10.416061208,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "before",
+          "round": 1,
+          "seconds": 10.577876375,
+          "wall_seconds": 11.220722542,
+          "prepare_seconds": 0.629700875,
+          "kernel_seconds": 10.577876375,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "after",
+          "round": 2,
+          "seconds": 11.116814125,
+          "wall_seconds": 11.458487333,
+          "prepare_seconds": 0.326584125,
+          "kernel_seconds": 11.116814125,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "before",
+          "round": 2,
+          "seconds": 11.074581041,
+          "wall_seconds": 11.712045625,
+          "prepare_seconds": 0.623488375,
+          "kernel_seconds": 11.074581041,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "before",
+          "round": 3,
+          "seconds": 11.426784333,
+          "wall_seconds": 12.064252541,
+          "prepare_seconds": 0.626775625,
+          "kernel_seconds": 11.426784333,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "label": "after",
+          "round": 3,
+          "seconds": 11.276336666,
+          "wall_seconds": 11.614235375,
+          "prepare_seconds": 0.327721625,
+          "kernel_seconds": 11.276336666,
+          "validation": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        }
+      ]
+    }
+  }
+}

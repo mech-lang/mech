@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>binary-trees Ada 2012 GNAT&nbsp;#4 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>binary-trees Ada 2012 GNAT&nbsp;#4 program</h1>
+    <aside>
+      <p><a href="../description/binarytrees.html#binarytrees">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--  The Computer Language Benchmarks Game</span>
+<span class="slc">--  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">--  Based on Ada versions created by</span>
+<span class="slc">--    Jim Rogers and Brian Drummons as well as the</span>
+<span class="slc">--    C version by Francesco Abbate</span>
+<span class="slc">--</span>
+<span class="slc">--  Contributed by Brad Moore</span>
+<span class="slc">--  *reset*</span>
+
+<span class="kwa">with</span> Trees<span class="opt">;</span>                  <span class="kwa">use</span> Trees<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Text_IO<span class="opt">;</span>            <span class="kwa">use</span> Ada<span class="opt">.</span>Text_IO<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Integer_Text_IO<span class="opt">;</span>    <span class="kwa">use</span> Ada<span class="opt">.</span>Integer_Text_IO<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Command_Line<span class="opt">;</span>       <span class="kwa">use</span> Ada<span class="opt">.</span>Command_Line<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Characters<span class="opt">.</span>Latin_1<span class="opt">;</span> <span class="kwa">use</span> Ada<span class="opt">.</span>Characters<span class="opt">.</span>Latin_1<span class="opt">;</span>
+
+<span class="kwa">procedure</span> Binarytrees <span class="kwa">is</span>
+
+   <span class="kwa">function</span> Get_Depth <span class="kwa">return</span> <span class="kwb">Positive</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">if</span> Argument_Count <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then</span>
+         <span class="kwa">return</span> <span class="kwb">Positive</span><span class="kwd">&#39;Value</span> <span class="opt">(</span><span class="kwc">Argument</span> <span class="opt">(</span><span class="num">1</span><span class="opt">));</span>
+      <span class="kwa">else</span>
+         <span class="kwa">return</span> <span class="num">10</span><span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+   <span class="kwa">end</span> Get_Depth<span class="opt">;</span>
+
+   Min_Depth     <span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">4</span><span class="opt">;</span>
+   Requested_Depth <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Positive</span> <span class="opt">:=</span> Get_Depth<span class="opt">;</span>
+   Max_Depth     <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Positive</span> <span class="opt">:=</span> <span class="kwb">Positive</span><span class="kwd">&#39;Max</span> <span class="opt">(</span>Min_Depth <span class="opt">+</span> <span class="num">2</span><span class="opt">,</span>
+                                                      Requested_Depth<span class="opt">);</span>
+   Depth_Iterations <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Positive</span> <span class="opt">:= (</span>Max_Depth <span class="opt">-</span> Min_Depth<span class="opt">) /</span> <span class="num">2</span> <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+
+   <span class="kwa">function</span> Get_Worker_Count <span class="kwa">return</span> <span class="kwb">Positive</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">if</span> Argument_Count <span class="opt">&gt;</span> <span class="num">1</span> <span class="kwa">then</span>
+         <span class="kwa">return</span> <span class="kwb">Positive</span><span class="kwd">&#39;Value</span> <span class="opt">(</span><span class="kwc">Argument</span> <span class="opt">(</span><span class="num">2</span><span class="opt">));</span>
+      <span class="kwa">else</span>
+         <span class="slc">--  This seems to be the sweet spot assuming max depth of 20</span>
+         <span class="kwa">return</span> <span class="num">5</span><span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+   <span class="kwa">end</span> Get_Worker_Count<span class="opt">;</span>
+
+   Worker_Count     <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Positive</span> <span class="opt">:=</span> Get_Worker_Count<span class="opt">;</span>
+
+   <span class="kwa">task type</span> Depth_Worker
+     <span class="opt">(</span>Start<span class="opt">,</span> Finish <span class="opt">:</span> <span class="kwb">Positive</span> <span class="opt">:=</span> <span class="kwb">Positive</span><span class="kwd">&#39;Last</span><span class="opt">)</span> <span class="kwa">is</span>
+      <span class="kwa">pragma</span> <span class="kwc">Storage_Size</span> <span class="opt">(</span><span class="num">16</span>#<span class="num">100</span>#<span class="opt">);</span>
+   <span class="kwa">end</span> Depth_Worker<span class="opt">;</span>
+
+   Results <span class="opt">:</span> <span class="kwa">array</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Depth_Iterations<span class="opt">)</span> <span class="kwa">of</span> <span class="kwb">Integer</span><span class="opt">;</span>
+   Iteration_Tracking <span class="opt">:</span> <span class="kwa">array</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Depth_Iterations<span class="opt">)</span> <span class="kwa">of</span> <span class="kwb">Positive</span><span class="opt">;</span>
+
+   <span class="kwa">task body</span> Depth_Worker
+   <span class="kwa">is</span>
+      Depth         <span class="opt">:</span> <span class="kwb">Natural</span><span class="opt">;</span>
+      Check         <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Iterations    <span class="opt">:</span> <span class="kwb">Positive</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+
+      <span class="kwa">for</span> Depth_Iter <span class="kwa">in</span> Start <span class="opt">..</span> Finish <span class="kwa">loop</span>
+
+         Depth <span class="opt">:=</span> Min_Depth <span class="opt">+ (</span>Depth_Iter <span class="opt">-</span> <span class="num">1</span><span class="opt">) *</span> <span class="num">2</span><span class="opt">;</span>
+         Iterations <span class="opt">:=</span> <span class="num">2</span> <span class="opt">** (</span>Max_Depth <span class="opt">-</span> Depth <span class="opt">+</span> Min_Depth<span class="opt">);</span>
+         <span class="kwc">Iteration_Tracking</span> <span class="opt">(</span>Depth_Iter<span class="opt">) :=</span> Iterations<span class="opt">;</span>
+
+         Check      <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+
+         <span class="kwa">for</span> I <span class="kwa">in</span> <span class="num">1</span> <span class="opt">..</span> Iterations <span class="kwa">loop</span>
+            <span class="kwa">declare</span>
+               Short_Lived_Pool <span class="opt">:</span> Node_Pool<span class="opt">;</span>
+               Short_Lived_Tree_1<span class="opt">,</span> Short_Lived_Tree_2 <span class="opt">:</span> Tree_Node<span class="opt">;</span>
+            <span class="kwa">begin</span>
+
+               Short_Lived_Tree_1 <span class="opt">:=</span>
+                 Create
+                   <span class="opt">(</span>Short_Lived_Pool<span class="opt">,</span>
+                    Depth <span class="opt">=&gt;</span> Depth<span class="opt">);</span>
+
+               Short_Lived_Tree_2 <span class="opt">:=</span>
+                  Create
+                    <span class="opt">(</span>Short_Lived_Pool<span class="opt">,</span>
+                     Depth <span class="opt">=&gt;</span> Depth<span class="opt">);</span>
+
+               Check <span class="opt">:=</span> Check <span class="opt">+</span>
+                 <span class="kwc">Item_Check</span> <span class="opt">(</span>Short_Lived_Tree_1<span class="opt">);</span>
+            <span class="kwa">end</span><span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+
+         <span class="kwc">Results</span> <span class="opt">(</span>Depth_Iter<span class="opt">) :=</span> Check<span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">end</span> Depth_Worker<span class="opt">;</span>
+
+   <span class="kwa">subtype</span> Worker_Id <span class="kwa">is</span> <span class="kwb">Positive</span> <span class="kwa">range</span> <span class="num">1</span> <span class="opt">..</span> Worker_Count<span class="opt">;</span>
+
+   Start_Index         <span class="opt">:</span> <span class="kwb">Positive</span> <span class="opt">:=</span> <span class="num">1</span><span class="opt">;</span>
+   End_Index           <span class="opt">:</span> <span class="kwb">Positive</span> <span class="opt">:=</span> Depth_Iterations<span class="opt">;</span>
+
+   Iterations_Per_Task <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Positive</span> <span class="opt">:=</span>
+     Depth_Iterations <span class="opt">/</span> Worker_Count<span class="opt">;</span>
+
+   Remainder           <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span>
+     Depth_Iterations <span class="kwa">rem</span> Worker_Count<span class="opt">;</span>
+
+   <span class="kwa">function</span> Create_Worker <span class="kwa">return</span> Depth_Worker <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">if</span> Remainder <span class="opt">=</span> <span class="num">0</span> <span class="kwa">then</span>
+         End_Index <span class="opt">:=</span> Start_Index <span class="opt">+</span> Iterations_Per_Task <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+      <span class="kwa">else</span>
+         End_Index <span class="opt">:=</span> Start_Index <span class="opt">+</span> Iterations_Per_Task<span class="opt">;</span>
+         Remainder <span class="opt">:=</span> Remainder <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+      <span class="kwa">return</span> New_Worker <span class="opt">:</span> Depth_Worker
+        <span class="opt">(</span>Start <span class="opt">=&gt;</span> Start_Index<span class="opt">,</span>
+         Finish <span class="opt">=&gt;</span> End_Index<span class="opt">)</span>
+      <span class="kwa">do</span>
+         Start_Index <span class="opt">:=</span> End_Index <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+      <span class="kwa">end return</span><span class="opt">;</span>
+   <span class="kwa">end</span> Create_Worker<span class="opt">;</span>
+
+   Long_Lived_Node_Pool <span class="opt">:</span> Node_Pool<span class="opt">;</span>
+
+   Long_Lived_Tree      <span class="opt">:</span> Tree_Node<span class="opt">;</span>
+
+   Check <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+
+<span class="kwa">begin</span>
+
+   <span class="kwa">declare</span>
+      <span class="kwa">task</span> Stretch_Depth_Task <span class="kwa">is</span>
+      <span class="kwa">end</span> Stretch_Depth_Task<span class="opt">;</span>
+
+      <span class="kwa">task body</span> Stretch_Depth_Task <span class="kwa">is</span>
+         Stretch_Depth <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Positive</span> <span class="opt">:=</span> Max_Depth <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+
+         Pool <span class="opt">:</span> Trees<span class="opt">.</span>Node_Pool<span class="opt">;</span>
+         Stretch_Tree <span class="opt">:</span> <span class="kwa">constant</span> Tree_Node <span class="opt">:=</span>
+           Trees<span class="opt">.</span><span class="kwc">Create</span> <span class="opt">(</span>Pool  <span class="opt">=&gt;</span> Pool<span class="opt">,</span>
+                         Depth <span class="opt">=&gt;</span> Stretch_Depth<span class="opt">);</span>
+      <span class="kwa">begin</span>
+         Check        <span class="opt">:=</span> <span class="kwc">Item_Check</span> <span class="opt">(</span>Stretch_Tree<span class="opt">);</span>
+         <span class="kwc">Put</span> <span class="opt">(</span><span class="sng">&quot;stretch tree of depth &quot;</span><span class="opt">);</span>
+         <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">=&gt;</span> Stretch_Depth<span class="opt">,</span> Width <span class="opt">=&gt;</span> <span class="num">1</span><span class="opt">);</span>
+         <span class="kwc">Put</span> <span class="opt">(</span>HT <span class="opt">&amp;</span> <span class="sng">&quot; check: &quot;</span><span class="opt">);</span>
+         <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">=&gt;</span> Check<span class="opt">,</span> Width <span class="opt">=&gt;</span> <span class="num">1</span><span class="opt">);</span>
+         New_Line<span class="opt">;</span>
+      <span class="kwa">end</span> Stretch_Depth_Task<span class="opt">;</span>
+
+      <span class="kwa">task</span> Create_Long_Lived_Tree_Task <span class="kwa">is</span>
+      <span class="kwa">end</span> Create_Long_Lived_Tree_Task<span class="opt">;</span>
+
+      <span class="kwa">task body</span> Create_Long_Lived_Tree_Task <span class="kwa">is</span>
+      <span class="kwa">begin</span>
+         Long_Lived_Tree <span class="opt">:=</span> <span class="kwc">Create</span> <span class="opt">(</span>Long_Lived_Node_Pool<span class="opt">,</span> Max_Depth<span class="opt">);</span>
+      <span class="kwa">end</span> Create_Long_Lived_Tree_Task<span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">null</span><span class="opt">;</span>
+   <span class="kwa">end</span><span class="opt">;</span>
+
+   <span class="kwa">declare</span>
+      Workers <span class="opt">:</span> <span class="kwa">array</span> <span class="opt">(</span>Worker_Id<span class="opt">)</span> <span class="kwa">of</span> Depth_Worker
+        <span class="opt">:= (</span><span class="kwa">others</span> <span class="opt">=&gt;</span> Create_Worker<span class="opt">);</span>
+      <span class="kwa">pragma</span> <span class="kwc">Unreferenced</span> <span class="opt">(</span>Workers<span class="opt">);</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">null</span><span class="opt">;</span>
+   <span class="kwa">end</span><span class="opt">;</span>
+
+   <span class="kwa">for</span> I <span class="kwa">in</span> Results<span class="kwd">&#39;Range</span> <span class="kwa">loop</span>
+      <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">=&gt;</span> <span class="kwc">Iteration_Tracking</span> <span class="opt">(</span>I<span class="opt">),</span> Width <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+      <span class="kwc">Put</span> <span class="opt">(</span>HT <span class="opt">&amp;</span> <span class="sng">&quot; trees of depth &quot;</span><span class="opt">);</span>
+      <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">=&gt;</span> Min_Depth <span class="opt">+</span> <span class="num">2</span> <span class="opt">* (</span>I <span class="opt">-</span> <span class="num">1</span><span class="opt">),</span> Width <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+      <span class="kwc">Put</span> <span class="opt">(</span>HT <span class="opt">&amp;</span> <span class="sng">&quot; check: &quot;</span><span class="opt">);</span>
+      <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">=&gt;</span> <span class="kwc">Results</span> <span class="opt">(</span>I<span class="opt">),</span> Width <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+      New_Line<span class="opt">;</span>
+   <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwc">Put</span> <span class="opt">(</span><span class="sng">&quot;long lived tree of depth &quot;</span><span class="opt">);</span>
+   <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">=&gt;</span> Max_Depth<span class="opt">,</span> Width <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+   <span class="kwc">Put</span> <span class="opt">(</span>HT <span class="opt">&amp;</span> <span class="sng">&quot; check: &quot;</span><span class="opt">);</span>
+   Check <span class="opt">:=</span> <span class="kwc">Item_Check</span> <span class="opt">(</span>Long_Lived_Tree<span class="opt">);</span>
+   <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">=&gt;</span> Check<span class="opt">,</span> Width <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+   New_Line<span class="opt">;</span>
+
+<span class="kwa">end</span> Binarytrees<span class="opt">;</span>
+
+<span class="slc">--  The Computer Language Benchmarks Game</span>
+<span class="slc">--  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">--  Based on Ada versions created by</span>
+<span class="slc">--    Jim Rogers and Brian Drummond as well as</span>
+<span class="slc">--    C version by Francesco Abbate</span>
+<span class="slc">--</span>
+<span class="slc">--  Contributed by Brad Moore</span>
+
+<span class="kwa">private with</span> Ada<span class="opt">.</span>Finalization<span class="opt">;</span>
+<span class="kwa">private with</span> Apache_Runtime<span class="opt">.</span>Pools<span class="opt">;</span>
+
+<span class="kwa">package</span> Trees <span class="kwa">is</span>
+
+   <span class="kwa">type</span> Tree_Node <span class="kwa">is private</span><span class="opt">;</span>
+   <span class="kwa">function</span> <span class="kwc">Item_Check</span> <span class="opt">(</span>Item <span class="opt">:</span> Tree_Node<span class="opt">)</span> <span class="kwa">return</span> <span class="kwb">Integer</span><span class="opt">;</span>
+
+   <span class="kwa">type</span> Node_Pool <span class="kwa">is limited private</span><span class="opt">;</span>
+
+   <span class="kwa">function</span> Create
+     <span class="opt">(</span>Pool <span class="opt">:</span> Node_Pool<span class="opt">;</span>
+      Depth <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">)</span> <span class="kwa">return</span> Tree_Node<span class="opt">;</span>
+
+<span class="kwa">private</span>
+
+   <span class="kwa">use</span> Apache_Runtime<span class="opt">;</span>
+
+   <span class="kwa">type</span> Node<span class="opt">;</span>
+   <span class="kwa">type</span> Tree_Node <span class="kwa">is access all</span> Node<span class="opt">;</span>
+
+   <span class="kwa">type</span> Node <span class="kwa">is record</span>
+      Left  <span class="opt">:</span> Tree_Node<span class="opt">;</span>
+      Right <span class="opt">:</span> Tree_Node<span class="opt">;</span>
+   <span class="kwa">end record</span><span class="opt">;</span>
+
+   <span class="kwa">type</span> Node_Pool <span class="kwa">is</span>
+     <span class="kwa">new</span> Ada<span class="opt">.</span>Finalization<span class="opt">.</span>Limited_Controlled <span class="kwa">with</span>
+      <span class="kwa">record</span>
+         Pool <span class="opt">:</span> <span class="kwa">aliased</span> Pools<span class="opt">.</span>Pool_Type<span class="opt">;</span>
+      <span class="kwa">end record</span><span class="opt">;</span>
+
+   overriding <span class="kwa">procedure</span> <span class="kwc">Initialize</span> <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwa">in out</span> Node_Pool<span class="opt">);</span>
+   overriding <span class="kwa">procedure</span> <span class="kwc">Finalize</span>   <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwa">in out</span> Node_Pool<span class="opt">);</span>
+
+<span class="kwa">end</span> Trees<span class="opt">;</span>
+
+<span class="slc">--  The Computer Language Benchmarks Game</span>
+<span class="slc">--  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">--  Based on Ada versions created by</span>
+<span class="slc">--    Jim Rogers and Brian Drummond as well as the</span>
+<span class="slc">--    C version by Francesco Abbate</span>
+<span class="slc">--</span>
+<span class="slc">--  Contributed by Brad Moore</span>
+
+<span class="kwa">with</span> Ada<span class="opt">.</span>Unchecked_Conversion<span class="opt">;</span>
+<span class="kwa">with</span> Interfaces<span class="opt">;</span>
+<span class="kwa">with</span> System<span class="opt">;</span>
+
+<span class="kwa">package body</span> Trees <span class="kwa">is</span>
+
+   Pools_Status <span class="opt">:</span> <span class="kwa">constant</span> Apache_Runtime<span class="opt">.</span>Apr_Status <span class="opt">:=</span>
+     Apache_Runtime<span class="opt">.</span>Pools<span class="opt">.</span>Initialize<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Unreferenced</span> <span class="opt">(</span>Pools_Status<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">New_Node</span> <span class="opt">(</span>Pool <span class="opt">:</span> Node_Pool<span class="opt">)</span> <span class="kwa">return</span> Tree_Node<span class="opt">;</span>
+
+   <span class="kwa">function</span> Create
+     <span class="opt">(</span>Pool <span class="opt">:</span> Node_Pool<span class="opt">;</span>
+      Depth <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">)</span> <span class="kwa">return</span> Tree_Node
+   <span class="kwa">is</span>
+      Result <span class="opt">:</span> <span class="kwa">constant</span> Tree_Node <span class="opt">:=</span> <span class="kwc">New_Node</span> <span class="opt">(</span>Pool<span class="opt">);</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">if</span> Depth <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then</span>
+         Result<span class="opt">.</span><span class="kwa">all</span> <span class="opt">:= (</span>Left <span class="opt">=&gt;</span> <span class="kwc">Create</span> <span class="opt">(</span>Pool<span class="opt">,</span> Depth <span class="opt">-</span> <span class="num">1</span><span class="opt">),</span>
+                        Right <span class="opt">=&gt;</span> <span class="kwc">Create</span> <span class="opt">(</span>Pool<span class="opt">,</span> Depth <span class="opt">-</span> <span class="num">1</span><span class="opt">));</span>
+      <span class="kwa">else</span>
+         Result<span class="opt">.</span><span class="kwa">all</span> <span class="opt">:= (</span>Left | Right <span class="opt">=&gt;</span> <span class="kwa">null</span><span class="opt">);</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+      <span class="kwa">return</span> Result<span class="opt">;</span>
+
+   <span class="kwa">end</span> Create<span class="opt">;</span>
+
+   overriding <span class="kwa">procedure</span> <span class="kwc">Finalize</span>   <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwa">in out</span> Node_Pool<span class="opt">)</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      Pools<span class="opt">.</span><span class="kwc">Destroy</span> <span class="opt">(</span>Item<span class="opt">.</span>Pool<span class="opt">);</span>
+   <span class="kwa">end</span> Finalize<span class="opt">;</span>
+
+   overriding <span class="kwa">procedure</span> <span class="kwc">Initialize</span> <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwa">in out</span> Node_Pool<span class="opt">)</span> <span class="kwa">is</span>
+      Status <span class="opt">:</span> <span class="kwa">constant</span> Apr_Status <span class="opt">:=</span>
+        Pools<span class="opt">.</span>Create
+          <span class="opt">(</span>New_Pool <span class="opt">=&gt;</span> Item<span class="opt">.</span>Pool<span class="kwd">&#39;Address</span><span class="opt">,</span>
+           Parent   <span class="opt">=&gt;</span> System<span class="opt">.</span>Null_Address<span class="opt">);</span>
+      <span class="kwa">pragma</span> <span class="kwc">Unreferenced</span> <span class="opt">(</span>Status<span class="opt">);</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">null</span><span class="opt">;</span>
+   <span class="kwa">end</span> Initialize<span class="opt">;</span>
+
+   <span class="kwa">function</span> <span class="kwc">Item_Check</span> <span class="opt">(</span>Item <span class="opt">:</span> Tree_Node<span class="opt">)</span> <span class="kwa">return</span> <span class="kwb">Integer</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">if</span> Item<span class="opt">.</span>Left <span class="opt">=</span> <span class="kwa">null then</span>
+         <span class="kwa">return</span> <span class="num">1</span><span class="opt">;</span>
+      <span class="kwa">else</span>
+         <span class="kwa">return</span> <span class="num">1</span> <span class="opt">+</span> <span class="kwc">Item_Check</span> <span class="opt">(</span>Item<span class="opt">.</span>Left<span class="opt">) +</span> <span class="kwc">Item_Check</span> <span class="opt">(</span>Item<span class="opt">.</span>Right<span class="opt">);</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+   <span class="kwa">end</span> Item_Check<span class="opt">;</span>
+
+   <span class="kwa">function</span> <span class="kwc">New_Node</span> <span class="opt">(</span>Pool <span class="opt">:</span> Node_Pool<span class="opt">)</span> <span class="kwa">return</span> Tree_Node
+   <span class="kwa">is</span>
+      <span class="kwa">function</span> Node_Convert <span class="kwa">is new</span> Ada<span class="opt">.</span>Unchecked_Conversion
+        <span class="opt">(</span>Source <span class="opt">=&gt;</span> System<span class="opt">.</span>Address<span class="opt">,</span>
+         Target <span class="opt">=&gt;</span> Tree_Node<span class="opt">);</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">return</span> Node_Convert
+        <span class="opt">(</span>Pools<span class="opt">.</span><span class="kwc">Allocate</span> <span class="opt">(</span>Pool <span class="opt">=&gt;</span> Pool<span class="opt">.</span>Pool<span class="opt">,</span>
+                         Size <span class="opt">=&gt;</span> Node<span class="kwd">&#39;Size</span> <span class="opt">/</span> Interfaces<span class="opt">.</span>Unsigned_8<span class="kwd">&#39;Size</span><span class="opt">));</span>
+   <span class="kwa">end</span> New_Node<span class="opt">;</span>
+<span class="kwa">end</span> Trees<span class="opt">;</span>
+
+<span class="slc">--  The Computer Language Benchmarks Game</span>
+<span class="slc">--  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">--  Contributed by Brad Moore</span>
+
+<span class="kwa">package</span> Apache_Runtime <span class="kwa">is</span>
+   <span class="kwa">pragma</span> Pure<span class="opt">;</span>
+
+   <span class="kwa">type</span> Apr_Status <span class="kwa">is new</span> <span class="kwb">Integer</span><span class="opt">;</span>
+
+   <span class="kwa">type</span> Apr_Size <span class="kwa">is new</span> <span class="kwb">Integer</span><span class="opt">;</span>
+
+<span class="kwa">end</span> Apache_Runtime<span class="opt">;</span>
+
+<span class="slc">--  The Computer Language Benchmarks Game</span>
+<span class="slc">--  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">--  Contributed by Brad Moore</span>
+
+<span class="kwa">with</span> System<span class="opt">;</span>
+
+<span class="kwa">package</span> Apache_Runtime<span class="opt">.</span>Pools <span class="kwa">is</span>
+
+   <span class="kwa">subtype</span> Pool_Type <span class="kwa">is</span> System<span class="opt">.</span>Address<span class="opt">;</span>
+   <span class="kwa">subtype</span> Pool_Access <span class="kwa">is</span> System<span class="opt">.</span>Address<span class="opt">;</span>
+
+   <span class="kwa">function</span> Initialize <span class="kwa">return</span> Apr_Status<span class="opt">;</span>
+
+   <span class="kwa">function</span> Create
+     <span class="opt">(</span>New_Pool <span class="opt">:</span> Pool_Access<span class="opt">;</span>
+      Parent <span class="opt">:</span> Pool_Type<span class="opt">)</span> <span class="kwa">return</span> Apr_Status<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Destroy</span> <span class="opt">(</span>Pool <span class="opt">:</span> Pool_Type<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">Allocate</span> <span class="opt">(</span>Pool <span class="opt">:</span> Pool_Type<span class="opt">;</span> Size <span class="opt">:</span> Apr_Size<span class="opt">)</span> <span class="kwa">return</span> System<span class="opt">.</span>Address<span class="opt">;</span>
+
+<span class="kwa">private</span>
+
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>C<span class="opt">,</span> Initialize<span class="opt">,</span> <span class="sng">&quot;apr_initialize&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>C<span class="opt">,</span> Destroy<span class="opt">,</span> <span class="sng">&quot;apr_pool_destroy&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>C<span class="opt">,</span> Allocate<span class="opt">,</span> <span class="sng">&quot;apr_palloc&quot;</span><span class="opt">);</span>
+
+<span class="kwa">end</span> Apache_Runtime<span class="opt">.</span>Pools<span class="opt">;</span>
+
+<span class="slc">--  The Computer Language Benchmarks Game</span>
+<span class="slc">--  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">--  Contributed by Brad Moore</span>
+
+<span class="kwa">package body</span> Apache_Runtime<span class="opt">.</span>Pools <span class="kwa">is</span>
+
+   <span class="kwa">function</span> Create_Ex
+     <span class="opt">(</span>New_Pool <span class="opt">:</span> Pool_Access<span class="opt">;</span>
+      Parent <span class="opt">:</span> Pool_Type<span class="opt">;</span>
+      Reserved_1<span class="opt">,</span> Reserved_2 <span class="opt">:</span> System<span class="opt">.</span>Address<span class="opt">)</span> <span class="kwa">return</span> Apr_Status<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>C<span class="opt">,</span> Create_Ex<span class="opt">,</span> <span class="sng">&quot;apr_pool_create_ex&quot;</span><span class="opt">);</span>
+
+   <span class="slc">------------</span>
+   <span class="slc">-- Create --</span>
+   <span class="slc">------------</span>
+
+   <span class="kwa">function</span> Create
+     <span class="opt">(</span>New_Pool <span class="opt">:</span> Pool_Access<span class="opt">;</span>
+      Parent <span class="opt">:</span> Pool_Type<span class="opt">)</span>
+      <span class="kwa">return</span> Apr_Status
+   <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">return</span> Create_Ex
+        <span class="opt">(</span>New_Pool<span class="opt">,</span>
+         Parent<span class="opt">,</span>
+         System<span class="opt">.</span>Null_Address<span class="opt">,</span>
+         System<span class="opt">.</span>Null_Address<span class="opt">);</span>
+   <span class="kwa">end</span> Create<span class="opt">;</span>
+
+<span class="kwa">end</span> Apache_Runtime<span class="opt">.</span>Pools<span class="opt">;</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+GNATMAKE 13.3.0
+
+
+ Fri, 10 Jan 2025 03:19:55 GMT
+
+MAKE:
+gnatchop -r -w binarytrees.gnat-4.gnat
+splitting binarytrees.gnat-4.gnat into:
+   binarytrees.adb
+   trees.ads
+   trees.adb
+   apache_runtime.ads
+   apache_runtime-pools.ads
+   apache_runtime-pools.adb
+gnatmake -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 -f binarytrees.adb -o binarytrees.gnat-4.gnat_run -largs -lapr-1
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 binarytrees.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 trees.adb
+binarytrees.gnat-4.gnat:298:07: warning: possible aliasing problem for type &quot;Tree_Node&quot; [enabled by default]
+binarytrees.gnat-4.gnat:298:07: warning: use -fno-strict-aliasing switch for references [enabled by default]
+binarytrees.gnat-4.gnat:298:07: warning: or use &quot;pragma No_Strict_Aliasing (Tree_Node);&quot; [enabled by default]
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 apache_runtime.ads
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 apache_runtime-pools.adb
+x86_64-linux-gnu-gnatbind-13 -x binarytrees.ali
+x86_64-linux-gnu-gnatlink-13 binarytrees.ali -O3 -fomit-frame-pointer -march=ivybridge -o binarytrees.gnat-4.gnat_run -lapr-1
+
+4.17s to complete and log all make actions
+
+COMMAND LINE:
+ ./binarytrees.gnat-4.gnat_run 21
+
+PROGRAM OUTPUT:
+stretch tree of depth 22	 check: 8388607
+2097152	 trees of depth 4	 check: 65011712
+524288	 trees of depth 6	 check: 66584576
+131072	 trees of depth 8	 check: 66977792
+32768	 trees of depth 10	 check: 67076096
+8192	 trees of depth 12	 check: 67100672
+2048	 trees of depth 14	 check: 67106816
+512	 trees of depth 16	 check: 67108352
+128	 trees of depth 18	 check: 67108736
+32	 trees of depth 20	 check: 67108832
+long lived tree of depth 21	 check: 4194303
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

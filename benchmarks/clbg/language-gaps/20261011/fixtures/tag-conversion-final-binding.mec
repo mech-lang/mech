@@ -1,0 +1,4 @@
+Checked(x<bigint>) => <u64> :=
+  answer<u64> := x
+x<bigint> := 9
+io/print("{}\n", Checked(x))

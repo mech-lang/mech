@@ -1,0 +1,17 @@
+=ERROR REPORT==== 10-Oct-2026::16:59:33.720471 ===
+driver_select(0x0000000c6d1481c0, 0, ERL_DRV_READ ERL_DRV_USE, 1) by fd (0/1) driver #Port<0.2> stealing control of fd=0 from resource prim_tty:tty
+
+
+agggtaaa|tttaccct 356
+[cgt]gggtaaa|tttaccc[acg] 1250
+a[act]ggtaaa|tttacc[agt]t 4252
+ag[act]gtaaa|tttac[agt]ct 2894
+agg[act]taaa|ttta[agt]cct 5435
+aggg[acg]aaa|ttt[cgt]ccct 1537
+agggt[cgt]aa|tt[acg]accct 1431
+agggta[cgt]a|t[acg]taccct 1608
+agggtaa[cgt]|[acg]ttaccct 2178
+
+50833411
+50000000
+27388361

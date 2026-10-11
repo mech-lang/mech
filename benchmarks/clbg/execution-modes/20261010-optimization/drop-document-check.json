@@ -1,0 +1,41 @@
+[
+  {
+    "seconds": 1.32694675,
+    "wall_seconds": 1.32694675,
+    "prepare_seconds": 0.106965,
+    "kernel_seconds": 0.536252875,
+    "validation": {
+      "bytes": 259,
+      "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "seconds": 0.59858575,
+    "wall_seconds": 0.59858575,
+    "prepare_seconds": 0.081142333,
+    "kernel_seconds": 0.503984584,
+    "validation": {
+      "bytes": 259,
+      "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "seconds": 0.734275541,
+    "wall_seconds": 0.734275541,
+    "prepare_seconds": 0.081166958,
+    "kernel_seconds": 0.63844325,
+    "validation": {
+      "bytes": 259,
+      "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  }
+]

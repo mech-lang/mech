@@ -1,0 +1,10 @@
+driver-*
+*.o
+*.c
+*.disassembly.txt
+/source-shared*
+/compiler-shared*
+/pairwise-*
+/compact-*
+!*.json
+/site-before.json

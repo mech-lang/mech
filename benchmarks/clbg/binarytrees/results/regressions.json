@@ -1,0 +1,26 @@
+{
+  "compiler_sha256": "f034e47d52867e10b43cac6421a551b831bc01b4d58849819a84c77585a22515",
+  "passed": 4,
+  "checks": [
+    {
+      "id": "mech-fasta-final-compact-v2",
+      "native_object_identical": true,
+      "full_output_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+    },
+    {
+      "id": "mech-fasta-final-expanded-v2",
+      "native_object_identical": true,
+      "full_output_sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa"
+    },
+    {
+      "id": "fannkuchredux.mec",
+      "native_object_identical": true,
+      "correctness_n": 7
+    },
+    {
+      "id": "fannkuchredux-even.mec",
+      "native_object_identical": true,
+      "correctness_n": 7
+    }
+  ]
+}

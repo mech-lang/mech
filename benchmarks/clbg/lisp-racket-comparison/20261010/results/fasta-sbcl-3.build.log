@@ -1,0 +1,33 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-3.lisp" (written 10 OCT 2026 06:58:31 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-3.lisp
+; in: DEFUN MAKE-CPROB
+;     (LENGTH PROBS)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a SEQUENCE, not a VECTOR.
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-3.lisp
+; in: DEFUN RANDOMIZE
+;     (NEXT-RANDOM)
+; 
+; caught STYLE-WARNING:
+;   undefined function: COMMON-LISP-USER::NEXT-RANDOM
+
+; in: DEFUN MAIN
+;     (RESET-RANDOM)
+; 
+; caught STYLE-WARNING:
+;   undefined function: COMMON-LISP-USER::RESET-RANDOM
+; 
+; compilation unit finished
+;   Undefined functions:
+;     NEXT-RANDOM RESET-RANDOM
+;   caught 2 STYLE-WARNING conditions
+;   printed 1 note
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/fasta-sbcl-3/program.fasl
+; compilation finished in 0:00:00.041

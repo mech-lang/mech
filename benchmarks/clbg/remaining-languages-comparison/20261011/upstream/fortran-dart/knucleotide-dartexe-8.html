@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Dart aot&nbsp;#8 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Dart aot&nbsp;#8 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks Game</span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"> </span>
+<span class="com">   Naive transliteration from bearophile&#39;s program </span>
+<span class="com">   contributed by Isaac Gouy</span>
+<span class="com">*/</span>
+
+import <span class="sng">&#39;dart:collection&#39;</span><span class="opt">;</span>
+import <span class="sng">&#39;dart:io&#39;</span><span class="opt">;</span>
+
+<span class="kwd">List</span> <span class="kwb">seqLines</span><span class="opt">() {</span>
+   <span class="kwa">while</span> <span class="opt">(</span><span class="kwa">true</span><span class="opt">) {</span>
+      <span class="kwa">final</span> line <span class="opt">=</span> stdin<span class="opt">.</span><span class="kwb">readLineSync</span><span class="opt">();</span>    
+      <span class="kwa">if</span> <span class="opt">(</span>line <span class="opt">==</span> <span class="kwa">null</span> <span class="opt">||</span> line<span class="opt">.</span><span class="kwb">startsWith</span><span class="opt">(</span><span class="sng">&quot;&gt;THREE&quot;</span><span class="opt">)) {</span>
+         <span class="kwa">break</span><span class="opt">;</span>
+      <span class="opt">}</span> 
+   <span class="opt">}</span>
+   <span class="kwa">final</span> lines <span class="opt">= &lt;</span><span class="kwd">String</span><span class="opt">&gt;[];</span>
+   <span class="kwa">while</span> <span class="opt">(</span><span class="kwa">true</span><span class="opt">) {</span>
+      <span class="kwa">final</span> line <span class="opt">=</span> stdin<span class="opt">.</span><span class="kwb">readLineSync</span><span class="opt">();</span>    
+      <span class="kwa">if</span> <span class="opt">(</span>line <span class="opt">==</span> <span class="kwa">null</span> <span class="opt">||</span> line<span class="opt">.</span><span class="kwb">startsWith</span><span class="opt">(</span><span class="sng">&quot;&gt;&quot;</span><span class="opt">)) {</span>
+         <span class="kwa">break</span><span class="opt">;</span>
+      <span class="opt">}</span> 
+      lines<span class="opt">.</span><span class="kwb">add</span><span class="opt">(</span>line<span class="opt">);</span>      
+   <span class="opt">}</span>   
+   <span class="kwa">return</span> lines<span class="opt">;</span>
+<span class="opt">}</span>
+
+<span class="kwd">HashMap</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">,</span> <span class="kwb">int</span><span class="opt">&gt;</span> <span class="kwb">baseCounts</span><span class="opt">(</span><span class="kwb">int</span> bases<span class="opt">,</span> <span class="kwd">String</span> seq<span class="opt">) {</span>
+   <span class="kwa">final</span> counts <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">HashMap</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">,</span> <span class="kwb">int</span><span class="opt">&gt;();</span>   
+   <span class="kwa">final</span> size <span class="opt">=</span> seq<span class="opt">.</span>length <span class="opt">+</span> <span class="num">1</span> <span class="opt">-</span> bases<span class="opt">;</span>   
+   <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> size<span class="opt">;</span> i<span class="opt">++) {</span>  
+      <span class="kwa">final</span> nucleo <span class="opt">=</span> seq<span class="opt">.</span><span class="kwb">substring</span><span class="opt">(</span>i<span class="opt">,</span> i <span class="opt">+</span> bases<span class="opt">);</span>
+      <span class="kwa">if</span> <span class="opt">(</span>counts<span class="opt">.</span><span class="kwb">containsKey</span><span class="opt">(</span>nucleo<span class="opt">))</span>
+         counts<span class="opt">[</span>nucleo<span class="opt">] = (</span>counts<span class="opt">[</span>nucleo<span class="opt">] ??</span> <span class="num">0</span><span class="opt">) +</span> <span class="num">1</span><span class="opt">;</span>
+      <span class="kwa">else</span>
+         counts<span class="opt">[</span>nucleo<span class="opt">] =</span> <span class="num">1</span><span class="opt">;</span>      
+   <span class="opt">}</span>
+   <span class="kwa">return</span> counts<span class="opt">;</span>
+<span class="opt">}</span>
+
+<span class="kwd">Iterable</span><span class="opt">&lt;(</span><span class="kwd">String</span><span class="opt">,</span> <span class="kwd">String</span><span class="opt">)&gt;</span> <span class="kwb">sortedFreq</span><span class="opt">(</span><span class="kwb">int</span> bases<span class="opt">,</span> <span class="kwd">String</span> seq<span class="opt">) {</span>
+   <span class="kwa">final</span> keysValues <span class="opt">=</span> <span class="kwb">baseCounts</span><span class="opt">(</span>bases<span class="opt">,</span> seq<span class="opt">).</span>entries<span class="opt">.</span><span class="kwb">toList</span><span class="opt">();</span>
+   <span class="kwa">final</span> size <span class="opt">=</span> seq<span class="opt">.</span>length <span class="opt">+</span> <span class="num">1</span> <span class="opt">-</span> bases<span class="opt">;</span>     
+   keysValues<span class="opt">.</span><span class="kwb">sort</span><span class="opt">((</span>a<span class="opt">,</span> b<span class="opt">) =&gt;</span> b<span class="opt">.</span>value<span class="opt">.</span><span class="kwb">compareTo</span><span class="opt">(</span>a<span class="opt">.</span>value<span class="opt">));</span> 
+   <span class="kwa">return</span> 
+      keysValues<span class="opt">.</span><span class="kwb">map</span><span class="opt">((</span>each<span class="opt">) =&gt; (</span>each<span class="opt">.</span>key<span class="opt">,</span>  
+         <span class="opt">(</span><span class="num">100.0</span> <span class="opt">*</span> each<span class="opt">.</span>value <span class="opt">/</span> size <span class="opt">).</span><span class="kwb">toStringAsFixed</span><span class="opt">(</span><span class="num">3</span><span class="opt">)));</span> 
+<span class="opt">}</span>
+
+<span class="kwb">specificCount</span><span class="opt">(</span>code<span class="opt">,</span> seq<span class="opt">) {</span>  
+   <span class="kwa">return</span> <span class="kwb">baseCounts</span><span class="opt">(</span>code<span class="opt">.</span>length<span class="opt">,</span> seq<span class="opt">)[</span>code<span class="opt">];</span>
+<span class="opt">}</span>
+
+<span class="kwa">void</span> <span class="kwb">main</span><span class="opt">(</span><span class="kwd">List</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">&gt;</span> args<span class="opt">) {</span>
+   <span class="kwa">var</span> lines <span class="opt">=</span> <span class="kwb">seqLines</span><span class="opt">();</span>   
+   <span class="kwa">var</span> seq <span class="opt">=</span> lines<span class="opt">.</span><span class="kwb">map</span><span class="opt">((</span>each<span class="opt">) =&gt;</span> each<span class="opt">.</span><span class="kwb">toUpperCase</span><span class="opt">()).</span><span class="kwb">join</span><span class="opt">();</span>    
+   
+   <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">final</span> base <span class="kwa">in</span> <span class="opt">[</span><span class="num">1</span><span class="opt">,</span> <span class="num">2</span><span class="opt">]) {</span>  
+      <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">final</span> <span class="opt">(</span>k<span class="opt">,</span>v<span class="opt">)</span> <span class="kwa">in</span> <span class="kwb">sortedFreq</span><span class="opt">(</span>base<span class="opt">,</span>seq<span class="opt">)) {</span>
+         <span class="kwb">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">$k $v</span><span class="sng">&quot;</span><span class="opt">);</span>
+      <span class="opt">}</span>
+      <span class="kwb">print</span><span class="opt">(</span><span class="sng">&quot;&quot;</span><span class="opt">);</span>   
+   <span class="opt">}</span>
+       
+   <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">final</span> code <span class="kwa">in</span> <span class="opt">[</span><span class="sng">&quot;GGT&quot;</span><span class="opt">,</span> <span class="sng">&quot;GGTA&quot;</span><span class="opt">,</span> <span class="sng">&quot;GGTATT&quot;</span><span class="opt">,</span>
+            <span class="sng">&quot;GGTATTTTAATT&quot;</span><span class="opt">,</span> <span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span><span class="opt">]) {</span>     
+      <span class="kwb">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">${specificCount(code,seq)}</span><span class="sng"></span><span class="esc">\t</span><span class="sng"></span><span class="ipl">$code</span><span class="sng">&quot;</span><span class="opt">);</span> 
+   <span class="opt">}</span>
+<span class="opt">}</span>
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Dart SDK version: 3.7.0 (stable)
+Wed Feb 5 04:53:58 2025
+
+
+
+ Sat, 22 Feb 2025 09:52:24 GMT
+
+MAKE:
+/opt/src/dart-sdk/bin/dart analyze 
+Analyzing tmp...
+No issues found!
+
+/opt/src/dart-sdk/bin/dart compile exe knucleotide.dartexe-8.dartexe -o knucleotide.dartexe-8.dartexe_run
+Generated: /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/knucleotide.dartexe-8.dartexe_run
+
+6.13 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./knucleotide.dartexe-8.dartexe_run 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

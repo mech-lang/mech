@@ -1,0 +1,8 @@
+<row> := <{value<u64>}>
+Allocate(n<u64>) = (result<u64>) :=
+  h := memory/allocate({value: n})
+  result := 1.
+Test(n<u64>) = (result<u64>) :=
+  result := stats/sum([Allocate(0) | i <- 0..3]).
+r := memory/with-arena(2, <row>, Test, 0)
+io/print("{}\n", r)

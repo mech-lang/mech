@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "scope": [
+    "hosts/gpu/src/control/bigint.rs"
+  ],
+  "stdout": "unsafe boundary audit passed\n",
+  "stderr": "",
+  "whole_repository_limitation": "Whole repository scan stops on existing generated benchmark CLI ABI projects. The control compiler also has a pre-existing JIT ABI conversion not yet catalogued. This check covers the changed bigint runtime pointer boundary only."
+}

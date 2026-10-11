@@ -1,0 +1,15 @@
+[package]
+name = "clbg-binarytrees-rust-dependencies"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[dependencies]
+typed-arena = "=2.0.2"
+bumpalo = "=3.20.3"
+toolshed = "=0.8.1"
+rayon = "=1.12.0"
+[profile.release]
+debug = false
+codegen-units = 1
+
+[workspace]

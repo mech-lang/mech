@@ -1,0 +1,252 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/knucleotide-sbcl-6.lisp" (written 10 OCT 2026 06:58:31 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/knucleotide-sbcl-6.lisp
+; in: DEFUN MY-TR-RUN
+;     (ELT KNUCLEOTIDE2::*MY-TASK-LIST* KNUCLEOTIDE2::TASKINDEX)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a VECTOR, not a SIMPLE-ARRAY.
+
+;     (FUNCALL (KNUCLEOTIDE2::MY-TASK-MYLAMBDA KNUCLEOTIDE2::THETASK))
+; 
+; note: unable to
+;   optimize away possible call to FDEFINITION at runtime
+; because:
+;   callable expression is not known to be a function
+
+; in: DEFUN CREATE-FRAGMENT-TASKS
+;     (LOOP KNUCLEOTIDE2::FOR KNUCLEOTIDE2::FRAGMENTLENGTH KNUCLEOTIDE2::ACROSS KNUCLEOTIDE2::MFRAGMENT-LENGTHS
+;           DO (LOOP KNUCLEOTIDE2::FOR KNUCLEOTIDE2::I KNUCLEOTIDE2::OF-TYPE (UNSIGNED-BYTE
+;                                                                             32) KNUCLEOTIDE2::FROM 0 KNUCLEOTIDE2::BELOW KNUCLEOTIDE2::FRAGMENTLENGTH
+;                    DO (LET ((KNUCLEOTIDE2::OFFSET KNUCLEOTIDE2::I)
+;                             (KNUCLEOTIDE2::MFRAGMENTLENGTH
+;                              KNUCLEOTIDE2::FRAGMENTLENGTH))
+;                         (VECTOR-PUSH-EXTEND
+;                          (KNUCLEOTIDE2::MAKE-MY-TASK :MYLAMBDA #)
+;                          KNUCLEOTIDE2::TASKS))))
+; --> LET MULTIPLE-VALUE-BIND MULTIPLE-VALUE-CALL FUNCTION LET TAGBODY 
+; --> SB-LOOP::LOOP-DESETQ SETQ AREF 
+; ==>
+;   1
+; 
+; note: unable to
+;   avoid runtime dispatch on array element type
+; because:
+;   Upgraded element type of array is not known at compile time.
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a VECTOR, not a SIMPLE-STRING.
+
+; in: DEFUN CREATE-FRAGMENT-MAP
+;     (DEFUN KNUCLEOTIDE2::CREATE-FRAGMENT-MAP
+;            (SEQUENCE KNUCLEOTIDE2::OFFSET KNUCLEOTIDE2::FRAGMENTLENGTH)
+;       (DECLARE (TYPE (SIMPLE-ARRAY (UNSIGNED-BYTE 8) (*)) SEQUENCE)
+;                (TYPE (UNSIGNED-BYTE 32) KNUCLEOTIDE2::OFFSET)
+;                (TYPE (UNSIGNED-BYTE 32) KNUCLEOTIDE2::FRAGMENTLENGTH))
+;       (LET* ((KNUCLEOTIDE2::RES
+;               (KNUCLEOTIDE2::MAKE-RESULT :KEYLENGTH
+;                KNUCLEOTIDE2::FRAGMENTLENGTH))
+;              (KNUCLEOTIDE2::MYMAP
+;               (KNUCLEOTIDE2::RESULT-OUTMAP KNUCLEOTIDE2::RES))
+;              (KNUCLEOTIDE2::LASTINDEX (+ # 1)))
+;         (DECLARE (TYPE (UNSIGNED-BYTE 32) KNUCLEOTIDE2::LASTINDEX))
+;         (LOOP KNUCLEOTIDE2::FOR KNUCLEOTIDE2::INDEX KNUCLEOTIDE2::OF-TYPE (UNSIGNED-BYTE
+;                                                                            32) KNUCLEOTIDE2::FROM KNUCLEOTIDE2::OFFSET KNUCLEOTIDE2::BELOW KNUCLEOTIDE2::LASTINDEX KNUCLEOTIDE2::BY KNUCLEOTIDE2::FRAGMENTLENGTH
+;               DO ...)
+;         KNUCLEOTIDE2::RES))
+; ==>
+;   (SB-IMPL::%DEFUN 'KNUCLEOTIDE2::CREATE-FRAGMENT-MAP
+;                    (SB-INT:NAMED-LAMBDA KNUCLEOTIDE2::CREATE-FRAGMENT-MAP
+;                        (SEQUENCE KNUCLEOTIDE2::OFFSET
+;                         KNUCLEOTIDE2::FRAGMENTLENGTH)
+;                      (DECLARE (SB-C::TOP-LEVEL-FORM))
+;                      (DECLARE (TYPE (SIMPLE-ARRAY # #) SEQUENCE)
+;                               (TYPE (UNSIGNED-BYTE 32) KNUCLEOTIDE2::OFFSET)
+;                               (TYPE (UNSIGNED-BYTE 32)
+;                                KNUCLEOTIDE2::FRAGMENTLENGTH))
+;                      (BLOCK KNUCLEOTIDE2::CREATE-FRAGMENT-MAP
+;                        (LET* (# # #)
+;                          (DECLARE #)
+;                          (LOOP KNUCLEOTIDE2::FOR KNUCLEOTIDE2::INDEX KNUCLEOTIDE2::OF-TYPE # KNUCLEOTIDE2::FROM KNUCLEOTIDE2::OFFSET KNUCLEOTIDE2::BELOW KNUCLEOTIDE2::LASTINDEX KNUCLEOTIDE2::BY KNUCLEOTIDE2::FRAGMENTLENGTH
+;                                DO ...)
+;                          KNUCLEOTIDE2::RES))))
+; 
+; caught STYLE-WARNING:
+;   Call to KNUCLEOTIDE2::GET-KEY could not be inlined because its source code was
+;   not saved. A global INLINE or SB-EXT:MAYBE-INLINE proclamation must be in
+;   effect to save function definitions for inlining.
+
+; in: DEFUN WRITE-FREQUENCIES
+;     (MAKE-ARRAY
+;      (HASH-TABLE-COUNT (KNUCLEOTIDE2::RESULT-OUTMAP KNUCLEOTIDE2::FREQUENCIES))
+;      :FILL-POINTER 0 :ELEMENT-TYPE 'CONS)
+; 
+; caught STYLE-WARNING:
+;   The default initial element 0 is not a CONS.
+;   See also:
+;     The ANSI Standard, Function MAKE-ARRAY
+;     The ANSI Standard, Function UPGRADED-ARRAY-ELEMENT-TYPE
+
+;     (> (CDR KNUCLEOTIDE2::X) (CDR KNUCLEOTIDE2::Y))
+; 
+; note: unable to
+;   open-code FLOAT to RATIONAL comparison
+; due to type uncertainty:
+;   The first argument is a REAL, not a SINGLE-FLOAT.
+;   The second argument is a REAL, not a RATIONAL.
+; 
+; note: unable to
+;   open-code FLOAT to RATIONAL comparison
+; due to type uncertainty:
+;   The first argument is a REAL, not a DOUBLE-FLOAT.
+;   The second argument is a REAL, not a RATIONAL.
+; 
+; note: forced to do full call
+;       unable to do inline float comparison (cost 3) because:
+;       The first argument is a REAL, not a SINGLE-FLOAT.
+;       The second argument is a REAL, not a SINGLE-FLOAT.
+;       unable to do inline float comparison (cost 3) because:
+;       The first argument is a REAL, not a DOUBLE-FLOAT.
+;       The second argument is a REAL, not a DOUBLE-FLOAT.
+;       etc.
+
+;     (* KNUCLEOTIDE2::VALUE 100.0)
+; 
+; note: forced to do full call
+;       unable to do inline float arithmetic (cost 4) because:
+;       The first argument is a NUMBER, not a SINGLE-FLOAT.
+;       The result is a (VALUES
+;                        (OR FLOAT (COMPLEX SINGLE-FLOAT) (COMPLEX DOUBLE-FLOAT))
+;                        &OPTIONAL), not a (VALUES SINGLE-FLOAT &OPTIONAL).
+
+;     (/ (* KNUCLEOTIDE2::VALUE 100.0) KNUCLEOTIDE2::TOTALCOUNT)
+; 
+; note: forced to do full call
+;       unable to do inline float arithmetic (cost 12) because:
+;       The first argument is a (OR FLOAT (COMPLEX SINGLE-FLOAT)
+;                                   (COMPLEX DOUBLE-FLOAT)), not a SINGLE-FLOAT.
+;       The second argument is a NUMBER, not a SINGLE-FLOAT.
+;       The result is a (VALUES
+;                        (OR FLOAT (COMPLEX SINGLE-FLOAT) (COMPLEX DOUBLE-FLOAT))
+;                        &OPTIONAL), not a (VALUES SINGLE-FLOAT &OPTIONAL).
+;       unable to do inline float arithmetic (cost 19) because:
+;       The first argument is a (OR FLOAT (COMPLEX SINGLE-FLOAT)
+;                                   (COMPLEX DOUBLE-FLOAT)), not a DOUBLE-FLOAT.
+;       The second argument is a NUMBER, not a DOUBLE-FLOAT.
+;       The result is a (VALUES
+;                        (OR FLOAT (COMPLEX SINGLE-FLOAT) (COMPLEX DOUBLE-FLOAT))
+;                        &OPTIONAL), not a (VALUES DOUBLE-FLOAT &OPTIONAL).
+
+; in: DEFUN WRITE-COUNT
+;     (MAP '(VECTOR (UNSIGNED-BYTE 8)) #'CHAR-CODE KNUCLEOTIDE2::NUCLEOTIDEFRAGMENT)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a SEQUENCE, not a VECTOR.
+
+;     (LENGTH KNUCLEOTIDE2::NUCLEOTIDEFRAGMENT)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a SEQUENCE, not a VECTOR.
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a SEQUENCE, not a VECTOR.
+
+;     (LOOP KNUCLEOTIDE2::FOR KNUCLEOTIDE2::TASK KNUCLEOTIDE2::ACROSS KNUCLEOTIDE2::TASKS
+;           KNUCLEOTIDE2::FOR KNUCLEOTIDE2::RESULT = (KNUCLEOTIDE2::MY-TASK-RESULT
+;                                                     KNUCLEOTIDE2::TASK)
+;           DO (IF (EQL (KNUCLEOTIDE2::RESULT-KEYLENGTH KNUCLEOTIDE2::RESULT)
+;                       (LENGTH KNUCLEOTIDE2::NUCLEOTIDEFRAGMENT))
+;                  (SETF COUNT (+ COUNT #))))
+; --> LET MULTIPLE-VALUE-BIND MULTIPLE-VALUE-CALL FUNCTION LET LET TAGBODY 
+; --> SB-LOOP::LOOP-DESETQ SETQ AREF 
+; ==>
+;   1
+; 
+; note: unable to
+;   avoid runtime dispatch on array element type
+; because:
+;   Upgraded element type of array is not known at compile time.
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a VECTOR, not a SIMPLE-STRING.
+
+;     (LENGTH KNUCLEOTIDE2::NUCLEOTIDEFRAGMENT)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a SEQUENCE, not a VECTOR.
+
+;     (+ COUNT
+;        (GETHASH KNUCLEOTIDE2::K
+;                 (KNUCLEOTIDE2::RESULT-OUTMAP KNUCLEOTIDE2::RESULT) 0))
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a NUMBER, not a RATIONAL.
+;   The second argument is a NUMBER, not a RATIONAL.
+; 
+; note: forced to do full call
+;       unable to do inline float arithmetic (cost 2) because:
+;       The first argument is a NUMBER, not a SINGLE-FLOAT.
+;       The second argument is a NUMBER, not a SINGLE-FLOAT.
+;       The result is a (VALUES NUMBER &OPTIONAL), not a (VALUES SINGLE-FLOAT
+;                                                                &OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a NUMBER, not a FIXNUM.
+;       The second argument is a NUMBER, not a FIXNUM.
+;       The result is a (VALUES NUMBER &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+; in: DEFUN READ-ASCII-FILE-TO-BINARY-ARRAY
+;     (MAKE-ARRAY (FILE-LENGTH STREAM) :ELEMENT-TYPE '(UNSIGNED-BYTE 8))
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a (OR NULL (UNSIGNED-BYTE 45)), not a (OR INTEGER
+;                                                                   (CONS INTEGER
+;                                                                         NULL)).
+
+; in: DEFUN MAIN
+;     (ELT KNUCLEOTIDE2::*MY-TASK-LIST* 0)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a VECTOR, not a SIMPLE-ARRAY.
+
+;     (ELT KNUCLEOTIDE2::*MY-TASK-LIST* 1)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a VECTOR, not a SIMPLE-ARRAY.
+
+;     (ELT KNUCLEOTIDE2::*MY-TASK-LIST* 2)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a VECTOR, not a SIMPLE-ARRAY.
+; 
+; compilation unit finished
+;   caught 2 STYLE-WARNING conditions
+;   printed 21 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/knucleotide-sbcl-6/program.fasl
+; compilation finished in 0:00:00.030

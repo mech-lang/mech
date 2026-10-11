@@ -1,0 +1,5 @@
+Trace(n<u64>) = (result<u64>) :=
+  printed := io/print("trace={}\n", n)
+  result := n.
+result := (stats/sum([i | i <- 0..5, i > 2, ignored := Trace(i)]))
+io/print("{}\n", result)

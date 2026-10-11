@@ -1,0 +1,8 @@
+{
+  "sha256": "b0975da0ad6c1de407b89db3912cee0f2b1274c02958e78664e4b63df094a09f",
+  "files": {
+    "hosts/gpu/src/sequence/application.rs.in": "a50f34a79cb2e4cb59e12e75c9757ef7564ee2277a927c58aa101ca17a4fbdad",
+    "hosts/gpu/src/control/application.rs.in": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3"
+  },
+  "note": "Supplement for the two initial broad-sweep compiler archives, whose file filter omitted .rs.in templates. Exact original templates recovered from their preserved generated projects. Later confirmations include templates directly."
+}

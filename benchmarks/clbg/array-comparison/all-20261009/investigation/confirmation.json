@@ -1,0 +1,370 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-09T20:51:11.203059+00:00",
+  "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+  "protocol": "Five randomized sequential full-workload fresh-process samples, AC/Low Power Mode off; full output checked; startup and input parsing included; builds and verification excluded.",
+  "full_input": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-input25000000.txt",
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "bytes": 254166745,
+    "three_letters": 125000000,
+    "required_window_updates": 874999961
+  },
+  "programs": [
+    {
+      "id": "knucleotide-rust-7",
+      "benchmark": "knucleotide",
+      "language": "rust",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs",
+      "source_sha256": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-7"
+      ],
+      "executable_sha256": "b176b1d6b745dfada6f7192fdf9f0ed3cbced2b0ed8590978a0722a943fecb9c",
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "futures=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures-f93f5cc220f40f47.rlib",
+        "--extern",
+        "tokio_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libtokio_threadpool-a8446ba36124ba6c.rlib",
+        "--extern",
+        "itertools=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libitertools-63f8e103f3fb88a7.rlib",
+        "--extern",
+        "num=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum-1ca8ecfc42f84971.rlib",
+        "--extern",
+        "hashbrown=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libhashbrown-a437073872b5ca76.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-7"
+      ],
+      "loc": 163,
+      "strict": true,
+      "samples_seconds": [
+        0.530940416,
+        0.526685292,
+        0.552911292,
+        0.540321709,
+        0.559466292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "median_seconds": 0.540321709,
+      "sample_stdev_seconds": 0.013998016504736732
+    },
+    {
+      "id": "knucleotide-rust-6-panicabort",
+      "benchmark": "knucleotide",
+      "language": "rust",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs",
+      "source_sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6-panicabort"
+      ],
+      "executable_sha256": "922e72bf007d8465d9b6e100110a981ca57b1042585bbf04456ce537b0b84a2c",
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "fxhash=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfxhash-be129402f145c68a.rlib",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "num_traits=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_traits-5f47139c6d8f472d.rlib",
+        "--extern",
+        "scoped_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libscoped_threadpool-526c83fe137b87d5.rlib",
+        "-Cpanic=abort",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6-panicabort"
+      ],
+      "loc": 168,
+      "strict": true,
+      "samples_seconds": [
+        0.55426925,
+        0.551004792,
+        0.540505125,
+        0.537430792,
+        0.563379084
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "median_seconds": 0.551004792,
+      "sample_stdev_seconds": 0.01053620788859232
+    },
+    {
+      "id": "knucleotide:bqn-knucleotide",
+      "benchmark": "knucleotide",
+      "language": "bqn",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/knucleotide.bqn"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/knucleotide.bqn",
+      "source_sha256": "a0d4d974545aa3c87798b27c99668ea270514158d5e66e61c5456d8582d9628b",
+      "executable_sha256": "588c7a127cdf25001145f3f1a2e1b46b25f21df7d09b17f9c58a2b8bc7cb8b6d",
+      "loc": 51,
+      "strict": false,
+      "exclusion_reason": "Correct output, but selective matching replaces the required all-key hash-table lookup/update work at k=1,2,3,4,6,12,18.",
+      "samples_seconds": [
+        0.126891334,
+        0.125898917,
+        0.129483958,
+        0.127940834,
+        0.130974208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "median_seconds": 0.127940834,
+      "sample_stdev_seconds": 0.0020256092708632687
+    },
+    {
+      "id": "knucleotide:k-knucleotide.growler",
+      "benchmark": "knucleotide",
+      "language": "k",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/growler",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/knucleotide.growler.k"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/knucleotide.growler.k",
+      "source_sha256": "6cbab2064c6bedb3b9d29ae4372ff0f666e414ccc948f382e0f4d0ef0025d010",
+      "executable_sha256": "87b25c5f8e9f0b62bdf2aefc04618c6df07554ea99778c534223ad326870a90d",
+      "loc": 25,
+      "strict": false,
+      "exclusion_reason": "Correct output, but selective matching replaces the required all-key hash-table lookup/update work at k=1,2,3,4,6,12,18.",
+      "samples_seconds": [
+        0.725476416,
+        0.726006209,
+        0.771728667,
+        0.78875,
+        0.763164208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "median_seconds": 0.763164208,
+      "sample_stdev_seconds": 0.0282747408059335
+    },
+    {
+      "id": "knucleotide:mech-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+        "{n}"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "executable_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "loc": 17,
+      "strict": true,
+      "samples_seconds": [
+        0.503270416,
+        0.53307675,
+        0.526265958,
+        0.508126833,
+        0.509094959
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "median_seconds": 0.509094959,
+      "sample_stdev_seconds": 0.012929699264769046
+    }
+  ],
+  "orders": [
+    [
+      "knucleotide-rust-7",
+      "knucleotide:mech-control",
+      "knucleotide:bqn-knucleotide",
+      "knucleotide:k-knucleotide.growler",
+      "knucleotide-rust-6-panicabort"
+    ],
+    [
+      "knucleotide:bqn-knucleotide",
+      "knucleotide-rust-7",
+      "knucleotide:k-knucleotide.growler",
+      "knucleotide:mech-control",
+      "knucleotide-rust-6-panicabort"
+    ],
+    [
+      "knucleotide:bqn-knucleotide",
+      "knucleotide:mech-control",
+      "knucleotide-rust-7",
+      "knucleotide:k-knucleotide.growler",
+      "knucleotide-rust-6-panicabort"
+    ],
+    [
+      "knucleotide-rust-6-panicabort",
+      "knucleotide-rust-7",
+      "knucleotide:k-knucleotide.growler",
+      "knucleotide:mech-control",
+      "knucleotide:bqn-knucleotide"
+    ],
+    [
+      "knucleotide:k-knucleotide.growler",
+      "knucleotide-rust-6-panicabort",
+      "knucleotide:bqn-knucleotide",
+      "knucleotide:mech-control",
+      "knucleotide-rust-7"
+    ]
+  ],
+  "discarded": [],
+  "finished_at": "2026-10-09T20:51:28.415054+00:00"
+}

@@ -1,0 +1,57 @@
+{
+  "status": "passed",
+  "programs": [
+    {
+      "id": "compact-regions8",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8-final.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8-final.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-regions",
+        "8"
+      ],
+      "driver_sha256": "ee2982be7b31db12c0ffc305eda3f5332802408d274161342778893330b75684",
+      "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+      "identical_to_measured_object": true
+    },
+    {
+      "id": "pairwise-before",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before-final.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before-final.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "driver_sha256": "ee2982be7b31db12c0ffc305eda3f5332802408d274161342778893330b75684",
+      "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+      "identical_to_measured_object": true
+    },
+    {
+      "id": "compact-seed",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-seed-final.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-seed-final.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--simplify-square-seeds"
+      ],
+      "driver_sha256": "ee2982be7b31db12c0ffc305eda3f5332802408d274161342778893330b75684",
+      "object_sha256": "02eaac07470b7949bf3c68b0f1225b661ec827f27bb32718c05a420348bae527",
+      "identical_to_measured_object": true
+    }
+  ]
+}

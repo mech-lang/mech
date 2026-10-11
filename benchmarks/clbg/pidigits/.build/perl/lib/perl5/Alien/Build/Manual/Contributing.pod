@@ -1,0 +1,275 @@
+# PODNAME: Alien::Build::Manual::Contributing
+# ABSTRACT: Over-detailed contributing guide
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Manual::Contributing - Over-detailed contributing guide
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ perldoc Alien::Build::Manual::Contributing
+
+=head1 DESCRIPTION
+
+Thank you for considering to contribute to my open source project!  If
+you have a small patch please consider just submitting it.  Doing so
+through the project GitHub is probably the best way:
+
+L<https://github.com/plicease/Alien-Build/issues>
+
+If you have a more invasive enhancement or bugfix to contribute, please
+take the time to review these guidelines.  In general it is good idea to
+work closely with the L<Alien::Build> developers, and the best way to
+contact them is on the C<#native> IRC channel on irc.perl.org.
+
+=head2 History
+
+Joel Berger wrote the original L<Alien::Base>.  This distribution
+included the runtime code L<Alien::Base> and an installer class
+L<Alien::Base::ModuleBuild>.  The significant thing about L<Alien::Base>
+was that it provided tools to make it relatively easy for people to roll
+their own L<Alien> distributions.  Over time, the PerlAlien (github
+organization) or "Alien::Base team" has taken over development of
+L<Alien::Base> with myself (Graham Ollis) being responsible for
+integration and releases.  Joel Berger is still involved in the project.
+
+Since the original development of L<Alien::Base>, L<Module::Build>, on
+which L<Alien::Base::ModuleBuild> is based, has been removed from the
+core of Perl.  It seemed worthwhile to write a replacement installer
+that works with L<ExtUtils::MakeMaker> which IS still bundled with the
+Perl core.  Because this is a significant undertaking it is my intention
+to integrate the many lessons learned by Joel Berger, myself and the
+"Alien::Base team" as possible.  If the interface seems good then it is
+because I've stolen the ideas from some pretty good places.
+
+=head2 Philosophy
+
+=head3 Alien runtime should be as config-only as possible.
+
+Ideally the code for an L<Alien::Base> based L<Alien> should simply
+inherit from L<Alien::Base>, like so:
+
+ package Alien::libfoo;
+ 
+ use parent qw( Alien::Base );
+ 
+ 1;
+
+The detection logic should be done by the installer code (L<alienfile>
+and L<Alien::Build>) and saved into runtime properties (see
+L<Alien::Build/runtime_prop>).  And as much as
+possible the runtime should be implemented in the base class (L<Alien::Base>).
+Where reasonable, the base class should be expanded to meet the needs
+of this arrangement.
+
+=head3 when downloading a package grab the latest version
+
+If the maintainer of an L<Alien> disappears for a while, and if the
+version downloaded during a "share" install is hardcoded in the
+L<alienfile>, it can be problematic for end-users.
+
+There are exceptions, of course, in particular when a package provides
+a very unstable interface from version to version it makes sense
+to hard code the version and for the Alien developer and Alien consumer
+developer to coordinate closely.
+
+=head3 when installing a package the operating system as a whole should not be affected
+
+The convenience of using an L<Alien> is that a user of a CPAN module
+that consumes an L<Alien> doesn't need to know the exact incantation
+to install the libraries on which it depends (or indeed it may not be
+easily installed through the package manager anyway).
+
+As a corollary, a user of a CPAN module that consumes an L<Alien>
+module shouldn't expect operating system level packages to be
+installed, or for these packages to be installed in common system
+level directories, like C</usr/local> or C</opt>.  Instead a "share"
+directory associated with the Perl install and L<Alien> module
+should be used.
+
+Plugins that require user opt-in could be written to prompt a user
+to automatically install operating system packages, but this should
+never be done by default or without consent by the user.
+
+=head3 avoid dependencies
+
+One of the challenges with L<Alien> development is that you are by the
+nature of the problem, trying to make everyone happy.  Developers
+working out of CPAN just want stuff to work, and some build environments
+can be hostile in terms of tool availability, so for reliability you end
+up pulling a lot of dependencies.  On the other hand, operating system
+vendors who are building Perl modules usually want to use the system
+version of a library so that they do not have to patch libraries in
+multiple places.  Such vendors have to package any extra dependencies
+and having to do so for packages that the don't even use makes them
+understandably unhappy.
+
+As general policy the L<Alien::Build> core should have as few
+dependencies as possible, and should only pull extra dependencies if
+they are needed.  Where dependencies cannot be avoidable, popular and
+reliable CPAN modules, which are already available as packages in the
+major Linux vendors (Debian, Red Hat) should be preferred.
+
+As such L<Alien::Build> is hyper aggressive at using dynamic
+prerequisites.
+
+=head3 interface agnostic
+
+One of the challenges with L<Alien::Base::ModuleBuild> was that
+L<Module::Build> was pulled from the core.  In addition, there is a
+degree of hostility toward L<Module::Build> in some corners of the Perl
+community.  I agree with Joel Berger's rationale for choosing
+L<Module::Build> at the time, as I believe its interface more easily
+lends itself to building L<Alien> distributions.
+
+That said, an important feature of L<Alien::Build> is that it is
+installer agnostic.  Although it is initially designed to work with
+L<ExtUtils::MakeMaker>, it has been designed from the ground up to work
+with any installer (Perl, or otherwise).
+
+As an extension of this, although L<Alien::Build> may have external CPAN
+dependencies, they should not be exposed to developers USING
+L<Alien::Build>.  As an example, L<Path::Tiny> is used heavily
+internally because it does what L<File::Spec> does, plus the things that
+it doesn't, and uses forward slashes on Windows (backslashes are the
+"correct separator on windows, but actually using them tends to break
+everything).  However, there aren't any interfaces in L<Alien::Build>
+that will return a L<Path::Tiny> object (or if there are, then this is a
+bug).
+
+This means that if we ever need to port L<Alien::Build> to a platform
+that doesn't support L<Path::Tiny> (such as VMS), then it may require
+some work to L<Alien::Build> itself, modules that USE L<Alien::Build>
+shouldn't need to be modified.
+
+=head3 plugable
+
+The actual logic that probes the system, downloads source and builds it
+should be as pluggable as possible.  One of the challenges with
+L<Alien::Base::ModuleBuild> was that it was designed to work well with
+software that works with C<autoconf> and C<pkg-config>.  While you can
+build with other tools, you have to know a bit of how the installer
+logic works, and which hooks need to be tweaked.
+
+L<Alien::Build> has plugins for C<autoconf>, C<pkgconf> (successor of
+C<pkg-config>), vanilla Makefiles, and CMake.  If your build system
+doesn't have a plugin, then all you have to do is write one!  Plugins
+that prove their worth may be merged into the L<Alien::Build> core.
+Plugins that after a while feel like maybe not such a good idea may be
+removed from the core, or even from CPAN itself.
+
+In addition, L<Alien::Build> has a special type of plugin, called a
+negotiator which picks the best plugin for the particular environment
+that it is running in.  This way, as development of the negotiator and
+plugins develop over time modules that use L<Alien::Build> will benefit,
+without having to change the way they interface with L<Alien::Build>
+
+=head1 ACKNOWLEDGEMENT
+
+I would like to that Joel Berger for getting things running in the first
+place.  Also important to thank other members of the "Alien::Base team":
+
+Zaki Mughal (SIVOAIS)
+
+Ed J (ETJ, mohawk)
+
+Also kind thanks to all of the developers who have contributed to
+L<Alien::Base> over the years:
+
+L<https://metacpan.org/pod/Alien::Base#CONTRIBUTORS>
+
+=head1 SEE ALSO
+
+=over 4
+
+=item L<Alien::Build::Manual>
+
+Other L<Alien::Build> manuals.
+
+=back
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

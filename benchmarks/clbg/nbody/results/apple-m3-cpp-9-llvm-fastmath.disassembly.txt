@@ -1,0 +1,562 @@
+
+benchmarks/clbg/nbody/.build/nbody-gpp-9-llvm-fastmath:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+00000001000034f0 <_main>:
+1000034f0:     	stp	d15, d14, [sp, #-0x70]!
+1000034f4:     	stp	d13, d12, [sp, #0x10]
+1000034f8:     	stp	d11, d10, [sp, #0x20]
+1000034fc:     	stp	d9, d8, [sp, #0x30]
+100003500:     	stp	x28, x27, [sp, #0x40]
+100003504:     	stp	x20, x19, [sp, #0x50]
+100003508:     	stp	x29, x30, [sp, #0x60]
+10000350c:     	add	x29, sp, #0x60
+100003510:     	sub	x9, sp, #0x330
+100003514:     	and	sp, x9, #0xffffffffffffffe0
+100003518:     	adrp	x8, 0x100004000 <_printf+0x100004000>
+10000351c:     	ldr	x8, [x8, #0x8]
+100003520:     	ldr	x8, [x8]
+100003524:     	str	x8, [sp, #0x328]
+100003528:     	ldr	x0, [x1, #0x8]
+10000352c:     	bl	0x100003d5c <_printf+0x100003d5c>
+100003530:     	mov	x19, x0
+100003534:     	adrp	x1, 0x100003000 <_printf+0x100003000>
+100003538:     	add	x1, x1, #0xda0
+10000353c:     	add	x20, sp, #0x140
+100003540:     	add	x0, sp, #0x140
+100003544:     	mov	w2, #0x1e0              ; =480
+100003548:     	bl	0x100003d68 <_printf+0x100003d68>
+10000354c:     	adrp	x8, 0x100003000 <_printf+0x100003000>
+100003550:     	ldr	q0, [x8, #0xd80]
+100003554:     	str	q0, [sp, #0x160]
+100003558:     	mov	x8, #0x8a71             ; =35441
+10000355c:     	movk	x8, #0x1f0b, lsl #16
+100003560:     	movk	x8, #0x1933, lsl #32
+100003564:     	movk	x8, #0x3ef9, lsl #48
+100003568:     	str	x8, [sp, #0x170]
+10000356c:     	mov	x8, #0xd7a4             ; =55204
+100003570:     	movk	x8, #0xaef9, lsl #16
+100003574:     	movk	x8, #0x2576, lsl #32
+100003578:     	movk	x8, #0x3f2c, lsl #48
+10000357c:     	stp	x8, x20, [sp, #0x120]
+100003580:     	add	x8, sp, #0x120
+100003584:     	stp	x20, x8, [sp, #0x130]
+100003588:     	add	x0, sp, #0x128
+10000358c:     	bl	0x1000039fc <__Z10static_forITnDaLi1ETnDaLm5ETnDaLi1EZZ6energyRA5_K4BodyENKUlT_E_clINSt3__117integral_constantIiLi0EEEEEDaS4_EUlS4_E_EvOT2_>
+100003590:     	add	x0, sp, #0x140
+100003594:     	add	x1, sp, #0x120
+100003598:     	bl	0x100003b1c <__Z10static_forITnDaLi1ETnDaLm5ETnDaLi1EZ6energyRA5_K4BodyEUlT_E_EvOT2_>
+10000359c:     	ldr	d0, [sp, #0x120]
+1000035a0:     	str	d0, [sp]
+1000035a4:     	adrp	x0, 0x100003000 <_printf+0x100003000>
+1000035a8:     	add	x0, x0, #0xf80
+1000035ac:     	bl	0x100003d74 <_printf+0x100003d74>
+1000035b0:     	cbz	w19, 0x100003950 <_main+0x460>
+1000035b4:     	ldr	d12, [sp, #0x150]
+1000035b8:     	sxtw	x8, w19
+1000035bc:     	ldr	d23, [sp, #0x1b0]
+1000035c0:     	ldr	d4, [sp, #0x180]
+1000035c4:     	ldr	d1, [sp, #0x170]
+1000035c8:     	ldr	d5, [sp, #0x1e0]
+1000035cc:     	ldr	d6, [sp, #0x1d0]
+1000035d0:     	ldr	d18, [sp, #0x240]
+1000035d4:     	ldr	d0, [sp, #0x230]
+1000035d8:     	ldr	d20, [sp, #0x270]
+1000035dc:     	ldr	d19, [sp, #0x2a0]
+1000035e0:     	ldr	d22, [sp, #0x290]
+1000035e4:     	ldr	d3, [sp, #0x2d0]
+1000035e8:     	ldr	d2, [sp, #0x300]
+1000035ec:     	stp	q2, q19, [sp, #0x40]
+1000035f0:     	ldr	d2, [sp, #0x2f0]
+1000035f4:     	ldr	q16, [sp, #0x220]
+1000035f8:     	ldr	q7, [sp, #0x280]
+1000035fc:     	mov.16b	v21, v12
+100003600:     	mov.d	v21[1], v23[0]
+100003604:     	ldr	d17, [sp, #0x210]
+100003608:     	mov.d	v17[1], v20[0]
+10000360c:     	stp	q5, q4, [sp, #0x70]
+100003610:     	mov.d	v4[1], v5[0]
+100003614:     	mov.d	v5[1], v18[0]
+100003618:     	stp	q5, q4, [sp, #0x20]
+10000361c:     	str	q18, [sp, #0x60]
+100003620:     	mov.d	v18[1], v19[0]
+100003624:     	str	q18, [sp, #0x10]
+100003628:     	ldr	q30, [sp, #0x140]
+10000362c:     	ldr	q18, [sp, #0x1a0]
+100003630:     	ldr	q5, [sp, #0x160]
+100003634:     	ldr	q28, [sp, #0x1c0]
+100003638:     	ldr	q25, [sp, #0x200]
+10000363c:     	ldr	q24, [sp, #0x260]
+100003640:     	ldr	q14, [sp, #0x2c0]
+100003644:     	mov	x9, #0x147b             ; =5243
+100003648:     	movk	x9, #0x47ae, lsl #16
+10000364c:     	movk	x9, #0x7ae1, lsl #32
+100003650:     	movk	x9, #0x3f84, lsl #48
+100003654:     	ldr	q31, [sp, #0x2e0]
+100003658:     	str	q18, [sp, #0x110]
+10000365c:     	str	q25, [sp, #0xa0]
+100003660:     	stp	q3, q24, [sp, #0xe0]
+100003664:     	str	q5, [sp, #0xd0]
+100003668:     	str	d2, [sp, #0x108]
+10000366c:     	fsub	d19, d12, d23
+100003670:     	fsub.2d	v13, v21, v17
+100003674:     	fsub.2d	v4, v30, v18
+100003678:     	fmul.2d	v2, v4, v4
+10000367c:     	faddp.2d	d2, v2
+100003680:     	fmadd	d2, d19, d19, d2
+100003684:     	fsqrt	d18, d2
+100003688:     	fmul	d2, d18, d2
+10000368c:     	fmov	d5, x9
+100003690:     	str	d5, [sp, #0xc8]
+100003694:     	fdiv	d2, d5, d2
+100003698:     	ldr	q5, [sp, #0x70]
+10000369c:     	mov.16b	v29, v22
+1000036a0:     	fmul	d22, d2, d5
+1000036a4:     	ldr	q5, [sp, #0x80]
+1000036a8:     	fmul	d2, d5, d2
+1000036ac:     	fmla.2d	v28, v4, v2[0]
+1000036b0:     	fmadd	d2, d2, d19, d6
+1000036b4:     	str	q2, [sp, #0xb0]
+1000036b8:     	fsub.2d	v18, v30, v25
+1000036bc:     	fmul.2d	v2, v18, v18
+1000036c0:     	fsub	d27, d12, d20
+1000036c4:     	dup.2d	v3, v3[0]
+1000036c8:     	str	q3, [sp, #0x90]
+1000036cc:     	fsub.2d	v20, v30, v24
+1000036d0:     	fmul.2d	v23, v20, v20
+1000036d4:     	faddp.2d	d9, v23
+1000036d8:     	ext.16b	v23, v21, v17, #0x8
+1000036dc:     	fsub.2d	v26, v23, v17
+1000036e0:     	ldr	q3, [sp, #0x110]
+1000036e4:     	fsub.2d	v23, v3, v24
+1000036e8:     	fmul.2d	v24, v23, v23
+1000036ec:     	faddp.2d	v10, v2, v24
+1000036f0:     	fmla.2d	v10, v13, v13
+1000036f4:     	fsqrt.2d	v8, v10
+1000036f8:     	fmul.2d	v2, v8, v10
+1000036fc:     	dup.2d	v11, x9
+100003700:     	fdiv.2d	v2, v11, v2
+100003704:     	ldr	q6, [sp, #0x60]
+100003708:     	fmul	d24, d6, d2
+10000370c:     	fmul.2d	v15, v18, v24[0]
+100003710:     	fmla.2d	v15, v4, v22[0]
+100003714:     	ldr	q3, [sp, #0x110]
+100003718:     	fsub.2d	v4, v3, v25
+10000371c:     	fmul	d24, d24, d13
+100003720:     	fmadd	d24, d22, d19, d24
+100003724:     	fmul.2d	v3, v4, v4
+100003728:     	fmadd	d19, d27, d27, d9
+10000372c:     	fsqrt	d22, d19
+100003730:     	mov.d	v8[0], v22[0]
+100003734:     	ldr	q22, [sp, #0xf0]
+100003738:     	fsub.2d	v9, v25, v22
+10000373c:     	mov.d	v10[0], v19[0]
+100003740:     	fsub.2d	v22, v25, v14
+100003744:     	fmul.2d	v19, v8, v10
+100003748:     	fmul.2d	v8, v22, v22
+10000374c:     	fdiv.2d	v19, v11, v19
+100003750:     	ldr	q12, [sp, #0x30]
+100003754:     	fmul.2d	v2, v2, v12
+100003758:     	fmla.2d	v16, v18, v2[0]
+10000375c:     	ldr	q25, [sp, #0x50]
+100003760:     	fmul.2d	v10, v19, v25[0]
+100003764:     	fmla.2d	v15, v20, v10[0]
+100003768:     	fmul	d18, d5, d19
+10000376c:     	ldr	q5, [sp, #0xd0]
+100003770:     	fmla.2d	v7, v20, v18[0]
+100003774:     	ldr	q19, [sp, #0xf0]
+100003778:     	fsub.2d	v19, v19, v14
+10000377c:     	fmadd	d20, d18, d27, d29
+100003780:     	mov.16b	v29, v27
+100003784:     	fmul.2d	v18, v19, v19
+100003788:     	faddp.2d	v8, v8, v18
+10000378c:     	fmul.2d	v18, v9, v9
+100003790:     	faddp.2d	v3, v3, v18
+100003794:     	fmla.2d	v3, v26, v26
+100003798:     	fsqrt.2d	v18, v3
+10000379c:     	fmul.2d	v3, v18, v3
+1000037a0:     	ldr	q27, [sp, #0x90]
+1000037a4:     	fsub.2d	v18, v17, v27
+1000037a8:     	fmla.2d	v8, v18, v18
+1000037ac:     	fdiv.2d	v3, v11, v3
+1000037b0:     	mov.d	v0[1], v20[0]
+1000037b4:     	fmul	d20, d6, d3
+1000037b8:     	fmla.2d	v0, v13, v2
+1000037bc:     	mov.d	v13[0], v29[0]
+1000037c0:     	fmul	d6, d20, d26
+1000037c4:     	mov.d	v24[1], v6[0]
+1000037c8:     	fsqrt.2d	v6, v8
+1000037cc:     	fmul.2d	v8, v6, v8
+1000037d0:     	fmla.2d	v24, v13, v10
+1000037d4:     	fmla.2d	v7, v23, v2[1]
+1000037d8:     	fsub.2d	v6, v21, v27
+1000037dc:     	fmul.2d	v2, v23, v10[1]
+1000037e0:     	fsub.2d	v23, v30, v14
+1000037e4:     	fdiv.2d	v8, v11, v8
+1000037e8:     	fmla.2d	v2, v4, v20[0]
+1000037ec:     	ldr	q20, [sp, #0x20]
+1000037f0:     	fmul.2d	v20, v20, v3
+1000037f4:     	fmla.2d	v16, v4, v20[0]
+1000037f8:     	fmul.d	d3, d25, v3[1]
+1000037fc:     	fmla.2d	v7, v9, v20[1]
+100003800:     	fmla.2d	v0, v26, v20
+100003804:     	ldr	q25, [sp, #0x40]
+100003808:     	fmul	d4, d25, d8
+10000380c:     	fmul.2d	v20, v22, v4[0]
+100003810:     	fmla.2d	v20, v9, v3[0]
+100003814:     	fmul.2d	v9, v23, v23
+100003818:     	fmul	d4, d4, d18
+10000381c:     	fmla.d	d4, d3, v26[1]
+100003820:     	ldr	q3, [sp, #0x110]
+100003824:     	fsub.2d	v3, v3, v14
+100003828:     	fmul.2d	v10, v3, v3
+10000382c:     	faddp.2d	v9, v9, v10
+100003830:     	fmla.2d	v9, v6, v6
+100003834:     	fsqrt.2d	v10, v9
+100003838:     	fmul.2d	v9, v10, v9
+10000383c:     	fdiv.2d	v9, v11, v9
+100003840:     	fmul.2d	v10, v9, v25[0]
+100003844:     	fmla.2d	v15, v23, v10[0]
+100003848:     	fsub.2d	v5, v5, v15
+10000384c:     	fmul.2d	v9, v12, v9
+100003850:     	fmla.2d	v31, v23, v9[0]
+100003854:     	fmla.2d	v2, v3, v10[1]
+100003858:     	fsub.2d	v28, v28, v2
+10000385c:     	fmla.2d	v24, v6, v10
+100003860:     	fmla.2d	v31, v3, v9[1]
+100003864:     	fsub.2d	v16, v16, v20
+100003868:     	ldr	q2, [sp, #0x10]
+10000386c:     	fmul.2d	v2, v2, v8
+100003870:     	fmla.2d	v31, v22, v2[0]
+100003874:     	fmul.d	d3, d25, v8[1]
+100003878:     	fmls.2d	v7, v19, v3[0]
+10000387c:     	fmla.2d	v31, v19, v2[1]
+100003880:     	fmul.2d	v2, v2, v18
+100003884:     	fmul.d	d3, d3, v18[1]
+100003888:     	ldp	q25, q18, [sp, #0xa0]
+10000388c:     	mov.d	v1[1], v18[0]
+100003890:     	ldr	q18, [sp, #0x110]
+100003894:     	mov.d	v4[1], v3[0]
+100003898:     	fsub.2d	v0, v0, v4
+10000389c:     	fsub.2d	v1, v1, v24
+1000038a0:     	ldp	q3, q24, [sp, #0xe0]
+1000038a4:     	fmla.2d	v2, v6, v9
+1000038a8:     	faddp.2d	d2, v2
+1000038ac:     	ldr	d4, [sp, #0x108]
+1000038b0:     	fadd	d4, d4, d2
+1000038b4:     	str	d4, [sp, #0x108]
+1000038b8:     	ldr	d2, [sp, #0x108]
+1000038bc:     	fmla.2d	v30, v11, v5
+1000038c0:     	fmla.2d	v18, v11, v28
+1000038c4:     	fmla.2d	v25, v11, v16
+1000038c8:     	fmla.2d	v24, v11, v7
+1000038cc:     	fmla.2d	v21, v11, v1
+1000038d0:     	fmla.2d	v17, v11, v0
+1000038d4:     	mov	d20, v17[1]
+1000038d8:     	mov	d23, v21[1]
+1000038dc:     	mov.16b	v12, v21
+1000038e0:     	fmla.2d	v14, v11, v31
+1000038e4:     	ldr	d4, [sp, #0xc8]
+1000038e8:     	fmadd	d3, d2, d4, d3
+1000038ec:     	mov	d6, v1[1]
+1000038f0:     	mov	d22, v0[1]
+1000038f4:     	subs	x8, x8, #0x1
+1000038f8:     	b.ne	0x100003658 <_main+0x168>
+1000038fc:     	str	q30, [sp, #0x140]
+100003900:     	str	q18, [sp, #0x1a0]
+100003904:     	str	q5, [sp, #0x160]
+100003908:     	str	q28, [sp, #0x1c0]
+10000390c:     	str	q25, [sp, #0x200]
+100003910:     	str	q24, [sp, #0x260]
+100003914:     	str	q14, [sp, #0x2c0]
+100003918:     	str	q31, [sp, #0x2e0]
+10000391c:     	str	q16, [sp, #0x220]
+100003920:     	str	q7, [sp, #0x280]
+100003924:     	str	d12, [sp, #0x150]
+100003928:     	str	d23, [sp, #0x1b0]
+10000392c:     	str	d1, [sp, #0x170]
+100003930:     	str	d6, [sp, #0x1d0]
+100003934:     	str	d17, [sp, #0x210]
+100003938:     	str	d0, [sp, #0x230]
+10000393c:     	str	d20, [sp, #0x270]
+100003940:     	str	d22, [sp, #0x290]
+100003944:     	str	d3, [sp, #0x2d0]
+100003948:     	str	d2, [sp, #0x2f0]
+10000394c:     	b	0x100003954 <_main+0x464>
+100003950:     	ldr	d5, [sp, #0x160]
+100003954:     	ldr	d0, [sp, #0x180]
+100003958:     	fmov	d1, #0.50000000
+10000395c:     	fmul	d0, d0, d1
+100003960:     	add	x8, sp, #0x69
+100003964:     	ldur	q1, [x8, #0xff]
+100003968:     	fmul.2d	v1, v1, v1
+10000396c:     	fmadd	d2, d5, d5, d1
+100003970:     	mov	d1, v1[1]
+100003974:     	fadd	d1, d2, d1
+100003978:     	fmul	d0, d0, d1
+10000397c:     	str	d0, [sp, #0x120]
+100003980:     	add	x8, sp, #0x140
+100003984:     	stp	x8, x8, [sp, #0x128]
+100003988:     	add	x8, sp, #0x120
+10000398c:     	str	x8, [sp, #0x138]
+100003990:     	add	x0, sp, #0x128
+100003994:     	bl	0x1000039fc <__Z10static_forITnDaLi1ETnDaLm5ETnDaLi1EZZ6energyRA5_K4BodyENKUlT_E_clINSt3__117integral_constantIiLi0EEEEEDaS4_EUlS4_E_EvOT2_>
+100003998:     	add	x0, sp, #0x140
+10000399c:     	add	x1, sp, #0x120
+1000039a0:     	bl	0x100003b1c <__Z10static_forITnDaLi1ETnDaLm5ETnDaLi1EZ6energyRA5_K4BodyEUlT_E_EvOT2_>
+1000039a4:     	ldr	d0, [sp, #0x120]
+1000039a8:     	str	d0, [sp]
+1000039ac:     	adrp	x0, 0x100003000 <_printf+0x100003000>
+1000039b0:     	add	x0, x0, #0xf80
+1000039b4:     	bl	0x100003d74 <_printf+0x100003d74>
+1000039b8:     	ldr	x8, [sp, #0x328]
+1000039bc:     	adrp	x9, 0x100004000 <_printf+0x100004000>
+1000039c0:     	ldr	x9, [x9, #0x8]
+1000039c4:     	ldr	x9, [x9]
+1000039c8:     	cmp	x9, x8
+1000039cc:     	b.ne	0x1000039f8 <_main+0x508>
+1000039d0:     	mov	w0, #0x0                ; =0
+1000039d4:     	sub	sp, x29, #0x60
+1000039d8:     	ldp	x29, x30, [sp, #0x60]
+1000039dc:     	ldp	x20, x19, [sp, #0x50]
+1000039e0:     	ldp	x28, x27, [sp, #0x40]
+1000039e4:     	ldp	d9, d8, [sp, #0x30]
+1000039e8:     	ldp	d11, d10, [sp, #0x20]
+1000039ec:     	ldp	d13, d12, [sp, #0x10]
+1000039f0:     	ldp	d15, d14, [sp], #0x70
+1000039f4:     	ret
+1000039f8:     	bl	0x100003d50 <_printf+0x100003d50>
+
+00000001000039fc <__Z10static_forITnDaLi1ETnDaLm5ETnDaLi1EZZ6energyRA5_K4BodyENKUlT_E_clINSt3__117integral_constantIiLi0EEEEEDaS4_EUlS4_E_EvOT2_>:
+1000039fc:     	ldp	x8, x9, [x0]
+100003a00:     	ldp	d0, d1, [x8]
+100003a04:     	ldp	d2, d3, [x9, #0x60]
+100003a08:     	fsub	d0, d0, d2
+100003a0c:     	fsub	d1, d1, d3
+100003a10:     	ldr	d2, [x8, #0x10]
+100003a14:     	ldr	d3, [x9, #0x70]
+100003a18:     	fsub	d2, d2, d3
+100003a1c:     	fmul	d0, d0, d0
+100003a20:     	fmadd	d0, d1, d1, d0
+100003a24:     	fmadd	d0, d2, d2, d0
+100003a28:     	fsqrt	d0, d0
+100003a2c:     	ldr	d1, [x8, #0x40]
+100003a30:     	ldr	d2, [x9, #0xa0]
+100003a34:     	fmul	d1, d2, d1
+100003a38:     	fdiv	d0, d1, d0
+100003a3c:     	ldr	x10, [x0, #0x10]
+100003a40:     	ldr	d1, [x10]
+100003a44:     	fsub	d0, d1, d0
+100003a48:     	str	d0, [x10]
+100003a4c:     	ldp	d1, d2, [x8]
+100003a50:     	ldp	d3, d4, [x9, #0xc0]
+100003a54:     	fsub	d1, d1, d3
+100003a58:     	fsub	d2, d2, d4
+100003a5c:     	ldr	d3, [x8, #0x10]
+100003a60:     	ldr	d4, [x9, #0xd0]
+100003a64:     	fsub	d3, d3, d4
+100003a68:     	fmul	d1, d1, d1
+100003a6c:     	fmadd	d1, d2, d2, d1
+100003a70:     	fmadd	d1, d3, d3, d1
+100003a74:     	fsqrt	d1, d1
+100003a78:     	ldr	d2, [x8, #0x40]
+100003a7c:     	ldr	d3, [x9, #0x100]
+100003a80:     	fmul	d2, d3, d2
+100003a84:     	fdiv	d1, d2, d1
+100003a88:     	fsub	d0, d0, d1
+100003a8c:     	str	d0, [x10]
+100003a90:     	ldp	d1, d2, [x8]
+100003a94:     	ldp	d3, d4, [x9, #0x120]
+100003a98:     	fsub	d1, d1, d3
+100003a9c:     	fsub	d2, d2, d4
+100003aa0:     	ldr	d3, [x8, #0x10]
+100003aa4:     	ldr	d4, [x9, #0x130]
+100003aa8:     	fsub	d3, d3, d4
+100003aac:     	fmul	d1, d1, d1
+100003ab0:     	fmadd	d1, d2, d2, d1
+100003ab4:     	fmadd	d1, d3, d3, d1
+100003ab8:     	fsqrt	d1, d1
+100003abc:     	ldr	d2, [x8, #0x40]
+100003ac0:     	ldr	d3, [x9, #0x160]
+100003ac4:     	fmul	d2, d3, d2
+100003ac8:     	fdiv	d1, d2, d1
+100003acc:     	fsub	d0, d0, d1
+100003ad0:     	str	d0, [x10]
+100003ad4:     	ldp	d1, d2, [x8]
+100003ad8:     	ldp	d3, d4, [x9, #0x180]
+100003adc:     	fsub	d1, d1, d3
+100003ae0:     	fsub	d2, d2, d4
+100003ae4:     	ldr	d3, [x8, #0x10]
+100003ae8:     	ldr	d4, [x9, #0x190]
+100003aec:     	fsub	d3, d3, d4
+100003af0:     	fmul	d1, d1, d1
+100003af4:     	fmadd	d1, d2, d2, d1
+100003af8:     	fmadd	d1, d3, d3, d1
+100003afc:     	fsqrt	d1, d1
+100003b00:     	ldr	d2, [x8, #0x40]
+100003b04:     	ldr	d3, [x9, #0x1c0]
+100003b08:     	fmul	d2, d3, d2
+100003b0c:     	fdiv	d1, d2, d1
+100003b10:     	fsub	d0, d0, d1
+100003b14:     	str	d0, [x10]
+100003b18:     	ret
+
+0000000100003b1c <__Z10static_forITnDaLi1ETnDaLm5ETnDaLi1EZ6energyRA5_K4BodyEUlT_E_EvOT2_>:
+100003b1c:     	ldr	d1, [x0, #0xa0]
+100003b20:     	fmov	d0, #0.50000000
+100003b24:     	fmul	d1, d1, d0
+100003b28:     	ldp	d2, d3, [x0, #0x80]
+100003b2c:     	fmul	d2, d2, d2
+100003b30:     	fmadd	d2, d3, d3, d2
+100003b34:     	ldr	d3, [x0, #0x90]
+100003b38:     	fmadd	d2, d3, d3, d2
+100003b3c:     	ldr	d3, [x1]
+100003b40:     	fmadd	d1, d1, d2, d3
+100003b44:     	str	d1, [x1]
+100003b48:     	ldp	d2, d3, [x0, #0x60]
+100003b4c:     	ldp	d4, d5, [x0, #0xc0]
+100003b50:     	fsub	d2, d2, d4
+100003b54:     	fsub	d3, d3, d5
+100003b58:     	ldr	d4, [x0, #0x70]
+100003b5c:     	ldr	d5, [x0, #0xd0]
+100003b60:     	fsub	d4, d4, d5
+100003b64:     	fmul	d2, d2, d2
+100003b68:     	fmadd	d2, d3, d3, d2
+100003b6c:     	fmadd	d2, d4, d4, d2
+100003b70:     	fsqrt	d2, d2
+100003b74:     	ldr	d3, [x0, #0xa0]
+100003b78:     	ldr	d4, [x0, #0x100]
+100003b7c:     	fmul	d3, d4, d3
+100003b80:     	fdiv	d2, d3, d2
+100003b84:     	fsub	d1, d1, d2
+100003b88:     	str	d1, [x1]
+100003b8c:     	ldp	d2, d3, [x0, #0x60]
+100003b90:     	ldp	d4, d5, [x0, #0x120]
+100003b94:     	fsub	d2, d2, d4
+100003b98:     	fsub	d3, d3, d5
+100003b9c:     	ldr	d4, [x0, #0x70]
+100003ba0:     	ldr	d5, [x0, #0x130]
+100003ba4:     	fsub	d4, d4, d5
+100003ba8:     	fmul	d2, d2, d2
+100003bac:     	fmadd	d2, d3, d3, d2
+100003bb0:     	fmadd	d2, d4, d4, d2
+100003bb4:     	fsqrt	d2, d2
+100003bb8:     	ldr	d3, [x0, #0xa0]
+100003bbc:     	ldr	d4, [x0, #0x160]
+100003bc0:     	fmul	d3, d4, d3
+100003bc4:     	fdiv	d2, d3, d2
+100003bc8:     	fsub	d1, d1, d2
+100003bcc:     	str	d1, [x1]
+100003bd0:     	ldp	d2, d3, [x0, #0x60]
+100003bd4:     	ldp	d4, d5, [x0, #0x180]
+100003bd8:     	fsub	d2, d2, d4
+100003bdc:     	fsub	d3, d3, d5
+100003be0:     	ldr	d4, [x0, #0x70]
+100003be4:     	ldr	d5, [x0, #0x190]
+100003be8:     	fsub	d4, d4, d5
+100003bec:     	fmul	d2, d2, d2
+100003bf0:     	fmadd	d2, d3, d3, d2
+100003bf4:     	fmadd	d2, d4, d4, d2
+100003bf8:     	fsqrt	d2, d2
+100003bfc:     	ldr	d3, [x0, #0xa0]
+100003c00:     	ldr	d4, [x0, #0x1c0]
+100003c04:     	fmul	d3, d4, d3
+100003c08:     	fdiv	d2, d3, d2
+100003c0c:     	fsub	d1, d1, d2
+100003c10:     	str	d1, [x1]
+100003c14:     	ldr	d2, [x0, #0x100]
+100003c18:     	fmul	d2, d2, d0
+100003c1c:     	ldp	d3, d4, [x0, #0xe0]
+100003c20:     	fmul	d3, d3, d3
+100003c24:     	fmadd	d3, d4, d4, d3
+100003c28:     	ldr	d4, [x0, #0xf0]
+100003c2c:     	fmadd	d3, d4, d4, d3
+100003c30:     	fmadd	d1, d2, d3, d1
+100003c34:     	str	d1, [x1]
+100003c38:     	ldp	d2, d3, [x0, #0xc0]
+100003c3c:     	ldp	d4, d5, [x0, #0x120]
+100003c40:     	fsub	d2, d2, d4
+100003c44:     	fsub	d3, d3, d5
+100003c48:     	ldr	d4, [x0, #0xd0]
+100003c4c:     	ldr	d5, [x0, #0x130]
+100003c50:     	fsub	d4, d4, d5
+100003c54:     	fmul	d2, d2, d2
+100003c58:     	fmadd	d2, d3, d3, d2
+100003c5c:     	fmadd	d2, d4, d4, d2
+100003c60:     	fsqrt	d2, d2
+100003c64:     	ldr	d3, [x0, #0x100]
+100003c68:     	ldr	d4, [x0, #0x160]
+100003c6c:     	fmul	d3, d4, d3
+100003c70:     	fdiv	d2, d3, d2
+100003c74:     	fsub	d1, d1, d2
+100003c78:     	str	d1, [x1]
+100003c7c:     	ldp	d2, d3, [x0, #0xc0]
+100003c80:     	ldp	d4, d5, [x0, #0x180]
+100003c84:     	fsub	d2, d2, d4
+100003c88:     	fsub	d3, d3, d5
+100003c8c:     	ldr	d4, [x0, #0xd0]
+100003c90:     	ldr	d5, [x0, #0x190]
+100003c94:     	fsub	d4, d4, d5
+100003c98:     	fmul	d2, d2, d2
+100003c9c:     	fmadd	d2, d3, d3, d2
+100003ca0:     	fmadd	d2, d4, d4, d2
+100003ca4:     	fsqrt	d2, d2
+100003ca8:     	ldr	d3, [x0, #0x100]
+100003cac:     	ldr	d4, [x0, #0x1c0]
+100003cb0:     	fmul	d3, d4, d3
+100003cb4:     	fdiv	d2, d3, d2
+100003cb8:     	fsub	d1, d1, d2
+100003cbc:     	str	d1, [x1]
+100003cc0:     	ldr	d2, [x0, #0x160]
+100003cc4:     	fmul	d2, d2, d0
+100003cc8:     	ldp	d3, d4, [x0, #0x140]
+100003ccc:     	fmul	d3, d3, d3
+100003cd0:     	fmadd	d3, d4, d4, d3
+100003cd4:     	ldr	d4, [x0, #0x150]
+100003cd8:     	fmadd	d3, d4, d4, d3
+100003cdc:     	fmadd	d1, d2, d3, d1
+100003ce0:     	str	d1, [x1]
+100003ce4:     	ldp	d2, d3, [x0, #0x120]
+100003ce8:     	ldp	d4, d5, [x0, #0x180]
+100003cec:     	fsub	d2, d2, d4
+100003cf0:     	fsub	d3, d3, d5
+100003cf4:     	ldr	d4, [x0, #0x130]
+100003cf8:     	ldr	d5, [x0, #0x190]
+100003cfc:     	fsub	d4, d4, d5
+100003d00:     	fmul	d2, d2, d2
+100003d04:     	fmadd	d2, d3, d3, d2
+100003d08:     	fmadd	d2, d4, d4, d2
+100003d0c:     	fsqrt	d2, d2
+100003d10:     	ldr	d3, [x0, #0x160]
+100003d14:     	ldr	d4, [x0, #0x1c0]
+100003d18:     	fmul	d3, d4, d3
+100003d1c:     	fdiv	d2, d3, d2
+100003d20:     	fsub	d1, d1, d2
+100003d24:     	str	d1, [x1]
+100003d28:     	ldr	d2, [x0, #0x1c0]
+100003d2c:     	fmul	d0, d2, d0
+100003d30:     	ldp	d2, d3, [x0, #0x1a0]
+100003d34:     	fmul	d2, d2, d2
+100003d38:     	fmadd	d2, d3, d3, d2
+100003d3c:     	ldr	d3, [x0, #0x1b0]
+100003d40:     	fmadd	d2, d3, d3, d2
+100003d44:     	fmadd	d0, d0, d2, d1
+100003d48:     	str	d0, [x1]
+100003d4c:     	ret
+
+Disassembly of section __TEXT,__stubs:
+
+0000000100003d50 <__stubs>:
+100003d50:     	adrp	x16, 0x100004000 <_printf+0x100004000>
+100003d54:     	ldr	x16, [x16]
+100003d58:     	br	x16
+100003d5c:     	adrp	x16, 0x100004000 <_printf+0x100004000>
+100003d60:     	ldr	x16, [x16, #0x10]
+100003d64:     	br	x16
+100003d68:     	adrp	x16, 0x100004000 <_printf+0x100004000>
+100003d6c:     	ldr	x16, [x16, #0x18]
+100003d70:     	br	x16
+100003d74:     	adrp	x16, 0x100004000 <_printf+0x100004000>
+100003d78:     	ldr	x16, [x16, #0x20]
+100003d7c:     	br	x16

@@ -1,0 +1,63 @@
+{
+  "id": "knucleotide-fsharp-local-rolling-static-output-aot",
+  "key": "knucleotide:knucleotide-fsharp-local-rolling-static-output-aot",
+  "benchmark": "knucleotide",
+  "language": "fsharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-rolling-static-output.fs",
+  "source_sha256": "a479f9e1154da47b78dc22da9db0c5d2fe29e6a659d64273819d9c22da6bb481",
+  "source_url": null,
+  "local_adaptation": true,
+  "adaptations": [
+    "Locally authored F# application. All seven widths build complete growable maps; packed keys retain all 36 bits.",
+    "Use ordinary statically resolved .NET number/text formatting, because this FSharp.Core printf path invokes generic methods through reflection that NativeAOT cannot create. All changed application output expressions count. Limit async scheduling to eight workers."
+  ],
+  "physical_loc": 43,
+  "normalized_loc": 43,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharp-local-rolling-static-output-aot/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-rolling-static-output-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/knucleotide-fsharp-local-rolling-static-output-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-rolling-static-output-aot/app",
+  "binary_sha256": "53837183845ddd74e5970b62a6c953dd07dbbd35dc0ac5072998ed858824d36f",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-rolling-static-output-aot/app"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-rolling-static-output-aot/app": "53837183845ddd74e5970b62a6c953dd07dbbd35dc0ac5072998ed858824d36f"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 242,
+    "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+    "reference_match": true
+  },
+  "published_elapsed_hint": null,
+  "timing_selection_reasons": [
+    "Additional ARM SIMD or complete rolling-map optimization candidate."
+  ]
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>regex-redux Swift&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>regex-redux Swift&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/regexredux.html#regexredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">// The Computer Language Benchmarks Game</span>
+<span class="slc">// https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">//</span>
+<span class="slc">// regex-dna program contributed by Daniel Muellenborn</span>
+<span class="slc">// converted from regex-dna program</span>
+
+<span class="kwa">import</span> Foundation
+
+<span class="kwa">var</span> <span class="kwc">data</span> <span class="opt">=</span> FileHandle<span class="opt">.</span>standardInput<span class="opt">.</span><span class="kwd">readDataToEndOfFile</span><span class="opt">()</span>
+
+<span class="kwa">var</span> <span class="kwc">sequence</span> <span class="opt">=</span> <span class="kwb">String</span><span class="opt">(</span><span class="kwc">data</span><span class="opt">:</span> <span class="kwc">data</span><span class="opt">,</span> encoding<span class="opt">: .</span>utf8<span class="opt">)!</span>
+
+<span class="kwa">let</span> <span class="kwc">inputLength</span> <span class="opt">=</span> <span class="kwc">data</span><span class="opt">.</span>count
+
+<span class="kwa">let</span> <span class="kwc">regex</span><span class="opt">: (</span><span class="kwb">String</span><span class="opt">) -&gt;</span> NSRegularExpression <span class="opt">= {</span> pattern <span class="kwa">in</span>
+  <span class="kwa">return try</span><span class="opt">!</span> <span class="kwd">NSRegularExpression</span><span class="opt">(</span>pattern<span class="opt">:</span> pattern<span class="opt">,</span> options<span class="opt">: [])</span>
+<span class="opt">}</span>
+
+<span class="kwc">sequence</span> <span class="opt">=</span> <span class="kwc">regex</span><span class="opt">(</span><span class="sng">&quot;&gt;[^\n]*\n|\n&quot;</span><span class="opt">).</span><span class="kwd">stringByReplacingMatches</span><span class="opt">(</span><span class="kwa">in</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">,</span> options<span class="opt">: [],</span> range<span class="opt">:</span> <span class="kwd">NSRange</span><span class="opt">(</span>location<span class="opt">:</span> <span class="num">0</span><span class="opt">,</span> length<span class="opt">:</span> <span class="kwc">inputLength</span><span class="opt">),</span> withTemplate<span class="opt">:</span> <span class="sng">&quot;&quot;</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwc">codeLength</span> <span class="opt">=</span> <span class="kwc">sequence</span><span class="opt">.</span>utf8<span class="opt">.</span>count
+
+<span class="kwa">let</span> <span class="kwc">variants</span> <span class="opt">= [</span>
+  <span class="sng">&quot;agggtaaa|tttaccct&quot;</span><span class="opt">,</span>
+  <span class="sng">&quot;[cgt]gggtaaa|tttaccc[acg]&quot;</span><span class="opt">,</span>
+  <span class="sng">&quot;a[act]ggtaaa|tttacc[agt]t&quot;</span><span class="opt">,</span>
+  <span class="sng">&quot;ag[act]gtaaa|tttac[agt]ct&quot;</span><span class="opt">,</span>
+  <span class="sng">&quot;agg[act]taaa|ttta[agt]cct&quot;</span><span class="opt">,</span>
+  <span class="sng">&quot;aggg[acg]aaa|ttt[cgt]ccct&quot;</span><span class="opt">,</span>
+  <span class="sng">&quot;agggt[cgt]aa|tt[acg]accct&quot;</span><span class="opt">,</span>
+  <span class="sng">&quot;agggta[cgt]a|t[acg]taccct&quot;</span><span class="opt">,</span>
+  <span class="sng">&quot;agggtaa[cgt]|[acg]ttaccct&quot;</span><span class="opt">,</span>
+<span class="opt">]</span>
+
+<span class="kwa">var</span> <span class="kwc">counts</span> <span class="opt">=</span> <span class="kwd">Array</span><span class="opt">(</span>repeating<span class="opt">: (</span><span class="sng">&quot;&quot;</span><span class="opt">,</span><span class="num">0</span><span class="opt">),</span> count<span class="opt">:</span> <span class="kwc">variants</span><span class="opt">.</span>count<span class="opt">)</span>
+
+<span class="slc">// parallelized version is slower</span>
+<span class="slc">// let queue = DispatchQueue(label: &quot;Queue&quot;)</span>
+<span class="slc">// DispatchQueue.concurrentPerform(iterations: variants.count) { n in</span>
+<span class="kwa">for</span> n <span class="kwa">in</span> <span class="num">0</span><span class="opt">..&lt;</span><span class="kwc">variants</span><span class="opt">.</span>count <span class="opt">{</span>
+  <span class="kwc">counts</span><span class="opt">[</span>n<span class="opt">] = (</span><span class="kwc">variants</span><span class="opt">[</span>n<span class="opt">],</span> <span class="kwc">regex</span><span class="opt">(</span><span class="kwc">variants</span><span class="opt">[</span>n<span class="opt">]).</span><span class="kwd">numberOfMatches</span><span class="opt">(</span><span class="kwa">in</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">,</span> options<span class="opt">: [],</span> range<span class="opt">:</span> <span class="kwd">NSRange</span><span class="opt">(</span>location<span class="opt">:</span> <span class="num">0</span><span class="opt">,</span> length<span class="opt">:</span> <span class="kwc">codeLength</span><span class="opt">)))</span>
+<span class="opt">}</span>
+
+<span class="kwa">for</span> <span class="opt">(</span>variant<span class="opt">,</span> count<span class="opt">)</span> <span class="kwa">in</span> <span class="kwc">counts</span> <span class="opt">{</span>
+  <span class="kwd">print</span><span class="opt">(</span>variant<span class="opt">,</span> <span class="sng">&quot;</span><span class="ipl">\(count)</span><span class="sng">&quot;</span><span class="opt">)</span>
+<span class="opt">}</span>
+
+<span class="kwa">let</span> <span class="kwc">replacements</span> <span class="opt">= [</span>
+  <span class="opt">(</span><span class="kwc">regex</span><span class="opt">(</span><span class="sng">&quot;tHa[Nt]&quot;</span><span class="opt">),</span> <span class="sng">&quot;&lt;4&gt;&quot;</span><span class="opt">),</span>
+  <span class="opt">(</span><span class="kwc">regex</span><span class="opt">(</span><span class="sng">&quot;aND|caN|Ha[DS]|WaS&quot;</span><span class="opt">),</span> <span class="sng">&quot;&lt;3&gt;&quot;</span><span class="opt">),</span>
+  <span class="opt">(</span><span class="kwc">regex</span><span class="opt">(</span><span class="sng">&quot;a[NSt]|BY&quot;</span><span class="opt">),</span> <span class="sng">&quot;&lt;2&gt;&quot;</span><span class="opt">),</span>
+  <span class="opt">(</span><span class="kwc">regex</span><span class="opt">(</span><span class="sng">&quot;&lt;[^&gt;]*&gt;&quot;</span><span class="opt">),</span> <span class="sng">&quot;|&quot;</span><span class="opt">),</span>
+  <span class="opt">(</span><span class="kwc">regex</span><span class="opt">(</span><span class="sng">&quot;\\|[^|][^|]*\\|&quot;</span><span class="opt">),</span> <span class="sng">&quot;-&quot;</span><span class="opt">),</span>
+<span class="opt">]</span>
+
+<span class="kwa">for</span> <span class="opt">(</span>re<span class="opt">,</span> replacement<span class="opt">)</span> <span class="kwa">in</span> <span class="kwc">replacements</span> <span class="opt">{</span>
+  <span class="kwc">sequence</span> <span class="opt">=</span> re<span class="opt">.</span><span class="kwd">stringByReplacingMatches</span><span class="opt">(</span><span class="kwa">in</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">,</span> options<span class="opt">: [],</span> range<span class="opt">:</span> <span class="kwd">NSRange</span><span class="opt">(</span>location<span class="opt">:</span> <span class="num">0</span><span class="opt">,</span> length<span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">.</span>utf16<span class="opt">.</span>count<span class="opt">),</span> withTemplate<span class="opt">:</span> replacement<span class="opt">)</span>
+<span class="opt">}</span>
+
+<span class="kwa">let</span> <span class="kwc">resultLength</span> <span class="opt">=</span> <span class="kwc">sequence</span><span class="opt">.</span>utf8<span class="opt">.</span>count
+
+<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;&quot;</span><span class="opt">,</span> <span class="kwc">inputLength</span><span class="opt">,</span> <span class="kwc">codeLength</span><span class="opt">,</span> <span class="kwc">resultLength</span><span class="opt">,</span> separator<span class="opt">:</span> <span class="sng">&quot;\n&quot;</span><span class="opt">)</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Swift version 6.0.3
+(swift-6.0.3-RELEASE)
+Target: x86_64-unknown-linux-gnu
+
+
+ Sun, 23 Feb 2025 04:20:02 GMT
+
+MAKE:
+/opt/src/swift-6.0.3-RELEASE/usr/bin/swiftc regexredux.swift-2.swift -Ounchecked -wmo  -o regexredux.swift-2.swift_run
+
+13.66 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./regexredux.swift-2.swift_run 0 &lt; regexredux-input5000000.txt
+
+PROGRAM OUTPUT:
+agggtaaa|tttaccct 356
+[cgt]gggtaaa|tttaccc[acg] 1250
+a[act]ggtaaa|tttacc[agt]t 4252
+ag[act]gtaaa|tttac[agt]ct 2894
+agg[act]taaa|ttta[agt]cct 5435
+aggg[acg]aaa|ttt[cgt]ccct 1537
+agggt[cgt]aa|tt[acg]accct 1431
+agggta[cgt]a|t[acg]taccct 1608
+agggtaa[cgt]|[acg]ttaccct 2178
+
+50833411
+50000000
+27388361
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

@@ -1,0 +1,76 @@
+{
+  "id": "knucleotide-csharpcore-7-jit",
+  "key": "knucleotide:knucleotide-csharpcore-7-jit",
+  "benchmark": "knucleotide",
+  "language": "csharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-7.cs",
+  "source_sha256": "c1f17ad8c4e8e6ef1b6e623e4e82b75c7cf3f58d4d7b6eb86c110aa00deaf572",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/knucleotide-csharpcore-7.cs",
+  "original_source_sha256": "c1f17ad8c4e8e6ef1b6e623e4e82b75c7cf3f58d4d7b6eb86c110aa00deaf572",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-csharpcore-7.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 07:34:19 GMT\n\nMAKE:\ncp knucleotide.csharpcore-7.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj (in 752 ms).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(71,14): warning CS8981: The type name 'program' only contains lower-cased ascii characters. Such names may become reserved for the language. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(127,68): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(143,50): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(79,25): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(83,25): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(71,14): warning CS8981: The type name 'program' only contains lower-cased ascii characters. Such names may become reserved for the language. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(127,68): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(143,50): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(79,25): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(83,25): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n    5 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:05.66\n\n7.50s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 128,
+  "normalized_loc": 133,
+  "expansions": [
+    {
+      "line": 20,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 25,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 32,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 33,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-csharpcore-7-jit/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-7-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/knucleotide-csharpcore-7-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-7-jit/app.dll",
+  "binary_sha256": "746c4e314b544628bd50b44c48d04576f3d3def0cfe98e7c49b7c2eb6cd133ac",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-7-jit/app.dll"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-7-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-7-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-7-jit/app.pdb": "91d3d95c272acfbfef4ed8763ae2664a20682415b7c7a70972b532b10b9941c0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-7-jit/app.dll": "746c4e314b544628bd50b44c48d04576f3d3def0cfe98e7c49b7c2eb6cd133ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-7-jit/app.deps.json": "6a462ac6276fa69b78e97b74d8228965ed0a0cd3ca99b82010e58d6384d0db61"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

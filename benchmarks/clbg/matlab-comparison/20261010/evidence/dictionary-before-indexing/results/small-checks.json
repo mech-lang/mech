@@ -1,0 +1,261 @@
+{
+  "status": "passed",
+  "programs": {
+    "spectralnorm:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "70a95adaf05139b83bc30f68583f000d2548f3c5643779ae81b8c5a5f25d6e44",
+      "seconds": 2.567186542,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "c8a384fd73173769e2f9f2a7d94cfac63aea8712fe58dfa2a7319c60f0dc1b7e",
+      "seconds": 2.404736708,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "a25151b82cb0b010cbfba1ba63e9cbaa9955ba8192b9503a5dd298c3cf27c763",
+      "seconds": 2.397233417,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "28a6594978613aecec61760f2099c15730a27a173d91f4f0400c2ffc72db4711",
+      "seconds": 2.421830333,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "regexredux:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "cefbed6d631f9cb83da8a3dde423ec666678fd6aec98a4a942fddcf172fbd483",
+      "seconds": 2.806046375,
+      "validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "regexredux:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "0a6b33da5a01bd571fabe43ede4a5dcce6e8a9a5e6e0d36ad8e501e21985cd01",
+      "seconds": 2.376062875,
+      "validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "revcomp:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "7663f250329dcf7807f4860fa99e3ce54c35bacad89daaa9d16a0501f3ebe9e7",
+      "seconds": 2.526516667,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "revcomp:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "598047d327f956e991e51c2b3b2ca649ef67f008f5d74951b0090b1874ebe259",
+      "seconds": 2.487696416,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "929a6f552e47e3c4237466b266ebcc7df0b8a45c8335fbfe614550215e4429b2",
+      "seconds": 2.388047625,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "98ce9f7ad215d22b161b1b6500206c5778189812b8534a348ae044513036341d",
+      "seconds": 2.482440208,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "nbody:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "133b0f5ff697569e6b6639f1713d4c3cd6ca623917e8c3627eb5255a6725456f",
+      "seconds": 2.473431,
+      "validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "stderr": "",
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "nbody:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "dedbc68eb8c2522e3cfeb02e451821da2e34fa9a0c054822e3225cda9dc49044",
+      "seconds": 2.485033458,
+      "validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "stderr": "",
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "39d15406548ec73d9078c43b069b6f5de5ea563d743e6fc94c21606b2d47f8e3",
+      "seconds": 2.441949792,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "8acb719708775bd1726173f27771e6e63d04aaa225f4acf2dce4aff382222343",
+      "seconds": 2.435264958,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "77830cd398c5f3875da72fdbb60884503d2e9dfd99958316a85d8a5f05fb1c59",
+      "seconds": 2.730764,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "8df7084bbaff245cb8512ffc4231171df1165ac4751fb1aa55d47113a096bf30",
+      "seconds": 2.531152,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "0cc8469fc532bf963b10d2344ae0ca70236b435b627cfabbbea6e2cb58a24a89",
+      "seconds": 2.550412583,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "5cdbc269335343bc82f1f669ae1ccf50194e8cc6a52ee67773a3656ccdcceec0",
+      "seconds": 2.553329666,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:matlab-compact": {
+      "status": "passed",
+      "source_sha256": "292c4aad088d3f2e8084e46bf20b0352e493f1cb4ba9a8d9998bc326a071d6dd",
+      "seconds": 2.738753708,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:matlab-optimized": {
+      "status": "passed",
+      "source_sha256": "ee5d6b95aeed42d4eee74e255a1c06aed04eecd731f14a9f90f762c89f4daf63",
+      "seconds": 2.715925625,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    }
+  },
+  "power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  }
+}

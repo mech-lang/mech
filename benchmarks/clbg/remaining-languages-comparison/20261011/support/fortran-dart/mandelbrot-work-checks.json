@@ -1,0 +1,545 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "id": "mandelbrot-fortran-6",
+      "n": 1,
+      "source_sha256": "5d83a54d4912c4eca4dee93f9971076a2e70950451c16edf2f1e304ca1aa3903",
+      "binary_sha256": "fc30690e458c8e0a5cfa642d0825256ce94214081a5e556eb0286c5b90009def",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-7",
+      "n": 1,
+      "source_sha256": "40f9ab5b0e50a81b50f9bf5cc44832fafc24ca97d9ca22f377a372fcc7e820d1",
+      "binary_sha256": "6062ba446ef368931d8fc53bc800c2559330d95f146fd8010d34650d8137e343",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-4",
+      "n": 1,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "fe47f30b58b80ed295a5ebc746415a31390de6a6c2a91d1902cb79ff6c5ed249",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-4",
+      "n": 1,
+      "source_sha256": "0aa785d5a90a3343fd8cd0ffe985398f72ca1015ff3e88512f531b158931ed28",
+      "binary_sha256": "935813c3eebafb7cff941a9e0b2f4121c32a6cc53d2c8d3f00deee395575c638",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-6",
+      "n": 1,
+      "source_sha256": "05fe0c03941f8521381388bec913c965cb96d29c7643a9c9003b57a389f6f2dc",
+      "binary_sha256": "08a08ec1804888f9d04cb0d07d1c1c4d46f355356ba3f9ccdddd1aaf6eb44d0f",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-3",
+      "n": 1,
+      "source_sha256": "92a874b282a170e5c2cbb27fd4fe924ed6eb1f8c6d6caa502514796a4d5023f4",
+      "binary_sha256": "fa794a69326316b522021263c2c0dfe42a8e05d0a22d86b2594ccad6fc093f97",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-2",
+      "n": 1,
+      "source_sha256": "94c8c9fedcae2b232305f18774e2059769e885ce5bb3f0f0b94adffa019ad807",
+      "binary_sha256": "308665bacbc449c1f46939870e30670f587cda391418fdb3dabcc314e5a8b649",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-5",
+      "n": 1,
+      "source_sha256": "3e2f5a6f66443f5303bafeec4350f09936725bfb49bd04c1db8b13cab8cf102b",
+      "binary_sha256": "f578a439846eae62adee1410d2fe30dce6561bb90f6877eb1f4e39365a147c4a",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-1",
+      "n": 1,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "42b6ee86fda63550c29b52340f8f97ca1246c6e90debb61efd72741eff50f2e1",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-8",
+      "n": 1,
+      "source_sha256": "d04b74cec582ac093310debdf4e5f5adcda8b9b1a89f516345afa2acfd193ccd",
+      "binary_sha256": "54b6d22bc68a819d35c2a8303546d91ded23205dee48c3cc0ddfc92bc8657d12",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-1",
+      "n": 1,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "bd53bbadf1b4ed66fd2912932347cbd1a83fd14ed7c6990e3f2af2424d8d3e77",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-4",
+      "n": 1,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "5fb41c5cf47d82695a4472216acffbc717c6800890653dbd144a35875f95fac0",
+      "output_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-6",
+      "n": 7,
+      "source_sha256": "5d83a54d4912c4eca4dee93f9971076a2e70950451c16edf2f1e304ca1aa3903",
+      "binary_sha256": "fc30690e458c8e0a5cfa642d0825256ce94214081a5e556eb0286c5b90009def",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-7",
+      "n": 7,
+      "source_sha256": "40f9ab5b0e50a81b50f9bf5cc44832fafc24ca97d9ca22f377a372fcc7e820d1",
+      "binary_sha256": "6062ba446ef368931d8fc53bc800c2559330d95f146fd8010d34650d8137e343",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-4",
+      "n": 7,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "fe47f30b58b80ed295a5ebc746415a31390de6a6c2a91d1902cb79ff6c5ed249",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-4",
+      "n": 7,
+      "source_sha256": "0aa785d5a90a3343fd8cd0ffe985398f72ca1015ff3e88512f531b158931ed28",
+      "binary_sha256": "935813c3eebafb7cff941a9e0b2f4121c32a6cc53d2c8d3f00deee395575c638",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-6",
+      "n": 7,
+      "source_sha256": "05fe0c03941f8521381388bec913c965cb96d29c7643a9c9003b57a389f6f2dc",
+      "binary_sha256": "08a08ec1804888f9d04cb0d07d1c1c4d46f355356ba3f9ccdddd1aaf6eb44d0f",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-3",
+      "n": 7,
+      "source_sha256": "92a874b282a170e5c2cbb27fd4fe924ed6eb1f8c6d6caa502514796a4d5023f4",
+      "binary_sha256": "fa794a69326316b522021263c2c0dfe42a8e05d0a22d86b2594ccad6fc093f97",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-2",
+      "n": 7,
+      "source_sha256": "94c8c9fedcae2b232305f18774e2059769e885ce5bb3f0f0b94adffa019ad807",
+      "binary_sha256": "308665bacbc449c1f46939870e30670f587cda391418fdb3dabcc314e5a8b649",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-5",
+      "n": 7,
+      "source_sha256": "3e2f5a6f66443f5303bafeec4350f09936725bfb49bd04c1db8b13cab8cf102b",
+      "binary_sha256": "f578a439846eae62adee1410d2fe30dce6561bb90f6877eb1f4e39365a147c4a",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-1",
+      "n": 7,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "42b6ee86fda63550c29b52340f8f97ca1246c6e90debb61efd72741eff50f2e1",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-8",
+      "n": 7,
+      "source_sha256": "d04b74cec582ac093310debdf4e5f5adcda8b9b1a89f516345afa2acfd193ccd",
+      "binary_sha256": "54b6d22bc68a819d35c2a8303546d91ded23205dee48c3cc0ddfc92bc8657d12",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-1",
+      "n": 7,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "bd53bbadf1b4ed66fd2912932347cbd1a83fd14ed7c6990e3f2af2424d8d3e77",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-4",
+      "n": 7,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "5fb41c5cf47d82695a4472216acffbc717c6800890653dbd144a35875f95fac0",
+      "output_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-6",
+      "n": 13,
+      "source_sha256": "5d83a54d4912c4eca4dee93f9971076a2e70950451c16edf2f1e304ca1aa3903",
+      "binary_sha256": "fc30690e458c8e0a5cfa642d0825256ce94214081a5e556eb0286c5b90009def",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-7",
+      "n": 13,
+      "source_sha256": "40f9ab5b0e50a81b50f9bf5cc44832fafc24ca97d9ca22f377a372fcc7e820d1",
+      "binary_sha256": "6062ba446ef368931d8fc53bc800c2559330d95f146fd8010d34650d8137e343",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-4",
+      "n": 13,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "fe47f30b58b80ed295a5ebc746415a31390de6a6c2a91d1902cb79ff6c5ed249",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-4",
+      "n": 13,
+      "source_sha256": "0aa785d5a90a3343fd8cd0ffe985398f72ca1015ff3e88512f531b158931ed28",
+      "binary_sha256": "935813c3eebafb7cff941a9e0b2f4121c32a6cc53d2c8d3f00deee395575c638",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-6",
+      "n": 13,
+      "source_sha256": "05fe0c03941f8521381388bec913c965cb96d29c7643a9c9003b57a389f6f2dc",
+      "binary_sha256": "08a08ec1804888f9d04cb0d07d1c1c4d46f355356ba3f9ccdddd1aaf6eb44d0f",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-3",
+      "n": 13,
+      "source_sha256": "92a874b282a170e5c2cbb27fd4fe924ed6eb1f8c6d6caa502514796a4d5023f4",
+      "binary_sha256": "fa794a69326316b522021263c2c0dfe42a8e05d0a22d86b2594ccad6fc093f97",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-2",
+      "n": 13,
+      "source_sha256": "94c8c9fedcae2b232305f18774e2059769e885ce5bb3f0f0b94adffa019ad807",
+      "binary_sha256": "308665bacbc449c1f46939870e30670f587cda391418fdb3dabcc314e5a8b649",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-5",
+      "n": 13,
+      "source_sha256": "3e2f5a6f66443f5303bafeec4350f09936725bfb49bd04c1db8b13cab8cf102b",
+      "binary_sha256": "f578a439846eae62adee1410d2fe30dce6561bb90f6877eb1f4e39365a147c4a",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-1",
+      "n": 13,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "42b6ee86fda63550c29b52340f8f97ca1246c6e90debb61efd72741eff50f2e1",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-8",
+      "n": 13,
+      "source_sha256": "d04b74cec582ac093310debdf4e5f5adcda8b9b1a89f516345afa2acfd193ccd",
+      "binary_sha256": "54b6d22bc68a819d35c2a8303546d91ded23205dee48c3cc0ddfc92bc8657d12",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-1",
+      "n": 13,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "bd53bbadf1b4ed66fd2912932347cbd1a83fd14ed7c6990e3f2af2424d8d3e77",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-4",
+      "n": 13,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "5fb41c5cf47d82695a4472216acffbc717c6800890653dbd144a35875f95fac0",
+      "output_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-6",
+      "n": 31,
+      "source_sha256": "5d83a54d4912c4eca4dee93f9971076a2e70950451c16edf2f1e304ca1aa3903",
+      "binary_sha256": "fc30690e458c8e0a5cfa642d0825256ce94214081a5e556eb0286c5b90009def",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-7",
+      "n": 31,
+      "source_sha256": "40f9ab5b0e50a81b50f9bf5cc44832fafc24ca97d9ca22f377a372fcc7e820d1",
+      "binary_sha256": "6062ba446ef368931d8fc53bc800c2559330d95f146fd8010d34650d8137e343",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-4",
+      "n": 31,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "fe47f30b58b80ed295a5ebc746415a31390de6a6c2a91d1902cb79ff6c5ed249",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-4",
+      "n": 31,
+      "source_sha256": "0aa785d5a90a3343fd8cd0ffe985398f72ca1015ff3e88512f531b158931ed28",
+      "binary_sha256": "935813c3eebafb7cff941a9e0b2f4121c32a6cc53d2c8d3f00deee395575c638",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-6",
+      "n": 31,
+      "source_sha256": "05fe0c03941f8521381388bec913c965cb96d29c7643a9c9003b57a389f6f2dc",
+      "binary_sha256": "08a08ec1804888f9d04cb0d07d1c1c4d46f355356ba3f9ccdddd1aaf6eb44d0f",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-3",
+      "n": 31,
+      "source_sha256": "92a874b282a170e5c2cbb27fd4fe924ed6eb1f8c6d6caa502514796a4d5023f4",
+      "binary_sha256": "fa794a69326316b522021263c2c0dfe42a8e05d0a22d86b2594ccad6fc093f97",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-2",
+      "n": 31,
+      "source_sha256": "94c8c9fedcae2b232305f18774e2059769e885ce5bb3f0f0b94adffa019ad807",
+      "binary_sha256": "308665bacbc449c1f46939870e30670f587cda391418fdb3dabcc314e5a8b649",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-5",
+      "n": 31,
+      "source_sha256": "3e2f5a6f66443f5303bafeec4350f09936725bfb49bd04c1db8b13cab8cf102b",
+      "binary_sha256": "f578a439846eae62adee1410d2fe30dce6561bb90f6877eb1f4e39365a147c4a",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-1",
+      "n": 31,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "42b6ee86fda63550c29b52340f8f97ca1246c6e90debb61efd72741eff50f2e1",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-8",
+      "n": 31,
+      "source_sha256": "d04b74cec582ac093310debdf4e5f5adcda8b9b1a89f516345afa2acfd193ccd",
+      "binary_sha256": "54b6d22bc68a819d35c2a8303546d91ded23205dee48c3cc0ddfc92bc8657d12",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-1",
+      "n": 31,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "bd53bbadf1b4ed66fd2912932347cbd1a83fd14ed7c6990e3f2af2424d8d3e77",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-4",
+      "n": 31,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "5fb41c5cf47d82695a4472216acffbc717c6800890653dbd144a35875f95fac0",
+      "output_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-6",
+      "n": 33,
+      "source_sha256": "5d83a54d4912c4eca4dee93f9971076a2e70950451c16edf2f1e304ca1aa3903",
+      "binary_sha256": "fc30690e458c8e0a5cfa642d0825256ce94214081a5e556eb0286c5b90009def",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-7",
+      "n": 33,
+      "source_sha256": "40f9ab5b0e50a81b50f9bf5cc44832fafc24ca97d9ca22f377a372fcc7e820d1",
+      "binary_sha256": "6062ba446ef368931d8fc53bc800c2559330d95f146fd8010d34650d8137e343",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-4",
+      "n": 33,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "fe47f30b58b80ed295a5ebc746415a31390de6a6c2a91d1902cb79ff6c5ed249",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-4",
+      "n": 33,
+      "source_sha256": "0aa785d5a90a3343fd8cd0ffe985398f72ca1015ff3e88512f531b158931ed28",
+      "binary_sha256": "935813c3eebafb7cff941a9e0b2f4121c32a6cc53d2c8d3f00deee395575c638",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-6",
+      "n": 33,
+      "source_sha256": "05fe0c03941f8521381388bec913c965cb96d29c7643a9c9003b57a389f6f2dc",
+      "binary_sha256": "08a08ec1804888f9d04cb0d07d1c1c4d46f355356ba3f9ccdddd1aaf6eb44d0f",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-3",
+      "n": 33,
+      "source_sha256": "92a874b282a170e5c2cbb27fd4fe924ed6eb1f8c6d6caa502514796a4d5023f4",
+      "binary_sha256": "fa794a69326316b522021263c2c0dfe42a8e05d0a22d86b2594ccad6fc093f97",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-2",
+      "n": 33,
+      "source_sha256": "94c8c9fedcae2b232305f18774e2059769e885ce5bb3f0f0b94adffa019ad807",
+      "binary_sha256": "308665bacbc449c1f46939870e30670f587cda391418fdb3dabcc314e5a8b649",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-fortran-5",
+      "n": 33,
+      "source_sha256": "3e2f5a6f66443f5303bafeec4350f09936725bfb49bd04c1db8b13cab8cf102b",
+      "binary_sha256": "f578a439846eae62adee1410d2fe30dce6561bb90f6877eb1f4e39365a147c4a",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-1",
+      "n": 33,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "42b6ee86fda63550c29b52340f8f97ca1246c6e90debb61efd72741eff50f2e1",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-8",
+      "n": 33,
+      "source_sha256": "d04b74cec582ac093310debdf4e5f5adcda8b9b1a89f516345afa2acfd193ccd",
+      "binary_sha256": "54b6d22bc68a819d35c2a8303546d91ded23205dee48c3cc0ddfc92bc8657d12",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-1",
+      "n": 33,
+      "source_sha256": "bf85ad43630b2899b9795edc8cf12dc27ef4289104160f7b4f21873064ff7de2",
+      "binary_sha256": "bd53bbadf1b4ed66fd2912932347cbd1a83fd14ed7c6990e3f2af2424d8d3e77",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "mandelbrot-dart-jit-4",
+      "n": 33,
+      "source_sha256": "a5b6d719e5d76261595f260f961db5d52c9e191e227aea7c6aff21f659851299",
+      "binary_sha256": "5fb41c5cf47d82695a4472216acffbc717c6800890653dbd144a35875f95fac0",
+      "output_sha256": "fab83a057aaa9c9fe67510b373d0e44acd9633f0fa6b69a5070d97c512e23aef",
+      "reference_match": true,
+      "formal_sample": false
+    }
+  ]
+}

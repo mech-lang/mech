@@ -1,0 +1,149 @@
+
+benchmarks/clbg/knucleotide/.build/mech-compact-final-std1-simd1-p4:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000100003234 <_mech_window_2_18>:
+100003234: d503237f    	pacibsp
+100003238: a9bf7bfd    	stp	x29, x30, [sp, #-0x10]!
+10000323c: 910003fd    	mov	x29, sp
+100003240: a9bf63f7    	stp	x23, x24, [sp, #-0x10]!
+100003244: a9bf5bf5    	stp	x21, x22, [sp, #-0x10]!
+100003248: a9bf53f3    	stp	x19, x20, [sp, #-0x10]!
+10000324c: d2900210    	mov	x16, #0x8010            ; =32784
+100003250: cb3063ff    	sub	sp, sp, x16
+100003254: aa0203f8    	mov	x24, x2
+100003258: f100483f    	cmp	x1, #0x12
+10000325c: aa0103e3    	mov	x3, x1
+100003260: 54000fa3    	b.lo	0x100003454 <_mech_window_2_18+0x220>
+100003264: d2800235    	mov	x21, #0x11              ; =17
+100003268: 39400001    	ldrb	w1, [x0]
+10000326c: 39400402    	ldrb	w2, [x0, #0x1]
+100003270: aa010841    	orr	x1, x2, x1, lsl #2
+100003274: 39400802    	ldrb	w2, [x0, #0x2]
+100003278: aa010841    	orr	x1, x2, x1, lsl #2
+10000327c: 39400c02    	ldrb	w2, [x0, #0x3]
+100003280: aa010841    	orr	x1, x2, x1, lsl #2
+100003284: 39401002    	ldrb	w2, [x0, #0x4]
+100003288: aa010841    	orr	x1, x2, x1, lsl #2
+10000328c: 39401402    	ldrb	w2, [x0, #0x5]
+100003290: aa010841    	orr	x1, x2, x1, lsl #2
+100003294: 39401802    	ldrb	w2, [x0, #0x6]
+100003298: aa010841    	orr	x1, x2, x1, lsl #2
+10000329c: 39401c02    	ldrb	w2, [x0, #0x7]
+1000032a0: aa010841    	orr	x1, x2, x1, lsl #2
+1000032a4: 39402002    	ldrb	w2, [x0, #0x8]
+1000032a8: aa010841    	orr	x1, x2, x1, lsl #2
+1000032ac: 39402402    	ldrb	w2, [x0, #0x9]
+1000032b0: aa010841    	orr	x1, x2, x1, lsl #2
+1000032b4: 39402802    	ldrb	w2, [x0, #0xa]
+1000032b8: aa010841    	orr	x1, x2, x1, lsl #2
+1000032bc: 39402c02    	ldrb	w2, [x0, #0xb]
+1000032c0: aa010841    	orr	x1, x2, x1, lsl #2
+1000032c4: 39403002    	ldrb	w2, [x0, #0xc]
+1000032c8: aa010841    	orr	x1, x2, x1, lsl #2
+1000032cc: 39403402    	ldrb	w2, [x0, #0xd]
+1000032d0: aa010841    	orr	x1, x2, x1, lsl #2
+1000032d4: 39403802    	ldrb	w2, [x0, #0xe]
+1000032d8: aa010841    	orr	x1, x2, x1, lsl #2
+1000032dc: 39403c02    	ldrb	w2, [x0, #0xf]
+1000032e0: aa010841    	orr	x1, x2, x1, lsl #2
+1000032e4: 39404002    	ldrb	w2, [x0, #0x10]
+1000032e8: aa0003e5    	mov	x5, x0
+1000032ec: aa010857    	orr	x23, x2, x1, lsl #2
+1000032f0: d2800002    	mov	x2, #0x0                ; =0
+1000032f4: 910003f3    	mov	x19, sp
+1000032f8: b2408fe0    	mov	x0, #0xfffffffff        ; =68719476735
+1000032fc: 4e080c00    	dup.2d	v0, x0
+100003300: 3da003e0    	str	q0, [sp, #0x8000]
+100003304: 910022a0    	add	x0, x21, #0x8
+100003308: aa0303f4    	mov	x20, x3
+10000330c: eb14001f    	cmp	x0, x20
+100003310: 9a9f87e3    	cset	x3, ls
+100003314: 91002041    	add	x1, x2, #0x8
+100003318: f140043f    	cmp	x1, #0x1, lsl #12       ; =0x1000
+10000331c: 9a9f87e4    	cset	x4, ls
+100003320: 0a040063    	and	w3, w3, w4
+100003324: 53001c63    	uxtb	w3, w3
+100003328: b5000143    	cbnz	x3, 0x100003350 <_mech_window_2_18+0x11c>
+10000332c: aa0503f6    	mov	x22, x5
+100003330: 38756ac0    	ldrb	w0, [x22, x21]
+100003334: 53001c00    	uxtb	w0, w0
+100003338: aa170800    	orr	x0, x0, x23, lsl #2
+10000333c: 92408c17    	and	x23, x0, #0xfffffffff
+100003340: f8227a77    	str	x23, [x19, x2, lsl #3]
+100003344: 910006b5    	add	x21, x21, #0x1
+100003348: 91000442    	add	x2, x2, #0x1
+10000334c: 14000030    	b	0x10000340c <_mech_window_2_18+0x1d8>
+100003350: aa0503f6    	mov	x22, x5
+100003354: f8756ac3    	ldr	x3, [x22, x21]
+100003358: d37ef6e4    	lsl	x4, x23, #2
+10000335c: 4e080c80    	dup.2d	v0, x4
+100003360: d37ceee4    	lsl	x4, x23, #4
+100003364: 4e181c80    	mov.d	v0[1], x4
+100003368: 4f405402    	shl.2d	v2, v0, #0x0
+10000336c: dac00c63    	rev	x3, x3
+100003370: d346fc64    	lsr	x4, x3, #6
+100003374: aa040063    	orr	x3, x3, x4
+100003378: 92008c63    	and	x3, x3, #0xf000f000f000f
+10000337c: d34cfc64    	lsr	x4, x3, #12
+100003380: aa040063    	orr	x3, x3, x4
+100003384: 92001c63    	and	x3, x3, #0xff000000ff
+100003388: d358fc64    	lsr	x4, x3, #24
+10000338c: aa040063    	orr	x3, x3, x4
+100003390: 92403c63    	and	x3, x3, #0xffff
+100003394: 4e080c61    	dup.2d	v1, x3
+100003398: d37ef463    	lsl	x3, x3, #2
+10000339c: 4e181c61    	mov.d	v1[1], x3
+1000033a0: 6f720423    	ushr.2d	v3, v1, #0xe
+1000033a4: 4ea31c42    	orr.16b	v2, v2, v3
+1000033a8: 3de003f0    	ldr	q16, [sp, #0x8000]
+1000033ac: 4e301c42    	and.16b	v2, v2, v16
+1000033b0: d37df042    	lsl	x2, x2, #3
+1000033b4: 3ca26a62    	str	q2, [x19, x2]
+1000033b8: 4f445402    	shl.2d	v2, v0, #0x4
+1000033bc: 6f760423    	ushr.2d	v3, v1, #0xa
+1000033c0: 4ea31c42    	orr.16b	v2, v2, v3
+1000033c4: 4e301c42    	and.16b	v2, v2, v16
+1000033c8: 91004263    	add	x3, x19, #0x10
+1000033cc: 3ca26862    	str	q2, [x3, x2]
+1000033d0: 4f485402    	shl.2d	v2, v0, #0x8
+1000033d4: 6f7a0423    	ushr.2d	v3, v1, #0x6
+1000033d8: 4ea31c42    	orr.16b	v2, v2, v3
+1000033dc: 4e301c42    	and.16b	v2, v2, v16
+1000033e0: 91008263    	add	x3, x19, #0x20
+1000033e4: 3ca26862    	str	q2, [x3, x2]
+1000033e8: 4f4c5400    	shl.2d	v0, v0, #0xc
+1000033ec: 6f7e0421    	ushr.2d	v1, v1, #0x2
+1000033f0: 4ea11c00    	orr.16b	v0, v0, v1
+1000033f4: 4e301c00    	and.16b	v0, v0, v16
+1000033f8: 9100c263    	add	x3, x19, #0x30
+1000033fc: 3ca26860    	str	q0, [x3, x2]
+100003400: 4e183c17    	mov.d	x23, v0[1]
+100003404: aa0103e2    	mov	x2, x1
+100003408: aa0003f5    	mov	x21, x0
+10000340c: f140045f    	cmp	x2, #0x1, lsl #12       ; =0x1000
+100003410: 9a9f17e0    	cset	x0, eq
+100003414: eb1402bf    	cmp	x21, x20
+100003418: 9a9f17e1    	cset	x1, eq
+10000341c: 2a010000    	orr	w0, w0, w1
+100003420: 53001c00    	uxtb	w0, w0
+100003424: b40000e0    	cbz	x0, 0x100003440 <_mech_window_2_18+0x20c>
+100003428: d0000083    	adrp	x3, 0x100015000 <_mech_sequence_dispatch+0x1e94>
+10000342c: 910e5063    	add	x3, x3, #0x394
+100003430: aa1803e0    	mov	x0, x24
+100003434: aa1303e1    	mov	x1, x19
+100003438: d63f0060    	blr	x3
+10000343c: d2800002    	mov	x2, #0x0                ; =0
+100003440: eb1402bf    	cmp	x21, x20
+100003444: 54000082    	b.hs	0x100003454 <_mech_window_2_18+0x220>
+100003448: aa1403e3    	mov	x3, x20
+10000344c: aa1603e5    	mov	x5, x22
+100003450: 17ffffad    	b	0x100003304 <_mech_window_2_18+0xd0>
+100003454: d2900210    	mov	x16, #0x8010            ; =32784
+100003458: 8b3063ff    	add	sp, sp, x16
+10000345c: a8c153f3    	ldp	x19, x20, [sp], #0x10
+100003460: a8c15bf5    	ldp	x21, x22, [sp], #0x10
+100003464: a8c163f7    	ldp	x23, x24, [sp], #0x10
+100003468: a8c17bfd    	ldp	x29, x30, [sp], #0x10
+10000346c: d65f0fff    	retab

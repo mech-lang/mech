@@ -1,0 +1,43 @@
+{
+  "all_passed": true,
+  "checked_results": 240,
+  "formulas": [
+    {
+      "name": "descending",
+      "expression": "(100 - j) * (100 - j)"
+    },
+    {
+      "name": "descending-transpose",
+      "expression": "(100 - i) * (100 - i)"
+    },
+    {
+      "name": "cubic",
+      "expression": "(j + 1) * (j + 1) * (j + 1)"
+    },
+    {
+      "name": "large",
+      "expression": "(1000000000000000000 - j) * 9"
+    }
+  ],
+  "policies": [
+    {
+      "simd": false,
+      "unroll": 1,
+      "rows": 1
+    },
+    {
+      "simd": true,
+      "unroll": 2,
+      "rows": 2
+    },
+    {
+      "simd": true,
+      "unroll": 4,
+      "rows": 4
+    }
+  ],
+  "induction_enabled_and_disabled": true,
+  "transpose_and_scalar_tails": true,
+  "negative_differences_and_large_unsigned_values": true,
+  "cubic_parent_with_quadratic_subgraph": true
+}

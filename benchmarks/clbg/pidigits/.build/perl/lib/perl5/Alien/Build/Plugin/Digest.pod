@@ -1,0 +1,128 @@
+# PODNAME: Alien::Build::Plugin::Digest
+# ABSTRACT: Fetch Alien::Digest plugins
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Plugin::Digest - Fetch Alien::Digest plugins
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ use alienfile;
+ share {
+   start_url 'http://ftp.gnu.org/gnu/make/make-3.75.tar.gz';
+   plugin 'Digest' => [ SHA256 => '2bc876304905aee78abf0f7163ba55a2efcec803034f75c75d1b94650c36aba7';
+   plugin 'Download';
+ };
+
+=head1 DESCRIPTION
+
+Digest plugins checks the cryptographic signatures of downloaded files.
+Typically you will probably want to use SHA256 via the
+L<Digest Negotiator plugin|Alien::Build::Plugin::Digest::Negotiate>.
+
+=over 4
+
+=item L<Alien::Build::Plugin::Digest::Negotiate>
+
+Negotiate the most appropriate plugin to calculate digest.
+
+=item L<Alien::Build::Plugin::Digest::SHA>
+
+Use the XS based L<Digest::SHA> for computing SHA digests.  This is the default since
+L<Digest::SHA> comes with recent versions of Perl.
+
+=item L<Alien::Build::Plugin::Digest::SHAPP>
+
+Use the pure-perl based L<Digest::SHA::PurePerl> for computing SHA digests.
+
+=back
+
+=head1 SEE ALSO
+
+L<Alien::Build>, L<Alien::Build::Plugin>
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

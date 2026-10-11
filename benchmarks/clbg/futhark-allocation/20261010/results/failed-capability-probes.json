@@ -1,0 +1,24 @@
+[
+  {
+    "probe": "recursive-type",
+    "command": [
+      "/opt/homebrew/bin/futhark",
+      "check",
+      "probes/recursive-type.fut"
+    ],
+    "source_sha256": "31922ec41895c93be50f9879fb658f1aedfa60fa9d92066e164944d4c9a036cb",
+    "returncode": 2,
+    "log": "results/recursive-type.log"
+  },
+  {
+    "probe": "foreign-allocator",
+    "command": [
+      "/opt/homebrew/bin/futhark",
+      "check",
+      "probes/foreign-allocator.fut"
+    ],
+    "source_sha256": "b6a3f0c255c5ee928b9ac39a55e0ebcb09d4d704c5774409960e174406b4d4e5",
+    "returncode": 2,
+    "log": "results/foreign-allocator.log"
+  }
+]

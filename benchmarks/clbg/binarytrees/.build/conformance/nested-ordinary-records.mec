@@ -1,0 +1,8 @@
+<position> := <{x<f64>, y<f64>}>
+<row> := <{pos<position>, count<u64>, active<bool>}>
+Test(n<u64>) = (result<u64>) :=
+  h := memory/allocate({pos: {x: 1.25, y: 2.5}, count: 19, active: true})
+  row := memory/read(h, <row>)
+  result := control/select(row.pos.x == 1.25 && row.pos.y == 2.5 && row.active, row.count, 0).
+result := memory/with-arena(1, <row>, Test, 0)
+io/print("{}\n", result)

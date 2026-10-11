@@ -1,0 +1,95 @@
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v2/builds/mandelbrot/mech-program-compact-after.project/grid.o:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000000000000 <_mech_map_bits>:
+       0:      	ldr	d0, [x0]
+       4:      	ldr	d2, [x0, #0x8]
+       8:      	ldr	d1, [x0, #0x10]
+       c:      	movi.2s	v5, #0x0
+      10:      	fmov	d3, #2.00000000
+      14:      	fdiv	d3, d3, d0
+      18:      	fmul	d0, d2, d3
+      1c:      	fmov	d2, #1.50000000
+      20:      	fsub	d0, d0, d2
+      24:      	fmul	d1, d1, d3
+      28:      	fmov	d2, #1.00000000
+      2c:      	fsub	d1, d1, d2
+      30:      	mov.16b	v16, v5
+      34:      	mov.16b	v17, v5
+      38:      	mov	x0, #0x4049000000000000 ; =4632233691727265792
+      3c:      	fmov	d2, x0
+      40:      	mov	x0, #-0x1               ; =-1
+      44:      	mov	x1, #0x0                ; =0
+      48:      	fcmp	d17, d2
+      4c:      	csel	x2, x0, x1, ge
+      50:      	fmul	d2, d5, d5
+      54:      	fmul	d3, d16, d16
+      58:      	fadd	d4, d2, d3
+      5c:      	fmov	d6, #4.00000000
+      60:      	fcmp	d4, d6
+      64:      	csel	x0, x0, x1, ls
+      68:      	orn	x1, x2, x0
+      6c:      	cmp	x1, #0x0
+      70:      	b.ne	0x9c <_mech_map_bits+0x9c>
+      74:      	fsub	d2, d2, d3
+      78:      	fadd	d2, d2, d0
+      7c:      	fmov	d3, #2.00000000
+      80:      	fmul	d3, d3, d5
+      84:      	fmul	d3, d3, d16
+      88:      	fadd	d16, d3, d1
+      8c:      	fmov	d3, #1.00000000
+      90:      	fadd	d17, d17, d3
+      94:      	mov.16b	v5, v2
+      98:      	b	0x38 <_mech_map_bits+0x38>
+      9c:      	and	x0, x0, #0x1
+      a0:      	ret
+
+00000000000000a4 <_mech_grid_row>:
+      a4:      	pacibsp
+      a8:      	stp	x29, x30, [sp, #-0x10]!
+      ac:      	mov	x29, sp
+      b0:      	stp	x21, x22, [sp, #-0x10]!
+      b4:      	stp	x19, x20, [sp, #-0x10]!
+      b8:      	sub	sp, sp, #0x20
+      bc:      	mov	x21, x2
+      c0:      	ucvtf	d19, x0
+      c4:      	mov	x19, sp
+      c8:      	stur	d19, [sp]
+      cc:      	ucvtf	d20, x1
+      d0:      	stur	d20, [sp, #0x10]
+      d4:      	mov	x20, #0x0               ; =0
+      d8:      	cmp	x0, #0x0
+      dc:      	mov	x22, x0
+      e0:      	b.eq	0x148 <_mech_grid_row+0xa4>
+      e4:      	ucvtf	d25, x20
+      e8:      	stur	d25, [sp, #0x8]
+      ec:      	mov	x0, x19
+      f0:      	bl	0xf0 <_mech_grid_row+0x4c>
+      f4:      	mov	x4, x22
+      f8:      	cmp	x20, x4
+      fc:      	b.lo	0x108 <_mech_grid_row+0x64>
+     100:      	mov	x2, x21
+     104:      	b	0x130 <_mech_grid_row+0x8c>
+     108:      	lsr	x1, x20, #3
+     10c:      	mov	x2, x21
+     110:      	ldrb	w3, [x2, x1]
+     114:      	and	x0, x0, #0x1
+     118:      	mov	x5, #0x7                ; =7
+     11c:      	and	x6, x20, #0x7
+     120:      	sub	x5, x5, x6
+     124:      	lsl	x0, x0, x5
+     128:      	orr	w0, w3, w0
+     12c:      	strb	w0, [x2, x1]
+     130:      	add	x20, x20, #0x1
+     134:      	cmp	x20, x4
+     138:      	b.hs	0x148 <_mech_grid_row+0xa4>
+     13c:      	mov	x21, x2
+     140:      	mov	x22, x4
+     144:      	b	0xe4 <_mech_grid_row+0x40>
+     148:      	add	sp, sp, #0x20
+     14c:      	ldp	x19, x20, [sp], #0x10
+     150:      	ldp	x21, x22, [sp], #0x10
+     154:      	ldp	x29, x30, [sp], #0x10
+     158:      	retab

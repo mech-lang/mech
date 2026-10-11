@@ -1,0 +1,46 @@
+*** BEGIN CFG
+After AllocateRegisters
+==== file:///Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/binarytrees-dart-6.dart_::_bottomUpTree (RegularFunction)
+  0: B0[graph]:0 {
+      v0 <- Constant(#null) T{Null?}
+      v1 <- Constant(#<optimized out>) T{Sentinel~}
+      v3 <- Constant(#0) [0, 0] T{_Smi}
+      v9 <- Constant(#1) [1, 1] T{_Smi}
+}
+  2: B1[function entry]:2 {
+      v2 <- Parameter(0 @fp[2]) [-9223372036854775808, 9223372036854775807] T{<:int}
+}
+  4:     CheckStackOverflow:8(stack=0, loop=0)
+  5:     ParallelMove r0 <- fp[2]
+  6:     CheckSmi:12(v2)
+  8:     Branch if RelationalOp:12(>, v2 T{_Smi}, v3) T{bool} goto (3, 4)
+ 10: B3[target]:18
+ 12:     v8 <- AllocateObject:20(cls=TreeNode) T{TreeNode}
+ 13:     ParallelMove r1 <- r0, r0 <- fp[2]
+ 14:     ParallelMove fp[-4] <- r1
+ 14:     v10 <- BinarySmiOp:22(- [-o], v2 T{_Smi}, v9) [0, 4611686018427387902] T{_Smi}
+ 15:     ParallelMove fp[-3] <- r2
+ 16:     MoveArgument(sp[0] <- v10)
+ 18:     v11 <- StaticCall:24( bottomUpTree<0> v10) T{TreeNode}
+ 20:     ParallelMove fp[-5] <- r0
+ 20:     MoveArgument(sp[0] <- v10 T{_Smi})
+ 22:     v13 <- StaticCall:28( bottomUpTree<0> v10 T{_Smi}) T{TreeNode}
+ 23:     ParallelMove r0 <- fp[-5], r2 <- r0, r1 <- fp[-4]
+ 24:     StoreField(v8 T{TreeNode} . left = v11 T{TreeNode})
+ 25:     ParallelMove r0 <- r2
+ 26:     StoreField(v8 T{TreeNode} . right = v13 T{TreeNode})
+ 28:     ParallelMove r0 <- r1 goto:40 B5
+ 30: B4[target]:32
+ 32:     v6 <- AllocateObject:34(cls=TreeNode) T{TreeNode}
+ 34:     ParallelMove r0 <- r0 goto:42 B5
+ 36: B5[join]:38 pred(B3, B4) {
+      v7 <- phi(v8, v6) alive T{TreeNode}
+}
+ 38:     DartReturn:46(v7)
+*** END CFG
+stretch tree of depth 11	 check: 4095
+1024	 trees of depth 4	 check: 31744
+256	 trees of depth 6	 check: 32512
+64	 trees of depth 8	 check: 32704
+16	 trees of depth 10	 check: 32752
+long lived tree of depth 10	 check: 2047

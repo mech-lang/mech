@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "width": 1440,
+      "matched_sample_rows": 7,
+      "counted_sources_verified": true,
+      "fixed_axes": true,
+      "no_horizontal_overflow": true
+    },
+    {
+      "width": 390,
+      "matched_sample_rows": 7,
+      "counted_sources_verified": true,
+      "fixed_axes": true,
+      "no_horizontal_overflow": true
+    }
+  ],
+  "errors": []
+}

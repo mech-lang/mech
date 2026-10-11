@@ -1,0 +1,7 @@
+Hidden(x<u64>) = (result<u64>) :=
+  ignored := io/print("hidden={}\n", x)
+  result := x.
+Chunk(start<u64>, end<u64>, arg<u64>) = (result<u64>) :=
+  result := Hidden(start).
+n := parallel/reduce-ranges(0, 10, 1, Chunk, 0, "sum")
+io/print("{}\n", n)

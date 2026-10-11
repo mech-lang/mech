@@ -1,0 +1,925 @@
+{
+  "status": "passed",
+  "rows": {
+    "binarytrees:binarytrees-sbcl-3": {
+      "source_sha256": "ed486cbdb2877c09ae5a6af46ef532397ff3d7bb43aec00a0e0f22887d3fb417",
+      "initial_normalized_loc": 60,
+      "physical_loc": 60,
+      "normalized_loc": 60,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fannkuchredux:fannkuchredux-sbcl-5": {
+      "source_sha256": "a724a98d3635891ad061de236d371b60ea26bd7bff7b3ccd920038d313c0182b",
+      "initial_normalized_loc": 62,
+      "physical_loc": 62,
+      "normalized_loc": 62,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fannkuchredux:fannkuchredux-sbcl-2": {
+      "source_sha256": "0467e9a292dc53990596f1a3fd294e4d9d8f4f6588075c0dce057e52a57779ac",
+      "initial_normalized_loc": 44,
+      "physical_loc": 44,
+      "normalized_loc": 44,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fannkuchredux:fannkuchredux-sbcl-4": {
+      "source_sha256": "6d9804f2c091704d084973c20287ff54af27994ebda4fa073ec081ae8c91332b",
+      "initial_normalized_loc": 130,
+      "physical_loc": 128,
+      "normalized_loc": 130,
+      "expansions": [
+        {
+          "line": 132,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "\t   (csum 0) (fmax 0))"
+        },
+        {
+          "line": 141,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "\t\t\t collecting  (sb-thread:make-thread (let ((start index) (end (+ index index-step)))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fannkuchredux:fannkuchredux-sbcl-3": {
+      "source_sha256": "a18e6227e5930d085e07eb0c49dbdf8bb6121efd769ae1dfb95c7bc1c6e13619",
+      "initial_normalized_loc": 71,
+      "physical_loc": 71,
+      "normalized_loc": 71,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fasta:fasta-sbcl-1": {
+      "source_sha256": "00a19eb81676bf6adb584815f5dc08f17630dd98287a086fa4178804512cc3d9",
+      "initial_normalized_loc": 113,
+      "physical_loc": 113,
+      "normalized_loc": 113,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fasta:fasta-sbcl-2": {
+      "source_sha256": "67a649a3274fad9e8e509c65b60ce06fa925b81bc466d8b0a253b9d64833d964",
+      "initial_normalized_loc": 149,
+      "physical_loc": 149,
+      "normalized_loc": 149,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-sbcl-3": {
+      "source_sha256": "bad5f3258e201c983beacf4e15069b6a518f7bde08114be50b193b6f57a9f1df",
+      "initial_normalized_loc": 96,
+      "physical_loc": 95,
+      "normalized_loc": 96,
+      "expansions": [
+        {
+          "line": 49,
+          "extra": 1,
+          "reason": "Packed independent assignments",
+          "source": "\t\tbit 0 code 0)"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "nbody:nbody-sbcl-2": {
+      "source_sha256": "c79ce9a77788c151db03e0ef80b2e9dbb48c5a408823603e02e526e7d57b5989",
+      "initial_normalized_loc": 113,
+      "physical_loc": 113,
+      "normalized_loc": 113,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "nbody:nbody-sbcl-1": {
+      "source_sha256": "f325bbc1ee1ec67bc99fc30e90dbb7ae95a77ae0a8a85aa95d5186a90884e396",
+      "initial_normalized_loc": 111,
+      "physical_loc": 111,
+      "normalized_loc": 111,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "pidigits:pidigits-sbcl-2": {
+      "source_sha256": "40e3f88f67246aac9415df0bf3209182ce8cc93950a64e9631d5f0a8ee00743a",
+      "initial_normalized_loc": 49,
+      "physical_loc": 49,
+      "normalized_loc": 49,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "revcomp:revcomp-sbcl-1": {
+      "source_sha256": "43dc2c019b4709330513a5336135557f79173eacaa724d1c0a9aad5c7e7cb4b9",
+      "initial_normalized_loc": 64,
+      "physical_loc": 64,
+      "normalized_loc": 64,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-sbcl-3": {
+      "source_sha256": "1d4d16ce39b9ab8fb7adb36d8853e6813906de88c390230fc5c4c790cb8406a2",
+      "initial_normalized_loc": 66,
+      "physical_loc": 66,
+      "normalized_loc": 66,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-sbcl-2": {
+      "source_sha256": "aa044f7d3cb0ebb27b2f8e08bcf61fa7560cfae67a1e49a6c92d4258fbcf187e",
+      "initial_normalized_loc": 67,
+      "physical_loc": 67,
+      "normalized_loc": 67,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-sbcl-7": {
+      "source_sha256": "bac0cef1bfb50feb1100ad19f1765fcda0bd443d09d5cc4699d95d3e3f409d85",
+      "initial_normalized_loc": 63,
+      "physical_loc": 63,
+      "normalized_loc": 63,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-sbcl-1": {
+      "source_sha256": "cea6b9890b0861b0e64a1326474c8f0a8921cb1b2945cae6e2e743ef1c28424c",
+      "initial_normalized_loc": 46,
+      "physical_loc": 46,
+      "normalized_loc": 46,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-sbcl-6": {
+      "source_sha256": "3d089c014d63b14dfd629448f1a5c639627ed89e47b975fa23b921736269d4b3",
+      "initial_normalized_loc": 41,
+      "physical_loc": 41,
+      "normalized_loc": 41,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-sbcl-9": {
+      "source_sha256": "03197fbee34a948b5d7ce62bfc8f40c4d033f80cf4ce7d7cc21abdf84b4daa7d",
+      "initial_normalized_loc": 64,
+      "physical_loc": 64,
+      "normalized_loc": 64,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "binarytrees:binarytrees-racket-4": {
+      "source_sha256": "dd566b340524a9edf98ae5c922330e7a53f978301057af97fc91f80555dc498f",
+      "initial_normalized_loc": 75,
+      "physical_loc": 74,
+      "normalized_loc": 75,
+      "expansions": [
+        {
+          "line": 37,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let sum ([t t] [acc 0])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "binarytrees:binarytrees-racket-2": {
+      "source_sha256": "2ab605699eab6beb7390583535e51cbf949cbc2712e116e201beffb4c0a5bdc8",
+      "initial_normalized_loc": 30,
+      "physical_loc": 30,
+      "normalized_loc": 30,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "binarytrees:binarytrees-racket-3": {
+      "source_sha256": "e19c38a94517f5bc083e16b498776a5d8e00fba0bd934994f84ca07f03c7ab7e",
+      "initial_normalized_loc": 35,
+      "physical_loc": 34,
+      "normalized_loc": 35,
+      "expansions": [
+        {
+          "line": 35,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let sum ([t t] [acc 0])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "binarytrees:binarytrees-racket-1": {
+      "source_sha256": "8864ea19314959e1fcd69a37595c2de82896012e9ba2a32ee1e22ee73ef9fdad",
+      "initial_normalized_loc": 41,
+      "physical_loc": 41,
+      "normalized_loc": 41,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fannkuchredux:fannkuchredux-racket-3": {
+      "source_sha256": "23ad2da12c3f4f7e09a23b267d8dfd794d5bec2496376283cd204b9e5c8de0d6",
+      "initial_normalized_loc": 108,
+      "physical_loc": 105,
+      "normalized_loc": 106,
+      "expansions": [
+        {
+          "line": 64,
+          "extra": 1,
+          "reason": "Packed independent accumulator bindings",
+          "source": "    (for/fold ([flips 0] [checksum 0]) ([f (in-list future-slices)])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fannkuchredux:fannkuchredux-racket-2": {
+      "source_sha256": "ae0c49790074720b7c1216ce9974577cabd92c24a76ca7de3738d8464a705c29",
+      "initial_normalized_loc": 93,
+      "physical_loc": 91,
+      "normalized_loc": 91,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fannkuchredux:fannkuchredux-racket-1": {
+      "source_sha256": "6a5b9b738081325075bc7b2776c511fb85e454fe60caf2baac6b2bf9ab71743e",
+      "initial_normalized_loc": 59,
+      "physical_loc": 59,
+      "normalized_loc": 59,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fasta:fasta-racket-3": {
+      "source_sha256": "6f8a5ee3b5eeea3a82b554de572572f0c026b83bcd541173bf38ae80f22a90e4",
+      "initial_normalized_loc": 86,
+      "physical_loc": 84,
+      "normalized_loc": 86,
+      "expansions": [
+        {
+          "line": 55,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop ([i 0] [cum 0.0])"
+        },
+        {
+          "line": 76,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop ([count count] [pos 0])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fasta:fasta-racket-1": {
+      "source_sha256": "6f97e1b118d9caae9729363ded8b0df28a7357b78636879681b8716c7ba4f85c",
+      "initial_normalized_loc": 74,
+      "physical_loc": 69,
+      "normalized_loc": 74,
+      "expansions": [
+        {
+          "line": 40,
+          "extra": 3,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let* ((ia 3877) (ic 29573) (im 139968) (last seed))"
+        },
+        {
+          "line": 73,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "    (let loop-o ((n n_) (k 0))"
+        },
+        {
+          "line": 76,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "          (let loop-i ((i 0) (k k))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-racket-4": {
+      "source_sha256": "3a1d5203aca6d0a92543ad5b870d2406208cc40a7273df096a74533e4747a3c2",
+      "initial_normalized_loc": 54,
+      "physical_loc": 49,
+      "normalized_loc": 54,
+      "expansions": [
+        {
+          "line": 34,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop ([i 0] [Zr 0.0] [Zi 0.0])"
+        },
+        {
+          "line": 48,
+          "extra": 3,
+          "reason": "Packed independent initialized bindings",
+          "source": "      (let loop-x ([x 0] [bitnum 0] [byteacc 0] [aindex (fx* bpr (fx- N y))])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-racket-2": {
+      "source_sha256": "07f2b3c368a4dc5cc20c6627726e65059b83a1ecd590ea46f2ae3999c311b6d6",
+      "initial_normalized_loc": 46,
+      "physical_loc": 42,
+      "normalized_loc": 46,
+      "expansions": [
+        {
+          "line": 25,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "    (let loop ((i 0) (zr 0.0) (zi 0.0))"
+        },
+        {
+          "line": 47,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "          (let loop-x ((x 0) (bitnum 0) (byteacc 0))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-racket-1": {
+      "source_sha256": "9c3da21396aadcbfb6f70af3d474e21d4badfff79d609508d9ca37991fa80a56",
+      "initial_normalized_loc": 43,
+      "physical_loc": 39,
+      "normalized_loc": 43,
+      "expansions": [
+        {
+          "line": 21,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "    (let loop ((i 0) (zr 0.0) (zi 0.0))"
+        },
+        {
+          "line": 43,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "          (let loop-x ((x 0) (bitnum 0) (byteacc 0))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-racket-3": {
+      "source_sha256": "1de38bd5db65c238a9c385000eb1f6ed3b0dd42217d7b1e20febda3994c758be",
+      "initial_normalized_loc": 52,
+      "physical_loc": 47,
+      "normalized_loc": 52,
+      "expansions": [
+        {
+          "line": 32,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "     (let loop ([N (syntax-e #'N)] [E #'E])"
+        },
+        {
+          "line": 36,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop ([i 0] [Zr 0.0] [Zi 0.0])"
+        },
+        {
+          "line": 46,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "    (let loop-x ([x 0] [bitnum 0] [byteacc 0])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "nbody:nbody-racket-2": {
+      "source_sha256": "fe4bd6a0873887fa4a43f610030952d25311c06c0fbc3279e482956b6d07619c",
+      "initial_normalized_loc": 135,
+      "physical_loc": 130,
+      "normalized_loc": 135,
+      "expansions": [
+        {
+          "line": 94,
+          "extra": 3,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop-i ([i 0] [px 0.0] [py 0.0] [pz 0.0])"
+        },
+        {
+          "line": 108,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop-o ([o 0] [e 0.0])"
+        },
+        {
+          "line": 116,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "        (let loop-i ([i (unsafe-fx+ o 1)] [e e])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "nbody:nbody-racket-1": {
+      "source_sha256": "4f5165d32c1814b907546a44563bb4184db006b91d7205549a5f1d84541e4300",
+      "initial_normalized_loc": 123,
+      "physical_loc": 118,
+      "normalized_loc": 123,
+      "expansions": [
+        {
+          "line": 79,
+          "extra": 3,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop-i ([i *system*] [px 0.0] [py 0.0] [pz 0.0])"
+        },
+        {
+          "line": 93,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop-o ([o *system*] [e 0.0])"
+        },
+        {
+          "line": 102,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "        (let loop-i ([i (cdr o)] [e e])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "pidigits:pidigits-racket-1": {
+      "source_sha256": "834572babe37e41ab77a4819658792f370797f83eb75d5d6951cde3b6545bc65",
+      "initial_normalized_loc": 33,
+      "physical_loc": 33,
+      "normalized_loc": 33,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "regexredux:regexredux-racket-2": {
+      "source_sha256": "f624eb20f16a013aa73856cf6de96101a7c57bf8a5562b81712d994b58067b45",
+      "initial_normalized_loc": 48,
+      "physical_loc": 48,
+      "normalized_loc": 48,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "regexredux:regexredux-racket-1": {
+      "source_sha256": "90e8dfbcdcc5fb11bda8fd5b6bf69294e1e27e4737ebaa7082e509f80fd3e3eb",
+      "initial_normalized_loc": 27,
+      "physical_loc": 27,
+      "normalized_loc": 27,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "revcomp:revcomp-racket-1": {
+      "source_sha256": "936278bc2ff4f82535552324684f69a18c87042b667b32eee674be519759c2fc",
+      "initial_normalized_loc": 50,
+      "physical_loc": 50,
+      "normalized_loc": 50,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "revcomp:revcomp-racket-2": {
+      "source_sha256": "0f0f792fb8faab2039e60fc17695fbd619f24551f0c807d538bb18f190d1c450",
+      "initial_normalized_loc": 72,
+      "physical_loc": 63,
+      "normalized_loc": 70,
+      "expansions": [
+        {
+          "line": 37,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let loop ([chunks chunks] [col line-length])"
+        },
+        {
+          "line": 43,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "          (let chunk-loop ([i end] [j 0] [col col])"
+        },
+        {
+          "line": 45,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "              (let* ([i (fx- i 1)] [b (bytes-ref in-buf i)])"
+        },
+        {
+          "line": 67,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "(let loop ([buf (read-bytes buf-size I)] [start 0] [chunks '()])"
+        },
+        {
+          "line": 69,
+          "extra": 1,
+          "reason": "Packed independent body expressions",
+          "source": "    (begin (output chunks) (void))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-racket-1": {
+      "source_sha256": "9b351b34151a1d21d2fdb9333729a054a1e4c610bde71f7ef24a51aa931b386f",
+      "initial_normalized_loc": 42,
+      "physical_loc": 40,
+      "normalized_loc": 42,
+      "expansions": [
+        {
+          "line": 22,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "    (let loop ([i 0][vBv 0.0][vv 0.0])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-racket-2": {
+      "source_sha256": "9b21393ac9beb39c9bb5f166ed228c46558c1246d554442c9bc0d6c38ebf14a9",
+      "initial_normalized_loc": 48,
+      "physical_loc": 46,
+      "normalized_loc": 48,
+      "expansions": [
+        {
+          "line": 31,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "    (let loop ([i 0][vBv 0.0][vv 0.0])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "binarytrees:binarytrees-sbcl-1-faithful": {
+      "source_sha256": "60480c46d37e25dc1a950894e03fa59ce45ceca073bbb78da31602449c40eac6",
+      "initial_normalized_loc": 32,
+      "physical_loc": 31,
+      "normalized_loc": 32,
+      "expansions": [
+        {
+          "line": 51,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (let ((*print-pretty* nil) (long-lived-tree (build-btree 0 n)))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fasta:fasta-sbcl-3-faithful": {
+      "source_sha256": "be3659c8bc55486a470f9d00534935071a448e8d512e0ca3b3e15f4a67247314",
+      "initial_normalized_loc": 116,
+      "physical_loc": 116,
+      "normalized_loc": 116,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "fasta:fasta-sbcl-6-faithful": {
+      "source_sha256": "2a74888ca951c29cd02f7714ffaf98ff53bc9ddc8e9955930212e0d84d1dbfe4",
+      "initial_normalized_loc": 127,
+      "physical_loc": 127,
+      "normalized_loc": 127,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-sbcl-6-faithful": {
+      "source_sha256": "5f2ef010ebc0a95ad081cc16c07a27631cd94b58d001e667bd9b1eb06c3d4c89",
+      "initial_normalized_loc": 193,
+      "physical_loc": 193,
+      "normalized_loc": 193,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-sbcl-2-faithful": {
+      "source_sha256": "b55bf28bf6896984c6705d1aa730fce0a18d9ca343110fa5706c12bf2da6edb5",
+      "initial_normalized_loc": 105,
+      "physical_loc": 105,
+      "normalized_loc": 105,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-sbcl-3-faithful": {
+      "source_sha256": "0aecc2e09b0192ff51fa5652560aa7fe6175541ff7bd4f16d9c56dbea908a625",
+      "initial_normalized_loc": 105,
+      "physical_loc": 105,
+      "normalized_loc": 105,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-sbcl-1-faithful": {
+      "source_sha256": "2e68c31dbe576022f2d142dd15e0f6de8fffff24a549085feccb41f43cd7474a",
+      "initial_normalized_loc": 194,
+      "physical_loc": 194,
+      "normalized_loc": 194,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-sbcl-4-faithful": {
+      "source_sha256": "fb20804865b4e3127e24c966d3e1c0ccf3eba4c000403d563cd9018892795b96",
+      "initial_normalized_loc": 161,
+      "physical_loc": 160,
+      "normalized_loc": 161,
+      "expansions": [
+        {
+          "line": 20,
+          "extra": 1,
+          "reason": "Packed independent body expressions",
+          "source": "     :finally (return `(let (,@binds) (declare ,@decls) (macrolet (,@updates) ,@body)))))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-sbcl-5-faithful": {
+      "source_sha256": "cc6d14eb710b2a61071d34639a9ea14eadb637169a9ae2c30eb6f98b8c815085",
+      "initial_normalized_loc": 162,
+      "physical_loc": 161,
+      "normalized_loc": 162,
+      "expansions": [
+        {
+          "line": 24,
+          "extra": 1,
+          "reason": "Packed independent body expressions",
+          "source": "     :finally (return `(let (,@binds) (declare ,@decls) (macrolet (,@updates) ,@body)))))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-sbcl-1-faithful": {
+      "source_sha256": "97333ffee562ba0fbf2c33289768dc4fb00c6cab1df9d125b23d829ebf185c89",
+      "initial_normalized_loc": 268,
+      "physical_loc": 265,
+      "normalized_loc": 268,
+      "expansions": [
+        {
+          "line": 144,
+          "extra": 3,
+          "reason": "Packed independent initialized bindings",
+          "source": "\t    `(let ((,zrv vops::+zero+) (,ziv vops::+zero+) (,trv vops::+zero+) (,tiv vops::+zero+))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-sbcl-4-faithful": {
+      "source_sha256": "6e7891c57662f31694d16c7d3f0e3330d198c0c2ae8fc1f3240f2f5cf29aa520",
+      "initial_normalized_loc": 277,
+      "physical_loc": 277,
+      "normalized_loc": 277,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "pidigits:pidigits-sbcl-4-faithful": {
+      "source_sha256": "d0cc55e2088169b5ab950e176d91309a23be7683056264b1f25db861491354f7",
+      "initial_normalized_loc": 38,
+      "physical_loc": 38,
+      "normalized_loc": 41,
+      "expansions": [
+        {
+          "line": 35,
+          "extra": 3,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (do ((d 0) (k 0) (i 0) (n 10000))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "pidigits:pidigits-sbcl-3-faithful": {
+      "source_sha256": "1e1d1a602c7c045047865d0535083aa98c261b8a3043b363be43c1dc7ed9c15d",
+      "initial_normalized_loc": 38,
+      "physical_loc": 38,
+      "normalized_loc": 41,
+      "expansions": [
+        {
+          "line": 35,
+          "extra": 3,
+          "reason": "Packed independent initialized bindings",
+          "source": "  (do ((d 0) (k 0) (i 0) (n 10000))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "regexredux:regexredux-sbcl-4-faithful": {
+      "source_sha256": "c39ffa1bbefe6b1a1164762096a53937f1074fc8ef8b759d8ded8d9ae05f9fd6",
+      "initial_normalized_loc": 163,
+      "physical_loc": 161,
+      "normalized_loc": 163,
+      "expansions": [
+        {
+          "line": 166,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "          (bg (let (reg cur)"
+        },
+        {
+          "line": 168,
+          "extra": 1,
+          "reason": "Packed independent assignments",
+          "source": "                  (setf cur idx reg (nth cur +regex-list+))"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "revcomp:revcomp-sbcl-2-faithful": {
+      "source_sha256": "6f2b1f43b579af9de5a9815c1004741bcafc92a03a494f5869ee901509210f6a",
+      "initial_normalized_loc": 44,
+      "physical_loc": 44,
+      "normalized_loc": 44,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-racket-4-faithful": {
+      "source_sha256": "bfda47dd174092bcfd1ca60467bf6c5ccf824b9aa5f96a6af86ced8f662ad1c0",
+      "initial_normalized_loc": 69,
+      "physical_loc": 67,
+      "normalized_loc": 69,
+      "expansions": [
+        {
+          "line": 46,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "    (let ([key 0] [ishift (* 2 keylen)] [thresh (sub1 keylen)])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-racket-1-faithful": {
+      "source_sha256": "c7a12cba5471ec5e459169f8bcb8b0088e079d1a107de0fd031c284cc4bec1bb",
+      "initial_normalized_loc": 35,
+      "physical_loc": 35,
+      "normalized_loc": 35,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "pidigits:pidigits-racket-2-faithful": {
+      "source_sha256": "327a318cecc4faf5d3c6d1a12e633b3c48359d8e39ec3b4798c987e89f61177a",
+      "initial_normalized_loc": 87,
+      "physical_loc": 75,
+      "normalized_loc": 87,
+      "expansions": [
+        {
+          "line": 29,
+          "extra": 1,
+          "reason": "Packed independent body expressions",
+          "source": "(define (make-ui n) (let ([i (make-mpz 0 0 #f)]) (init_set_ui i n) i))"
+        },
+        {
+          "line": 38,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "    (let loop ([xs xs] [cur '()] [r '()])"
+        },
+        {
+          "line": 67,
+          "extra": 3,
+          "reason": "Packed independent assignments/reads in the source GMP arithmetic macro",
+          "source": "    (gmp _r = _x0 * n, _r = _r + _x1, _r = _r / _x2, get _r))"
+        },
+        {
+          "line": 72,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "      (let* ([k (add1 k)] [y2 (add1 (* k 2))])"
+        },
+        {
+          "line": 73,
+          "extra": 3,
+          "reason": "Packed independent assignments/reads in the source GMP arithmetic macro",
+          "source": "        (gmp _x1 = _x1 * y2, _x1 += _x0 * (* y2 2), _x0 = _x0 * k,_x2 = _x2 * y2)"
+        },
+        {
+          "line": 76,
+          "extra": 2,
+          "reason": "Packed independent assignments/reads in the source GMP arithmetic macro",
+          "source": "      (begin (gmp _x1 -= _x2 * d, _x1 = _x1 * 10, _x0 = _x0 * 10)"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-racket-3-faithful": {
+      "source_sha256": "d85eb503824b5658d53b6fac2f4d274db58e8afdd0d9369ab39bc54d6523fd10",
+      "initial_normalized_loc": 59,
+      "physical_loc": 52,
+      "normalized_loc": 59,
+      "expansions": [
+        {
+          "line": 35,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "       (let L ([a 0.0] [j 0])"
+        },
+        {
+          "line": 43,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "       (let L ([a 0.0] [j 0])"
+        },
+        {
+          "line": 47,
+          "extra": 1,
+          "reason": "Packed independent body expressions",
+          "source": "  (define (AtAv x y t N) (Av x t N) (Atv t y N))"
+        },
+        {
+          "line": 52,
+          "extra": 1,
+          "reason": "Packed independent body expressions",
+          "source": "    (AtAv u v t N) (AtAv v u t N))"
+        },
+        {
+          "line": 55,
+          "extra": 2,
+          "reason": "Packed independent initialized bindings",
+          "source": "               (let L ([vBv 0.0] [vv 0.0] [i 0])"
+        },
+        {
+          "line": 57,
+          "extra": 1,
+          "reason": "Packed independent initialized bindings",
+          "source": "                     (let ([ui (flvector-ref u i)] [vi (flvector-ref v i)])"
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment physical LOC, semantic declarations and every application helper, plus packed independent body forms, initialized bindings and assignments. Structural argument, literal-data and parameter separators are excluded. Reader comments are removed. No compressed-size metric."
+    }
+  },
+  "fixtures_passed": 18,
+  "timing_report_sha256": "ffe07ba6aa3d25828079f06560ed2be1a776769b5edfc940571af7d596a6a04b",
+  "source_audit_sha256": "9f12752deadb85e9d02b35ff6881b100b7c09fdf47f9461bbf490a3dac88870c",
+  "audit_script_sha256": "ce8038ee9aa831530176fde5cda1a5de1f6271b4e44d761bb55758c3efcd2385",
+  "loc_tool_sha256": "66156b4c8f556da78cda1982f324a3b17d70e2fa8db124f7359c30c897626d48",
+  "initial_loc_tool_sha256": "d3976941fe93f39eb8421989a07c95350c20ed0f299c29b7446ac45deb869129",
+  "corrections": [
+    {
+      "key": "fannkuchredux:fannkuchredux-racket-3",
+      "before": 108,
+      "after": 106,
+      "reason": "Racket syntax-template ellipses are structural repetition markers, not separate body expressions."
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-racket-2",
+      "before": 93,
+      "after": 91,
+      "reason": "Racket syntax-template ellipses are structural repetition markers, not separate body expressions."
+    },
+    {
+      "key": "revcomp:revcomp-racket-2",
+      "before": 72,
+      "after": 70,
+      "reason": "Racket syntax-template ellipses are structural repetition markers, not separate body expressions."
+    },
+    {
+      "key": "pidigits:pidigits-sbcl-4-faithful",
+      "before": 38,
+      "after": 41,
+      "reason": "Packed independent Common Lisp DO initializers count separately, like LET initializers."
+    },
+    {
+      "key": "pidigits:pidigits-sbcl-3-faithful",
+      "before": 38,
+      "after": 41,
+      "reason": "Packed independent Common Lisp DO initializers count separately, like LET initializers."
+    }
+  ],
+  "policy": "Every application helper, macro, declaration and FFI binding is included. Packed independent body expressions, initialized bindings and assignments are expanded; structural parameters, literal data and argument separators are not. Reader comments are removed. Original sources, binaries and timings are unchanged."
+}

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement Dart aot&nbsp;#4 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement Dart aot&nbsp;#4 program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks Game</span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">   contributed by Sergei Frolkin</span>
+<span class="com">   + null safety     </span>
+<span class="com">*/</span>
+
+import <span class="sng">&#39;dart:async&#39;</span><span class="opt">;</span>
+import <span class="sng">&#39;dart:io&#39;</span><span class="opt">;</span>
+import <span class="sng">&#39;dart:typed_data&#39;</span><span class="opt">;</span>
+
+<span class="kwa">const</span> begSequence <span class="opt">=</span> <span class="num">62</span><span class="opt">;</span> <span class="slc">//&quot;&gt;&quot;</span>
+<span class="kwa">const</span> endOfLine <span class="opt">=</span> <span class="num">10</span><span class="opt">;</span> <span class="slc">//&quot;\n&quot;</span>
+<span class="kwa">const</span> <span class="kwd">Map</span><span class="opt">&lt;</span><span class="kwd">String</span><span class="opt">,</span> <span class="kwd">String</span><span class="opt">&gt;</span> rules <span class="opt">= {</span>
+  <span class="sng">&#39;A&#39;</span><span class="opt">:</span> <span class="sng">&#39;T&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;B&#39;</span><span class="opt">:</span> <span class="sng">&#39;V&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;C&#39;</span><span class="opt">:</span> <span class="sng">&#39;G&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;D&#39;</span><span class="opt">:</span> <span class="sng">&#39;H&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;G&#39;</span><span class="opt">:</span> <span class="sng">&#39;C&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;H&#39;</span><span class="opt">:</span> <span class="sng">&#39;D&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;K&#39;</span><span class="opt">:</span> <span class="sng">&#39;M&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;M&#39;</span><span class="opt">:</span> <span class="sng">&#39;K&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;N&#39;</span><span class="opt">:</span> <span class="sng">&#39;N&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;R&#39;</span><span class="opt">:</span> <span class="sng">&#39;Y&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;S&#39;</span><span class="opt">:</span> <span class="sng">&#39;S&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;T&#39;</span><span class="opt">:</span> <span class="sng">&#39;A&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;U&#39;</span><span class="opt">:</span> <span class="sng">&#39;A&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;V&#39;</span><span class="opt">:</span> <span class="sng">&#39;B&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;Y&#39;</span><span class="opt">:</span> <span class="sng">&#39;R&#39;</span><span class="opt">,</span>
+  <span class="sng">&#39;W&#39;</span><span class="opt">:</span> <span class="sng">&#39;W&#39;</span><span class="opt">,</span>
+<span class="opt">};</span>
+
+<span class="kwa">final</span> <span class="kwd">Uint</span><span class="num">8L</span>ist complement <span class="opt">=</span> <span class="kwb">initComplement</span><span class="opt">();</span>
+
+<span class="kwd">Uint</span><span class="num">8L</span>ist <span class="kwb">initComplement</span><span class="opt">() {</span>
+  <span class="kwa">final</span> res <span class="opt">=</span> <span class="kwd">Uint</span><span class="num">8L</span>ist<span class="opt">(</span><span class="num">256</span><span class="opt">);</span>
+  <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> <span class="num">255</span><span class="opt">;</span> i<span class="opt">++) {</span>
+    <span class="kwa">final</span> c <span class="opt">=</span> <span class="kwd">String</span><span class="opt">.</span><span class="kwb">fromCharCode</span><span class="opt">(</span>i<span class="opt">).</span><span class="kwb">toUpperCase</span><span class="opt">();</span>
+    <span class="kwa">final</span> s <span class="opt">=</span> rules<span class="opt">[</span>c<span class="opt">];</span>
+    <span class="kwa">if</span> <span class="opt">(</span>s <span class="opt">!=</span> <span class="kwa">null</span><span class="opt">) {</span>
+      res<span class="opt">[</span>i<span class="opt">] =</span> s<span class="opt">.</span>codeUnits<span class="opt">[</span><span class="num">0</span><span class="opt">];</span>
+    <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+      res<span class="opt">[</span>i<span class="opt">] =</span> i<span class="opt">;</span>
+    <span class="opt">}</span>
+  <span class="opt">}</span>
+  <span class="kwa">return</span> res<span class="opt">;</span>
+<span class="opt">}</span>
+
+<span class="kwa">class</span> <span class="kwd">Sequence</span> <span class="opt">{</span>
+  <span class="kwa">static const</span> chunkSize <span class="opt">=</span> <span class="num">1024</span> <span class="opt">*</span> <span class="num">1024</span><span class="opt">;</span>
+  <span class="kwa">var</span> buf <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Uint</span><span class="num">8L</span>ist<span class="opt">(</span>chunkSize<span class="opt">);</span>
+  <span class="kwb">int</span> offset <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+
+  <span class="kwa">void</span> <span class="kwb">add</span><span class="opt">(</span><span class="kwb">int</span> b<span class="opt">) {</span>
+    <span class="slc">// if (offset &gt;= buf.length) buf.length += chunkSize;</span>
+    <span class="kwa">if</span> <span class="opt">(</span>offset <span class="opt">&gt;=</span> buf<span class="opt">.</span>length<span class="opt">) {</span>
+      <span class="kwa">var</span> newbuf <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Uint</span><span class="num">8L</span>ist<span class="opt">(</span>buf<span class="opt">.</span>length <span class="opt">+</span> chunkSize<span class="opt">);</span>
+      newbuf<span class="opt">.</span><span class="kwb">setAll</span><span class="opt">(</span><span class="num">0</span><span class="opt">,</span> buf<span class="opt">);</span>
+      buf <span class="opt">=</span> newbuf<span class="opt">;</span>
+    <span class="opt">}</span>
+    <span class="opt">;</span>
+    buf<span class="opt">[</span>offset<span class="opt">++] =</span> b<span class="opt">;</span>
+  <span class="opt">}</span>
+
+  <span class="kwd">Uint</span><span class="num">8L</span>ist <span class="kwb">getRevCompListAndReset</span><span class="opt">() {</span>
+    <span class="kwa">for</span> <span class="opt">(</span><span class="kwb">int</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">,</span> j <span class="opt">=</span> offset <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span> i <span class="opt">&lt;</span> j<span class="opt">;</span> i<span class="opt">++,</span> j<span class="opt">--) {</span>
+      <span class="kwa">while</span> <span class="opt">(</span>buf<span class="opt">[</span>i<span class="opt">] ==</span> endOfLine<span class="opt">)</span> i<span class="opt">++;</span>
+      <span class="kwa">if</span> <span class="opt">(</span>i <span class="opt">&gt;</span> j<span class="opt">)</span> <span class="kwa">break</span><span class="opt">;</span>
+      <span class="kwa">while</span> <span class="opt">(</span>buf<span class="opt">[</span>j<span class="opt">] ==</span> endOfLine<span class="opt">)</span> j<span class="opt">--;</span>
+      <span class="kwa">if</span> <span class="opt">(</span>i <span class="opt">&gt;</span> j<span class="opt">)</span> <span class="kwa">break</span><span class="opt">;</span>
+      <span class="kwb">int</span> si <span class="opt">=</span> buf<span class="opt">[</span>i<span class="opt">];</span>
+      buf<span class="opt">[</span>i<span class="opt">] =</span> complement<span class="opt">[</span>buf<span class="opt">[</span>j<span class="opt">]];</span>
+      buf<span class="opt">[</span>j<span class="opt">] =</span> complement<span class="opt">[</span>si<span class="opt">];</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> <span class="kwb">getListAndReset</span><span class="opt">();</span>
+  <span class="opt">}</span>
+
+  <span class="kwd">Uint</span><span class="num">8L</span>ist <span class="kwb">getListAndReset</span><span class="opt">() {</span>
+    <span class="kwa">final</span> end <span class="opt">=</span> offset<span class="opt">;</span>
+    offset <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+    <span class="slc">// return buf.buffer.asUint8List(0, end);</span>
+    <span class="kwa">return</span> buf<span class="opt">.</span><span class="kwb">sublist</span><span class="opt">(</span><span class="num">0</span><span class="opt">,</span> end<span class="opt">);</span>
+  <span class="opt">}</span>
+
+  <span class="kwb">bool</span> get isNotEmpty <span class="opt">=&gt;</span> offset <span class="opt">&gt;</span> <span class="num">0</span><span class="opt">;</span>
+<span class="opt">}</span>
+
+<span class="kwd">Stream</span><span class="opt">&lt;</span><span class="kwd">Uint</span><span class="num">8L</span>ist<span class="opt">&gt;</span> <span class="kwb">run</span><span class="opt">()</span> async<span class="opt">* {</span>
+  <span class="kwa">var</span> inDNA <span class="opt">=</span> <span class="kwa">true</span><span class="opt">;</span>
+  <span class="kwa">var</span> dna <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Sequence</span><span class="opt">();</span>
+  <span class="kwa">var</span> txt <span class="opt">=</span> <span class="kwa">new</span> <span class="kwd">Sequence</span><span class="opt">();</span>
+  await <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> chunk <span class="kwa">in</span> stdin<span class="opt">) {</span>
+    <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> b <span class="kwa">in</span> chunk<span class="opt">) {</span>
+      <span class="kwa">if</span> <span class="opt">(</span>inDNA<span class="opt">) {</span>
+        <span class="kwa">if</span> <span class="opt">(</span>b <span class="opt">!=</span> begSequence<span class="opt">) {</span>
+          dna<span class="opt">.</span><span class="kwb">add</span><span class="opt">(</span>b<span class="opt">);</span>
+        <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+          yield dna<span class="opt">.</span><span class="kwb">getRevCompListAndReset</span><span class="opt">();</span>
+          inDNA <span class="opt">=</span> <span class="kwa">false</span><span class="opt">;</span>
+          txt<span class="opt">.</span><span class="kwb">add</span><span class="opt">(</span>b<span class="opt">);</span>
+        <span class="opt">}</span>
+      <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+        txt<span class="opt">.</span><span class="kwb">add</span><span class="opt">(</span>b<span class="opt">);</span>
+        <span class="kwa">if</span> <span class="opt">(</span>b <span class="opt">==</span> endOfLine<span class="opt">) {</span>
+          yield txt<span class="opt">.</span><span class="kwb">getListAndReset</span><span class="opt">();</span>
+          inDNA <span class="opt">=</span> <span class="kwa">true</span><span class="opt">;</span>
+        <span class="opt">}</span>
+      <span class="opt">}</span>
+    <span class="opt">}</span>
+  <span class="opt">}</span>
+  <span class="kwa">if</span> <span class="opt">(</span>dna<span class="opt">.</span>isNotEmpty<span class="opt">) {</span>
+    yield dna<span class="opt">.</span><span class="kwb">getRevCompListAndReset</span><span class="opt">();</span>
+  <span class="opt">}</span> <span class="kwa">else if</span> <span class="opt">(</span>txt<span class="opt">.</span>isNotEmpty<span class="opt">) {</span>
+    yield txt<span class="opt">.</span><span class="kwb">getListAndReset</span><span class="opt">();</span>
+  <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwb">main</span><span class="opt">() {</span>
+  <span class="kwb">run</span><span class="opt">().</span><span class="kwb">listen</span><span class="opt">((</span><span class="kwd">Uint</span><span class="num">8L</span>ist chunk<span class="opt">) {</span>
+    stdout<span class="opt">.</span><span class="kwb">add</span><span class="opt">(</span>chunk<span class="opt">);</span>
+  <span class="opt">});</span>
+<span class="opt">}</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Dart SDK version: 3.7.0 (stable)
+Wed Feb 5 04:53:58 2025
+
+
+
+ Sat, 22 Feb 2025 15:56:46 GMT
+
+MAKE:
+/opt/src/dart-sdk/bin/dart analyze 
+Analyzing tmp...
+No issues found!
+
+/opt/src/dart-sdk/bin/dart compile exe revcomp.dartexe-4.dartexe -o revcomp.dartexe-4.dartexe_run
+Generated: /home/dunham/all-benchmarksgame/benchmarksgame_i53330/revcomp/tmp/revcomp.dartexe-4.dartexe_run
+
+6.18 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./revcomp.dartexe-4.dartexe_run 0 &lt; revcomp-input100000001.txt
+
+UNEXPECTED OUTPUT 
+
+5833337c5833337
+&lt; BtCMGCTTTATCAAAMTTATVCCWTTKKTACTATDAAGGAAACTDATTATATCACATGCA
+---
+&gt; BACMGCTTTATCAAAMTTATVCCWTTKKTACTATDAAGGAAACTDATTATATCACATGCA
+12500005c12500005
+&lt; ATACCTAGAATTAGAAAATGTTTGACGGTTTTGTGTATTAGGaTCTGAATAACTGCTATG
+---
+&gt; ATACCTAGAATTAGAAAATGTTTGACGGTTTTGTGTATTAGGTTCTGAATAACTGCTATG
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

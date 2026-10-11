@@ -1,0 +1,11 @@
+{
+  "status": "failed-lifetime",
+  "language": "elm",
+  "benchmark": "binarytrees",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Binarytrees.elm",
+  "source_sha256": "50f648aa6c28ae027cf18e6bd7aafcc1b8921727da0900f436ec5b8a6488b3f3",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/binarytrees-elm-idiomatic.js",
+  "binary_sha256": "0e3c7e86480a3f2ace2dead0bf2bd28f92f6ea844a075c7d36d338c9867ab1d6",
+  "reason": "Generated JavaScript checks the long-lived root before the temporary-work call. Subsequent JIT liveness can release it early; output correctness does not establish the required lifetime. Quarantined and replaced with explicit tail-loop root threading.",
+  "compiled_run": "var $author$project$Binarytrees$run = F2(\n\tfunction (n, _v0) {\n\t\tvar maximum = A2($elm$core$Basics$max, 6, n);\n\t\tvar stretch = $author$project$Binarytrees$check(\n\t\t\tA2($author$project$Binarytrees$build, maximum + 1, 1));\n\t\tvar longLived = A2($author$project$Binarytrees$build, maximum, 1);\n\t\tvar retainedCheck = $author$project$Binarytrees$check(longLived);\n\t\tvar rows = A2($author$project$Binarytrees$depths, 4, maximum);\n\t\treturn 'stretch tree of depth ' + ($elm$core$String$fromInt(maximum + 1) + ('\\u0009 check: ' + ($elm$core$String$fromInt(stretch) + ('\\u000A' + (rows + ('long lived tree of depth ' + ($elm$core$String$fromInt(maximum) + ('\\u0009 check: ' + ($elm$core$String$fromInt(retainedCheck) + '\\u000A')))))))));\n\t});"
+}

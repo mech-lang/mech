@@ -1,0 +1,13 @@
+root(x<f64>) => <f64> := x |> math/sqrt |> math/sqrt
+scalar := sequence/iterate(16.0, 2, root)
+io/write(string/concat(number/format(scalar, 9), "\n"))
+scale(x<[f64]>) => <[f64]> := x * 1.5 + 0.25
+values := sequence/iterate(sequence/fill(3, 2.0), 2, scale)
+io/write(string/concat(number/format(stats/dot(values, sequence/fill(3, 1.0)), 9), "\n"))
+coefficient(i<u64>, j<u64>) => <f64> := number/to-f64((i + 1) * (j + 2))
+rectangular(x<[f64]>) => <[f64]> := x |> matrix/apply(_, 2, coefficient, "multiply") |> matrix/apply-transpose(_, 3, coefficient, "multiply")
+result := sequence/fill(3, 1.0) |> rectangular
+io/write(string/concat(text/join(number/format(result, 9), ","), "\n"))
+format(x<f64>) => <string> := x |> number/format(_, 3)
+text := 2.5 |> format
+io/write(string/concat(text, "\n"))

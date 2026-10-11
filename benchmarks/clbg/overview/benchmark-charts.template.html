@@ -1,0 +1,203 @@
+<div id="mech-benchmark-charts">
+  <h2>Mech Benchmarks Game</h2>
+  <div class="viz-controls">
+    <button type="button" class="btn" data-size="loc" aria-pressed="true">Lines of code</button>
+    <button type="button" class="btn" data-size="gzip" aria-pressed="false" data-tooltip="Comments removed; whitespace normalized; source identifiers retained">Compressed source</button>
+    <button type="button" class="btn" data-overview hidden>All eight benchmarks</button>
+  </div>
+  <div class="text-small" data-shape-key>● Fastest · ■ Smallest · faint points: measured builds · new runtimes: compact only · smaller ← · faster ↓</div>
+  <div data-language-key class="viz-row" aria-label="Languages"></div>
+  <div data-panels></div>
+  <div class="tooltip" role="tooltip" data-detail hidden></div>
+  <div data-endpoint-table hidden></div>
+  <div class="text-small" data-caveats>Apple M3 · <!--__POWER_LABEL__--> · experimental v0.4 Cranelift AOT · startup and output included · generic runtime excluded from Mech source size · gzip retains source names · new runtimes: compact sources only · labeled algorithm differences and exclusions</div>
+</div>
+<style>
+  #mech-benchmark-charts { position: relative; }
+  #mech-benchmark-charts [hidden] { display: none !important; }
+  #mech-benchmark-charts [data-panels] { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; margin-top: 18px; }
+  #mech-benchmark-charts [data-panels].expanded { grid-template-columns: minmax(0,1fr); }
+  #mech-benchmark-charts .plot-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+  #mech-benchmark-charts .plot-heading h3 { margin: 0; }
+  #mech-benchmark-charts .plot-caption { min-height: 36px; margin-top: 6px; }
+  #mech-benchmark-charts .plot-svg { display: block; width: 100%; overflow: visible; }
+  #mech-benchmark-charts .plot-svg text { fill: var(--foreground); font-size: 12px; font-weight: 400; }
+  #mech-benchmark-charts .plot-svg .domain,
+  #mech-benchmark-charts .plot-svg .tick line { stroke: var(--border); }
+  #mech-benchmark-charts .plot-svg .tick text { fill: var(--muted-foreground); }
+  #mech-benchmark-charts [data-language-key] { margin-top: 10px; gap: 6px 16px; }
+  #mech-benchmark-charts .language-toggle { appearance: none; display: inline-flex; align-items: center; gap: 6px; background: transparent; border: none; padding: 0; color: var(--foreground); font: inherit; }
+  #mech-benchmark-charts .language-toggle[aria-pressed="false"] { opacity: .45; }
+  #mech-benchmark-charts .legend-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+  #mech-benchmark-charts [data-caveats] { margin-top: 18px; }
+  #mech-benchmark-charts [data-detail] { position: absolute; pointer-events: none; z-index: 5; max-width: min(300px, calc(100% - 8px)); overflow-wrap: anywhere; background: var(--popover); color: var(--popover-foreground); }
+  #mech-benchmark-charts [data-endpoint-table] { margin-top: 16px; }
+  @media (max-width: 740px) { #mech-benchmark-charts [data-panels] { grid-template-columns: minmax(0,1fr); } }
+  @media (pointer: coarse) { #mech-benchmark-charts .language-toggle { min-height: 44px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+(() => {
+  const root = document.getElementById('mech-benchmark-charts');
+  const studies = /*__BENCHMARK_DATA__*/;
+  const labels = {mech:'Mech',rust:'Rust',chapel:'Chapel',julia:'Julia',go:'Go',java:'Java',c:'C',cpp:'C++',python:'Python (CPython)',ruby:'Ruby (YJIT)',perl:'Perl',lua:'Lua',luajit:'LuaJIT',javascript:'JavaScript (V8)',php:'PHP (JIT)'};
+  const colors = Object.fromEntries(Object.keys(labels).map((lang,index)=>[lang,'var(--viz-series-'+(index%6+1)+')']));
+  const languages = Object.keys(labels);
+  const panels = root.querySelector('[data-panels]');
+  const detail = root.querySelector('[data-detail]');
+  const table = root.querySelector('[data-endpoint-table]');
+  const overview = root.querySelector('[data-overview]');
+  const byKey = new Map(studies.map(s => [s.key,s]));
+  let metric = 'gzip', selected = null, latestNbody = false, strictFasta = false, hiddenLanguages = new Set();
+  let pinned = false, observer;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const safe = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const time = value => value.toFixed(3) + ' s';
+  const save = () => {
+    if (window.openai?.setWidgetState) window.openai.setWidgetState({modelContent:{sizeMetric:metric,benchmark:selected,latestNbody,strictFasta},privateContent:{hiddenLanguages:[...hiddenLanguages]}}).catch(() => {});
+  };
+  function restore(state) {
+    const m = state?.modelContent || {};
+    metric = m.sizeMetric === 'loc' ? 'loc' : 'gzip';
+    selected = byKey.has(m.benchmark) ? m.benchmark : null;
+    latestNbody = !!m.latestNbody;
+    strictFasta = !!m.strictFasta;
+    hiddenLanguages = new Set((state?.privateContent?.hiddenLanguages || []).filter(v => languages.includes(v)));
+  }
+  function endpoints(study) {
+    return languages.filter(lang => study.rows.some(r => r.lang === lang)).map(lang => {
+      const rows = study.rows.filter(r => r.lang === lang);
+      const fastest = rows.every(r=>r.endpoint_scope==='compact-only') ? null : d3.least(rows, r => r.score);
+      const smallest = rows.reduce((a,b) => b[metric] < a[metric] || (b[metric] === a[metric] && b.score < a.score) ? b : a);
+      return {lang,fastest,smallest};
+    });
+  }
+  function renderKey() {
+    const key = root.querySelector('[data-language-key]');
+    key.replaceChildren();
+    languages.forEach(lang => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'language-toggle cursor-interaction';
+      button.setAttribute('aria-pressed', String(!hiddenLanguages.has(lang)));
+      const dot = document.createElement('span'); dot.className = 'legend-dot'; dot.style.background = colors[lang]; if(studies.flatMap(s=>s.rows).filter(r=>r.lang===lang).every(r=>r.endpoint_scope==='compact-only'))dot.style.borderRadius='0';
+      button.append(dot, document.createTextNode(labels[lang]+(studies.flatMap(s=>s.rows).filter(r=>r.lang===lang).every(r=>r.endpoint_scope==='compact-only')?' · compact':'')));
+      button.addEventListener('click', () => {
+        hiddenLanguages.has(lang) ? hiddenLanguages.delete(lang) : hiddenLanguages.add(lang);
+        renderKey(); drawAll(); renderTable(); save();
+      });
+      key.append(button);
+    });
+  }
+  function ticks(max, count) {
+    const values = [];
+    for (let v=1;v <= max * 1.01;v *= 2) values.push(v);
+    if (values.length < 2) return [1,...[1.25,1.5,1.75,2].filter(v => v <= max)];
+    return values.filter((v,i) => i % Math.max(1,Math.ceil(values.length/count)) === 0);
+  }
+  function showDetail(event, study, row, xRatio, yRatio) {
+    const b = root.getBoundingClientRect();
+    detail.innerHTML = '<strong>' + safe(labels[row.lang]) + '</strong> · ' + safe(row.id) +
+      '<br>' + time(row.seconds) + ' · ' + row.loc + ' LOC · ' + row.gzip + ' gzip bytes' +
+      '<br>' + xRatio.toFixed(2) + '× size · ' + yRatio.toFixed(2) + '× time' +
+      '<br>' + row.samples + ' samples · ' + safe(row.batch) + (row.modified ? '<br>Modified ARM SIMD source' : '') +
+      (row.endpoint_scope==='compact-only'?'<br>Compact entry only; fastest entry not sampled':'')+(row.execution_mode?'<br>'+safe(row.execution_mode):'')+(row.algorithm ? '<br>' + (row.algorithm.strict ? 'Strict cohort: ' : 'Historical comparison: ') + safe(row.algorithm.reason) : '');
+    detail.hidden = false;
+    const x = Math.max(0,Math.min(root.clientWidth-detail.offsetWidth,event.clientX-b.left+12));
+    detail.style.left = x+'px';
+    detail.style.top = Math.max(0,event.clientY-b.top-detail.offsetHeight-10)+'px';
+  }
+  function draw(section, animate=false) {
+    detail.hidden=true;pinned=false;
+    const study = byKey.get(section.dataset.key);
+    const width = section.clientWidth;
+    if (!width) return;
+    const height = selected ? 460 : 330;
+    const margin = {left:64,right:22,top:16,bottom:57};
+    const points = study.rows;
+    const baseSize = d3.min(points, r => r[metric]), baseTime = d3.min(points,r => r.score);
+    const visible=points.filter(r=>!hiddenLanguages.has(r.lang)); const maxX = d3.max(visible.length?visible:points,r => r[metric]/baseSize), maxY = d3.max(visible.length?visible:points,r => r.score/baseTime);
+    const x = d3.scaleLog().base(2).domain([Math.pow(2,-.10),Math.max(1.2,maxX)*1.12]).range([margin.left+8,width-margin.right-8]);
+    const y = d3.scaleLog().base(2).domain([Math.pow(2,-.10),Math.max(1.2,maxY)*1.12]).range([height-margin.bottom-8,margin.top+8]);
+    const svg = d3.select(section.querySelector('svg'));
+    svg.attr('viewBox',`0 0 ${width} ${height}`).attr('height',height).attr('aria-label',study.name+'; normalized time versus '+(metric==='loc'?'noncomment lines of code':'normalized gzip bytes')+'. Smaller and faster are toward the bottom left.');
+    const layer = (name) => svg.selectAll('g.'+name).data([null]).join('g').attr('class',name);
+    svg.selectAll('rect[data-chart-frame]').data([null]).join('rect').attr('data-chart-frame','').attr('x',margin.left).attr('y',margin.top)
+      .attr('width',width-margin.left-margin.right).attr('height',height-margin.bottom-margin.top).attr('fill','none').attr('stroke','var(--border)').attr('stroke-width',1);
+    const xTicks=ticks(maxX,width < 360 ? 4 : 5), yTicks=ticks(maxY,5);
+    layer('x-grid').attr('transform',`translate(0,${height-margin.bottom})`).call(d3.axisBottom(x).tickValues(xTicks).tickSize(-(height-margin.top-margin.bottom)).tickFormat('')).call(g=>g.select('.domain').remove());
+    layer('y-grid').attr('transform',`translate(${margin.left},0)`).call(d3.axisLeft(y).tickValues(yTicks).tickSize(-(width-margin.left-margin.right)).tickFormat('')).call(g=>g.select('.domain').remove());
+    layer('x-axis').attr('transform',`translate(0,${height-margin.bottom})`).call(d3.axisBottom(x).tickValues(xTicks).tickFormat(v=>v+'×').tickSize(0).tickPadding(9)).call(g=>g.select('.domain').remove());
+    layer('y-axis').attr('transform',`translate(${margin.left},0)`).call(d3.axisLeft(y).tickValues(yTicks).tickFormat(v=>v+'×').tickSize(0).tickPadding(8)).call(g=>g.select('.domain').remove());
+    svg.selectAll('text.axis-title[data-axis="x"]').data([null]).join('text').attr('class','axis-title').attr('data-axis','x').attr('x',(margin.left+width-margin.right)/2).attr('y',height-10).attr('text-anchor','middle').text(metric==='loc'?'Source lines (normalized)':'Gzip bytes (normalized)');
+    svg.selectAll('text.axis-title[data-axis="y"]').data([null]).join('text').attr('class','axis-title').attr('data-axis','y').attr('transform',`translate(16,${(margin.top+height-margin.bottom)/2}) rotate(-90)`).attr('text-anchor','middle').text('Elapsed time (normalized)');
+    const active = points.filter(r=>!hiddenLanguages.has(r.lang));
+    const endpointRows = endpoints(study).filter(e=>!hiddenLanguages.has(e.lang));
+    const motion = selection => animate && !reduceMotion ? selection.transition().duration(280) : selection;
+    const faint = layer('observations').selectAll('circle').data(active,r=>r.id).join('circle').attr('r',3).attr('fill',r=>colors[r.lang]).attr('opacity',.22);
+    motion(faint).attr('cx',r=>x(r[metric]/baseSize)).attr('cy',r=>y(r.score/baseTime));
+    const connectors = layer('connectors').selectAll('line').data(endpointRows.filter(e=>e.fastest),e=>e.lang).join('line').attr('stroke',e=>colors[e.lang]).attr('stroke-width',2);
+    motion(connectors).attr('x1',e=>x(e.fastest[metric]/baseSize)).attr('y1',e=>y(e.fastest.score/baseTime)).attr('x2',e=>x(e.smallest[metric]/baseSize)).attr('y2',e=>y(e.smallest.score/baseTime));
+    const small = layer('smallest').selectAll('rect').data(endpointRows.filter(e=>!e.fastest||e.smallest.id!==e.fastest.id),e=>e.lang).join('rect').attr('width',9).attr('height',9).attr('fill',e=>colors[e.lang]);
+    motion(small).attr('x',e=>x(e.smallest[metric]/baseSize)-4.5).attr('y',e=>y(e.smallest.score/baseTime)-4.5);
+    const fast = layer('fastest').selectAll('circle').data(endpointRows.filter(e=>e.fastest),e=>e.lang).join('circle').attr('r',5).attr('fill',e=>colors[e.lang]);
+    motion(fast).attr('cx',e=>x(e.fastest[metric]/baseSize)).attr('cy',e=>y(e.fastest.score/baseTime));
+    const mech = endpointRows.find(e=>e.lang==='mech');
+    const annotation = layer('mech-label').selectAll('text').data(mech?[mech]:[]).join('text').text('Mech');
+    motion(annotation).attr('x',e=>Math.min(width-margin.right-40,x(e.fastest[metric]/baseSize)+9)).attr('y',e=>Math.max(margin.top+15,y(e.fastest.score/baseTime)-10));
+    const marker = layer('hover').selectAll('circle').data([null]).join('circle').attr('r',7).attr('fill','none').attr('stroke','var(--foreground)').attr('stroke-width',1).attr('visibility','hidden');
+    const hit = svg.selectAll('rect[data-chart-hit]').data([null]).join('rect').attr('data-chart-hit','').attr('data-chart-hover-overlay','nearest-point')
+      .attr('x',margin.left).attr('y',margin.top).attr('width',width-margin.right-margin.left).attr('height',height-margin.top-margin.bottom).attr('fill','transparent');
+    function hover(event) {
+      if (!active.length) return;
+      const [mx,my]=d3.pointer(event,svg.node());
+      const row=d3.least(active,r=>Math.hypot(x(r[metric]/baseSize)-mx,y(r.score/baseTime)-my));
+      const cx=x(row[metric]/baseSize),cy=y(row.score/baseTime);
+      if (Math.hypot(cx-mx,cy-my)>32) { if(!pinned){detail.hidden=true;marker.attr('visibility','hidden');} return; }
+      marker.attr('cx',cx).attr('cy',cy).attr('visibility','visible');
+      showDetail(event,study,row,row[metric]/baseSize,row.score/baseTime);
+    }
+    hit.on('pointermove',event=>{if(!pinned)hover(event);}).on('pointerleave',()=>{if(!pinned){detail.hidden=true;marker.attr('visibility','hidden');}}).on('click',event=>{pinned=!pinned;hover(event);});
+    section.querySelector('[data-mech-summary]').textContent = mech ? `Mech fastest: ${time(mech.fastest.seconds)} · ${mech.fastest.loc} LOC · ${mech.fastest.gzip} gzip bytes` : '';
+    // Keep at least four pixels between tick, axis and optional value labels.
+    const boxes=[];
+    [...svg.selectAll('.axis-title').nodes(),...svg.selectAll('.tick text').nodes(),...svg.selectAll('.mech-label text').nodes()].forEach(function(element) {
+      const box=element.getBoundingClientRect();
+      const overlaps=boxes.some(b=>box.left<b.right+4&&box.right>b.left-4&&box.top<b.bottom+4&&box.bottom>b.top-4);
+      if(overlaps) element.style.visibility='hidden';
+      else { element.style.visibility='visible';boxes.push(box); }
+    });
+  }
+  function renderTable() {
+    table.hidden = !selected;
+    if (!selected) { table.replaceChildren(); return; }
+    const study=byKey.get(selected);
+    const rows=endpoints(study).filter(e=>!hiddenLanguages.has(e.lang));
+    table.innerHTML = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Language</th><th>Fastest</th><th>Smallest</th><th class="text-end">Time tradeoff</th></tr></thead><tbody>'+rows.map(e=>'<tr><td>'+safe(labels[e.lang])+'</td><td>'+(e.fastest?time(e.fastest.seconds)+' · '+e.fastest.loc+' LOC · '+e.fastest.gzip+' bytes<br><span class="text-small">'+safe(e.fastest.id)+(e.fastest.modified?' (ARM port)':'')+'</span>':'Not sampled')+'</td><td>'+time(e.smallest.seconds)+' · '+e.smallest.loc+' LOC · '+e.smallest.gzip+' bytes<br><span class="text-small">'+safe(e.smallest.id)+'</span></td><td class="text-end">'+(e.fastest?(e.smallest.score/e.fastest.score).toFixed(2)+'×':'—')+'</td></tr>').join('')+'</tbody></table></div>';
+  }
+  function drawAll(animate=false) { panels.querySelectorAll('section').forEach(s=>draw(s,animate)); }
+  function renderPanels() {
+    observer?.disconnect(); panels.replaceChildren(); pinned=false;detail.hidden=true;
+    panels.classList.toggle('expanded',!!selected);overview.hidden=!selected;
+    const shown=selected?[byKey.get(selected)]:studies.filter(s=>!['nbody-latest','fasta-strict'].includes(s.key)).map(s=>s.key==='nbody'&&latestNbody?byKey.get('nbody-latest'):s.key==='fasta'&&strictFasta?byKey.get('fasta-strict'):s);
+    shown.forEach(study=>{
+      const section=document.createElement('section');section.dataset.key=study.key;
+      section.innerHTML='<div class="plot-heading"><h3>'+safe(study.name)+'</h3><div class="viz-row">'+
+        (study.key.startsWith('nbody')?'<button class="btn" type="button" data-nbody-switch>'+(study.key==='nbody'?'Matched check':'Full cohort')+'</button>':'')+
+        (study.key.startsWith('fasta')?'<button class="btn" type="button" data-fasta-switch>'+(study.key==='fasta'?'Strict cohort':'All listings')+'</button>':'')+
+        (!selected?'<button class="btn" type="button" data-expand>Expand</button>':'')+'</div></div>'+
+        '<div class="text-small">'+safe(study.workload)+'</div><svg class="plot-svg" role="img"></svg><div class="text-small" data-mech-summary></div><div class="text-small plot-caption">'+safe(study.note)+'</div>';
+      section.querySelector('[data-expand]')?.addEventListener('click',()=>{selected=study.key;renderPanels();renderTable();save();});
+      section.querySelector('[data-nbody-switch]')?.addEventListener('click',()=>{latestNbody=study.key==='nbody';if(selected)selected=latestNbody?'nbody-latest':'nbody';renderPanels();renderTable();save();});
+      section.querySelector('[data-fasta-switch]')?.addEventListener('click',()=>{strictFasta=study.key==='fasta';if(selected)selected=strictFasta?'fasta-strict':'fasta';renderPanels();renderTable();save();});
+      panels.append(section);
+    });
+    observer=new ResizeObserver(()=>drawAll());panels.querySelectorAll('section').forEach(s=>observer.observe(s));
+    drawAll();
+  }
+  function updateMetricButtons() {root.querySelectorAll('[data-size]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.size===metric)));}
+  root.querySelectorAll('[data-size]').forEach(button=>button.addEventListener('click',()=>{metric=button.dataset.size;updateMetricButtons();drawAll(true);renderTable();save();}));
+  overview.addEventListener('click',()=>{selected=null;renderPanels();renderTable();save();});
+  restore(window.openai?.widgetState);updateMetricButtons();renderKey();renderPanels();renderTable();
+  window.addEventListener('openai:set_globals',event=>{if(event.detail?.globals?.widgetState){restore(event.detail.globals.widgetState);updateMetricButtons();renderKey();renderPanels();renderTable();}});
+})();
+</script>

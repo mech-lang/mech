@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Haskell GHC&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Haskell GHC&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Inspired by version contributed by Branimir Maksimovic</span>
+<span class="slc">-- Updated by Callan McGill:</span>
+<span class="slc">--   - to use hashmap from unordered containers</span>
+<span class="slc">--   - bit encoding of &#39;a&#39;, &#39;c&#39;, &#39;g&#39;, &#39;t&#39;</span>
+<span class="slc">--   - Vector streaming framework to re-write algorithm</span>
+<span class="slc">-- Fix mixup of order in 2-sequences by Artem Pelenitsyn</span>
+
+<span class="kwb">module</span> Main <span class="kwb">where</span>
+
+<span class="kwb">import qualified</span> Control<span class="opt">.</span>Concurrent<span class="opt">.</span>ParallelIO<span class="opt">.</span>Global <span class="kwb">as</span> ParallelIO
+<span class="kwb">import</span>           Data<span class="opt">.</span>Bits
+<span class="kwb">import</span>           Data<span class="opt">.</span>ByteString                      <span class="kwc">(</span>ByteString<span class="kwc">)</span>
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>ByteString                      <span class="kwb">as</span> ByteString
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>ByteString<span class="opt">.</span>Char8                <span class="kwb">as</span> Char8
+<span class="kwb">import</span>           Data<span class="opt">.</span>ByteString<span class="opt">.</span>Internal             <span class="kwc">(</span>toForeignPtr<span class="kwc">)</span>
+<span class="kwb">import</span>           Data<span class="opt">.</span>Coerce
+<span class="kwb">import</span>           Data<span class="opt">.</span>Hashable
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>HashMap<span class="opt">.</span>Internal                <span class="kwb">as</span> Internal
+<span class="kwb">import</span>           Data<span class="opt">.</span>HashMap<span class="opt">.</span>Strict                  <span class="kwc">(</span>HashMap<span class="kwc">)</span>
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>HashMap<span class="opt">.</span>Strict                  <span class="kwb">as</span> HashMap
+<span class="kwb">import</span>           Data<span class="opt">.</span>List                            <span class="kwc">(</span>foldl&#39;<span class="kwc">)</span>
+<span class="kwb">import</span>           Data<span class="opt">.</span>Primitive<span class="opt">.</span>PVar
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector                          <span class="kwb">as</span> Vector
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Algorithms<span class="opt">.</span>Intro         <span class="kwb">as</span> Sort
+<span class="kwb">import</span>           Data<span class="opt">.</span>Vector<span class="opt">.</span>Fusion<span class="opt">.</span>Stream<span class="opt">.</span>Monadic    <span class="kwc">(</span>Step <span class="kwc">(</span><span class="opt">..</span><span class="kwc">),</span> Stream <span class="kwc">(</span><span class="opt">..</span><span class="kwc">))</span>
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Fusion<span class="opt">.</span>Stream<span class="opt">.</span>Monadic    <span class="kwb">as</span> Stream
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Storable                 <span class="kwb">as</span> Storable
+<span class="kwb">import</span>           Foreign<span class="opt">.</span>Ptr                          <span class="kwc">(</span>castPtr<span class="kwc">,</span> plusPtr<span class="kwc">)</span>
+<span class="kwb">import</span>           GHC<span class="opt">.</span>Word
+<span class="kwb">import qualified</span> Text<span class="opt">.</span>Builder                         <span class="kwb">as</span> Builder
+
+
+main :: IO <span class="kwc">()</span>
+main <span class="opt">=</span> <span class="kwd">do</span>
+  <span class="kwd">let</span>
+    skip <span class="opt">=</span> <span class="kwd">do</span>
+      l <span class="opt">&lt;-</span> ByteString<span class="opt">.</span>getLine
+      <span class="kwd">if</span> Char8<span class="opt">.</span>isPrefixOf <span class="sng">&quot;&gt;THREE&quot;</span> l
+          <span class="kwd">then</span> return <span class="kwc">()</span>
+          <span class="kwd">else</span> skip
+  skip
+  s <span class="opt">&lt;-</span> ByteString<span class="opt">.</span>getContents
+  <span class="kwd">let</span> sv <span class="opt">=</span> byteStringToVector s
+  <span class="kwd">let</span>
+    content <span class="opt">=</span>
+     <span class="slc">-- Remove newlines and only keep the second and third</span>
+     <span class="slc">-- bit of each character as in many of the faster solutions.</span>
+        Storable<span class="opt">.</span>map <span class="kwc">(\</span>b <span class="opt">-&gt;</span> <span class="kwc">(</span>b <span class="opt">.&amp;.</span> <span class="num">0</span>b110<span class="kwc">)</span> <span class="opt">`shiftR`</span> <span class="num">1</span><span class="kwc">)</span>
+      <span class="opt">.</span> Storable<span class="opt">.</span>filter <span class="kwc">(</span><span class="opt">/=</span> <span class="num">10</span><span class="kwc">)</span> <span class="opt">$</span> sv
+  <span class="slc">-- return results in parallel.</span>
+  results <span class="opt">&lt;-</span> ParallelIO<span class="opt">.</span>parallel <span class="kwc">(</span>actions content<span class="kwc">)</span>
+  <span class="slc">-- Put builder results to stdout.</span>
+  Builder<span class="opt">.</span>putToStdOut <span class="kwc">(</span>foldl&#39; <span class="kwc">(</span><span class="opt">&lt;&gt;</span><span class="kwc">)</span> mempty results<span class="kwc">)</span>
+
+<span class="com">{-# inline actions #-}</span>
+<span class="slc">-- Tasks to be run in parallel.</span>
+actions :: Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> <span class="kwc">[</span>IO Builder<span class="opt">.</span>Builder<span class="kwc">]</span>
+actions content <span class="opt">=</span>
+  <span class="kwc">[</span> writeFrequencies1 content
+  <span class="kwc">,</span> writeFrequencies2 content
+  <span class="kwc">,</span> writeCount content <span class="sng">&quot;GGT&quot;</span>
+  <span class="kwc">,</span> writeCount content <span class="sng">&quot;GGTA&quot;</span>
+  <span class="kwc">,</span> writeCount content <span class="sng">&quot;GGTATT&quot;</span>
+  <span class="kwc">,</span> writeCount content <span class="sng">&quot;GGTATTTTAATT&quot;</span>
+  <span class="kwc">,</span> writeCount content <span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span>
+  <span class="kwc">]</span>
+
+<span class="slc">-- Write the one-letter frequences into text builder.</span>
+writeFrequencies1 :: Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> IO Builder<span class="opt">.</span>Builder
+writeFrequencies1 input <span class="opt">=</span> <span class="kwd">do</span>
+    hm <span class="opt">&lt;-</span> calculate1B input
+    mv <span class="opt">&lt;-</span> Vector<span class="opt">.</span>unsafeThaw <span class="opt">.</span> Vector<span class="opt">.</span>fromList <span class="opt">.</span> HashMap<span class="opt">.</span>toList <span class="opt">$</span> hm
+    Sort<span class="opt">.</span>sortBy <span class="kwc">(</span>\<span class="kwc">(</span>_<span class="kwc">,</span>x<span class="kwc">) (</span>_<span class="kwc">,</span>y<span class="kwc">)</span> <span class="opt">-&gt;</span> y <span class="opt">`compare`</span> x<span class="kwc">)</span> mv
+    sorted :: Vector<span class="opt">.</span>Vector <span class="kwc">(</span>Word8<span class="kwc">,</span> Int<span class="kwc">)</span>  <span class="opt">&lt;-</span> Vector<span class="opt">.</span>unsafeFreeze <span class="opt">$</span> mv
+    <span class="kwd">let</span>
+      inputLength :: Double
+      inputLength <span class="opt">=</span> fromIntegral <span class="kwc">(</span>Storable<span class="opt">.</span>length input<span class="kwc">)</span>
+    <span class="kwd">let</span> b <span class="opt">=</span> Vector<span class="opt">.</span>foldl&#39; <span class="kwc">(\</span>acc <span class="kwc">(</span>k<span class="kwc">,</span>v<span class="kwc">)</span><span class="opt">-&gt;</span>
+                      <span class="kwd">let</span>
+                        perc :: Double
+                        perc <span class="opt">=</span> <span class="num">100</span> <span class="opt">*</span> <span class="kwc">(</span>fromIntegral v<span class="kwc">)</span><span class="opt">/</span>inputLength
+                      <span class="kwd">in</span>
+                          acc
+                       <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="kwc">(</span>decode <span class="opt">$</span> k<span class="kwc">)</span>
+                       <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="sng">&#39; &#39;</span>
+                       <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>fixedDouble <span class="num">3</span> perc
+                       <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span> mempty sorted
+    pure <span class="kwc">(</span>b <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span>
+
+<span class="slc">-- Write the two-letter frequencies into text builder.</span>
+writeFrequencies2 :: Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> IO Builder<span class="opt">.</span>Builder
+writeFrequencies2 input <span class="opt">=</span> <span class="kwd">do</span>
+    hm <span class="opt">&lt;-</span> calculate2B input
+    mv <span class="opt">&lt;-</span> Vector<span class="opt">.</span>unsafeThaw <span class="opt">.</span> Vector<span class="opt">.</span>fromList <span class="opt">.</span> HashMap<span class="opt">.</span>toList <span class="opt">$</span> hm
+    Sort<span class="opt">.</span>sortBy <span class="kwc">(</span>\<span class="kwc">(</span>_<span class="kwc">,</span>x<span class="kwc">) (</span>_<span class="kwc">,</span>y<span class="kwc">)</span> <span class="opt">-&gt;</span> y <span class="opt">`compare`</span> x<span class="kwc">)</span> mv
+    sorted :: Vector<span class="opt">.</span>Vector <span class="kwc">(</span>Word16<span class="kwc">,</span> Int<span class="kwc">)</span>  <span class="opt">&lt;-</span> Vector<span class="opt">.</span>unsafeFreeze <span class="opt">$</span> mv
+    <span class="kwd">let</span>
+      inputLength :: Double
+      inputLength  <span class="opt">=</span> fromIntegral <span class="kwc">(</span>Storable<span class="opt">.</span>length input<span class="kwc">)</span> <span class="opt">-</span> <span class="num">1</span>
+    <span class="kwd">let</span> b <span class="opt">=</span> foldl&#39; <span class="kwc">(\</span>acc <span class="kwc">(</span>k<span class="kwc">,</span>v<span class="kwc">)</span><span class="opt">-&gt;</span>
+                      <span class="kwd">let</span>
+                        perc :: Double
+                        perc <span class="opt">=</span> <span class="num">100</span> <span class="opt">*</span> <span class="kwc">(</span>fromIntegral v<span class="kwc">)</span><span class="opt">/</span>inputLength
+                      <span class="kwd">in</span>
+                          acc
+                       <span class="opt">&lt;&gt;</span> decode16 k
+                       <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="sng">&#39; &#39;</span>
+                       <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>fixedDouble <span class="num">3</span> perc
+                       <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span> mempty  sorted
+    pure <span class="kwc">(</span>b <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span>
+
+<span class="slc">-- Convert byte back to letter.</span>
+decode :: Word8 <span class="opt">-&gt;</span> Char
+decode <span class="num">0</span> <span class="opt">=</span> <span class="sng">&#39;A&#39;</span>
+decode <span class="num">1</span> <span class="opt">=</span> <span class="sng">&#39;C&#39;</span>
+decode <span class="num">2</span> <span class="opt">=</span> <span class="sng">&#39;T&#39;</span>
+decode <span class="num">3</span> <span class="opt">=</span> <span class="sng">&#39;G&#39;</span>
+decode _ <span class="opt">=</span> error <span class="sng">&quot;decode: encountered unexpected byte&quot;</span>
+
+<span class="slc">-- Convert pair of bytes back to pair of letters</span>
+decode16 :: Word16 <span class="opt">-&gt;</span> Builder<span class="opt">.</span>Builder
+decode16 <span class="num">0</span>b0000000000000000 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;AA&quot;</span>
+decode16 <span class="num">0</span>b0000000000000001 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;CA&quot;</span>
+decode16 <span class="num">0</span>b0000000000000010 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;TA&quot;</span>
+decode16 <span class="num">0</span>b0000000000000011 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;GA&quot;</span>
+decode16 <span class="num">0</span>b0000000100000000 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;AC&quot;</span>
+decode16 <span class="num">0</span>b0000000100000001 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;CC&quot;</span>
+decode16 <span class="num">0</span>b0000000100000010 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;TC&quot;</span>
+decode16 <span class="num">0</span>b0000000100000011 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;GC&quot;</span>
+decode16 <span class="num">0</span>b0000001000000000 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;AT&quot;</span>
+decode16 <span class="num">0</span>b0000001000000001 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;CT&quot;</span>
+decode16 <span class="num">0</span>b0000001000000010 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;TT&quot;</span>
+decode16 <span class="num">0</span>b0000001000000011 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;GT&quot;</span>
+decode16 <span class="num">0</span>b0000001100000000 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;AG&quot;</span>
+decode16 <span class="num">0</span>b0000001100000001 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;CG&quot;</span>
+decode16 <span class="num">0</span>b0000001100000010 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;TG&quot;</span>
+decode16 <span class="num">0</span>b0000001100000011 <span class="opt">=</span> Builder<span class="opt">.</span>text <span class="sng">&quot;GG&quot;</span>
+decode16 n                  <span class="opt">=</span> error <span class="opt">$</span> <span class="sng">&quot;decode16: unexpected bits: &quot;</span> <span class="opt">&lt;&gt;</span> show n
+
+
+<span class="slc">-- Compute hashmap of single character occurences</span>
+calculate1B :: Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> IO <span class="kwc">(</span>HashMap Word8 Int<span class="kwc">)</span>
+calculate1B input <span class="opt">=</span> Storable<span class="opt">.</span>foldM&#39; updateMap HashMap<span class="opt">.</span>empty input <span class="opt">&gt;&gt;=</span> traverse readPVar
+  <span class="kwb">where</span>
+    updateMap
+      :: HashMap Word8 <span class="kwc">(</span>PVar Int RW<span class="kwc">)</span>
+      <span class="opt">-&gt;</span> Word8
+      <span class="opt">-&gt;</span> IO <span class="kwc">(</span>HashMap Word8 <span class="kwc">(</span>PVar Int RW<span class="kwc">))</span>
+    updateMap freqmap word <span class="opt">=</span>
+         <span class="kwd">case</span> HashMap<span class="opt">.</span>lookup word freqmap <span class="kwd">of</span>
+            Nothing <span class="opt">-&gt;</span>
+              <span class="kwd">do</span>
+                ref <span class="opt">&lt;-</span> newPVar <span class="num">1</span>
+                <span class="kwd">let</span>
+                  freqmap&#39;
+                  <span class="slc">-- Use insertNewKey as we know key is not present</span>
+                      <span class="opt">=</span> Internal<span class="opt">.</span>insertNewKey <span class="kwc">(</span>fromIntegral word<span class="kwc">)</span> word ref freqmap
+                pure freqmap&#39;
+                   <span class="slc">-- Mutate reference over copying hashmap on insert.</span>
+            Just x <span class="opt">-&gt;</span> modifyPVar_ x <span class="kwc">(</span><span class="opt">+</span><span class="num">1</span><span class="kwc">)</span> <span class="opt">&gt;&gt;</span> pure freqmap
+
+
+<span class="slc">-- Compute hashmap of two-character occurences.</span>
+calculate2B :: Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> IO <span class="kwc">(</span>HashMap Word16 Int<span class="kwc">)</span>
+calculate2B input <span class="opt">=</span> fold16M updateMap HashMap<span class="opt">.</span>empty input <span class="opt">&gt;&gt;=</span> traverse readPVar
+  <span class="kwb">where</span>
+    updateMap
+      :: HashMap Word16 <span class="kwc">(</span>PVar Int RW<span class="kwc">)</span>
+      <span class="opt">-&gt;</span> Word16
+      <span class="opt">-&gt;</span> IO <span class="kwc">(</span>HashMap Word16 <span class="kwc">(</span>PVar Int RW<span class="kwc">))</span>
+    updateMap freqmap word <span class="opt">=</span>
+         <span class="kwd">case</span> HashMap<span class="opt">.</span>lookup word freqmap <span class="kwd">of</span>
+            Nothing <span class="opt">-&gt;</span>
+              <span class="kwd">do</span>
+                ref <span class="opt">&lt;-</span> newPVar <span class="num">1</span>
+                <span class="kwd">let</span>
+                  freqmap&#39;
+                  <span class="slc">-- Use insertNewKey as we know key is not present</span>
+                      <span class="opt">=</span> Internal<span class="opt">.</span>insertNewKey <span class="kwc">(</span>fromIntegral word<span class="kwc">)</span> word ref freqmap
+                pure freqmap&#39;
+                   <span class="slc">-- Mutate reference over copying hashmap on insert.</span>
+            Just x <span class="opt">-&gt;</span> modifyPVar_ x <span class="kwc">(</span><span class="opt">+</span><span class="num">1</span><span class="kwc">)</span> <span class="opt">&gt;&gt;</span> pure freqmap
+
+
+<span class="com">{-# INLINE writeCount #-}</span>
+<span class="slc">-- Write number of occurences of string in input.</span>
+writeCount :: Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> ByteString <span class="opt">-&gt;</span> IO Builder<span class="opt">.</span>Builder
+writeCount input string <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span> size <span class="opt">=</span> Char8<span class="opt">.</span>length string
+    <span class="kwd">let</span> stringV <span class="opt">=</span> byteStringToVector string
+    <span class="kwd">let</span> encoded <span class="opt">=</span> Storable<span class="opt">.</span>map <span class="kwc">(\</span>b <span class="opt">-&gt;</span> <span class="kwc">(</span>b <span class="opt">.&amp;.</span> <span class="num">0</span>b110<span class="kwc">)</span> <span class="opt">`shiftR`</span> <span class="num">1</span><span class="kwc">)</span> <span class="opt">$</span> stringV
+    hm <span class="opt">&lt;-</span> tcalculate input size
+    <span class="kwd">let</span>
+      v :: Int
+      v <span class="opt">=</span> maybe <span class="num">0</span> id <span class="opt">$</span> HashMap<span class="opt">.</span>lookup <span class="kwc">(</span>coerce encoded<span class="kwc">)</span> hm
+    <span class="kwd">let</span> b <span class="opt">=</span> Builder<span class="opt">.</span>unsignedDecimal v <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="sng">&#39;</span><span class="esc">\t</span><span class="sng">&#39;</span> <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>asciiByteString string
+    pure <span class="kwc">(</span>b <span class="opt">&lt;&gt;</span> Builder<span class="opt">.</span>char <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span>
+
+<span class="slc">-- Compute hashmaps in parallel over given increment</span>
+<span class="slc">-- and then re-combine.</span>
+tcalculate :: Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> IO <span class="kwc">(</span>HashMap Incremental Int<span class="kwc">)</span>
+tcalculate input size <span class="opt">=</span> <span class="kwd">do</span>
+    <span class="kwd">let</span>
+      computeHashMaps <span class="opt">=</span> map <span class="kwc">(</span>\i <span class="opt">-&gt;</span> calculate input i size <span class="num">64</span><span class="kwc">) [</span><span class="num">0</span><span class="opt">..</span>63<span class="kwc">]</span>
+    results <span class="opt">&lt;-</span> ParallelIO<span class="opt">.</span>parallel computeHashMaps
+    return
+      <span class="opt">$</span> foldl&#39; <span class="kwc">(</span>\ acc hm <span class="opt">-&gt;</span> HashMap<span class="opt">.</span>unionWith <span class="kwc">(</span><span class="opt">+</span><span class="kwc">)</span> acc hm<span class="kwc">)</span> HashMap<span class="opt">.</span>empty results
+
+<span class="slc">-- Compute hashmap from given beginning point with the given increment.</span>
+calculate :: Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> IO <span class="kwc">(</span>HashMap Incremental Int<span class="kwc">)</span>
+calculate input <span class="opt">!</span>beg <span class="opt">!</span>size <span class="opt">!</span>incr <span class="opt">=</span>
+    Stream<span class="opt">.</span>foldM&#39; updateHashMap HashMap<span class="opt">.</span>empty <span class="kwc">(</span>fromVectorWithInc beg size incr end input<span class="kwc">)</span> <span class="opt">&gt;&gt;=</span>
+    traverse readPVar
+  <span class="kwb">where</span>
+    end <span class="opt">=</span> Storable<span class="opt">.</span>length input <span class="opt">+</span> <span class="num">1</span> <span class="opt">-</span> size
+    updateHashMap
+      :: HashMap Incremental <span class="kwc">(</span>PVar Int RW<span class="kwc">)</span>
+      <span class="opt">-&gt;</span> Incremental
+      <span class="opt">-&gt;</span> IO <span class="kwc">(</span>HashMap Incremental <span class="kwc">(</span>PVar Int RW<span class="kwc">))</span>
+    updateHashMap freqmap slice <span class="opt">=</span>
+         <span class="kwd">case</span> HashMap<span class="opt">.</span>lookup slice freqmap <span class="kwd">of</span>
+            Nothing <span class="opt">-&gt;</span> <span class="kwd">do</span>
+              ref <span class="opt">&lt;-</span> newPVar <span class="num">1</span>
+              <span class="kwd">let</span>
+                freqmap&#39;
+                    <span class="opt">=</span> Internal<span class="opt">.</span>insertNewKey <span class="kwc">(</span>fromIntegral <span class="kwc">(</span>hash slice<span class="kwc">))</span> slice ref freqmap
+              pure freqmap&#39;
+            Just x <span class="opt">-&gt;</span> modifyPVar_ x <span class="kwc">(</span><span class="opt">+</span><span class="num">1</span><span class="kwc">)</span> <span class="opt">&gt;&gt;</span> pure freqmap
+
+
+<span class="kwa">newtype</span> Incremental <span class="opt">=</span> Incremental <span class="kwc">(</span>Storable<span class="opt">.</span>Vector Word8<span class="kwc">)</span>
+  <span class="kwa">deriving newtype</span> Eq
+
+<span class="slc">-- Use a custom hashable instance using the bit values we</span>
+<span class="slc">-- have extracted from the input</span>
+<span class="kwa">instance</span> Hashable Incremental <span class="kwb">where</span>
+  hash <span class="kwc">(</span>Incremental v<span class="kwc">)</span> <span class="opt">=</span>
+    Storable<span class="opt">.</span>foldl&#39;
+    <span class="kwc">(</span>\ acc w <span class="opt">-&gt;</span> <span class="kwc">(</span>acc <span class="opt">`shiftL`</span> <span class="num">2</span><span class="kwc">)</span> <span class="opt">.|.</span> <span class="kwc">(</span>fromIntegral w<span class="kwc">))</span>
+    <span class="num">0</span>
+    v
+  hashWithSalt _ <span class="opt">=</span> error <span class="sng">&quot;hashWithSalt not implemented.&quot;</span>
+
+<span class="slc">-- Convert a bytestring to a storable vector without copying.</span>
+<span class="slc">-- Taken from: bytestring-to-vector package</span>
+byteStringToVector :: ByteString <span class="opt">-&gt;</span> Storable<span class="opt">.</span>Vector Word8
+byteStringToVector bs <span class="opt">=</span> vec <span class="kwb">where</span>
+    vec <span class="opt">=</span> Storable<span class="opt">.</span>unsafeFromForeignPtr fptr off len
+    <span class="kwc">(</span>fptr<span class="kwc">,</span> off<span class="kwc">,</span> len<span class="kwc">)</span> <span class="opt">=</span> toForeignPtr bs
+
+
+fold16M :: <span class="kwc">(</span>a <span class="opt">-&gt;</span> Word16 <span class="opt">-&gt;</span> IO a<span class="kwc">)</span> <span class="opt">-&gt;</span> a <span class="opt">-&gt;</span> Storable<span class="opt">.</span>Vector Word8 <span class="opt">-&gt;</span> IO a
+fold16M f v vec <span class="opt">=</span> <span class="kwd">do</span>
+     Storable<span class="opt">.</span>unsafeWith vec <span class="opt">$</span> \ptr <span class="opt">-&gt;</span> go v ptr <span class="kwc">(</span>ptr <span class="opt">`plusPtr`</span> <span class="kwc">(</span>len <span class="opt">-</span> <span class="num">1</span><span class="kwc">))</span>
+  <span class="kwb">where</span>
+    len <span class="opt">=</span> Storable<span class="opt">.</span>length vec
+        <span class="slc">-- tail recursive; traverses array left to right</span>
+    go <span class="opt">!</span>z <span class="opt">!</span>p end <span class="opt">|</span> p <span class="opt">==</span> end <span class="opt">=</span> return z
+                  <span class="opt">|</span> otherwise <span class="opt">=</span>
+                    <span class="kwd">do</span>
+                      x <span class="opt">&lt;-</span> peek <span class="kwc">(</span>castPtr <span class="opt">&#64;</span>_ <span class="opt">&#64;</span>Word16 p<span class="kwc">)</span>
+                      z&#39; <span class="opt">&lt;-</span> f z x
+                      go z&#39; <span class="kwc">(</span>p <span class="opt">`plusPtr`</span> <span class="num">1</span><span class="kwc">)</span> end
+
+
+
+<span class="com">{-# inline fromVectorWithInc #-}</span>
+fromVectorWithInc
+  :: forall m <span class="opt">.</span> <span class="kwc">(</span>Monad m<span class="kwc">)</span>
+  <span class="opt">=&gt;</span> Int
+  <span class="opt">-&gt;</span> Int
+  <span class="opt">-&gt;</span> Int
+  <span class="opt">-&gt;</span> Int
+  <span class="opt">-&gt;</span> Storable<span class="opt">.</span>Vector Word8
+  <span class="opt">-&gt;</span> Stream m Incremental
+fromVectorWithInc beg size inc end v <span class="opt">=</span> Stream step beg
+  <span class="kwb">where</span>
+    <span class="com">{-# INLINE step #-}</span>
+    step :: Int <span class="opt">-&gt;</span> m <span class="kwc">(</span>Step Int Incremental<span class="kwc">)</span>
+    step <span class="opt">!</span>i <span class="opt">|</span> i <span class="opt">&gt;=</span> end <span class="opt">=</span> return Done
+            <span class="opt">|</span> otherwise <span class="opt">=</span> return <span class="opt">$</span> Yield <span class="kwc">(</span>coerce <span class="kwc">(</span>Storable<span class="opt">.</span>unsafeSlice i size v<span class="kwc">)) (</span>i<span class="opt">+</span>inc<span class="kwc">)</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 07:27:34 GMT
+
+MAKE:
+mv knucleotide.ghc-3.ghc knucleotide.ghc-3.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -funbox-strict-fields -XBinaryLiterals -XDerivingStrategies -XGeneralizedNewtypeDeriving -XOverloadedStrings -XScopedTypeVariables -XTypeApplications -package hashable -package unordered-containers -package pvar -package ghc-compact knucleotide.ghc-3.hs -o knucleotide.ghc-3.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( knucleotide.ghc-3.hs, knucleotide.ghc-3.o )
+knucleotide.ghc-3.hs:40:7: warning: [GHC-68441] [-Wdeprecations]
+    In the use of ‘getLine’ (imported from Data.ByteString):
+    Deprecated: &quot;Deprecated since @bytestring-0.12@. Use 'Data.ByteString.Char8.getLine' instead. (Functions that rely on ASCII encodings belong in &quot;Data.ByteString.Char8&quot;)&quot;
+   |
+40 |       l &lt;- ByteString.getLine
+   |       ^^^^^^^^^^^^^^^^^^^^^^^
+
+[2 of 2] Linking knucleotide.ghc-3.ghc_run
+rm knucleotide.ghc-3.hs
+
+33.57 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./knucleotide.ghc-3.ghc_run +RTS -N4 -K2048M -RTS 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

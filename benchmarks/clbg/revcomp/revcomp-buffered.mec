@@ -1,0 +1,7 @@
+transform(header<string>, data<[u8]>) = (out<string>) :=
+  from := "ACGTUMRWSYKVHDBNacgtumrwsykvhdbn"
+  to := "TGCAAKYWSRMBDHVNTGCAAKYWSRMBDHVN"
+  table := bytes/table(from, to, "error")
+  wrapped := data |> sequence/reverse |> bytes/translate(_, table) |> text/wrap(_, 60, "\n")
+  out := string/concat(string/concat(header, "\n"), wrapped).
+io/read() |> text/records(_, ">", "") |> records/map(_, transform) |> io/write-each

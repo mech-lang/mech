@@ -1,0 +1,94 @@
+/* The Great Computer Language Shootout
+   http://shootout.alioth.debian.org/
+
+   Contributed by Dave Fladebo
+
+   compile: dmd -O -inline -release revcomp.d
+*/
+
+import std.ctype, std.stdio, std.c.stdlib, std.c.string;
+
+void main (char[][] args)
+{
+    char buffer[1024];
+    char* inp = cast(char*)malloc(129);
+    int mlen = 128;
+    int slen = 0;
+
+    buildIubComplement;
+
+    while(fgets(buffer.ptr, 1023, stdin))
+    {
+    	if(buffer[0] == '>')
+        {
+    	    if(slen > 0)
+            {
+    	    	process(inp, slen);
+    	    	slen = 0;
+    	    }
+    	    printf("%.*s", buffer);
+    	} else {
+    	    int l = strlen(buffer.ptr);
+    	    while(l > 0 && !isalpha(buffer[l-1])) l--;
+    	    while(slen + l > mlen)
+            {
+    	    	mlen += mlen;
+    	    	inp = cast(char*)realloc(inp, mlen + 1);
+    	    }
+
+    	    memcpy(inp + slen, buffer.ptr, l);
+    	    slen += l;
+    	}
+    }
+    if(slen > 0) process(inp, slen);
+    free(inp);
+}
+
+char[][] iubpairs = [['A','T'], ['C','G'], ['B','V'], ['D','H'], ['K','M'], ['R','Y'], ['\0','\0']];
+
+char[char.max + 1] iubComplement;
+
+void buildIubComplement()
+{
+    for(int i=0; i <= char.max; i++) iubComplement[i] = i;
+    for(int i=0; iubpairs[i][0] != '\0'; i++)
+    {
+    	iubComplement[iubpairs[i][0]] = iubpairs[i][1];
+    	iubComplement[iubpairs[i][1]] = iubpairs[i][0];
+    	iubComplement[tolower (iubpairs[i][0])] = iubpairs[i][1];
+    	iubComplement[tolower (iubpairs[i][1])] = iubpairs[i][0];
+    }
+}
+
+void inPlaceReverse(char* strand, int len)
+{
+    int i;
+    for(i=0, len--; i < len; i++,len--)
+    {
+    	char c = strand[i];
+    	strand[i] = iubComplement[strand[len]];
+    	strand[len] = iubComplement[c];
+    }
+    if(i == len) strand[i] = iubComplement[strand[i]];
+}
+
+void process(char* strand, int len)
+{
+    char* s;
+
+    inPlaceReverse(strand, len);
+    s = strand;
+
+    while(len > 60)
+    {
+    	char c = s[60];
+    	s[60] = '\0';
+    	puts (s);
+    	s[60] = c;
+    	s += 60;
+    	len -= 60;
+    }
+
+    s[len] = '\0';
+    puts(s);
+}

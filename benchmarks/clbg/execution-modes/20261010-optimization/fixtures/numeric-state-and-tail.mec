@@ -1,0 +1,7 @@
+~left := [1.0, 2.0, 3.0]
+~right := [10.0, 20.0, 30.0]
+next-left := right
+next-right := left
+left = next-left
+right = next-right
+left[1] + left[2] + left[3] + 2.0 * (right[1] + right[2] + right[3])

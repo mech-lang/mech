@@ -1,0 +1,196 @@
+{
+  "status": "complete",
+  "runner": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/.build/mech-execution-modes-final",
+  "runner_sha256": "ce96e07c5c37728c29de7fa7bd2454a08503c4f92041f972320d73c3bb3a7d56",
+  "emitter": "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+  "emitter_sha256": "1c4d54e734f07d95e483a24a95c74abb19348f68bb2c3960334973258f57562c",
+  "programs": {
+    "nbody:pairwise-mass-tails": {
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "native_object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+      "original_native_object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "numeric",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/nbody-pairwise-mass-tails",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ]
+    },
+    "nbody:compact-baseline": {
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "native_object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+      "original_native_object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "numeric",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/nbody-compact-baseline",
+        "--fp-contract",
+        "--algebraic-powers"
+      ]
+    },
+    "mandelbrot:mech-program-simd-loop-fma": {
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+      "original_native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "grid",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/mandelbrot-mech-program-simd-loop-fma",
+        "--fp-contract-loop"
+      ]
+    },
+    "mandelbrot:mech-program-compact": {
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "native_object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+      "original_native_object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "grid",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/mandelbrot-mech-program-compact",
+        "--scalar"
+      ]
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4": {
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "native_object_sha256": "6bbb29e24b736879f6ea0223e4111e0289e3ca139a2bf6f36ac89f512e1f1d4f",
+      "original_native_object_sha256": "6bbb29e24b736879f6ea0223e4111e0289e3ca139a2bf6f36ac89f512e1f1d4f",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "sequence",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/knucleotide-mech-compact-final-std1-simd0-p4"
+      ]
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8": {
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "native_object_sha256": "84bafbcb5e7c56a5cea4805cfc79fa16f1abc26bde514e3d4d2be8914562bc2b",
+      "original_native_object_sha256": "84bafbcb5e7c56a5cea4805cfc79fa16f1abc26bde514e3d4d2be8914562bc2b",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "sequence",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/spectralnorm-mech-integer-simd1-u4-r4-p8-g8"
+      ]
+    },
+    "revcomp:mech-revcomp-optimized": {
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "native_object_sha256": "c1e649ece8e124ba23a6b1a3030217eacece9ee1042eb8726c40aee9aafc7cc4",
+      "original_native_object_sha256": "c1e649ece8e124ba23a6b1a3030217eacece9ee1042eb8726c40aee9aafc7cc4",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "sequence",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/revcomp-mech-revcomp-optimized"
+      ]
+    },
+    "fannkuchredux:mech-fannkuch-even": {
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "native_object_sha256": "8430f419036230f41625215e0e956a3a347975aeaeabe1c68da97c2c33238288",
+      "original_native_object_sha256": "8430f419036230f41625215e0e956a3a347975aeaeabe1c68da97c2c33238288",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "control",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/fannkuchredux-mech-fannkuch-even"
+      ]
+    },
+    "fannkuchredux:mech-fannkuch-default": {
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "native_object_sha256": "8a1d0c8f565a1e762f47c3629a75c8cbb29fe58563c29fceff57033ed88523ea",
+      "original_native_object_sha256": "8a1d0c8f565a1e762f47c3629a75c8cbb29fe58563c29fceff57033ed88523ea",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "control",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/fannkuchredux-mech-fannkuch-default"
+      ]
+    },
+    "fasta:mech-fasta-final-expanded-v2": {
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "native_object_sha256": "da16ddc347a935d586d42b18b39065e1339f0a0afccd9feede06e667ab47bfb7",
+      "original_native_object_sha256": "da16ddc347a935d586d42b18b39065e1339f0a0afccd9feede06e667ab47bfb7",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "control",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/fasta-mech-fasta-final-expanded-v2"
+      ]
+    },
+    "fasta:mech-fasta-final-compact-v2": {
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+      "original_native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "control",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/fasta-mech-fasta-final-compact-v2"
+      ]
+    },
+    "binarytrees:mech-binarytrees-parallel": {
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "native_object_sha256": "c20a6cdc8409a6eca9594cdc4fdc96140761f78ebcbdd9c99a478a26f6daa16f",
+      "original_native_object_sha256": "c20a6cdc8409a6eca9594cdc4fdc96140761f78ebcbdd9c99a478a26f6daa16f",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "control",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/binarytrees-mech-binarytrees-parallel"
+      ]
+    },
+    "regexredux:mech-regex-final-reuse-signed": {
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "native_object_sha256": "2e5a7cad20128410422c160d364d45d4ccd492999b0eccc76ffe68ba7e5d4f7c",
+      "original_native_object_sha256": "2e5a7cad20128410422c160d364d45d4ccd492999b0eccc76ffe68ba7e5d4f7c",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "sequence",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/regexredux-mech-regex-final-reuse-signed"
+      ]
+    },
+    "pidigits:mech-pi-final-advance-signed": {
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "native_object_sha256": "ec80845402fc6a9e9f25afa55d7e2505ef01b9a5af9f51d490691fdcc49c5fcf",
+      "original_native_object_sha256": "ec80845402fc6a9e9f25afa55d7e2505ef01b9a5af9f51d490691fdcc49c5fcf",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "control",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/pidigits-mech-pi-final-advance-signed"
+      ]
+    },
+    "pidigits:mech-pi-final-compact-signed": {
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "native_object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+      "original_native_object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+      "identical": true,
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-final-emit",
+        "control",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/objects/pidigits-mech-pi-final-compact-signed"
+      ]
+    }
+  }
+}

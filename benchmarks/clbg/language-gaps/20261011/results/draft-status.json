@@ -1,0 +1,32 @@
+{
+  "fasta.binary-search.mec": {
+    "physical_loc": 14,
+    "sha256": "7a3d21986c8312f256b7667ec71e21156c9d3bd8e2524a01b95c0f9771b960c2",
+    "status": "Complete output validated in AOT/JIT/JIT without inlining/interpreted; full workload validated and measured."
+  },
+  "fasta.prototype.mec": {
+    "physical_loc": 11,
+    "sha256": "4863053d6d9e16d9ced4e05531a7cd36c62d3ac70ba1f8ca1de9853300404546",
+    "status": "Complete output validated in AOT/JIT/JIT without inlining/interpreted; full workload validated and measured."
+  },
+  "fasta.readable.mec": {
+    "physical_loc": 21,
+    "sha256": "866c14097baf214f500d69c052dd5c396b89667d25a24337ef16654776c297f2",
+    "status": "Readable wrapping of the FASTA expression prototype; not independently built."
+  },
+  "pidigits.hypothetical.mec": {
+    "physical_loc": 15,
+    "sha256": "3441917b150471dec96a3b2be9bb20ddf1f86bab885ee06169ff832ef99cf80a",
+    "status": "Uncompiled hypothetical; missing general lowerings/APIs."
+  },
+  "pidigits.prototype.mec": {
+    "physical_loc": 21,
+    "sha256": "e8a3197fb776b633ccba133d5193d48769eebf90b9f8a8ceccde4d4725278a08",
+    "status": "Complete output validated in AOT/JIT/JIT without inlining/interpreted; full workload validated and measured."
+  },
+  "regexredux.hypothetical.mec": {
+    "physical_loc": 8,
+    "sha256": "5ac2c75e2bae711b74399d0015756978dc1968c23e493b6bc404a8047484f4dd",
+    "status": "Uncompiled hypothetical; missing general lowerings/APIs."
+  }
+}

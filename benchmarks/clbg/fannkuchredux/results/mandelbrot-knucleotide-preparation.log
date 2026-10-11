@@ -1,0 +1,16 @@
+Prepare mech-program-compact
+ld: warning: no platform load command found in '/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-svpfQX/grid.o', assuming: macOS
+Prepare mech-program-simd
+ld: warning: no platform load command found in '/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-xEb8OP/grid.o', assuming: macOS
+Prepare mech-program-simd-loop-fma
+ld: warning: no platform load command found in '/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-g09Puz/grid.o', assuming: macOS
+Prepare mech-compact-final-std1-simd0-p4
+     Locking 187 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+   Compiling knucleotide-compact v0.0.0 (/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-yo4LB7)
+    Finished `release` profile [optimized] target(s) in 1.81s
+Prepare mech-parallel-final-std1-simd0-p4
+     Locking 187 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+   Compiling knucleotide v0.0.0 (/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-3xAypi)
+    Finished `release` profile [optimized] target(s) in 1.76s

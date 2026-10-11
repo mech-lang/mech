@@ -1,0 +1,112 @@
+{
+  "id": "regexredux-csharpcore-2-arm64-faithful-aot",
+  "key": "regexredux:regexredux-csharpcore-2-arm64-faithful-aot",
+  "benchmark": "regexredux",
+  "language": "csharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/regexredux-csharpcore-2-arm64-faithful.cs",
+  "source_sha256": "4d4a9abfb13ab40f4d75269cf00e472cb73be9ea96359377d84e8920b4820466",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/regexredux-csharpcore-2.cs",
+  "original_source_sha256": "6c18018dcc4e3db2a8629866f118a8ed851fa45c56dd0efbbeee0e23aea1d7d8",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-csharpcore-2.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 08:42:21 GMT\n\nMAKE:\ncp regexredux.csharpcore-2.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.csproj (in 680 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:05.80\n\n7.54s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 0 < regexredux-input5000000.txt\n\nPROGRAM OUTPUT:\nagggtaaa|tttaccct 356\n[cgt]gggtaaa|tttaccc[acg] 1250\na[act]ggtaaa|tttacc[agt]t 4252\nag[act]gtaaa|tttac[agt]ct 2894\nagg[act]taaa|ttta[agt]cct 5435\naggg[acg]aaa|ttt[cgt]ccct 1537\nagggt[cgt]aa|tt[acg]accct 1431\nagggta[cgt]a|t[acg]taccct 1608\nagggtaa[cgt]|[acg]ttaccct 2178\n\n50833411\n50000000\n27388361",
+  "adaptations": [
+    "Pin the native PCRE2 library and use an in/out output-size pointer in the ordinary replacement binding."
+  ],
+  "local_adaptation": true,
+  "physical_loc": 131,
+  "normalized_loc": 141,
+  "expansions": [
+    {
+      "line": 113,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 124,
+      "extra_lines": 2,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 142,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 146,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 149,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 153,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 156,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 159,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 162,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/regexredux-csharpcore-2-arm64-faithful-aot/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-2-arm64-faithful-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/regexredux-csharpcore-2-arm64-faithful-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-2-arm64-faithful-aot/app",
+  "binary_sha256": "0816918bc7a1f876d45d3a3f82e52339f4feca9c8e5a1e8383218ab9dc53c0e8",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-2-arm64-faithful-aot/app"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-csharpcore-2-arm64-faithful-aot/app": "0816918bc7a1f876d45d3a3f82e52339f4feca9c8e5a1e8383218ab9dc53c0e8"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 262,
+    "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 1.427,
+  "timing_selection_reasons": [
+    "Lowest officially published elapsed time at the prescribed full workload; local timing still required.",
+    "Additional ARM SIMD or complete rolling-map optimization candidate."
+  ]
+}

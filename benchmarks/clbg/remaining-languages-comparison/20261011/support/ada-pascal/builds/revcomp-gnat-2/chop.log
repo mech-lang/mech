@@ -1,0 +1,6 @@
+splitting /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/ada/revcomp-gnat-2.adb into:
+   revcomp.adb
+   text_input.ads
+   text_input.adb
+   line_io.ads
+   line_io.adb

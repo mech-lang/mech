@@ -1,0 +1,1 @@
+Alien based distribution with architecture specific file in share

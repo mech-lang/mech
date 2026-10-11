@@ -1,0 +1,385 @@
+{
+  "status": "passed",
+  "programs": {
+    "binarytrees:binarytrees-erlang-1": {
+      "status": "passed",
+      "source_sha256": "2f00106ab1454d6f65fd355f7ab0dfe8c6d72a23e60c61d42e73c236561e7a4f",
+      "seconds": 0.113216667,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-erlang-2": {
+      "status": "passed",
+      "source_sha256": "7186119844387945140dd9d84edc376547a04da1d582e3591022aa364239fa10",
+      "seconds": 0.111508791,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:fannkuchredux-erlang-1": {
+      "status": "passed",
+      "source_sha256": "7c5bde88454b01136675a9e337706264f30dc6d55d5b4ba906c947cc0b3b3ac5",
+      "seconds": 0.119512125,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-erlang-1": {
+      "status": "passed",
+      "source_sha256": "73b34520a8ae4ca01b28dffec7b0df6d9a556c84f8e2a865bd149c1778ce6589",
+      "seconds": 0.101341125,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-erlang-2": {
+      "status": "passed",
+      "source_sha256": "73a61b56f5653429000f4e28903355b18e94b9c86ebeb133b621cc9766f07c3d",
+      "seconds": 0.109785791,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-erlang-1": {
+      "status": "passed",
+      "source_sha256": "b4bc101738dd35f6520a6e98842c06fd8612824e680276ea94698bf68502e210",
+      "seconds": 0.106966583,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-erlang-3": {
+      "status": "passed",
+      "source_sha256": "e2bab46bdd3670a0344e373a68702ca7e77b7e2c32929a35402dd0ba5ba32d82",
+      "seconds": 0.114187208,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-erlang-3": {
+      "status": "passed",
+      "source_sha256": "13fa7dd82a04e5c8cd627d2ec40310066f0324f86066d007cfbb1ea4a43553dd",
+      "seconds": 0.115375208,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-erlang-4": {
+      "status": "passed",
+      "source_sha256": "4e9a6147061f5e7def1b58a27c32a64a0cc3e111b03775f5f2d97233fea42379",
+      "seconds": 0.118204875,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-erlang-1": {
+      "status": "failed",
+      "source_sha256": "8511c8e5953cd3c08cdb9e9b9b0a7f0e4e8b540aab6c86691f9254652f239a36",
+      "error": "('mandelbrot', 6991, 'fe905fc30cba37bba81cf1b1df430b1445a1ec6152432838a2db3b47989b6b60', 5011, '97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5')"
+    },
+    "mandelbrot:mandelbrot-erlang-2": {
+      "status": "failed",
+      "source_sha256": "61473f33a5770b6ce15f8ead44602785f040224afdf911f3e62ffbd18a9778db",
+      "error": "('mandelbrot', 6991, 'fe905fc30cba37bba81cf1b1df430b1445a1ec6152432838a2db3b47989b6b60', 5011, '97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5')"
+    },
+    "nbody:nbody-erlang-3": {
+      "status": "passed",
+      "source_sha256": "9f66ffe55a1945b707621544345ed2840a1fcc7e84378668a595e58dea4046f0",
+      "seconds": 0.106642042,
+      "validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "stderr": "",
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-erlang-2": {
+      "status": "passed",
+      "source_sha256": "015899cd3d1691016a43ee541f839b15b3040ebc2dbbea0a0b0e7bbe84804ea9",
+      "seconds": 0.108516292,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-erlang-1": {
+      "status": "passed",
+      "source_sha256": "a23ca682b59899a40e71a8be1913a08f7b5d5b962ffb81148b938b8b8c135d81",
+      "seconds": 0.102854083,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-erlang-3": {
+      "status": "passed",
+      "source_sha256": "3310461c73c004633339c749b906365dce5b298f55064826d37f92ce2d4aaa6c",
+      "seconds": 0.107644292,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "regexredux:regexredux-erlang-6": {
+      "status": "passed",
+      "source_sha256": "b38d70db4de042d5c7bbacc20aa2808b795186ce923df1596a73d262192142c0",
+      "seconds": 0.12724375,
+      "validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "revcomp:revcomp-erlang-1": {
+      "status": "passed",
+      "source_sha256": "9cd7ce7fbbbe41ba0f48565ba35879d739980973b5a8c2c6b54fe61bb42b0c3b",
+      "seconds": 0.1099295,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "revcomp:revcomp-erlang-4": {
+      "status": "passed",
+      "source_sha256": "4e74c9e502428fa2511c9ff2ee4117861d7755a23f0ac4e53f014ba4b53669dd",
+      "seconds": 0.110224542,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "revcomp:revcomp-erlang-3": {
+      "status": "passed",
+      "source_sha256": "9429dffd13cb779a0d254a3ac32bc8376b735e230a00a3bf389a2c2ec556163d",
+      "seconds": 0.110951333,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-erlang-1": {
+      "status": "passed",
+      "source_sha256": "2930fd184250bd8186915911de49091f3b6a8256272f7f36ffcc015b6526ff89",
+      "seconds": 0.110355834,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-erlang-2": {
+      "status": "passed",
+      "source_sha256": "e73d96678f5a437fad29318b04867608b4ec79a4996bd131614770bf65654c76",
+      "seconds": 0.110662083,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-erlang-1-faithful": {
+      "status": "passed",
+      "source_sha256": "3ec54d1186802716832fd59b0f335ebbdeebbc9f67bb04d78040e080ff5bad68",
+      "seconds": 0.103788875,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-erlang-2-faithful": {
+      "status": "passed",
+      "source_sha256": "4e7e3bbffcde7fd09a529e135c22bda8728d11573b60bba7fae78b9074c825c6",
+      "seconds": 0.109870542,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-erlang-1-faithful": {
+      "status": "passed",
+      "source_sha256": "33f1054e093204f9f105fbfadc1ffdc9beb1e958c0b09b9e254218569e40aa2c",
+      "seconds": 0.109324541,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-erlang-2-faithful": {
+      "status": "passed",
+      "source_sha256": "7209bbd711666fb1a24470c73bae4935448bbd0b695cd574bfa3590a81320259",
+      "seconds": 0.110944125,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-erlang-1-faithful": {
+      "status": "passed",
+      "source_sha256": "e463b84fd0bfbc40246f0ecbbd968b0afd8e95302215946128920fd9c59efc39",
+      "seconds": 0.108573834,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-erlang-3-faithful": {
+      "status": "passed",
+      "source_sha256": "8e4825a9b38a083802f382e0f14490c7e1f1b6971d6d7ec2bb329869375155e2",
+      "seconds": 0.112510166,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-erlang-3-faithful": {
+      "status": "passed",
+      "source_sha256": "c2ea865ac19891551fd0b5acb53f0d837e0f28c108c38a3c3c388439d35e078f",
+      "seconds": 0.113675667,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-erlang-4-faithful": {
+      "status": "passed",
+      "source_sha256": "523734fe27613f50fc2f8408456d814ef5a28776cb1f17dcc992e5a5b2e6fb33",
+      "seconds": 0.130468958,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-erlang-1-faithful": {
+      "status": "passed",
+      "source_sha256": "3f63c723f3e377096f35b96eb6e289f58dc7397df4ac981ef07d1cf63aa48f43",
+      "seconds": 0.116134416,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-erlang-2-faithful": {
+      "status": "passed",
+      "source_sha256": "bb2c57e38344c6c6ef93a7d11c544b7538050f18ba3c10f5d0b9da949b33a35b",
+      "seconds": 0.119269375,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "regexredux:regexredux-erlang-6-faithful": {
+      "status": "passed",
+      "source_sha256": "dc53ea64bda55c8b1472f7f16e322700bf31ef6b4bea1e581662639a02c09bac",
+      "seconds": 0.120465917,
+      "validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    }
+  },
+  "power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  }
+}

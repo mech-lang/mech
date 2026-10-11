@@ -1,0 +1,9 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-compact.fs(2,1): warning FS0221: The declarations in this file will be placed in an implicit module 'Knucleotide-fsharp-local-compact' based on the file name 'knucleotide-fsharp-local-compact.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file. [/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharp-local-compact-jit/app.fsproj]
+
+Build succeeded.
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-compact.fs(2,1): warning FS0221: The declarations in this file will be placed in an implicit module 'Knucleotide-fsharp-local-compact' based on the file name 'knucleotide-fsharp-local-compact.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file. [/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharp-local-compact-jit/app.fsproj]
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.85

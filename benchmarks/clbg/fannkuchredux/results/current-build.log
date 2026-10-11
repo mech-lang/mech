@@ -1,0 +1,7 @@
+prepared mech-fannkuch-simd
+prepared mech-fannkuch-scalar
+prepared mech-fannkuch-coarse
+prepared mech-fannkuch-paired
+prepared fannkuchredux-graalvmaot-1
+prepared fannkuchredux-graalvmaot-3
+prepared fannkuchredux-graalvmaot-8

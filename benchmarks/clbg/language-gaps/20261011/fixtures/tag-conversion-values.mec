@@ -1,0 +1,14 @@
+<count> := <u64>
+<wide> := <bigint>
+Widen(x<u64>) => <wide> := x
+Narrow(x<bigint>) => <count> := x
+Legacy(x<bigint>) = (y<count>) := y := x.
+Touch(x<bigint>) => <bigint> :=
+  io/print("touch\n")
+  x
+Checked(x<bigint>) => <u64> := Touch(x)
+a<wide> := 7
+b<count> := a + 1
+c<bigint> := 11
+d<count> := Widen(13)
+io/print("{} {} {} {} {}\n", b, Narrow(c), Legacy(c), Checked(a), d)

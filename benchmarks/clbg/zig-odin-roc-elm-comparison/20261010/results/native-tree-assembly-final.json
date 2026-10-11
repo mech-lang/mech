@@ -1,0 +1,64 @@
+{
+  "status": "passed",
+  "tool": "/Library/Developer/CommandLineTools/usr/bin/llvm-objdump",
+  "tool_sha256": "d7485cc27dc452a9f3261314bb2a84b99aca9891a67a0d162f72a6a5a1b1405b",
+  "programs": [
+    {
+      "key": "binarytrees:binarytrees-zig-arena-compact",
+      "status": "passed",
+      "source_sha256": "81af06556379389ee22cfdd45c50dab1e6134769f6def30ca67763d3d8415594",
+      "binary_sha256": "fbd8963380553b14a5818f27b736b015808fada96f1bd3d624b4ab760568a254",
+      "assembly": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/timed-binarytrees-zig-arena-compact.asm.txt",
+      "assembly_sha256": "7a0d6b46cf0e0ce5bbe92557efdc8dfdaddc5923a3e70e82530bcb95ae715205",
+      "node_allocation_bytes": 16,
+      "recursive_child_constructor_calls": 2,
+      "both_pointer_children_stored_and_loaded": true,
+      "construction_and_traversal_inside_iteration_loop": true,
+      "reset_after_traversal": true,
+      "allocator_call_retained": true
+    },
+    {
+      "key": "binarytrees:binarytrees-zig-arena-parallel",
+      "status": "passed",
+      "source_sha256": "e73f078c62f6b500f9d6d22e8e750be5df5cf5ca100bd5182b6d58291ab32de9",
+      "binary_sha256": "f45afea369309ef69ed96157b158717f100cb0ce50c0126490f8b0b417ac8813",
+      "assembly": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/timed-binarytrees-zig-arena-parallel.asm.txt",
+      "assembly_sha256": "a6ba04a8891f67db340e79e11543ed06b29c764466d595e3ef60ec24bcd38c32",
+      "node_allocation_bytes": 16,
+      "recursive_child_constructor_calls": 2,
+      "both_pointer_children_stored_and_loaded": true,
+      "construction_and_traversal_inside_iteration_loop": true,
+      "reset_after_traversal": true,
+      "allocator_call_retained": true
+    },
+    {
+      "key": "binarytrees:binarytrees-odin-arena-compact",
+      "status": "passed",
+      "source_sha256": "017ac5f09bf7911f3eb578552aa67c7a9fd7c72eca7fcdf85dd70d360316b794",
+      "binary_sha256": "b58ba8b7479034451f8e84bdebd8fbadf6ee6c195947bcfd0755fbee9ce69b08",
+      "assembly": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/timed-binarytrees-odin-arena-compact.asm.txt",
+      "assembly_sha256": "5d81dbd55fcaf093ceea7524c48cd384cefb7b6b505119cfd406dd457f92d725",
+      "node_allocation_bytes": 16,
+      "recursive_child_constructor_calls": 2,
+      "both_pointer_children_stored_and_loaded": true,
+      "construction_and_traversal_inside_iteration_loop": true,
+      "reset_after_traversal": true,
+      "allocator_call_retained": true
+    },
+    {
+      "key": "binarytrees:binarytrees-odin-arena-parallel",
+      "status": "passed",
+      "source_sha256": "1d68787e2bb6a45c7749bfd016d69ce9c64379205017bb8a78aa206805abeb2a",
+      "binary_sha256": "043ae5c82b75a5ea57efff4b6b903925647b9cadcab1244879157ea8d47fa2d9",
+      "assembly": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/evidence/timed-binarytrees-odin-arena-parallel.asm.txt",
+      "assembly_sha256": "b61e0cd7ed8a459cfc13eddfadda79b407a968df9be4acc731eb153dd003b269",
+      "node_allocation_bytes": 16,
+      "recursive_child_constructor_calls": 2,
+      "both_pointer_children_stored_and_loaded": true,
+      "construction_and_traversal_inside_iteration_loop": true,
+      "reset_after_traversal": true,
+      "allocator_call_retained": true
+    }
+  ],
+  "reason": "Disassembly is from the actual pinned, uninstrumented measured binaries. The constructor retains a 16-byte allocator request in the common leaf/interior path and separate recursive child construction/stores. Checks load both child pointers. Each batch loop retains construction and traversal calls followed by arena reset. This verifies the optimized compiler did not collapse the workload or eliminate node allocation."
+}

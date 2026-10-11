@@ -1,0 +1,6 @@
+.build/
+mech-driver/target/
+rust-deps/target/
+__pycache__/
+!mech-driver/Cargo.lock
+!rust-deps/Cargo.lock

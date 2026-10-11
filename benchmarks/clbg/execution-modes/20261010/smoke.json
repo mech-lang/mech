@@ -1,0 +1,468 @@
+[
+  {
+    "key": "nbody:pairwise-mass-tails",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.7413186660269275,
+    "bytes": 26,
+    "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+    "stderr": "TIMING {\"prepare_seconds\":0.184680875,\"kernel_seconds\":0.000020833}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "jit",
+      "1000",
+      "--algebraic-powers",
+      "--fp-contract",
+      "--reassociate-constants",
+      "--schedule",
+      "--pack-state-tails"
+    ]
+  },
+  {
+    "key": "nbody:pairwise-mass-tails",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.7110495420056395,
+    "bytes": 26,
+    "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+    "stderr": "TIMING {\"prepare_seconds\":0.181741958,\"kernel_seconds\":0.000346792}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "resident",
+      "1000",
+      "--algebraic-powers",
+      "--fp-contract",
+      "--reassociate-constants",
+      "--schedule",
+      "--pack-state-tails"
+    ]
+  },
+  {
+    "key": "nbody:compact-baseline",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.49258633400313556,
+    "bytes": 26,
+    "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+    "stderr": "TIMING {\"prepare_seconds\":0.127636,\"kernel_seconds\":0.000022833}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "jit",
+      "1000",
+      "--algebraic-powers",
+      "--fp-contract",
+      "--reassociate-constants",
+      "--schedule",
+      "--pack-state-tails"
+    ]
+  },
+  {
+    "key": "nbody:compact-baseline",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.49288558395346627,
+    "bytes": 26,
+    "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+    "stderr": "TIMING {\"prepare_seconds\":0.129037375,\"kernel_seconds\":0.000384209}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "resident",
+      "1000",
+      "--algebraic-powers",
+      "--fp-contract",
+      "--reassociate-constants",
+      "--schedule",
+      "--pack-state-tails"
+    ]
+  },
+  {
+    "key": "mandelbrot:mech-program-simd-loop-fma",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.595875040977262,
+    "bytes": 5011,
+    "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "stderr": "TIMING {\"prepare_seconds\":0.581274042,\"kernel_seconds\":0.000216708}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "jit",
+      "200",
+      "--fp-contract-loop"
+    ]
+  },
+  {
+    "key": "mandelbrot:mech-program-simd-loop-fma",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.5968040829757228,
+    "bytes": 5011,
+    "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "stderr": "TIMING {\"prepare_seconds\":0.581727959,\"kernel_seconds\":0.001990375}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "resident",
+      "200",
+      "--fp-contract-loop"
+    ]
+  },
+  {
+    "key": "mandelbrot:mech-program-compact",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.17427174997283146,
+    "bytes": 5011,
+    "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "stderr": "TIMING {\"prepare_seconds\":0.160596584,\"kernel_seconds\":0.000519958}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "jit",
+      "200"
+    ]
+  },
+  {
+    "key": "mandelbrot:mech-program-compact",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.18045804102439433,
+    "bytes": 5011,
+    "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "stderr": "TIMING {\"prepare_seconds\":0.160177166,\"kernel_seconds\":0.00727325}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "resident",
+      "200"
+    ]
+  },
+  {
+    "key": "knucleotide:mech-compact-final-std1-simd0-p4",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.09052975004306063,
+    "bytes": 242,
+    "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+    "stderr": "TIMING {\"prepare_seconds\":0.076444375,\"kernel_seconds\":0.000391125}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "jit"
+    ]
+  },
+  {
+    "key": "knucleotide:mech-compact-final-std1-simd0-p4",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.08731062500737607,
+    "bytes": 242,
+    "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+    "stderr": "TIMING {\"prepare_seconds\":0.072711833,\"kernel_seconds\":0.00037775}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "resident"
+    ]
+  },
+  {
+    "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.12738212500698864,
+    "bytes": 12,
+    "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+    "stderr": "TIMING {\"prepare_seconds\":0.113861417,\"kernel_seconds\":0.001157583}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "jit",
+      "100"
+    ]
+  },
+  {
+    "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.12624499999219552,
+    "bytes": 12,
+    "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+    "stderr": "TIMING {\"prepare_seconds\":0.109664708,\"kernel_seconds\":0.002751917}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "resident",
+      "100"
+    ]
+  },
+  {
+    "key": "revcomp:mech-revcomp-optimized",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.041008332977071404,
+    "bytes": 10245,
+    "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+    "stderr": "TIMING {\"prepare_seconds\":0.027150667,\"kernel_seconds\":0.000120083}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "jit"
+    ]
+  },
+  {
+    "key": "revcomp:mech-revcomp-optimized",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.03970225004013628,
+    "bytes": 10245,
+    "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+    "stderr": "TIMING {\"prepare_seconds\":0.026101625,\"kernel_seconds\":0.000081416}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "resident"
+    ]
+  },
+  {
+    "key": "fannkuchredux:mech-fannkuch-even",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.7398599580046721,
+    "bytes": 24,
+    "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+    "stderr": "TIMING {\"prepare_seconds\":0.725990542,\"kernel_seconds\":0.000167}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "jit",
+      "7"
+    ]
+  },
+  {
+    "key": "fannkuchredux:mech-fannkuch-even",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.4883248339756392,
+    "bytes": 24,
+    "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+    "stderr": "TIMING {\"prepare_seconds\":0.473065667,\"kernel_seconds\":0.000659542}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "resident",
+      "7"
+    ]
+  },
+  {
+    "key": "fannkuchredux:mech-fannkuch-default",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.4649756670114584,
+    "bytes": 24,
+    "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+    "stderr": "TIMING {\"prepare_seconds\":0.450896834,\"kernel_seconds\":0.000205291}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "jit",
+      "7"
+    ]
+  },
+  {
+    "key": "fannkuchredux:mech-fannkuch-default",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.3173060409608297,
+    "bytes": 24,
+    "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+    "stderr": "TIMING {\"prepare_seconds\":0.310205917,\"kernel_seconds\":0.00170475}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "resident",
+      "7"
+    ]
+  },
+  {
+    "key": "fasta:mech-fasta-final-expanded-v2",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.5418457500054501,
+    "bytes": 10245,
+    "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+    "stderr": "TIMING {\"prepare_seconds\":0.527360292,\"kernel_seconds\":0.000047333}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "jit",
+      "1000"
+    ]
+  },
+  {
+    "key": "fasta:mech-fasta-final-expanded-v2",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.3612562499474734,
+    "bytes": 10245,
+    "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+    "stderr": "TIMING {\"prepare_seconds\":0.346770541,\"kernel_seconds\":0.000739584}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "resident",
+      "1000"
+    ]
+  },
+  {
+    "key": "fasta:mech-fasta-final-compact-v2",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.35397250001551583,
+    "bytes": 10245,
+    "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+    "stderr": "TIMING {\"prepare_seconds\":0.339643167,\"kernel_seconds\":0.000070208}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "jit",
+      "1000"
+    ]
+  },
+  {
+    "key": "fasta:mech-fasta-final-compact-v2",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.23987799999304116,
+    "bytes": 10245,
+    "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+    "stderr": "TIMING {\"prepare_seconds\":0.225909584,\"kernel_seconds\":0.000860708}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "resident",
+      "1000"
+    ]
+  },
+  {
+    "key": "binarytrees:mech-binarytrees-parallel",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.3279927499825135,
+    "bytes": 223,
+    "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+    "stderr": "TIMING {\"prepare_seconds\":0.315807625,\"kernel_seconds\":0.000562584}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "jit",
+      "10"
+    ]
+  },
+  {
+    "key": "binarytrees:mech-binarytrees-parallel",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.21980433305725455,
+    "bytes": 223,
+    "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+    "stderr": "TIMING {\"prepare_seconds\":0.203478292,\"kernel_seconds\":0.003424}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "resident",
+      "10"
+    ]
+  },
+  {
+    "key": "regexredux:mech-regex-final-reuse-signed",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.08770708402153105,
+    "bytes": 262,
+    "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+    "stderr": "TIMING {\"prepare_seconds\":0.073833208,\"kernel_seconds\":0.000831125}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "jit"
+    ]
+  },
+  {
+    "key": "regexredux:mech-regex-final-reuse-signed",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.08553179103182629,
+    "bytes": 262,
+    "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+    "stderr": "TIMING {\"prepare_seconds\":0.071415042,\"kernel_seconds\":0.000580708}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "resident"
+    ]
+  },
+  {
+    "key": "pidigits:mech-pi-final-advance-signed",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.4113572500064038,
+    "bytes": 45,
+    "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+    "stderr": "TIMING {\"prepare_seconds\":0.397763958,\"kernel_seconds\":0.000049542}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "jit",
+      "30"
+    ]
+  },
+  {
+    "key": "pidigits:mech-pi-final-advance-signed",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.2767103749793023,
+    "bytes": 45,
+    "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+    "stderr": "TIMING {\"prepare_seconds\":0.263945167,\"kernel_seconds\":0.000081}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "resident",
+      "30"
+    ]
+  },
+  {
+    "key": "pidigits:mech-pi-final-compact-signed",
+    "mode": "jit",
+    "correct": true,
+    "wall_seconds": 0.3779938329826109,
+    "bytes": 45,
+    "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+    "stderr": "TIMING {\"prepare_seconds\":0.364007541,\"kernel_seconds\":0.0000565}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "jit",
+      "30"
+    ]
+  },
+  {
+    "key": "pidigits:mech-pi-final-compact-signed",
+    "mode": "resident",
+    "correct": true,
+    "wall_seconds": 0.25648004200775176,
+    "bytes": 45,
+    "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+    "stderr": "TIMING {\"prepare_seconds\":0.243446834,\"kernel_seconds\":0.00009275}\n",
+    "command": [
+      "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "resident",
+      "30"
+    ]
+  }
+]

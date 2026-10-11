@@ -1,0 +1,34 @@
+*** BEGIN CFG
+After AllocateRegisters
+==== file:///Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/dart/binarytrees-dart-7.dart_::_bottomUpTree (RegularFunction)
+  0: B0[graph]:0 {
+      v31 <- UnboxedConstant(#0) [0, 0] int64
+      v32 <- UnboxedConstant(#1) [1, 1] int64
+}
+  2: B1[function entry]:2 {
+      v2 <- Parameter(0 @r1) [-9223372036854775808, 9223372036854775807] int64
+}
+  4:     CheckStackOverflow:8(stack=0, loop=0)
+  6:     Branch if RelationalOp(>, v2, v31 T{_Smi}) T{bool} goto (3, 4)
+  8: B3[target]:16
+ 10:     v10 <- BinaryInt64Op(- [tr], v2, v32 T{_Smi}) [-9223372036854775808, 9223372036854775807] int64
+ 11:     ParallelMove r1 <- r0, fp[-1] <- r0
+ 12:     v11 <- StaticCall:22( bottomUpTree<0> v10, result_type = T{TreeNode}) T{TreeNode}
+ 13:     ParallelMove r1 <- fp[-1], r0 <- r0
+ 14:     ParallelMove fp[-2] <- r0
+ 14:     v13 <- StaticCall:26( bottomUpTree<0> v10 T{<:int}, result_type = T{TreeNode}) T{TreeNode}
+ 16:     ParallelMove fp[-3] <- r0
+ 16:     v8 <- AllocateObject:18(cls=TreeNode) T{TreeNode}
+ 17:     ParallelMove r1 <- r0, r0 <- fp[-2]
+ 18:     StoreField(v8 T{TreeNode} . left = v11 T{TreeNode}, NoStoreBarrier)
+ 19:     ParallelMove r0 <- fp[-3]
+ 20:     StoreField(v8 T{TreeNode} . right = v13 T{TreeNode}, NoStoreBarrier)
+ 22:     ParallelMove r0 <- r1 goto:38 B5
+ 24: B4[target]:30
+ 26:     v6 <- AllocateObject:32(cls=TreeNode) T{TreeNode}
+ 28:     ParallelMove r0 <- r0 goto:40 B5
+ 30: B5[join]:36 pred(B3, B4) {
+      v7 <- phi(v8, v6) alive T{TreeNode}
+}
+ 32:     DartReturn:42(v7)
+*** END CFG

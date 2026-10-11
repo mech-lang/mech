@@ -1,0 +1,2990 @@
+{
+  "loc": {
+    "profiles": {
+      "mech": {
+        "fastest": {
+          "x": 1.3113734332693048,
+          "y": 1.099509713440872
+        },
+        "smallest": {
+          "x": 1.1246564977070577,
+          "y": 1.5616089903872594
+        }
+      },
+      "rust": {
+        "fastest": {
+          "x": 6.937187672750487,
+          "y": 1.0614808321625913
+        },
+        "smallest": {
+          "x": 3.6273952765242585,
+          "y": 1.9035061258270707
+        }
+      },
+      "chapel": {
+        "fastest": {
+          "x": 3.1775220298231455,
+          "y": 2.0375820744554005
+        },
+        "smallest": {
+          "x": 2.690352823370039,
+          "y": 3.6701011938735757
+        }
+      },
+      "julia": {
+        "fastest": {
+          "x": 3.263043726595427,
+          "y": 2.389576929011606
+        },
+        "smallest": {
+          "x": 2.3475336505215476,
+          "y": 7.153610902960516
+        }
+      },
+      "go": {
+        "fastest": {
+          "x": 6.244522267484912,
+          "y": 2.3619563272362596
+        },
+        "smallest": {
+          "x": 3.0443483748130786,
+          "y": 10.258646934509455
+        }
+      },
+      "java": {
+        "fastest": {
+          "x": 5.230646266091194,
+          "y": 2.5945288677196414
+        },
+        "smallest": {
+          "x": 2.7568881312336413,
+          "y": 10.359578424338206
+        }
+      },
+      "c": {
+        "fastest": {
+          "x": 4.789401410327899,
+          "y": 1.3214663378380587
+        },
+        "smallest": {
+          "x": 3.227353332390691,
+          "y": 5.304610007607339
+        }
+      },
+      "cpp": {
+        "fastest": {
+          "x": 6.465102266315592,
+          "y": 1.7682418538079567
+        },
+        "smallest": {
+          "x": 2.9193449879636724,
+          "y": 6.131523194761964
+        }
+      },
+      "python": {
+        "smallest": {
+          "x": 1.6765487218391906,
+          "y": 146.16386965276658
+        }
+      },
+      "ruby": {
+        "smallest": {
+          "x": 1.815164174108551,
+          "y": 140.01562474070326
+        }
+      },
+      "perl": {
+        "smallest": {
+          "x": 1.910239120433649,
+          "y": 140.34030312913862
+        }
+      },
+      "lua": {
+        "smallest": {
+          "x": 2.1756114815223024,
+          "y": 106.85624451701574
+        }
+      },
+      "luajit": {
+        "smallest": {
+          "x": 2.1756114815223024,
+          "y": 15.681052107741605
+        }
+      },
+      "javascript": {
+        "smallest": {
+          "x": 2.865300115976796,
+          "y": 23.944484828977004
+        }
+      },
+      "php": {
+        "smallest": {
+          "x": 2.2219914476383176,
+          "y": 50.62149131495274
+        }
+      }
+    },
+    "benchmark_endpoints": {
+      "mech": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "mech-pairwise-fma",
+            "x": 1.1875,
+            "y": 1.2146407240753787
+          },
+          "smallest": {
+            "id": "mech-sqrt-fma",
+            "x": 1.0,
+            "y": 1.2430175412254738
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mech-program-simd-loop-fma",
+            "x": 1.45,
+            "y": 1.0444267113007812
+          },
+          "smallest": {
+            "id": "mech-program-compact",
+            "x": 1.0,
+            "y": 5.358426012212714
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "mech-compact-final-std1-simd0-p4",
+            "x": 1.0,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mech-compact-final-std1-simd0-p4",
+            "x": 1.0,
+            "y": 1.0
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "mech-integer-simd1-u4-r4-p8-g8",
+            "x": 1.0,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mech-integer-simd1-u4-r4-p8-g8",
+            "x": 1.0,
+            "y": 1.0
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "mech-revcomp-optimized",
+            "x": 1.0,
+            "y": 1.5090564224686411
+          },
+          "smallest": {
+            "id": "mech-revcomp-optimized",
+            "x": 1.0,
+            "y": 1.5090564224686411
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "mech-fannkuch-even",
+            "x": 1.8285714285714285,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mech-fannkuch-default",
+            "x": 1.2285714285714286,
+            "y": 1.658722743224481
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "mech-fasta-final-expanded-v2",
+            "x": 1.3333333333333333,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mech-fasta-final-compact-v2",
+            "x": 1.0,
+            "y": 1.9011805153003645
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "mech-binarytrees-parallel",
+            "x": 2.0833333333333335,
+            "y": 1.1157355655270091
+          },
+          "smallest": {
+            "id": "mech-binarytrees-parallel",
+            "x": 2.0833333333333335,
+            "y": 1.1157355655270091
+          }
+        }
+      ],
+      "rust": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "rust-3",
+            "x": 6.125,
+            "y": 1.199543796092638
+          },
+          "smallest": {
+            "id": "nbody-rust-1",
+            "x": 4.15625,
+            "y": 1.7745677436324208
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-rust-4",
+            "x": 7.3,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mandelbrot-rust-7",
+            "x": 2.95,
+            "y": 1.1172342836429257
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-rust-7",
+            "x": 9.588235294117647,
+            "y": 1.074155327858288
+          },
+          "smallest": {
+            "id": "knucleotide-rust-1",
+            "x": 5.411764705882353,
+            "y": 11.876124165461682
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-rust-5",
+            "x": 7.0,
+            "y": 1.0390429044889415
+          },
+          "smallest": {
+            "id": "spectralnorm-rust-4",
+            "x": 4.615384615384615,
+            "y": 1.0489444882197614
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-rust-1",
+            "x": 25.7,
+            "y": 1.162883631754327
+          },
+          "smallest": {
+            "id": "revcomp-rust-3-panic-abort",
+            "x": 10.2,
+            "y": 1.2752466111308074
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-rust6-neon",
+            "x": 3.857142857142857,
+            "y": 1.0282244614997884
+          },
+          "smallest": {
+            "id": "fannkuchredux-rust-4-panic-abort",
+            "x": 2.7142857142857144,
+            "y": 1.4489876207797658
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-rust-7",
+            "x": 7.7272727272727275,
+            "y": 1.0068305481078426
+          },
+          "smallest": {
+            "id": "fasta-rust-4-thin",
+            "x": 1.5151515151515151,
+            "y": 3.776689711487428
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-rust-2-thin",
+            "x": 2.3333333333333335,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "binarytrees-rust-2-thin",
+            "x": 2.3333333333333335,
+            "y": 1.0
+          }
+        }
+      ],
+      "chapel": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "chapel-3",
+            "x": 2.46875,
+            "y": 1.0355031677499151
+          },
+          "smallest": {
+            "id": "chapel-3",
+            "x": 2.46875,
+            "y": 1.0355031677499151
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-chapel-3",
+            "x": 2.35,
+            "y": 2.7148846164936384
+          },
+          "smallest": {
+            "id": "mandelbrot-chapel-1",
+            "x": 1.9,
+            "y": 6.336765058119793
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-chapel-4",
+            "x": 5.411764705882353,
+            "y": 3.190483929703611
+          },
+          "smallest": {
+            "id": "knucleotide-chapel-3",
+            "x": 5.117647058823529,
+            "y": 3.9198417096339457
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-chapel-2",
+            "x": 1.9230769230769231,
+            "y": 2.843189801086296
+          },
+          "smallest": {
+            "id": "spectralnorm-chapel-2",
+            "x": 1.9230769230769231,
+            "y": 2.843189801086296
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-chapel-9",
+            "x": 10.7,
+            "y": 1.9686898461300564
+          },
+          "smallest": {
+            "id": "revcomp-chapel-5",
+            "x": 4.4,
+            "y": 16.754780831534816
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-chapel-2",
+            "x": 2.6,
+            "y": 2.5406817376851167
+          },
+          "smallest": {
+            "id": "fannkuchredux-chapel-2",
+            "x": 2.6,
+            "y": 2.5406817376851167
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-chapel-6",
+            "x": 2.9696969696969697,
+            "y": 1.0242023334237853
+          },
+          "smallest": {
+            "id": "fasta-chapel-6",
+            "x": 2.9696969696969697,
+            "y": 1.0242023334237853
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-chapel-5",
+            "x": 2.0833333333333335,
+            "y": 2.2742716599664194
+          },
+          "smallest": {
+            "id": "binarytrees-chapel-4",
+            "x": 1.75,
+            "y": 10.324192991305999
+          }
+        }
+      ],
+      "julia": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-julia-5",
+            "x": 2.8125,
+            "y": 1.7489961733559727
+          },
+          "smallest": {
+            "id": "nbody-julia-5",
+            "x": 2.8125,
+            "y": 1.7489961733559727
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-julia-7",
+            "x": 2.95,
+            "y": 1.341791714192489
+          },
+          "smallest": {
+            "id": "mandelbrot-julia-1",
+            "x": 1.65,
+            "y": 25.571132762306405
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-julia-6",
+            "x": 4.9411764705882355,
+            "y": 3.0938897525535434
+          },
+          "smallest": {
+            "id": "knucleotide-julia-1",
+            "x": 4.352941176470588,
+            "y": 71.21284971919853
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-julia-4",
+            "x": 3.076923076923077,
+            "y": 4.2090288054952385
+          },
+          "smallest": {
+            "id": "spectralnorm-julia-4",
+            "x": 3.076923076923077,
+            "y": 4.2090288054952385
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-julia-7",
+            "x": 4.1,
+            "y": 2.889047531580828
+          },
+          "smallest": {
+            "id": "revcomp-julia-9",
+            "x": 3.6,
+            "y": 2.9330953907212174
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-julia-2",
+            "x": 3.6857142857142855,
+            "y": 1.7415145478584597
+          },
+          "smallest": {
+            "id": "fannkuchredux-julia-1",
+            "x": 1.9714285714285715,
+            "y": 9.989590044536476
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-julia-2",
+            "x": 2.696969696969697,
+            "y": 1.1966813931114395
+          },
+          "smallest": {
+            "id": "fasta-julia-5",
+            "x": 2.090909090909091,
+            "y": 2.0089967825331496
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-julia-3",
+            "x": 2.5,
+            "y": 5.77759510966962
+          },
+          "smallest": {
+            "id": "binarytrees-julia-4",
+            "x": 1.0,
+            "y": 8.691011637802951
+          }
+        }
+      ],
+      "go": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-go-3",
+            "x": 4.21875,
+            "y": 1.6937059953241147
+          },
+          "smallest": {
+            "id": "nbody-go-2",
+            "x": 3.78125,
+            "y": 1.8626422745397457
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-go-4-nofma",
+            "x": 5.1,
+            "y": 3.5228938111677057
+          },
+          "smallest": {
+            "id": "mandelbrot-go-8",
+            "x": 2.55,
+            "y": 24.051890417336004
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-go-6",
+            "x": 11.882352941176471,
+            "y": 2.4762252777266083
+          },
+          "smallest": {
+            "id": "knucleotide-go-8",
+            "x": 4.705882352941177,
+            "y": 28.472026111105144
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-go-2",
+            "x": 9.23076923076923,
+            "y": 1.9590974839551767
+          },
+          "smallest": {
+            "id": "spectralnorm-go-8",
+            "x": 3.3846153846153846,
+            "y": 27.14106211617234
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-go-6",
+            "x": 15.0,
+            "y": 1.390648308680051
+          },
+          "smallest": {
+            "id": "revcomp-go-2",
+            "x": 5.9,
+            "y": 2.098260196032333
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-go-2",
+            "x": 3.6285714285714286,
+            "y": 1.5920072470202007
+          },
+          "smallest": {
+            "id": "fannkuchredux-go-8",
+            "x": 1.6285714285714286,
+            "y": 14.47254118047962
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-go-2",
+            "x": 4.909090909090909,
+            "y": 2.0007910587894004
+          },
+          "smallest": {
+            "id": "fasta-go-8",
+            "x": 2.727272727272727,
+            "y": 7.644951803626335
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-go-3",
+            "x": 3.6666666666666665,
+            "y": 7.554870744894218
+          },
+          "smallest": {
+            "id": "binarytrees-go-1",
+            "x": 1.8333333333333333,
+            "y": 15.262226472045018
+          }
+        }
+      ],
+      "java": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-graalvmaot-5",
+            "x": 4.0625,
+            "y": 2.1202393007576084
+          },
+          "smallest": {
+            "id": "nbody-graalvmaot-8",
+            "x": 3.96875,
+            "y": 2.232574225553165
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-graalvmaot-6",
+            "x": 2.85,
+            "y": 3.10110303725333
+          },
+          "smallest": {
+            "id": "mandelbrot-graalvmaot-8",
+            "x": 2.15,
+            "y": 27.11416666653452
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-graalvmaot-1",
+            "x": 8.235294117647058,
+            "y": 2.5076417765080947
+          },
+          "smallest": {
+            "id": "knucleotide-graalvmaot-8",
+            "x": 3.764705882352941,
+            "y": 41.93496033788449
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-graalvmaot-3",
+            "x": 5.230769230769231,
+            "y": 3.0050269769568065
+          },
+          "smallest": {
+            "id": "spectralnorm-graalvmaot-8",
+            "x": 3.230769230769231,
+            "y": 10.36847555232086
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-graalvmaot-3",
+            "x": 19.5,
+            "y": 2.601244293737458
+          },
+          "smallest": {
+            "id": "revcomp-graalvmaot-4",
+            "x": 5.7,
+            "y": 5.235591865948731
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-graalvmaot-1",
+            "x": 4.285714285714286,
+            "y": 1.9873260171802443
+          },
+          "smallest": {
+            "id": "fannkuchredux-graalvmaot-2",
+            "x": 1.457142857142857,
+            "y": 13.045964426486435
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-graalvmaot-4",
+            "x": 5.121212121212121,
+            "y": 4.162727914819226
+          },
+          "smallest": {
+            "id": "fasta-graalvmaot-8",
+            "x": 2.212121212121212,
+            "y": 16.667577993562418
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-graalvmaot-7",
+            "x": 2.625,
+            "y": 1.9258604974996718
+          },
+          "smallest": {
+            "id": "binarytrees-graalvmaot-6",
+            "x": 1.75,
+            "y": 4.427197300068517
+          }
+        }
+      ],
+      "c": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-gcc-8-llvm-fastmath",
+            "x": 3.96875,
+            "y": 1.63831008328954
+          },
+          "smallest": {
+            "id": "nbody-gcc-3-gcc-fastmath",
+            "x": 3.34375,
+            "y": 2.783059357973577
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-gcc-9-llvm-fastmath",
+            "x": 2.45,
+            "y": 1.127542636285967
+          },
+          "smallest": {
+            "id": "mandelbrot-gcc-8-gcc-fastmath",
+            "x": 2.15,
+            "y": 23.967176710661157
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-gcc-1-gcc-native",
+            "x": 7.9411764705882355,
+            "y": 2.2749955457282094
+          },
+          "smallest": {
+            "id": "knucleotide-gcc-1-gcc-native",
+            "x": 7.9411764705882355,
+            "y": 2.2749955457282094
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-gcc-3-gcc-fastmath",
+            "x": 4.153846153846154,
+            "y": 1.0319688426675007
+          },
+          "smallest": {
+            "id": "spectralnorm-gcc-8-llvm-fastmath",
+            "x": 3.076923076923077,
+            "y": 4.774187533458043
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-gcc-9-llvm",
+            "x": 14.3,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "revcomp-gcc-5-llvm",
+            "x": 5.4,
+            "y": 2.257895963267376
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-gcc-5-gcc",
+            "x": 2.4571428571428573,
+            "y": 1.8401534524017173
+          },
+          "smallest": {
+            "id": "fannkuchredux-gcc-8-llvm",
+            "x": 1.6,
+            "y": 16.230984234895185
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-gcc-7-gcc",
+            "x": 7.757575757575758,
+            "y": 1.0019847280074805
+          },
+          "smallest": {
+            "id": "fasta-gcc-8-gcc",
+            "x": 2.515151515151515,
+            "y": 19.773767181827388
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-gcc-2-gcc",
+            "x": 3.1666666666666665,
+            "y": 1.1629404624587805
+          },
+          "smallest": {
+            "id": "binarytrees-gcc-3-gcc",
+            "x": 3.0833333333333335,
+            "y": 1.1941808722180582
+          }
+        }
+      ],
+      "cpp": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-gpp-6-llvm-native",
+            "x": 6.3125,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "nbody-gpp-5-llvm-fastmath",
+            "x": 3.96875,
+            "y": 1.205940837431788
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-gpp-0-gcc-fastmath",
+            "x": 15.4,
+            "y": 1.0151907457983376
+          },
+          "smallest": {
+            "id": "mandelbrot-gpp-3-gcc-fastmath",
+            "x": 1.25,
+            "y": 23.18127500514534
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-gpp-2-llvm-fastmath",
+            "x": 8.470588235294118,
+            "y": 1.316213343877758
+          },
+          "smallest": {
+            "id": "knucleotide-gpp-3-gcc-fastmath",
+            "x": 7.882352941176471,
+            "y": 1.9421592992581078
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-gpp-1-llvm-fastmath",
+            "x": 2.6923076923076925,
+            "y": 5.734135119366267
+          },
+          "smallest": {
+            "id": "spectralnorm-gpp-1-llvm-fastmath",
+            "x": 2.6923076923076925,
+            "y": 5.734135119366267
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-gpp-6-gcc",
+            "x": 17.6,
+            "y": 4.233186147318915
+          },
+          "smallest": {
+            "id": "revcomp-gpp-1-gcc",
+            "x": 4.8,
+            "y": 11.529448696291007
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-gpp-1-llvm",
+            "x": 3.4571428571428573,
+            "y": 2.162469201124741
+          },
+          "smallest": {
+            "id": "fannkuchredux-gpp-3-llvm",
+            "x": 1.6857142857142857,
+            "y": 13.632558472520937
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-gpp-6-llvm",
+            "x": 7.757575757575758,
+            "y": 1.1511467723345097
+          },
+          "smallest": {
+            "id": "fasta-gpp-1-llvm",
+            "x": 3.303030303030303,
+            "y": 1.674700330740395
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-gpp-7-gcc",
+            "x": 2.9166666666666665,
+            "y": 1.1837049634899863
+          },
+          "smallest": {
+            "id": "binarytrees-gpp-2-gcc",
+            "x": 1.875,
+            "y": 24.378551362456506
+          }
+        }
+      ],
+      "python": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-python3-1",
+            "x": 2.78125,
+            "y": 159.8595016343236
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-python3-3",
+            "x": 1.6,
+            "y": 661.8797083782151
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-python3-1",
+            "x": 2.0588235294117645,
+            "y": 151.45096726944143
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-python3-8",
+            "x": 1.9230769230769231,
+            "y": 1362.4916653052876
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-python3-4",
+            "x": 1.5,
+            "y": 11.523108528711312
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-python3-6",
+            "x": 1.2571428571428571,
+            "y": 224.04341826411027
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-python3-1",
+            "x": 1.878787878787879,
+            "y": 34.02977278679196
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-python3-2",
+            "x": 1.0,
+            "y": 108.60152899386331
+          }
+        }
+      ],
+      "ruby": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-ruby-2",
+            "x": 3.4375,
+            "y": 63.8436600905041
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-ruby-8",
+            "x": 1.9,
+            "y": 664.4493993373571
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-ruby-2",
+            "x": 1.8235294117647058,
+            "y": 171.89238302378052
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-ruby-8",
+            "x": 2.230769230769231,
+            "y": 575.9077024174
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-ruby-5",
+            "x": 1.5,
+            "y": 14.416807671339845
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-ruby-8",
+            "x": 1.3142857142857143,
+            "y": 637.0846670161372
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-ruby-2",
+            "x": 2.0,
+            "y": 62.21510333344028
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-ruby-1",
+            "x": 1.125,
+            "y": 61.55463020350321
+          }
+        }
+      ],
+      "perl": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-perl-2",
+            "x": 3.78125,
+            "y": 137.59751189124174
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-perl-1",
+            "x": 2.9,
+            "y": 460.88408385950635
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-perl-2",
+            "x": 1.1176470588235294,
+            "y": 82.12012277569907
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-perl-2",
+            "x": 2.8461538461538463,
+            "y": 1952.1241982640915
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-perl-4",
+            "x": 1.6,
+            "y": 5.456805525087568
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-perl-3",
+            "x": 1.0,
+            "y": 240.4123826691686
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-perl-1",
+            "x": 2.242424242424242,
+            "y": 41.44426533187885
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-perl-1",
+            "x": 1.4166666666666667,
+            "y": 272.23264413285494
+          }
+        }
+      ],
+      "lua": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-lua-4",
+            "x": 3.34375,
+            "y": 73.11817831618079
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-lua-1",
+            "x": 1.1,
+            "y": 346.8214343699782
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-lua-2",
+            "x": 3.3529411764705883,
+            "y": 79.5933323772876
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-lua-1",
+            "x": 2.5384615384615383,
+            "y": 484.28021499762406
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-lua-2",
+            "x": 3.4,
+            "y": 51.692936147698965
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-lua-1",
+            "x": 1.1428571428571428,
+            "y": 137.31733777657647
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-lua-2",
+            "x": 2.606060606060606,
+            "y": 18.712263019121696
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-lua-2",
+            "x": 1.5833333333333333,
+            "y": 130.9217065901325
+          }
+        }
+      ],
+      "luajit": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-lua-4-luajit",
+            "x": 3.34375,
+            "y": 3.674692840336779
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-lua-1-luajit",
+            "x": 1.1,
+            "y": 29.61351753074201
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-lua-2-luajit",
+            "x": 3.3529411764705883,
+            "y": 15.146704019820623
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-lua-1-luajit",
+            "x": 2.5384615384615383,
+            "y": 13.55245871051951
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-lua-2-luajit",
+            "x": 3.4,
+            "y": 27.127748984062872
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-lua-1-luajit",
+            "x": 1.1428571428571428,
+            "y": 15.49059868971219
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-lua-2-luajit",
+            "x": 2.606060606060606,
+            "y": 7.4379871169495075
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-lua-2-luajit",
+            "x": 1.5833333333333333,
+            "y": 52.362084751812844
+          }
+        }
+      ],
+      "javascript": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-node-8",
+            "x": 3.625,
+            "y": 2.9129677197791226
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-node-1",
+            "x": 1.6,
+            "y": 122.03737150365762
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-node-8",
+            "x": 3.3529411764705883,
+            "y": 88.16706752902194
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-node-8",
+            "x": 2.923076923076923,
+            "y": 28.76296869229427
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-node-2",
+            "x": 18.1,
+            "y": 19.203987872633945
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-node-8",
+            "x": 1.4285714285714286,
+            "y": 15.655881400510408
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-node-1",
+            "x": 2.1818181818181817,
+            "y": 24.956692777388117
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-node-7",
+            "x": 1.4166666666666667,
+            "y": 15.97420964948774
+          }
+        }
+      ],
+      "php": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-php-3",
+            "x": 2.4375,
+            "y": 39.38672106070504
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-php-8",
+            "x": 2.15,
+            "y": 152.6786199182548
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-php-8",
+            "x": 3.0588235294117645,
+            "y": 40.48556515138463
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-php-8",
+            "x": 3.1538461538461537,
+            "y": 280.7815457886474
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-php-2",
+            "x": 2.1,
+            "y": 10.503488205799922
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-php-1",
+            "x": 1.2285714285714286,
+            "y": 51.95037479495355
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-php-2",
+            "x": 2.6666666666666665,
+            "y": 25.05746283325623
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-php-3",
+            "x": 1.7083333333333333,
+            "y": 46.134235813069495
+          }
+        }
+      ]
+    }
+  },
+  "gzip": {
+    "profiles": {
+      "mech": {
+        "fastest": {
+          "x": 1.549218961657018,
+          "y": 1.099509713440872
+        },
+        "smallest": {
+          "x": 1.356726241059217,
+          "y": 1.9361032237857274
+        }
+      },
+      "rust": {
+        "fastest": {
+          "x": 3.8356991537994354,
+          "y": 1.0614808321625913
+        },
+        "smallest": {
+          "x": 2.453745064763385,
+          "y": 1.966702747887565
+        }
+      },
+      "chapel": {
+        "fastest": {
+          "x": 2.012420445546408,
+          "y": 2.0375820744554005
+        },
+        "smallest": {
+          "x": 1.6662308659736895,
+          "y": 3.998667968128988
+        }
+      },
+      "julia": {
+        "fastest": {
+          "x": 2.081048585835295,
+          "y": 2.389576929011606
+        },
+        "smallest": {
+          "x": 1.3577675945677878,
+          "y": 13.099758452150667
+        }
+      },
+      "go": {
+        "fastest": {
+          "x": 2.719425652443108,
+          "y": 2.3619563272362596
+        },
+        "smallest": {
+          "x": 1.5896658083627215,
+          "y": 10.632819453533727
+        }
+      },
+      "java": {
+        "fastest": {
+          "x": 3.1091668055493247,
+          "y": 2.5945288677196414
+        },
+        "smallest": {
+          "x": 1.656345143953536,
+          "y": 10.398876883292726
+        }
+      },
+      "c": {
+        "fastest": {
+          "x": 2.712617182600971,
+          "y": 1.3214663378380587
+        },
+        "smallest": {
+          "x": 1.7534818900887361,
+          "y": 7.102797542281138
+        }
+      },
+      "cpp": {
+        "fastest": {
+          "x": 3.5512501354143318,
+          "y": 1.7682418538079567
+        },
+        "smallest": {
+          "x": 1.8157547131136325,
+          "y": 6.372058343117571
+        }
+      },
+      "python": {
+        "smallest": {
+          "x": 1.1645171639578675,
+          "y": 168.02611071314817
+        }
+      },
+      "ruby": {
+        "smallest": {
+          "x": 1.0926200506151342,
+          "y": 191.55353291897578
+        }
+      },
+      "perl": {
+        "smallest": {
+          "x": 1.2726114060606395,
+          "y": 116.12577739371564
+        }
+      },
+      "lua": {
+        "smallest": {
+          "x": 1.4483367219792902,
+          "y": 107.01172036211618
+        }
+      },
+      "luajit": {
+        "smallest": {
+          "x": 1.4483367219792902,
+          "y": 16.077375403639362
+        }
+      },
+      "javascript": {
+        "smallest": {
+          "x": 1.5470964040913686,
+          "y": 21.788226413678817
+        }
+      },
+      "php": {
+        "smallest": {
+          "x": 1.2602070181340252,
+          "y": 51.603421826751266
+        }
+      }
+    },
+    "benchmark_endpoints": {
+      "mech": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "mech-pairwise-fma",
+            "x": 1.1980874316939891,
+            "y": 1.2146407240753787
+          },
+          "smallest": {
+            "id": "mech-power-fma",
+            "x": 1.0,
+            "y": 1.2480240726631089
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mech-program-simd-loop-fma",
+            "x": 1.5778546712802768,
+            "y": 1.0444267113007812
+          },
+          "smallest": {
+            "id": "mech-program-compact",
+            "x": 1.0,
+            "y": 5.358426012212714
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "mech-compact-final-std1-simd0-p4",
+            "x": 1.4061624649859943,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mech-compact-final-std1-simd0-p4",
+            "x": 1.4061624649859943,
+            "y": 1.0
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "mech-integer-simd1-u4-r4-p8-g8",
+            "x": 1.0774647887323943,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mech-optimized-simd1-u4-r4-p8",
+            "x": 1.056338028169014,
+            "y": 1.2594805266671878
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "mech-revcomp-optimized",
+            "x": 1.204,
+            "y": 1.5090564224686411
+          },
+          "smallest": {
+            "id": "mech-revcomp-optimized",
+            "x": 1.204,
+            "y": 1.5090564224686411
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "mech-fannkuch-even",
+            "x": 3.2047872340425534,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mech-fannkuch-default",
+            "x": 2.268617021276596,
+            "y": 1.658722743224481
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "mech-fasta-final-expanded-v2",
+            "x": 1.2104499274310596,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mech-fasta-final-compact-v2",
+            "x": 1.2002902757619738,
+            "y": 1.9011805153003645
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "mech-binarytrees-parallel",
+            "x": 2.4804804804804803,
+            "y": 1.1157355655270091
+          },
+          "smallest": {
+            "id": "mech-binarytrees-compact",
+            "x": 2.3573573573573574,
+            "y": 4.925765977826654
+          }
+        }
+      ],
+      "rust": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "rust-3",
+            "x": 2.387978142076503,
+            "y": 1.199543796092638
+          },
+          "smallest": {
+            "id": "nbody-rust-1",
+            "x": 1.9986338797814207,
+            "y": 1.7745677436324208
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-rust-4",
+            "x": 4.418685121107266,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "mandelbrot-rust-5",
+            "x": 2.4567474048442905,
+            "y": 1.1821624162824265
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-rust-7",
+            "x": 4.336134453781512,
+            "y": 1.074155327858288
+          },
+          "smallest": {
+            "id": "knucleotide-rust-1",
+            "x": 2.969187675070028,
+            "y": 11.876124165461682
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-rust-5",
+            "x": 3.6549295774647885,
+            "y": 1.0390429044889415
+          },
+          "smallest": {
+            "id": "spectralnorm-rust-4",
+            "x": 2.8098591549295775,
+            "y": 1.0489444882197614
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-rust-1",
+            "x": 10.916,
+            "y": 1.162883631754327
+          },
+          "smallest": {
+            "id": "revcomp-rust-3-panic-abort",
+            "x": 4.304,
+            "y": 1.2752466111308074
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-rust6-neon",
+            "x": 3.324468085106383,
+            "y": 1.0282244614997884
+          },
+          "smallest": {
+            "id": "fannkuchredux-rust-5-panic-abort",
+            "x": 2.6702127659574466,
+            "y": 1.778309495920204
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-rust-7",
+            "x": 3.621190130624093,
+            "y": 1.0068305481078426
+          },
+          "smallest": {
+            "id": "fasta-rust-4-thin",
+            "x": 1.309143686502177,
+            "y": 3.776689711487428
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-rust-2-thin",
+            "x": 2.1321321321321323,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "binarytrees-rust-2-thin",
+            "x": 2.1321321321321323,
+            "y": 1.0
+          }
+        }
+      ],
+      "chapel": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "chapel-3",
+            "x": 1.3278688524590163,
+            "y": 1.0355031677499151
+          },
+          "smallest": {
+            "id": "nbody-chapel-2",
+            "x": 1.3210382513661203,
+            "y": 1.7116661177213497
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-chapel-3",
+            "x": 1.9757785467128028,
+            "y": 2.7148846164936384
+          },
+          "smallest": {
+            "id": "mandelbrot-chapel-1",
+            "x": 1.508650519031142,
+            "y": 6.336765058119793
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-chapel-4",
+            "x": 2.9607843137254903,
+            "y": 3.190483929703611
+          },
+          "smallest": {
+            "id": "knucleotide-chapel-3",
+            "x": 2.8739495798319328,
+            "y": 3.9198417096339457
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-chapel-2",
+            "x": 1.1901408450704225,
+            "y": 2.843189801086296
+          },
+          "smallest": {
+            "id": "spectralnorm-chapel-1",
+            "x": 1.0950704225352113,
+            "y": 3.4153614190420627
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-chapel-9",
+            "x": 4.968,
+            "y": 1.9686898461300564
+          },
+          "smallest": {
+            "id": "revcomp-chapel-5",
+            "x": 2.144,
+            "y": 16.754780831534816
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-chapel-2",
+            "x": 1.9308510638297873,
+            "y": 2.5406817376851167
+          },
+          "smallest": {
+            "id": "fannkuchredux-chapel-2",
+            "x": 1.9308510638297873,
+            "y": 2.5406817376851167
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-chapel-6",
+            "x": 1.590711175616836,
+            "y": 1.0242023334237853
+          },
+          "smallest": {
+            "id": "fasta-chapel-6",
+            "x": 1.590711175616836,
+            "y": 1.0242023334237853
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-chapel-5",
+            "x": 1.906906906906907,
+            "y": 2.2742716599664194
+          },
+          "smallest": {
+            "id": "binarytrees-chapel-4",
+            "x": 1.4384384384384385,
+            "y": 10.324192991305999
+          }
+        }
+      ],
+      "julia": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-julia-5",
+            "x": 1.510928961748634,
+            "y": 1.7489961733559727
+          },
+          "smallest": {
+            "id": "nbody-julia-2",
+            "x": 1.465846994535519,
+            "y": 7.453739688107481
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-julia-7",
+            "x": 2.5986159169550174,
+            "y": 1.341791714192489
+          },
+          "smallest": {
+            "id": "mandelbrot-julia-1",
+            "x": 1.273356401384083,
+            "y": 25.571132762306405
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-julia-6",
+            "x": 2.61624649859944,
+            "y": 3.0938897525535434
+          },
+          "smallest": {
+            "id": "knucleotide-julia-1",
+            "x": 1.9103641456582634,
+            "y": 71.21284971919853
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-julia-4",
+            "x": 1.8345070422535212,
+            "y": 4.2090288054952385
+          },
+          "smallest": {
+            "id": "spectralnorm-julia-2",
+            "x": 1.2852112676056338,
+            "y": 5.576905884405093
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-julia-7",
+            "x": 2.044,
+            "y": 2.889047531580828
+          },
+          "smallest": {
+            "id": "revcomp-julia-2",
+            "x": 1.588,
+            "y": 18.171122665327
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-julia-2",
+            "x": 2.8111702127659575,
+            "y": 1.7415145478584597
+          },
+          "smallest": {
+            "id": "fannkuchredux-julia-1",
+            "x": 1.125,
+            "y": 9.989590044536476
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-julia-2",
+            "x": 1.7198838896952104,
+            "y": 1.1966813931114395
+          },
+          "smallest": {
+            "id": "fasta-julia-3",
+            "x": 1.2801161103047896,
+            "y": 7.261572455622924
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-julia-3",
+            "x": 1.8888888888888888,
+            "y": 5.77759510966962
+          },
+          "smallest": {
+            "id": "binarytrees-julia-4",
+            "x": 1.102102102102102,
+            "y": 8.691011637802951
+          }
+        }
+      ],
+      "go": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-go-3",
+            "x": 1.6325136612021858,
+            "y": 1.6937059953241147
+          },
+          "smallest": {
+            "id": "nbody-go-3",
+            "x": 1.6325136612021858,
+            "y": 1.6937059953241147
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-go-4-nofma",
+            "x": 3.1003460207612457,
+            "y": 3.5228938111677057
+          },
+          "smallest": {
+            "id": "mandelbrot-go-8",
+            "x": 1.6816608996539792,
+            "y": 24.051890417336004
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-go-6",
+            "x": 4.394957983193278,
+            "y": 2.4762252777266083
+          },
+          "smallest": {
+            "id": "knucleotide-go-8",
+            "x": 2.0756302521008405,
+            "y": 28.472026111105144
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-go-2",
+            "x": 2.334507042253521,
+            "y": 1.9590974839551767
+          },
+          "smallest": {
+            "id": "spectralnorm-go-1",
+            "x": 1.4330985915492958,
+            "y": 36.976468093808826
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-go-6",
+            "x": 5.092,
+            "y": 1.390648308680051
+          },
+          "smallest": {
+            "id": "revcomp-go-3",
+            "x": 2.152,
+            "y": 2.255895804287993
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-go-2",
+            "x": 2.372340425531915,
+            "y": 1.5920072470202007
+          },
+          "smallest": {
+            "id": "fannkuchredux-go-8",
+            "x": 1.2925531914893618,
+            "y": 14.47254118047962
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-go-2",
+            "x": 2.007256894049347,
+            "y": 2.0007910587894004
+          },
+          "smallest": {
+            "id": "fasta-go-8",
+            "x": 1.2612481857764877,
+            "y": 7.644951803626335
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-go-3",
+            "x": 2.3753753753753752,
+            "y": 7.554870744894218
+          },
+          "smallest": {
+            "id": "binarytrees-go-1",
+            "x": 1.4234234234234233,
+            "y": 15.262226472045018
+          }
+        }
+      ],
+      "java": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-graalvmaot-5",
+            "x": 1.9453551912568305,
+            "y": 2.1202393007576084
+          },
+          "smallest": {
+            "id": "nbody-graalvmaot-8",
+            "x": 1.7923497267759563,
+            "y": 2.232574225553165
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-graalvmaot-6",
+            "x": 2.7612456747404845,
+            "y": 3.10110303725333
+          },
+          "smallest": {
+            "id": "mandelbrot-graalvmaot-8",
+            "x": 1.4740484429065743,
+            "y": 27.11416666653452
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-graalvmaot-1",
+            "x": 5.025210084033613,
+            "y": 2.5076417765080947
+          },
+          "smallest": {
+            "id": "knucleotide-graalvmaot-8",
+            "x": 2.1708683473389354,
+            "y": 41.93496033788449
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-graalvmaot-3",
+            "x": 2.6443661971830985,
+            "y": 3.0050269769568065
+          },
+          "smallest": {
+            "id": "spectralnorm-graalvmaot-8",
+            "x": 1.556338028169014,
+            "y": 10.36847555232086
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-graalvmaot-3",
+            "x": 6.612,
+            "y": 2.601244293737458
+          },
+          "smallest": {
+            "id": "revcomp-graalvmaot-4",
+            "x": 2.348,
+            "y": 5.235591865948731
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-graalvmaot-1",
+            "x": 3.398936170212766,
+            "y": 1.9873260171802443
+          },
+          "smallest": {
+            "id": "fannkuchredux-graalvmaot-8",
+            "x": 1.3377659574468086,
+            "y": 13.447173916218949
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-graalvmaot-4",
+            "x": 2.181422351233672,
+            "y": 4.162727914819226
+          },
+          "smallest": {
+            "id": "fasta-graalvmaot-8",
+            "x": 1.281567489114659,
+            "y": 16.667577993562418
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-graalvmaot-7",
+            "x": 2.4954954954954953,
+            "y": 1.9258604974996718
+          },
+          "smallest": {
+            "id": "binarytrees-graalvmaot-6",
+            "x": 1.5765765765765767,
+            "y": 4.427197300068517
+          }
+        }
+      ],
+      "c": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-gcc-8-llvm-fastmath",
+            "x": 1.6133879781420766,
+            "y": 1.63831008328954
+          },
+          "smallest": {
+            "id": "nbody-gcc-1-llvm-fastmath",
+            "x": 1.592896174863388,
+            "y": 1.6569134364881983
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-gcc-9-llvm-fastmath",
+            "x": 2.3737024221453287,
+            "y": 1.127542636285967
+          },
+          "smallest": {
+            "id": "mandelbrot-gcc-8-gcc-fastmath",
+            "x": 1.3771626297577855,
+            "y": 23.967176710661157
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-gcc-1-gcc-native",
+            "x": 4.1568627450980395,
+            "y": 2.2749955457282094
+          },
+          "smallest": {
+            "id": "knucleotide-gcc-1-gcc-native",
+            "x": 4.1568627450980395,
+            "y": 2.2749955457282094
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-gcc-3-gcc-fastmath",
+            "x": 1.6161971830985915,
+            "y": 1.0319688426675007
+          },
+          "smallest": {
+            "id": "spectralnorm-gcc-8-llvm-fastmath",
+            "x": 1.3309859154929577,
+            "y": 4.774187533458043
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-gcc-9-llvm",
+            "x": 6.092,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "revcomp-gcc-5-llvm",
+            "x": 2.532,
+            "y": 2.257895963267376
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-gcc-5-gcc",
+            "x": 2.393617021276596,
+            "y": 1.8401534524017173
+          },
+          "smallest": {
+            "id": "fannkuchredux-gcc-8-llvm",
+            "x": 1.247340425531915,
+            "y": 16.230984234895185
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-gcc-7-gcc",
+            "x": 3.2525399129172716,
+            "y": 1.0019847280074805
+          },
+          "smallest": {
+            "id": "fasta-gcc-8-gcc",
+            "x": 1.1944847605224964,
+            "y": 19.773767181827388
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-gcc-2-gcc",
+            "x": 2.4024024024024024,
+            "y": 1.1629404624587805
+          },
+          "smallest": {
+            "id": "binarytrees-gcc-1-gcc",
+            "x": 1.951951951951952,
+            "y": 20.725287493830137
+          }
+        }
+      ],
+      "cpp": [
+        {
+          "benchmark": "nbody",
+          "fastest": {
+            "id": "nbody-gpp-6-llvm-native",
+            "x": 2.2568306010928962,
+            "y": 1.0
+          },
+          "smallest": {
+            "id": "nbody-gpp-3-llvm-fastmath",
+            "x": 1.900273224043716,
+            "y": 1.640653793339925
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": {
+            "id": "mandelbrot-gpp-0-gcc-fastmath",
+            "x": 9.370242214532873,
+            "y": 1.0151907457983376
+          },
+          "smallest": {
+            "id": "mandelbrot-gpp-3-gcc-fastmath",
+            "x": 1.42560553633218,
+            "y": 23.18127500514534
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": {
+            "id": "knucleotide-gpp-2-llvm-fastmath",
+            "x": 4.445378151260504,
+            "y": 1.316213343877758
+          },
+          "smallest": {
+            "id": "knucleotide-gpp-3-gcc-fastmath",
+            "x": 3.4761904761904763,
+            "y": 1.9421592992581078
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": {
+            "id": "spectralnorm-gpp-1-llvm-fastmath",
+            "x": 1.5669014084507042,
+            "y": 5.734135119366267
+          },
+          "smallest": {
+            "id": "spectralnorm-gpp-1-llvm-fastmath",
+            "x": 1.5669014084507042,
+            "y": 5.734135119366267
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": {
+            "id": "revcomp-gpp-6-gcc",
+            "x": 6.956,
+            "y": 4.233186147318915
+          },
+          "smallest": {
+            "id": "revcomp-gpp-1-gcc",
+            "x": 2.256,
+            "y": 11.529448696291007
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": {
+            "id": "fannkuchredux-gpp-1-llvm",
+            "x": 2.797872340425532,
+            "y": 2.162469201124741
+          },
+          "smallest": {
+            "id": "fannkuchredux-gpp-3-llvm",
+            "x": 1.5611702127659575,
+            "y": 13.632558472520937
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": {
+            "id": "fasta-gpp-6-llvm",
+            "x": 3.3352685050798256,
+            "y": 1.1511467723345097
+          },
+          "smallest": {
+            "id": "fasta-gpp-1-llvm",
+            "x": 1.5021770682148041,
+            "y": 1.674700330740395
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": {
+            "id": "binarytrees-gpp-7-gcc",
+            "x": 2.645645645645646,
+            "y": 1.1837049634899863
+          },
+          "smallest": {
+            "id": "binarytrees-gpp-2-gcc",
+            "x": 1.5135135135135136,
+            "y": 24.378551362456506
+          }
+        }
+      ],
+      "python": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-python3-8",
+            "x": 1.5792349726775956,
+            "y": 199.15117404654694
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-python3-3",
+            "x": 1.0449826989619377,
+            "y": 661.8797083782151
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-python3-1",
+            "x": 1.350140056022409,
+            "y": 151.45096726944143
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-python3-8",
+            "x": 1.119718309859155,
+            "y": 1362.4916653052876
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-python3-4",
+            "x": 1.28,
+            "y": 11.523108528711312
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-python3-6",
+            "x": 1.0106382978723405,
+            "y": 224.04341826411027
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-python3-8",
+            "x": 1.0478955007256894,
+            "y": 83.31219440870784
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-python3-2",
+            "x": 1.0,
+            "y": 108.60152899386331
+          }
+        }
+      ],
+      "ruby": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-ruby-7",
+            "x": 1.5423497267759563,
+            "y": 261.3050797759707
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-ruby-3",
+            "x": 1.0484429065743945,
+            "y": 1347.0338398183076
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-ruby-2",
+            "x": 1.1540616246498598,
+            "y": 171.89238302378052
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-ruby-8",
+            "x": 1.0,
+            "y": 575.9077024174
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-ruby-2",
+            "x": 1.004,
+            "y": 19.088054346095056
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-ruby-1",
+            "x": 1.0,
+            "y": 398.9741253160022
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-ruby-8",
+            "x": 1.0,
+            "y": 115.02889236540743
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-ruby-4",
+            "x": 1.0840840840840842,
+            "y": 59.38436547880943
+          }
+        }
+      ],
+      "perl": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-perl-2",
+            "x": 1.9084699453551912,
+            "y": 137.59751189124174
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-perl-1",
+            "x": 1.9792387543252594,
+            "y": 460.88408385950635
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-perl-2",
+            "x": 1.0,
+            "y": 82.12012277569907
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-perl-1",
+            "x": 1.158450704225352,
+            "y": 429.0197028985943
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-perl-4",
+            "x": 1.0,
+            "y": 5.456805525087568
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-perl-3",
+            "x": 1.1143617021276595,
+            "y": 240.4123826691686
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-perl-1",
+            "x": 1.204644412191582,
+            "y": 41.44426533187885
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-perl-1",
+            "x": 1.1711711711711712,
+            "y": 272.23264413285494
+          }
+        }
+      ],
+      "lua": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-lua-2",
+            "x": 1.6256830601092895,
+            "y": 73.96222930579982
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-lua-3",
+            "x": 1.2249134948096885,
+            "y": 346.87485103279266
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-lua-2",
+            "x": 1.711484593837535,
+            "y": 79.5933323772876
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-lua-1",
+            "x": 1.1443661971830985,
+            "y": 484.28021499762406
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-lua-2",
+            "x": 2.196,
+            "y": 51.692936147698965
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-lua-1",
+            "x": 1.2101063829787233,
+            "y": 137.31733777657647
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-lua-2",
+            "x": 1.521044992743106,
+            "y": 18.712263019121696
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-lua-2",
+            "x": 1.2282282282282282,
+            "y": 130.9217065901325
+          }
+        }
+      ],
+      "luajit": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-lua-2-luajit",
+            "x": 1.6256830601092895,
+            "y": 4.4830770253872565
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-lua-3-luajit",
+            "x": 1.2249134948096885,
+            "y": 29.6383809497723
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-lua-2-luajit",
+            "x": 1.711484593837535,
+            "y": 15.146704019820623
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-lua-1-luajit",
+            "x": 1.1443661971830985,
+            "y": 13.55245871051951
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-lua-2-luajit",
+            "x": 2.196,
+            "y": 27.127748984062872
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-lua-1-luajit",
+            "x": 1.2101063829787233,
+            "y": 15.49059868971219
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-lua-2-luajit",
+            "x": 1.521044992743106,
+            "y": 7.4379871169495075
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-lua-2-luajit",
+            "x": 1.2282282282282282,
+            "y": 52.362084751812844
+          }
+        }
+      ],
+      "javascript": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-node-8",
+            "x": 1.5887978142076502,
+            "y": 2.9129677197791226
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-node-1",
+            "x": 1.259515570934256,
+            "y": 122.03737150365762
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-node-8",
+            "x": 1.8683473389355743,
+            "y": 88.16706752902194
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-node-1",
+            "x": 1.1091549295774648,
+            "y": 16.760564729659013
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-node-2",
+            "x": 4.792,
+            "y": 19.203987872633945
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-node-8",
+            "x": 1.1648936170212767,
+            "y": 15.655881400510408
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-node-8",
+            "x": 1.060957910014514,
+            "y": 20.130898095262353
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-node-7",
+            "x": 1.3363363363363363,
+            "y": 15.97420964948774
+          }
+        }
+      ],
+      "php": [
+        {
+          "benchmark": "nbody",
+          "fastest": null,
+          "smallest": {
+            "id": "nbody-php-3",
+            "x": 1.46448087431694,
+            "y": 39.38672106070504
+          }
+        },
+        {
+          "benchmark": "mandelbrot",
+          "fastest": null,
+          "smallest": {
+            "id": "mandelbrot-php-8",
+            "x": 1.4013840830449826,
+            "y": 152.6786199182548
+          }
+        },
+        {
+          "benchmark": "knucleotide",
+          "fastest": null,
+          "smallest": {
+            "id": "knucleotide-php-8",
+            "x": 1.5546218487394958,
+            "y": 40.48556515138463
+          }
+        },
+        {
+          "benchmark": "spectralnorm",
+          "fastest": null,
+          "smallest": {
+            "id": "spectralnorm-php-8",
+            "x": 1.2077464788732395,
+            "y": 280.7815457886474
+          }
+        },
+        {
+          "benchmark": "revcomp",
+          "fastest": null,
+          "smallest": {
+            "id": "revcomp-php-2",
+            "x": 1.048,
+            "y": 10.503488205799922
+          }
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "fastest": null,
+          "smallest": {
+            "id": "fannkuchredux-php-2",
+            "x": 1.1515957446808511,
+            "y": 48.86584801141171
+          }
+        },
+        {
+          "benchmark": "fasta",
+          "fastest": null,
+          "smallest": {
+            "id": "fasta-php-8",
+            "x": 1.0870827285921625,
+            "y": 24.13396120577368
+          }
+        },
+        {
+          "benchmark": "binarytrees",
+          "fastest": null,
+          "smallest": {
+            "id": "binarytrees-php-2",
+            "x": 1.2582582582582582,
+            "y": 59.38319816652609
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,4 @@
+Test(n<u64>) = (result<u64>) :=
+  result := n.
+r := memory/with-frame(Test, 1)
+io/print("{}\n", r)

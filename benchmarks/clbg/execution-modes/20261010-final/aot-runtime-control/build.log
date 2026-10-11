@@ -1,0 +1,6 @@
+   Compiling mech-engine v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine)
+   Compiling knucleotide-compact v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/aot-runtime-control)
+   Compiling mech-compute v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/compute)
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib)
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 29.11s

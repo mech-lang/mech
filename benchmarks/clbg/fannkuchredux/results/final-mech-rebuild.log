@@ -1,0 +1,5 @@
+prepared mech-fannkuch-simd
+prepared mech-fannkuch-scalar
+prepared mech-fannkuch-coarse
+prepared mech-fannkuch-paired
+prepared mech-fannkuch-cached

@@ -1,0 +1,54 @@
+[
+  {
+    "benchmark": "fasta",
+    "profile": "prototype",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds-before-frame-elision/fasta-prototype/aot",
+    "binary_sha256": "d402bfc013bbed5db3a564e5f036050e0b1bd6050769e4194a82f25a62f83fe5",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/fasta.prototype.mec",
+    "source_sha256": "4863053d6d9e16d9ced4e05531a7cd36c62d3ac70ba1f8ca1de9853300404546",
+    "native_object_sha256": "95c6d2f0b1e9771078ed321d91de190e050b1eedfd28922e7f79bccffc0b9855",
+    "old_native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+    "runtime_environment": {
+      "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+      "MECH_CONTROL_SCAN_CACHE": "1",
+      "MECH_CONTROL_SCAN_PIPELINE": "auto"
+    }
+  },
+  {
+    "benchmark": "fasta",
+    "profile": "rebuilt-smallest",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds-before-frame-elision/fasta-rebuilt-smallest/aot",
+    "binary_sha256": "e4d43731dcec20db3689c9b6d1dbc0e892d5aa79844b29ecc2743b534c2033a7",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+    "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+    "native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+    "old_native_object_sha256": "b7123eea54250ec14931eee29f3f7fd736559e8664f4610327635407cac73d2a",
+    "runtime_environment": {
+      "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+      "MECH_CONTROL_SCAN_CACHE": "1",
+      "MECH_CONTROL_SCAN_PIPELINE": "auto"
+    }
+  },
+  {
+    "benchmark": "pidigits",
+    "profile": "prototype",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds-before-frame-elision/pidigits-prototype/aot",
+    "binary_sha256": "929f18dc20cd74dacd475849007524186c9c437601c30ea49db491d300911b61",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/pidigits.prototype.mec",
+    "source_sha256": "e8a3197fb776b633ccba133d5193d48769eebf90b9f8a8ceccde4d4725278a08",
+    "native_object_sha256": "870b0c476925cf3fecc75ca06093263f10e4e422dbd3be7378f924309fee6d3f",
+    "old_native_object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+    "runtime_environment": {}
+  },
+  {
+    "benchmark": "pidigits",
+    "profile": "rebuilt-smallest",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds-before-frame-elision/pidigits-rebuilt-smallest/aot",
+    "binary_sha256": "274a4ce0d9f0a566c9d7e5f0482ef63f2633cbfef101be6a4a6f56c71fa9c599",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+    "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+    "native_object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+    "old_native_object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+    "runtime_environment": {}
+  }
+]

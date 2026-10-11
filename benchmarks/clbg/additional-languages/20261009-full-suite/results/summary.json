@@ -1,0 +1,1167 @@
+{
+  "status": "passed-with-documented-allocation-gap",
+  "timing_report_sha256": "2af915b2b4af15342df200070bfa5e02c7f9177d82edb3144b92094956321958",
+  "source_audit_sha256": "9b4ec1b0e5d14ec98f83d7ff85888ab228dcebfb3bd7744d42d45f9726af0c79",
+  "profile_plan_sha256": "d830af16493bd652715239d13731c2909ad1cb60a215ce45977c6b11fea91086",
+  "benchmarks": [
+    {
+      "benchmark": "spectralnorm",
+      "mech_seconds": 0.086075292,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "spectralnorm:mojo-spectralnorm",
+        "fast_seconds": 0.272595292,
+        "fast_loc": 50,
+        "fewest_key": "spectralnorm:mojo-spectralnorm-small",
+        "fewest_seconds": 0.870142041,
+        "fewest_loc": 35,
+        "time_ratio_to_mech": 3.1669400784606108,
+        "fewest_time_ratio_to_mech": 10.109080327023463,
+        "previous_fast_seconds": 0.271946917,
+        "speedup_from_previous": 0.9976214739614799,
+        "candidate_count": 2,
+        "deliberate_pair": {
+          "compact": "spectralnorm-small.mojo",
+          "performance": "spectralnorm.mojo",
+          "techniques": "Compact four-function multiplication; SIMD/parallel row kernels in Mojo, four-row shared-load tiling in Futhark. Evaluate every coefficient during all forty products."
+        },
+        "candidates": [
+          {
+            "key": "spectralnorm:mojo-spectralnorm-small",
+            "loc": 35,
+            "median_seconds": 0.870142041,
+            "samples_seconds": [
+              0.871881584,
+              0.865268083,
+              0.870142041
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "spectralnorm:mojo-spectralnorm",
+            "loc": 50,
+            "median_seconds": 0.272595292,
+            "samples_seconds": [
+              0.274502583,
+              0.272153791,
+              0.272595292
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "spectralnorm:futhark-spectralnorm-optimized",
+        "fast_seconds": 0.218352875,
+        "fast_loc": 25,
+        "fewest_key": "spectralnorm:futhark-spectralnorm",
+        "fewest_seconds": 0.234290791,
+        "fewest_loc": 16,
+        "time_ratio_to_mech": 2.5367660094606475,
+        "fewest_time_ratio_to_mech": 2.7219285064987058,
+        "previous_fast_seconds": 0.23920975,
+        "speedup_from_previous": 1.095519122429691,
+        "candidate_count": 2,
+        "deliberate_pair": {
+          "compact": "spectralnorm.fut",
+          "performance": "spectralnorm-optimized.fut",
+          "techniques": "Compact four-function multiplication; SIMD/parallel row kernels in Mojo, four-row shared-load tiling in Futhark. Evaluate every coefficient during all forty products."
+        },
+        "candidates": [
+          {
+            "key": "spectralnorm:futhark-spectralnorm-optimized",
+            "loc": 25,
+            "median_seconds": 0.218352875,
+            "samples_seconds": [
+              0.214413416,
+              0.218352875,
+              0.226001542
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "spectralnorm:futhark-spectralnorm",
+            "loc": 16,
+            "median_seconds": 0.234290791,
+            "samples_seconds": [
+              0.234290791,
+              0.237235,
+              0.233291916
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "regexredux",
+      "mech_seconds": 0.489611584,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "regexredux:mojo-regexredux-optimized",
+        "fast_seconds": 1.259126292,
+        "fast_loc": 29,
+        "fewest_key": "regexredux:mojo-regexredux-compact",
+        "fewest_seconds": 2.188111666,
+        "fewest_loc": 25,
+        "time_ratio_to_mech": 2.5716840310706375,
+        "fewest_time_ratio_to_mech": 4.4690765854102015,
+        "previous_fast_seconds": 2.431972958,
+        "speedup_from_previous": 1.931476590912137,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "regexredux-compact.mojo",
+          "performance": "regexredux-optimized.mojo",
+          "techniques": "Compact pattern literals; parallel independent searches and general one-pass replacement/bit-mask access improvements. Keep all nine searches and five ordered substitutions."
+        },
+        "candidates": [
+          {
+            "key": "regexredux:mojo-regexredux-compact",
+            "loc": 25,
+            "median_seconds": 2.188111666,
+            "samples_seconds": [
+              2.188111666,
+              2.179495958,
+              2.212125209
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "regexredux:mojo-regexredux-optimized",
+            "loc": 29,
+            "median_seconds": 1.259126292,
+            "samples_seconds": [
+              1.252947709,
+              1.259126292,
+              1.271282125
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "regexredux:mojo-regexredux",
+            "loc": 26,
+            "median_seconds": 2.191963833,
+            "samples_seconds": [
+              2.191963833,
+              2.193613333,
+              2.1860135
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "regexredux:futhark-regexredux",
+        "fast_seconds": 2.62034725,
+        "fast_loc": 26,
+        "fewest_key": "regexredux:futhark-regexredux-compact",
+        "fewest_seconds": 2.627014875,
+        "fewest_loc": 24,
+        "time_ratio_to_mech": 5.351889815580834,
+        "fewest_time_ratio_to_mech": 5.365508008486989,
+        "previous_fast_seconds": 2.781208625,
+        "speedup_from_previous": 1.0613893349440613,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "regexredux-compact.fut",
+          "performance": "regexredux-optimized.fut",
+          "techniques": "Compact pattern literals; parallel independent searches and general one-pass replacement/bit-mask access improvements. Keep all nine searches and five ordered substitutions."
+        },
+        "candidates": [
+          {
+            "key": "regexredux:futhark-regexredux-compact",
+            "loc": 24,
+            "median_seconds": 2.627014875,
+            "samples_seconds": [
+              2.607278,
+              2.627014875,
+              2.682151584
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "regexredux:futhark-regexredux-optimized",
+            "loc": 27,
+            "median_seconds": 2.641809916,
+            "samples_seconds": [
+              2.641809916,
+              2.628334041,
+              2.645257667
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          },
+          {
+            "key": "regexredux:futhark-regexredux",
+            "loc": 26,
+            "median_seconds": 2.62034725,
+            "samples_seconds": [
+              2.608741084,
+              2.658307667,
+              2.62034725
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "pidigits",
+      "mech_seconds": 0.300272042,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "pidigits:mojo-pidigits-optimized",
+        "fast_seconds": 0.429661375,
+        "fast_loc": 43,
+        "fewest_key": "pidigits:mojo-pidigits-compact",
+        "fewest_seconds": 0.493705125,
+        "fewest_loc": 30,
+        "time_ratio_to_mech": 1.430907027301596,
+        "fewest_time_ratio_to_mech": 1.6441927850212574,
+        "previous_fast_seconds": 0.440672125,
+        "speedup_from_previous": 1.025626576277656,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "pidigits-compact.mojo",
+          "performance": "pidigits-optimized.mojo",
+          "techniques": "Compact ordinary unbounded-integer operators; fused GMP product/sum in Mojo, leading-limb quotient estimation with exact corrections in Futhark. Preserve sequential LFT and dual extraction."
+        },
+        "candidates": [
+          {
+            "key": "pidigits:mojo-pidigits-compact",
+            "loc": 30,
+            "median_seconds": 0.493705125,
+            "samples_seconds": [
+              0.494614916,
+              0.493705125,
+              0.49255
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "pidigits:mojo-pidigits-optimized",
+            "loc": 43,
+            "median_seconds": 0.429661375,
+            "samples_seconds": [
+              0.432245083,
+              0.429661375,
+              0.429041584
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "pidigits:mojo-pidigits",
+            "loc": 45,
+            "median_seconds": 0.439547333,
+            "samples_seconds": [
+              0.439547333,
+              0.447260625,
+              0.4373545
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "pidigits:futhark-pidigits-optimized",
+        "fast_seconds": 2.917066417,
+        "fast_loc": 23,
+        "fewest_key": "pidigits:futhark-pidigits-optimized",
+        "fewest_seconds": 2.917066417,
+        "fewest_loc": 23,
+        "time_ratio_to_mech": 9.714745327505382,
+        "fewest_time_ratio_to_mech": 9.714745327505382,
+        "previous_fast_seconds": 4.120948958,
+        "speedup_from_previous": 1.412703164379133,
+        "candidate_count": 2,
+        "deliberate_pair": {
+          "compact": "pidigits.fut",
+          "performance": "pidigits-optimized.fut",
+          "techniques": "Compact ordinary unbounded-integer operators; fused GMP product/sum in Mojo, leading-limb quotient estimation with exact corrections in Futhark. Preserve sequential LFT and dual extraction."
+        },
+        "candidates": [
+          {
+            "key": "pidigits:futhark-pidigits-optimized",
+            "loc": 23,
+            "median_seconds": 2.917066417,
+            "samples_seconds": [
+              2.916620375,
+              2.917066417,
+              2.926792
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": true
+          },
+          {
+            "key": "pidigits:futhark-pidigits",
+            "loc": 23,
+            "median_seconds": 4.113740417,
+            "samples_seconds": [
+              4.113740417,
+              4.112579791,
+              4.135398334
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "nbody",
+      "mech_seconds": 1.05385575,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "nbody:mojo-nbody-optimized",
+        "fast_seconds": 1.084872833,
+        "fast_loc": 62,
+        "fewest_key": "nbody:mojo-nbody-compact",
+        "fewest_seconds": 1.768158166,
+        "fewest_loc": 55,
+        "time_ratio_to_mech": 1.0294320005370752,
+        "fewest_time_ratio_to_mech": 1.677799040333556,
+        "previous_fast_seconds": 1.750560084,
+        "speedup_from_previous": 1.6136085546166499,
+        "candidate_count": 4,
+        "deliberate_pair": {
+          "compact": "nbody-compact.mojo",
+          "performance": "nbody-optimized.mojo",
+          "techniques": "Compact literals and direct state flow; SIMD pair updates and compile-time unrolling in Mojo, explicit scalar state in Futhark. All ten pairs and five positions every step."
+        },
+        "candidates": [
+          {
+            "key": "nbody:mojo-nbody-compact",
+            "loc": 55,
+            "median_seconds": 1.768158166,
+            "samples_seconds": [
+              1.76200575,
+              1.769423875,
+              1.768158166
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "nbody:mojo-nbody-optimized",
+            "loc": 62,
+            "median_seconds": 1.084872833,
+            "samples_seconds": [
+              1.084872833,
+              1.082756875,
+              1.089305959
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "nbody:mojo-nbody-small",
+            "loc": 128,
+            "median_seconds": 6.551982208,
+            "samples_seconds": [
+              6.5017405,
+              6.658702542,
+              6.551982208
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          },
+          {
+            "key": "nbody:mojo-nbody",
+            "loc": 62,
+            "median_seconds": 1.75152925,
+            "samples_seconds": [
+              1.751326416,
+              1.75152925,
+              1.757185833
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "nbody:futhark-nbody-optimized",
+        "fast_seconds": 1.079082333,
+        "fast_loc": 53,
+        "fewest_key": "nbody:futhark-nbody",
+        "fewest_seconds": 34.763904292,
+        "fewest_loc": 40,
+        "time_ratio_to_mech": 1.0239374155333876,
+        "fewest_time_ratio_to_mech": 32.98734603099143,
+        "previous_fast_seconds": 1.081235833,
+        "speedup_from_previous": 1.0019956771917609,
+        "candidate_count": 2,
+        "deliberate_pair": {
+          "compact": "nbody.fut",
+          "performance": "nbody-optimized.fut",
+          "techniques": "Compact literals and direct state flow; SIMD pair updates and compile-time unrolling in Mojo, explicit scalar state in Futhark. All ten pairs and five positions every step."
+        },
+        "candidates": [
+          {
+            "key": "nbody:futhark-nbody-optimized",
+            "loc": 53,
+            "median_seconds": 1.079082333,
+            "samples_seconds": [
+              1.076639708,
+              1.081222584,
+              1.079082333
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "nbody:futhark-nbody",
+            "loc": 40,
+            "median_seconds": 34.763904292,
+            "samples_seconds": [
+              34.735945291,
+              34.909930083,
+              34.763904292
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "mech_seconds": 0.439738792,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "mandelbrot:mojo-mandelbrot-optimized",
+        "fast_seconds": 1.149276917,
+        "fast_loc": 35,
+        "fewest_key": "mandelbrot:mojo-mandelbrot-compact",
+        "fewest_seconds": 10.549695667,
+        "fewest_loc": 27,
+        "time_ratio_to_mech": 2.6135445357752287,
+        "fewest_time_ratio_to_mech": 23.99082332267834,
+        "previous_fast_seconds": 1.873398375,
+        "speedup_from_previous": 1.6300669989006664,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "mandelbrot-compact.mojo",
+          "performance": "mandelbrot-optimized.mojo",
+          "techniques": "Scalar compact loop; four-lane masked iteration and parallel rows. Same grid, fifty-iteration escape loop and complete PBM, no analytic interior tests."
+        },
+        "candidates": [
+          {
+            "key": "mandelbrot:mojo-mandelbrot-compact",
+            "loc": 27,
+            "median_seconds": 10.549695667,
+            "samples_seconds": [
+              10.549695667,
+              10.600292542,
+              10.523619583
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "mandelbrot:mojo-mandelbrot-optimized",
+            "loc": 35,
+            "median_seconds": 1.149276917,
+            "samples_seconds": [
+              1.140949417,
+              1.149276917,
+              1.182013375
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "mandelbrot:mojo-mandelbrot",
+            "loc": 35,
+            "median_seconds": 1.883901791,
+            "samples_seconds": [
+              1.868893,
+              1.887287959,
+              1.883901791
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "mandelbrot:futhark-mandelbrot-optimized",
+        "fast_seconds": 0.890895916,
+        "fast_loc": 31,
+        "fewest_key": "mandelbrot:futhark-mandelbrot",
+        "fewest_seconds": 2.111419625,
+        "fewest_loc": 19,
+        "time_ratio_to_mech": 2.0259661694799944,
+        "fewest_time_ratio_to_mech": 4.801531416859852,
+        "previous_fast_seconds": 2.13626025,
+        "speedup_from_previous": 2.3978785979752995,
+        "candidate_count": 2,
+        "deliberate_pair": {
+          "compact": "mandelbrot.fut",
+          "performance": "mandelbrot-optimized.fut",
+          "techniques": "Scalar compact loop; four-lane masked iteration and parallel rows. Same grid, fifty-iteration escape loop and complete PBM, no analytic interior tests."
+        },
+        "candidates": [
+          {
+            "key": "mandelbrot:futhark-mandelbrot-optimized",
+            "loc": 31,
+            "median_seconds": 0.890895916,
+            "samples_seconds": [
+              0.890895916,
+              0.891355583,
+              0.889405583
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "mandelbrot:futhark-mandelbrot",
+            "loc": 19,
+            "median_seconds": 2.111419625,
+            "samples_seconds": [
+              2.1136595,
+              2.110574459,
+              2.111419625
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "mech_seconds": 0.149272625,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "revcomp:mojo-revcomp-optimized",
+        "fast_seconds": 0.431201875,
+        "fast_loc": 42,
+        "fewest_key": "revcomp:mojo-revcomp-compact",
+        "fewest_seconds": 2.350093,
+        "fewest_loc": 33,
+        "time_ratio_to_mech": 2.888686890848205,
+        "fewest_time_ratio_to_mech": 15.743630153217982,
+        "previous_fast_seconds": 0.444188667,
+        "speedup_from_previous": 1.030117661246255,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "revcomp-compact.mojo",
+          "performance": "revcomp-optimized.mojo",
+          "techniques": "Compact parsing/reversal/wrapping; a reusable complement lookup and parallel output construction. Preserve headers, every input base and sixty-column output."
+        },
+        "candidates": [
+          {
+            "key": "revcomp:mojo-revcomp-compact",
+            "loc": 33,
+            "median_seconds": 2.350093,
+            "samples_seconds": [
+              2.350093,
+              2.348935125,
+              2.389072875
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "revcomp:mojo-revcomp-optimized",
+            "loc": 42,
+            "median_seconds": 0.431201875,
+            "samples_seconds": [
+              0.431201875,
+              0.432882667,
+              0.427178542
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "revcomp:mojo-revcomp",
+            "loc": 44,
+            "median_seconds": 0.441093958,
+            "samples_seconds": [
+              0.436108666,
+              0.445306959,
+              0.441093958
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "revcomp:futhark-revcomp-optimized",
+        "fast_seconds": 0.392229083,
+        "fast_loc": 30,
+        "fewest_key": "revcomp:futhark-revcomp-compact",
+        "fewest_seconds": 0.6504365,
+        "fewest_loc": 15,
+        "time_ratio_to_mech": 2.62760223450214,
+        "fewest_time_ratio_to_mech": 4.357372961050293,
+        "previous_fast_seconds": 0.809702125,
+        "speedup_from_previous": 2.064360242761499,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "revcomp-compact.fut",
+          "performance": "revcomp-optimized.fut",
+          "techniques": "Compact parsing/reversal/wrapping; a reusable complement lookup and parallel output construction. Preserve headers, every input base and sixty-column output."
+        },
+        "candidates": [
+          {
+            "key": "revcomp:futhark-revcomp-compact",
+            "loc": 15,
+            "median_seconds": 0.6504365,
+            "samples_seconds": [
+              0.6504365,
+              0.646279916,
+              0.665919041
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "revcomp:futhark-revcomp-optimized",
+            "loc": 30,
+            "median_seconds": 0.392229083,
+            "samples_seconds": [
+              0.392229083,
+              0.388541792,
+              0.400242083
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "revcomp:futhark-revcomp",
+            "loc": 29,
+            "median_seconds": 0.809018834,
+            "samples_seconds": [
+              0.809391333,
+              0.799194792,
+              0.809018834
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "mech_seconds": 0.54874775,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "fasta:mojo-fasta-optimized",
+        "fast_seconds": 1.22295175,
+        "fast_loc": 53,
+        "fewest_key": "fasta:mojo-fasta-compact",
+        "fewest_seconds": 2.675716167,
+        "fewest_loc": 31,
+        "time_ratio_to_mech": 2.2286228052871286,
+        "fewest_time_ratio_to_mech": 4.876040342762225,
+        "previous_fast_seconds": 2.598036459,
+        "speedup_from_previous": 2.124398169429006,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "fasta-compact.mojo",
+          "performance": "fasta-optimized.mojo",
+          "techniques": "Compact single record generator; UInt32 LCG state and parallel floating-CDF conversion after sequential generation. Preserve every RNG update."
+        },
+        "candidates": [
+          {
+            "key": "fasta:mojo-fasta-compact",
+            "loc": 31,
+            "median_seconds": 2.675716167,
+            "samples_seconds": [
+              2.685012292,
+              2.632095875,
+              2.675716167
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "fasta:mojo-fasta-optimized",
+            "loc": 53,
+            "median_seconds": 1.22295175,
+            "samples_seconds": [
+              1.232753958,
+              1.220089666,
+              1.22295175
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "fasta:mojo-fasta",
+            "loc": 44,
+            "median_seconds": 2.590844292,
+            "samples_seconds": [
+              2.602842166,
+              2.581116916,
+              2.590844292
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "fasta:futhark-fasta-optimized",
+        "fast_seconds": 0.984710375,
+        "fast_loc": 18,
+        "fewest_key": "fasta:futhark-fasta-compact",
+        "fewest_seconds": 2.136921167,
+        "fewest_loc": 16,
+        "time_ratio_to_mech": 1.7944681777738498,
+        "fewest_time_ratio_to_mech": 3.8941775469694413,
+        "previous_fast_seconds": 2.470956333,
+        "speedup_from_previous": 2.5093229397527166,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "fasta-compact.fut",
+          "performance": "fasta-optimized.fut",
+          "techniques": "Compact single record generator; UInt32 LCG state and parallel floating-CDF conversion after sequential generation. Preserve every RNG update."
+        },
+        "candidates": [
+          {
+            "key": "fasta:futhark-fasta-compact",
+            "loc": 16,
+            "median_seconds": 2.136921167,
+            "samples_seconds": [
+              2.188421667,
+              2.136921167,
+              2.105251375
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "fasta:futhark-fasta-optimized",
+            "loc": 18,
+            "median_seconds": 0.984710375,
+            "samples_seconds": [
+              0.984710375,
+              0.98772775,
+              0.982860333
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "fasta:futhark-fasta",
+            "loc": 21,
+            "median_seconds": 2.35648375,
+            "samples_seconds": [
+              2.28543775,
+              2.35648375,
+              2.434877708
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "mech_seconds": 0.51382825,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "knucleotide:mojo-knucleotide-optimized",
+        "fast_seconds": 1.696559958,
+        "fast_loc": 77,
+        "fewest_key": "knucleotide:mojo-knucleotide-compact",
+        "fewest_seconds": 4.753924,
+        "fewest_loc": 44,
+        "time_ratio_to_mech": 3.3018035851473715,
+        "fewest_time_ratio_to_mech": 9.251970867697523,
+        "previous_fast_seconds": 3.111290375,
+        "speedup_from_previous": 1.8338817678260917,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "knucleotide-compact.mojo",
+          "performance": "knucleotide-optimized.mojo",
+          "techniques": "Serial compact growing maps; rolling keys, one-search entry increments, 32 partitions/eight workers, bounded reserve plus fixed-shape inner updates in Futhark. Retain all keys."
+        },
+        "candidates": [
+          {
+            "key": "knucleotide:mojo-knucleotide-compact",
+            "loc": 44,
+            "median_seconds": 4.753924,
+            "samples_seconds": [
+              4.716092625,
+              4.753924,
+              4.798077667
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "knucleotide:mojo-knucleotide-optimized",
+            "loc": 77,
+            "median_seconds": 1.696559958,
+            "samples_seconds": [
+              1.710079792,
+              1.696192584,
+              1.696559958
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "knucleotide:mojo-knucleotide",
+            "loc": 75,
+            "median_seconds": 3.09083725,
+            "samples_seconds": [
+              3.168671375,
+              3.09083725,
+              3.0724005
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "knucleotide:futhark-knucleotide-optimized",
+        "fast_seconds": 9.040219375,
+        "fast_loc": 54,
+        "fewest_key": "knucleotide:futhark-knucleotide-compact",
+        "fewest_seconds": 29.069172291,
+        "fewest_loc": 37,
+        "time_ratio_to_mech": 17.593854318052774,
+        "fewest_time_ratio_to_mech": 56.573713669888726,
+        "previous_fast_seconds": 15.702948292,
+        "speedup_from_previous": 1.73700964994558,
+        "candidate_count": 3,
+        "deliberate_pair": {
+          "compact": "knucleotide-compact.fut",
+          "performance": "knucleotide-optimized.fut",
+          "techniques": "Serial compact growing maps; rolling keys, one-search entry increments, 32 partitions/eight workers, bounded reserve plus fixed-shape inner updates in Futhark. Retain all keys."
+        },
+        "candidates": [
+          {
+            "key": "knucleotide:futhark-knucleotide-compact",
+            "loc": 37,
+            "median_seconds": 29.069172291,
+            "samples_seconds": [
+              29.153263792,
+              29.069172291,
+              29.038587292
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "knucleotide:futhark-knucleotide-optimized",
+            "loc": 54,
+            "median_seconds": 9.040219375,
+            "samples_seconds": [
+              8.778160417,
+              9.040683625,
+              9.040219375
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "knucleotide:futhark-knucleotide",
+            "loc": 50,
+            "median_seconds": 16.705348625,
+            "samples_seconds": [
+              17.166589958,
+              16.705348625,
+              15.086120709
+            ],
+            "candidate_role": "baseline-candidate",
+            "selected_fast": false,
+            "selected_fewest": false
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "mech_seconds": 1.702457333,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "fannkuchredux:mojo-fannkuchredux-optimized",
+        "fast_seconds": 7.340605041,
+        "fast_loc": 71,
+        "fewest_key": "fannkuchredux:mojo-fannkuchredux",
+        "fewest_seconds": 14.135072667,
+        "fewest_loc": 66,
+        "time_ratio_to_mech": 4.311770344379021,
+        "fewest_time_ratio_to_mech": 8.302747089756288,
+        "previous_fast_seconds": 7.397071334,
+        "speedup_from_previous": 1.0076923213665105,
+        "candidate_count": 2,
+        "deliberate_pair": {
+          "compact": "fannkuchredux.mojo",
+          "performance": "fannkuchredux-optimized.mojo",
+          "techniques": "Compact factoradic enumeration; disjoint worker ranges, native pointer updates in Mojo and fixed-size array loops in Futhark. Enumerate all permutations."
+        },
+        "candidates": [
+          {
+            "key": "fannkuchredux:mojo-fannkuchredux-optimized",
+            "loc": 71,
+            "median_seconds": 7.340605041,
+            "samples_seconds": [
+              7.406255875,
+              7.340605041,
+              7.311026917
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "fannkuchredux:mojo-fannkuchredux",
+            "loc": 66,
+            "median_seconds": 14.135072667,
+            "samples_seconds": [
+              14.086725667,
+              14.135072667,
+              14.174851583
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          }
+        ]
+      },
+      "futhark": {
+        "status": "admitted",
+        "fast_key": "fannkuchredux:futhark-fannkuchredux-optimized",
+        "fast_seconds": 5.630263208,
+        "fast_loc": 44,
+        "fewest_key": "fannkuchredux:futhark-fannkuchredux",
+        "fewest_seconds": 70.989302375,
+        "fewest_loc": 36,
+        "time_ratio_to_mech": 3.3071390976234234,
+        "fewest_time_ratio_to_mech": 41.69813891893877,
+        "previous_fast_seconds": 5.565923292,
+        "speedup_from_previous": 0.9885724852243889,
+        "candidate_count": 2,
+        "deliberate_pair": {
+          "compact": "fannkuchredux.fut",
+          "performance": "fannkuchredux-optimized.fut",
+          "techniques": "Compact factoradic enumeration; disjoint worker ranges, native pointer updates in Mojo and fixed-size array loops in Futhark. Enumerate all permutations."
+        },
+        "candidates": [
+          {
+            "key": "fannkuchredux:futhark-fannkuchredux-optimized",
+            "loc": 44,
+            "median_seconds": 5.630263208,
+            "samples_seconds": [
+              5.630263208,
+              5.602464958,
+              5.99188375
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          },
+          {
+            "key": "fannkuchredux:futhark-fannkuchredux",
+            "loc": 36,
+            "median_seconds": 70.989302375,
+            "samples_seconds": [
+              70.989302375,
+              71.365455042,
+              68.510997916
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "mech_seconds": 0.394411208,
+      "mojo": {
+        "status": "admitted",
+        "fast_key": "binarytrees:mojo-binarytrees-optimized",
+        "fast_seconds": 0.66561325,
+        "fast_loc": 49,
+        "fewest_key": "binarytrees:mojo-binarytrees-compact",
+        "fewest_seconds": 2.218423417,
+        "fewest_loc": 38,
+        "time_ratio_to_mech": 1.6876124118663485,
+        "fewest_time_ratio_to_mech": 5.624645983691214,
+        "previous_fast_seconds": null,
+        "speedup_from_previous": null,
+        "candidate_count": 2,
+        "deliberate_pair": {
+          "compact": "binarytrees-compact.mojo",
+          "performance": "binarytrees-optimized.mojo",
+          "techniques": "Compact recursive construction and traversal; eight independent CPU workers in the performance form. Every node, including leaves, receives one 16-byte apr_palloc allocation from the existing Apache APR pool. Each temporary tree is built, walked and cleared separately; stretch pool is destroyed before long-lived allocation."
+        },
+        "candidates": [
+          {
+            "key": "binarytrees:mojo-binarytrees-compact",
+            "loc": 38,
+            "median_seconds": 2.218423417,
+            "samples_seconds": [
+              2.134609417,
+              2.224066333,
+              2.218423417
+            ],
+            "candidate_role": "compact-candidate",
+            "selected_fast": false,
+            "selected_fewest": true
+          },
+          {
+            "key": "binarytrees:mojo-binarytrees-optimized",
+            "loc": 49,
+            "median_seconds": 0.66561325,
+            "samples_seconds": [
+              0.6569195,
+              0.66561325,
+              0.676355542
+            ],
+            "candidate_role": "performance-candidate",
+            "selected_fast": true,
+            "selected_fewest": false
+          }
+        ]
+      },
+      "futhark": {
+        "status": "excluded",
+        "reason": "The array representation constructs and traverses all node values, but omits the required per-node heap/library-pool allocations. Futhark 0.27.1 has flattened array values and no recursive heap-reference data model or outgoing C allocator calls. A native tree executor would violate the language-source rule."
+      }
+    }
+  ],
+  "coverage": {
+    "mojo": [
+      "spectralnorm",
+      "regexredux",
+      "pidigits",
+      "nbody",
+      "mandelbrot",
+      "revcomp",
+      "fasta",
+      "knucleotide",
+      "fannkuchredux",
+      "binarytrees"
+    ],
+    "futhark": [
+      "spectralnorm",
+      "regexredux",
+      "pidigits",
+      "nbody",
+      "mandelbrot",
+      "revcomp",
+      "fasta",
+      "knucleotide",
+      "fannkuchredux"
+    ]
+  },
+  "geometric_mean_time_ratio_to_mech": {
+    "mojo": 2.336529694686569,
+    "futhark": 3.4810865865017884
+  },
+  "geometric_mean_fewest_time_ratio_to_mech": {
+    "mojo": 6.304331919694805,
+    "futhark": 9.88304757778771
+  },
+  "common_benchmark_comparison": {
+    "benchmarks": [
+      "spectralnorm",
+      "regexredux",
+      "pidigits",
+      "nbody",
+      "mandelbrot",
+      "revcomp",
+      "fasta",
+      "knucleotide",
+      "fannkuchredux"
+    ],
+    "geometric_mean_time_ratio_to_mech": {
+      "mojo": 2.422541070392488,
+      "futhark": 3.4810865865017884
+    }
+  },
+  "samples": 180,
+  "candidate_sources": 50,
+  "distinct_compact_performance_pairs": 19,
+  "attempted_compact_performance_pairs": 20,
+  "unsupported": [
+    {
+      "benchmark": "binarytrees",
+      "language": "futhark",
+      "reason": "The array representation constructs and traverses all node values, but omits the required per-node heap/library-pool allocations. Futhark 0.27.1 has flattened array values and no recursive heap-reference data model or outgoing C allocator calls. A native tree executor would violate the language-source rule."
+    }
+  ],
+  "cpu_only": true,
+  "max_workers": 8,
+  "work_audited": true,
+  "rejected_tree_result_excluded": true,
+  "discarded_samples": 0
+}

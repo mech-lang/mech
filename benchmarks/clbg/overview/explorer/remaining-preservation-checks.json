@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "previous_sha256": "73fbca13a7196acf8b34a745ff9cd13a2fc73846e8cbb304e7be37926a6d6b58",
+  "current_sha256": "29aeddf9881d3a9001b8468c223ec1ba00dedffd6e62fe45ada8e35f89b543ea",
+  "preserved_endpoint_programs": 509,
+  "preserved_source_files": 489,
+  "preserved_timing_samples": 1603,
+  "new_languages": [
+    "csharp",
+    "csharp-aot",
+    "fsharp",
+    "fsharp-aot",
+    "ada",
+    "pascal",
+    "fortran",
+    "dart",
+    "dart-jit",
+    "smalltalk"
+  ],
+  "new_endpoint_programs": 166
+}

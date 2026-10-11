@@ -1,0 +1,277 @@
+{
+  "created_at": "2026-10-09T19:56:26.479743+00:00",
+  "driver_sha256": "648732c12233a9fd96d69dd2a8990b47980bf8bfdf1ab22aaa0bb2ee78fc7ddb",
+  "compiler_files": {
+    "hosts/gpu/src/fused_f64/mod.rs": "6c6a2664e86d1977017240469c8da5151db02ef3575f7aa3400c3c7a644c7ab4",
+    "hosts/gpu/src/fused_f64/runner.rs": "1249907f7fcb777cf9f09ddd3e57268149b5aad2c4cb5a209a36b8ccf41318db"
+  },
+  "programs": {
+    "compact": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "normalized_loc": 20,
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+      "binary_sha256": "d0996b429202cd64256d39b3c0f8bf95e9f42c583ad897e613f9b012520c67a9",
+      "generation": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact.o",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "link": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact"
+      ],
+      "same_object_as_baseline": true,
+      "same_generated_runner_as_baseline": true
+    },
+    "optimized": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "normalized_loc": 25,
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "generation": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "link": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized"
+      ],
+      "same_object_as_baseline": true,
+      "same_generated_runner_as_baseline": true
+    },
+    "compact-baseline": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+      "normalized_loc": 32,
+      "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+      "binary_sha256": "794e34d68b99342b4594f39922afa857cde8d00eda55aaa7121ab66ce176d8b2",
+      "generation": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--output",
+        "energy"
+      ],
+      "link": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline"
+      ],
+      "frozen_object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479"
+    },
+    "optimized-baseline": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise-mass.mec",
+      "normalized_loc": 37,
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+      "binary_sha256": "a8866afa845eed570348e233ed1bd008e2d771bf2a1951d7699febfe8b76248c",
+      "generation": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise-mass.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--output",
+        "energy",
+        "--pack-state-tails"
+      ],
+      "link": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline"
+      ],
+      "frozen_object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232"
+    }
+  },
+  "checks": [
+    {
+      "program": "compact",
+      "steps": 0,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169075164"
+      ]
+    },
+    {
+      "program": "compact",
+      "steps": 1,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169074954"
+      ]
+    },
+    {
+      "program": "compact",
+      "steps": 10,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169073022"
+      ]
+    },
+    {
+      "program": "compact",
+      "steps": 1000,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169087605"
+      ]
+    },
+    {
+      "program": "compact",
+      "steps": 10000,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169016441"
+      ]
+    },
+    {
+      "program": "compact",
+      "steps": 1000000,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169086185"
+      ]
+    },
+    {
+      "program": "compact",
+      "steps": 50000000,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169059907"
+      ]
+    },
+    {
+      "program": "optimized",
+      "steps": 0,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169075164"
+      ]
+    },
+    {
+      "program": "optimized",
+      "steps": 1,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169074954"
+      ]
+    },
+    {
+      "program": "optimized",
+      "steps": 10,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169073022"
+      ]
+    },
+    {
+      "program": "optimized",
+      "steps": 1000,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169087605"
+      ]
+    },
+    {
+      "program": "optimized",
+      "steps": 10000,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169016441"
+      ]
+    },
+    {
+      "program": "optimized",
+      "steps": 1000000,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169086185"
+      ]
+    },
+    {
+      "program": "optimized",
+      "steps": 50000000,
+      "state_components": 30,
+      "bit_identical": true,
+      "output": [
+        "-0.169075164",
+        "-0.169059907"
+      ]
+    }
+  ],
+  "status": "complete"
+}

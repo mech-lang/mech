@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement Erlang program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement Erlang program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">% The Computer Language Benchmarks Game</span>
+<span class="slc">% https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">%%</span>
+<span class="slc">%% Based on two Erlang versions contributed by</span>
+<span class="slc">%% Vlad Balin and Fredrik Svahn.</span>
+<span class="slc">%% contributed by Michael Pitidis</span>
+<span class="slc">%% I/O redone by Erik Søe Sørensen</span>
+
+<span class="opt">-</span><span class="kwd">module</span><span class="opt">(</span>revcomp<span class="opt">).</span>
+
+<span class="slc">%-compile([native, {hipe, [o3]}, inline, {inline_size, 100}]).</span>
+<span class="slc">%-compile(export_all).</span>
+
+<span class="opt">-</span><span class="kwd">export</span><span class="opt">([</span>main<span class="opt">/</span><span class="num">1</span><span class="opt">]).</span>
+
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>WIDTH<span class="opt">,</span> <span class="num">60</span><span class="opt">).</span>
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>WORKERS<span class="opt">,</span> <span class="num">4</span><span class="opt">).</span>
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>BUFSIZE<span class="opt">,</span> <span class="num">4096</span><span class="opt">).</span>
+
+<span class="kwd">main</span><span class="opt">([</span>_Args<span class="opt">]) -&gt;</span>
+  <span class="kwc">io</span><span class="opt">:</span><span class="kwd">setopts</span><span class="opt">([</span><span class="kwb">binary</span><span class="opt">]),</span>
+  <span class="kwd">run_parallel</span><span class="opt">(),</span>
+  <span class="kwb">halt</span><span class="opt">().</span>
+
+<span class="slc">%% Set up one process for reading. Transformations and printing are</span>
+<span class="slc">%% handled asynchronously in separate processes.</span>
+<span class="kwd">run_parallel</span><span class="opt">() -&gt;</span>
+  <span class="kwb">register</span><span class="opt">(</span>reader<span class="opt">,</span> <span class="kwb">self</span><span class="opt">()),</span>
+  reader <span class="opt">!</span> go<span class="opt">,</span>
+  <span class="kwd">loop</span><span class="opt">(&lt;&lt; &gt;&gt;).</span>
+
+<span class="kwd">loop</span><span class="opt">(</span>Buf<span class="opt">) -&gt;</span>
+  <span class="kwa">case</span> <span class="kwd">get_line</span><span class="opt">()</span> <span class="kwa">of</span>
+    eof <span class="opt">-&gt;</span>
+      <span class="kwa">receive</span> go <span class="opt">-&gt;</span> ok <span class="kwa">end</span><span class="opt">,</span>
+      <span class="kwb">spawn</span><span class="opt">(</span><span class="kwa">fun</span><span class="opt">() -&gt;</span> <span class="kwd">flush</span><span class="opt">(&lt;&lt; &gt;&gt;,</span> Buf<span class="opt">)</span> <span class="kwa">end</span><span class="opt">),</span>
+      <span class="kwa">receive</span> go <span class="opt">-&gt;</span> ok <span class="kwa">end</span><span class="opt">;</span>
+    <span class="opt">&lt;&lt;</span> <span class="sng">&quot;&gt;&quot;</span><span class="opt">,</span> _<span class="opt">/</span>bytes <span class="opt">&gt;&gt; =</span> Comment <span class="opt">-&gt;</span>
+      <span class="kwa">receive</span> go <span class="opt">-&gt;</span> ok <span class="kwa">end</span><span class="opt">,</span>
+      <span class="kwb">spawn</span><span class="opt">(</span><span class="kwa">fun</span><span class="opt">() -&gt;</span> <span class="kwd">flush</span><span class="opt">([</span>Comment<span class="opt">,</span> $<span class="esc">\n</span><span class="opt">],</span> Buf<span class="opt">)</span> <span class="kwa">end</span><span class="opt">),</span>
+      <span class="kwd">loop</span><span class="opt">(&lt;&lt; &gt;&gt;);</span>
+    Line <span class="opt">-&gt;</span>
+      <span class="slc">% Strip newline and append.</span>
+<span class="slc">%%       S = size(Line) - 1,</span>
+<span class="slc">%%       &lt;&lt; Chunk:S/bytes, _ &gt;&gt; = Line,</span>
+      <span class="kwd">loop</span><span class="opt">(&lt;&lt;</span> Buf<span class="opt">/</span><span class="kwb">binary</span><span class="opt">,</span> Line<span class="opt">/</span><span class="kwb">binary</span> <span class="opt">&gt;&gt;)</span>
+  <span class="kwa">end</span><span class="opt">.</span>
+
+<span class="kwd">get_line</span><span class="opt">() -&gt;</span>
+    Buf <span class="opt">=</span> <span class="kwa">case</span> <span class="kwb">get</span><span class="opt">(</span>linebuf<span class="opt">)</span> <span class="kwa">of</span>
+	      undefined <span class="opt">-&gt; &lt;&lt;&gt;&gt;;</span>
+	      B <span class="opt">-&gt;</span> B
+	  <span class="kwa">end</span><span class="opt">,</span>
+    <span class="kwa">case</span> <span class="kwb">binary</span><span class="opt">:</span><span class="kwd">split</span><span class="opt">(</span>Buf<span class="opt">, &lt;&lt;</span><span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">&gt;&gt;)</span> <span class="kwa">of</span>
+	<span class="opt">[</span>Line<span class="opt">,</span>Rest<span class="opt">] -&gt;</span>
+	    <span class="kwb">put</span><span class="opt">(</span>linebuf<span class="opt">,</span> Rest<span class="opt">),</span>
+	    Line<span class="opt">;</span>
+	<span class="opt">[</span>_<span class="opt">] -&gt;</span>
+	    IsEOF <span class="opt">=</span> <span class="kwb">get</span><span class="opt">(</span>linebuf_eof<span class="opt">) /=</span> undefined<span class="opt">,</span>
+	    <span class="kwa">if</span> Buf<span class="opt">==&lt;&lt;&gt;&gt;,</span> IsEOF <span class="opt">-&gt;</span>
+		    eof<span class="opt">;</span>
+	       true <span class="opt">-&gt;</span>
+		    <span class="kwa">case</span> <span class="kwc">file</span><span class="opt">:</span><span class="kwd">read</span><span class="opt">(</span>standard_io<span class="opt">,</span> ?BUFSIZE<span class="opt">)</span> <span class="kwa">of</span>
+			eof <span class="opt">-&gt;</span>
+			    <span class="kwb">put</span><span class="opt">(</span>linebuf_eof<span class="opt">,</span> true<span class="opt">),</span>
+			    <span class="kwd">get_line</span><span class="opt">();</span>
+			<span class="opt">{</span>ok<span class="opt">,</span> Data<span class="opt">} -&gt;</span>
+			    <span class="kwb">put</span><span class="opt">(</span>linebuf<span class="opt">, &lt;&lt;</span>Buf<span class="opt">/</span><span class="kwb">binary</span><span class="opt">,</span> Data<span class="opt">/</span><span class="kwb">binary</span><span class="opt">&gt;&gt;),</span>
+			    <span class="kwd">get_line</span><span class="opt">()</span>
+		    <span class="kwa">end</span>
+	    <span class="kwa">end</span>
+    <span class="kwa">end</span><span class="opt">.</span>
+	      
+
+
+<span class="slc">%% Calculate the reverse complement of Buffer, and print it.</span>
+<span class="slc">%% Calculation is done in chunks, each assigned a separate process.</span>
+<span class="slc">%% The results are collected, and printed in the correct order.</span>
+<span class="kwd">flush</span><span class="opt">(</span>Comment<span class="opt">,</span> Buffer<span class="opt">) -&gt;</span>
+  <span class="kwb">register</span><span class="opt">(</span>collector<span class="opt">,</span> <span class="kwb">self</span><span class="opt">()),</span>
+  <span class="kwc">io</span><span class="opt">:</span><span class="kwd">put_chars</span><span class="opt">(</span><span class="kwd">reverse_complement</span><span class="opt">(</span>Buffer<span class="opt">)),</span>
+  <span class="kwc">io</span><span class="opt">:</span><span class="kwd">put_chars</span><span class="opt">(</span>Comment<span class="opt">),</span>
+  <span class="kwb">unregister</span><span class="opt">(</span>collector<span class="opt">),</span>
+  reader <span class="opt">!</span> go<span class="opt">.</span>
+
+<span class="slc">%% Calculation is distributed among workers.</span>
+<span class="slc">%% As a minor optimization, workers handle only chunks of the same size,</span>
+<span class="slc">%% evenly divisible by ?WIDTH. The remainder is handled by the current</span>
+<span class="slc">%% process, with a separate function.</span>
+<span class="kwd">reverse_complement</span><span class="opt">(&lt;&lt; &gt;&gt;) -&gt;</span>
+  <span class="opt">&lt;&lt; &gt;&gt;;</span>
+<span class="kwd">reverse_complement</span><span class="opt">(</span>Buffer<span class="opt">) -&gt;</span>
+  <span class="opt">{</span>Chunks<span class="opt">,</span> Left<span class="opt">} =</span> <span class="kwd">calculate_splits</span><span class="opt">(</span><span class="kwb">size</span><span class="opt">(</span>Buffer<span class="opt">),</span> ?WORKERS<span class="opt">),</span>
+  Even <span class="opt">=</span> <span class="kwd">start_jobs</span><span class="opt">(</span>Buffer<span class="opt">,</span> Chunks<span class="opt">),</span>
+  Last <span class="opt">=</span> <span class="kwd">revcomp_last</span><span class="opt">(</span>Buffer<span class="opt">,</span> Left<span class="opt">, &lt;&lt; &gt;&gt;),</span>
+  <span class="kwd">collect</span><span class="opt">(</span>Even<span class="opt">) ++ [</span>Last<span class="opt">].</span>
+
+<span class="kwd">start_jobs</span><span class="opt">(</span>_<span class="opt">,</span> <span class="num">0</span><span class="opt">) -&gt;</span>
+  <span class="num">0</span><span class="opt">;</span>
+<span class="kwd">start_jobs</span><span class="opt">(</span>Buffer<span class="opt">,</span> Chunks<span class="opt">) -&gt;</span>
+  <span class="kwd">start_jobs</span><span class="opt">(</span>Buffer<span class="opt">,</span> Chunks<span class="opt">,</span> <span class="kwb">size</span><span class="opt">(</span>Buffer<span class="opt">),</span> <span class="num">0</span><span class="opt">).</span>
+
+<span class="kwd">start_jobs</span><span class="opt">(</span>_<span class="opt">,</span> _<span class="opt">,</span> _<span class="opt">,</span> N <span class="opt">=</span> ?WORKERS<span class="opt">) -&gt;</span>
+  N<span class="opt">;</span>
+<span class="kwd">start_jobs</span><span class="opt">(</span>Buffer<span class="opt">,</span> Chunk<span class="opt">,</span> Size<span class="opt">,</span> N<span class="opt">)</span> <span class="kwa">when</span> Size <span class="opt">&gt;=</span> Chunk <span class="opt">-&gt;</span>
+  <span class="kwd">new_job</span><span class="opt">({</span><span class="kwa">fun</span> revcomp_chunk<span class="opt">/</span><span class="num">4</span><span class="opt">, [</span>Buffer<span class="opt">,</span> Size <span class="opt">-</span> Chunk<span class="opt">,</span> Size<span class="opt">, &lt;&lt; &gt;&gt;]},</span> N<span class="opt">),</span>
+  <span class="kwd">start_jobs</span><span class="opt">(</span>Buffer<span class="opt">,</span> Chunk<span class="opt">,</span> Size <span class="opt">-</span> Chunk<span class="opt">,</span> N <span class="opt">+</span> <span class="num">1</span><span class="opt">).</span>
+
+<span class="slc">%% Specialized function which handles even chunks.</span>
+<span class="kwd">revcomp_chunk</span><span class="opt">(</span>_<span class="opt">,</span> Start<span class="opt">,</span> Start<span class="opt">,</span> Acc<span class="opt">) -&gt;</span>
+  Acc<span class="opt">;</span>
+<span class="kwd">revcomp_chunk</span><span class="opt">(</span>Buffer<span class="opt">,</span> Start<span class="opt">,</span> Stop<span class="opt">,</span> Acc<span class="opt">) -&gt;</span>
+  From <span class="opt">=</span> Stop <span class="opt">-</span> ?WIDTH<span class="opt">,</span>
+  <span class="opt">&lt;&lt;</span> <span class="kwc">_</span><span class="opt">:</span>From<span class="opt">/</span>bytes<span class="opt">,</span> <span class="kwc">Line</span><span class="opt">:</span>?WIDTH<span class="opt">/</span>bytes<span class="opt">,</span> _<span class="opt">/</span>bytes <span class="opt">&gt;&gt; =</span> Buffer<span class="opt">,</span>
+  RC <span class="opt">=</span> <span class="kwd">revcomp</span><span class="opt">(</span>Line<span class="opt">),</span>
+  <span class="kwd">revcomp_chunk</span><span class="opt">(</span>Buffer<span class="opt">,</span> Start<span class="opt">,</span> From<span class="opt">, &lt;&lt;</span> Acc<span class="opt">/</span><span class="kwb">binary</span><span class="opt">,</span> RC<span class="opt">/</span><span class="kwb">binary</span> <span class="opt">&gt;&gt;).</span>
+
+<span class="slc">%% Specialized function which handles the uneven chunk.</span>
+<span class="kwd">revcomp_last</span><span class="opt">(</span>Buffer<span class="opt">,</span> Stop<span class="opt">,</span> Acc<span class="opt">)</span> <span class="kwa">when</span> Stop <span class="opt">&gt;</span> ?WIDTH <span class="opt">-&gt;</span>
+  From <span class="opt">=</span> Stop <span class="opt">-</span> ?WIDTH<span class="opt">,</span>
+  <span class="opt">&lt;&lt;</span> <span class="kwc">_</span><span class="opt">:</span>From<span class="opt">/</span>bytes<span class="opt">,</span> <span class="kwc">Line</span><span class="opt">:</span>?WIDTH<span class="opt">/</span>bytes<span class="opt">,</span> _<span class="opt">/</span>bytes <span class="opt">&gt;&gt; =</span> Buffer<span class="opt">,</span>
+  RC <span class="opt">=</span> <span class="kwd">revcomp</span><span class="opt">(</span>Line<span class="opt">),</span>
+  <span class="kwd">revcomp_last</span><span class="opt">(</span>Buffer<span class="opt">,</span> From<span class="opt">, &lt;&lt;</span> Acc<span class="opt">/</span><span class="kwb">binary</span><span class="opt">,</span> RC<span class="opt">/</span><span class="kwb">binary</span> <span class="opt">&gt;&gt;);</span>
+<span class="kwd">revcomp_last</span><span class="opt">(</span>Buffer<span class="opt">,</span> Stop<span class="opt">,</span> Acc<span class="opt">) -&gt;</span>
+  <span class="opt">&lt;&lt;</span> <span class="kwc">Line</span><span class="opt">:</span>Stop<span class="opt">/</span>bytes<span class="opt">,</span> _<span class="opt">/</span>bytes <span class="opt">&gt;&gt; =</span> Buffer<span class="opt">,</span>
+  RC <span class="opt">=</span> <span class="kwd">revcomp</span><span class="opt">(</span>Line<span class="opt">),</span>
+  <span class="opt">&lt;&lt;</span> Acc<span class="opt">/</span><span class="kwb">binary</span><span class="opt">,</span> RC<span class="opt">/</span><span class="kwb">binary</span> <span class="opt">&gt;&gt;.</span>
+
+<span class="slc">%% Generate the reverse complement of a sequence, and append</span>
+<span class="slc">%% a newline character.</span>
+<span class="kwd">revcomp</span><span class="opt">(&lt;&lt; &gt;&gt;) -&gt;</span>
+  <span class="opt">&lt;&lt; &gt;&gt;;</span>
+<span class="kwd">revcomp</span><span class="opt">(</span>Line<span class="opt">) -&gt;</span>
+  <span class="kwb">list_to_binary</span><span class="opt">(</span><span class="kwc">lists</span><span class="opt">:</span><span class="kwd">reverse</span><span class="opt">(</span>
+      <span class="opt">[</span> <span class="num">10</span> <span class="opt">| [</span> <span class="kwd">complement</span><span class="opt">(</span>C<span class="opt">) ||</span> C <span class="opt">&lt;-</span> <span class="kwb">binary_to_list</span><span class="opt">(</span>Line<span class="opt">)]])).</span>
+
+<span class="kwd">calculate_splits</span><span class="opt">(</span>Size<span class="opt">,</span> Nodes<span class="opt">) -&gt;</span>
+  Tmp <span class="opt">=</span> Size div Nodes<span class="opt">,</span>
+  Rem <span class="opt">=</span> Tmp rem ?WIDTH<span class="opt">,</span>
+  Chunks <span class="opt">=</span> Tmp <span class="opt">-</span> Rem<span class="opt">,</span>
+  Left <span class="opt">= (</span>Size rem Nodes<span class="opt">) + (</span>Nodes <span class="opt">*</span> Rem<span class="opt">),</span>
+  <span class="opt">{</span>Chunks<span class="opt">,</span> Left<span class="opt">}.</span>
+
+<span class="kwd">complement</span><span class="opt">(</span> $A <span class="opt">) -&gt;</span> $T<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $C <span class="opt">) -&gt;</span> $G<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $G <span class="opt">) -&gt;</span> $C<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $T <span class="opt">) -&gt;</span> $A<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $U <span class="opt">) -&gt;</span> $A<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $M <span class="opt">) -&gt;</span> $K<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $R <span class="opt">) -&gt;</span> $Y<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $Y <span class="opt">) -&gt;</span> $R<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $K <span class="opt">) -&gt;</span> $M<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $V <span class="opt">) -&gt;</span> $B<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $H <span class="opt">) -&gt;</span> $D<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $D <span class="opt">) -&gt;</span> $H<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $B <span class="opt">) -&gt;</span> $V<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $a <span class="opt">) -&gt;</span> $T<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $c <span class="opt">) -&gt;</span> $G<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $g <span class="opt">) -&gt;</span> $C<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $t <span class="opt">) -&gt;</span> $A<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $u <span class="opt">) -&gt;</span> $A<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $m <span class="opt">) -&gt;</span> $K<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $r <span class="opt">) -&gt;</span> $Y<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $y <span class="opt">) -&gt;</span> $R<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $k <span class="opt">) -&gt;</span> $M<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $v <span class="opt">) -&gt;</span> $B<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $h <span class="opt">) -&gt;</span> $D<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $d <span class="opt">) -&gt;</span> $H<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $b <span class="opt">) -&gt;</span> $V<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $N <span class="opt">) -&gt;</span> $N<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $S <span class="opt">) -&gt;</span> $S<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $W <span class="opt">) -&gt;</span> $W<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $n <span class="opt">) -&gt;</span> $N<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $s <span class="opt">) -&gt;</span> $S<span class="opt">;</span>
+<span class="kwd">complement</span><span class="opt">(</span> $w <span class="opt">) -&gt;</span> $W<span class="opt">.</span>
+
+<span class="slc">%% Parallel helpers.</span>
+<span class="kwd">new_job</span><span class="opt">({</span>Fun<span class="opt">,</span> Args<span class="opt">},</span> N<span class="opt">) -&gt;</span>
+  <span class="kwb">spawn</span><span class="opt">(</span><span class="kwa">fun</span><span class="opt">() -&gt;</span> collector <span class="opt">! {</span>N<span class="opt">,</span> <span class="kwb">apply</span><span class="opt">(</span>Fun<span class="opt">,</span> Args<span class="opt">)}</span> <span class="kwa">end</span><span class="opt">).</span>
+
+<span class="kwd">collect</span><span class="opt">(</span>N<span class="opt">) -&gt;</span> <span class="kwd">collect</span><span class="opt">(</span>N<span class="opt">, []).</span>
+<span class="kwd">collect</span><span class="opt">(</span><span class="num">0</span><span class="opt">,</span> Results<span class="opt">) -&gt; [</span> R <span class="opt">|| {</span>_<span class="opt">,</span> R<span class="opt">} &lt;-</span> <span class="kwc">lists</span><span class="opt">:</span><span class="kwd">keysort</span><span class="opt">(</span><span class="num">1</span><span class="opt">,</span> Results<span class="opt">) ];</span>
+<span class="kwd">collect</span><span class="opt">(</span>N<span class="opt">,</span> Results<span class="opt">) -&gt;</span> <span class="kwa">receive</span> <span class="opt">{</span>K<span class="opt">,</span> R<span class="opt">} -&gt;</span> <span class="kwd">collect</span><span class="opt">(</span>N<span class="opt">-</span><span class="num">1</span><span class="opt">, [{</span>K<span class="opt">,</span> R<span class="opt">} |</span> Results<span class="opt">])</span> <span class="kwa">end</span><span class="opt">.</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Erlang/OTP 27 [erts-15.0]
+[source] [64-bit] [smp:4:4]
+[ds:4:4:10] [async-threads:1] [jit:ns]
+
+
+
+ Sat, 18 Jan 2025 02:20:46 GMT
+
+MAKE:
+mv revcomp.erlang revcomp.erl
+/opt/src/otp_src_27.0/bin/erlc revcomp.erl
+rm revcomp.erl
+
+0.97s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/otp_src_27.0/bin/erl -smp enable -noshell -run  revcomp main 0 &lt; revcomp-input100000001.txt
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

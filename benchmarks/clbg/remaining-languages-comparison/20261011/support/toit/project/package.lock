@@ -1,0 +1,14 @@
+sdk: ^2.0.0-alpha.161
+prefixes:
+  regexp: github.com/close2/toit-dartino-regexp-0
+packages:
+  github.com/close2/toit-dartino-regexp-0:
+    hash: 768fed0da7102530356c5f94f2d373546892697a
+    prefixes:
+      case: github.com/toitlang/pkg-case-0
+    url: github.com/close2/toit-dartino-regexp
+    version: 0.4.1
+  github.com/toitlang/pkg-case-0:
+    hash: 62898a912a1c8beffd007ce8ccc89ff685f43f7a
+    url: github.com/toitlang/pkg-case
+    version: 0.2.0

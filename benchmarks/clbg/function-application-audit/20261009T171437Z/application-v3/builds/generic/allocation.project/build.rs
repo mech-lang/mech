@@ -1,0 +1,1 @@
+fn main(){let root=std::env::var("CARGO_MANIFEST_DIR").unwrap();println!("cargo:rustc-link-arg={root}/mech-control.o");println!("cargo:rerun-if-changed=mech-control.o");println!("cargo:rerun-if-changed=control.json");}

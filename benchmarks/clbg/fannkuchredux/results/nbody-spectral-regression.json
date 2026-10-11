@@ -1,0 +1,259 @@
+{
+  "programs": [
+    {
+      "benchmark": "spectralnorm",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "4"
+      },
+      "expected_small": "1.274219991\n",
+      "expected_full": "1.274224153\n",
+      "id": "mech-integer-simd1-u4-r4-p8-g4-previous",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-integer-simd1-u4-r4-p8-g4",
+        "5500"
+      ],
+      "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+      "samples_seconds": [
+        0.127389292,
+        0.179979625,
+        0.125913458,
+        0.144461958,
+        0.1242305
+      ],
+      "median_seconds": 0.127389292
+    },
+    {
+      "benchmark": "spectralnorm",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "4"
+      },
+      "expected_small": "1.274219991\n",
+      "expected_full": "1.274224153\n",
+      "id": "mech-integer-simd1-u4-r4-p8-g4-current",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/extra-regressions/mech-integer-simd1-u4-r4-p8-g4",
+        "5500"
+      ],
+      "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+      "samples_seconds": [
+        0.123621792,
+        0.147059166,
+        0.155977542,
+        0.202245042,
+        0.155630333
+      ],
+      "median_seconds": 0.155630333
+    },
+    {
+      "benchmark": "spectralnorm",
+      "source_sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "16"
+      },
+      "expected_small": "1.274219991\n",
+      "expected_full": "1.274224153\n",
+      "id": "mech-optimized-simd1-u4-r4-p8-previous",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-optimized-simd1-u4-r4-p8",
+        "5500"
+      ],
+      "native_object_sha256": "f7da2ab5ef946b4cafd0819786fe4b752053e3c5d59b1517ee193227dd327d59",
+      "samples_seconds": [
+        0.158086792,
+        0.1943855,
+        0.151602,
+        0.153736292,
+        0.202243417
+      ],
+      "median_seconds": 0.158086792
+    },
+    {
+      "benchmark": "spectralnorm",
+      "source_sha256": "f6a445fba59ca450e7d8d468f1e6c98328721a2ebe9857c0d9b634bc65aa9cd9",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "8",
+        "MECH_ARRAY_GRAIN": "16"
+      },
+      "expected_small": "1.274219991\n",
+      "expected_full": "1.274224153\n",
+      "id": "mech-optimized-simd1-u4-r4-p8-current",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/extra-regressions/mech-optimized-simd1-u4-r4-p8",
+        "5500"
+      ],
+      "native_object_sha256": "f7da2ab5ef946b4cafd0819786fe4b752053e3c5d59b1517ee193227dd327d59",
+      "samples_seconds": [
+        0.153481625,
+        0.189323708,
+        0.199225459,
+        0.154737667,
+        0.162615458
+      ],
+      "median_seconds": 0.162615458
+    },
+    {
+      "benchmark": "nbody",
+      "source_sha256": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170",
+      "runtime_environment": {},
+      "expected_small": "-0.169075164\n-0.169087605\n",
+      "expected_full": "-0.169075164\n-0.169059907\n",
+      "id": "nbody-previous",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-aot-simd-factored-v04",
+        "50000000"
+      ],
+      "native_object_sha256": "f87448dff2cc3d18445e88103980655ecfb11952e6c0c5b5818141735bb1a59e",
+      "samples_seconds": [
+        2.068788916,
+        2.103431708,
+        2.06713375,
+        2.078183583,
+        2.068657
+      ],
+      "median_seconds": 2.068788916
+    },
+    {
+      "benchmark": "nbody",
+      "source_sha256": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170",
+      "runtime_environment": {},
+      "expected_small": "-0.169075164\n-0.169087605\n",
+      "expected_full": "-0.169075164\n-0.169059907\n",
+      "id": "nbody-current",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/extra-regressions/nbody",
+        "50000000"
+      ],
+      "native_object_sha256": "f87448dff2cc3d18445e88103980655ecfb11952e6c0c5b5818141735bb1a59e",
+      "samples_seconds": [
+        2.069556625,
+        2.076197625,
+        2.069894625,
+        2.062467208,
+        2.070406584
+      ],
+      "median_seconds": 2.069894625
+    }
+  ],
+  "all_outputs_passed": true,
+  "samples": 5,
+  "workers": 8,
+  "protocol": "Sequential fresh processes, builds and conformance completed before sampling.",
+  "compiler_snapshot": {
+    "path": "nbody-spectral-regression.compiler.tar.gz",
+    "sha256": "62e82e9a6748de8b4f6ce6f6c203f806894195e74cde8fa66f79ba93fe5c629e",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "Cargo.lock": "3461224508c37a29f0ef79ea172672060b553b72b0ccf19d8307791292e8dad9",
+      "Cargo.toml": "b98e0c170b770803e732df39f37e2c4e5c4ce43c5a46d8650a5f3956c8bccaf4",
+      "benchmarks/clbg/fannkuchredux/.gitignore": "03824949a66ab6db1429bd078d10d1bc2d75706aa1b756c547f9a7ff541c77cb",
+      "benchmarks/clbg/fannkuchredux/README.md": "50dd1f4c7293f50e86acf4daabf63a2964026aff055ceb15f242e77b145e841b",
+      "benchmarks/clbg/fannkuchredux/audit.py": "55d62a933359c4a0b6376d83789437dbcc7680a6090dd465a3c35f221961c9f8",
+      "benchmarks/clbg/fannkuchredux/comparisons/fannkuchredux-rust6-neon.rs": "38063a69a01c45177d377a194ff3f3cd02ed8c9716baa8cc8c39ef078cab4a64",
+      "benchmarks/clbg/fannkuchredux/complete_preparation.py": "1cea75b4cf362fff86da1972e56146caf1f30b3da7726038d23113fd887075f0",
+      "benchmarks/clbg/fannkuchredux/extra_regressions.py": "de3e41326fd63a6fc45b39458e7a315020ba75b0e814b9611555674d192d6d40",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-aligned.mec": "78687fdbc7a07506b39379a17c90c230d68b263b50e39882762eb3c2e1a1ea82",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-cached.mec": "f62d757ae78b562a0de35b7b52c2a6a43c8724b0e844a1e378c647cc6724a30c",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-coarse.mec": "78e374c6a533626d435a3a693ba0eb3d8bb9f9d563b79344f7e26669978273c0",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-initial.mec": "ca58bf822e438707cb8abf8a724f746770e72b87f1c9ec53c0523ea4b0cd8777",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-paired.mec": "4141ed3c7f30f3e0162642b3a1e0ab934a1a8deb0789c070d0a8a5dfbb93d098",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux.mec": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "benchmarks/clbg/fannkuchredux/fetch_sources.py": "3f59b3b4a097d2744f6c7bf9e8159912b8f8dd14997fc366030085e06d8939a0",
+      "benchmarks/clbg/fannkuchredux/finalize.py": "68d21c7bd9769b098e6cdbd2d266edcc22a7e94cf99e169d6395f177025f466c",
+      "benchmarks/clbg/fannkuchredux/input-pins.json": "307e52404c43b36148990f2e8af06628b11d98de04e07bee3265b2848490b0f5",
+      "benchmarks/clbg/fannkuchredux/inputs/output7.txt": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+      "benchmarks/clbg/fannkuchredux/manifest.json": "d4824201d72c15d0a1a72a70ef2b55a92f3222625d31ccf5d75c255e02dfeceb",
+      "benchmarks/clbg/fannkuchredux/plot.py": "10e9d51e2d424aac80d7f776dca4fb2044f90bb9dba143821e85174873cff8fc",
+      "benchmarks/clbg/fannkuchredux/prepare_comparisons.py": "a36166a9f8d14436c9b5309c95f7c0ea46140ac7c689665aa395b6d8209ba2c4",
+      "benchmarks/clbg/fannkuchredux/prepare_final.py": "74150da5c4d08c80b60b304aeea6ab3d5ce190de7bf86891849ae2a7b73f3a47",
+      "benchmarks/clbg/fannkuchredux/prepare_indexing.py": "5c9ac7bee2c323a2fa9cc9d5fce4ca94b355891a2a3fd06043c97087fce6b3f4",
+      "benchmarks/clbg/fannkuchredux/revcomp_regression.py": "059d6e8e6449d9e6a91a3892bd1dc319573f43c5fd0eb5c1e8ce039b110f5c62",
+      "benchmarks/clbg/fannkuchredux/run.py": "5696481412c16823a22df3642d278019513afbd8d0d573026ced719b4a20c2de",
+      "benchmarks/clbg/fannkuchredux/toolchains.json": "7e3d61b62eaa56fe2c3f9615664361b54d2f5dcb1a178172ff1c0b49d2318f94",
+      "benchmarks/clbg/fannkuchredux/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-chapel-2.chpl": "ad1e10362a1c2528e4c050f580de22ad5d09b393dcc3256610f66f7785178966",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-1.c": "d109b20a1ef2dcc601d3fc3dca2b7d06f423b72d3a0fa650afb4cef5fa8e9a18",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-2.c": "24eb08c58f59c9cc93565f130276c5985e9243b528a55b0fca370ca37448e19f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-3.c": "4c96f8a019b9b1e2425123a243405046f8d86e030f256796574fdf6bfd0e8c07",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-4.c": "cfe834d9e71fb9e00ab8bf57fe564d3dd255cafb5c8db78c7b636c8dfc0d70f9",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-5.c": "1c716c1a16aeac98da6fb7ac6c80429d0d54f6573dc8d6efca11fee3b39d3b05",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-6.c": "fafc8ae4e36084bc299fc3e12bd8eda63fd792523e3e6513404c285ced19531a",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-8.c": "65c8d4b7b5697e1ee1ccff75aec8fb66ae97811fbd96b02a0ef46941c49dea97",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-1.go": "5e47620ed3cd6460457728cd43025a72d9293d022ece3b59feb891ff3ae71306",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-2.go": "239df20fdbdde276110a5d5f18344d2b999bc9246583b3e63fdbcd3086a8556a",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-3.go": "5b88f512ae9878fdbc3aaa1d6f9be11d026606059ab014b8d80d467775da4ac3",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-8.go": "e746d5097b2ecde2df42387b1da17a0d8c4214d5ffdc396dd2498b11ba19c3e4",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-1.cpp": "407789d3a4d7629b571390933e018b3c1fc1154bc4b2fae9c1100e3eaf054225",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-2.cpp": "be606397193e58f80559467cb1596addcf5e03a5ad9a44d36de987007092b042",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-3.cpp": "fccf786c37f0ad3939f77727cacc2ce629aed85b6e0963eeab5ae8cb4c12d06f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-4.cpp": "4bb4c6c883d42ba98dd457aec4be912891404e01f52223bb9de67fbe61ea8526",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-5.cpp": "7c850c537cc609712f2081df5453322f97537218faf9e77f37fb70c3531882b7",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-6.cpp": "761c156df5d3347978f00a9e6da9a657bf78e4befe87a6ef2c79deac200f006f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-7.cpp": "2b0c86ad3a28cb847ddb3bdd124c76156546973d600c74b7ab3de4ab7c65cdda",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-1.java": "dcff27bde49720bdc698c669dca93ddf3bfacc8e3f349422aefe9c51049600cc",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-2.java": "f55e671f4aab2ac2881f9ab9ada9a67bb08c72de74fef273fd999d8e47237296",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-3.java": "03438b4110e6e72a29aee4cada71ff0e7ab807b8648a59f5b3c7dceb89a6ee49",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-8.java": "546f1d8bdb8d19eb739bc18d23bb2f6d8d1c302ec596445f2e363ab190de198b",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-1.jl": "98dbee45fe7940783aec1dcc18579f6cda293963d77dc522e55720cd218e0a01",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-2.jl": "b7f7248fb1aac401c04d5a7823fbcd8578069646d68610e9a56ce59447295571",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-3.jl": "38c08bc365cb86c00b55568bbaa7be204f1b8f9d76a959bfb359e6f8ec2554cb",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-2.rs": "9238cf9dd91b245c4b07de2a6985785c7683e40fcd510f8b817076e7c4ba3d1c",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-4.rs": "367a0a0187b3ee6744f9a455a170a5b7f0307046a4dd245d5f8678e89ccf2e33",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-5.rs": "7a8ab49b03083e544e9394409693c4ef276670d76a9b7bef61e1d6f5677d5a2d",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-6.rs": "b0fac82457e18fea7bd8b64dddb8a0d5266d4f5d84201a3b3970973c96349a38",
+      "benchmarks/clbg/fannkuchredux/use_latest_baseline.py": "c86ba67d693e26ebadc3edf9c0b9beee2982ae2d1c6472ef844cb8d5702132f3",
+      "benchmarks/clbg/fannkuchredux/verify.py": "8a51e90cd8d1ac56b45226c26644ce5b119fb5c083a4a331c57294621a1c76b7",
+      "benchmarks/clbg/fannkuchredux/verify_constants.py": "e0b11e67408ce93fee2e0303c70f4ba4e88472304c1cedaaa10e2cc10a6a7a6e",
+      "benchmarks/clbg/fannkuchredux/verify_extra.py": "b2fc3216f4f4817b844a473ead8743f515593d71fbc8f6ac80666d9816b02abd",
+      "benchmarks/clbg/mandelbrot/rust-deps/Cargo.lock": "e5714b40ec94e81bfc1c8ee35d335a5251d066929a53c6f032ddfe42e4bb0507",
+      "benchmarks/clbg/mandelbrot/rust-deps/Cargo.toml": "0366149a6d15d57506dffefa08a7c76767f254ae0f7fca896398c609584d590e",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "benchmarks/clbg/process.py": "c64b449018915b066d1a6fada7c92afacd9d90e24c7d4a0505fa0e71b787de80",
+      "hosts/gpu/Cargo.toml": "f32eb6407560d49e60e71c47ad1eba2de0228664b2ce412e347bcbd2bd1d6935",
+      "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+      "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+      "hosts/gpu/src/batched/mod.rs": "f2ce0842ed10633b024a7846f48ed25faec21949b58fefb742499adcb07df23b",
+      "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+      "hosts/gpu/src/bin/mech-native-map.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "hosts/gpu/src/control/application.rs.in": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3",
+      "hosts/gpu/src/control/compiler.rs": "834df370de5e06534d7b56c89469aaa2d303d7871c96fc11811d77d3fbc37bd2",
+      "hosts/gpu/src/control/mod.rs": "e3e80c86c4f3f51bd3ec6a37291e7e259bf81eeff7fb5b7582e375240c6e01c9",
+      "hosts/gpu/src/control/runtime.rs": "610aa781bdfbbe3b5c9ddb421f2ec878b78d8f59d3a8825ecb3bbe6fc769c554",
+      "hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+      "hosts/gpu/src/fused_f64/map_runner.c": "1a6e8e14c1cb7d64061a29a0bffc5a7f4067bda87c2762eb0ab77ba3a23286c5",
+      "hosts/gpu/src/fused_f64/map_runner.rs": "f93ffdff7f74a0f6a8144d09bc8fb8b0f3d829fe1da133599319dd66d7b665ca",
+      "hosts/gpu/src/fused_f64/mod.rs": "3bafe44689d095dcf198564f4ef53c7bab448862294877f1747f93c35a06195c",
+      "hosts/gpu/src/fused_f64/native.rs": "7eccad1d7823290a503fb0e3dcbacc376d68d51a378c1156559a2ad2c58ad32c",
+      "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+      "hosts/gpu/src/fused_f64/runner.rs": "149d02e2024b04d7956a98d8efa63119182c65394cb7060b529f6397cf34cae8",
+      "hosts/gpu/src/lib.rs": "de880a06a1ee6d2ba08d08dacacae566e2d00ebb024e09b7e2090164a84e13c1",
+      "hosts/gpu/src/native_build.rs": "57aed9e3b31512d01e511384f660bdfcc824e77265306eb36ae525f9ebeeb9ac",
+      "hosts/gpu/src/sequence/application.rs.in": "ca29d7db1f71b2ae8727a0a36fce9acccdd29679cb1f3b213d75085fe8a566b5",
+      "hosts/gpu/src/sequence/bytes.rs": "ddf68d4222dcd6a5165b3c6dc0561816d96b2935681e8551755979e671f3174f",
+      "hosts/gpu/src/sequence/compiler.rs": "c086f8014e4d4f44529b9bd67a6d6683b22c99286248455213032d929c1ce289",
+      "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+      "hosts/gpu/src/sequence/mod.rs": "b8bcdc879335271c3fec98da844d28257b97eeea2d07d0bf26eaf869be4090cf",
+      "hosts/gpu/src/sequence/numeric.rs": "fae77d575e66339c222998eeba4a9e2293132340145647a617ad9b34661c644d",
+      "hosts/gpu/src/sequence/runtime.rs": "baf600fd328cce9f1a5eb94bb5ea9baae862ac4f4b4c852a6f151dbc2cec2a2a",
+      "scripts/unsafe-boundaries.allowlist": "1ac4d2b1e69625c48a09a91929d314a3923e22b3355ce18f3a2195de59d8481a",
+      "src/cli/app/tests/mod.rs": "8ed9623c971678920f0f0d591dd92270ccbcca6c0432425251b8ab84b911800b",
+      "src/cli/commands/build.rs": "f1c616abe74e102fefd429edf72d8aa4fd07549ce58ee2eeb0d181ed38ab2056",
+      "src/engine/Cargo.toml": "53d1489619006a3d44b4a08cdf3da1188b31d9b9c9939c1ac24af0c8a43ed373",
+      "src/engine/src/lib.rs": "f2bd07c34820c1fd9a9ba0fdc4cbd7f9c7487ba53eaf5bf425284f0a1642ab8d",
+      "src/engine/src/native_sequence/control.rs": "21e5571a0cabd3082037d9c0ab145816ebe514ba9216f01567018d24cc12d428",
+      "src/engine/src/native_sequence/grid.rs": "937f5ae4fac23068149c03bf20f263475043b9f2f5b6ed3f5e0dee0f79a629ba",
+      "src/engine/src/native_sequence/mod.rs": "0ffe456b3a105f314321a3476805fbfe6c01de7d706a11548c60a5ae621709d9",
+      "src/engine/src/numeric_optimizations.rs": "bc6b27fbf6a8673d4ee7c74d37a541275a681b4ca30b0b9a1fd9bbee0531e773",
+      "src/engine/src/resident/numeric/mod.rs": "2f64443746ae660b0be42a8253495c763cbed9296a13f5622c549fe94a998862",
+      "src/stdlib/Cargo.toml": "7e7fee937d6587e6170210f392d67e356b391b74c607257a02ccceb20988ce0e",
+      "src/stdlib/src/lib.rs": "6982882a6334509093eed3aef07430c88d28ab9aa4254243a38736d40e62476b",
+      "src/stdlib/src/native_sequence.rs": "4c0bebd57c1e2c219d15e729dc76f36f69f7944ccde796499b0c3481126e6380"
+    }
+  }
+}

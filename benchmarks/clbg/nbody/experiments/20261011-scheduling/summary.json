@@ -1,0 +1,155 @@
+{
+  "status": "complete",
+  "selected_experiment": "pairwise-original24",
+  "selected_compact": "compact-regions8",
+  "source_changes": false,
+  "production_compiler_changes": false,
+  "site_updated": false,
+  "optimized_source_loc": 25,
+  "compact_source_loc": 20,
+  "comparisons": [
+    {
+      "candidate": "pairwise-original24",
+      "baseline": "pairwise-seed8",
+      "candidate_seconds": 1.039141792,
+      "baseline_seconds": 1.041305458,
+      "median_ratio": 0.9979221601275807,
+      "paired_geomean_ratio": 0.9980380676743836,
+      "paired_bootstrap_95": [
+        0.9967026178944918,
+        0.999425918759596
+      ],
+      "report": "confirmation-50m.json"
+    },
+    {
+      "candidate": "pairwise-original24",
+      "baseline": "pairwise-seed8",
+      "candidate_seconds": 1.039062708,
+      "baseline_seconds": 1.041376625,
+      "median_ratio": 0.997778020992165,
+      "paired_geomean_ratio": 0.9979029728499991,
+      "paired_bootstrap_95": [
+        0.9961863261948191,
+        0.9997473890350087
+      ],
+      "report": "replication-50m.json"
+    }
+  ],
+  "prototype_tests": {
+    "fused": 33,
+    "native_map": 14
+  },
+  "workload": {
+    "steps": 50000000,
+    "bodies": 5,
+    "pairs_per_step": 10,
+    "coordinates": 3,
+    "initial_and_final_energy": true
+  },
+  "timed_samples": 330,
+  "discarded_samples": 0,
+  "reports": {
+    "pilot-50m.json": "e760b3f8298203bcca0e4e27167d6ca99547f4189daa999d5bb17f5d1fb4d99f",
+    "sweep-50m.json": "899f54ec7875d7a59ff8f16bba64f34b531dccb25a06773aa601dbf69243147e",
+    "confirmation-50m.json": "27bf378ad64ded1b4529aca5df885ab2257f0e3bf1d6d0813edf09a8181e9d29",
+    "replication-50m.json": "35b98557842df280fa283c7ba6d5f990a34af2390e4b932ed03d5c1da2479371"
+  },
+  "restored_compiler_sources": {
+    "hosts/gpu/src/fused_f64/map_runner.rs": "fd70647e126f8b03272423d5e30e4d47804c26d10bb38dfdeafc9eba7b3a9419",
+    "benchmarks/clbg/nbody/mech-driver/tests/fused.rs": "71f0e104677838a54767c5b15594b50cd7aaa3adaead938e456f4e039d0f1d93",
+    "benchmarks/clbg/mandelbrot/mech-driver/tests/native_map.rs": "cdf13e4ae68520cae26531d1f730153e55f394cccb0ecec1eca0163046c6537a",
+    "hosts/gpu/src/fused_f64/native.rs": "37d0c34abd60b137e77770584960f679aef836c3269034280055b5dd68628579",
+    "hosts/gpu/src/fused_f64/mod.rs": "c34e939be71b5db73b9dff23c03ec0db748f874ad7a9f90ec263a8570574971c",
+    "hosts/gpu/src/fused_f64/runner.rs": "0fd44bfc3e2fb9ea48a9582abaf7084b8cd2e11599f7332d29ba3dba571a26d7"
+  },
+  "native_counts": {
+    "compact-regions8": {
+      "disassembly_path": "compact-regions8.disassembly.txt",
+      "loop_start_hex": "0x1000034fc",
+      "loop_backedge_hex": "0x100003968",
+      "static_instructions": 284,
+      "stack_load_instructions": 74,
+      "stack_store_instructions": 26,
+      "fused_instructions": 65,
+      "sqrt_instructions": 5,
+      "divide_instructions": 5,
+      "loop_calls": []
+    },
+    "pairwise-seed8": {
+      "disassembly_path": "pairwise-seed8.disassembly.txt",
+      "loop_start_hex": "0x100003500",
+      "loop_backedge_hex": "0x10000394c",
+      "static_instructions": 276,
+      "stack_load_instructions": 51,
+      "stack_store_instructions": 23,
+      "fused_instructions": 60,
+      "sqrt_instructions": 5,
+      "divide_instructions": 5,
+      "loop_calls": []
+    },
+    "pairwise-original24": {
+      "disassembly_path": "pairwise-original24.disassembly.txt",
+      "loop_start_hex": "0x10000352c",
+      "loop_backedge_hex": "0x100003958",
+      "static_instructions": 268,
+      "stack_load_instructions": 48,
+      "stack_store_instructions": 20,
+      "fused_instructions": 60,
+      "sqrt_instructions": 5,
+      "divide_instructions": 5,
+      "loop_calls": []
+    }
+  },
+  "flags": [
+    "--fp-contract",
+    "--algebraic-powers",
+    "--pack-state-tails",
+    "--simplify-square-seeds",
+    "--schedule-regions",
+    "24"
+  ],
+  "notes": [
+    "Five prototype strategies: reverse pressure scheduling, latency-aware scheduling, final-use-first scheduling, deferred SIMD extraction, and composite arithmetic decomposition.",
+    "Composite expansion is a no-op for these n-body sources, which already spell out sqrt, multiply, divide.",
+    "Many distinct prototype flags produce identical native objects. They were deduplicated before the second pilot.",
+    "The best code is produced by the existing compiler with 24-instruction regions. All prototype compiler/test edits were restored exactly; archives and frozen generation drivers remain.",
+    "No full-suite/site result was replaced by these experimental measurements.",
+    "Zig changes rank relative to the unchanged Mech control between earlier and current cohorts. The 0.2% within-cohort gain is the supported optimization claim; cross-cohort ranking changes are not attributed to it."
+  ],
+  "prototype_snapshots": {
+    "compiler-pilot": {
+      "native.rs": "37d0c34abd60b137e77770584960f679aef836c3269034280055b5dd68628579",
+      "latency_schedule.rs": "c845e369b6916dd885d3903d0cb5372cd290d64f6b29c6acdd5533d67ed217de",
+      "runner.rs": "8ed2f5b67846f840a5ecf16f9e2ecd4eea931f5b2be21d9d4e24aa9c8d88d34f",
+      "mod.rs": "227d00a09b44e59ffe88f8bbea5df9a574c4e06a48ba075320318e8723841594",
+      "scheduling.rs": "9fcf0667c1b9feaeddba963c68e900d7124a8107cec9b4c7405c848fd99626f2",
+      "map_runner.rs": "a8a18495647f57f1fe5ad7f9333fbdb5a53cae369dd975b33dc140d360b7ed4f"
+    },
+    "compiler-lazy": {
+      "native.rs": "a441847e375171f40a35eb1b582a108e68d7b9e79b69f918873b7de68cdf6905",
+      "latency_schedule.rs": "2e162b52adc38af629c1506fdbb06bb45094282b0f920ee05454885812043e49",
+      "runner.rs": "dba7c6f6f523ae0f4160be4afc60981a796ffa57c28829ef324d825039d3701c",
+      "mod.rs": "b912e731a48eb5cfdeba3b6947665115d99ee346b39d3651e517c529b80c239c",
+      "scheduling.rs": "93ef980013bd8fa181a3e0561a3d3bc85ef6d4d0bfec0d81c7a30313c7efeed2",
+      "map_runner.rs": "5644817275f9d5f0a773b9d7553957293bfb2b9adf37876ec2eac65e97c5c3cd"
+    },
+    "compiler-retire": {
+      "native.rs": "a441847e375171f40a35eb1b582a108e68d7b9e79b69f918873b7de68cdf6905",
+      "latency_schedule.rs": "2e162b52adc38af629c1506fdbb06bb45094282b0f920ee05454885812043e49",
+      "runner.rs": "95655a5e7f88b1d27fda828c0fe76b987cd42c7a2fb76aa667b0182596a94c7b",
+      "mod.rs": "4a7414e6a59161c93bff112bdcc27ff8db8e37c38a9aaff3c2e683a5212db094",
+      "scheduling.rs": "93ef980013bd8fa181a3e0561a3d3bc85ef6d4d0bfec0d81c7a30313c7efeed2",
+      "map_runner.rs": "21c9e7e5d06f488e1e1c445d293b7ddf1eb102f452d9e0512b68fffcdec58f70"
+    },
+    "compiler-prototypes": {
+      "hosts__gpu__src__fused_f64__scheduling.rs": "93ef980013bd8fa181a3e0561a3d3bc85ef6d4d0bfec0d81c7a30313c7efeed2",
+      "hosts__gpu__src__fused_f64__map_runner.rs": "21c9e7e5d06f488e1e1c445d293b7ddf1eb102f452d9e0512b68fffcdec58f70",
+      "benchmarks__clbg__nbody__mech-driver__tests__fused.rs": "54235802633480b384c55e0c7a86f381eb36872372a0dcca1314e215ef4600f5",
+      "benchmarks__clbg__mandelbrot__mech-driver__tests__native_map.rs": "2a98136e5eea3bca46d1d7a92b9aa38a3cbbdbcc961ad280c892c333cecf854e",
+      "hosts__gpu__src__fused_f64__latency_schedule.rs": "2e162b52adc38af629c1506fdbb06bb45094282b0f920ee05454885812043e49",
+      "hosts__gpu__src__fused_f64__native.rs": "a441847e375171f40a35eb1b582a108e68d7b9e79b69f918873b7de68cdf6905",
+      "hosts__gpu__src__fused_f64__mod.rs": "4a7414e6a59161c93bff112bdcc27ff8db8e37c38a9aaff3c2e683a5212db094",
+      "hosts__gpu__src__fused_f64__runner.rs": "95655a5e7f88b1d27fda828c0fe76b987cd42c7a2fb76aa667b0182596a94c7b"
+    }
+  }
+}

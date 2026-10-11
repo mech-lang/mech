@@ -1,0 +1,4 @@
+splitting /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/ada/nbody-gnat-1.adb into:
+   nbody_pck.ads
+   nbody_pck.adb
+   nbody.adb

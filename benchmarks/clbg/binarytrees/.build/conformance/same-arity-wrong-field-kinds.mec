@@ -1,0 +1,8 @@
+<row> := <{x<u64>, y<u64>}>
+<wrong> := <{x<f64>, y<f64>}>
+Test(n<u64>) = (result<u64>) :=
+  h := memory/allocate({x: 1, y: 2})
+  row := memory/read(h, <wrong>)
+  result := 1.
+r := memory/with-arena(1, <row>, Test, 0)
+io/print("{}\n", r)

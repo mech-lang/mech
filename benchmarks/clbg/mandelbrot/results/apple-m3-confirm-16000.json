@@ -1,0 +1,2345 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T13:48:04.943038+00:00",
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "logical_cpus": 8,
+    "cpu": "Apple M3"
+  },
+  "toolchain_versions": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "julia": "julia version 1.13.1",
+    "go": "go version go1.27.1 darwin/arm64",
+    "java": "openjdk version \"27\" 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+    "gcc": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "gpp": "g++-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "llvm": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg"
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-confirm-16000.compiler.tar.gz",
+    "sha256": "873ab91edcfd05230c63b696603a9d234e4ba421879203ef3df9af1f3377764b",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "Cargo.lock": "485b0d49f68971d287e1ca89156904b6ce90b281230b9445f16248eabd7cfe50",
+      "benchmarks/clbg/mandelbrot/.gitignore": "b2b592f9ecd265530206ebf051c0bdecc9277580c00a692f428139948d588fc7",
+      "benchmarks/clbg/mandelbrot/README.md": "90ff7f1cc27aaf72f9bbc9c15ca2a01dfaf56a5e08b62f17f715b353454a0790",
+      "benchmarks/clbg/mandelbrot/confirm.py": "e210eac69e20f2580bda7cf78c0d6b845a5a8d25afd54e844c9b8775e030f433",
+      "benchmarks/clbg/mandelbrot/fetch_sources.py": "be17c0caf00753b83bce3f239f6b263e277f72649626095feafa07c76fedbf77",
+      "benchmarks/clbg/mandelbrot/fix_worker_metadata.py": "0e3bb9873f13be6a97439a9719b11e00da602d76199ab36a41ada7b76486b979",
+      "benchmarks/clbg/mandelbrot/mandelbrot-compact.mec": "89ebdc902c202c58cc29ff02a2d1ce5f78e8257257dd2755498e2f13ba1b3b50",
+      "benchmarks/clbg/mandelbrot/mandelbrot-unrolled.mec": "2914b1f966a61f74ddc3d2462dae7b45365aa70e4a5c63ac7af04f910a8835b1",
+      "benchmarks/clbg/mandelbrot/mandelbrot.mec": "fa906382c589e92c47ba9fb0db79059b7282df013317a565d740d5dafb8859cf",
+      "benchmarks/clbg/mandelbrot/manifest.json": "d624e575bee09fe48681b43f637253901c27a010ed4d3c97481982c0eb800484",
+      "benchmarks/clbg/mandelbrot/mech-driver/Cargo.lock": "154b7ba0463000cbbbac81972010c547d436f609a9f8fe67388141e35a7d58d7",
+      "benchmarks/clbg/mandelbrot/mech-driver/Cargo.toml": "7444dfff4d0901708e6c768acc1cb2fbc422da26da42833cd1ff0be9d5f3f89a",
+      "benchmarks/clbg/mandelbrot/mech-driver/src/compiled-main.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "benchmarks/clbg/mandelbrot/mech-driver/tests/native_map.rs": "fc213aecb9c4906ce69c8c5c6ff45880c1fde0cb025e305e7917919adca0487f",
+      "benchmarks/clbg/mandelbrot/plot.py": "1044fb93da03556b750a83991e3a6b56b01a0429ccb4708b4831547d22bb72d3",
+      "benchmarks/clbg/mandelbrot/run.py": "b0f689321098556784a3b6241fd99438e587e174f6a380c42047273cce1fbad3",
+      "benchmarks/clbg/mandelbrot/rust-deps/Cargo.lock": "e5714b40ec94e81bfc1c8ee35d335a5251d066929a53c6f032ddfe42e4bb0507",
+      "benchmarks/clbg/mandelbrot/rust-deps/Cargo.toml": "0366149a6d15d57506dffefa08a7c76767f254ae0f7fca896398c609584d590e",
+      "benchmarks/clbg/mandelbrot/rust-deps/src/lib.rs": "768ac763a3411618658567bb9289aa94919b85b62beaa1d23dd7718e75a8e4bb",
+      "benchmarks/clbg/mandelbrot/upstream/mandelbrot-200.pbm": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "hosts/gpu/Cargo.toml": "3decea17f58d2d5eb31e0cc57f33cbef38ed8fb10baabfd7b155cf5896e3d800",
+      "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+      "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+      "hosts/gpu/src/batched/mod.rs": "f2ce0842ed10633b024a7846f48ed25faec21949b58fefb742499adcb07df23b",
+      "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+      "hosts/gpu/src/bin/mech-native-map.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "hosts/gpu/src/fused_f64/map_runner.c": "0d9967109f490f913d99215e098776e88342d34c1b64e7e2c29fa4bfe7f53ccc",
+      "hosts/gpu/src/fused_f64/map_runner.rs": "81590d71d6d233c62571b23622e2c3ace68ef559b35ead4c46209f3de7ecbd80",
+      "hosts/gpu/src/fused_f64/mod.rs": "f9afe57c57abd92b49627de09422c77609fc54659824ad1f89da193f91ae666f",
+      "hosts/gpu/src/fused_f64/native.rs": "9e4ddff506f0a174bcc08932e4205d57ca9073bf53e176ced38ae007ccecd830",
+      "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+      "hosts/gpu/src/fused_f64/runner.rs": "149d02e2024b04d7956a98d8efa63119182c65394cb7060b529f6397cf34cae8",
+      "hosts/gpu/src/lib.rs": "47466a637d602459eee869f8010ae3add5f4ca05bbc860f41ebccf7d78bcfb51",
+      "scripts/unsafe-boundaries.allowlist": "ffe377395abc415adb84ef1e5712cf0ea107e60db235619055e1b8dd8c8fb5d9",
+      "src/engine/src/resident/numeric/mod.rs": "e7d2470fb7602ec3658b93b43b64b259a3f28ac453eda3b53f9da8db7c765c39"
+    }
+  },
+  "protocol": {
+    "size": 16000,
+    "samples": 5,
+    "requested_threads": 8,
+    "controlled_only": false,
+    "environment": {
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8",
+      "OMP_DYNAMIC": "FALSE",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "RAYON_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "seed": 20261008,
+    "sample_order": [
+      [
+        "mech-unrolled-simd-loop-fma",
+        "mandelbrot-chapel-3-chunk512",
+        "mandelbrot-chapel-3-chunk4096",
+        "mech-eight-scalar",
+        "mech-unrolled-simd-loop-fma-scheduled",
+        "mandelbrot-graalvmaot-6",
+        "mandelbrot-gcc-9-llvm-fastmath",
+        "mech-unrolled-simd",
+        "mandelbrot-chapel-3-chunk64",
+        "mandelbrot-chapel-3",
+        "mandelbrot-go-4-nofma",
+        "mandelbrot-julia-7",
+        "mandelbrot-gpp-0-gcc-fastmath",
+        "mech-compact",
+        "mandelbrot-rust-4",
+        "mech-eight-simd"
+      ],
+      [
+        "mandelbrot-chapel-3-chunk4096",
+        "mandelbrot-chapel-3-chunk512",
+        "mandelbrot-chapel-3",
+        "mech-eight-simd",
+        "mandelbrot-julia-7",
+        "mech-unrolled-simd",
+        "mech-eight-scalar",
+        "mech-unrolled-simd-loop-fma",
+        "mech-unrolled-simd-loop-fma-scheduled",
+        "mech-compact",
+        "mandelbrot-go-4-nofma",
+        "mandelbrot-chapel-3-chunk64",
+        "mandelbrot-gpp-0-gcc-fastmath",
+        "mandelbrot-graalvmaot-6",
+        "mandelbrot-gcc-9-llvm-fastmath",
+        "mandelbrot-rust-4"
+      ],
+      [
+        "mandelbrot-julia-7",
+        "mandelbrot-gpp-0-gcc-fastmath",
+        "mech-eight-scalar",
+        "mandelbrot-chapel-3-chunk512",
+        "mech-eight-simd",
+        "mandelbrot-go-4-nofma",
+        "mandelbrot-gcc-9-llvm-fastmath",
+        "mech-unrolled-simd-loop-fma",
+        "mech-unrolled-simd",
+        "mech-compact",
+        "mandelbrot-chapel-3",
+        "mandelbrot-graalvmaot-6",
+        "mandelbrot-chapel-3-chunk64",
+        "mech-unrolled-simd-loop-fma-scheduled",
+        "mandelbrot-rust-4",
+        "mandelbrot-chapel-3-chunk4096"
+      ],
+      [
+        "mandelbrot-julia-7",
+        "mech-eight-scalar",
+        "mech-compact",
+        "mandelbrot-chapel-3-chunk4096",
+        "mech-unrolled-simd",
+        "mandelbrot-graalvmaot-6",
+        "mandelbrot-gcc-9-llvm-fastmath",
+        "mech-eight-simd",
+        "mandelbrot-gpp-0-gcc-fastmath",
+        "mandelbrot-go-4-nofma",
+        "mandelbrot-chapel-3-chunk64",
+        "mech-unrolled-simd-loop-fma-scheduled",
+        "mandelbrot-chapel-3",
+        "mandelbrot-rust-4",
+        "mandelbrot-chapel-3-chunk512",
+        "mech-unrolled-simd-loop-fma"
+      ],
+      [
+        "mech-compact",
+        "mandelbrot-julia-7",
+        "mandelbrot-go-4-nofma",
+        "mech-unrolled-simd",
+        "mandelbrot-graalvmaot-6",
+        "mech-eight-simd",
+        "mandelbrot-gpp-0-gcc-fastmath",
+        "mech-unrolled-simd-loop-fma",
+        "mandelbrot-chapel-3-chunk512",
+        "mandelbrot-chapel-3-chunk4096",
+        "mech-unrolled-simd-loop-fma-scheduled",
+        "mech-eight-scalar",
+        "mandelbrot-rust-4",
+        "mandelbrot-chapel-3",
+        "mandelbrot-chapel-3-chunk64",
+        "mandelbrot-gcc-9-llvm-fastmath"
+      ]
+    ],
+    "timed_region": "Fresh process through exit, including initialization/JIT and complete PBM output to a temporary regular file. Excludes AOT builds and output validation.",
+    "official_reference_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/mandelbrot-output.txt",
+    "official_reference_200_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "full_input_reference": "locally compiled unmodified Rust #4; every candidate additionally compared with full image; differing pixels retained and reported",
+    "full_input_reference_image": {
+      "bytes": 32000015,
+      "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be"
+    },
+    "source_metric": "Comment removal, whitespace collapse, UTF-8, gzip level 1 with mtime=0; also nonblank noncomment physical LOC. Local metric, not guaranteed CLBG gz.",
+    "source_scope": "Mech program .mec only; coordinate mapping, recurrence and termination all in Mech. Generic native map/thread/PBM runtime and compiler excluded. Competitors: complete unchanged upstream programs.",
+    "floating_point": "Native C/C++ disables contraction; fastmath configurations explicitly relax IEEE semantics; LLVM also tests fastmath with contraction disabled. Go tests default and compiler -d=fmahash=n. Mech FMA opt-in. Official N=200 requires byte equality; larger images record exact equality and differing pixel count.",
+    "threads": "Runtime controls request the chosen worker count where supported; each row records actual source worker policy. Fixed or automatic policies remain unmodified.",
+    "status": "full-input confirmation and runtime configuration study; selected endpoints",
+    "selection": "Fastest baseline build for every language, all five baseline Mech builds, Chapel #3 chunk sizes 64/512/4096 and Mech demand scheduling. Smallest competitor sources are not remeasured in this study."
+  },
+  "programs": [
+    {
+      "id": "mandelbrot-rust-4",
+      "language": "rust",
+      "variant": 4,
+      "path": "upstream/mandelbrot-rust-4.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-rust-4.html",
+      "sha256": "5d7cbf0a4536913670781be454d9fc95817e7f09cacd7082186b176bab08830c",
+      "upstream_starred": false,
+      "published_secs": 0.95,
+      "published_gz": 1301,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:59:15 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-ada39ec68f280726.rlib mandelbrot.rs -o mandelbrot.rust-4.rust_run\n\n12.26 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.rust-4.rust_run 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-rust-4.rs"
+        ],
+        "sha256": "5d7cbf0a4536913670781be454d9fc95817e7f09cacd7082186b176bab08830c",
+        "physical_lines": 180,
+        "nonblank_noncomment_lines": 146,
+        "normalized_bytes": 3149,
+        "gzip1_bytes": 1277
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/librayon-df4ef925755eec75.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-rust-4.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-rust-4"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-rust-4",
+        "16000"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-rust-4",
+        "200"
+      ],
+      "worker_policy": "Rayon threads: 8",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.678918125,
+        0.664375583,
+        0.645585875,
+        0.653104209,
+        0.662392
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.662392,
+      "min_seconds": 0.645585875,
+      "max_seconds": 0.678918125
+    },
+    {
+      "id": "mandelbrot-chapel-3",
+      "language": "chapel",
+      "variant": 3,
+      "path": "upstream/mandelbrot-chapel-3.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-chapel-3.html",
+      "sha256": "b95c31e9995500e6cf5d6576a14efb71234ed2dad0a398fbe4d7e10da5f9bc4d",
+      "upstream_starred": false,
+      "published_secs": 1.18,
+      "published_gz": 582,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 17:59:39 GMT\n\nMAKE:\nmv mandelbrot.chapel-3.chapel mandelbrot.chapel-3.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast mandelbrot.chapel-3.chpl -o mandelbrot.chapel-3.chapel_run\nrm mandelbrot.chapel-3.chpl\n\n21.30 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.chapel-3.chapel_run --n=16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-chapel-3.chpl"
+        ],
+        "sha256": "b95c31e9995500e6cf5d6576a14efb71234ed2dad0a398fbe4d7e10da5f9bc4d",
+        "physical_lines": 76,
+        "nonblank_noncomment_lines": 47,
+        "normalized_bytes": 1073,
+        "gzip1_bytes": 571
+      },
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--n=16000"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--n=200"
+      ],
+      "worker_policy": "Chapel runtime tasks: 8",
+      "thread_controlled": true,
+      "samples_seconds": [
+        2.078096625,
+        1.927566625,
+        2.069529458,
+        1.938717,
+        1.951483708
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "warning: QTHREADS: Reduced numThreadsPerLocale=8 to 4 to prevent oversubscription of the system.\n",
+      "median_seconds": 1.951483708,
+      "min_seconds": 1.927566625,
+      "max_seconds": 2.078096625
+    },
+    {
+      "id": "mandelbrot-julia-7",
+      "language": "julia",
+      "variant": 7,
+      "path": "upstream/mandelbrot-julia-7.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-julia-7.html",
+      "sha256": "e0eeaf849574af7fb568f48670b99274dc4c50a9f95333760e880e93177aabd4",
+      "upstream_starred": false,
+      "published_secs": 1.54,
+      "published_gz": 629,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 08:30:18 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.12 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- mandelbrot.julia-7.julia 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-julia-7.jl"
+        ],
+        "sha256": "e0eeaf849574af7fb568f48670b99274dc4c50a9f95333760e880e93177aabd4",
+        "physical_lines": 104,
+        "nonblank_noncomment_lines": 59,
+        "normalized_bytes": 1394,
+        "gzip1_bytes": 751
+      },
+      "compile_command": null,
+      "generation_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-julia-7.jl",
+        "16000"
+      ],
+      "correctness_command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-julia-7.jl",
+        "200"
+      ],
+      "worker_policy": "Julia threads: 8",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.824669583,
+        0.838297459,
+        0.828274959,
+        0.901950375,
+        0.833952584
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.833952584,
+      "min_seconds": 0.824669583,
+      "max_seconds": 0.901950375
+    },
+    {
+      "id": "mandelbrot-gpp-0-gcc-fastmath",
+      "language": "cpp",
+      "variant": 0,
+      "path": "upstream/mandelbrot-gpp-0.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-gpp-0.html",
+      "sha256": "af0e64a414419638053cabf22b1b47326746ced617657e74297dbc43e8e251b6",
+      "upstream_starred": false,
+      "published_secs": 2.36,
+      "published_gz": 2752,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 04:10:07 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  --std=c++17 -I ./Include/gpp/vcl mandelbrot.gpp-0.c++ -o mandelbrot.gpp-0.c++.o &&  \\\n        /usr/bin/g++ mandelbrot.gpp-0.c++.o -o mandelbrot.gpp-0.gpp_run -pthread \nrm mandelbrot.gpp-0.c++\n\n4.60s to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.gpp-0.gpp_run 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "upstream_id": "mandelbrot-gpp-0",
+      "cc_backend": "gcc",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-gpp-0.cpp"
+        ],
+        "sha256": "af0e64a414419638053cabf22b1b47326746ced617657e74297dbc43e8e251b6",
+        "physical_lines": 350,
+        "nonblank_noncomment_lines": 308,
+        "normalized_bytes": 8926,
+        "gzip1_bytes": 2708
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-gpp-0.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-gpp-0-gcc-fastmath",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-fopenmp",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-gpp-0-gcc-fastmath",
+        "16000"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-gpp-0-gcc-fastmath",
+        "200"
+      ],
+      "worker_policy": "std::thread::hardware_concurrency(), 8 workers on this host",
+      "thread_controlled": false,
+      "samples_seconds": [
+        0.847201583,
+        0.7897365,
+        0.956182,
+        0.825896667,
+        0.798225417
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.825896667,
+      "min_seconds": 0.7897365,
+      "max_seconds": 0.956182
+    },
+    {
+      "id": "mandelbrot-go-4-nofma",
+      "language": "go",
+      "variant": 4,
+      "path": "upstream/mandelbrot-go-4.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-go-4.html",
+      "sha256": "39914187a39ecbad8411e4960a0926432eb797f74931f0c0fb67dc00e88d8736",
+      "upstream_starred": false,
+      "published_secs": 3.77,
+      "published_gz": 912,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 03:14:38 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o mandelbrot.go-4.go_run mandelbrot.go-4.go\n\n5.49s to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.go-4.go_run 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "upstream_id": "mandelbrot-go-4",
+      "go_no_fma": true,
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-go-4.go"
+        ],
+        "sha256": "39914187a39ecbad8411e4960a0926432eb797f74931f0c0fb67dc00e88d8736",
+        "physical_lines": 158,
+        "nonblank_noncomment_lines": 102,
+        "normalized_bytes": 1773,
+        "gzip1_bytes": 896
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-gcflags=-d=fmahash=n",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-go-4-nofma",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-go-4.go"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-go-4-nofma",
+        "16000"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-go-4-nofma",
+        "200"
+      ],
+      "worker_policy": "NumCPU()*2: GOMAXPROCS=16, 16 workers",
+      "thread_controlled": false,
+      "samples_seconds": [
+        2.113830083,
+        2.114376833,
+        2.409642375,
+        2.112832958,
+        2.123327625
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.114376833,
+      "min_seconds": 2.112832958,
+      "max_seconds": 2.409642375
+    },
+    {
+      "id": "mandelbrot-graalvmaot-6",
+      "language": "java",
+      "variant": 6,
+      "path": "upstream/mandelbrot-graalvmaot-6.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-graalvmaot-6.html",
+      "sha256": "f6b630a1faac92820f9d394392ad4e3acb84b21aacccf3a89662c8aa0a0d406a",
+      "upstream_starred": false,
+      "published_secs": 3.96,
+      "published_gz": 808,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 02:53:43 GMT\n\nMAKE:\nmv mandelbrot.graalvmaot-6.graalvmaot mandelbrot.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  mandelbrot.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native mandelbrot -o mandelbrot.graalvmaot-6.graalvmaot_run\n\n97.90 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.graalvmaot-6.graalvmaot_run 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-graalvmaot-6.java"
+        ],
+        "sha256": "f6b630a1faac92820f9d394392ad4e3acb84b21aacccf3a89662c8aa0a0d406a",
+        "physical_lines": 79,
+        "nonblank_noncomment_lines": 57,
+        "normalized_bytes": 1546,
+        "gzip1_bytes": 798
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-6",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-6/mandelbrot.java"
+      ],
+      "generation_command": null,
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-6",
+        "mandelbrot",
+        "16000"
+      ],
+      "correctness_command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-graalvmaot-6",
+        "mandelbrot",
+        "200"
+      ],
+      "worker_policy": "ActiveProcessorCount=8, 16 Java workers",
+      "thread_controlled": false,
+      "samples_seconds": [
+        2.090477041,
+        1.896025083,
+        1.843092542,
+        1.761629208,
+        1.885382959
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "execution_mode": "OpenJDK JIT; upstream GraalVM AOT submission source",
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.885382959,
+      "min_seconds": 1.761629208,
+      "max_seconds": 2.090477041
+    },
+    {
+      "id": "mandelbrot-gcc-9-llvm-fastmath",
+      "language": "c",
+      "variant": 9,
+      "path": "upstream/mandelbrot-gcc-9.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-gcc-9.html",
+      "sha256": "0c8bcfcbd20e0328896ef50863d61cb3a109920d6ad3d7f17057c28d23122ca4",
+      "upstream_starred": false,
+      "published_secs": 4.07,
+      "published_gz": 700,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 03:59:00 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp mandelbrot.gcc-9.c -o mandelbrot.gcc-9.gcc_run \nrm mandelbrot.gcc-9.c\n\n2.47s to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.gcc-9.gcc_run 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "upstream_id": "mandelbrot-gcc-9",
+      "cc_backend": "llvm",
+      "cc_tune": "fastmath",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-gcc-9.c"
+        ],
+        "sha256": "0c8bcfcbd20e0328896ef50863d61cb3a109920d6ad3d7f17057c28d23122ca4",
+        "physical_lines": 90,
+        "nonblank_noncomment_lines": 49,
+        "normalized_bytes": 1747,
+        "gzip1_bytes": 686
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-gcc-9.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-gcc-9-llvm-fastmath",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-fopenmp",
+        "-I/opt/homebrew/opt/libomp/include",
+        "-L/opt/homebrew/opt/libomp/lib",
+        "-Wl,-rpath,/opt/homebrew/opt/libomp/lib",
+        "-ffast-math",
+        "-funroll-loops",
+        "-flto"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-gcc-9-llvm-fastmath",
+        "16000"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-gcc-9-llvm-fastmath",
+        "200"
+      ],
+      "worker_policy": "OpenMP threads: 8",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.812169875,
+        0.820335417,
+        0.8162685,
+        0.664734417,
+        0.814147875
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.814147875,
+      "min_seconds": 0.664734417,
+      "max_seconds": 0.820335417
+    },
+    {
+      "id": "mech-compact",
+      "language": "mech",
+      "path": "mandelbrot-compact.mec",
+      "simd": false,
+      "fma": false,
+      "upstream_starred": false,
+      "generated_c_sha256": "7978fd4f1e3a2e7cb42bb56fb223112c547360e68f2dd077a2c921c6cd369020",
+      "native_object_sha256": "bc204ded9feb960928d7c74cec6c6eb162fcc1aba3306064812a18a0843453ce",
+      "execution_mode": "experimental v0.4 Cranelift AOT native map; Clang links generic PBM/thread runtime",
+      "source": {
+        "paths": [
+          "mandelbrot-compact.mec"
+        ],
+        "sha256": "89ebdc902c202c58cc29ff02a2d1ce5f78e8257257dd2755498e2f13ba1b3b50",
+        "physical_lines": 18,
+        "nonblank_noncomment_lines": 17,
+        "normalized_bytes": 330,
+        "gzip1_bytes": 197
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-compact.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-compact.o",
+        "-lm",
+        "-pthread",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-compact",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact.mec",
+        "emit-cranelift",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-compact.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-compact.o",
+        "done",
+        "inside",
+        "width",
+        "pixel,row"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-compact",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-compact",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        4.14851375,
+        3.874757458,
+        3.892361375,
+        3.942309542,
+        3.831247458
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 3.892361375,
+      "min_seconds": 3.831247458,
+      "max_seconds": 4.14851375
+    },
+    {
+      "id": "mech-eight-scalar",
+      "language": "mech",
+      "path": "mandelbrot.mec",
+      "simd": false,
+      "fma": false,
+      "upstream_starred": false,
+      "generated_c_sha256": "ed1535af71a32e5ff50892a5ecc8c4f5c1e11ad06e1302f762ca914f7fe7ed01",
+      "native_object_sha256": "0a310011006b617e02cbf2e475945ad7f01e3bcd397bcb613ce8e40f00700db0",
+      "execution_mode": "experimental v0.4 Cranelift AOT native map; Clang links generic PBM/thread runtime",
+      "source": {
+        "paths": [
+          "mandelbrot.mec"
+        ],
+        "sha256": "fa906382c589e92c47ba9fb0db79059b7282df013317a565d740d5dafb8859cf",
+        "physical_lines": 19,
+        "nonblank_noncomment_lines": 18,
+        "normalized_bytes": 545,
+        "gzip1_bytes": 255
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-scalar.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-scalar.o",
+        "-lm",
+        "-pthread",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-scalar",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot.mec",
+        "emit-cranelift",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-scalar.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-scalar.o",
+        "done",
+        "inside",
+        "width",
+        "pixel,row"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-scalar",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-scalar",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        2.12517475,
+        2.525600625,
+        2.519579041,
+        2.639019625,
+        2.516711875
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 2.519579041,
+      "min_seconds": 2.12517475,
+      "max_seconds": 2.639019625
+    },
+    {
+      "id": "mech-eight-simd",
+      "language": "mech",
+      "path": "mandelbrot.mec",
+      "simd": true,
+      "fma": false,
+      "upstream_starred": false,
+      "generated_c_sha256": "ed1535af71a32e5ff50892a5ecc8c4f5c1e11ad06e1302f762ca914f7fe7ed01",
+      "native_object_sha256": "c26c9340a2404a762dd0a68b2975cfbaf2066143fce140248de2a50556af0555",
+      "execution_mode": "experimental v0.4 Cranelift AOT native map; Clang links generic PBM/thread runtime",
+      "source": {
+        "paths": [
+          "mandelbrot.mec"
+        ],
+        "sha256": "fa906382c589e92c47ba9fb0db79059b7282df013317a565d740d5dafb8859cf",
+        "physical_lines": 19,
+        "nonblank_noncomment_lines": 18,
+        "normalized_bytes": 545,
+        "gzip1_bytes": 255
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-simd.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-simd.o",
+        "-lm",
+        "-pthread",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-simd",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-simd.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-simd.o",
+        "done",
+        "inside",
+        "width",
+        "pixel,row"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-simd",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-eight-simd",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        1.388306708,
+        1.202381667,
+        1.406406625,
+        1.336555625,
+        1.446264042
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 1.388306708,
+      "min_seconds": 1.202381667,
+      "max_seconds": 1.446264042
+    },
+    {
+      "id": "mech-unrolled-simd",
+      "language": "mech",
+      "path": "mandelbrot-unrolled.mec",
+      "simd": true,
+      "fma": false,
+      "upstream_starred": false,
+      "generated_c_sha256": "ed1535af71a32e5ff50892a5ecc8c4f5c1e11ad06e1302f762ca914f7fe7ed01",
+      "native_object_sha256": "3ab4d0ed52c380eae15ba1dae7d15145d76e65e4ffc9cfa77e0e691067f6d10d",
+      "execution_mode": "experimental v0.4 Cranelift AOT native map; Clang links generic PBM/thread runtime",
+      "source": {
+        "paths": [
+          "mandelbrot-unrolled.mec"
+        ],
+        "sha256": "2914b1f966a61f74ddc3d2462dae7b45365aa70e4a5c63ac7af04f910a8835b1",
+        "physical_lines": 27,
+        "nonblank_noncomment_lines": 26,
+        "normalized_bytes": 777,
+        "gzip1_bytes": 321
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd.o",
+        "-lm",
+        "-pthread",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-unrolled.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd.o",
+        "done",
+        "inside",
+        "width",
+        "pixel,row"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.997453,
+        0.994532958,
+        1.008043625,
+        0.798893708,
+        0.991924125
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.994532958,
+      "min_seconds": 0.798893708,
+      "max_seconds": 1.008043625
+    },
+    {
+      "id": "mech-unrolled-simd-loop-fma",
+      "language": "mech",
+      "path": "mandelbrot-unrolled.mec",
+      "simd": true,
+      "loop_fma": true,
+      "upstream_starred": false,
+      "generated_c_sha256": "ed1535af71a32e5ff50892a5ecc8c4f5c1e11ad06e1302f762ca914f7fe7ed01",
+      "native_object_sha256": "022f3cf9c6b18d29aca96d63daf0e13ce8fa4954ac8fb87d46d87ec8bc901a13",
+      "execution_mode": "experimental v0.4 Cranelift AOT native map; Clang links generic PBM/thread runtime",
+      "source": {
+        "paths": [
+          "mandelbrot-unrolled.mec"
+        ],
+        "sha256": "2914b1f966a61f74ddc3d2462dae7b45365aa70e4a5c63ac7af04f910a8835b1",
+        "physical_lines": 27,
+        "nonblank_noncomment_lines": 26,
+        "normalized_bytes": 777,
+        "gzip1_bytes": 321
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma.o",
+        "-lm",
+        "-pthread",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-unrolled.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma.o",
+        "done",
+        "inside",
+        "width",
+        "pixel,row",
+        "--fp-contract-loop"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.822795917,
+        0.794817209,
+        0.833146208,
+        0.795193917,
+        0.794046708
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.795193917,
+      "min_seconds": 0.794046708,
+      "max_seconds": 0.833146208
+    },
+    {
+      "id": "mandelbrot-chapel-3-chunk64",
+      "language": "chapel",
+      "variant": 3,
+      "path": "upstream/mandelbrot-chapel-3.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-chapel-3.html",
+      "sha256": "b95c31e9995500e6cf5d6576a14efb71234ed2dad0a398fbe4d7e10da5f9bc4d",
+      "upstream_starred": false,
+      "published_secs": 1.18,
+      "published_gz": 582,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 17:59:39 GMT\n\nMAKE:\nmv mandelbrot.chapel-3.chapel mandelbrot.chapel-3.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast mandelbrot.chapel-3.chpl -o mandelbrot.chapel-3.chapel_run\nrm mandelbrot.chapel-3.chpl\n\n21.30 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.chapel-3.chapel_run --n=16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-chapel-3.chpl"
+        ],
+        "sha256": "b95c31e9995500e6cf5d6576a14efb71234ed2dad0a398fbe4d7e10da5f9bc4d",
+        "physical_lines": 76,
+        "nonblank_noncomment_lines": 47,
+        "normalized_bytes": 1073,
+        "gzip1_bytes": 571
+      },
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--n=16000",
+        "--chunkSize=64"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--n=200",
+        "--chunkSize=64"
+      ],
+      "worker_policy": "Chapel runtime tasks: 8",
+      "thread_controlled": true,
+      "samples_seconds": [
+        1.959535875,
+        2.07558575,
+        1.962877,
+        1.931357875,
+        1.951229083
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "warning: QTHREADS: Reduced numThreadsPerLocale=8 to 4 to prevent oversubscription of the system.\n",
+      "median_seconds": 1.959535875,
+      "min_seconds": 1.931357875,
+      "max_seconds": 2.07558575,
+      "upstream_id": "mandelbrot-chapel-3",
+      "chunk_size": 64
+    },
+    {
+      "id": "mandelbrot-chapel-3-chunk512",
+      "language": "chapel",
+      "variant": 3,
+      "path": "upstream/mandelbrot-chapel-3.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-chapel-3.html",
+      "sha256": "b95c31e9995500e6cf5d6576a14efb71234ed2dad0a398fbe4d7e10da5f9bc4d",
+      "upstream_starred": false,
+      "published_secs": 1.18,
+      "published_gz": 582,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 17:59:39 GMT\n\nMAKE:\nmv mandelbrot.chapel-3.chapel mandelbrot.chapel-3.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast mandelbrot.chapel-3.chpl -o mandelbrot.chapel-3.chapel_run\nrm mandelbrot.chapel-3.chpl\n\n21.30 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.chapel-3.chapel_run --n=16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-chapel-3.chpl"
+        ],
+        "sha256": "b95c31e9995500e6cf5d6576a14efb71234ed2dad0a398fbe4d7e10da5f9bc4d",
+        "physical_lines": 76,
+        "nonblank_noncomment_lines": 47,
+        "normalized_bytes": 1073,
+        "gzip1_bytes": 571
+      },
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--n=16000",
+        "--chunkSize=512"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--n=200",
+        "--chunkSize=512"
+      ],
+      "worker_policy": "Chapel runtime tasks: 8",
+      "thread_controlled": true,
+      "samples_seconds": [
+        1.975425166,
+        1.935354708,
+        1.996889875,
+        1.953660042,
+        1.999563
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "warning: QTHREADS: Reduced numThreadsPerLocale=8 to 4 to prevent oversubscription of the system.\n",
+      "median_seconds": 1.975425166,
+      "min_seconds": 1.935354708,
+      "max_seconds": 1.999563,
+      "upstream_id": "mandelbrot-chapel-3",
+      "chunk_size": 512
+    },
+    {
+      "id": "mandelbrot-chapel-3-chunk4096",
+      "language": "chapel",
+      "variant": 3,
+      "path": "upstream/mandelbrot-chapel-3.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-chapel-3.html",
+      "sha256": "b95c31e9995500e6cf5d6576a14efb71234ed2dad0a398fbe4d7e10da5f9bc4d",
+      "upstream_starred": false,
+      "published_secs": 1.18,
+      "published_gz": 582,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 17:59:39 GMT\n\nMAKE:\nmv mandelbrot.chapel-3.chapel mandelbrot.chapel-3.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast mandelbrot.chapel-3.chpl -o mandelbrot.chapel-3.chapel_run\nrm mandelbrot.chapel-3.chpl\n\n21.30 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.chapel-3.chapel_run --n=16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-chapel-3.chpl"
+        ],
+        "sha256": "b95c31e9995500e6cf5d6576a14efb71234ed2dad0a398fbe4d7e10da5f9bc4d",
+        "physical_lines": 76,
+        "nonblank_noncomment_lines": 47,
+        "normalized_bytes": 1073,
+        "gzip1_bytes": 571
+      },
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--n=16000",
+        "--chunkSize=4096"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-chapel-3",
+        "--n=200",
+        "--chunkSize=4096"
+      ],
+      "worker_policy": "Chapel runtime tasks: 8",
+      "thread_controlled": true,
+      "samples_seconds": [
+        3.017206209,
+        3.022195708,
+        2.904357042,
+        2.93067875,
+        2.909953416
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "warning: QTHREADS: Reduced numThreadsPerLocale=8 to 4 to prevent oversubscription of the system.\n",
+      "median_seconds": 2.93067875,
+      "min_seconds": 2.904357042,
+      "max_seconds": 3.022195708,
+      "upstream_id": "mandelbrot-chapel-3",
+      "chunk_size": 4096
+    },
+    {
+      "id": "mech-unrolled-simd-loop-fma-scheduled",
+      "language": "mech",
+      "path": "mandelbrot-unrolled.mec",
+      "simd": true,
+      "loop_fma": true,
+      "upstream_starred": false,
+      "generated_c_sha256": "ed1535af71a32e5ff50892a5ecc8c4f5c1e11ad06e1302f762ca914f7fe7ed01",
+      "native_object_sha256": "022f3cf9c6b18d29aca96d63daf0e13ce8fa4954ac8fb87d46d87ec8bc901a13",
+      "execution_mode": "experimental v0.4 Cranelift AOT native map; Clang links generic PBM/thread runtime",
+      "source": {
+        "paths": [
+          "mandelbrot-unrolled.mec"
+        ],
+        "sha256": "2914b1f966a61f74ddc3d2462dae7b45365aa70e4a5c63ac7af04f910a8835b1",
+        "physical_lines": 27,
+        "nonblank_noncomment_lines": 26,
+        "normalized_bytes": 777,
+        "gzip1_bytes": 321
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma-scheduled.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma-scheduled.o",
+        "-lm",
+        "-pthread",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma-scheduled",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-unrolled.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma-scheduled.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma-scheduled.o",
+        "done",
+        "inside",
+        "width",
+        "pixel,row",
+        "--fp-contract-loop",
+        "--schedule"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma-scheduled",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-unrolled-simd-loop-fma-scheduled",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.78793175,
+        0.929405542,
+        0.796607875,
+        0.805522333,
+        0.790986625
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.796607875,
+      "min_seconds": 0.78793175,
+      "max_seconds": 0.929405542
+    }
+  ],
+  "excluded": [],
+  "endpoints": {
+    "time_baseline_seconds": 0.662392,
+    "size_baseline_bytes": 197,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-gcc-9-llvm-fastmath",
+        "smallest": "mandelbrot-gcc-9-llvm-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.482233502538071,
+            "time_ratio": 1.2291028197804321
+          },
+          "smallest": {
+            "size_ratio": 3.482233502538071,
+            "time_ratio": 1.2291028197804321
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 4,
+        "fastest": "mandelbrot-chapel-3",
+        "smallest": "mandelbrot-chapel-3",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.8984771573604062,
+            "time_ratio": 2.9461160581649537
+          },
+          "smallest": {
+            "size_ratio": 2.8984771573604062,
+            "time_ratio": 2.9461160581649537
+          }
+        }
+      },
+      "cpp": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-gpp-0-gcc-fastmath",
+        "smallest": "mandelbrot-gpp-0-gcc-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 13.746192893401016,
+            "time_ratio": 1.2468397368929576
+          },
+          "smallest": {
+            "size_ratio": 13.746192893401016,
+            "time_ratio": 1.2468397368929576
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-go-4-nofma",
+        "smallest": "mandelbrot-go-4-nofma",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.548223350253807,
+            "time_ratio": 3.1920325622893997
+          },
+          "smallest": {
+            "size_ratio": 4.548223350253807,
+            "time_ratio": 3.1920325622893997
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-graalvmaot-6",
+        "smallest": "mandelbrot-graalvmaot-6",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.050761421319797,
+            "time_ratio": 2.8463250748801316
+          },
+          "smallest": {
+            "size_ratio": 4.050761421319797,
+            "time_ratio": 2.8463250748801316
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-julia-7",
+        "smallest": "mandelbrot-julia-7",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.8121827411167515,
+            "time_ratio": 1.2590015942221526
+          },
+          "smallest": {
+            "size_ratio": 3.8121827411167515,
+            "time_ratio": 1.2590015942221526
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 6,
+        "fastest": "mech-unrolled-simd-loop-fma",
+        "smallest": "mech-compact",
+        "same_entry": false,
+        "smallest_time_over_fastest": 4.894858086546455,
+        "fastest_size_over_smallest": 1.6294416243654823,
+        "log2_tradeoff_distance": 2.397092513159655,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.6294416243654823,
+            "time_ratio": 1.2004884071667532
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 5.876220387625454
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-rust-4",
+        "smallest": "mandelbrot-rust-4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.482233502538071,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 6.482233502538071,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  },
+  "nonheroic_endpoints": {
+    "time_baseline_seconds": 0.662392,
+    "size_baseline_bytes": 197,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-gcc-9-llvm-fastmath",
+        "smallest": "mandelbrot-gcc-9-llvm-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.482233502538071,
+            "time_ratio": 1.2291028197804321
+          },
+          "smallest": {
+            "size_ratio": 3.482233502538071,
+            "time_ratio": 1.2291028197804321
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 4,
+        "fastest": "mandelbrot-chapel-3",
+        "smallest": "mandelbrot-chapel-3",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.8984771573604062,
+            "time_ratio": 2.9461160581649537
+          },
+          "smallest": {
+            "size_ratio": 2.8984771573604062,
+            "time_ratio": 2.9461160581649537
+          }
+        }
+      },
+      "cpp": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-gpp-0-gcc-fastmath",
+        "smallest": "mandelbrot-gpp-0-gcc-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 13.746192893401016,
+            "time_ratio": 1.2468397368929576
+          },
+          "smallest": {
+            "size_ratio": 13.746192893401016,
+            "time_ratio": 1.2468397368929576
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-go-4-nofma",
+        "smallest": "mandelbrot-go-4-nofma",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.548223350253807,
+            "time_ratio": 3.1920325622893997
+          },
+          "smallest": {
+            "size_ratio": 4.548223350253807,
+            "time_ratio": 3.1920325622893997
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-graalvmaot-6",
+        "smallest": "mandelbrot-graalvmaot-6",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.050761421319797,
+            "time_ratio": 2.8463250748801316
+          },
+          "smallest": {
+            "size_ratio": 4.050761421319797,
+            "time_ratio": 2.8463250748801316
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-julia-7",
+        "smallest": "mandelbrot-julia-7",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.8121827411167515,
+            "time_ratio": 1.2590015942221526
+          },
+          "smallest": {
+            "size_ratio": 3.8121827411167515,
+            "time_ratio": 1.2590015942221526
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 6,
+        "fastest": "mech-unrolled-simd-loop-fma",
+        "smallest": "mech-compact",
+        "same_entry": false,
+        "smallest_time_over_fastest": 4.894858086546455,
+        "fastest_size_over_smallest": 1.6294416243654823,
+        "log2_tradeoff_distance": 2.397092513159655,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.6294416243654823,
+            "time_ratio": 1.2004884071667532
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 5.876220387625454
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-rust-4",
+        "smallest": "mandelbrot-rust-4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.482233502538071,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 6.482233502538071,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  },
+  "exact_image_endpoints": {
+    "time_baseline_seconds": 0.662392,
+    "size_baseline_bytes": 197,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-gcc-9-llvm-fastmath",
+        "smallest": "mandelbrot-gcc-9-llvm-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.482233502538071,
+            "time_ratio": 1.2291028197804321
+          },
+          "smallest": {
+            "size_ratio": 3.482233502538071,
+            "time_ratio": 1.2291028197804321
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 4,
+        "fastest": "mandelbrot-chapel-3",
+        "smallest": "mandelbrot-chapel-3",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.8984771573604062,
+            "time_ratio": 2.9461160581649537
+          },
+          "smallest": {
+            "size_ratio": 2.8984771573604062,
+            "time_ratio": 2.9461160581649537
+          }
+        }
+      },
+      "cpp": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-gpp-0-gcc-fastmath",
+        "smallest": "mandelbrot-gpp-0-gcc-fastmath",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 13.746192893401016,
+            "time_ratio": 1.2468397368929576
+          },
+          "smallest": {
+            "size_ratio": 13.746192893401016,
+            "time_ratio": 1.2468397368929576
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-go-4-nofma",
+        "smallest": "mandelbrot-go-4-nofma",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.548223350253807,
+            "time_ratio": 3.1920325622893997
+          },
+          "smallest": {
+            "size_ratio": 4.548223350253807,
+            "time_ratio": 3.1920325622893997
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-graalvmaot-6",
+        "smallest": "mandelbrot-graalvmaot-6",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.050761421319797,
+            "time_ratio": 2.8463250748801316
+          },
+          "smallest": {
+            "size_ratio": 4.050761421319797,
+            "time_ratio": 2.8463250748801316
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-julia-7",
+        "smallest": "mandelbrot-julia-7",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.8121827411167515,
+            "time_ratio": 1.2590015942221526
+          },
+          "smallest": {
+            "size_ratio": 3.8121827411167515,
+            "time_ratio": 1.2590015942221526
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 6,
+        "fastest": "mech-unrolled-simd-loop-fma",
+        "smallest": "mech-compact",
+        "same_entry": false,
+        "smallest_time_over_fastest": 4.894858086546455,
+        "fastest_size_over_smallest": 1.6294416243654823,
+        "log2_tradeoff_distance": 2.397092513159655,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.6294416243654823,
+            "time_ratio": 1.2004884071667532
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 5.876220387625454
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-rust-4",
+        "smallest": "mandelbrot-rust-4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.482233502538071,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 6.482233502538071,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  },
+  "baseline_report": {
+    "path": "apple-m3-16000.json",
+    "sha256": "51cd62518ba98945a996aabb7f96f6a36331bad23b0a2f7cd1b4d7c69f7ab31c"
+  }
+}

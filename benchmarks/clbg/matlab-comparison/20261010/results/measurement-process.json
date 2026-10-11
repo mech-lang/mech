@@ -1,0 +1,12 @@
+{
+  "pid": 53495,
+  "started_at": "2026-10-10T18:17:28.688647+00:00",
+  "log": "results/measurement.log",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/run.py",
+    "--phase",
+    "measure"
+  ],
+  "previous_pid": 36717,
+  "revision": "dictionary indexing before full nucleotide measurements"
+}

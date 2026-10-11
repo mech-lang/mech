@@ -1,0 +1,316 @@
+SMALL revcomp:mech-revcomp-optimized:jit
+SMALL revcomp:mech-revcomp-optimized:resident
+SMALL revcomp:mech-revcomp-optimized:aot-new
+RUN 1 revcomp:mech-revcomp-optimized:jit
+SAMPLE 1 revcomp:mech-revcomp-optimized:jit 0.230658s process 0.230658s
+RUN 1 revcomp:mech-revcomp-optimized:resident
+SAMPLE 1 revcomp:mech-revcomp-optimized:resident 0.224942s process 0.267795s
+RUN 1 revcomp:mech-revcomp-optimized:aot-new
+SAMPLE 1 revcomp:mech-revcomp-optimized:aot-new 0.147719s process 0.147719s
+RUN 2 revcomp:mech-revcomp-optimized:aot-new
+SAMPLE 2 revcomp:mech-revcomp-optimized:aot-new 0.149249s process 0.149249s
+RUN 2 revcomp:mech-revcomp-optimized:resident
+SAMPLE 2 revcomp:mech-revcomp-optimized:resident 0.226762s process 0.267682s
+RUN 2 revcomp:mech-revcomp-optimized:jit
+SAMPLE 2 revcomp:mech-revcomp-optimized:jit 0.171185s process 0.171185s
+RUN 3 revcomp:mech-revcomp-optimized:jit
+SAMPLE 3 revcomp:mech-revcomp-optimized:jit 0.174436s process 0.174436s
+RUN 3 revcomp:mech-revcomp-optimized:resident
+SAMPLE 3 revcomp:mech-revcomp-optimized:resident 0.218645s process 0.260835s
+RUN 3 revcomp:mech-revcomp-optimized:aot-new
+SAMPLE 3 revcomp:mech-revcomp-optimized:aot-new 0.144347s process 0.144347s
+SMALL regexredux:mech-regex-final-reuse-signed:jit
+SMALL regexredux:mech-regex-final-reuse-signed:resident
+SMALL regexredux:mech-regex-final-reuse-signed:aot-new
+RUN 1 regexredux:mech-regex-final-reuse-signed:jit
+SAMPLE 1 regexredux:mech-regex-final-reuse-signed:jit 0.580715s process 0.580715s
+RUN 1 regexredux:mech-regex-final-reuse-signed:aot-new
+SAMPLE 1 regexredux:mech-regex-final-reuse-signed:aot-new 0.479623s process 0.479623s
+RUN 1 regexredux:mech-regex-final-reuse-signed:resident
+SAMPLE 1 regexredux:mech-regex-final-reuse-signed:resident 0.478976s process 0.568526s
+RUN 2 regexredux:mech-regex-final-reuse-signed:resident
+SAMPLE 2 regexredux:mech-regex-final-reuse-signed:resident 0.473683s process 0.561741s
+RUN 2 regexredux:mech-regex-final-reuse-signed:aot-new
+SAMPLE 2 regexredux:mech-regex-final-reuse-signed:aot-new 0.497173s process 0.497173s
+RUN 2 regexredux:mech-regex-final-reuse-signed:jit
+SAMPLE 2 regexredux:mech-regex-final-reuse-signed:jit 0.564493s process 0.564493s
+RUN 3 regexredux:mech-regex-final-reuse-signed:jit
+SAMPLE 3 regexredux:mech-regex-final-reuse-signed:jit 0.558462s process 0.558462s
+RUN 3 regexredux:mech-regex-final-reuse-signed:aot-new
+SAMPLE 3 regexredux:mech-regex-final-reuse-signed:aot-new 0.499742s process 0.499742s
+RUN 3 regexredux:mech-regex-final-reuse-signed:resident
+SAMPLE 3 regexredux:mech-regex-final-reuse-signed:resident 0.483740s process 0.572471s
+SMALL knucleotide:mech-compact-final-std1-simd0-p4:jit
+SMALL knucleotide:mech-compact-final-std1-simd0-p4:resident
+SMALL knucleotide:mech-compact-final-std1-simd0-p4:aot-new
+RUN 1 knucleotide:mech-compact-final-std1-simd0-p4:resident
+SAMPLE 1 knucleotide:mech-compact-final-std1-simd0-p4:resident 0.612286s process 0.703424s
+RUN 1 knucleotide:mech-compact-final-std1-simd0-p4:aot-new
+SAMPLE 1 knucleotide:mech-compact-final-std1-simd0-p4:aot-new 0.507671s process 0.507671s
+RUN 1 knucleotide:mech-compact-final-std1-simd0-p4:jit
+SAMPLE 1 knucleotide:mech-compact-final-std1-simd0-p4:jit 0.612304s process 0.612304s
+RUN 2 knucleotide:mech-compact-final-std1-simd0-p4:jit
+SAMPLE 2 knucleotide:mech-compact-final-std1-simd0-p4:jit 0.621294s process 0.621294s
+RUN 2 knucleotide:mech-compact-final-std1-simd0-p4:resident
+SAMPLE 2 knucleotide:mech-compact-final-std1-simd0-p4:resident 0.597977s process 0.691288s
+RUN 2 knucleotide:mech-compact-final-std1-simd0-p4:aot-new
+SAMPLE 2 knucleotide:mech-compact-final-std1-simd0-p4:aot-new 0.502049s process 0.502049s
+RUN 3 knucleotide:mech-compact-final-std1-simd0-p4:jit
+SAMPLE 3 knucleotide:mech-compact-final-std1-simd0-p4:jit 0.600049s process 0.600049s
+RUN 3 knucleotide:mech-compact-final-std1-simd0-p4:resident
+SAMPLE 3 knucleotide:mech-compact-final-std1-simd0-p4:resident 0.587058s process 0.678518s
+RUN 3 knucleotide:mech-compact-final-std1-simd0-p4:aot-new
+SAMPLE 3 knucleotide:mech-compact-final-std1-simd0-p4:aot-new 0.528264s process 0.528264s
+SMALL pidigits:mech-pi-final-advance-signed:jit
+SMALL pidigits:mech-pi-final-advance-signed:resident
+SMALL pidigits:mech-pi-final-advance-signed:aot-new
+SMALL pidigits:mech-pi-final-compact-signed:jit
+SMALL pidigits:mech-pi-final-compact-signed:resident
+SMALL pidigits:mech-pi-final-compact-signed:aot-new
+RUN 1 pidigits:mech-pi-final-compact-signed:aot-new
+SAMPLE 1 pidigits:mech-pi-final-compact-signed:aot-new 0.397873s process 0.397873s
+RUN 1 pidigits:mech-pi-final-advance-signed:resident
+SAMPLE 1 pidigits:mech-pi-final-advance-signed:resident 0.306015s process 0.455066s
+RUN 1 pidigits:mech-pi-final-advance-signed:aot-new
+SAMPLE 1 pidigits:mech-pi-final-advance-signed:aot-new 0.307457s process 0.307457s
+RUN 1 pidigits:mech-pi-final-compact-signed:resident
+SAMPLE 1 pidigits:mech-pi-final-compact-signed:resident 0.399765s process 0.540235s
+RUN 1 pidigits:mech-pi-final-advance-signed:jit
+SAMPLE 1 pidigits:mech-pi-final-advance-signed:jit 0.448323s process 0.448323s
+RUN 1 pidigits:mech-pi-final-compact-signed:jit
+SAMPLE 1 pidigits:mech-pi-final-compact-signed:jit 0.528092s process 0.528092s
+RUN 2 pidigits:mech-pi-final-compact-signed:resident
+SAMPLE 2 pidigits:mech-pi-final-compact-signed:resident 0.400889s process 0.541125s
+RUN 2 pidigits:mech-pi-final-compact-signed:aot-new
+SAMPLE 2 pidigits:mech-pi-final-compact-signed:aot-new 0.398480s process 0.398480s
+RUN 2 pidigits:mech-pi-final-compact-signed:jit
+SAMPLE 2 pidigits:mech-pi-final-compact-signed:jit 0.526910s process 0.526910s
+RUN 2 pidigits:mech-pi-final-advance-signed:jit
+SAMPLE 2 pidigits:mech-pi-final-advance-signed:jit 0.447030s process 0.447030s
+RUN 2 pidigits:mech-pi-final-advance-signed:resident
+SAMPLE 2 pidigits:mech-pi-final-advance-signed:resident 0.306663s process 0.456890s
+RUN 2 pidigits:mech-pi-final-advance-signed:aot-new
+SAMPLE 2 pidigits:mech-pi-final-advance-signed:aot-new 0.307265s process 0.307265s
+RUN 3 pidigits:mech-pi-final-compact-signed:jit
+SAMPLE 3 pidigits:mech-pi-final-compact-signed:jit 0.526661s process 0.526661s
+RUN 3 pidigits:mech-pi-final-advance-signed:jit
+SAMPLE 3 pidigits:mech-pi-final-advance-signed:jit 0.447466s process 0.447466s
+RUN 3 pidigits:mech-pi-final-compact-signed:resident
+SAMPLE 3 pidigits:mech-pi-final-compact-signed:resident 0.400039s process 0.540240s
+RUN 3 pidigits:mech-pi-final-advance-signed:resident
+SAMPLE 3 pidigits:mech-pi-final-advance-signed:resident 0.305725s process 0.454901s
+RUN 3 pidigits:mech-pi-final-compact-signed:aot-new
+SAMPLE 3 pidigits:mech-pi-final-compact-signed:aot-new 0.398682s process 0.398682s
+RUN 3 pidigits:mech-pi-final-advance-signed:aot-new
+SAMPLE 3 pidigits:mech-pi-final-advance-signed:aot-new 0.306139s process 0.306139s
+SMALL nbody:pairwise-mass-tails:jit
+SMALL nbody:pairwise-mass-tails:resident
+SMALL nbody:pairwise-mass-tails:aot-new
+SMALL nbody:compact-baseline:jit
+SMALL nbody:compact-baseline:resident
+SMALL nbody:compact-baseline:aot-new
+RUN 1 nbody:compact-baseline:resident
+SAMPLE 1 nbody:compact-baseline:resident 16.495272s process 16.769374s
+RUN 1 nbody:pairwise-mass-tails:resident
+SAMPLE 1 nbody:pairwise-mass-tails:resident 16.156358s process 16.550467s
+RUN 1 nbody:compact-baseline:aot-new
+SAMPLE 1 nbody:compact-baseline:aot-new 1.121616s process 1.121616s
+RUN 1 nbody:pairwise-mass-tails:jit
+SAMPLE 1 nbody:pairwise-mass-tails:jit 1.449042s process 1.449042s
+RUN 1 nbody:compact-baseline:jit
+SAMPLE 1 nbody:compact-baseline:jit 1.386448s process 1.386448s
+RUN 1 nbody:pairwise-mass-tails:aot-new
+SAMPLE 1 nbody:pairwise-mass-tails:aot-new 1.052067s process 1.052067s
+RUN 2 nbody:compact-baseline:jit
+SAMPLE 2 nbody:compact-baseline:jit 1.380457s process 1.380457s
+RUN 2 nbody:compact-baseline:resident
+SAMPLE 2 nbody:compact-baseline:resident 16.468098s process 16.742936s
+RUN 2 nbody:pairwise-mass-tails:jit
+SAMPLE 2 nbody:pairwise-mass-tails:jit 1.442719s process 1.442719s
+RUN 2 nbody:pairwise-mass-tails:resident
+SAMPLE 2 nbody:pairwise-mass-tails:resident 16.149274s process 16.544588s
+RUN 2 nbody:pairwise-mass-tails:aot-new
+SAMPLE 2 nbody:pairwise-mass-tails:aot-new 1.053825s process 1.053825s
+RUN 2 nbody:compact-baseline:aot-new
+SAMPLE 2 nbody:compact-baseline:aot-new 1.122782s process 1.122782s
+RUN 3 nbody:pairwise-mass-tails:resident
+SAMPLE 3 nbody:pairwise-mass-tails:resident 16.115762s process 16.509473s
+RUN 3 nbody:pairwise-mass-tails:jit
+SAMPLE 3 nbody:pairwise-mass-tails:jit 1.438556s process 1.438556s
+RUN 3 nbody:compact-baseline:jit
+SAMPLE 3 nbody:compact-baseline:jit 1.377995s process 1.377995s
+RUN 3 nbody:pairwise-mass-tails:aot-new
+SAMPLE 3 nbody:pairwise-mass-tails:aot-new 1.058176s process 1.058176s
+RUN 3 nbody:compact-baseline:aot-new
+SAMPLE 3 nbody:compact-baseline:aot-new 1.126875s process 1.126875s
+RUN 3 nbody:compact-baseline:resident
+SAMPLE 3 nbody:compact-baseline:resident 16.495300s process 16.770124s
+SMALL mandelbrot:mech-program-simd-loop-fma:jit
+SMALL mandelbrot:mech-program-simd-loop-fma:resident
+SMALL mandelbrot:mech-program-simd-loop-fma:aot-new
+SMALL mandelbrot:mech-program-compact:jit
+SMALL mandelbrot:mech-program-compact:resident
+SMALL mandelbrot:mech-program-compact:aot-new
+RUN 1 mandelbrot:mech-program-compact:aot-new
+SAMPLE 1 mandelbrot:mech-program-compact:aot-new 2.251039s process 2.251039s
+RUN 1 mandelbrot:mech-program-compact:jit
+SAMPLE 1 mandelbrot:mech-program-compact:jit 2.347048s process 2.347048s
+RUN 1 mandelbrot:mech-program-simd-loop-fma:resident
+SAMPLE 1 mandelbrot:mech-program-simd-loop-fma:resident 10.212315s process 10.549627s
+RUN 1 mandelbrot:mech-program-compact:resident
+SAMPLE 1 mandelbrot:mech-program-compact:resident 48.032573s process 48.135028s
+RUN 1 mandelbrot:mech-program-simd-loop-fma:jit
+SAMPLE 1 mandelbrot:mech-program-simd-loop-fma:jit 0.788756s process 0.788756s
+RUN 1 mandelbrot:mech-program-simd-loop-fma:aot-new
+SAMPLE 1 mandelbrot:mech-program-simd-loop-fma:aot-new 0.457224s process 0.457224s
+RUN 2 mandelbrot:mech-program-simd-loop-fma:resident
+SAMPLE 2 mandelbrot:mech-program-simd-loop-fma:resident 10.762556s process 11.101781s
+RUN 2 mandelbrot:mech-program-simd-loop-fma:aot-new
+SAMPLE 2 mandelbrot:mech-program-simd-loop-fma:aot-new 0.453510s process 0.453510s
+RUN 2 mandelbrot:mech-program-compact:jit
+SAMPLE 2 mandelbrot:mech-program-compact:jit 2.349530s process 2.349530s
+RUN 2 mandelbrot:mech-program-compact:resident
+SAMPLE 2 mandelbrot:mech-program-compact:resident 49.974429s process 50.077687s
+RUN 2 mandelbrot:mech-program-simd-loop-fma:jit
+SAMPLE 2 mandelbrot:mech-program-simd-loop-fma:jit 0.783310s process 0.783310s
+RUN 2 mandelbrot:mech-program-compact:aot-new
+SAMPLE 2 mandelbrot:mech-program-compact:aot-new 2.255729s process 2.255729s
+RUN 3 mandelbrot:mech-program-simd-loop-fma:jit
+SAMPLE 3 mandelbrot:mech-program-simd-loop-fma:jit 0.775890s process 0.775890s
+RUN 3 mandelbrot:mech-program-compact:jit
+SAMPLE 3 mandelbrot:mech-program-compact:jit 2.330348s process 2.330348s
+RUN 3 mandelbrot:mech-program-compact:resident
+SAMPLE 3 mandelbrot:mech-program-compact:resident 50.122437s process 50.226589s
+RUN 3 mandelbrot:mech-program-simd-loop-fma:aot-new
+SAMPLE 3 mandelbrot:mech-program-simd-loop-fma:aot-new 0.446687s process 0.446687s
+RUN 3 mandelbrot:mech-program-simd-loop-fma:resident
+SAMPLE 3 mandelbrot:mech-program-simd-loop-fma:resident 11.240528s process 11.580651s
+RUN 3 mandelbrot:mech-program-compact:aot-new
+SAMPLE 3 mandelbrot:mech-program-compact:aot-new 2.308864s process 2.308864s
+SMALL spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit
+SMALL spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident
+SMALL spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new
+RUN 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit
+SAMPLE 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit 0.236124s process 0.236124s
+RUN 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new
+SAMPLE 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new 0.086467s process 0.086467s
+RUN 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident
+SAMPLE 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident 0.457014s process 0.587599s
+RUN 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit
+SAMPLE 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit 0.237050s process 0.237050s
+RUN 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident
+SAMPLE 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident 0.457349s process 0.586440s
+RUN 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new
+SAMPLE 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new 0.088524s process 0.088524s
+RUN 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new
+SAMPLE 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new 0.089982s process 0.089982s
+RUN 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit
+SAMPLE 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit 0.252471s process 0.252471s
+RUN 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident
+SAMPLE 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident 0.453448s process 0.583868s
+SMALL binarytrees:mech-binarytrees-parallel:jit
+SMALL binarytrees:mech-binarytrees-parallel:resident
+SMALL binarytrees:mech-binarytrees-parallel:aot-new
+RUN 1 binarytrees:mech-binarytrees-parallel:aot-new
+SAMPLE 1 binarytrees:mech-binarytrees-parallel:aot-new 0.400788s process 0.400788s
+RUN 1 binarytrees:mech-binarytrees-parallel:jit
+SAMPLE 1 binarytrees:mech-binarytrees-parallel:jit 0.517185s process 0.517185s
+RUN 1 binarytrees:mech-binarytrees-parallel:resident
+SAMPLE 1 binarytrees:mech-binarytrees-parallel:resident 9.585770s process 9.709399s
+RUN 2 binarytrees:mech-binarytrees-parallel:aot-new
+SAMPLE 2 binarytrees:mech-binarytrees-parallel:aot-new 0.399626s process 0.399626s
+RUN 2 binarytrees:mech-binarytrees-parallel:resident
+SAMPLE 2 binarytrees:mech-binarytrees-parallel:resident 9.766766s process 9.889992s
+RUN 2 binarytrees:mech-binarytrees-parallel:jit
+SAMPLE 2 binarytrees:mech-binarytrees-parallel:jit 0.527683s process 0.527683s
+RUN 3 binarytrees:mech-binarytrees-parallel:jit
+SAMPLE 3 binarytrees:mech-binarytrees-parallel:jit 0.525069s process 0.525069s
+RUN 3 binarytrees:mech-binarytrees-parallel:resident
+SAMPLE 3 binarytrees:mech-binarytrees-parallel:resident 9.852464s process 9.974571s
+RUN 3 binarytrees:mech-binarytrees-parallel:aot-new
+SAMPLE 3 binarytrees:mech-binarytrees-parallel:aot-new 0.405803s process 0.405803s
+SMALL fasta:mech-fasta-final-expanded-v2:jit
+SMALL fasta:mech-fasta-final-expanded-v2:resident
+SMALL fasta:mech-fasta-final-expanded-v2:aot-new
+SMALL fasta:mech-fasta-final-compact-v2:jit
+SMALL fasta:mech-fasta-final-compact-v2:resident
+SMALL fasta:mech-fasta-final-compact-v2:aot-new
+RUN 1 fasta:mech-fasta-final-expanded-v2:aot-new
+SAMPLE 1 fasta:mech-fasta-final-expanded-v2:aot-new 0.578375s process 0.578375s
+RUN 1 fasta:mech-fasta-final-expanded-v2:jit
+SAMPLE 1 fasta:mech-fasta-final-expanded-v2:jit 0.765905s process 0.765905s
+RUN 1 fasta:mech-fasta-final-compact-v2:aot-new
+SAMPLE 1 fasta:mech-fasta-final-compact-v2:aot-new 1.235145s process 1.235145s
+RUN 1 fasta:mech-fasta-final-compact-v2:jit
+SAMPLE 1 fasta:mech-fasta-final-compact-v2:jit 1.346990s process 1.346990s
+RUN 1 fasta:mech-fasta-final-compact-v2:resident
+SAMPLE 1 fasta:mech-fasta-final-compact-v2:resident 22.078429s process 22.208056s
+RUN 1 fasta:mech-fasta-final-expanded-v2:resident
+SAMPLE 1 fasta:mech-fasta-final-expanded-v2:resident 18.711230s process 18.905748s
+RUN 2 fasta:mech-fasta-final-expanded-v2:jit
+SAMPLE 2 fasta:mech-fasta-final-expanded-v2:jit 0.764207s process 0.764207s
+RUN 2 fasta:mech-fasta-final-compact-v2:resident
+SAMPLE 2 fasta:mech-fasta-final-compact-v2:resident 22.081872s process 22.213366s
+RUN 2 fasta:mech-fasta-final-compact-v2:aot-new
+SAMPLE 2 fasta:mech-fasta-final-compact-v2:aot-new 1.232773s process 1.232773s
+RUN 2 fasta:mech-fasta-final-expanded-v2:resident
+SAMPLE 2 fasta:mech-fasta-final-expanded-v2:resident 18.760426s process 18.955743s
+RUN 2 fasta:mech-fasta-final-compact-v2:jit
+SAMPLE 2 fasta:mech-fasta-final-compact-v2:jit 1.353357s process 1.353357s
+RUN 2 fasta:mech-fasta-final-expanded-v2:aot-new
+SAMPLE 2 fasta:mech-fasta-final-expanded-v2:aot-new 0.576379s process 0.576379s
+RUN 3 fasta:mech-fasta-final-expanded-v2:resident
+SAMPLE 3 fasta:mech-fasta-final-expanded-v2:resident 18.738240s process 18.936411s
+RUN 3 fasta:mech-fasta-final-compact-v2:jit
+SAMPLE 3 fasta:mech-fasta-final-compact-v2:jit 1.348340s process 1.348340s
+RUN 3 fasta:mech-fasta-final-expanded-v2:jit
+SAMPLE 3 fasta:mech-fasta-final-expanded-v2:jit 0.765849s process 0.765849s
+RUN 3 fasta:mech-fasta-final-expanded-v2:aot-new
+SAMPLE 3 fasta:mech-fasta-final-expanded-v2:aot-new 0.576562s process 0.576562s
+RUN 3 fasta:mech-fasta-final-compact-v2:aot-new
+SAMPLE 3 fasta:mech-fasta-final-compact-v2:aot-new 1.232088s process 1.232088s
+RUN 3 fasta:mech-fasta-final-compact-v2:resident
+SAMPLE 3 fasta:mech-fasta-final-compact-v2:resident 22.072629s process 22.203497s
+SMALL fannkuchredux:mech-fannkuch-even:jit
+SMALL fannkuchredux:mech-fannkuch-even:resident
+SMALL fannkuchredux:mech-fannkuch-even:aot-new
+SMALL fannkuchredux:mech-fannkuch-default:jit
+SMALL fannkuchredux:mech-fannkuch-default:resident
+SMALL fannkuchredux:mech-fannkuch-default:aot-new
+RUN 1 fannkuchredux:mech-fannkuch-even:aot-new
+SAMPLE 1 fannkuchredux:mech-fannkuch-even:aot-new 1.694296s process 1.694296s
+RUN 1 fannkuchredux:mech-fannkuch-even:resident
+SAMPLE 1 fannkuchredux:mech-fannkuch-even:resident 74.227277s process 74.487858s
+RUN 1 fannkuchredux:mech-fannkuch-default:aot-new
+SAMPLE 1 fannkuchredux:mech-fannkuch-default:aot-new 2.865517s process 2.865517s
+RUN 1 fannkuchredux:mech-fannkuch-default:resident
+SAMPLE 1 fannkuchredux:mech-fannkuch-default:resident 60.393628s process 60.563135s
+RUN 1 fannkuchredux:mech-fannkuch-even:jit
+SAMPLE 1 fannkuchredux:mech-fannkuch-even:jit 2.069023s process 2.069023s
+RUN 1 fannkuchredux:mech-fannkuch-default:jit
+SAMPLE 1 fannkuchredux:mech-fannkuch-default:jit 3.043768s process 3.043768s
+RUN 2 fannkuchredux:mech-fannkuch-even:jit
+SAMPLE 2 fannkuchredux:mech-fannkuch-even:jit 1.997325s process 1.997325s
+RUN 2 fannkuchredux:mech-fannkuch-default:resident
+SAMPLE 2 fannkuchredux:mech-fannkuch-default:resident 61.607569s process 61.776336s
+RUN 2 fannkuchredux:mech-fannkuch-default:jit
+SAMPLE 2 fannkuchredux:mech-fannkuch-default:jit 2.998532s process 2.998532s
+RUN 2 fannkuchredux:mech-fannkuch-even:aot-new
+SAMPLE 2 fannkuchredux:mech-fannkuch-even:aot-new 1.748311s process 1.748311s
+RUN 2 fannkuchredux:mech-fannkuch-even:resident
+SAMPLE 2 fannkuchredux:mech-fannkuch-even:resident 79.217724s process 79.479828s
+RUN 2 fannkuchredux:mech-fannkuch-default:aot-new
+SAMPLE 2 fannkuchredux:mech-fannkuch-default:aot-new 2.909672s process 2.909672s
+RUN 3 fannkuchredux:mech-fannkuch-default:jit
+SAMPLE 3 fannkuchredux:mech-fannkuch-default:jit 3.018131s process 3.018131s
+RUN 3 fannkuchredux:mech-fannkuch-even:resident
+SAMPLE 3 fannkuchredux:mech-fannkuch-even:resident 78.642502s process 78.902388s
+RUN 3 fannkuchredux:mech-fannkuch-even:jit
+SAMPLE 3 fannkuchredux:mech-fannkuch-even:jit 2.020614s process 2.020614s
+RUN 3 fannkuchredux:mech-fannkuch-default:resident
+SAMPLE 3 fannkuchredux:mech-fannkuch-default:resident 62.382933s process 62.549440s
+RUN 3 fannkuchredux:mech-fannkuch-default:aot-new
+SAMPLE 3 fannkuchredux:mech-fannkuch-default:aot-new 2.869516s process 2.869516s
+RUN 3 fannkuchredux:mech-fannkuch-even:aot-new
+SAMPLE 3 fannkuchredux:mech-fannkuch-even:aot-new 1.786512s process 1.786512s
+REPORT /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/timings.json complete

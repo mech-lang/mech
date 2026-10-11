@@ -1,0 +1,1 @@
+{"target":"Alien::GMP","pathname":"P/PL/PLICEASE/Alien-GMP-1.16.tar.gz","dist":"Alien-GMP-1.16","version":"1.16","name":"Alien::GMP","provides":{"Alien::GMP":{"version":"1.16","file":"lib/Alien/GMP.pm"}}}

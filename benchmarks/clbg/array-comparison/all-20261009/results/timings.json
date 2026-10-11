@@ -1,0 +1,571 @@
+{
+  "status": "complete_for_prepared_sources",
+  "created_at": "2026-10-09T20:34:14.633593+00:00",
+  "machine": "Apple M3",
+  "protocol": "Sequential fresh processes; randomized rounds; complete stdout to regular files; median and sample SD; startup included; builds, hashing, and comparisons excluded; AC power with Low Power Mode off; compiler and power guards.",
+  "sample_count": 3,
+  "programs": {
+    "spectralnorm:k-spectralnorm.growler": {
+      "id": "spectralnorm:k-spectralnorm.growler",
+      "key": "spectralnorm:k-spectralnorm.growler",
+      "benchmark": "spectralnorm",
+      "language": "k",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/growler",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/spectralnorm.growler.k",
+        "{n}"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/spectralnorm.growler.k",
+      "source_sha256": "024de5de397b0783b21444cd45b11602acae0aadf0907286c2ef8da09010ca09",
+      "loc": 11,
+      "physical_loc": 7,
+      "loc_expansions": [
+        {
+          "line": 2,
+          "extra_lines": 1,
+          "original": "i:!n:. `argv 2",
+          "units": [
+            "i assignment",
+            "nested n assignment"
+          ]
+        },
+        {
+          "line": 3,
+          "extra_lines": 1,
+          "original": " A: {1%1+x+0.5*s*1+s:x+i}'i",
+          "units": [
+            "A assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 4,
+          "extra_lines": 1,
+          "original": "TA: {1%1+i+0.5*s*1+s:x+i}'i",
+          "units": [
+            "TA assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 6,
+          "extra_lines": 1,
+          "original": "u:B v:19 B/n#1.0",
+          "units": [
+            "u assignment",
+            "nested v assignment"
+          ]
+        }
+      ],
+      "source_url": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/spectralnorm/spectralnorm.growler.k",
+      "runtime_sha256": "87b25c5f8e9f0b62bdf2aefc04618c6df07554ea99778c534223ad326870a90d",
+      "samples_seconds": [
+        0.587330833,
+        0.5927385,
+        0.598745958
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "validation_seconds": 0.5918675,
+      "median_seconds": 0.5927385,
+      "sample_stdev_seconds": 0.005710188157586943,
+      "algorithm": {
+        "strict": false,
+        "status": "interface-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+        "reason": "Published compact source materializes matrix values and does not implement the four separate functions required by the task. Preserve these measurements for investigation, exclude from strict comparison until a faithful implementation is measured."
+      },
+      "eligible_for_chart": false,
+      "measurement_status": "excluded-interface-mismatch"
+    },
+    "spectralnorm:bqn-spectralnorm": {
+      "id": "spectralnorm:bqn-spectralnorm",
+      "key": "spectralnorm:bqn-spectralnorm",
+      "benchmark": "spectralnorm",
+      "language": "bqn",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/spectralnorm.bqn",
+        "{n}"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/spectralnorm.bqn",
+      "source_sha256": "f4de9792cb13aee9fcb911be9cdf65fd9a65c9727607c0f12b6fdbc9bf9c30a1",
+      "loc": 12,
+      "physical_loc": 8,
+      "loc_expansions": [
+        {
+          "line": 1,
+          "extra_lines": 3,
+          "original": "i1h\u21900.5\u00d7i1\u21901+i\u2190\u2195n\u2190\u2022ParseFloat\u2291\u2022args",
+          "units": [
+            "i1h assignment",
+            "nested i1 assignment",
+            "nested i assignment",
+            "nested n assignment"
+          ]
+        },
+        {
+          "line": 3,
+          "extra_lines": 1,
+          "original": "a \u2190 \u2349b \u22c4 a\u203fb<\u02d8\u00a8\u21a9",
+          "units": [
+            "a assignment",
+            "a/b modifying assignment after statement diamond"
+          ]
+        }
+      ],
+      "source_url": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/spectralnorm/spectralnorm.bqn",
+      "runtime_sha256": "588c7a127cdf25001145f3f1a2e1b46b25f21df7d09b17f9c58a2b8bc7cb8b6d",
+      "samples_seconds": [
+        0.401782458,
+        0.449473791,
+        0.399902625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "validation_seconds": 0.408236083,
+      "median_seconds": 0.401782458,
+      "sample_stdev_seconds": 0.028092992940186867,
+      "algorithm": {
+        "strict": false,
+        "status": "interface-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+        "reason": "Published compact source materializes matrix values and does not implement the four separate functions required by the task. Preserve these measurements for investigation, exclude from strict comparison until a faithful implementation is measured."
+      },
+      "eligible_for_chart": false,
+      "measurement_status": "excluded-interface-mismatch"
+    },
+    "spectralnorm:mech-control": {
+      "id": "spectralnorm:mech-control",
+      "key": "spectralnorm:mech-control",
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/spectralnorm/mech-integer-simd1-u4-r4-p8-g8-after",
+        "{n}"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm-integer.mec",
+      "source_sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "binary_sha256": "02ba64480f916df8cc8726a14e370b4c214438421d8cf73f5618e0c8619bcf5d",
+      "samples_seconds": [
+        0.091197208,
+        0.091222333,
+        0.089120834
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "validation_seconds": 0.099933125,
+      "median_seconds": 0.091197208,
+      "sample_stdev_seconds": 0.001206113475901145
+    },
+    "knucleotide:k-knucleotide.growler": {
+      "id": "knucleotide:k-knucleotide.growler",
+      "key": "knucleotide:k-knucleotide.growler",
+      "benchmark": "knucleotide",
+      "language": "k",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/growler",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/knucleotide.growler.k"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/knucleotide.growler.k",
+      "source_sha256": "6cbab2064c6bedb3b9d29ae4372ff0f666e414ccc948f382e0f4d0ef0025d010",
+      "loc": 25,
+      "physical_loc": 10,
+      "loc_expansions": [
+        {
+          "line": 3,
+          "extra_lines": 5,
+          "original": "x:1:\"/dev/stdin\";h:(&x=\">\")2;s:1+h+(x@h+!200)?\"\\n\";N:#x;K:262144;P:\"ggtattttaatttatagt\"",
+          "units": [
+            "x assignment",
+            "h assignment",
+            "s assignment",
+            "N assignment",
+            "K assignment",
+            "P assignment"
+          ]
+        },
+        {
+          "line": 4,
+          "extra_lines": 6,
+          "original": "f:{[S;o]b:x@o+!K&N-o;b:b@&b>\"\\n\";d:(S 0),b;L:#S 0;p:(-1_4*c)+1_c:\"acgt\"?d",
+          "units": [
+            "f function binding/header",
+            "b assignment",
+            "b reassignment",
+            "d assignment",
+            "L assignment",
+            "p assignment",
+            "nested c assignment"
+          ]
+        },
+        {
+          "line": 5,
+          "extra_lines": 1,
+          "original": " g:&p=10;g:g@&g<$[N>o+K;0|(#d)-17;#d]",
+          "units": [
+            "g assignment",
+            "g reassignment"
+          ]
+        },
+        {
+          "line": 7,
+          "extra_lines": 2,
+          "original": "Z:f/[(();16#0;16#0;0;0);s+K*!-_-(N-s)%K];c2:Z 1;n:Z 3",
+          "units": [
+            "Z assignment",
+            "c2 assignment",
+            "n assignment"
+          ]
+        },
+        {
+          "line": 8,
+          "extra_lines": 1,
+          "original": "fm:{[k;c;n]{x,\" \",(-3_r),\".\",-3#r:$_0.5+1e5*y}'[k;c%n]@>c}",
+          "units": [
+            "fm function binding",
+            "formatter-local nested r assignment"
+          ]
+        }
+      ],
+      "source_url": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/knucleotide/knucleotide.growler.k",
+      "runtime_sha256": "87b25c5f8e9f0b62bdf2aefc04618c6df07554ea99778c534223ad326870a90d",
+      "samples_seconds": [
+        0.728882833,
+        0.729277792,
+        0.727584916
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "validation_seconds": 0.732911166,
+      "median_seconds": 0.728882833,
+      "sample_stdev_seconds": 0.0008856645623434518,
+      "algorithm": {
+        "strict": false,
+        "status": "work-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+        "reason": "Uses a small indexed pair histogram and selective searches for requested longer strings. Omits library hash-table lookup/update for every overlapping window at k=1,2,3,4,6,12,18. Correct output does not establish work parity."
+      },
+      "measurement_status": "excluded-work-mismatch",
+      "eligible_for_chart": false
+    },
+    "knucleotide:bqn-knucleotide": {
+      "id": "knucleotide:bqn-knucleotide",
+      "key": "knucleotide:bqn-knucleotide",
+      "benchmark": "knucleotide",
+      "language": "bqn",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/knucleotide.bqn"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/sources/knucleotide.bqn",
+      "source_sha256": "a0d4d974545aa3c87798b27c99668ea270514158d5e66e61c5456d8582d9628b",
+      "loc": 51,
+      "physical_loc": 46,
+      "loc_expansions": [
+        {
+          "line": 17,
+          "extra_lines": 2,
+          "original": "vsi \u2190 {p\u203fc: \u27e8n\u2190\u2260p, s\u2190z\u2290n\u2193c \u22c4 \u2260s\u27e9}\u00a8 <\u02d8 2\u21952\u2193vs",
+          "units": [
+            "vsi assignment",
+            "lambda-local n assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 25,
+          "extra_lines": 1,
+          "original": "  tn\u2190\u2260tail \u2190 inp\u2193\u02dccn\u00d7\ud835\udd68",
+          "units": [
+            "tn assignment",
+            "nested tail assignment"
+          ]
+        },
+        {
+          "line": 54,
+          "extra_lines": 2,
+          "original": "J0 \u2190 {a\u203fb: a\u21a9\u230a0.5+1e5\u00d7a \u22c4 \u223e\u27e8b,\" \",\u2022Repr \u230aa\u00f71e3,\".\",\"000\"\u00ab\u02dc\u2022Repr 1e3|a\u27e9}",
+          "units": [
+            "J0 function binding/header",
+            "a modifying assignment",
+            "return expression after statement diamond"
+          ]
+        }
+      ],
+      "source_url": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/knucleotide/knucleotide.bqn",
+      "runtime_sha256": "588c7a127cdf25001145f3f1a2e1b46b25f21df7d09b17f9c58a2b8bc7cb8b6d",
+      "samples_seconds": [
+        0.123645875,
+        0.125278334,
+        0.123239333
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "validation_seconds": 0.132349833,
+      "median_seconds": 0.123645875,
+      "sample_stdev_seconds": 0.0010791759095444,
+      "algorithm": {
+        "strict": false,
+        "status": "work-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+        "reason": "Uses a small indexed pair histogram and selective searches for requested longer strings. Omits library hash-table lookup/update for every overlapping window at k=1,2,3,4,6,12,18. Correct output does not establish work parity."
+      },
+      "measurement_status": "excluded-work-mismatch",
+      "eligible_for_chart": false
+    },
+    "knucleotide:mech-control": {
+      "id": "knucleotide:mech-control",
+      "key": "knucleotide:mech-control",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+        "{n}"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "samples_seconds": [
+        0.507950875,
+        0.518671,
+        0.503222167
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "validation_seconds": 0.531970875,
+      "median_seconds": 0.507950875,
+      "sample_stdev_seconds": 0.007915682750367331
+    }
+  },
+  "orders": {
+    "spectralnorm": [
+      [
+        "spectralnorm:k-spectralnorm.growler",
+        "spectralnorm:mech-control",
+        "spectralnorm:bqn-spectralnorm"
+      ],
+      [
+        "spectralnorm:mech-control",
+        "spectralnorm:bqn-spectralnorm",
+        "spectralnorm:k-spectralnorm.growler"
+      ],
+      [
+        "spectralnorm:k-spectralnorm.growler",
+        "spectralnorm:bqn-spectralnorm",
+        "spectralnorm:mech-control"
+      ]
+    ],
+    "knucleotide": [
+      [
+        "knucleotide:bqn-knucleotide",
+        "knucleotide:k-knucleotide.growler",
+        "knucleotide:mech-control"
+      ],
+      [
+        "knucleotide:k-knucleotide.growler",
+        "knucleotide:mech-control",
+        "knucleotide:bqn-knucleotide"
+      ],
+      [
+        "knucleotide:bqn-knucleotide",
+        "knucleotide:k-knucleotide.growler",
+        "knucleotide:mech-control"
+      ]
+    ]
+  },
+  "completed_benchmarks": [
+    "spectralnorm",
+    "knucleotide"
+  ],
+  "exclusions": [
+    {
+      "key": "spectralnorm:k-spectralnorm.growler",
+      "algorithm": {
+        "strict": false,
+        "status": "interface-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+        "reason": "Published compact source materializes matrix values and does not implement the four separate functions required by the task. Preserve these measurements for investigation, exclude from strict comparison until a faithful implementation is measured."
+      }
+    },
+    {
+      "key": "spectralnorm:bqn-spectralnorm",
+      "algorithm": {
+        "strict": false,
+        "status": "interface-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+        "reason": "Published compact source materializes matrix values and does not implement the four separate functions required by the task. Preserve these measurements for investigation, exclude from strict comparison until a faithful implementation is measured."
+      }
+    },
+    {
+      "key": "knucleotide:k-knucleotide.growler",
+      "algorithm": {
+        "strict": false,
+        "status": "work-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+        "reason": "Uses a small indexed pair histogram and selective searches for requested longer strings. Omits library hash-table lookup/update for every overlapping window at k=1,2,3,4,6,12,18. Correct output does not establish work parity."
+      }
+    },
+    {
+      "key": "knucleotide:bqn-knucleotide",
+      "algorithm": {
+        "strict": false,
+        "status": "work-mismatch",
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+        "reason": "Uses a small indexed pair histogram and selective searches for requested longer strings. Omits library hash-table lookup/update for every overlapping window at k=1,2,3,4,6,12,18. Correct output does not establish work parity."
+      }
+    }
+  ],
+  "finished_at": "2026-10-09T21:37:03.783429+00:00",
+  "admission_policy": "Correct output is necessary but insufficient. A source must pass the required-work audit before new measurements or chart admission. Faster-than-leading results require a documented investigation."
+}

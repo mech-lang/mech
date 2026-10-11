@@ -1,0 +1,710 @@
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/nbody/pairwise-mass-tails-before.o:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000000000000 <_mech_turns>:
+       0:      	pacibsp
+       4:      	stp	x29, x30, [sp, #-0x10]!
+       8:      	mov	x29, sp
+       c:      	stp	d14, d15, [sp, #-0x10]!
+      10:      	stp	d12, d13, [sp, #-0x10]!
+      14:      	stp	d10, d11, [sp, #-0x10]!
+      18:      	stp	d8, d9, [sp, #-0x10]!
+      1c:      	sub	sp, sp, #0x1e0
+      20:      	ldr	d23, [x0]
+      24:      	ldr	d16, [x0, #0x28]
+      28:      	ldr	d24, [x0, #0x8]
+      2c:      	ldr	d17, [x0, #0x30]
+      30:      	ldr	d25, [x0, #0x10]
+      34:      	ldr	d18, [x0, #0x38]
+      38:      	ldr	d26, [x0, #0x18]
+      3c:      	ldr	d19, [x0, #0x40]
+      40:      	ldr	d27, [x0, #0x20]
+      44:      	ldr	d20, [x0, #0x48]
+      48:      	ldr	d28, [x0, #0x50]
+      4c:      	ldr	d21, [x0, #0x58]
+      50:      	ldr	d29, [x0, #0x60]
+      54:      	ldr	d22, [x0, #0x68]
+      58:      	ldr	d30, [x0, #0x70]
+      5c:      	stur	q30, [sp]
+      60:      	ldr	d1, [x0, #0x78]
+      64:      	ldr	d30, [x0, #0xa0]
+      68:      	ldr	d2, [x0, #0x80]
+      6c:      	ldr	d31, [x0, #0xa8]
+      70:      	ldr	d12, [x0, #0x88]
+      74:      	ldr	d0, [x0, #0xb0]
+      78:      	ldr	d13, [x0, #0x90]
+      7c:      	ldr	d7, [x0, #0xb8]
+      80:      	ldr	d14, [x0, #0x98]
+      84:      	ldr	d9, [x0, #0xc0]
+      88:      	ldr	d15, [x0, #0xc8]
+      8c:      	ldr	d10, [x0, #0xd0]
+      90:      	ldr	d8, [x0, #0xd8]
+      94:      	ldr	d11, [x0, #0xe0]
+      98:      	ldr	d3, [x0, #0xe8]
+      9c:      	stur	q3, [sp, #0x30]
+      a0:      	fmov	d23, d23
+      a4:      	mov.d	v23[1], v16[0]
+      a8:      	str	q23, [sp, #0x100]
+      ac:      	fmov	d23, d24
+      b0:      	mov.d	v23[1], v17[0]
+      b4:      	stur	q23, [sp, #0xb0]
+      b8:      	fmov	d3, d25
+      bc:      	mov.d	v3[1], v18[0]
+      c0:      	stur	q3, [sp, #0x80]
+      c4:      	fmov	d23, d26
+      c8:      	mov.16b	v3, v23
+      cc:      	mov.d	v3[1], v19[0]
+      d0:      	stur	q3, [sp, #0x60]
+      d4:      	fmov	d16, d27
+      d8:      	mov.16b	v3, v16
+      dc:      	mov.d	v3[1], v20[0]
+      e0:      	stur	q3, [sp, #0x40]
+      e4:      	fmov	d3, d28
+      e8:      	mov.16b	v20, v3
+      ec:      	mov.d	v20[1], v21[0]
+      f0:      	mov.16b	v21, v20
+      f4:      	fmov	d6, d29
+      f8:      	mov.d	v6[1], v22[0]
+      fc:      	fmov	d5, d1
+     100:      	mov.d	v5[1], v30[0]
+     104:      	fmov	d4, d2
+     108:      	mov.d	v4[1], v31[0]
+     10c:      	fmov	d3, d12
+     110:      	mov.d	v3[1], v0[0]
+     114:      	fmov	d2, d13
+     118:      	mov.d	v2[1], v7[0]
+     11c:      	stur	q2, [sp, #0x70]
+     120:      	fmov	d1, d14
+     124:      	mov.d	v1[1], v9[0]
+     128:      	stur	q1, [sp, #0x50]
+     12c:      	fmov	d30, d15
+     130:      	mov.d	v30[1], v10[0]
+     134:      	stur	q30, [sp, #0x10]
+     138:      	fmov	d16, d8
+     13c:      	mov.d	v16[1], v11[0]
+     140:      	stur	q16, [sp, #0x20]
+     144:      	mov	x8, #0x99ac             ; =39340
+     148:      	movk	x8, #0x5317, lsl #16
+     14c:      	movk	x8, #0xa8f3, lsl #32
+     150:      	movk	x8, #0xbf60, lsl #48
+     154:      	dup.2d	v28, x8
+     158:      	str	q28, [sp, #0x1d0]
+     15c:      	mov	x8, #0x147b             ; =5243
+     160:      	movk	x8, #0x47ae, lsl #16
+     164:      	movk	x8, #0x7ae1, lsl #32
+     168:      	movk	x8, #0x3f84, lsl #48
+     16c:      	dup.2d	v20, x8
+     170:      	movi.16b	v17, #0x0
+     174:      	str	q17, [sp, #0x1c0]
+     178:      	mov	x8, #0x1eb3             ; =7859
+     17c:      	movk	x8, #0x9cf4, lsl #16
+     180:      	movk	x8, #0x3dd2, lsl #32
+     184:      	movk	x8, #0xbf5c, lsl #48
+     188:      	dup.2d	v31, x8
+     18c:      	str	q31, [sp, #0x1b0]
+     190:      	mov	x8, #0xc637             ; =50743
+     194:      	movk	x8, #0xd07, lsl #16
+     198:      	movk	x8, #0x1d49, lsl #32
+     19c:      	movk	x8, #0xbf87, lsl #48
+     1a0:      	dup.2d	v13, x8
+     1a4:      	str	q13, [sp, #0x1a0]
+     1a8:      	mov	x8, #0x33d8             ; =13272
+     1ac:      	movk	x8, #0xd9ab, lsl #16
+     1b0:      	movk	x8, #0x4c95, lsl #32
+     1b4:      	movk	x8, #0xbfa3, lsl #48
+     1b8:      	dup.2d	v14, x8
+     1bc:      	str	q14, [sp, #0x190]
+     1c0:      	mov	x8, #0x45de             ; =17886
+     1c4:      	movk	x8, #0xc9be, lsl #16
+     1c8:      	movk	x8, #0xbd3c, lsl #32
+     1cc:      	movk	x8, #0x4043, lsl #48
+     1d0:      	dup.2d	v25, x8
+     1d4:      	str	q25, [sp, #0x180]
+     1d8:      	mov	x8, #0x33d8             ; =13272
+     1dc:      	movk	x8, #0xd9ab, lsl #16
+     1e0:      	movk	x8, #0x4c95, lsl #32
+     1e4:      	movk	x8, #0x3fa3, lsl #48
+     1e8:      	dup.2d	v19, x8
+     1ec:      	str	q19, [sp, #0x170]
+     1f0:      	mov	x8, #0xc637             ; =50743
+     1f4:      	movk	x8, #0xd07, lsl #16
+     1f8:      	movk	x8, #0x1d49, lsl #32
+     1fc:      	movk	x8, #0x3f87, lsl #48
+     200:      	dup.2d	v0, x8
+     204:      	str	q0, [sp, #0x160]
+     208:      	mov	x8, #0x1eb3             ; =7859
+     20c:      	movk	x8, #0x9cf4, lsl #16
+     210:      	movk	x8, #0x3dd2, lsl #32
+     214:      	movk	x8, #0x3f5c, lsl #48
+     218:      	dup.2d	v26, x8
+     21c:      	str	q26, [sp, #0x150]
+     220:      	cmp	x1, #0x0
+     224:      	b.eq	0x688 <_mech_turns+0x688>
+     228:      	sub	x1, x1, #0x1
+     22c:      	ldr	q15, [sp, #0x100]
+     230:      	ldur	q26, [sp, #0x40]
+     234:      	fsub.2d	v0, v15, v26
+     238:      	ldr	q28, [sp, #0x1d0]
+     23c:      	fmul.2d	v18, v0, v28
+     240:      	mov	d7, v6[1]
+     244:      	mov.16b	v8, v21
+     248:      	fsub	d17, d8, d7
+     24c:      	str	q7, [sp, #0x140]
+     250:      	fmov	d16, d17
+     254:      	ldur	q25, [sp]
+     258:      	str	q17, [sp, #0x130]
+     25c:      	fsub	d21, d8, d25
+     260:      	mov.d	v16[1], v21[0]
+     264:      	ldur	q30, [sp, #0x60]
+     268:      	str	q21, [sp, #0x120]
+     26c:      	fsub.2d	v21, v15, v30
+     270:      	uzp2.2d	v17, v21, v0
+     274:      	uzp1.2d	v22, v21, v0
+     278:      	ldr	q1, [sp, #0x1c0]
+     27c:      	mov.16b	v19, v1
+     280:      	fmla.2d	v19, v22, v22
+     284:      	fmla.2d	v19, v17, v17
+     288:      	fmla.2d	v19, v16, v16
+     28c:      	fsqrt.2d	v16, v19
+     290:      	fmul.2d	v16, v19, v16
+     294:      	fdiv.2d	v9, v20, v16
+     298:      	ldr	q31, [sp, #0x1b0]
+     29c:      	fmul.2d	v19, v21, v31
+     2a0:      	ldur	q31, [sp, #0x80]
+     2a4:      	fsub.2d	v16, v15, v31
+     2a8:      	ldr	q13, [sp, #0x1a0]
+     2ac:      	fmul.2d	v22, v16, v13
+     2b0:      	mov	d27, v8[1]
+     2b4:      	fsub	d13, d8, d27
+     2b8:      	fmov	d23, d13
+     2bc:      	str	q13, [sp, #0x110]
+     2c0:      	fsub	d12, d8, d6
+     2c4:      	mov.d	v23[1], v12[0]
+     2c8:      	mov.16b	v13, v12
+     2cc:      	ldur	q30, [sp, #0xb0]
+     2d0:      	fsub.2d	v17, v15, v30
+     2d4:      	uzp2.2d	v24, v17, v16
+     2d8:      	uzp1.2d	v28, v17, v16
+     2dc:      	mov.16b	v26, v1
+     2e0:      	fmla.2d	v26, v28, v28
+     2e4:      	fmla.2d	v26, v24, v24
+     2e8:      	fmla.2d	v26, v23, v23
+     2ec:      	fsqrt.2d	v23, v26
+     2f0:      	fmul.2d	v23, v26, v23
+     2f4:      	fdiv.2d	v24, v20, v23
+     2f8:      	ldr	q14, [sp, #0x190]
+     2fc:      	fmul.2d	v23, v17, v14
+     300:      	fmla.2d	v5, v23, v24[0]
+     304:      	fmla.2d	v5, v22, v24[1]
+     308:      	fmla.2d	v5, v19, v9[0]
+     30c:      	fmla.2d	v5, v18, v9[1]
+     310:      	fmla.2d	v15, v5, v20
+     314:      	ldur	q26, [sp, #0x40]
+     318:      	str	q15, [sp, #0x100]
+     31c:      	fsub.2d	v12, v30, v26
+     320:      	ldr	q28, [sp, #0x1d0]
+     324:      	fmul.2d	v19, v12, v28
+     328:      	fsub	d18, d27, d25
+     32c:      	mov.16b	v23, v18
+     330:      	fmov	d22, d23
+     334:      	stur	q23, [sp, #0xf0]
+     338:      	fsub	d29, d6, d7
+     33c:      	mov.d	v22[1], v29[0]
+     340:      	ldur	q25, [sp, #0x60]
+     344:      	stur	q29, [sp, #0xe0]
+     348:      	fsub.2d	v18, v31, v25
+     34c:      	uzp2.2d	v23, v12, v18
+     350:      	uzp1.2d	v26, v12, v18
+     354:      	ldr	q25, [sp, #0x1c0]
+     358:      	fmla.2d	v25, v26, v26
+     35c:      	fmla.2d	v25, v23, v23
+     360:      	fmla.2d	v25, v22, v22
+     364:      	fsqrt.2d	v22, v25
+     368:      	fmul.2d	v22, v25, v22
+     36c:      	fdiv.2d	v14, v20, v22
+     370:      	ldur	q25, [sp, #0x60]
+     374:      	fsub.2d	v22, v30, v25
+     378:      	ldr	q31, [sp, #0x1b0]
+     37c:      	fmul.2d	v25, v22, v31
+     380:      	fsub	d23, d27, d6
+     384:      	mov.16b	v26, v23
+     388:      	fmov	d23, d26
+     38c:      	stur	q26, [sp, #0xd0]
+     390:      	fsub	d26, d27, d7
+     394:      	mov.16b	v1, v26
+     398:      	mov.d	v23[1], v1[0]
+     39c:      	ldur	q31, [sp, #0x80]
+     3a0:      	stur	q1, [sp, #0xc0]
+     3a4:      	fsub.2d	v29, v30, v31
+     3a8:      	uzp2.2d	v26, v29, v22
+     3ac:      	uzp1.2d	v30, v29, v22
+     3b0:      	ldr	q1, [sp, #0x1c0]
+     3b4:      	mov.16b	v28, v1
+     3b8:      	fmla.2d	v28, v30, v30
+     3bc:      	fmla.2d	v28, v26, v26
+     3c0:      	fmla.2d	v28, v23, v23
+     3c4:      	fsqrt.2d	v23, v28
+     3c8:      	fmul.2d	v23, v28, v23
+     3cc:      	fdiv.2d	v10, v20, v23
+     3d0:      	ldr	q23, [sp, #0x1a0]
+     3d4:      	fmul.2d	v23, v29, v23
+     3d8:      	ldr	q26, [sp, #0x180]
+     3dc:      	fmul.2d	v17, v17, v26
+     3e0:      	fmla.2d	v4, v17, v24[0]
+     3e4:      	fmla.2d	v4, v23, v10[0]
+     3e8:      	fmla.2d	v4, v25, v10[1]
+     3ec:      	fmla.2d	v4, v19, v14[0]
+     3f0:      	ldur	q30, [sp, #0xb0]
+     3f4:      	fmla.2d	v30, v4, v20
+     3f8:      	ldur	q26, [sp, #0x40]
+     3fc:      	stur	q30, [sp, #0xb0]
+     400:      	fsub.2d	v26, v31, v26
+     404:      	ldr	q28, [sp, #0x1d0]
+     408:      	fmul.2d	v7, v26, v28
+     40c:      	ldur	q11, [sp]
+     410:      	fsub	d19, d6, d11
+     414:      	fmov	d17, d19
+     418:      	ldr	q2, [sp, #0x140]
+     41c:      	stur	q19, [sp, #0xa0]
+     420:      	fsub	d19, d2, d11
+     424:      	mov.16b	v1, v19
+     428:      	mov.d	v17[1], v1[0]
+     42c:      	ldur	q25, [sp, #0x60]
+     430:      	ldur	q30, [sp, #0x40]
+     434:      	stur	q1, [sp, #0x90]
+     438:      	fsub.2d	v25, v25, v30
+     43c:      	uzp2.2d	v19, v26, v25
+     440:      	uzp1.2d	v28, v26, v25
+     444:      	ldr	q1, [sp, #0x1c0]
+     448:      	mov.16b	v23, v1
+     44c:      	fmla.2d	v23, v28, v28
+     450:      	fmla.2d	v23, v19, v19
+     454:      	fmla.2d	v23, v17, v17
+     458:      	fsqrt.2d	v17, v23
+     45c:      	fmul.2d	v17, v23, v17
+     460:      	fdiv.2d	v28, v20, v17
+     464:      	ldr	q31, [sp, #0x1b0]
+     468:      	fmul.2d	v17, v18, v31
+     46c:      	ldr	q1, [sp, #0x170]
+     470:      	fmul.2d	v19, v29, v1
+     474:      	ldr	q31, [sp, #0x180]
+     478:      	fmul.2d	v16, v16, v31
+     47c:      	fmla.2d	v3, v16, v24[1]
+     480:      	fmla.2d	v3, v19, v10[0]
+     484:      	fmla.2d	v3, v17, v14[1]
+     488:      	fmla.2d	v3, v7, v28[0]
+     48c:      	ldur	q31, [sp, #0x80]
+     490:      	fmla.2d	v31, v3, v20
+     494:      	ldr	q1, [sp, #0x1d0]
+     498:      	stur	q31, [sp, #0x80]
+     49c:      	fmul.2d	v16, v25, v1
+     4a0:      	ldr	q1, [sp, #0x160]
+     4a4:      	fmul.2d	v17, v18, v1
+     4a8:      	ldr	q18, [sp, #0x170]
+     4ac:      	fmul.2d	v18, v22, v18
+     4b0:      	ldr	q1, [sp, #0x180]
+     4b4:      	fmul.2d	v19, v21, v1
+     4b8:      	ldur	q2, [sp, #0x70]
+     4bc:      	fmla.2d	v2, v19, v9[0]
+     4c0:      	fmla.2d	v2, v18, v10[1]
+     4c4:      	fmla.2d	v2, v17, v14[1]
+     4c8:      	fmla.2d	v2, v16, v28[1]
+     4cc:      	ldur	q16, [sp, #0x60]
+     4d0:      	fmla.2d	v16, v2, v20
+     4d4:      	ldr	q21, [sp, #0x150]
+     4d8:      	stur	q16, [sp, #0x60]
+     4dc:      	fmul.2d	v16, v25, v21
+     4e0:      	ldr	q22, [sp, #0x160]
+     4e4:      	fmul.2d	v17, v26, v22
+     4e8:      	ldr	q25, [sp, #0x170]
+     4ec:      	fmul.2d	v18, v12, v25
+     4f0:      	fmul.2d	v19, v0, v1
+     4f4:      	ldur	q1, [sp, #0x50]
+     4f8:      	fmla.2d	v1, v19, v9[1]
+     4fc:      	fmla.2d	v1, v18, v14[0]
+     500:      	fmla.2d	v1, v17, v28[0]
+     504:      	fmla.2d	v1, v16, v28[1]
+     508:      	ldur	q26, [sp, #0x40]
+     50c:      	fmla.2d	v26, v1, v20
+     510:      	stur	q26, [sp, #0x40]
+     514:      	ldr	d16, 0x788 <_mech_turns+0x788>
+     518:      	ldr	q26, [sp, #0x120]
+     51c:      	fmul	d17, d26, d16
+     520:      	mov	d0, v9[1]
+     524:      	ldr	d7, 0x790 <_mech_turns+0x790>
+     528:      	ldr	q22, [sp, #0x130]
+     52c:      	fmul	d19, d22, d7
+     530:      	ldr	d29, 0x798 <_mech_turns+0x798>
+     534:      	mov.16b	v11, v13
+     538:      	fmul	d21, d11, d29
+     53c:      	mov	d15, v24[1]
+     540:      	ldr	d18, 0x7a0 <_mech_turns+0x7a0>
+     544:      	ldr	q13, [sp, #0x110]
+     548:      	fmul	d23, d13, d18
+     54c:      	ldur	q18, [sp, #0x10]
+     550:      	fmadd	d23, d23, d24, d18
+     554:      	fmadd	d21, d21, d15, d23
+     558:      	fmadd	d19, d19, d9, d21
+     55c:      	fmadd	d12, d17, d0, d19
+     560:      	ldr	d21, 0x7a8 <_mech_turns+0x7a8>
+     564:      	fmadd	d17, d12, d21, d8
+     568:      	fmov	d8, d17
+     56c:      	ldur	q26, [sp, #0xf0]
+     570:      	fmul	d17, d26, d16
+     574:      	ldur	q23, [sp, #0xc0]
+     578:      	fmul	d30, d23, d7
+     57c:      	mov	d25, v10[1]
+     580:      	ldur	q19, [sp, #0xd0]
+     584:      	fmul	d31, d19, d29
+     588:      	ldr	d29, 0x7b0 <_mech_turns+0x7b0>
+     58c:      	fmul	d13, d13, d29
+     590:      	mov	d18, v18[1]
+     594:      	fmadd	d18, d13, d24, d18
+     598:      	fmadd	d18, d31, d10, d18
+     59c:      	fmadd	d18, d30, d25, d18
+     5a0:      	fmadd	d13, d17, d14, d18
+     5a4:      	fmadd	d17, d13, d21, d27
+     5a8:      	mov.d	v8[1], v17[0]
+     5ac:      	ldur	q17, [sp, #0xa0]
+     5b0:      	fmul	d27, d17, d16
+     5b4:      	ldur	q30, [sp, #0xe0]
+     5b8:      	fmul	d7, d30, d7
+     5bc:      	mov	d31, v14[1]
+     5c0:      	ldr	d18, 0x7b8 <_mech_turns+0x7b8>
+     5c4:      	fmul	d19, d19, d18
+     5c8:      	fmul	d11, d11, d29
+     5cc:      	ldur	q24, [sp, #0x20]
+     5d0:      	fmadd	d15, d11, d15, d24
+     5d4:      	fmadd	d19, d19, d10, d15
+     5d8:      	fmadd	d19, d7, d31, d19
+     5dc:      	fmadd	d27, d27, d28, d19
+     5e0:      	fmadd	d19, d27, d21, d6
+     5e4:      	fmov	d6, d19
+     5e8:      	ldur	q19, [sp, #0x90]
+     5ec:      	fmul	d15, d19, d16
+     5f0:      	mov	d7, v28[1]
+     5f4:      	ldr	d16, 0x7c0 <_mech_turns+0x7c0>
+     5f8:      	fmul	d30, d30, d16
+     5fc:      	fmul	d23, d23, d18
+     600:      	fmul	d22, d22, d29
+     604:      	mov	d24, v24[1]
+     608:      	fmadd	d22, d22, d9, d24
+     60c:      	fmadd	d22, d23, d25, d22
+     610:      	fmadd	d22, d30, d31, d22
+     614:      	fmadd	d22, d15, d7, d22
+     618:      	ldr	q30, [sp, #0x140]
+     61c:      	fmadd	d23, d22, d21, d30
+     620:      	mov.d	v6[1], v23[0]
+     624:      	ldr	d23, 0x7c8 <_mech_turns+0x7c8>
+     628:      	fmul	d19, d19, d23
+     62c:      	fmul	d17, d17, d16
+     630:      	fmul	d18, d26, d18
+     634:      	ldr	q26, [sp, #0x120]
+     638:      	fmul	d23, d26, d29
+     63c:      	ldur	q16, [sp, #0x30]
+     640:      	fmadd	d16, d23, d0, d16
+     644:      	fmadd	d16, d18, d14, d16
+     648:      	fmadd	d16, d17, d28, d16
+     64c:      	fmadd	d16, d19, d7, d16
+     650:      	ldur	q11, [sp]
+     654:      	fmadd	d11, d16, d21, d11
+     658:      	stur	q11, [sp]
+     65c:      	fmov	d18, d12
+     660:      	mov.d	v18[1], v13[0]
+     664:      	fmov	d24, d27
+     668:      	mov.d	v24[1], v22[0]
+     66c:      	mov.16b	v21, v8
+     670:      	stur	q18, [sp, #0x10]
+     674:      	stur	q24, [sp, #0x20]
+     678:      	stur	q16, [sp, #0x30]
+     67c:      	stur	q1, [sp, #0x50]
+     680:      	stur	q2, [sp, #0x70]
+     684:      	b	0x220 <_mech_turns+0x220>
+     688:      	ldur	q1, [sp, #0x50]
+     68c:      	ldur	q2, [sp, #0x70]
+     690:      	mov.16b	v8, v21
+     694:      	ldr	q15, [sp, #0x100]
+     698:      	ldur	q16, [sp, #0x30]
+     69c:      	ldur	q18, [sp, #0x10]
+     6a0:      	ldur	q24, [sp, #0x20]
+     6a4:      	str	d15, [x0]
+     6a8:      	mov	d17, v15[1]
+     6ac:      	str	d17, [x0, #0x28]
+     6b0:      	ldur	q30, [sp, #0xb0]
+     6b4:      	str	d30, [x0, #0x8]
+     6b8:      	mov	d17, v30[1]
+     6bc:      	str	d17, [x0, #0x30]
+     6c0:      	ldur	q31, [sp, #0x80]
+     6c4:      	str	d31, [x0, #0x10]
+     6c8:      	mov	d19, v31[1]
+     6cc:      	str	d19, [x0, #0x38]
+     6d0:      	ldur	q25, [sp, #0x60]
+     6d4:      	str	d25, [x0, #0x18]
+     6d8:      	mov	d20, v25[1]
+     6dc:      	str	d20, [x0, #0x40]
+     6e0:      	ldur	q26, [sp, #0x40]
+     6e4:      	str	d26, [x0, #0x20]
+     6e8:      	mov	d22, v26[1]
+     6ec:      	str	d22, [x0, #0x48]
+     6f0:      	str	d8, [x0, #0x50]
+     6f4:      	mov	d25, v8[1]
+     6f8:      	str	d25, [x0, #0x58]
+     6fc:      	str	d6, [x0, #0x60]
+     700:      	mov	d26, v6[1]
+     704:      	str	d26, [x0, #0x68]
+     708:      	ldur	q11, [sp]
+     70c:      	str	d11, [x0, #0x70]
+     710:      	str	d5, [x0, #0x78]
+     714:      	mov	d29, v5[1]
+     718:      	str	d29, [x0, #0xa0]
+     71c:      	str	d4, [x0, #0x80]
+     720:      	mov	d31, v4[1]
+     724:      	str	d31, [x0, #0xa8]
+     728:      	str	d3, [x0, #0x88]
+     72c:      	mov	d0, v3[1]
+     730:      	str	d0, [x0, #0xb0]
+     734:      	str	d2, [x0, #0x90]
+     738:      	mov	d0, v2[1]
+     73c:      	str	d0, [x0, #0xb8]
+     740:      	str	d1, [x0, #0x98]
+     744:      	mov	d0, v1[1]
+     748:      	str	d0, [x0, #0xc0]
+     74c:      	str	d18, [x0, #0xc8]
+     750:      	mov	d0, v18[1]
+     754:      	str	d0, [x0, #0xd0]
+     758:      	str	d24, [x0, #0xd8]
+     75c:      	mov	d0, v24[1]
+     760:      	str	d0, [x0, #0xe0]
+     764:      	str	d16, [x0, #0xe8]
+     768:      	add	sp, sp, #0x1e0
+     76c:      	ldp	d8, d9, [sp], #0x10
+     770:      	ldp	d10, d11, [sp], #0x10
+     774:      	ldp	d12, d13, [sp], #0x10
+     778:      	ldp	d14, d15, [sp], #0x10
+     77c:      	ldp	x29, x30, [sp], #0x10
+     780:      	retab
+     784:      	udf	#0x0
+     788:      	<unknown>
+     78c:      	<unknown>
+     790:      	ldr	q19, 0xfffffffffffe8b64 <_mech_observe+0xfffffffffffe8394>
+     794:      	<unknown>
+     798:      	<unknown>
+     79c:      	<unknown>
+     7a0:      	<unknown>
+     7a4:      	<unknown>
+     7a8:      	<unknown>
+     7ac:      	<unknown>
+     7b0:      	<unknown>
+     7b4:      	<unknown>
+     7b8:      	<unknown>
+     7bc:      	<unknown>
+     7c0:      	<unknown>
+     7c4:      	<unknown>
+     7c8:      	ldr	q19, 0xfffffffffffe8b9c <_mech_observe+0xfffffffffffe83cc>
+     7cc:      	<unknown>
+
+00000000000007d0 <_mech_observe>:
+     7d0:      	pacibsp
+     7d4:      	stp	x29, x30, [sp, #-0x10]!
+     7d8:      	mov	x29, sp
+     7dc:      	stp	d14, d15, [sp, #-0x10]!
+     7e0:      	stp	d12, d13, [sp, #-0x10]!
+     7e4:      	stp	d10, d11, [sp, #-0x10]!
+     7e8:      	stp	d8, d9, [sp, #-0x10]!
+     7ec:      	ldr	d22, [x0]
+     7f0:      	ldr	d18, [x0, #0x8]
+     7f4:      	ldr	d4, [x0, #0x10]
+     7f8:      	ldr	d0, [x0, #0x18]
+     7fc:      	ldr	d1, [x0, #0x20]
+     800:      	ldr	d23, [x0, #0x28]
+     804:      	ldr	d19, [x0, #0x30]
+     808:      	ldr	d7, [x0, #0x38]
+     80c:      	ldr	d2, [x0, #0x40]
+     810:      	ldr	d3, [x0, #0x48]
+     814:      	ldr	d24, [x0, #0x50]
+     818:      	ldr	d20, [x0, #0x58]
+     81c:      	ldr	d16, [x0, #0x60]
+     820:      	ldr	d5, [x0, #0x68]
+     824:      	ldr	d6, [x0, #0x70]
+     828:      	ldr	d21, [x0, #0x78]
+     82c:      	ldr	d26, [x0, #0x80]
+     830:      	ldr	d30, [x0, #0x88]
+     834:      	ldr	d11, [x0, #0x90]
+     838:      	ldr	d31, [x0, #0x98]
+     83c:      	ldr	d25, [x0, #0xa0]
+     840:      	ldr	d29, [x0, #0xa8]
+     844:      	ldr	d9, [x0, #0xb0]
+     848:      	ldr	d13, [x0, #0xb8]
+     84c:      	ldr	d10, [x0, #0xc0]
+     850:      	ldr	d27, [x0, #0xc8]
+     854:      	ldr	d8, [x0, #0xd0]
+     858:      	ldr	d12, [x0, #0xd8]
+     85c:      	ldr	d14, [x0, #0xe0]
+     860:      	ldr	d15, [x0, #0xe8]
+     864:      	ldr	d28, 0xa80 <_mech_observe+0x2b0>
+     868:      	movi.2s	v17, #0x0
+     86c:      	fmadd	d31, d31, d31, d17
+     870:      	fmadd	d31, d10, d10, d31
+     874:      	fmadd	d31, d15, d15, d31
+     878:      	ldr	d10, 0xa88 <_mech_observe+0x2b8>
+     87c:      	fmadd	d11, d11, d11, d17
+     880:      	fmadd	d11, d13, d13, d11
+     884:      	fmadd	d11, d14, d14, d11
+     888:      	ldr	d13, 0xa90 <_mech_observe+0x2c0>
+     88c:      	fmadd	d30, d30, d30, d17
+     890:      	fmadd	d30, d9, d9, d30
+     894:      	fmadd	d30, d12, d12, d30
+     898:      	ldr	d9, 0xa98 <_mech_observe+0x2c8>
+     89c:      	fmadd	d26, d26, d26, d17
+     8a0:      	fmadd	d26, d29, d29, d26
+     8a4:      	fmadd	d26, d8, d8, d26
+     8a8:      	ldr	d29, 0xaa0 <_mech_observe+0x2d0>
+     8ac:      	fmadd	d21, d21, d21, d17
+     8b0:      	fmadd	d21, d25, d25, d21
+     8b4:      	fmadd	d21, d27, d27, d21
+     8b8:      	fmadd	d21, d29, d21, d17
+     8bc:      	fmadd	d21, d9, d26, d21
+     8c0:      	fmadd	d21, d13, d30, d21
+     8c4:      	fmadd	d21, d10, d11, d21
+     8c8:      	fmadd	d21, d28, d31, d21
+     8cc:      	ldr	d25, 0xaa8 <_mech_observe+0x2d8>
+     8d0:      	fsub	d26, d24, d20
+     8d4:      	fsub	d27, d23, d19
+     8d8:      	fsub	d28, d22, d18
+     8dc:      	fmadd	d28, d28, d28, d17
+     8e0:      	fmadd	d27, d27, d27, d28
+     8e4:      	fmadd	d26, d26, d26, d27
+     8e8:      	fsqrt	d26, d26
+     8ec:      	fdiv	d25, d25, d26
+     8f0:      	fadd	d25, d17, d25
+     8f4:      	ldr	d26, 0xab0 <_mech_observe+0x2e0>
+     8f8:      	fsub	d27, d24, d16
+     8fc:      	fsub	d28, d23, d7
+     900:      	fsub	d29, d22, d4
+     904:      	fmadd	d29, d29, d29, d17
+     908:      	fmadd	d28, d28, d28, d29
+     90c:      	fmadd	d27, d27, d27, d28
+     910:      	fsqrt	d27, d27
+     914:      	fdiv	d26, d26, d27
+     918:      	fadd	d25, d25, d26
+     91c:      	ldr	d26, 0xab8 <_mech_observe+0x2e8>
+     920:      	fsub	d27, d24, d5
+     924:      	fsub	d28, d23, d2
+     928:      	fsub	d29, d22, d0
+     92c:      	fmadd	d29, d29, d29, d17
+     930:      	fmadd	d28, d28, d28, d29
+     934:      	fmadd	d27, d27, d27, d28
+     938:      	fsqrt	d27, d27
+     93c:      	fdiv	d26, d26, d27
+     940:      	fadd	d25, d25, d26
+     944:      	ldr	d26, 0xac0 <_mech_observe+0x2f0>
+     948:      	fsub	d24, d24, d6
+     94c:      	fsub	d23, d23, d3
+     950:      	fsub	d22, d22, d1
+     954:      	fmadd	d22, d22, d22, d17
+     958:      	fmadd	d22, d23, d23, d22
+     95c:      	fmadd	d22, d24, d24, d22
+     960:      	fsqrt	d22, d22
+     964:      	fdiv	d22, d26, d22
+     968:      	fadd	d22, d25, d22
+     96c:      	ldr	d23, 0xac8 <_mech_observe+0x2f8>
+     970:      	fsub	d24, d20, d16
+     974:      	fsub	d25, d19, d7
+     978:      	fsub	d26, d18, d4
+     97c:      	fmadd	d26, d26, d26, d17
+     980:      	fmadd	d25, d25, d25, d26
+     984:      	fmadd	d24, d24, d24, d25
+     988:      	fsqrt	d24, d24
+     98c:      	fdiv	d23, d23, d24
+     990:      	fadd	d22, d22, d23
+     994:      	ldr	d23, 0xad0 <_mech_observe+0x300>
+     998:      	fsub	d24, d20, d5
+     99c:      	fsub	d25, d19, d2
+     9a0:      	fsub	d26, d18, d0
+     9a4:      	fmadd	d26, d26, d26, d17
+     9a8:      	fmadd	d25, d25, d25, d26
+     9ac:      	fmadd	d24, d24, d24, d25
+     9b0:      	fsqrt	d24, d24
+     9b4:      	fdiv	d23, d23, d24
+     9b8:      	fadd	d22, d22, d23
+     9bc:      	ldr	d23, 0xad8 <_mech_observe+0x308>
+     9c0:      	fsub	d20, d20, d6
+     9c4:      	fsub	d19, d19, d3
+     9c8:      	fsub	d18, d18, d1
+     9cc:      	fmadd	d18, d18, d18, d17
+     9d0:      	fmadd	d18, d19, d19, d18
+     9d4:      	fmadd	d18, d20, d20, d18
+     9d8:      	fsqrt	d18, d18
+     9dc:      	fdiv	d18, d23, d18
+     9e0:      	fadd	d18, d22, d18
+     9e4:      	ldr	d19, 0xae0 <_mech_observe+0x310>
+     9e8:      	fsub	d20, d16, d5
+     9ec:      	fsub	d22, d7, d2
+     9f0:      	fsub	d23, d4, d0
+     9f4:      	fmadd	d23, d23, d23, d17
+     9f8:      	fmadd	d22, d22, d22, d23
+     9fc:      	fmadd	d20, d20, d20, d22
+     a00:      	fsqrt	d20, d20
+     a04:      	fdiv	d19, d19, d20
+     a08:      	fadd	d18, d18, d19
+     a0c:      	ldr	d19, 0xae8 <_mech_observe+0x318>
+     a10:      	fsub	d16, d16, d6
+     a14:      	fsub	d7, d7, d3
+     a18:      	fsub	d4, d4, d1
+     a1c:      	fmadd	d4, d4, d4, d17
+     a20:      	fmadd	d4, d7, d7, d4
+     a24:      	fmadd	d4, d16, d16, d4
+     a28:      	fsqrt	d4, d4
+     a2c:      	fdiv	d4, d19, d4
+     a30:      	fadd	d4, d18, d4
+     a34:      	ldr	d7, 0xaf0 <_mech_observe+0x320>
+     a38:      	fsub	d5, d5, d6
+     a3c:      	fsub	d2, d2, d3
+     a40:      	fsub	d0, d0, d1
+     a44:      	fmadd	d0, d0, d0, d17
+     a48:      	fmadd	d0, d2, d2, d0
+     a4c:      	fmadd	d0, d5, d5, d0
+     a50:      	fsqrt	d0, d0
+     a54:      	fdiv	d0, d7, d0
+     a58:      	fadd	d0, d4, d0
+     a5c:      	fsub	d0, d21, d0
+     a60:      	str	d0, [x1]
+     a64:      	ldp	d8, d9, [sp], #0x10
+     a68:      	ldp	d10, d11, [sp], #0x10
+     a6c:      	ldp	d12, d13, [sp], #0x10
+     a70:      	ldp	d14, d15, [sp], #0x10
+     a74:      	ldp	x29, x30, [sp], #0x10
+     a78:      	retab
+     a7c:      	udf	#0x0
+     a80:      	<unknown>
+     a84:      	<unknown>
+     a88:      	ldr	q19, 0xfffffffffffe8e5c <_mech_observe+0xfffffffffffe868c>
+     a8c:      	<unknown>
+     a90:      	<unknown>
+     a94:      	<unknown>
+     a98:      	<unknown>
+     a9c:      	<unknown>
+     aa0:      	<unknown>
+     aa4:      	<unknown>
+     aa8:      	<unknown>
+     aac:      	<unknown>
+     ab0:      	<unknown>
+     ab4:      	<unknown>
+     ab8:      	<unknown>
+     abc:      	<unknown>
+     ac0:      	<unknown>
+     ac4:      	<unknown>
+     ac8:      	<unknown>
+     acc:      	<unknown>
+     ad0:      	<unknown>
+     ad4:      	<unknown>
+     ad8:      	<unknown>
+     adc:      	<unknown>
+     ae0:      	<unknown>
+     ae4:      	<unknown>
+     ae8:      	adr	x11, 0xfffffffffffc0d00 <_mech_observe+0xfffffffffffc0530>
+     aec:      	<unknown>
+     af0:      	ldr	q29, [x18, #0xf4b0]
+     af4:      	<unknown>

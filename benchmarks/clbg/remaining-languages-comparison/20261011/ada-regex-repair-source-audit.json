@@ -1,0 +1,288 @@
+{
+  "status": "reviewed",
+  "frozen_at": "2026-10-11T09:33:02.439372+00:00",
+  "programs": [
+    {
+      "id": "regexredux-ada-pcre2-heap",
+      "key": "regexredux:regexredux-ada-pcre2-heap",
+      "benchmark": "regexredux",
+      "language": "ada",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/ada/regexredux-ada-pcre2-heap.adb",
+      "source_sha256": "0d5186ec1f9005eb594f930f5979c4816b3c2d05702d636171dadbb3b1fa3128",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-gnat-6.html",
+      "adaptations": [
+        "Use the standard native PCRE2/JIT engine rather than retired PCRE1; retain all nine nonoverlapping counts and five ordered global substitutions. Every application binding, pattern, buffer and sequencing step is Ada source included in LOC. Complete stdin bytes and all output are retained.",
+        "Use standard GNAT Unbounded.Aux heap storage and borrowed string views instead of full-input To_String copies and stack-sized replacement buffers. Keep every count, PCRE2 call and ordered replacement; include the application allocation callback and all bindings in LOC."
+      ],
+      "local_adaptation": true,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "ada",
+        "output": "Complete canonical stdout.",
+        "obligations": [
+          "Use the standard native PCRE2/JIT engine rather than retired PCRE1; retain all nine nonoverlapping counts and five ordered global substitutions. Every application binding, pattern, buffer and sequencing step is Ada source included in LOC. Complete stdin bytes and all output are retained.",
+          "Use standard GNAT Unbounded.Aux heap storage and borrowed string views instead of full-input To_String copies and stack-sized replacement buffers. Keep every count, PCRE2 call and ordered replacement; include the application allocation callback and all bindings in LOC."
+        ],
+        "nine_complete_nonoverlap_counts": true,
+        "five_ordered_global_substitutions": true,
+        "all_input_bytes": true,
+        "counted_ffi": true,
+        "generic_engine": "PCRE2 JIT",
+        "generic_heap_storage": true,
+        "borrowed_views": true
+      },
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/ada-pascal/regexredux-gnat-6.adb",
+      "original_source_sha256": "a70396d2faa889208a1ec74681adae107626db97a41fb614f9588f52ad377829",
+      "build_status": "passed",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatmake",
+        "-f",
+        "-q",
+        "-gnat2022",
+        "-gnatp",
+        "-gnatn2",
+        "-O3",
+        "-march=native",
+        "-funroll-loops",
+        "-fomit-frame-pointer",
+        "-fno-math-errno",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2-heap/regexredux.adb",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2-heap/regexredux-ada-pcre2-heap",
+        "-largs",
+        "-L/opt/homebrew/opt/gmp/lib",
+        "-L/opt/homebrew/opt/pcre2/lib"
+      ],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2-heap/regexredux-ada-pcre2-heap",
+      "binary_sha256": "882143d94c9bde2bc60615005e54b9c52099b7861489b573331e2d471ecca8d0",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2-heap/regexredux-ada-pcre2-heap"
+      ],
+      "compiler_sha256": "0f96eee99e85dfa933c7efe4f470e4fdd538ffbc5e19e9fedfbb348137505e8c",
+      "physical_loc": 117,
+      "normalized_loc": 126,
+      "expansions": [
+        {
+          "line": 3,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 4,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 8,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 39,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 41,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 60,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 75,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 80,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 98,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "loc": 126,
+      "application_source_files": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/ada/regexredux-ada-pcre2-heap.adb"
+      ],
+      "loc_policy": "All application code, units, binding declarations and packed independent statements count; scoped generic runtime libraries are separately pinned. No source compression metric.",
+      "loc_expansions": [
+        {
+          "line": 3,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 4,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 8,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 39,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 41,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 60,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 75,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 80,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        },
+        {
+          "line": 98,
+          "extra_lines": 1,
+          "reason": "Independent statements or initialized bindings packed on one source line."
+        }
+      ],
+      "eligible_for_chart": true,
+      "compiled_source_files": {
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2-heap/regexredux.adb": "0d5186ec1f9005eb594f930f5979c4816b3c2d05702d636171dadbb3b1fa3128"
+      },
+      "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2-heap/build.log",
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "mech-control-regexredux",
+      "key": "regexredux:mech-control",
+      "benchmark": "regexredux",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "source_url": "https://mech-lang.org",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "loc": 24,
+      "published_chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "previous_seconds": 0.489611584,
+      "previous_report": "additional-languages/20261009-full-suite/results/timings.json",
+      "algorithm": {
+        "strict": true,
+        "status": "reviewed",
+        "reason": "Nine independent regex counts, each using its prescribed pattern, and five ordered regex substitutions. The general regex library handles each operation; there is no combined-pattern benchmark matcher.",
+        "full_work": {
+          "input_bytes": 50833411,
+          "count_patterns": 9,
+          "ordered_substitutions": 5
+        },
+        "evidence": [
+          {
+            "path": "regexredux/regexredux.mec",
+            "sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d"
+          }
+        ],
+        "requirements_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html"
+      }
+    }
+  ],
+  "runtimes": {
+    "ada": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatmake",
+      "sha256": "0f96eee99e85dfa933c7efe4f470e4fdd538ffbc5e19e9fedfbb348137505e8c",
+      "version": "GNAT/GCC 16.1.0-1 Alire native Apple Silicon distribution",
+      "prefix": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1",
+      "architecture": "native arm64 macOS",
+      "archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat-aarch64-darwin-16.1.0-1.tar.gz",
+      "archive_sha256": "657cf254323eb91f79768918e8bd8887d6da7ac6056732a38f21e2848267da18",
+      "source_url": "https://github.com/alire-project/GNAT-FSF-builds/releases/download/gnat-16.1.0-1/gnat-aarch64-darwin-16.1.0-1.tar.gz",
+      "checksum_verified": true,
+      "checksum_url": "https://github.com/alire-project/GNAT-FSF-builds/releases/download/gnat-16.1.0-1/gnat-aarch64-darwin-16.1.0-1.tar.gz.sha256",
+      "distribution_release": "gnat-16.1.0-1",
+      "component_sha256": {
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gcc": "bef9103e216ecdb36b9f6aba896ced832857ad59aa83cdfb10fd1911ab4785c7",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatmake": "0f96eee99e85dfa933c7efe4f470e4fdd538ffbc5e19e9fedfbb348137505e8c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatbind": "a2e9097274508f690ce74c637e9477f0dcf4309d74dfb48d216573e939f9755e",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatlink": "d1fd3450afee47322368eb317c485f40d5e413fe9dab1a99faca4b6e03ece508",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatchop": "f6043aff1093fd0a09d9b722cf5fe7f0ba2e9cf2fc262304a55e46d94598adb3"
+      },
+      "native_execution_verified": true
+    }
+  },
+  "libraries": {
+    "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9",
+    "/opt/homebrew/opt/pcre2/lib/libpcre2-8.0.dylib": "c3adcd954967b7e92812831fe12c614a9ca2d12221e897a87ee379df2ac004fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/smalltalk/images/regexredux-smalltalk-pcre2.image": "a0f4634e883ae9b8ed50e9639d46920b62f38deed5e213c562ba7215a21cd227"
+  },
+  "pin_files": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/source-audit-v2.json": "e5917fc2950b4a20e9e70fde421043c9cd4f5775a1852be3645c52d965c7dfd6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/native-timings-v2.json": "d6758ce452be15c5796b5e21f3aaf33d2942dd5b64ea4d8a0872aa3a31f06dae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/prepare_ada_regex_heap.py": "10f50b3eade099b022b807dd856247097234a2d043171b429dbc6af234200ac4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/run_ada_regex_repair.py": "8a45689a2c291e2b24e6a023ec506db5e33291d49f992f48cd5a31631cec1937",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/queued_ada_regex_repair.py": "35cacf3cfedaee6f5eaf2a8a96485e813e0d245677e0aed680d9900ff61c1102",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/run.py": "dd5122a6011454474e70d74f2ea80ffc67a8c004e4be906d36edc022ba8d4e3b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/probe.py": "05a69c12fea0329b96962dffa306c5a1879eb16cfd838dad031c9cf175af3b79",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/dotnet_fetch.py": "e0d118e180ecc3ac08eee8672111ca69017e03d3788ef5ceca03260c2cc26c29",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/metrics_final.py": "db866bfb1b339a324b75f50d4919727192defd73370f9cb5064eda90be3ee778",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2-heap/regexredux.adb": "0d5186ec1f9005eb594f930f5979c4816b3c2d05702d636171dadbb3b1fa3128",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/ada-regex-repair-preflight.json": "b11a3effd84031ea0e2e427b632f44a9b5280e0fde0c886150be8b9322018e9e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/run.py": "6926e288a7b9b59b030c9226227df967aa1d92b3e395789467706e2241d987ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/run.py": "8b7f1b408fb5838dc6adc2404bcfa6146e48e770e602fbe78255454f3cacb8c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/input5000000.txt": "97197f5957a12f8a859ba7edff6d97994daa18afacd77db21fa68c6f2e447e38",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gcc": "bef9103e216ecdb36b9f6aba896ced832857ad59aa83cdfb10fd1911ab4785c7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatmake": "0f96eee99e85dfa933c7efe4f470e4fdd538ffbc5e19e9fedfbb348137505e8c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatbind": "a2e9097274508f690ce74c637e9477f0dcf4309d74dfb48d216573e939f9755e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatlink": "d1fd3450afee47322368eb317c485f40d5e413fe9dab1a99faca4b6e03ece508",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/bin/gnatchop": "f6043aff1093fd0a09d9b722cf5fe7f0ba2e9cf2fc262304a55e46d94598adb3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/lib/gcc/aarch64-apple-darwin24.6.0/16.1.0/adainclude/a-stunau.ads": "0e2ffc366f8ebc33629b11d86a02417f553bd5f27a0c714ee80654c0196f2cf7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/gnat/gnat-aarch64-darwin-16.1.0-1/lib/gcc/aarch64-apple-darwin24.6.0/16.1.0/adainclude/a-stunau.adb": "6df1fc169f93f8321439574171c279eccfed8d733b9e0b115e1aaa7bfd188891"
+  },
+  "timing_boundary": "Sequential fresh processes in randomized rounds, three admitted samples per candidate. Full prescribed workloads and complete output to regular files; process startup, JIT compilation, image loading, standard libraries, workers and output are included. Ahead-of-time compilation, source audits, output hashing and comparisons are outside timing. AC power with Low Power Mode off. Samples overlapping competing compilers or power changes are discarded and retried. At most eight application workers; native ARM64 execution. No scaled timings.",
+  "coverage": {
+    "ada": 1
+  },
+  "expected_benchmarks": [
+    "regexredux"
+  ],
+  "repairs": [
+    {
+      "failed_key": "regexredux:regexredux-ada-pcre2",
+      "replacement_key": "regexredux:regexredux-ada-pcre2-heap",
+      "reason": "Full-size stack overflow.",
+      "changes": "Use standard GNAT Unbounded.Aux heap storage and borrowed string views instead of full-input To_String copies and stack-sized replacement buffers. Keep every count, PCRE2 call and ordered replacement; include the application allocation callback and all bindings in LOC.",
+      "preflight": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/ada-regex-repair-preflight.json",
+      "preflight_sha256": "b11a3effd84031ea0e2e427b632f44a9b5280e0fde0c886150be8b9322018e9e"
+    }
+  ],
+  "loc_policy": "Nonblank, noncomment application lines; independent packed assignments/statements expanded. All application helpers and FFI declarations counted. General library implementations excluded uniformly.",
+  "requirements": "Full seven growable nucleotide maps with collision-free 36-bit keys; binary64 arithmetic and full Fasta random steps/CDF decisions; both pi extractions for every tested candidate (generic impossible-candidate guard allowed equally); distinct equal-size leaf/interior tree records retained and traversed; all permutations and pixels; full regex counts and ordered substitutions; no specialized native benchmark kernels.",
+  "unmeasured_alternates": []
+}

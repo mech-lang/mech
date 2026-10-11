@@ -1,0 +1,37 @@
+This is lbn, a big-integer library for Lua. It is based on the bn subsystem of
+the OpenSSL cryptographic library:
+	https://www.openssl.org/
+If you're running Linux, you probably already have OpenSSL installed.
+
+To build the library and run a simple test, just do make.
+If Lua is not installed in /usr/local, tell make:
+	make LUA_TOPDIR=/var/tmp/lhf/lua-5.5.0/install
+
+To install the library where Lua can find it, use a variant of these:
+	make install
+	sudo make install
+	sudo make install LIBDIR=/usr/local/lib/lua/5.5
+
+For detailed installation instructions, see
+	https://www.tecgraf.puc-rio.br/~lhf/ftp/lua/install.html
+
+For the latest version of this library, see
+	https://www.tecgraf.puc-rio.br/~lhf/ftp/lua/#lbn
+
+The library is simple and intuitive; see the summary below.
+Read test.lua to see the library in action.
+
+This code is hereby placed in the public domain and also under the MIT license.
+
+Please send comments, suggestions, and bug reports to lhf@tecgraf.puc-rio.br .
+
+bn library:
+__add(x,y)	__tostring(x)	gcd(x,y)	mulmod(x,y,m)	sqrtmod(x)
+__div(x,y)	__unm(x)	invmod(x)	neg(x)		sub(x,y)
+__eq(x,y)	abs(x)		isnegative(x)	new(x)		submod(x,y,m)
+__le(x,y)	add(x,y)	isodd(x)	pow(x,y)	text(t)
+__lt(x,y)	addmod(x,y,m)	isone(x)	powmod(x,y,m)	tohex(x)
+__mod(x,y)	aprime(bits)	isprime(x)	quotrem(x,y)	tonumber(x)
+__mul(x,y)	bits(x)		iszero(x)	random(bits)	tostring(x)
+__pow(x,y)	compare(x,y)	mod(x,y)	sqr(x)		totext(x)
+__sub(x,y)	div(x,y)	mul(x,y)	sqrmod(x)	version

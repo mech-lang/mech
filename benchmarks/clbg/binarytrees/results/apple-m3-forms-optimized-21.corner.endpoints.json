@@ -1,0 +1,36 @@
+{
+  "source_report": "apple-m3-forms-optimized-21.json",
+  "metric": "gzip1_bytes",
+  "time_baseline_ratio_to_control": 0.709921125,
+  "size_baseline": 367,
+  "languages": {
+    "c": {
+      "fastest": "binarytrees-gcc-3-gcc",
+      "smallest": "binarytrees-gcc-3-gcc",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "julia": {
+      "fastest": "binarytrees-julia-3",
+      "smallest": "binarytrees-julia-4",
+      "time_cost": 1.3574638186438268,
+      "size_cost": 1.7138964577656677,
+      "log2_line_length": 0.8936269120191203
+    },
+    "mech": {
+      "fastest": "mech-binarytrees-parallel",
+      "smallest": "mech-binarytrees-compact",
+      "time_cost": 4.0235501752346865,
+      "size_cost": 1.060200668896321,
+      "log2_line_length": 2.0102389432762577
+    },
+    "rust": {
+      "fastest": "binarytrees-rust-5",
+      "smallest": "binarytrees-rust-5",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    }
+  }
+}

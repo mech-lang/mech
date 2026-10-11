@@ -1,0 +1,10 @@
+{
+  "official_n7_output": {
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/fannkuchredux-output.txt",
+    "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f"
+  },
+  "n12_reference": {
+    "output": "3968050\nPfannkuchen(12) = 65\n",
+    "provenance": "Pinned upstream program notes, independently checked by measured portable C/Rust/Chapel/Julia/etc executions."
+  }
+}

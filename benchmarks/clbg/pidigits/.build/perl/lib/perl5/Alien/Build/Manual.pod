@@ -1,0 +1,150 @@
+# PODNAME: Alien::Build::Manual
+# ABSTRACT: The Alien::Build Manual
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Manual - The Alien::Build Manual
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ perldoc Alien::Build::Manual::Alien
+ perldoc Alien::Build::Manual::AlienAuthor
+ perldoc Alien::Build::Manual::AlienUser
+ perldoc Alien::Build::Manual::Contributing
+ perldoc Alien::Build::Manual::FAQ
+ perldoc Alien::Build::Manual::PluginAuthor
+
+=head1 DESCRIPTION
+
+L<Alien::Build> comes with a number of manuals that are useful depending on how you
+are using L<Alien>.
+
+=over 4
+
+=item L<Alien::Build::Manual::Alien>
+
+General alien author documentation.
+
+=item L<Alien::Build::Manual::AlienAuthor>
+
+Alien author documentation.
+
+=item L<Alien::Build::Manual::AlienUser>
+
+Alien user documentation.
+
+=item L<Alien::Build::Manual::Contributing>
+
+Overly-detailed contributing guide.
+
+=item L<Alien::Build::Manual::FAQ>
+
+Frequently Asked Questions about L<Alien::Build>.
+
+=item L<Alien::Build::Manual::PluginAuthor>
+
+L<Alien::Build> plugin author documentation — or how to extend L<Alien::Build> with the plugin system.
+
+=item L<Alien::Build::Manual::Security>
+
+Documents some of the challenges and configuration tools related to security of L<Alien>s.
+
+=back
+
+=head1 SEE ALSO
+
+=over 4
+
+=item L<Alien::Base>
+
+=item L<Alien::Build>
+
+=item L<alienfile>
+
+=back
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

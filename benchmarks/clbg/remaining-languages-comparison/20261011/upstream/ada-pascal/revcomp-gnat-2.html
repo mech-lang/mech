@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement Ada 2012 GNAT&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement Ada 2012 GNAT&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--</span>
+<span class="slc">--  The Computer Language Benchmarks Game</span>
+<span class="slc">--  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">--  Contributed by Pascal Obry on 2005/03/19</span>
+<span class="slc">--  Modified by Bill Findlay  on 2005/04/04</span>
+<span class="slc">--  Updated by Georg Bauhaus and Jonathan Parker (May 2012)</span>
+
+<span class="kwa">with</span> Text_Input<span class="opt">;</span> <span class="kwa">use</span> Text_Input<span class="opt">;</span>
+<span class="kwa">with</span> Line_IO<span class="opt">;</span>
+
+<span class="kwa">procedure</span> Revcomp <span class="kwa">is</span>
+
+   Multitasking_Version_Desired <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Boolean</span> <span class="opt">:=</span> <span class="kwd">True</span><span class="opt">;</span>
+
+   Complement <span class="opt">:</span> <span class="kwa">constant array</span> <span class="opt">(</span><span class="kwb">Character</span><span class="opt">)</span> <span class="kwa">of</span> <span class="kwb">Character</span> <span class="opt">:=</span>
+     <span class="opt">(</span><span class="sng">&#39;A&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;T&#39;</span><span class="opt">,</span> <span class="sng">&#39;C&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;G&#39;</span><span class="opt">,</span> <span class="sng">&#39;G&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;C&#39;</span><span class="opt">,</span> <span class="sng">&#39;T&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;A&#39;</span><span class="opt">,</span> <span class="sng">&#39;U&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;A&#39;</span><span class="opt">,</span>
+      <span class="sng">&#39;M&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;K&#39;</span><span class="opt">,</span> <span class="sng">&#39;R&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;Y&#39;</span><span class="opt">,</span> <span class="sng">&#39;W&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;W&#39;</span><span class="opt">,</span> <span class="sng">&#39;S&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;S&#39;</span><span class="opt">,</span> <span class="sng">&#39;Y&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;R&#39;</span><span class="opt">,</span>
+      <span class="sng">&#39;K&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;M&#39;</span><span class="opt">,</span> <span class="sng">&#39;V&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;B&#39;</span><span class="opt">,</span> <span class="sng">&#39;H&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;D&#39;</span><span class="opt">,</span> <span class="sng">&#39;D&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;H&#39;</span><span class="opt">,</span> <span class="sng">&#39;B&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;V&#39;</span><span class="opt">,</span>
+      <span class="sng">&#39;N&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;N&#39;</span><span class="opt">,</span>
+      <span class="sng">&#39;a&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;T&#39;</span><span class="opt">,</span> <span class="sng">&#39;c&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;G&#39;</span><span class="opt">,</span> <span class="sng">&#39;g&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;C&#39;</span><span class="opt">,</span> <span class="sng">&#39;t&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;A&#39;</span><span class="opt">,</span> <span class="sng">&#39;u&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;A&#39;</span><span class="opt">,</span>
+      <span class="sng">&#39;m&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;K&#39;</span><span class="opt">,</span> <span class="sng">&#39;r&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;Y&#39;</span><span class="opt">,</span> <span class="sng">&#39;w&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;W&#39;</span><span class="opt">,</span> <span class="sng">&#39;s&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;S&#39;</span><span class="opt">,</span> <span class="sng">&#39;y&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;R&#39;</span><span class="opt">,</span>
+      <span class="sng">&#39;k&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;M&#39;</span><span class="opt">,</span> <span class="sng">&#39;v&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;B&#39;</span><span class="opt">,</span> <span class="sng">&#39;h&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;D&#39;</span><span class="opt">,</span> <span class="sng">&#39;d&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;H&#39;</span><span class="opt">,</span> <span class="sng">&#39;b&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;V&#39;</span><span class="opt">,</span>
+      <span class="sng">&#39;n&#39;</span> <span class="opt">=&gt;</span> <span class="sng">&#39;N&#39;</span><span class="opt">,</span>
+      <span class="kwa">others</span> <span class="opt">=&gt;</span> <span class="sng">&#39;?&#39;</span><span class="opt">);</span>
+
+   Max_Line_Length <span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">60</span><span class="opt">;</span>
+
+   End_Of_Line <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">String</span> <span class="opt">:=</span> Line_IO<span class="opt">.</span>Separator<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Reverse_Fasta
+     <span class="opt">(</span>Fasta_Line   <span class="opt">:</span> <span class="kwa">in</span>     String_Access<span class="opt">;</span>
+      Fasta_Start  <span class="opt">:</span> <span class="kwa">in</span>     <span class="kwb">Natural</span><span class="opt">;</span>
+      Fasta_Finish <span class="opt">:</span> <span class="kwa">in</span>     <span class="kwb">Natural</span><span class="opt">;</span>
+      Bundle       <span class="opt">:</span> <span class="kwa">in out</span> <span class="kwb">String</span><span class="opt">)</span>
+   <span class="kwa">is</span>
+      L <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> Bundle<span class="kwd">&#39;First</span><span class="opt">;</span> <span class="slc">-- Leftmost char</span>
+      R <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> Fasta_Finish<span class="opt">;</span> <span class="slc">-- Rightmost char</span>
+      c0<span class="opt">,</span> c1 <span class="opt">:</span> <span class="kwb">Character</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">if</span> R <span class="opt">&lt;</span> Fasta_Start <span class="kwa">then return</span><span class="opt">;</span> <span class="kwa">end if</span><span class="opt">;</span>
+
+      c1 <span class="opt">:=</span> <span class="kwc">Fasta_Line</span><span class="opt">(</span>R<span class="opt">);</span>
+      <span class="kwa">loop</span>
+         <span class="kwc">Bundle</span><span class="opt">(</span>L<span class="opt">) :=</span> <span class="kwc">Complement</span><span class="opt">(</span>c1<span class="opt">);</span>
+         R <span class="opt">:=</span> R <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+         L <span class="opt">:=</span> L <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwa">if</span> R <span class="opt">&gt;</span> Fasta_Start <span class="kwa">then</span>
+            c0 <span class="opt">:=</span> <span class="kwc">Fasta_Line</span><span class="opt">(</span>R<span class="opt">);</span>
+            c1 <span class="opt">:=</span> <span class="kwc">Fasta_Line</span><span class="opt">(</span>R<span class="opt">-</span><span class="num">1</span><span class="opt">);</span>
+            <span class="kwc">Bundle</span><span class="opt">(</span>L<span class="opt">) :=</span> <span class="kwc">Complement</span><span class="opt">(</span>c0<span class="opt">);</span>
+            L <span class="opt">:=</span> L <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+            R <span class="opt">:=</span> R <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwa">else</span>
+            <span class="kwa">if</span> R <span class="opt">=</span> Fasta_Start <span class="kwa">then</span>
+               <span class="kwc">Bundle</span><span class="opt">(</span>L<span class="opt">) :=</span> <span class="kwc">Complement</span><span class="opt">(</span><span class="kwc">Fasta_Line</span><span class="opt">(</span>R<span class="opt">));</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+            <span class="kwa">exit</span><span class="opt">;</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">end</span> Reverse_Fasta<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Put_Reversed_Fasta
+     <span class="opt">(</span>Fasta_Section     <span class="opt">:</span> <span class="kwa">in</span> String_Access<span class="opt">;</span>
+      Fasta_Data_Length <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Natural</span><span class="opt">)</span>
+   <span class="kwa">is</span>
+      Lines_per_Bundle <span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">2000</span><span class="opt">;</span>
+      Line_Feed_Len    <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Natural</span> <span class="opt">:=</span> End_Of_Line<span class="kwd">&#39;Length</span><span class="opt">;</span>
+      Line_Bundle <span class="opt">:</span> <span class="kwb">String</span><span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Lines_per_Bundle<span class="opt">*(</span>Max_Line_Length <span class="opt">+</span> Line_Feed_Len<span class="opt">));</span>
+      L        <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> Fasta_Data_Length<span class="opt">;</span>
+      B_start  <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> Line_Bundle<span class="kwd">&#39;First</span><span class="opt">;</span>
+      B_finish <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> B_start <span class="opt">+</span> Max_Line_Length <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+
+      <span class="slc">-- Append line feed string (End_Of_Line) to 2000 Line_Bundle lines:</span>
+
+      <span class="kwa">while</span> L <span class="opt">&gt;=</span> Lines_per_Bundle <span class="opt">*</span> Max_Line_Length <span class="kwa">loop</span>
+         B_start <span class="opt">:=</span> Line_Bundle<span class="kwd">&#39;First</span><span class="opt">;</span>
+         <span class="kwa">for</span> j <span class="kwa">in</span> <span class="num">1</span> <span class="opt">..</span> Lines_per_Bundle <span class="kwa">loop</span>
+            B_finish <span class="opt">:=</span> B_start <span class="opt">+</span> Max_Line_Length <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+            Reverse_Fasta
+              <span class="opt">(</span>Fasta_Line   <span class="opt">=&gt;</span> Fasta_Section<span class="opt">,</span>
+               Fasta_Start  <span class="opt">=&gt;</span> L <span class="opt">-</span> Max_Line_Length <span class="opt">+</span> <span class="num">1</span><span class="opt">,</span>
+               Fasta_Finish <span class="opt">=&gt;</span> L<span class="opt">,</span>
+               Bundle       <span class="opt">=&gt;</span> <span class="kwc">Line_Bundle</span><span class="opt">(</span>B_start <span class="opt">..</span> B_finish<span class="opt">));</span>
+            <span class="kwc">Line_Bundle</span><span class="opt">(</span>B_finish <span class="opt">+</span> <span class="num">1</span> <span class="opt">..</span> B_finish <span class="opt">+</span> Line_Feed_Len<span class="opt">) :=</span> End_Of_Line<span class="opt">;</span>
+            B_start <span class="opt">:=</span> B_finish <span class="opt">+</span> Line_Feed_Len <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+            L       <span class="opt">:=</span> L <span class="opt">-</span> Max_Line_Length<span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+         Line_IO<span class="opt">.</span><span class="kwc">Put</span> <span class="opt">(</span>Line_Bundle<span class="opt">);</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">while</span> L <span class="opt">&gt;=</span> Max_Line_Length <span class="kwa">loop</span>
+         Reverse_Fasta
+           <span class="opt">(</span>Fasta_Line   <span class="opt">=&gt;</span> Fasta_Section<span class="opt">,</span>
+            Fasta_Start  <span class="opt">=&gt;</span> L <span class="opt">-</span> Max_Line_Length <span class="opt">+</span> <span class="num">1</span><span class="opt">,</span>
+            Fasta_Finish <span class="opt">=&gt;</span> L<span class="opt">,</span>
+            Bundle       <span class="opt">=&gt;</span> <span class="kwc">Line_Bundle</span><span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Max_Line_Length<span class="opt">));</span>
+         Line_IO<span class="opt">.</span><span class="kwc">Put_Line</span> <span class="opt">(</span><span class="kwc">Line_Bundle</span> <span class="opt">(</span><span class="num">1</span><span class="opt">..</span>Max_Line_Length<span class="opt">));</span>
+         L <span class="opt">:=</span> L <span class="opt">-</span> Max_Line_Length<span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">if</span> L <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then</span>
+         Reverse_Fasta
+           <span class="opt">(</span>Fasta_Line   <span class="opt">=&gt;</span> Fasta_Section<span class="opt">,</span>
+            Fasta_Start  <span class="opt">=&gt;</span> <span class="num">1</span><span class="opt">,</span>
+            Fasta_Finish <span class="opt">=&gt;</span> L<span class="opt">,</span>
+            Bundle       <span class="opt">=&gt;</span> <span class="kwc">Line_Bundle</span><span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> L<span class="opt">));</span>
+         Line_IO<span class="opt">.</span><span class="kwc">Put_Line</span> <span class="opt">(</span><span class="kwc">Line_Bundle</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> L<span class="opt">));</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+   <span class="kwa">end</span> Put_Reversed_Fasta<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Read_Reverse_Write_a_Section_p
+     <span class="opt">(</span>Job_Is_Complete <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Boolean</span><span class="opt">)</span>
+   <span class="kwa">is</span>
+      Section_o_Fasta <span class="opt">:</span> <span class="kwc">String_Pointer</span> <span class="opt">(</span><span class="num">2</span><span class="opt">**</span><span class="num">20</span> <span class="opt">*</span> <span class="num">128</span><span class="opt">);</span>
+      Header          <span class="opt">:</span> <span class="kwb">String</span><span class="opt">(</span><span class="num">1</span><span class="opt">..</span>Max_Line_Length<span class="opt">) := (</span><span class="kwa">others</span> <span class="opt">=&gt;</span> <span class="sng">&#39;?&#39;</span><span class="opt">);</span>
+      Section_Length  <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      Header_Length   <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      Job_Is_Complete <span class="opt">:=</span> <span class="kwd">False</span><span class="opt">;</span>
+
+      Text_Input<span class="opt">.</span>Read_Section
+        <span class="opt">(</span>Data_Buffer     <span class="opt">=&gt;</span> Section_o_Fasta<span class="opt">.</span>Buffer<span class="opt">,</span>
+         Data_Length     <span class="opt">=&gt;</span> Section_Length<span class="opt">,</span>
+         Next_Header     <span class="opt">=&gt;</span> Header<span class="opt">,</span>
+         Header_Length   <span class="opt">=&gt;</span> Header_Length<span class="opt">,</span>
+         Max_Line_Length <span class="opt">=&gt;</span> <span class="num">100</span><span class="opt">);</span> <span class="slc">-- use anything &gt;= actual limit of 60.</span>
+
+      <span class="kwa">if</span> Header_Length <span class="opt">&lt;</span> <span class="num">1</span> <span class="kwa">then</span>   <span class="slc">-- null Header marks final section.</span>
+         Job_Is_Complete <span class="opt">:=</span> <span class="kwd">True</span><span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+      <span class="kwa">if</span> Section_Length <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then</span>
+         <span class="kwc">Put_Reversed_Fasta</span> <span class="opt">(</span>Section_o_Fasta<span class="opt">.</span>Buffer<span class="opt">,</span> Section_Length<span class="opt">);</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+      <span class="kwa">if</span> Header_Length <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then</span>
+         Line_IO<span class="opt">.</span><span class="kwc">Put_Line</span> <span class="opt">(</span><span class="kwc">Header</span><span class="opt">(</span><span class="num">1</span><span class="opt">..</span>Header_Length<span class="opt">));</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+   <span class="kwa">end</span> Read_Reverse_Write_a_Section_p<span class="opt">;</span>
+
+   <span class="kwa">task type</span> Read_Reverse_Write_a_Section <span class="kwa">is</span>
+      <span class="kwa">entry</span> Start_Reading<span class="opt">;</span>
+      <span class="kwa">entry</span> <span class="kwc">Done_Reading_Start_Writing</span> <span class="opt">(</span>Reached_End_Of_File <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Boolean</span><span class="opt">);</span>
+      <span class="kwa">entry</span> Done_Writing<span class="opt">;</span>
+      <span class="kwa">pragma</span> <span class="kwc">Storage_Size</span> <span class="opt">(</span><span class="num">2</span><span class="opt">**</span><span class="num">20</span><span class="opt">);</span>
+   <span class="kwa">end</span> Read_Reverse_Write_a_Section<span class="opt">;</span>
+
+   <span class="kwa">task body</span> Read_Reverse_Write_a_Section <span class="kwa">is</span>
+      Section_o_Fasta <span class="opt">:</span> <span class="kwc">String_Pointer</span> <span class="opt">(</span><span class="num">2</span><span class="opt">**</span><span class="num">20</span> <span class="opt">*</span> <span class="num">128</span><span class="opt">);</span>
+      Header          <span class="opt">:</span> <span class="kwb">String</span><span class="opt">(</span><span class="num">1</span><span class="opt">..</span>Max_Line_Length<span class="opt">) := (</span><span class="kwa">others</span> <span class="opt">=&gt;</span> <span class="sng">&#39;?&#39;</span><span class="opt">);</span>
+      Section_Length  <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      Header_Length   <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      Hit_End_Of_File <span class="opt">:</span> <span class="kwb">Boolean</span> <span class="opt">:=</span> <span class="kwd">False</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">loop</span>
+      <span class="kwa">select</span>
+         <span class="kwa">accept</span> Start_Reading<span class="opt">;</span>
+
+         Text_Input<span class="opt">.</span>Read_Section
+           <span class="opt">(</span>Data_Buffer     <span class="opt">=&gt;</span> Section_o_Fasta<span class="opt">.</span>Buffer<span class="opt">,</span>
+            Data_Length     <span class="opt">=&gt;</span> Section_Length<span class="opt">,</span>
+            Next_Header     <span class="opt">=&gt;</span> Header<span class="opt">,</span>
+            Header_Length   <span class="opt">=&gt;</span> Header_Length<span class="opt">,</span>
+            Max_Line_Length <span class="opt">=&gt;</span> <span class="num">100</span><span class="opt">);</span> <span class="slc">-- use anything &gt;= actual limit of 60.</span>
+
+         <span class="kwa">if</span> Header_Length <span class="opt">&lt;</span> <span class="num">1</span> <span class="kwa">then</span>   <span class="slc">-- null Header marks final section.</span>
+            Hit_End_Of_File <span class="opt">:=</span> <span class="kwd">True</span><span class="opt">;</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+
+         <span class="kwa">accept</span> <span class="kwc">Done_Reading_Start_Writing</span> <span class="opt">(</span>Reached_End_Of_File <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Boolean</span><span class="opt">)</span> <span class="kwa">do</span>
+            Reached_End_Of_File <span class="opt">:=</span> Hit_End_Of_File<span class="opt">;</span>
+         <span class="kwa">end</span> Done_Reading_Start_Writing<span class="opt">;</span>
+
+         <span class="kwa">if</span> Section_Length <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then</span>
+            <span class="kwc">Put_Reversed_Fasta</span> <span class="opt">(</span>Section_o_Fasta<span class="opt">.</span>Buffer<span class="opt">,</span> Section_Length<span class="opt">);</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+         <span class="kwa">if</span> Header_Length <span class="opt">&gt;</span> <span class="num">0</span> <span class="kwa">then</span>
+            Line_IO<span class="opt">.</span><span class="kwc">Put_Line</span> <span class="opt">(</span><span class="kwc">Header</span><span class="opt">(</span><span class="num">1</span><span class="opt">..</span>Header_Length<span class="opt">));</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+
+         <span class="kwa">accept</span> Done_Writing<span class="opt">;</span>
+      <span class="kwa">or</span>
+         <span class="kwa">terminate</span><span class="opt">;</span>
+      <span class="kwa">end select</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+   <span class="kwa">end</span> Read_Reverse_Write_a_Section<span class="opt">;</span>
+
+   Job_Is_Complete <span class="opt">:</span> <span class="kwb">Boolean</span><span class="opt">;</span>
+
+<span class="kwa">begin</span>
+
+   <span class="kwa">if</span> Multitasking_Version_Desired <span class="kwa">then</span> <span class="slc">-- Do computation concurrently with Input</span>
+
+      <span class="kwa">declare</span>
+         <span class="kwa">type</span> Task_Id_Type <span class="kwa">is mod</span> <span class="num">2</span><span class="opt">;</span>
+         Do_a_Section <span class="opt">:</span> <span class="kwa">array</span> <span class="opt">(</span>Task_Id_Type<span class="opt">)</span> <span class="kwa">of</span> Read_Reverse_Write_a_Section<span class="opt">;</span>
+         i <span class="opt">:</span> Task_Id_Type <span class="opt">:=</span> Task_Id_Type<span class="kwd">&#39;First</span><span class="opt">;</span>
+         Reached_End_Of_File <span class="opt">:</span> <span class="kwb">Boolean</span> <span class="opt">:=</span> <span class="kwd">False</span><span class="opt">;</span>
+      <span class="kwa">begin</span>
+
+         <span class="kwc">Read_Reverse_Write_a_Section_p</span> <span class="opt">(</span>Job_Is_Complete<span class="opt">);</span>
+         <span class="slc">--  All this does is handle the 1st line of the file (the Header).</span>
+
+         <span class="kwc">Do_a_Section</span><span class="opt">(</span>i<span class="opt">).</span>Start_Reading<span class="opt">;</span>
+         <span class="slc">--  Start 1st task reading 1st section.</span>
+
+         <span class="kwa">loop</span>
+
+            <span class="kwc">Do_a_Section</span><span class="opt">(</span>i<span class="opt">).</span><span class="kwc">Done_Reading_Start_Writing</span> <span class="opt">(</span>Reached_End_Of_File<span class="opt">);</span>
+            <span class="slc">-- Block here until task i says its done reading the section.</span>
+            <span class="slc">-- After completion of this rendezvous, task i is unblocked. Task i</span>
+            <span class="slc">-- then begins computing and writing the reversed data. Task i </span>
+            <span class="slc">-- remains unblocked until it finishes writing.</span>
+
+            <span class="slc">-- Task i is done reading so we can unblock task i+1 to start reading:</span>
+            <span class="kwa">if not</span> Reached_End_Of_File <span class="kwa">then</span>
+               <span class="kwc">Do_a_Section</span><span class="opt">(</span>i<span class="opt">+</span><span class="num">1</span><span class="opt">).</span>Start_Reading<span class="opt">;</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+
+            <span class="kwc">Do_a_Section</span><span class="opt">(</span>i<span class="opt">).</span>Done_Writing<span class="opt">;</span>
+            <span class="slc">-- Block here until task i says it&#39;s done writing. (If task i+1 were</span>
+            <span class="slc">-- to write while task i writes, then their output is interleaved.)</span>
+            <span class="slc">-- Next go to top of loop to unblock task i+1 so that it can write.</span>
+
+            <span class="kwa">exit when</span> Reached_End_Of_File<span class="opt">;</span>
+            i <span class="opt">:=</span> i <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+
+         <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">end</span><span class="opt">;</span>
+
+   <span class="kwa">else</span> <span class="slc">-- Use a Procedure rather than Tasks:</span>
+
+      <span class="kwa">loop</span>
+         <span class="kwc">Read_Reverse_Write_a_Section_p</span> <span class="opt">(</span>Job_Is_Complete<span class="opt">);</span>
+         <span class="kwa">exit when</span> Job_Is_Complete<span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">end if</span><span class="opt">;</span> <span class="slc">-- Multitasking_Version_Desired</span>
+
+   Line_IO<span class="opt">.</span>Close<span class="opt">;</span>
+
+<span class="kwa">end</span> Revcomp<span class="opt">;</span>
+
+
+<span class="kwa">with</span> Ada<span class="opt">.</span>Unchecked_Deallocation<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Finalization<span class="opt">;</span>
+
+<span class="kwa">package</span> Text_Input <span class="kwa">is</span>
+
+   <span class="slc">-- Use Stream_IO to Read data from Standard_Input</span>
+
+   <span class="kwa">type</span> String_Access <span class="kwa">is access</span> <span class="kwb">String</span><span class="opt">;</span>
+   <span class="kwa">type</span> <span class="kwc">String_Pointer</span> <span class="opt">(</span>Size <span class="opt">:</span> <span class="kwb">Positive</span><span class="opt">)</span> <span class="kwa">is new</span> Ada<span class="opt">.</span>Finalization<span class="opt">.</span>Limited_Controlled <span class="kwa">with</span>
+       <span class="kwa">record</span>
+          Buffer <span class="opt">:</span> String_Access<span class="opt">;</span>
+       <span class="kwa">end record</span><span class="opt">;</span>
+
+   overriding <span class="kwa">procedure</span> <span class="kwc">Initialize</span> <span class="opt">(</span>Object <span class="opt">:</span> <span class="kwa">in out</span> String_Pointer<span class="opt">);</span>
+   overriding <span class="kwa">procedure</span> <span class="kwc">Finalize</span> <span class="opt">(</span>Object <span class="opt">:</span> <span class="kwa">in out</span> String_Pointer<span class="opt">);</span>
+
+   <span class="kwa">procedure</span> Read_Section
+     <span class="opt">(</span>Data_Buffer     <span class="opt">:</span> <span class="kwa">in out</span> String_Access<span class="opt">;</span>
+      Data_Length     <span class="opt">:</span>    <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">;</span>
+      Next_Header     <span class="opt">:</span>    <span class="kwa">out</span> <span class="kwb">String</span><span class="opt">;</span>
+      Header_Length   <span class="opt">:</span>    <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">;</span>
+      Max_Line_Length <span class="opt">:</span> <span class="kwa">in</span>     <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">1024</span><span class="opt">);</span>
+
+   Section_Marker <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Character</span> <span class="opt">:=</span> <span class="sng">&#39;&gt;&#39;</span><span class="opt">;</span>
+
+   <span class="slc">-- Read_Section reads until EOF or Section_Marker is found at start</span>
+   <span class="slc">-- of a line. Can accept any line of length &lt;= Max_Line_Length.</span>
+
+   <span class="kwa">procedure</span> Free <span class="kwa">is new</span> Ada<span class="opt">.</span><span class="kwc">Unchecked_Deallocation</span> <span class="opt">(</span><span class="kwb">String</span><span class="opt">,</span> String_Access<span class="opt">);</span>
+
+<span class="kwa">end</span> Text_Input<span class="opt">;</span>
+
+<span class="kwa">with</span> Ada<span class="opt">.</span>IO_Exceptions<span class="opt">;</span>
+<span class="kwa">with</span> Line_IO<span class="opt">;</span>
+
+<span class="kwa">package body</span> Text_Input <span class="kwa">is</span>
+
+   <span class="kwa">procedure</span> Read_Section
+     <span class="opt">(</span>Data_Buffer     <span class="opt">:</span> <span class="kwa">in out</span> String_Access<span class="opt">;</span>
+      Data_Length     <span class="opt">:</span>    <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">;</span>
+      Next_Header     <span class="opt">:</span>    <span class="kwa">out</span> <span class="kwb">String</span><span class="opt">;</span>
+      Header_Length   <span class="opt">:</span>    <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">;</span>
+      Max_Line_Length <span class="opt">:</span> <span class="kwa">in</span>     <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">1024</span><span class="opt">)</span>
+   <span class="kwa">is</span>
+      Ptr <span class="opt">:</span> String_Access<span class="opt">;</span>
+   <span class="kwa">begin</span>
+      Data_Length   <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      Header_Length <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+
+      Fill_Data_Buffer<span class="opt">:</span>
+      <span class="kwa">loop</span>
+         <span class="kwa">if</span> Data_Length <span class="opt">+</span> Max_Line_Length <span class="opt">&gt;</span> Data_Buffer<span class="kwd">&#39;Length</span> <span class="kwa">then</span>
+            Ptr <span class="opt">:=</span> Data_Buffer<span class="opt">;</span>
+            Data_Buffer <span class="opt">:=</span> <span class="kwa">new</span> <span class="kwb">String</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> <span class="num">2</span> <span class="opt">*</span> Data_Buffer<span class="kwd">&#39;Length</span><span class="opt">);</span>
+            <span class="kwc">Data_Buffer</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Data_Length<span class="opt">) :=</span> <span class="kwc">Ptr</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Data_Length<span class="opt">);</span>
+            <span class="kwc">Free</span> <span class="opt">(</span>Ptr<span class="opt">);</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+
+         Get_Next_Line<span class="opt">:</span>
+         <span class="kwa">declare</span>
+            Line <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">String</span> <span class="opt">:=</span> Line_IO<span class="opt">.</span>Get_Line<span class="opt">;</span>
+            Present_Line_Length <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Natural</span> <span class="opt">:=</span> Line<span class="kwd">&#39;Length</span><span class="opt">;</span>
+            Strt <span class="opt">:</span> <span class="kwb">Natural</span><span class="opt">;</span>
+         <span class="kwa">begin</span>
+
+            <span class="kwa">if</span> Present_Line_Length <span class="opt">&lt;</span> <span class="num">1</span> <span class="kwa">then</span>
+               Header_Length <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+               <span class="kwa">exit</span> Fill_Data_Buffer<span class="opt">;</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+
+            <span class="kwa">if</span> Present_Line_Length <span class="opt">&gt;</span> Max_Line_Length <span class="kwa">then</span>
+               <span class="kwa">raise</span> Program_Error<span class="opt">;</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+
+            <span class="kwa">if</span> <span class="kwc">Line</span><span class="opt">(</span>Line<span class="kwd">&#39;First</span><span class="opt">) =</span> Section_Marker <span class="kwa">then</span>
+               Strt <span class="opt">:=</span> Next_Header<span class="kwd">&#39;First</span><span class="opt">;</span>
+               <span class="kwc">Next_Header</span><span class="opt">(</span>Strt <span class="opt">..</span> Strt <span class="opt">+</span> Present_Line_Length <span class="opt">-</span> <span class="num">1</span><span class="opt">) :=</span> Line<span class="opt">;</span>
+               Header_Length <span class="opt">:=</span> Present_Line_Length<span class="opt">;</span>
+               <span class="kwa">exit</span> Fill_Data_Buffer<span class="opt">;</span>
+            <span class="kwa">else</span>
+               <span class="kwc">Data_Buffer</span><span class="opt">(</span>Data_Length<span class="opt">+</span><span class="num">1</span> <span class="opt">..</span> Data_Length<span class="opt">+</span>Present_Line_Length<span class="opt">):=</span>Line<span class="opt">;</span>
+               Data_Length <span class="opt">:=</span> Data_Length <span class="opt">+</span> Present_Line_Length<span class="opt">;</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+
+         <span class="kwa">end</span> Get_Next_Line<span class="opt">;</span>
+
+      <span class="kwa">end loop</span> Fill_Data_Buffer<span class="opt">;</span>
+
+   <span class="kwa">exception</span>
+      <span class="kwa">when</span> Ada<span class="opt">.</span>IO_Exceptions<span class="opt">.</span>End_Error <span class="opt">=&gt;</span>
+        <span class="kwa">return</span><span class="opt">;</span>
+   <span class="kwa">end</span> Read_Section<span class="opt">;</span>
+
+   overriding <span class="kwa">procedure</span> <span class="kwc">Initialize</span> <span class="opt">(</span>Object <span class="opt">:</span> <span class="kwa">in out</span> String_Pointer<span class="opt">)</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      Object<span class="opt">.</span>Buffer <span class="opt">:=</span> <span class="kwa">new</span> <span class="kwb">String</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Object<span class="opt">.</span>Size<span class="opt">);</span>
+   <span class="kwa">end</span> Initialize<span class="opt">;</span>
+
+   overriding <span class="kwa">procedure</span> <span class="kwc">Finalize</span> <span class="opt">(</span>Object <span class="opt">:</span> <span class="kwa">in out</span> String_Pointer<span class="opt">)</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      <span class="kwc">Free</span> <span class="opt">(</span>Object<span class="opt">.</span>Buffer<span class="opt">);</span>
+   <span class="kwa">end</span> Finalize<span class="opt">;</span>
+
+<span class="kwa">end</span> Text_Input<span class="opt">;</span>
+
+<span class="kwa">package</span> Line_IO <span class="kwa">is</span>
+
+   <span class="slc">--  Stream I/O of lines of text</span>
+
+   <span class="kwa">pragma</span> <span class="kwc">Elaborate_Body</span> <span class="opt">(</span>Line_IO<span class="opt">);</span>
+
+   Separator <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">String</span> <span class="opt">:= (</span><span class="num">1</span> <span class="opt">=&gt;</span> ASCII<span class="opt">.</span>LF<span class="opt">);</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Put_Line</span> <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwb">String</span><span class="opt">);</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwb">String</span><span class="opt">);</span>
+
+   <span class="kwa">function</span> Get_Line <span class="kwa">return</span> <span class="kwb">String</span><span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Close<span class="opt">;</span>  <span class="slc">--  close output</span>
+
+<span class="kwa">end</span> Line_IO<span class="opt">;</span>
+
+
+<span class="kwa">with</span> Ada<span class="opt">.</span>Streams<span class="opt">.</span>Stream_IO<span class="opt">;</span>
+
+<span class="kwa">package body</span> Line_IO <span class="kwa">is</span>
+
+   <span class="kwa">use</span> Ada<span class="opt">.</span>Streams<span class="opt">;</span>
+
+   <span class="kwa">subtype</span> Separator_Index <span class="kwa">is</span> Stream_Element_Offset
+       <span class="kwa">range</span> <span class="num">0</span> <span class="opt">..</span> Separator<span class="kwd">&#39;Length</span> <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+   Separator_Bytes <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwc">Stream_Element_Array</span> <span class="opt">(</span>Separator_Index<span class="opt">) :=</span>
+       <span class="opt">(</span><span class="num">0</span> <span class="opt">=&gt;</span> <span class="kwb">Character</span><span class="kwd">&#39;Pos</span> <span class="opt">(</span><span class="kwc">Separator</span> <span class="opt">(</span><span class="num">1</span><span class="opt">)));</span>
+   <span class="slc">--  Converts Separator into type Stream_Element_Array. Used by Put_Line.</span>
+
+   Stdin  <span class="opt">:</span> Stream_IO<span class="opt">.</span>File_Type<span class="opt">;</span>
+   Stdout <span class="opt">:</span> Stream_IO<span class="opt">.</span>File_Type<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Put_Line</span> <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwb">String</span><span class="opt">)</span> <span class="kwa">is</span>
+      <span class="kwa">subtype</span> Index <span class="kwa">is</span> Stream_Element_Offset <span class="kwa">range</span> <span class="num">1</span> <span class="opt">..</span> Item<span class="kwd">&#39;Length</span><span class="opt">;</span>
+      <span class="kwa">subtype</span> XBytes <span class="kwa">is</span> <span class="kwc">Stream_Element_Array</span> <span class="opt">(</span>Index<span class="opt">);</span>
+      Item_Bytes<span class="opt">:</span> XBytes<span class="opt">;</span>
+      <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Ada<span class="opt">,</span> Item_Bytes<span class="opt">);</span>
+      <span class="kwa">for</span> Item_Bytes<span class="kwd">&#39;Address</span> <span class="kwa">use</span> Item<span class="kwd">&#39;Address</span><span class="opt">;</span>
+      <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>Item<span class="kwd">&#39;Size</span> <span class="opt">=</span> Item_Bytes<span class="kwd">&#39;Size</span><span class="opt">);</span>
+   <span class="kwa">begin</span>
+      Stream_IO<span class="opt">.</span><span class="kwc">Write</span> <span class="opt">(</span>Stdout<span class="opt">,</span> Item_Bytes<span class="opt">);</span>
+      Stream_IO<span class="opt">.</span><span class="kwc">Write</span> <span class="opt">(</span>Stdout<span class="opt">,</span> Separator_Bytes<span class="opt">);</span>
+   <span class="kwa">end</span> Put_Line<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Put</span> <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwb">String</span><span class="opt">)</span> <span class="kwa">is</span>
+      <span class="kwa">subtype</span> Index <span class="kwa">is</span> Stream_Element_Offset <span class="kwa">range</span> <span class="num">1</span> <span class="opt">..</span> Item<span class="kwd">&#39;Length</span><span class="opt">;</span>
+      <span class="kwa">subtype</span> XBytes <span class="kwa">is</span> <span class="kwc">Stream_Element_Array</span> <span class="opt">(</span>Index<span class="opt">);</span>
+      Item_Bytes<span class="opt">:</span> XBytes<span class="opt">;</span>
+      <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Ada<span class="opt">,</span> Item_Bytes<span class="opt">);</span>
+      <span class="kwa">for</span> Item_Bytes<span class="kwd">&#39;Address</span> <span class="kwa">use</span> Item<span class="kwd">&#39;Address</span><span class="opt">;</span>
+      <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>Item<span class="kwd">&#39;Size</span> <span class="opt">=</span> Item_Bytes<span class="kwd">&#39;Size</span><span class="opt">);</span>
+   <span class="kwa">begin</span>
+      Stream_IO<span class="opt">.</span><span class="kwc">Write</span> <span class="opt">(</span>Stdout<span class="opt">,</span> Item_Bytes<span class="opt">);</span>
+   <span class="kwa">end</span> Put<span class="opt">;</span>
+
+   <span class="slc">--  Declarations associated with filling a text buffer.</span>
+
+   BUFSIZ<span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">8_192</span> <span class="opt">*</span> <span class="num">8</span><span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Assert</span><span class="opt">(</span><span class="kwb">Character</span><span class="kwd">&#39;Size</span> <span class="opt">=</span> Stream_Element<span class="kwd">&#39;Size</span><span class="opt">);</span>
+
+   SL <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Natural</span>   <span class="opt">:=</span> Separator<span class="kwd">&#39;Length</span><span class="opt">;</span>
+
+   <span class="kwa">subtype</span> Extended_Buffer_Index <span class="kwa">is</span> <span class="kwb">Positive</span> <span class="kwa">range</span> <span class="num">1</span> <span class="opt">..</span> BUFSIZ <span class="opt">+</span> SL<span class="opt">;</span>
+   <span class="kwa">subtype</span> Buffer_Index <span class="kwa">is</span> Extended_Buffer_Index
+     <span class="kwa">range</span> Extended_Buffer_Index<span class="kwd">&#39;First</span> <span class="opt">..</span> Extended_Buffer_Index<span class="kwd">&#39;Last</span> <span class="opt">-</span> SL<span class="opt">;</span>
+   <span class="kwa">subtype</span> Extended_Bytes_Index <span class="kwa">is</span> Stream_Element_Offset
+     <span class="kwa">range</span> <span class="num">1</span> <span class="opt">..</span> <span class="kwc">Stream_Element_Offset</span><span class="opt">(</span>Extended_Buffer_Index<span class="kwd">&#39;Last</span><span class="opt">);</span>
+   <span class="kwa">subtype</span> Bytes_Index <span class="kwa">is</span> Extended_Bytes_Index
+     <span class="kwa">range</span> Extended_Bytes_Index<span class="kwd">&#39;First</span>
+     <span class="opt">.. (</span>Extended_Bytes_Index<span class="kwd">&#39;Last</span> <span class="opt">-</span> <span class="kwc">Stream_Element_Offset</span><span class="opt">(</span>SL<span class="opt">));</span>
+
+   <span class="kwa">subtype</span> Buffer_Data <span class="kwa">is</span> <span class="kwb">String</span><span class="opt">(</span>Extended_Buffer_Index<span class="opt">);</span>
+   <span class="kwa">subtype</span> Buffer_Bytes <span class="kwa">is</span> <span class="kwc">Stream_Element_Array</span><span class="opt">(</span>Extended_Bytes_Index<span class="opt">);</span>
+
+   Buffer <span class="opt">:</span> Buffer_Data<span class="opt">;</span>
+   Bytes  <span class="opt">:</span> Buffer_Bytes<span class="opt">;</span>
+   <span class="kwa">for</span> Bytes<span class="kwd">&#39;Address</span> <span class="kwa">use</span> Buffer<span class="kwd">&#39;Address</span><span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Ada<span class="opt">,</span> Bytes<span class="opt">);</span>
+
+   <span class="slc">-- start of next substring and last valid character in buffer</span>
+   Position <span class="opt">:</span> <span class="kwb">Natural</span> <span class="kwa">range</span> <span class="num">0</span> <span class="opt">..</span> Extended_Buffer_Index<span class="kwd">&#39;Last</span><span class="opt">;</span>
+   Last     <span class="opt">:</span> <span class="kwb">Natural</span> <span class="kwa">range</span> <span class="num">0</span> <span class="opt">..</span> Buffer_Index<span class="kwd">&#39;Last</span><span class="opt">;</span>
+   End_Of_Input <span class="opt">:</span> <span class="kwb">Boolean</span><span class="opt">;</span>
+
+   <span class="kwa">function</span> Get_Line <span class="kwa">return</span> <span class="kwb">String</span> <span class="kwa">is</span>
+
+      <span class="kwa">procedure</span> Reload <span class="kwa">is</span>
+         <span class="slc">--  fill Buffer with bytes available</span>
+         Last_Filled <span class="opt">:</span> Stream_Element_Offset<span class="opt">;</span>
+      <span class="kwa">begin</span>
+         <span class="kwa">if</span> Last <span class="opt">&lt;</span> Buffer_Index<span class="kwd">&#39;Last</span> <span class="kwa">then</span>
+            <span class="kwa">raise</span> Stream_IO<span class="opt">.</span>End_Error<span class="opt">;</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+         Stream_IO<span class="opt">.</span><span class="kwc">Read</span><span class="opt">(</span>Stdin<span class="opt">,</span>
+           Item <span class="opt">=&gt;</span> <span class="kwc">Bytes</span><span class="opt">(</span>Bytes_Index<span class="opt">),</span>
+           Last <span class="opt">=&gt;</span> Last_Filled<span class="opt">);</span>
+         Last <span class="opt">:=</span> <span class="kwb">Natural</span><span class="opt">(</span>Last_Filled<span class="opt">);</span>
+         Position <span class="opt">:=</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwc">Buffer</span><span class="opt">(</span>Last <span class="opt">+</span> <span class="num">1</span> <span class="opt">..</span> Last <span class="opt">+</span> SL<span class="opt">) :=</span> Separator<span class="opt">;</span>
+      <span class="kwa">end</span> Reload<span class="opt">;</span>
+
+      <span class="kwa">function</span> Separator_Position <span class="kwa">return</span> <span class="kwb">Natural</span> <span class="kwa">is</span>
+         <span class="slc">--   index of next Separator_Sequence (may be sentinel)</span>
+         K <span class="opt">:</span> Extended_Buffer_Index <span class="opt">:=</span> Position<span class="opt">;</span>
+      <span class="kwa">begin</span>
+         <span class="kwa">loop</span>
+            <span class="kwa">if</span> <span class="kwc">Buffer</span><span class="opt">(</span>K<span class="opt">) =</span> <span class="kwc">Separator</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span> <span class="kwa">then</span>
+               <span class="kwa">exit</span><span class="opt">;</span>
+            <span class="kwa">elsif</span> <span class="kwc">Buffer</span><span class="opt">(</span>K<span class="opt">+</span><span class="num">1</span><span class="opt">) =</span> <span class="kwc">Separator</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span> <span class="kwa">then</span>
+               K <span class="opt">:=</span> K <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span> <span class="kwa">exit</span><span class="opt">;</span>
+            <span class="kwa">else</span>
+               K <span class="opt">:=</span> K <span class="opt">+</span> <span class="num">2</span><span class="opt">;</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+        <span class="kwa">return</span> K<span class="opt">;</span>
+      <span class="kwa">end</span> Separator_Position<span class="opt">;</span>
+
+      Next_Separator <span class="opt">:</span> <span class="kwb">Natural</span> <span class="kwa">range</span> <span class="num">0</span> <span class="opt">..</span> Extended_Buffer_Index<span class="kwd">&#39;Last</span><span class="opt">;</span>
+   <span class="kwa">begin</span>  <span class="slc">-- Get_Line</span>
+
+      <span class="kwa">if</span> End_Of_Input <span class="kwa">then</span>
+         <span class="kwa">raise</span> Stream_IO<span class="opt">.</span>End_Error<span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+      Next_Separator <span class="opt">:=</span> Separator_Position<span class="opt">;</span>
+
+      <span class="kwa">if</span> Next_Separator <span class="opt">&gt;</span> Last <span class="kwa">then</span>
+         <span class="kwa">declare</span>
+            Result <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">String</span> <span class="opt">:=</span> <span class="kwc">Buffer</span><span class="opt">(</span>Position <span class="opt">..</span> Last<span class="opt">);</span>
+            <span class="kwa">subtype</span> XString <span class="kwa">is</span> <span class="kwb">String</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Last <span class="opt">-</span> Position <span class="opt">+</span> <span class="num">1</span><span class="opt">);</span>
+         <span class="kwa">begin</span>
+            <span class="kwa">begin</span>
+               Reload<span class="opt">;</span>
+               <span class="kwa">return</span> <span class="kwc">XString</span><span class="opt">(</span>Result<span class="opt">) &amp;</span> Get_Line<span class="opt">;</span>
+            <span class="kwa">exception</span>
+               <span class="kwa">when</span> Stream_IO<span class="opt">.</span>End_Error <span class="opt">=&gt;</span>
+                  End_Of_Input <span class="opt">:=</span> <span class="kwd">True</span><span class="opt">;</span>
+                  <span class="kwa">return</span> <span class="kwc">XString</span><span class="opt">(</span>Result<span class="opt">);</span>
+            <span class="kwa">end</span><span class="opt">;</span>
+         <span class="kwa">end</span><span class="opt">;</span>
+      <span class="kwa">else</span>
+         <span class="kwa">declare</span>
+            Result <span class="opt">:</span> <span class="kwb">String</span> <span class="kwa">renames</span> <span class="kwc">Buffer</span><span class="opt">(</span>Position <span class="opt">..</span> Next_Separator <span class="opt">-</span> <span class="num">1</span><span class="opt">);</span>
+            <span class="kwa">subtype</span> XString <span class="kwa">is</span> <span class="kwb">String</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Next_Separator <span class="opt">-</span> Position<span class="opt">);</span>
+         <span class="kwa">begin</span>
+            Position <span class="opt">:=</span> Next_Separator <span class="opt">+</span> SL<span class="opt">;</span>
+            <span class="kwa">return</span> <span class="kwc">XString</span> <span class="opt">(</span>Result<span class="opt">);</span>
+         <span class="kwa">end</span><span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+      <span class="kwa">raise</span> Program_Error<span class="opt">;</span>
+   <span class="kwa">end</span> Get_Line<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Close <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      Stream_IO<span class="opt">.</span><span class="kwc">Close</span> <span class="opt">(</span>Stdout<span class="opt">);</span>
+   <span class="kwa">end</span> Close<span class="opt">;</span>
+
+<span class="kwa">begin</span>
+   Stream_IO<span class="opt">.</span><span class="kwc">Open</span> <span class="opt">(</span>Stdout<span class="opt">,</span>
+      Mode <span class="opt">=&gt;</span> Stream_IO<span class="opt">.</span>Out_File<span class="opt">,</span>
+      Name <span class="opt">=&gt;</span> <span class="sng">&quot;/dev/stdout&quot;</span><span class="opt">);</span>
+   Stream_IO<span class="opt">.</span><span class="kwc">Open</span> <span class="opt">(</span>Stdin<span class="opt">,</span>
+      Mode <span class="opt">=&gt;</span> Stream_IO<span class="opt">.</span>In_File<span class="opt">,</span>
+      Name <span class="opt">=&gt;</span> <span class="sng">&quot;/dev/stdin&quot;</span><span class="opt">);</span>
+
+   <span class="kwc">Buffer</span><span class="opt">(</span>Buffer_Index<span class="kwd">&#39;Last</span> <span class="opt">+</span> <span class="num">1</span> <span class="opt">..</span> Buffer<span class="kwd">&#39;Last</span><span class="opt">) :=</span> Separator<span class="opt">;</span>
+   Position <span class="opt">:=</span> Buffer_Index<span class="kwd">&#39;Last</span> <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+   Last     <span class="opt">:=</span> Buffer_Index<span class="kwd">&#39;Last</span><span class="opt">;</span>
+   End_Of_Input <span class="opt">:=</span> <span class="kwd">False</span><span class="opt">;</span>
+<span class="kwa">end</span> Line_IO<span class="opt">;</span>
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+GNATMAKE 13.3.0
+
+
+ Fri, 10 Jan 2025 04:57:11 GMT
+
+MAKE:
+gnatchop -r -w revcomp.gnat-2.gnat
+splitting revcomp.gnat-2.gnat into:
+   revcomp.adb
+   text_input.ads
+   text_input.adb
+   line_io.ads
+   line_io.adb
+gnatmake -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 -f revcomp.adb -o revcomp.gnat-2.gnat_run 
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 revcomp.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 line_io.adb
+revcomp.gnat-2.gnat:507:07: warning: unreachable code [enabled by default]
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 text_input.adb
+x86_64-linux-gnu-gnatbind-13 -x revcomp.ali
+x86_64-linux-gnu-gnatlink-13 revcomp.ali -O3 -fomit-frame-pointer -march=ivybridge -o revcomp.gnat-2.gnat_run
+
+4.21s to complete and log all make actions
+
+COMMAND LINE:
+ ./revcomp.gnat-2.gnat_run 0 &lt; revcomp-input100000001.txt
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

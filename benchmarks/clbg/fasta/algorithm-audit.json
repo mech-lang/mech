@@ -1,0 +1,174 @@
+{
+  "description_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+  "cohort_policy": "Conservative exact-source arithmetic cohort. Compiler-generated exact strength reduction is allowed; source reciprocal substitutions are separated even when outputs match. Historical listings are retained, not retroactively declared invalid submissions.",
+  "programs": {
+    "fasta-rust-7": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-gpp-9": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-gcc-3": {
+      "strict": false,
+      "reason": "Precomputes a nucleotide lookup table for every RNG state instead of searching cumulative probabilities."
+    },
+    "fasta-gcc-7": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-chapel-6": {
+      "strict": false,
+      "reason": "Precomputes a nucleotide lookup table for every RNG state instead of searching cumulative probabilities."
+    },
+    "fasta-gpp-7": {
+      "strict": false,
+      "reason": "Source replaces random-number floating division with reciprocal multiplication; reported separately from exact-arithmetic cohort."
+    },
+    "fasta-rust-9": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-rust-5": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-rust-2": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-gcc-6": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-chapel-5": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-gpp-5": {
+      "strict": false,
+      "reason": "Source replaces random-number floating division with reciprocal multiplication; reported separately from exact-arithmetic cohort."
+    },
+    "fasta-gpp-6": {
+      "strict": false,
+      "reason": "Source replaces random-number floating division with reciprocal multiplication; reported separately from exact-arithmetic cohort."
+    },
+    "fasta-graalvmaot-6": {
+      "strict": false,
+      "reason": "Source replaces random-number floating division with reciprocal multiplication; reported separately from exact-arithmetic cohort."
+    },
+    "fasta-graalvmaot-5": {
+      "strict": false,
+      "reason": "Source replaces random-number floating division with reciprocal multiplication; reported separately from exact-arithmetic cohort."
+    },
+    "fasta-gcc-5": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-go-2": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-julia-2": {
+      "strict": false,
+      "reason": "Precomputes a nucleotide lookup table for every RNG state instead of searching cumulative probabilities."
+    },
+    "fasta-go-3": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-gpp-2": {
+      "strict": false,
+      "reason": "Source replaces random-number floating division with reciprocal multiplication; reported separately from exact-arithmetic cohort."
+    },
+    "fasta-gpp-1": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-julia-7": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-rust-3": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-julia-6": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-gpp-3": {
+      "strict": false,
+      "reason": "Source replaces random-number floating division with reciprocal multiplication; reported separately from exact-arithmetic cohort."
+    },
+    "fasta-julia-5": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-julia-4": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-gcc-2": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-graalvmaot-4": {
+      "strict": false,
+      "reason": "Source replaces random-number floating division with reciprocal multiplication; reported separately from exact-arithmetic cohort."
+    },
+    "fasta-gpp-4": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-rust-4": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-rust-6": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-gcc-1": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-go-1": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-chapel-3": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-rust-1": {
+      "strict": false,
+      "reason": "Scales cumulative probability thresholds into the integer RNG domain."
+    },
+    "fasta-graalvmaot-2": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-gcc-8": {
+      "strict": false,
+      "reason": "Subtracts individual probabilities instead of building and searching cumulative probabilities."
+    },
+    "fasta-graalvmaot-8": {
+      "strict": false,
+      "reason": "Subtracts individual probabilities instead of building and searching cumulative probabilities."
+    },
+    "fasta-go-8": {
+      "strict": false,
+      "reason": "Subtracts individual probabilities instead of building and searching cumulative probabilities."
+    },
+    "fasta-julia-3": {
+      "strict": true,
+      "reason": "Prescribed LCG with direct division, floating cumulative probabilities and linear/binary search."
+    },
+    "fasta-gcc-4": {
+      "strict": false,
+      "reason": "Caches the finite RNG period and jumps the generator; also uses nucleotide lookup tables."
+    }
+  }
+}

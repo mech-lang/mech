@@ -1,0 +1,10 @@
+AsU64(x<bigint>) => <u64> := x
+a := bigint/new(7)
+b := bigint/new(3)
+sum := a + b
+product := a * b
+difference := b - a
+quotient := (a * a + b) / b
+remainder := a % b
+io/print("{} {} {} {} {} {}\n", AsU64(a), AsU64(b), AsU64(sum), AsU64(product), AsU64(quotient), AsU64(remainder))
+io/print("{} {} {} {} {} {}\n", control/select(difference < 0, 1, 0), control/select(a > b, 1, 0), control/select(a >= 7, 1, 0), control/select(b <= 3, 1, 0), control/select(a == 7, 1, 0), control/select(b != a, 1, 0))

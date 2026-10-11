@@ -1,0 +1,67 @@
+{
+  "status": "passed",
+  "canonical": {
+    "bytes": 262,
+    "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+    "reference_match": true
+  },
+  "probes": [
+    {
+      "name": "empty",
+      "passed": true,
+      "input_bytes": 0,
+      "input_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba",
+      "reference_sha256": "f081054482d3004e3643f41a3e11674f4c63c7c33fc830773b743138667a7aba"
+    },
+    {
+      "name": "header-only",
+      "passed": true,
+      "input_bytes": 13,
+      "input_sha256": "488a825ce2f9304050ed991b931d7c3aed9e3c65118dd13ab4729876858a9586",
+      "output_sha256": "e86f168945c4cc9f3cd064d9308b70fb655f1030d272c24515bfd7f6496f957f",
+      "reference_sha256": "e86f168945c4cc9f3cd064d9308b70fb655f1030d272c24515bfd7f6496f957f"
+    },
+    {
+      "name": "nonoverlap-and-ordered-substitutions",
+      "passed": true,
+      "input_bytes": 2500,
+      "input_sha256": "cc2d3e7f6b981e2c5047da76087053a5721baa96ab88ab246b7010844c9934c4",
+      "output_sha256": "c30f7b8f230e4aca11a05e27f15d09b1c3a77b21354f59ce2c012486e3258680",
+      "reference_sha256": "c30f7b8f230e4aca11a05e27f15d09b1c3a77b21354f59ce2c012486e3258680"
+    },
+    {
+      "name": "line-read-boundaries",
+      "passed": true,
+      "input_bytes": 131370,
+      "input_sha256": "6a95cd9732264098dab8139865a6da8bb376b27a7c692b46e14ceae0a7203771",
+      "output_sha256": "cfad31214d4eed35c81a5be9edb13d8925607ac07c0906a8cc2585013f098b2b",
+      "reference_sha256": "cfad31214d4eed35c81a5be9edb13d8925607ac07c0906a8cc2585013f098b2b"
+    },
+    {
+      "name": "heap-buffer-above-default-stack",
+      "passed": true,
+      "input_bytes": 9000160,
+      "input_sha256": "cda2ebeae3dc4d03ae291afd9d5b0aad812513c21908fee5142fa8b2c455c7a9",
+      "output_sha256": "d7b1c3ebbf9fc234348a0818e98f6d62fcd6bd3c2ad8251383203f183fec1c6e",
+      "reference_sha256": "d7b1c3ebbf9fc234348a0818e98f6d62fcd6bd3c2ad8251383203f183fec1c6e"
+    },
+    {
+      "name": "multiple-headers-and-lines",
+      "passed": true,
+      "input_bytes": 458,
+      "input_sha256": "d4717cede2e98f327b80108b9a03b7538df39dc70b75d5307a4765ee979cfd07",
+      "output_sha256": "94fbe22bb25e4411dd4cd90dac0edb2b4e7db6d2142a48a7e4fe0e7a770bffc9",
+      "reference_sha256": "94fbe22bb25e4411dd4cd90dac0edb2b4e7db6d2142a48a7e4fe0e7a770bffc9"
+    }
+  ],
+  "old_key": "regexredux:regexredux-ada-pcre2",
+  "old_failure": {
+    "error": "Command '['/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2/regexredux-ada-pcre2']' returned non-zero exit status 1.; \nraised STORAGE_ERROR : stack overflow\n",
+    "at": "2026-10-11T07:08:57.893897+00:00"
+  },
+  "new_key": "regexredux:regexredux-ada-pcre2-heap",
+  "changes": "Use standard GNAT Unbounded.Aux heap storage and borrowed string views instead of full-input To_String copies and stack-sized replacement buffers. Keep every count, PCRE2 call and ordered replacement; include the application allocation callback and all bindings in LOC.",
+  "source_sha256": "0d5186ec1f9005eb594f930f5979c4816b3c2d05702d636171dadbb3b1fa3128",
+  "binary_sha256": "882143d94c9bde2bc60615005e54b9c52099b7861489b573331e2d471ecca8d0"
+}

@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T23:02:56.221990+00:00",
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu": "Apple M3",
+    "logical_cpus": 8
+  },
+  "compiler_snapshot": {
+    "path": "mech-initial-12.compiler.tar.gz",
+    "sha256": "39d8d909c9a9617ed7a96d6238fad2ab1a63be683afb4731c09a7162e3062c86",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "Cargo.lock": "3461224508c37a29f0ef79ea172672060b553b72b0ccf19d8307791292e8dad9",
+      "Cargo.toml": "b98e0c170b770803e732df39f37e2c4e5c4ce43c5a46d8650a5f3956c8bccaf4",
+      "benchmarks/clbg/fannkuchredux/.gitignore": "03824949a66ab6db1429bd078d10d1bc2d75706aa1b756c547f9a7ff541c77cb",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux.mec": "ca58bf822e438707cb8abf8a724f746770e72b87f1c9ec53c0523ea4b0cd8777",
+      "benchmarks/clbg/fannkuchredux/fetch_sources.py": "3f59b3b4a097d2744f6c7bf9e8159912b8f8dd14997fc366030085e06d8939a0",
+      "benchmarks/clbg/fannkuchredux/input-pins.json": "307e52404c43b36148990f2e8af06628b11d98de04e07bee3265b2848490b0f5",
+      "benchmarks/clbg/fannkuchredux/inputs/output7.txt": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+      "benchmarks/clbg/fannkuchredux/manifest.json": "d4824201d72c15d0a1a72a70ef2b55a92f3222625d31ccf5d75c255e02dfeceb",
+      "benchmarks/clbg/fannkuchredux/run.py": "245beaf47deb4220a2f4f256317a715d73bd760923b174d89445aeca97e87e0f",
+      "benchmarks/clbg/fannkuchredux/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-chapel-2.chpl": "ad1e10362a1c2528e4c050f580de22ad5d09b393dcc3256610f66f7785178966",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-1.c": "d109b20a1ef2dcc601d3fc3dca2b7d06f423b72d3a0fa650afb4cef5fa8e9a18",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-2.c": "24eb08c58f59c9cc93565f130276c5985e9243b528a55b0fca370ca37448e19f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-3.c": "4c96f8a019b9b1e2425123a243405046f8d86e030f256796574fdf6bfd0e8c07",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-4.c": "cfe834d9e71fb9e00ab8bf57fe564d3dd255cafb5c8db78c7b636c8dfc0d70f9",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-5.c": "1c716c1a16aeac98da6fb7ac6c80429d0d54f6573dc8d6efca11fee3b39d3b05",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-6.c": "fafc8ae4e36084bc299fc3e12bd8eda63fd792523e3e6513404c285ced19531a",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-8.c": "65c8d4b7b5697e1ee1ccff75aec8fb66ae97811fbd96b02a0ef46941c49dea97",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-1.go": "5e47620ed3cd6460457728cd43025a72d9293d022ece3b59feb891ff3ae71306",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-2.go": "239df20fdbdde276110a5d5f18344d2b999bc9246583b3e63fdbcd3086a8556a",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-3.go": "5b88f512ae9878fdbc3aaa1d6f9be11d026606059ab014b8d80d467775da4ac3",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-8.go": "e746d5097b2ecde2df42387b1da17a0d8c4214d5ffdc396dd2498b11ba19c3e4",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-1.cpp": "407789d3a4d7629b571390933e018b3c1fc1154bc4b2fae9c1100e3eaf054225",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-2.cpp": "be606397193e58f80559467cb1596addcf5e03a5ad9a44d36de987007092b042",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-3.cpp": "fccf786c37f0ad3939f77727cacc2ce629aed85b6e0963eeab5ae8cb4c12d06f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-4.cpp": "4bb4c6c883d42ba98dd457aec4be912891404e01f52223bb9de67fbe61ea8526",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-5.cpp": "7c850c537cc609712f2081df5453322f97537218faf9e77f37fb70c3531882b7",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-6.cpp": "761c156df5d3347978f00a9e6da9a657bf78e4befe87a6ef2c79deac200f006f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-7.cpp": "2b0c86ad3a28cb847ddb3bdd124c76156546973d600c74b7ab3de4ab7c65cdda",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-1.java": "dcff27bde49720bdc698c669dca93ddf3bfacc8e3f349422aefe9c51049600cc",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-2.java": "f55e671f4aab2ac2881f9ab9ada9a67bb08c72de74fef273fd999d8e47237296",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-3.java": "03438b4110e6e72a29aee4cada71ff0e7ab807b8648a59f5b3c7dceb89a6ee49",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-8.java": "546f1d8bdb8d19eb739bc18d23bb2f6d8d1c302ec596445f2e363ab190de198b",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-1.jl": "98dbee45fe7940783aec1dcc18579f6cda293963d77dc522e55720cd218e0a01",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-2.jl": "b7f7248fb1aac401c04d5a7823fbcd8578069646d68610e9a56ce59447295571",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-3.jl": "38c08bc365cb86c00b55568bbaa7be204f1b8f9d76a959bfb359e6f8ec2554cb",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-2.rs": "9238cf9dd91b245c4b07de2a6985785c7683e40fcd510f8b817076e7c4ba3d1c",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-4.rs": "367a0a0187b3ee6744f9a455a170a5b7f0307046a4dd245d5f8678e89ccf2e33",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-5.rs": "7a8ab49b03083e544e9394409693c4ef276670d76a9b7bef61e1d6f5677d5a2d",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-6.rs": "b0fac82457e18fea7bd8b64dddb8a0d5266d4f5d84201a3b3970973c96349a38",
+      "benchmarks/clbg/process.py": "c64b449018915b066d1a6fada7c92afacd9d90e24c7d4a0505fa0e71b787de80",
+      "hosts/gpu/Cargo.toml": "f32eb6407560d49e60e71c47ad1eba2de0228664b2ce412e347bcbd2bd1d6935",
+      "hosts/gpu/src/control/application.rs.in": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3",
+      "hosts/gpu/src/control/compiler.rs": "cd4726b8336eb3869dae250088c5756f97da3c71177565f14ed939e17f5e3eff",
+      "hosts/gpu/src/control/mod.rs": "01945302295471154ac923be026bde235f13776752c0ae374c441daf80eb559c",
+      "hosts/gpu/src/control/runtime.rs": "a2fc3b98957eae12039c65520a972343c2908af64e5f082b32682c9f9a2d4465",
+      "hosts/gpu/src/lib.rs": "de880a06a1ee6d2ba08d08dacacae566e2d00ebb024e09b7e2090164a84e13c1",
+      "hosts/gpu/src/native_build.rs": "e46094bdb15f0f5a574a6ef91446d382e878a8cc1acd101a47bec56eeca56628",
+      "scripts/unsafe-boundaries.allowlist": "b637a29699bb0020168211063c97a0af9eb62dfed2a7b5b546776957d08558ed",
+      "src/engine/src/native_sequence/control.rs": "8fcbe59f8cd532fffce217ea89a51e3f578535a2733e04965354c7aff5ea0126",
+      "src/engine/src/native_sequence/grid.rs": "937f5ae4fac23068149c03bf20f263475043b9f2f5b6ed3f5e0dee0f79a629ba",
+      "src/engine/src/native_sequence/mod.rs": "0ffe456b3a105f314321a3476805fbfe6c01de7d706a11548c60a5ae621709d9",
+      "src/stdlib/src/lib.rs": "6982882a6334509093eed3aef07430c88d28ab9aa4254243a38736d40e62476b",
+      "src/stdlib/src/native_sequence.rs": "4f1e6cd4fe2e4f730b57d1c3c26586345a7b1efed088a04df2b9ab9395ff37ad"
+    }
+  },
+  "protocol": {
+    "n": 12,
+    "samples": 3,
+    "requested_threads": 8,
+    "sample_order": [
+      [
+        "mech-fannkuch-scalar",
+        "mech-fannkuch-simd"
+      ],
+      [
+        "mech-fannkuch-simd",
+        "mech-fannkuch-scalar"
+      ],
+      [
+        "mech-fannkuch-scalar",
+        "mech-fannkuch-simd"
+      ]
+    ],
+    "environment": {
+      "RAYON_NUM_THREADS": "8",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8"
+    },
+    "selection_skip_regex": null,
+    "timing_wait": "Blocking waitpid with POSIX deadline; no timeout poll quantization.",
+    "timed_region": "Sequential fresh process to exit, complete output to regular file. Runtime/CLI and JIT startup included; building, tests and output comparison excluded.",
+    "required_work": "All 12! permutations in prescribed order, dependent prefix flips, signed checksum and maximum; no precomputed input answers.",
+    "source_scope": "Complete Mech permutation generation, factoradic initialization, flipping and checksum; generic compiler/runtime/library support excluded."
+  },
+  "programs": [
+    {
+      "id": "mech-fannkuch-simd",
+      "language": "mech",
+      "path": "fannkuchredux.mec",
+      "simd": true,
+      "upstream_starred": false,
+      "mech_compiler_executable_sha256": "d849914cb761cfcf549b42cb4c5eb33f3e33e90f97db2d7556d42eecc31a7a71",
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings"
+      },
+      "native_object_sha256": "61dcf0af9cb805e9a9c0dc9ea5d8159891f1dc719aaba8c5093c7738059fbed9",
+      "descriptor_sha256": "136d81c05ffa1f0a346e9beee35dd6b5d8eba94131fb790b5269216a85ad40e6",
+      "executable_sha256": "379bfbc77b7f0529e2d6e1a9e8369f8bfb6dfb12dd15b3622b9612de709cecd7",
+      "source": {
+        "paths": [
+          "fannkuchredux.mec"
+        ],
+        "sha256": "ca58bf822e438707cb8abf8a724f746770e72b87f1c9ec53c0523ea4b0cd8777",
+        "physical_lines": 43,
+        "nonblank_noncomment_lines": 43,
+        "normalized_bytes": 2474,
+        "gzip1_bytes": 849
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-simd"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-simd"
+      ],
+      "worker_policy": "general Rayon range scheduler; Mech loop callbacks compiled by Cranelift",
+      "samples_seconds": [
+        4.11648825,
+        4.323560167,
+        4.248417791
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 4.248417791,
+      "min_seconds": 4.11648825,
+      "max_seconds": 4.323560167,
+      "preserved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/preserved-first-mech-fannkuch-simd"
+      ]
+    },
+    {
+      "id": "mech-fannkuch-scalar",
+      "language": "mech",
+      "path": "fannkuchredux.mec",
+      "simd": false,
+      "upstream_starred": false,
+      "mech_compiler_executable_sha256": "d849914cb761cfcf549b42cb4c5eb33f3e33e90f97db2d7556d42eecc31a7a71",
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings"
+      },
+      "native_object_sha256": "9932a5e7ee9b72ec3d61afc419341b02baa7e261917e6575562aae4ba891da7c",
+      "descriptor_sha256": "b2c4203b39f939f8933f7d258e223b6210aba49da8d874222e69e551806fbbe3",
+      "executable_sha256": "14840bb2838806503bfc2f763f8460a167e25bd21b5679589b1f3a16a1d996a5",
+      "source": {
+        "paths": [
+          "fannkuchredux.mec"
+        ],
+        "sha256": "ca58bf822e438707cb8abf8a724f746770e72b87f1c9ec53c0523ea4b0cd8777",
+        "physical_lines": 43,
+        "nonblank_noncomment_lines": 43,
+        "normalized_bytes": 2474,
+        "gzip1_bytes": 849
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-scalar",
+        "--scalar"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-scalar"
+      ],
+      "worker_policy": "general Rayon range scheduler; Mech loop callbacks compiled by Cranelift",
+      "samples_seconds": [
+        7.992085458,
+        7.916961584,
+        7.938662125
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 7.938662125,
+      "min_seconds": 7.916961584,
+      "max_seconds": 7.992085458,
+      "preserved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/preserved-first-mech-fannkuch-scalar"
+      ]
+    }
+  ],
+  "excluded": [],
+  "endpoints": {
+    "time_baseline_seconds": 4.248417791,
+    "size_baseline_bytes": 849,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 2,
+        "fastest": "mech-fannkuch-simd",
+        "smallest": "mech-fannkuch-simd",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  },
+  "nonheroic_endpoints": {
+    "time_baseline_seconds": 4.248417791,
+    "size_baseline_bytes": 849,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 2,
+        "fastest": "mech-fannkuch-simd",
+        "smallest": "mech-fannkuch-simd",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  }
+}

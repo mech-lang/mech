@@ -1,0 +1,2 @@
+a := heap/new-refs((heap/null(), heap/null()))
+io/print("{}\n", 1)

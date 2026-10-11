@@ -1,0 +1,8 @@
+{
+  "all_passed": true,
+  "reversal_preserves_encoding_domain": true,
+  "translation_infers_output_domain": true,
+  "packed_windows_histograms_reused": true,
+  "scalar_and_simd": true,
+  "expected_output": "77"
+}

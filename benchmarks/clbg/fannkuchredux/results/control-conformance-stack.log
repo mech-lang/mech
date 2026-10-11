@@ -1,0 +1,17 @@
+byte shape passed 1 SIMD False
+byte shape passed 2 SIMD False
+byte shape passed 15 SIMD False
+byte shape passed 16 SIMD False
+byte shape passed 17 SIMD False
+byte shape passed 32 SIMD False
+byte shape passed 33 SIMD False
+byte shape passed 64 SIMD False
+byte shape passed 1 SIMD True
+byte shape passed 2 SIMD True
+byte shape passed 15 SIMD True
+byte shape passed 16 SIMD True
+byte shape passed 17 SIMD True
+byte shape passed 32 SIMD True
+byte shape passed 33 SIMD True
+byte shape passed 64 SIMD True
+All native control checks passed: 2544

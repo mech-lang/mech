@@ -1,0 +1,2 @@
+ld: warning: -multiply_defined is obsolete
+-macosx_version_min has been renamed to -macos_version_min

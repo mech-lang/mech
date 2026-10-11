@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fasta Erlang program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fasta Erlang program</h1>
+    <aside>
+      <p><a href="../description/fasta.html#fasta">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">% The Computer Language Benchmarks Game</span>
+<span class="slc">% https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">%</span>
+<span class="slc">%   contributed by Alex Peake</span>
+<span class="slc">%</span>
+<span class="slc">%   erl -noshell -noinput -run fasta main N</span>
+
+<span class="opt">-</span><span class="kwd">module</span><span class="opt">(</span>fasta<span class="opt">).</span>
+
+<span class="opt">-</span><span class="kwd">export</span><span class="opt">([</span>main<span class="opt">/</span><span class="num">0</span><span class="opt">,</span> main<span class="opt">/</span><span class="num">1</span><span class="opt">]).</span>
+
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>IM<span class="opt">,</span> <span class="num">139968</span><span class="opt">).</span>
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>IA<span class="opt">,</span> <span class="num">3877</span><span class="opt">).</span>
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>IC<span class="opt">,</span> <span class="num">29573</span><span class="opt">).</span>
+
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>ALU<span class="opt">,</span><span class="sng">&quot;GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA&quot;</span><span class="opt">).</span>
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>HS<span class="opt">, [{</span>$a<span class="opt">,</span> <span class="num">0.3029549426680</span><span class="opt">}, {</span>$c<span class="opt">,</span> <span class="num">0.1979883004921</span><span class="opt">}, {</span>$g<span class="opt">,</span> <span class="num">0.1975473066391</span><span class="opt">}, {</span>$t<span class="opt">,</span> <span class="num">0.3015094502008</span><span class="opt">}]).</span>
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>IUB<span class="opt">, [{</span>$a<span class="opt">,</span> <span class="num">0.27</span><span class="opt">}, {</span>$c<span class="opt">,</span> <span class="num">0.12</span><span class="opt">}, {</span>$g<span class="opt">,</span> <span class="num">0.12</span><span class="opt">}, {</span>$t<span class="opt">,</span> <span class="num">0.27</span><span class="opt">}, {</span>$B<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$D<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$H<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$K<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$M<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$N<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$R<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$S<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$V<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$W<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}, {</span>$Y<span class="opt">,</span> <span class="num">0.02</span><span class="opt">}]).</span>
+
+<span class="opt">-</span><span class="kwd">define</span><span class="opt">(</span>LINE_LENGTH<span class="opt">,</span> <span class="num">60</span><span class="opt">).</span>
+
+<span class="kwd">main</span><span class="opt">() -&gt;</span> <span class="kwd">main</span><span class="opt">([</span><span class="sng">&quot;1000&quot;</span><span class="opt">]).</span>
+<span class="kwd">main</span><span class="opt">([</span>Arg<span class="opt">]) -&gt;</span>
+   N <span class="opt">=</span> <span class="kwb">list_to_integer</span><span class="opt">(</span>Arg<span class="opt">),</span>
+   Seed <span class="opt">=</span> <span class="num">42</span><span class="opt">,</span>
+   <span class="kwd">write_fasta_cycle</span><span class="opt">(</span><span class="sng">&quot;ONE&quot;</span><span class="opt">,</span><span class="sng">&quot;Homo sapiens alu&quot;</span><span class="opt">,</span> ?ALU<span class="opt">,</span> N<span class="opt">*</span><span class="num">2</span><span class="opt">),</span>
+   NewSeed <span class="opt">=</span> <span class="kwd">write_fasta_rand</span><span class="opt">(</span><span class="sng">&quot;TWO&quot;</span><span class="opt">,</span><span class="sng">&quot;IUB ambiguity codes&quot;</span><span class="opt">,</span> ?IUB<span class="opt">,</span> N<span class="opt">*</span><span class="num">3</span><span class="opt">,</span> Seed<span class="opt">),</span>
+   <span class="kwd">write_fasta_rand</span><span class="opt">(</span><span class="sng">&quot;THREE&quot;</span><span class="opt">,</span><span class="sng">&quot;Homo sapiens frequency&quot;</span><span class="opt">,</span> ?HS<span class="opt">,</span> N<span class="opt">*</span><span class="num">5</span><span class="opt">,</span> NewSeed<span class="opt">),</span>
+   <span class="kwb">halt</span><span class="opt">(</span><span class="num">0</span><span class="opt">).</span>
+
+<span class="slc">%% Write a sequence in LINE_LENGTH lines</span>
+<span class="kwd">write_fasta_cycle</span><span class="opt">(</span>Id<span class="opt">,</span> Description<span class="opt">,</span> Seq<span class="opt">,</span> Total<span class="opt">) -&gt;</span>
+	<span class="kwc">io</span><span class="opt">:</span><span class="kwd">put_chars</span><span class="opt">(</span><span class="sng">&quot;&gt;&quot;</span> <span class="opt">++</span> Id <span class="opt">++</span> <span class="sng">&quot; &quot;</span> <span class="opt">++</span> Description <span class="opt">++</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">),</span>
+	<span class="kwd">write_fasta_cycle</span><span class="opt">(</span>Seq<span class="opt">,</span> Total<span class="opt">).</span>
+<span class="kwd">write_fasta_cycle</span><span class="opt">(</span>Seq<span class="opt">,</span> Total<span class="opt">)</span> <span class="kwa">when</span> Total <span class="opt">=&lt;</span> ?LINE_LENGTH <span class="opt">-&gt;</span>
+	<span class="opt">{</span>Seq1<span class="opt">,</span> _Remainder<span class="opt">} =</span> <span class="kwd">seq_len</span><span class="opt">(</span>Seq<span class="opt">,</span> Total<span class="opt">),</span>
+	<span class="kwc">io</span><span class="opt">:</span><span class="kwd">put_chars</span><span class="opt">(</span>Seq1 <span class="opt">++</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">);</span>
+<span class="kwd">write_fasta_cycle</span><span class="opt">(</span>Seq<span class="opt">,</span> Total<span class="opt">) -&gt;</span>
+	<span class="opt">{</span>Seq1<span class="opt">,</span> Remainder<span class="opt">} =</span> <span class="kwd">seq_len</span><span class="opt">(</span>Seq<span class="opt">,</span> ?LINE_LENGTH<span class="opt">),</span>
+	<span class="kwc">io</span><span class="opt">:</span><span class="kwd">put_chars</span><span class="opt">(</span>Seq1 <span class="opt">++</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">),</span>
+	<span class="kwd">write_fasta_cycle</span><span class="opt">(</span>Remainder<span class="opt">,</span> Total <span class="opt">-</span> ?LINE_LENGTH<span class="opt">).</span>
+
+<span class="slc">%% Return a Len of a cycle of ALU</span>
+<span class="kwd">seq_len</span><span class="opt">(</span>Seq<span class="opt">,</span> Len<span class="opt">)</span> <span class="kwa">when</span> <span class="kwb">length</span><span class="opt">(</span>Seq<span class="opt">) &gt;=</span> Len <span class="opt">-&gt;</span>
+	<span class="kwc">lists</span><span class="opt">:</span><span class="kwd">split</span><span class="opt">(</span>Len<span class="opt">,</span> Seq<span class="opt">);</span>
+<span class="kwd">seq_len</span><span class="opt">(</span>Seq<span class="opt">,</span> Len<span class="opt">)</span> <span class="kwa">when</span> <span class="kwb">length</span><span class="opt">(</span>?ALU<span class="opt">) &lt;</span> Len <span class="opt">-</span> <span class="kwb">length</span><span class="opt">(</span>Seq<span class="opt">) -&gt;</span>
+	<span class="kwd">seq_len</span><span class="opt">(</span>Seq <span class="opt">++</span> ?ALU<span class="opt">,</span> Len<span class="opt">);</span>
+<span class="kwd">seq_len</span><span class="opt">(</span>Seq<span class="opt">,</span> Len<span class="opt">) -&gt;</span>
+	<span class="opt">{</span>Seq1<span class="opt">,</span> Seq2<span class="opt">} =</span> <span class="kwc">lists</span><span class="opt">:</span><span class="kwd">split</span><span class="opt">(</span>Len <span class="opt">-</span> <span class="kwb">length</span><span class="opt">(</span>Seq<span class="opt">),</span> ?ALU<span class="opt">),</span>
+	<span class="opt">{</span>Seq <span class="opt">++</span> Seq1<span class="opt">,</span> Seq2<span class="opt">}.</span>
+
+<span class="slc">%% Write a random sequence in LINE_LENGTH lines</span>
+<span class="kwd">write_fasta_rand</span><span class="opt">(</span>Id<span class="opt">,</span> Description<span class="opt">,</span> Freq<span class="opt">,</span> Total<span class="opt">,</span> Seed<span class="opt">) -&gt;</span>
+	<span class="kwc">io</span><span class="opt">:</span><span class="kwd">put_chars</span><span class="opt">(</span><span class="sng">&quot;&gt;&quot;</span> <span class="opt">++</span> Id <span class="opt">++</span> <span class="sng">&quot; &quot;</span> <span class="opt">++</span> Description <span class="opt">++</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="opt">),</span>
+	NewSeed <span class="opt">=</span> <span class="kwd">write_fasta_rand</span><span class="opt">(</span>Freq<span class="opt">,</span> Total<span class="opt">,</span> Seed<span class="opt">),</span>
+	NewSeed<span class="opt">.</span>
+<span class="kwd">write_fasta_rand</span><span class="opt">(</span>Freq<span class="opt">,</span> Total<span class="opt">,</span> Seed<span class="opt">)</span> <span class="kwa">when</span> Total <span class="opt">=&lt;</span> ?LINE_LENGTH <span class="opt">-&gt;</span>
+	<span class="opt">{</span>RandList<span class="opt">,</span> NewSeed<span class="opt">} =</span> <span class="kwd">rand_list</span><span class="opt">(</span>Freq<span class="opt">,</span> Total<span class="opt">, [],</span> Seed<span class="opt">),</span>
+	<span class="kwc">io</span><span class="opt">:</span><span class="kwd">put_chars</span><span class="opt">(</span>RandList<span class="opt">),</span>
+	NewSeed<span class="opt">;</span>
+<span class="kwd">write_fasta_rand</span><span class="opt">(</span>Freq<span class="opt">,</span> Total<span class="opt">,</span> Seed<span class="opt">) -&gt;</span>
+	<span class="opt">{</span>RandList<span class="opt">,</span> NewSeed<span class="opt">} =</span> <span class="kwd">rand_list</span><span class="opt">(</span>Freq<span class="opt">,</span> ?LINE_LENGTH<span class="opt">, [],</span> Seed<span class="opt">),</span>
+	<span class="kwc">io</span><span class="opt">:</span><span class="kwd">put_chars</span><span class="opt">(</span>RandList<span class="opt">),</span>
+	<span class="kwd">write_fasta_rand</span><span class="opt">(</span>Freq<span class="opt">,</span> Total <span class="opt">-</span> ?LINE_LENGTH<span class="opt">,</span> NewSeed<span class="opt">).</span>
+
+<span class="slc">%% Return a Len of a random list of Freq</span>
+<span class="kwd">rand_list</span><span class="opt">(</span>_Freq<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> List<span class="opt">,</span> Seed<span class="opt">) -&gt;</span>
+	<span class="opt">{</span><span class="kwc">lists</span><span class="opt">:</span><span class="kwd">reverse</span><span class="opt">([</span><span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span> <span class="opt">|</span> List<span class="opt">]),</span> Seed<span class="opt">};</span>
+<span class="kwd">rand_list</span><span class="opt">(</span>Freq<span class="opt">,</span> Len<span class="opt">,</span> List<span class="opt">,</span> Seed<span class="opt">) -&gt;</span>
+	<span class="opt">{</span>Rand<span class="opt">,</span> NewSeed<span class="opt">} =</span> <span class="kwd">rand</span><span class="opt">(</span>Seed<span class="opt">),</span>
+	<span class="kwd">rand_list</span><span class="opt">(</span>Freq<span class="opt">,</span> Len <span class="opt">-</span> <span class="num">1</span><span class="opt">, [</span><span class="kwd">choose_base</span><span class="opt">(</span>Freq<span class="opt">,</span> Rand<span class="opt">) |</span> List<span class="opt">],</span> NewSeed<span class="opt">).</span>
+
+<span class="slc">%% Functional random number generator</span>
+<span class="kwd">rand</span><span class="opt">(</span>Seed<span class="opt">) -&gt;</span>
+   NewSeed <span class="opt">= (</span>Seed <span class="opt">*</span> ?IA <span class="opt">+</span> ?IC<span class="opt">)</span> rem ?IM<span class="opt">,</span>
+   <span class="opt">{</span>NewSeed <span class="opt">/</span> ?IM<span class="opt">,</span> NewSeed<span class="opt">}.</span>
+
+<span class="slc">%% Select the Base corresponding to the calculated cumulative Probability</span>
+<span class="kwd">choose_base</span><span class="opt">([{</span>Base<span class="opt">,</span>_<span class="opt">}],</span> _<span class="opt">)</span>
+	<span class="opt">-&gt;</span> Base<span class="opt">;</span>
+<span class="kwd">choose_base</span><span class="opt">([{</span>Base<span class="opt">,</span>Freq<span class="opt">} |</span> _<span class="opt">],</span> Prob<span class="opt">)</span> <span class="kwa">when</span> Prob <span class="opt">&lt;</span> Freq <span class="opt">-&gt;</span> 
+	Base<span class="opt">;</span>
+<span class="kwd">choose_base</span><span class="opt">([{</span>_Base<span class="opt">,</span>Freq<span class="opt">} |</span> Bases<span class="opt">],</span> Prob<span class="opt">) -&gt;</span>
+	<span class="kwd">choose_base</span><span class="opt">(</span>Bases<span class="opt">,</span> Prob <span class="opt">-</span> Freq<span class="opt">).</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Erlang/OTP 27 [erts-15.0]
+[source] [64-bit] [smp:4:4]
+[ds:4:4:10] [async-threads:1] [jit:ns]
+
+
+
+ Wed, 15 Jan 2025 21:18:08 GMT
+
+MAKE:
+mv fasta.erlang fasta.erl
+/opt/src/otp_src_27.0/bin/erlc fasta.erl
+rm fasta.erl
+
+0.98s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/otp_src_27.0/bin/erl -smp enable -noshell -run  fasta main 25000000
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA
+TCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT
+AAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG
+GCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG
+CCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT
+GGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA
+GGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA
+TTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG
+AATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA
+GCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT
+AATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC
+AGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG
+GTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC
+CGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG
+AGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT
+TGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA
+TGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT
+GTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG
+TTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT
+CTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG
+CGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG
+TCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA
+CTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG
+AGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG
+GGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC
+TGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA
+TACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA
+GGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT
+GCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC
+ACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT
+TCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC
+CGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG
+CTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG
+GGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC
+CAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT
+GGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC
+GCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA
+GGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA
+GACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA
+GGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG
+AAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT
+CCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA
+GTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA
+AAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC
+GGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT
+ACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG
+GAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC
+GCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC
+GGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG
+TCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA
+AAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG
+GAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT
+CCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC
+TGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG
+ACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC
+GTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA
+ACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA
+CAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA
+CTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA
+ACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG
+CCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG
+AGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC
+CGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG
+AGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC
+CCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG
+CTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG
+CCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG
+CCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC
+ACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA
+AAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC
+TGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC
+ACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG
+CTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG
+AGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT
+AGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA
+TCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC
+CTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA
+TCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG
+CCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT
+GGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG
+GGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG
+CGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG
+GGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG
+GTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT
+AATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT
+GCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT
+CAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG
+GGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC
+TCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT
+CGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG
+ATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG
+CGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG
+AGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA
+CAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG
+CAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC
+ACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC
+GCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC
+GAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG
+GGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT
+TGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG
+CGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA
+GCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG
+CCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC
+GCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG
+CGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA
+CTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG
+CCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA
+ACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC
+CAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT
+GAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA
+AGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG
+ATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC
+TAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA
+GGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC
+GCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG
+TGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC
+AGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA
+ATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA
+GAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC
+AGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG
+TAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC
+CAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT
+GGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC
+CCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA
+GAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT
+TTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC
+ATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC
+TGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG
+GTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG
+TCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG
+GCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC
+GTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT
+ACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC
+GAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC
+GGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC
+CTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA
+ATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG
+AGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC
+TGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT
+CACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG
+TTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG
+CCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC
+GCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT
+GGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC
+CCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC
+TGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG
+CGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG
+AGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG
+AGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG
+AGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT
+GAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA
+TCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC
+AGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA
+AAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG
+CGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC
+TACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG
+GGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT
+CGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG
+CGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG
+GTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA
+AAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA
+GGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC
+TCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC
+CTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA
+GACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG
+CGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG
+AACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG
+ACAGAGCGAGACTCCGTCTCAAAAAGGCCGG    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

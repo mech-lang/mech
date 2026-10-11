@@ -1,0 +1,59 @@
+   Compiling mech-core v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/core)
+   Compiling mech-syntax v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/syntax)
+   Compiling mech-engine v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine)
+error[E0277]: the trait bound `std::string::String: CanonicalCellBacking` is not satisfied
+    --> src/engine/src/intrinsics/assign/mod.rs:1810:43
+     |
+1810 |             source: ValueCell::from_exact("new".to_owned()).unwrap(),
+     |                     --------------------- ^^^^^^^^^^^^^^^^ the trait `cell_binding::canonical_cell_sealed::Sealed` is not implemented for `std::string::String`
+     |                     |
+     |                     required by a bound introduced by this call
+     |
+     = note: `std::string::String` implements similarly named trait `mech_core::memory_runtime::allocation::planned_arena_element_sealed::Sealed`, but not `cell_binding::canonical_cell_sealed::Sealed`
+     = help: the following other types implement trait `cell_binding::canonical_cell_sealed::Sealed`:
+               bool
+               f64
+               mech_core::Value
+               na::Matrix<T, Dyn, Dyn, VecStorage<T, Dyn, Dyn>>
+               na::Matrix<T, Dyn, na::Const<1>, VecStorage<T, Dyn, na::Const<1>>>
+               na::Matrix<T, na::Const<1>, Dyn, VecStorage<T, na::Const<1>, Dyn>>
+               usize
+     = note: required for `std::string::String` to implement `CanonicalCellBacking`
+note: required by a bound in `mech_core::ValueCell::from_exact`
+    --> src/core/src/cell_binding.rs:2493:12
+     |
+2491 |     pub fn from_exact<T>(value: T) -> MResult<Self>
+     |            ---------- required by a bound in this associated function
+2492 |     where
+2493 |         T: CanonicalCellBacking,
+     |            ^^^^^^^^^^^^^^^^^^^^ required by this bound in `ValueCell::from_exact`
+
+error[E0277]: the trait bound `std::string::String: CanonicalCellBacking` is not satisfied
+    --> src/engine/src/intrinsics/assign/mod.rs:1852:44
+     |
+1852 |         let source = ValueCell::from_exact("new".to_owned()).unwrap();
+     |                      --------------------- ^^^^^^^^^^^^^^^^ the trait `cell_binding::canonical_cell_sealed::Sealed` is not implemented for `std::string::String`
+     |                      |
+     |                      required by a bound introduced by this call
+     |
+     = note: `std::string::String` implements similarly named trait `mech_core::memory_runtime::allocation::planned_arena_element_sealed::Sealed`, but not `cell_binding::canonical_cell_sealed::Sealed`
+     = help: the following other types implement trait `cell_binding::canonical_cell_sealed::Sealed`:
+               bool
+               f64
+               mech_core::Value
+               na::Matrix<T, Dyn, Dyn, VecStorage<T, Dyn, Dyn>>
+               na::Matrix<T, Dyn, na::Const<1>, VecStorage<T, Dyn, na::Const<1>>>
+               na::Matrix<T, na::Const<1>, Dyn, VecStorage<T, na::Const<1>, Dyn>>
+               usize
+     = note: required for `std::string::String` to implement `CanonicalCellBacking`
+note: required by a bound in `mech_core::ValueCell::from_exact`
+    --> src/core/src/cell_binding.rs:2493:12
+     |
+2491 |     pub fn from_exact<T>(value: T) -> MResult<Self>
+     |            ---------- required by a bound in this associated function
+2492 |     where
+2493 |         T: CanonicalCellBacking,
+     |            ^^^^^^^^^^^^^^^^^^^^ required by this bound in `ValueCell::from_exact`
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `mech-engine` (lib test) due to 2 previous errors

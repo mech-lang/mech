@@ -1,0 +1,10 @@
+More(i<u64>, end<u64>) = (more<bool>) :=
+  more := i < end.
+Step(i<u64>, end<u64>) = (next<u64>, stop<u64>) :=
+  h := memory/allocate({value: i})
+  next := i + 1
+  stop := end.
+(i, stop) := control/while((0, 0), More, Step)
+io/print("{}\n", i)
+h := memory/allocate({value: 19})
+io/print("{}\n", 1)

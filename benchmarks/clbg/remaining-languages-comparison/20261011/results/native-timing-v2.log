@@ -1,0 +1,875 @@
+RUN 1 mandelbrot-fpascal-6-native
+SAMPLE 1 mandelbrot-fpascal-6-native 3.047381s
+RUN 1 mandelbrot-fortran-5
+SAMPLE 1 mandelbrot-fortran-5 15.033581s
+RUN 1 mandelbrot-csharpcore-7-jit
+SAMPLE 1 mandelbrot-csharpcore-7-jit 0.636319s
+RUN 1 mandelbrot-dart-jit-4
+SAMPLE 1 mandelbrot-dart-jit-4 2.162141s
+RUN 1 mandelbrot-gnat-3
+SAMPLE 1 mandelbrot-gnat-3 1.177476s
+RUN 1 mandelbrot-smalltalk-published-2
+SAMPLE 1 mandelbrot-smalltalk-published-2 165.622643s
+RUN 1 mandelbrot-fsharpcore-6-arm64-faithful-aot
+SAMPLE 1 mandelbrot-fsharpcore-6-arm64-faithful-aot 1.182292s
+RUN 1 mandelbrot-csharpcore-2-arm64-faithful-jit
+SAMPLE 1 mandelbrot-csharpcore-2-arm64-faithful-jit 50.211258s
+RUN 1 mandelbrot-fpascal-5-native
+SAMPLE 1 mandelbrot-fpascal-5-native 1.828544s
+RUN 1 mandelbrot-fpascal-3
+SAMPLE 1 mandelbrot-fpascal-3 16.855394s
+RUN 1 mandelbrot-gnat-2
+SAMPLE 1 mandelbrot-gnat-2 9.922016s
+RUN 1 mandelbrot-fortran-6
+SAMPLE 1 mandelbrot-fortran-6 1.115231s
+RUN 1 mech-control-mandelbrot
+SAMPLE 1 mech-control-mandelbrot 0.446733s
+RUN 2 mandelbrot-dart-jit-4
+SAMPLE 2 mandelbrot-dart-jit-4 2.162570s
+RUN 2 mandelbrot-fsharpcore-6-arm64-faithful-aot
+SAMPLE 2 mandelbrot-fsharpcore-6-arm64-faithful-aot 1.181820s
+RUN 2 mandelbrot-csharpcore-7-aot
+SAMPLE 2 mandelbrot-csharpcore-7-aot 0.421398s
+RUN 2 mandelbrot-fpascal-2
+SAMPLE 2 mandelbrot-fpascal-2 7.447748s
+RUN 2 mandelbrot-fpascal-6-native
+SAMPLE 2 mandelbrot-fpascal-6-native 3.032310s
+RUN 2 mandelbrot-csharpcore-2-arm64-faithful-aot
+SAMPLE 2 mandelbrot-csharpcore-2-arm64-faithful-aot 49.847046s
+RUN 2 mandelbrot-smalltalk-published-1
+SAMPLE 2 mandelbrot-smalltalk-published-1 168.378325s
+RUN 2 mandelbrot-fortran-6
+SAMPLE 2 mandelbrot-fortran-6 1.122446s
+RUN 2 mandelbrot-dart-1
+SAMPLE 2 mandelbrot-dart-1 111.544949s
+RUN 2 mandelbrot-gnat-3
+SAMPLE 2 mandelbrot-gnat-3 1.148045s
+RUN 2 mandelbrot-csharpcore-7-jit
+SAMPLE 2 mandelbrot-csharpcore-7-jit 0.671872s
+RUN 2 mandelbrot-dart-4
+SAMPLE 2 mandelbrot-dart-4 2.156488s
+RUN 2 mandelbrot-gnat-2
+SAMPLE 2 mandelbrot-gnat-2 10.549704s
+RUN 2 mandelbrot-fpascal-7-native
+SAMPLE 2 mandelbrot-fpascal-7-native 1.857488s
+RUN 2 mandelbrot-fsharpcore-6-arm64-faithful-jit
+SAMPLE 2 mandelbrot-fsharpcore-6-arm64-faithful-jit 1.295833s
+RUN 2 mandelbrot-dart-jit-1
+SAMPLE 2 mandelbrot-dart-jit-1 113.075577s
+RUN 2 mandelbrot-fsharpcore-1-arm64-faithful-aot
+SAMPLE 2 mandelbrot-fsharpcore-1-arm64-faithful-aot 1.277560s
+RUN 2 mandelbrot-fortran-5
+SAMPLE 2 mandelbrot-fortran-5 16.072823s
+RUN 2 mandelbrot-fpascal-3
+SAMPLE 2 mandelbrot-fpascal-3 17.305315s
+RUN 2 mech-control-mandelbrot
+SAMPLE 2 mech-control-mandelbrot 0.439952s
+RUN 2 mandelbrot-fsharpcore-1-arm64-faithful-jit
+SAMPLE 2 mandelbrot-fsharpcore-1-arm64-faithful-jit 1.445725s
+RUN 2 mandelbrot-fpascal-5-native
+SAMPLE 2 mandelbrot-fpascal-5-native 1.836005s
+RUN 2 mandelbrot-fpascal-1
+SAMPLE 2 mandelbrot-fpascal-1 7.444899s
+RUN 2 mandelbrot-smalltalk-published-2
+SAMPLE 2 mandelbrot-smalltalk-published-2 167.260208s
+RUN 2 mandelbrot-csharpcore-2-arm64-faithful-jit
+SAMPLE 2 mandelbrot-csharpcore-2-arm64-faithful-jit 50.022617s
+RUN 3 mandelbrot-fpascal-2
+SAMPLE 3 mandelbrot-fpascal-2 7.478204s
+RUN 3 mandelbrot-fpascal-7-native
+SAMPLE 3 mandelbrot-fpascal-7-native 1.873969s
+RUN 3 mandelbrot-fpascal-3
+SAMPLE 3 mandelbrot-fpascal-3 17.186955s
+RUN 3 mandelbrot-fortran-5
+SAMPLE 3 mandelbrot-fortran-5 15.277667s
+RUN 3 mandelbrot-fsharpcore-6-arm64-faithful-aot
+SAMPLE 3 mandelbrot-fsharpcore-6-arm64-faithful-aot 1.178755s
+RUN 3 mandelbrot-fpascal-5-native
+SAMPLE 3 mandelbrot-fpascal-5-native 1.824588s
+RUN 3 mandelbrot-fortran-6
+SAMPLE 3 mandelbrot-fortran-6 1.118857s
+RUN 3 mandelbrot-fpascal-6-native
+SAMPLE 3 mandelbrot-fpascal-6-native 3.033518s
+RUN 3 mandelbrot-smalltalk-published-2
+SAMPLE 3 mandelbrot-smalltalk-published-2 167.369267s
+RUN 3 mandelbrot-gnat-3
+SAMPLE 3 mandelbrot-gnat-3 1.124628s
+RUN 3 mech-control-mandelbrot
+SAMPLE 3 mech-control-mandelbrot 0.438880s
+RUN 3 mandelbrot-fsharpcore-1-arm64-faithful-jit
+SAMPLE 3 mandelbrot-fsharpcore-1-arm64-faithful-jit 1.443724s
+RUN 3 mandelbrot-fpascal-1
+SAMPLE 3 mandelbrot-fpascal-1 7.441685s
+RUN 3 mandelbrot-dart-4
+SAMPLE 3 mandelbrot-dart-4 2.158383s
+RUN 3 mandelbrot-gnat-2
+SAMPLE 3 mandelbrot-gnat-2 10.081947s
+RUN 3 mandelbrot-dart-1
+SAMPLE 3 mandelbrot-dart-1 112.100315s
+RUN 3 mandelbrot-fsharpcore-6-arm64-faithful-jit
+SAMPLE 3 mandelbrot-fsharpcore-6-arm64-faithful-jit 1.360641s
+RUN 3 mandelbrot-csharpcore-2-arm64-faithful-aot
+SAMPLE 3 mandelbrot-csharpcore-2-arm64-faithful-aot 50.392325s
+RUN 3 mandelbrot-dart-jit-1
+SAMPLE 3 mandelbrot-dart-jit-1 113.726659s
+RUN 3 mandelbrot-smalltalk-published-1
+SAMPLE 3 mandelbrot-smalltalk-published-1 168.687615s
+RUN 3 mandelbrot-fsharpcore-1-arm64-faithful-aot
+SAMPLE 3 mandelbrot-fsharpcore-1-arm64-faithful-aot 1.272768s
+RUN 3 mandelbrot-csharpcore-7-jit
+SAMPLE 3 mandelbrot-csharpcore-7-jit 0.679295s
+RUN 3 mandelbrot-dart-jit-4
+SAMPLE 3 mandelbrot-dart-jit-4 2.157340s
+RUN 3 mandelbrot-csharpcore-7-aot
+SAMPLE 3 mandelbrot-csharpcore-7-aot 0.419311s
+RUN 3 mandelbrot-csharpcore-2-arm64-faithful-jit
+SAMPLE 3 mandelbrot-csharpcore-2-arm64-faithful-jit 49.263415s
+RUN 1 regexredux-dart-4
+SAMPLE 1 regexredux-dart-4 10.491811s
+RUN 1 regexredux-fortran-1
+SAMPLE 1 regexredux-fortran-1 0.664529s
+RUN 1 regexredux-smalltalk-pcre2
+SAMPLE 1 regexredux-smalltalk-pcre2 2.889506s
+RUN 1 mech-control-regexredux
+SAMPLE 1 mech-control-regexredux 0.492072s
+RUN 1 regexredux-fsharpcore-2-jit
+SAMPLE 1 regexredux-fsharpcore-2-jit 2.570266s
+RUN 1 regexredux-smalltalk-regex
+SAMPLE 1 regexredux-smalltalk-regex 524.227987s
+RUN 1 regexredux-dart-5
+SAMPLE 1 regexredux-dart-5 7.559018s
+RUN 1 regexredux-pascal-pcre2
+SAMPLE 1 regexredux-pascal-pcre2 11.358669s
+RUN 1 regexredux-dart-jit-5
+SAMPLE 1 regexredux-dart-jit-5 7.197848s
+RUN 1 regexredux-csharpcore-2-arm64-faithful-jit
+SAMPLE 1 regexredux-csharpcore-2-arm64-faithful-jit 0.701842s
+RUN 1 regexredux-ada-pcre2
+FULL FAILURE regexredux-ada-pcre2 Command '['/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/ada-pascal/builds/regexredux-ada-pcre2/regexredux-ada-pcre2']' returned non-zero exit status 1.; 
+raised STORAGE_ERROR : stack overflow
+
+RUN 1 regexredux-fsharpcore-2-static-output-aot
+SAMPLE 1 regexredux-fsharpcore-2-static-output-aot 4.961225s
+RUN 1 regexredux-csharpcore-5-aot
+SAMPLE 1 regexredux-csharpcore-5-aot 1.213399s
+RUN 1 regexredux-csharpcore-5-jit
+SAMPLE 1 regexredux-csharpcore-5-jit 0.715934s
+RUN 1 regexredux-dart-jit-4
+SAMPLE 1 regexredux-dart-jit-4 10.280823s
+RUN 1 regexredux-csharpcore-2-arm64-faithful-aot
+SAMPLE 1 regexredux-csharpcore-2-arm64-faithful-aot 0.682537s
+RUN 1 regexredux-fsharpcore-6-jit
+SAMPLE 1 regexredux-fsharpcore-6-jit 0.741886s
+RUN 1 regexredux-fsharpcore-6-static-output-aot
+SAMPLE 1 regexredux-fsharpcore-6-static-output-aot 1.206478s
+RUN 2 regexredux-fsharpcore-6-jit
+SAMPLE 2 regexredux-fsharpcore-6-jit 0.714430s
+RUN 2 mech-control-regexredux
+SAMPLE 2 mech-control-regexredux 0.495457s
+RUN 2 regexredux-csharpcore-5-jit
+SAMPLE 2 regexredux-csharpcore-5-jit 0.724733s
+RUN 2 regexredux-fsharpcore-6-static-output-aot
+SAMPLE 2 regexredux-fsharpcore-6-static-output-aot 1.222683s
+RUN 2 regexredux-dart-4
+SAMPLE 2 regexredux-dart-4 10.276477s
+RUN 2 regexredux-dart-5
+SAMPLE 2 regexredux-dart-5 7.284314s
+RUN 2 regexredux-smalltalk-pcre2
+SAMPLE 2 regexredux-smalltalk-pcre2 2.861119s
+RUN 2 regexredux-fortran-1
+SAMPLE 2 regexredux-fortran-1 0.534004s
+RUN 2 regexredux-fsharpcore-2-jit
+SAMPLE 2 regexredux-fsharpcore-2-jit 2.593549s
+RUN 2 regexredux-csharpcore-2-arm64-faithful-jit
+SAMPLE 2 regexredux-csharpcore-2-arm64-faithful-jit 0.697474s
+RUN 2 regexredux-csharpcore-2-arm64-faithful-aot
+SAMPLE 2 regexredux-csharpcore-2-arm64-faithful-aot 0.685856s
+RUN 2 regexredux-smalltalk-regex
+SAMPLE 2 regexredux-smalltalk-regex 525.279199s
+RUN 2 regexredux-dart-jit-5
+SAMPLE 2 regexredux-dart-jit-5 7.215059s
+RUN 2 regexredux-dart-jit-4
+SAMPLE 2 regexredux-dart-jit-4 10.284546s
+RUN 2 regexredux-pascal-pcre2
+SAMPLE 2 regexredux-pascal-pcre2 11.569527s
+RUN 2 regexredux-fsharpcore-2-static-output-aot
+SAMPLE 2 regexredux-fsharpcore-2-static-output-aot 5.104968s
+RUN 2 regexredux-csharpcore-5-aot
+SAMPLE 2 regexredux-csharpcore-5-aot 1.212362s
+RUN 3 mech-control-regexredux
+SAMPLE 3 mech-control-regexredux 0.495862s
+RUN 3 regexredux-fsharpcore-6-static-output-aot
+SAMPLE 3 regexredux-fsharpcore-6-static-output-aot 1.203288s
+RUN 3 regexredux-fsharpcore-2-static-output-aot
+SAMPLE 3 regexredux-fsharpcore-2-static-output-aot 5.106299s
+RUN 3 regexredux-csharpcore-2-arm64-faithful-aot
+SAMPLE 3 regexredux-csharpcore-2-arm64-faithful-aot 0.934094s
+RUN 3 regexredux-smalltalk-pcre2
+SAMPLE 3 regexredux-smalltalk-pcre2 2.832969s
+RUN 3 regexredux-smalltalk-regex
+SAMPLE 3 regexredux-smalltalk-regex 523.669968s
+RUN 3 regexredux-dart-5
+SAMPLE 3 regexredux-dart-5 7.281666s
+RUN 3 regexredux-csharpcore-5-aot
+SAMPLE 3 regexredux-csharpcore-5-aot 1.465094s
+RUN 3 regexredux-fortran-1
+SAMPLE 3 regexredux-fortran-1 0.511036s
+RUN 3 regexredux-csharpcore-2-arm64-faithful-jit
+SAMPLE 3 regexredux-csharpcore-2-arm64-faithful-jit 0.684299s
+RUN 3 regexredux-fsharpcore-2-jit
+SAMPLE 3 regexredux-fsharpcore-2-jit 2.572620s
+RUN 3 regexredux-pascal-pcre2
+SAMPLE 3 regexredux-pascal-pcre2 11.364769s
+RUN 3 regexredux-dart-jit-5
+SAMPLE 3 regexredux-dart-jit-5 7.213419s
+RUN 3 regexredux-fsharpcore-6-jit
+SAMPLE 3 regexredux-fsharpcore-6-jit 0.690045s
+RUN 3 regexredux-dart-4
+SAMPLE 3 regexredux-dart-4 10.229805s
+RUN 3 regexredux-csharpcore-5-jit
+SAMPLE 3 regexredux-csharpcore-5-jit 0.726154s
+RUN 3 regexredux-dart-jit-4
+SAMPLE 3 regexredux-dart-jit-4 10.312005s
+RUN 1 binarytrees-csharpcore-7-jit
+SAMPLE 1 binarytrees-csharpcore-7-jit 1.627947s
+RUN 1 binarytrees-dart-6
+SAMPLE 1 binarytrees-dart-6 5.636898s
+RUN 1 binarytrees-dart-7
+SAMPLE 1 binarytrees-dart-7 7.348939s
+RUN 1 binarytrees-fpascal-6-native
+SAMPLE 1 binarytrees-fpascal-6-native 1.085444s
+RUN 1 binarytrees-fsharpcore-1-jit
+SAMPLE 1 binarytrees-fsharpcore-1-jit 3.218506s
+RUN 1 binarytrees-dart-jit-6
+SAMPLE 1 binarytrees-dart-jit-6 5.151338s
+RUN 1 binarytrees-pascal-compact
+SAMPLE 1 binarytrees-pascal-compact 10.107074s
+RUN 1 binarytrees-smalltalk-arrays
+SAMPLE 1 binarytrees-smalltalk-arrays 17.072888s
+RUN 1 binarytrees-csharpcore-3-aot
+SAMPLE 1 binarytrees-csharpcore-3-aot 1.664767s
+RUN 1 binarytrees-dart-jit-7
+SAMPLE 1 binarytrees-dart-jit-7 10.962091s
+RUN 1 binarytrees-csharpcore-7-aot
+SAMPLE 1 binarytrees-csharpcore-7-aot 1.830565s
+RUN 1 binarytrees-fsharpcore-7-jit
+SAMPLE 1 binarytrees-fsharpcore-7-jit 1.830833s
+RUN 1 binarytrees-gnat-4-native
+SAMPLE 1 binarytrees-gnat-4-native 1.264911s
+RUN 1 binarytrees-fsharpcore-7-static-output-aot
+SAMPLE 1 binarytrees-fsharpcore-7-static-output-aot 2.217292s
+RUN 1 mech-control-binarytrees
+SAMPLE 1 mech-control-binarytrees 0.436440s
+RUN 1 binarytrees-gnat-1
+SAMPLE 1 binarytrees-gnat-1 21.790353s
+RUN 1 binarytrees-smalltalk-published-1
+SAMPLE 1 binarytrees-smalltalk-published-1 33.022782s
+RUN 1 binarytrees-fsharpcore-1-aot
+SAMPLE 1 binarytrees-fsharpcore-1-aot 3.941785s
+RUN 1 binarytrees-fortran-1
+SAMPLE 1 binarytrees-fortran-1 10.371277s
+RUN 1 binarytrees-fpascal-7-native
+SAMPLE 1 binarytrees-fpascal-7-native 1.045293s
+RUN 1 binarytrees-fortran-2
+SAMPLE 1 binarytrees-fortran-2 0.619977s
+RUN 1 binarytrees-gnat-3
+SAMPLE 1 binarytrees-gnat-3 10.787597s
+RUN 1 binarytrees-fpascal-5-native
+SAMPLE 1 binarytrees-fpascal-5-native 1.034360s
+RUN 1 binarytrees-csharpcore-3-jit
+SAMPLE 1 binarytrees-csharpcore-3-jit 1.760256s
+RUN 2 binarytrees-gnat-4-native
+SAMPLE 2 binarytrees-gnat-4-native 1.035450s
+RUN 2 binarytrees-gnat-3
+SAMPLE 2 binarytrees-gnat-3 10.535830s
+RUN 2 binarytrees-fsharpcore-1-aot
+SAMPLE 2 binarytrees-fsharpcore-1-aot 3.643636s
+RUN 2 binarytrees-smalltalk-published-1
+SAMPLE 2 binarytrees-smalltalk-published-1 32.899165s
+RUN 2 binarytrees-fsharpcore-7-static-output-aot
+SAMPLE 2 binarytrees-fsharpcore-7-static-output-aot 1.646792s
+RUN 2 binarytrees-pascal-compact
+SAMPLE 2 binarytrees-pascal-compact 9.341283s
+RUN 2 binarytrees-csharpcore-7-jit
+SAMPLE 2 binarytrees-csharpcore-7-jit 1.632295s
+RUN 2 binarytrees-fpascal-5-native
+SAMPLE 2 binarytrees-fpascal-5-native 0.793320s
+RUN 2 binarytrees-fpascal-6-native
+SAMPLE 2 binarytrees-fpascal-6-native 0.797661s
+RUN 2 binarytrees-csharpcore-7-aot
+SAMPLE 2 binarytrees-csharpcore-7-aot 1.505172s
+RUN 2 binarytrees-fortran-1
+SAMPLE 2 binarytrees-fortran-1 10.200453s
+RUN 2 binarytrees-fpascal-7-native
+SAMPLE 2 binarytrees-fpascal-7-native 0.835205s
+RUN 2 binarytrees-smalltalk-arrays
+SAMPLE 2 binarytrees-smalltalk-arrays 17.087356s
+RUN 2 binarytrees-dart-jit-7
+SAMPLE 2 binarytrees-dart-jit-7 11.042301s
+RUN 2 binarytrees-gnat-1
+SAMPLE 2 binarytrees-gnat-1 21.419847s
+RUN 2 binarytrees-dart-7
+SAMPLE 2 binarytrees-dart-7 6.906216s
+RUN 2 binarytrees-csharpcore-3-aot
+SAMPLE 2 binarytrees-csharpcore-3-aot 1.504400s
+RUN 2 binarytrees-fortran-2
+SAMPLE 2 binarytrees-fortran-2 0.446175s
+RUN 2 mech-control-binarytrees
+SAMPLE 2 mech-control-binarytrees 0.411134s
+RUN 2 binarytrees-dart-jit-6
+SAMPLE 2 binarytrees-dart-jit-6 5.204353s
+RUN 2 binarytrees-csharpcore-3-jit
+SAMPLE 2 binarytrees-csharpcore-3-jit 1.673876s
+RUN 2 binarytrees-dart-6
+SAMPLE 2 binarytrees-dart-6 4.653659s
+RUN 2 binarytrees-fsharpcore-1-jit
+SAMPLE 2 binarytrees-fsharpcore-1-jit 3.394238s
+RUN 2 binarytrees-fsharpcore-7-jit
+SAMPLE 2 binarytrees-fsharpcore-7-jit 1.814269s
+RUN 3 binarytrees-dart-jit-7
+SAMPLE 3 binarytrees-dart-jit-7 10.881011s
+RUN 3 binarytrees-fpascal-5-native
+SAMPLE 3 binarytrees-fpascal-5-native 0.789397s
+RUN 3 binarytrees-fortran-2
+SAMPLE 3 binarytrees-fortran-2 0.439628s
+RUN 3 binarytrees-fsharpcore-1-aot
+SAMPLE 3 binarytrees-fsharpcore-1-aot 3.677687s
+RUN 3 binarytrees-dart-jit-6
+SAMPLE 3 binarytrees-dart-jit-6 5.238662s
+RUN 3 binarytrees-gnat-4-native
+SAMPLE 3 binarytrees-gnat-4-native 1.040173s
+RUN 3 binarytrees-fpascal-7-native
+SAMPLE 3 binarytrees-fpascal-7-native 0.831684s
+RUN 3 binarytrees-smalltalk-arrays
+SAMPLE 3 binarytrees-smalltalk-arrays 17.114071s
+RUN 3 binarytrees-csharpcore-7-jit
+SAMPLE 3 binarytrees-csharpcore-7-jit 1.637908s
+RUN 3 binarytrees-fsharpcore-7-static-output-aot
+SAMPLE 3 binarytrees-fsharpcore-7-static-output-aot 1.715437s
+RUN 3 binarytrees-fortran-1
+SAMPLE 3 binarytrees-fortran-1 10.212154s
+RUN 3 binarytrees-fpascal-6-native
+SAMPLE 3 binarytrees-fpascal-6-native 0.793587s
+RUN 3 binarytrees-pascal-compact
+SAMPLE 3 binarytrees-pascal-compact 10.424832s
+RUN 3 binarytrees-fsharpcore-7-jit
+SAMPLE 3 binarytrees-fsharpcore-7-jit 1.779819s
+RUN 3 mech-control-binarytrees
+SAMPLE 3 mech-control-binarytrees 0.402654s
+RUN 3 binarytrees-csharpcore-3-aot
+SAMPLE 3 binarytrees-csharpcore-3-aot 1.487759s
+RUN 3 binarytrees-gnat-1
+SAMPLE 3 binarytrees-gnat-1 21.261873s
+RUN 3 binarytrees-dart-6
+SAMPLE 3 binarytrees-dart-6 8.200798s
+RUN 3 binarytrees-csharpcore-3-jit
+SAMPLE 3 binarytrees-csharpcore-3-jit 1.666233s
+RUN 3 binarytrees-csharpcore-7-aot
+SAMPLE 3 binarytrees-csharpcore-7-aot 1.576803s
+RUN 3 binarytrees-fsharpcore-1-jit
+SAMPLE 3 binarytrees-fsharpcore-1-jit 3.192816s
+RUN 3 binarytrees-dart-7
+SAMPLE 3 binarytrees-dart-7 6.880113s
+RUN 3 binarytrees-smalltalk-published-1
+SAMPLE 3 binarytrees-smalltalk-published-1 32.855186s
+RUN 3 binarytrees-gnat-3
+SAMPLE 3 binarytrees-gnat-3 10.904021s
+RUN 1 fannkuchredux-smalltalk-reuse
+SAMPLE 1 fannkuchredux-smalltalk-reuse 131.044861s
+RUN 1 fannkuchredux-smalltalk-published-1
+SAMPLE 1 fannkuchredux-smalltalk-published-1 176.116915s
+RUN 1 fannkuchredux-fsharpcore-6-jit
+SAMPLE 1 fannkuchredux-fsharpcore-6-jit 2.773684s
+RUN 1 fannkuchredux-dart-jit-5
+SAMPLE 1 fannkuchredux-dart-jit-5 3.611804s
+RUN 1 fannkuchredux-fortran-3
+SAMPLE 1 fannkuchredux-fortran-3 6.988274s
+RUN 1 fannkuchredux-gnat-3-faithful
+SAMPLE 1 fannkuchredux-gnat-3-faithful 3.152159s
+RUN 1 fannkuchredux-csharpcore-8-jit
+SAMPLE 1 fannkuchredux-csharpcore-8-jit 23.994729s
+RUN 1 mech-control-fannkuchredux
+SAMPLE 1 mech-control-fannkuchredux 1.696686s
+RUN 1 fannkuchredux-fsharpcore-1-jit
+SAMPLE 1 fannkuchredux-fsharpcore-1-jit 41.001625s
+RUN 1 fannkuchredux-fsharpcore-6-static-output-aot
+SAMPLE 1 fannkuchredux-fsharpcore-6-static-output-aot 2.988870s
+RUN 1 fannkuchredux-csharpcore-5-arm64-faithful-jit
+SAMPLE 1 fannkuchredux-csharpcore-5-arm64-faithful-jit 2.412411s
+RUN 1 fannkuchredux-dart-jit-8
+SAMPLE 1 fannkuchredux-dart-jit-8 29.681027s
+RUN 1 fannkuchredux-fortran-1
+SAMPLE 1 fannkuchredux-fortran-1 25.254510s
+RUN 1 fannkuchredux-dart-8
+SAMPLE 1 fannkuchredux-dart-8 29.384506s
+RUN 1 fannkuchredux-fsharpcore-1-static-output-aot
+SAMPLE 1 fannkuchredux-fsharpcore-1-static-output-aot 38.631651s
+RUN 1 fannkuchredux-csharpcore-8-aot
+SAMPLE 1 fannkuchredux-csharpcore-8-aot 23.655161s
+RUN 1 fannkuchredux-csharpcore-5-arm64-faithful-aot
+SAMPLE 1 fannkuchredux-csharpcore-5-arm64-faithful-aot 2.671146s
+RUN 1 fannkuchredux-fpascal-1-faithful
+SAMPLE 1 fannkuchredux-fpascal-1-faithful 5.668593s
+RUN 1 fannkuchredux-dart-5
+SAMPLE 1 fannkuchredux-dart-5 4.144975s
+RUN 2 fannkuchredux-gnat-3-faithful
+SAMPLE 2 fannkuchredux-gnat-3-faithful 2.999494s
+RUN 2 fannkuchredux-fortran-3
+SAMPLE 2 fannkuchredux-fortran-3 6.952576s
+RUN 2 mech-control-fannkuchredux
+SAMPLE 2 mech-control-fannkuchredux 1.705488s
+RUN 2 fannkuchredux-csharpcore-5-arm64-faithful-aot
+SAMPLE 2 fannkuchredux-csharpcore-5-arm64-faithful-aot 2.413904s
+RUN 2 fannkuchredux-smalltalk-reuse
+SAMPLE 2 fannkuchredux-smalltalk-reuse 131.003359s
+RUN 2 fannkuchredux-dart-jit-8
+SAMPLE 2 fannkuchredux-dart-jit-8 29.688846s
+RUN 2 fannkuchredux-csharpcore-8-aot
+SAMPLE 2 fannkuchredux-csharpcore-8-aot 23.312059s
+RUN 2 fannkuchredux-dart-jit-5
+SAMPLE 2 fannkuchredux-dart-jit-5 3.711328s
+RUN 2 fannkuchredux-dart-5
+SAMPLE 2 fannkuchredux-dart-5 3.810487s
+RUN 2 fannkuchredux-csharpcore-5-arm64-faithful-jit
+SAMPLE 2 fannkuchredux-csharpcore-5-arm64-faithful-jit 2.430058s
+RUN 2 fannkuchredux-fpascal-1-faithful
+SAMPLE 2 fannkuchredux-fpascal-1-faithful 5.461089s
+RUN 2 fannkuchredux-fsharpcore-1-static-output-aot
+SAMPLE 2 fannkuchredux-fsharpcore-1-static-output-aot 38.535863s
+RUN 2 fannkuchredux-fsharpcore-6-jit
+SAMPLE 2 fannkuchredux-fsharpcore-6-jit 2.767037s
+RUN 2 fannkuchredux-csharpcore-8-jit
+SAMPLE 2 fannkuchredux-csharpcore-8-jit 23.995441s
+RUN 2 fannkuchredux-smalltalk-published-1
+SAMPLE 2 fannkuchredux-smalltalk-published-1 176.177086s
+RUN 2 fannkuchredux-fsharpcore-6-static-output-aot
+SAMPLE 2 fannkuchredux-fsharpcore-6-static-output-aot 2.694858s
+RUN 2 fannkuchredux-dart-8
+SAMPLE 2 fannkuchredux-dart-8 29.049795s
+RUN 2 fannkuchredux-fsharpcore-1-jit
+SAMPLE 2 fannkuchredux-fsharpcore-1-jit 40.984096s
+RUN 2 fannkuchredux-fortran-1
+SAMPLE 2 fannkuchredux-fortran-1 25.117056s
+RUN 3 fannkuchredux-fortran-3
+SAMPLE 3 fannkuchredux-fortran-3 6.871494s
+RUN 3 fannkuchredux-fsharpcore-6-jit
+SAMPLE 3 fannkuchredux-fsharpcore-6-jit 2.776705s
+RUN 3 fannkuchredux-gnat-3-faithful
+SAMPLE 3 fannkuchredux-gnat-3-faithful 2.955516s
+RUN 3 fannkuchredux-csharpcore-5-arm64-faithful-aot
+SAMPLE 3 fannkuchredux-csharpcore-5-arm64-faithful-aot 2.399023s
+RUN 3 fannkuchredux-csharpcore-8-jit
+SAMPLE 3 fannkuchredux-csharpcore-8-jit 24.018979s
+RUN 3 fannkuchredux-smalltalk-published-1
+SAMPLE 3 fannkuchredux-smalltalk-published-1 176.089272s
+RUN 3 fannkuchredux-fortran-1
+SAMPLE 3 fannkuchredux-fortran-1 25.065615s
+RUN 3 fannkuchredux-smalltalk-reuse
+SAMPLE 3 fannkuchredux-smalltalk-reuse 130.889966s
+RUN 3 fannkuchredux-dart-jit-5
+SAMPLE 3 fannkuchredux-dart-jit-5 3.671098s
+RUN 3 fannkuchredux-dart-8
+SAMPLE 3 fannkuchredux-dart-8 29.207710s
+RUN 3 fannkuchredux-dart-5
+SAMPLE 3 fannkuchredux-dart-5 3.826696s
+RUN 3 fannkuchredux-fpascal-1-faithful
+SAMPLE 3 fannkuchredux-fpascal-1-faithful 5.547926s
+RUN 3 mech-control-fannkuchredux
+SAMPLE 3 mech-control-fannkuchredux 1.736306s
+RUN 3 fannkuchredux-fsharpcore-1-static-output-aot
+SAMPLE 3 fannkuchredux-fsharpcore-1-static-output-aot 38.379438s
+RUN 3 fannkuchredux-fsharpcore-1-jit
+SAMPLE 3 fannkuchredux-fsharpcore-1-jit 40.920787s
+RUN 3 fannkuchredux-csharpcore-5-arm64-faithful-jit
+SAMPLE 3 fannkuchredux-csharpcore-5-arm64-faithful-jit 2.421079s
+RUN 3 fannkuchredux-csharpcore-8-aot
+SAMPLE 3 fannkuchredux-csharpcore-8-aot 23.406499s
+RUN 3 fannkuchredux-dart-jit-8
+SAMPLE 3 fannkuchredux-dart-jit-8 29.640047s
+RUN 3 fannkuchredux-fsharpcore-6-static-output-aot
+SAMPLE 3 fannkuchredux-fsharpcore-6-static-output-aot 2.708165s
+RUN 1 fasta-fpascal-6-faithful
+SAMPLE 1 fasta-fpascal-6-faithful 3.118103s
+RUN 1 fasta-smalltalk-buffered
+SAMPLE 1 fasta-smalltalk-buffered 9.800315s
+RUN 1 fasta-csharpcore-9-arm64-faithful-aot
+SAMPLE 1 fasta-csharpcore-9-arm64-faithful-aot 2.838800s
+RUN 1 fasta-gnat-1
+SAMPLE 1 fasta-gnat-1 7.757961s
+RUN 1 fasta-fsharpcore-4-arm64-faithful-jit
+SAMPLE 1 fasta-fsharpcore-4-arm64-faithful-jit 0.756927s
+RUN 1 fasta-csharpcore-8-jit
+SAMPLE 1 fasta-csharpcore-8-jit 3.447910s
+RUN 1 fasta-fortran-3
+SAMPLE 1 fasta-fortran-3 2.097488s
+RUN 1 fasta-csharpcore-8-aot
+SAMPLE 1 fasta-csharpcore-8-aot 4.348639s
+RUN 1 fasta-dart-jit-8
+SAMPLE 1 fasta-dart-jit-8 21.475367s
+RUN 1 fasta-gnat-2-faithful
+SAMPLE 1 fasta-gnat-2-faithful 2.347206s
+RUN 1 fasta-fsharpcore-4-arm64-faithful-aot
+SAMPLE 1 fasta-fsharpcore-4-arm64-faithful-aot 0.994582s
+RUN 1 fasta-smalltalk-published-1
+SAMPLE 1 fasta-smalltalk-published-1 41.780168s
+RUN 1 fasta-fpascal-5-faithful
+SAMPLE 1 fasta-fpascal-5-faithful 3.028911s
+RUN 1 fasta-fortran-4
+SAMPLE 1 fasta-fortran-4 2.124157s
+RUN 1 fasta-smalltalk-published-2
+SAMPLE 1 fasta-smalltalk-published-2 20.708749s
+RUN 1 fasta-dart-jit-5
+SAMPLE 1 fasta-dart-jit-5 2.034227s
+RUN 1 fasta-dart-8
+SAMPLE 1 fasta-dart-8 22.143138s
+RUN 1 fasta-fsharpcore-3-arm64-faithful-jit
+SAMPLE 1 fasta-fsharpcore-3-arm64-faithful-jit 0.757187s
+RUN 1 fasta-fsharpcore-3-arm64-faithful-aot
+SAMPLE 1 fasta-fsharpcore-3-arm64-faithful-aot 0.999914s
+RUN 1 fasta-csharpcore-9-arm64-faithful-jit
+SAMPLE 1 fasta-csharpcore-9-arm64-faithful-jit 2.257991s
+RUN 1 fasta-gnat-5-faithful
+SAMPLE 1 fasta-gnat-5-faithful 2.386523s
+RUN 1 mech-control-fasta
+SAMPLE 1 mech-control-fasta 0.579996s
+RUN 1 fasta-dart-5
+SAMPLE 1 fasta-dart-5 3.111318s
+RUN 2 fasta-smalltalk-published-2
+SAMPLE 2 fasta-smalltalk-published-2 20.767328s
+RUN 2 fasta-fsharpcore-4-arm64-faithful-aot
+SAMPLE 2 fasta-fsharpcore-4-arm64-faithful-aot 0.735263s
+RUN 2 fasta-gnat-2-faithful
+SAMPLE 2 fasta-gnat-2-faithful 2.149485s
+RUN 2 fasta-csharpcore-9-arm64-faithful-aot
+SAMPLE 2 fasta-csharpcore-9-arm64-faithful-aot 2.433922s
+RUN 2 fasta-dart-5
+SAMPLE 2 fasta-dart-5 2.849379s
+RUN 2 fasta-fsharpcore-3-arm64-faithful-jit
+SAMPLE 2 fasta-fsharpcore-3-arm64-faithful-jit 0.756197s
+RUN 2 fasta-dart-jit-5
+SAMPLE 2 fasta-dart-jit-5 2.027756s
+RUN 2 fasta-csharpcore-8-jit
+SAMPLE 2 fasta-csharpcore-8-jit 3.437392s
+RUN 2 fasta-fsharpcore-4-arm64-faithful-jit
+SAMPLE 2 fasta-fsharpcore-4-arm64-faithful-jit 0.755072s
+RUN 2 fasta-dart-8
+SAMPLE 2 fasta-dart-8 21.876427s
+RUN 2 fasta-fortran-4
+SAMPLE 2 fasta-fortran-4 2.018794s
+RUN 2 fasta-csharpcore-9-arm64-faithful-jit
+SAMPLE 2 fasta-csharpcore-9-arm64-faithful-jit 2.262578s
+RUN 2 fasta-smalltalk-published-1
+SAMPLE 2 fasta-smalltalk-published-1 41.877693s
+RUN 2 fasta-fsharpcore-3-arm64-faithful-aot
+SAMPLE 2 fasta-fsharpcore-3-arm64-faithful-aot 0.737394s
+RUN 2 fasta-dart-jit-8
+SAMPLE 2 fasta-dart-jit-8 21.613467s
+RUN 2 fasta-csharpcore-8-aot
+SAMPLE 2 fasta-csharpcore-8-aot 4.061334s
+RUN 2 mech-control-fasta
+SAMPLE 2 mech-control-fasta 0.576040s
+RUN 2 fasta-fpascal-6-faithful
+SAMPLE 2 fasta-fpascal-6-faithful 2.929254s
+RUN 2 fasta-gnat-1
+SAMPLE 2 fasta-gnat-1 7.552927s
+RUN 2 fasta-fpascal-5-faithful
+SAMPLE 2 fasta-fpascal-5-faithful 2.716130s
+RUN 2 fasta-smalltalk-buffered
+SAMPLE 2 fasta-smalltalk-buffered 9.781652s
+RUN 2 fasta-fortran-3
+SAMPLE 2 fasta-fortran-3 1.956185s
+RUN 2 fasta-gnat-5-faithful
+SAMPLE 2 fasta-gnat-5-faithful 2.206561s
+RUN 3 fasta-fpascal-5-faithful
+SAMPLE 3 fasta-fpascal-5-faithful 2.841302s
+RUN 3 fasta-gnat-2-faithful
+SAMPLE 3 fasta-gnat-2-faithful 2.115157s
+RUN 3 fasta-fpascal-6-faithful
+SAMPLE 3 fasta-fpascal-6-faithful 2.936542s
+RUN 3 fasta-fortran-4
+SAMPLE 3 fasta-fortran-4 2.018074s
+RUN 3 fasta-fsharpcore-3-arm64-faithful-aot
+SAMPLE 3 fasta-fsharpcore-3-arm64-faithful-aot 0.739041s
+RUN 3 fasta-smalltalk-buffered
+SAMPLE 3 fasta-smalltalk-buffered 9.785650s
+RUN 3 fasta-fortran-3
+SAMPLE 3 fasta-fortran-3 1.971298s
+RUN 3 fasta-fsharpcore-4-arm64-faithful-jit
+SAMPLE 3 fasta-fsharpcore-4-arm64-faithful-jit 0.754542s
+RUN 3 fasta-csharpcore-9-arm64-faithful-jit
+SAMPLE 3 fasta-csharpcore-9-arm64-faithful-jit 2.254156s
+RUN 3 fasta-gnat-1
+SAMPLE 3 fasta-gnat-1 7.671455s
+RUN 3 fasta-csharpcore-9-arm64-faithful-aot
+SAMPLE 3 fasta-csharpcore-9-arm64-faithful-aot 2.562407s
+RUN 3 fasta-smalltalk-published-2
+SAMPLE 3 fasta-smalltalk-published-2 20.666995s
+RUN 3 fasta-dart-jit-5
+SAMPLE 3 fasta-dart-jit-5 2.025164s
+RUN 3 fasta-fsharpcore-4-arm64-faithful-aot
+SAMPLE 3 fasta-fsharpcore-4-arm64-faithful-aot 0.735919s
+RUN 3 fasta-csharpcore-8-jit
+SAMPLE 3 fasta-csharpcore-8-jit 3.459656s
+RUN 3 fasta-dart-jit-8
+SAMPLE 3 fasta-dart-jit-8 21.612607s
+RUN 3 fasta-smalltalk-published-1
+SAMPLE 3 fasta-smalltalk-published-1 41.938104s
+RUN 3 mech-control-fasta
+SAMPLE 3 mech-control-fasta 0.573390s
+RUN 3 fasta-dart-5
+SAMPLE 3 fasta-dart-5 2.832237s
+RUN 3 fasta-fsharpcore-3-arm64-faithful-jit
+SAMPLE 3 fasta-fsharpcore-3-arm64-faithful-jit 0.754271s
+RUN 3 fasta-gnat-5-faithful
+SAMPLE 3 fasta-gnat-5-faithful 2.164843s
+RUN 3 fasta-csharpcore-8-aot
+SAMPLE 3 fasta-csharpcore-8-aot 4.047796s
+RUN 3 fasta-dart-8
+SAMPLE 3 fasta-dart-8 21.851266s
+RUN 1 knucleotide-fortran-parallel
+SAMPLE 1 knucleotide-fortran-parallel 6.895565s
+RUN 1 knucleotide-smalltalk-published-2
+SAMPLE 1 knucleotide-smalltalk-published-2 334.064764s
+RUN 1 knucleotide-csharpcore-1-arm64-faithful-jit
+SAMPLE 1 knucleotide-csharpcore-1-arm64-faithful-jit 1.519450s
+RUN 1 knucleotide-fsharp-local-rolling-jit
+SAMPLE 1 knucleotide-fsharp-local-rolling-jit 2.862068s
+RUN 1 knucleotide-dart-1
+SAMPLE 1 knucleotide-dart-1 444.701349s
+RUN 1 knucleotide-fsharpcore-4-arm64-faithful-aot
+SAMPLE 1 knucleotide-fsharpcore-4-arm64-faithful-aot 3.646304s
+RUN 1 knucleotide-ada-optimized
+SAMPLE 1 knucleotide-ada-optimized 1.753472s
+RUN 1 knucleotide-csharpcore-1-arm64-faithful-aot
+SAMPLE 1 knucleotide-csharpcore-1-arm64-faithful-aot 1.909747s
+RUN 1 knucleotide-fsharp-local-compact-static-output-aot
+SAMPLE 1 knucleotide-fsharp-local-compact-static-output-aot 23.570851s
+RUN 1 knucleotide-pascal-optimized
+SAMPLE 1 knucleotide-pascal-optimized 7.855878s
+RUN 1 knucleotide-fortran-compact
+SAMPLE 1 knucleotide-fortran-compact 12.757020s
+RUN 1 knucleotide-dart-jit-3
+SAMPLE 1 knucleotide-dart-jit-3 4.837706s
+RUN 1 knucleotide-fsharp-local-compact-jit
+SAMPLE 1 knucleotide-fsharp-local-compact-jit 21.632734s
+RUN 1 knucleotide-dart-jit-1
+SAMPLE 1 knucleotide-dart-jit-1 445.198690s
+RUN 1 knucleotide-pascal-compact
+SAMPLE 1 knucleotide-pascal-compact 37.747945s
+RUN 1 knucleotide-dart-3
+SAMPLE 1 knucleotide-dart-3 4.444967s
+RUN 1 knucleotide-smalltalk-packed
+SAMPLE 1 knucleotide-smalltalk-packed 87.695557s
+RUN 1 knucleotide-fsharpcore-4-arm64-faithful-jit
+SAMPLE 1 knucleotide-fsharpcore-4-arm64-faithful-jit 3.963641s
+RUN 1 knucleotide-csharpcore-8-arm64-faithful-jit
+SAMPLE 1 knucleotide-csharpcore-8-arm64-faithful-jit 23.890815s
+RUN 1 knucleotide-ada-compact
+SAMPLE 1 knucleotide-ada-compact 6.123913s
+RUN 1 knucleotide-fsharp-local-rolling-static-output-aot
+SAMPLE 1 knucleotide-fsharp-local-rolling-static-output-aot 2.787862s
+RUN 1 knucleotide-csharpcore-8-arm64-faithful-aot
+SAMPLE 1 knucleotide-csharpcore-8-arm64-faithful-aot 25.005798s
+RUN 1 mech-control-knucleotide
+SAMPLE 1 mech-control-knucleotide 0.548674s
+RUN 2 knucleotide-dart-jit-3
+SAMPLE 2 knucleotide-dart-jit-3 4.846459s
+RUN 2 knucleotide-fsharp-local-rolling-jit
+SAMPLE 2 knucleotide-fsharp-local-rolling-jit 2.827724s
+RUN 2 knucleotide-ada-compact
+SAMPLE 2 knucleotide-ada-compact 5.910575s
+RUN 2 knucleotide-fsharp-local-compact-static-output-aot
+SAMPLE 2 knucleotide-fsharp-local-compact-static-output-aot 23.245038s
+RUN 2 knucleotide-csharpcore-8-arm64-faithful-jit
+SAMPLE 2 knucleotide-csharpcore-8-arm64-faithful-jit 23.918551s
+RUN 2 knucleotide-fsharpcore-4-arm64-faithful-jit
+SAMPLE 2 knucleotide-fsharpcore-4-arm64-faithful-jit 3.969812s
+RUN 2 knucleotide-dart-1
+SAMPLE 2 knucleotide-dart-1 444.913388s
+RUN 2 mech-control-knucleotide
+SAMPLE 2 mech-control-knucleotide 0.502827s
+RUN 2 knucleotide-smalltalk-packed
+SAMPLE 2 knucleotide-smalltalk-packed 87.903662s
+RUN 2 knucleotide-dart-3
+SAMPLE 2 knucleotide-dart-3 4.181071s
+RUN 2 knucleotide-fortran-compact
+SAMPLE 2 knucleotide-fortran-compact 12.366280s
+RUN 2 knucleotide-ada-optimized
+SAMPLE 2 knucleotide-ada-optimized 1.575994s
+RUN 2 knucleotide-dart-jit-1
+SAMPLE 2 knucleotide-dart-jit-1 454.047835s
+RUN 2 knucleotide-fsharp-local-rolling-static-output-aot
+SAMPLE 2 knucleotide-fsharp-local-rolling-static-output-aot 2.468422s
+RUN 2 knucleotide-csharpcore-8-arm64-faithful-aot
+SAMPLE 2 knucleotide-csharpcore-8-arm64-faithful-aot 24.711290s
+RUN 2 knucleotide-fsharpcore-4-arm64-faithful-aot
+SAMPLE 2 knucleotide-fsharpcore-4-arm64-faithful-aot 3.407875s
+RUN 2 knucleotide-csharpcore-1-arm64-faithful-jit
+SAMPLE 2 knucleotide-csharpcore-1-arm64-faithful-jit 1.471212s
+RUN 2 knucleotide-smalltalk-published-2
+SAMPLE 2 knucleotide-smalltalk-published-2 333.212172s
+RUN 2 knucleotide-pascal-optimized
+SAMPLE 2 knucleotide-pascal-optimized 7.545197s
+RUN 2 knucleotide-csharpcore-1-arm64-faithful-aot
+SAMPLE 2 knucleotide-csharpcore-1-arm64-faithful-aot 1.648583s
+RUN 2 knucleotide-fortran-parallel
+SAMPLE 2 knucleotide-fortran-parallel 7.038603s
+RUN 2 knucleotide-fsharp-local-compact-jit
+SAMPLE 2 knucleotide-fsharp-local-compact-jit 21.672445s
+RUN 2 knucleotide-pascal-compact
+SAMPLE 2 knucleotide-pascal-compact 40.623910s
+RUN 3 knucleotide-smalltalk-published-2
+SAMPLE 3 knucleotide-smalltalk-published-2 332.745696s
+RUN 3 knucleotide-ada-optimized
+SAMPLE 3 knucleotide-ada-optimized 1.623197s
+RUN 3 knucleotide-ada-compact
+SAMPLE 3 knucleotide-ada-compact 5.986411s
+RUN 3 knucleotide-pascal-optimized
+SAMPLE 3 knucleotide-pascal-optimized 7.522994s
+RUN 3 knucleotide-csharpcore-1-arm64-faithful-aot
+SAMPLE 3 knucleotide-csharpcore-1-arm64-faithful-aot 1.676538s
+RUN 3 knucleotide-fsharp-local-rolling-static-output-aot
+SAMPLE 3 knucleotide-fsharp-local-rolling-static-output-aot 2.530281s
+RUN 3 knucleotide-fortran-parallel
+SAMPLE 3 knucleotide-fortran-parallel 7.042794s
+RUN 3 knucleotide-fsharp-local-compact-jit
+SAMPLE 3 knucleotide-fsharp-local-compact-jit 21.593618s
+RUN 3 knucleotide-csharpcore-8-arm64-faithful-aot
+SAMPLE 3 knucleotide-csharpcore-8-arm64-faithful-aot 24.864513s
+RUN 3 knucleotide-dart-jit-3
+SAMPLE 3 knucleotide-dart-jit-3 4.862323s
+RUN 3 knucleotide-fsharp-local-rolling-jit
+SAMPLE 3 knucleotide-fsharp-local-rolling-jit 2.894174s
+RUN 3 knucleotide-fortran-compact
+SAMPLE 3 knucleotide-fortran-compact 12.445623s
+RUN 3 knucleotide-dart-jit-1
+SAMPLE 3 knucleotide-dart-jit-1 455.957739s
+RUN 3 knucleotide-dart-3
+SAMPLE 3 knucleotide-dart-3 4.136093s
+RUN 3 knucleotide-pascal-compact
+SAMPLE 3 knucleotide-pascal-compact 40.187724s
+RUN 3 mech-control-knucleotide
+SAMPLE 3 mech-control-knucleotide 0.522032s
+RUN 3 knucleotide-smalltalk-packed
+SAMPLE 3 knucleotide-smalltalk-packed 88.611905s
+RUN 3 knucleotide-dart-1
+SAMPLE 3 knucleotide-dart-1 444.032219s
+RUN 3 knucleotide-fsharpcore-4-arm64-faithful-jit
+SAMPLE 3 knucleotide-fsharpcore-4-arm64-faithful-jit 4.007911s
+RUN 3 knucleotide-fsharp-local-compact-static-output-aot
+SAMPLE 3 knucleotide-fsharp-local-compact-static-output-aot 23.352800s
+RUN 3 knucleotide-csharpcore-1-arm64-faithful-jit
+SAMPLE 3 knucleotide-csharpcore-1-arm64-faithful-jit 1.486446s
+RUN 3 knucleotide-fsharpcore-4-arm64-faithful-aot
+SAMPLE 3 knucleotide-fsharpcore-4-arm64-faithful-aot 3.346342s
+RUN 3 knucleotide-csharpcore-8-arm64-faithful-jit
+SAMPLE 3 knucleotide-csharpcore-8-arm64-faithful-jit 23.788563s
+RUN 1 revcomp-fsharpcore-1-aot
+SAMPLE 1 revcomp-fsharpcore-1-aot 14.951060s
+RUN 1 mech-control-revcomp
+SAMPLE 1 mech-control-revcomp 0.162087s
+RUN 1 revcomp-dart-jit-8
+SAMPLE 1 revcomp-dart-jit-8 0.928489s
+RUN 1 revcomp-fsharpcore-1-jit
+SAMPLE 1 revcomp-fsharpcore-1-jit 15.297952s
+RUN 1 revcomp-csharpcore-9-arm64-faithful-aot
+SAMPLE 1 revcomp-csharpcore-9-arm64-faithful-aot 0.340656s
+RUN 1 revcomp-csharpcore-3-jit
+SAMPLE 1 revcomp-csharpcore-3-jit 1.038571s
+RUN 1 revcomp-fortran-1
+SAMPLE 1 revcomp-fortran-1 0.457290s
+RUN 1 revcomp-gnat-1
+SAMPLE 1 revcomp-gnat-1 6.098472s
+RUN 1 revcomp-dart-5
+SAMPLE 1 revcomp-dart-5 1.290123s
+RUN 1 revcomp-smalltalk-published-2
+SAMPLE 1 revcomp-smalltalk-published-2 14.897637s
+RUN 1 revcomp-dart-jit-5
+SAMPLE 1 revcomp-dart-jit-5 0.786624s
+RUN 1 revcomp-csharpcore-3-aot
+SAMPLE 1 revcomp-csharpcore-3-aot 0.987460s
+RUN 1 revcomp-fortran-2
+SAMPLE 1 revcomp-fortran-2 1.944479s
+RUN 1 revcomp-smalltalk-streaming
+SAMPLE 1 revcomp-smalltalk-streaming 12.084993s
+RUN 1 revcomp-gnat-2
+SAMPLE 1 revcomp-gnat-2 0.429995s
+RUN 1 revcomp-dart-8
+SAMPLE 1 revcomp-dart-8 2.100298s
+RUN 1 revcomp-csharpcore-9-arm64-faithful-jit
+SAMPLE 1 revcomp-csharpcore-9-arm64-faithful-jit 0.105054s
+RUN 1 revcomp-fpascal-2
+SAMPLE 1 revcomp-fpascal-2 0.877272s
+RUN 2 revcomp-fpascal-2
+SAMPLE 2 revcomp-fpascal-2 0.660343s
+RUN 2 revcomp-fortran-1
+SAMPLE 2 revcomp-fortran-1 0.281531s
+RUN 2 revcomp-dart-8
+SAMPLE 2 revcomp-dart-8 1.784119s
+RUN 2 mech-control-revcomp
+SAMPLE 2 mech-control-revcomp 0.152135s
+RUN 2 revcomp-gnat-1
+SAMPLE 2 revcomp-gnat-1 6.408840s
+RUN 2 revcomp-smalltalk-streaming
+SAMPLE 2 revcomp-smalltalk-streaming 12.035990s
+RUN 2 revcomp-fsharpcore-1-jit
+SAMPLE 2 revcomp-fsharpcore-1-jit 15.093005s
+RUN 2 revcomp-dart-jit-5
+SAMPLE 2 revcomp-dart-jit-5 0.767516s
+RUN 2 revcomp-csharpcore-9-arm64-faithful-aot
+SAMPLE 2 revcomp-csharpcore-9-arm64-faithful-aot 0.074906s
+RUN 2 revcomp-csharpcore-3-aot
+SAMPLE 2 revcomp-csharpcore-3-aot 0.709631s
+RUN 2 revcomp-csharpcore-3-jit
+SAMPLE 2 revcomp-csharpcore-3-jit 1.032759s
+RUN 2 revcomp-dart-jit-8
+SAMPLE 2 revcomp-dart-jit-8 0.925258s
+RUN 2 revcomp-smalltalk-published-2
+SAMPLE 2 revcomp-smalltalk-published-2 14.883993s
+RUN 2 revcomp-fortran-2
+SAMPLE 2 revcomp-fortran-2 1.812057s
+RUN 2 revcomp-fsharpcore-1-aot
+SAMPLE 2 revcomp-fsharpcore-1-aot 15.732496s
+RUN 2 revcomp-csharpcore-9-arm64-faithful-jit
+SAMPLE 2 revcomp-csharpcore-9-arm64-faithful-jit 0.096585s
+RUN 2 revcomp-gnat-2
+SAMPLE 2 revcomp-gnat-2 0.219476s
+RUN 2 revcomp-dart-5
+SAMPLE 2 revcomp-dart-5 1.016081s
+RUN 3 revcomp-fpascal-2
+SAMPLE 3 revcomp-fpascal-2 0.658438s
+RUN 3 revcomp-csharpcore-3-jit
+SAMPLE 3 revcomp-csharpcore-3-jit 1.039083s
+RUN 3 mech-control-revcomp
+SAMPLE 3 mech-control-revcomp 0.150015s
+RUN 3 revcomp-dart-5
+SAMPLE 3 revcomp-dart-5 1.000222s
+RUN 3 revcomp-dart-jit-5
+SAMPLE 3 revcomp-dart-jit-5 0.787612s
+RUN 3 revcomp-csharpcore-3-aot
+SAMPLE 3 revcomp-csharpcore-3-aot 0.710752s
+RUN 3 revcomp-dart-jit-8
+SAMPLE 3 revcomp-dart-jit-8 0.927667s
+RUN 3 revcomp-csharpcore-9-arm64-faithful-jit
+SAMPLE 3 revcomp-csharpcore-9-arm64-faithful-jit 0.098118s
+RUN 3 revcomp-smalltalk-published-2
+SAMPLE 3 revcomp-smalltalk-published-2 14.909763s
+RUN 3 revcomp-fsharpcore-1-jit
+SAMPLE 3 revcomp-fsharpcore-1-jit 14.861432s
+RUN 3 revcomp-gnat-1
+SAMPLE 3 revcomp-gnat-1 5.953080s
+RUN 3 revcomp-smalltalk-streaming
+SAMPLE 3 revcomp-smalltalk-streaming 12.046939s
+RUN 3 revcomp-fortran-2
+SAMPLE 3 revcomp-fortran-2 1.816645s
+RUN 3 revcomp-fortran-1
+SAMPLE 3 revcomp-fortran-1 0.279113s
+RUN 3 revcomp-fsharpcore-1-aot
+SAMPLE 3 revcomp-fsharpcore-1-aot 14.630521s
+RUN 3 revcomp-gnat-2
+SAMPLE 3 revcomp-gnat-2 0.216285s
+RUN 3 revcomp-dart-8
+SAMPLE 3 revcomp-dart-8 1.772569s
+RUN 3 revcomp-csharpcore-9-arm64-faithful-aot
+SAMPLE 3 revcomp-csharpcore-9-arm64-faithful-aot 0.077569s
+REPORT complete

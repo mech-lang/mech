@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>regex-redux Erlang&nbsp;#6 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>regex-redux Erlang&nbsp;#6 program</h1>
+    <aside>
+      <p><a href="../description/regexredux.html#regexredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">% The Computer Language Benchmarks Game</span>
+<span class="slc">% https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">% Contributed by: Hynek Vychodil 2009</span>
+<span class="slc">% Fixed by Alexander Fyodorov</span>
+
+
+<span class="slc">% Inspired by regex-dna Erlang HiPE #5 program</span>
+<span class="slc">%    by Sergei Matusevich 2007 and Thanassis Avgerinos 2009</span>
+
+<span class="slc">% Main changes:</span>
+<span class="slc">%   1/ Very fast Port line input instead stdio (~5x)</span>
+<span class="slc">%   2/ Faster IUB code alternatives explicit expansion</span>
+<span class="slc">%      using binary instead lists (~5x)</span>
+<span class="slc">%   3/ Precompile regexps in data loading phase</span>
+<span class="slc">%   4/ Simpler dispatch and result join code</span>
+
+<span class="slc">% Note: re module is damn slow. Boyer-Moore like binary matcher</span>
+<span class="slc">% written in Erlang should be magnitude faster (HiPE of course).</span>
+
+<span class="opt">-</span><span class="kwd">module</span><span class="opt">(</span>regexredux<span class="opt">).</span>
+
+<span class="opt">-</span><span class="kwd">compile</span><span class="opt">([</span>native<span class="opt">, {</span>hipe<span class="opt">, [</span>o3<span class="opt">]}]).</span>
+
+<span class="opt">-</span><span class="kwd">export</span><span class="opt">([</span>main<span class="opt">/</span><span class="num">1</span><span class="opt">]).</span>
+
+<span class="kwd">main</span><span class="opt">(</span>_<span class="opt">) -&gt;</span> <span class="kwd">main</span><span class="opt">().</span>
+
+<span class="kwd">main</span><span class="opt">() -&gt;</span> <span class="kwd">do</span><span class="opt">(),</span> <span class="kwb">halt</span><span class="opt">().</span>
+
+<span class="kwd">do</span><span class="opt">() -&gt;</span>
+    S <span class="opt">=</span> <span class="kwb">self</span><span class="opt">(),</span>
+    Worker <span class="opt">=</span> <span class="kwb">spawn_link</span><span class="opt">(</span><span class="kwa">fun</span> <span class="opt">() -&gt;</span> <span class="kwd">work</span><span class="opt">(</span>S<span class="opt">)</span> <span class="kwa">end</span><span class="opt">),</span>
+    Worker <span class="opt">! {</span>data<span class="opt">,</span> <span class="kwd">read</span><span class="opt">()},</span>
+    <span class="kwa">receive</span> finish <span class="opt">-&gt;</span> ok <span class="kwa">end</span><span class="opt">.</span>
+
+<span class="kwd">work</span><span class="opt">(</span>Master<span class="opt">) -&gt;</span>
+    S <span class="opt">=</span> <span class="kwb">self</span><span class="opt">(),</span>
+    Patterns <span class="opt">= [{</span>Pat<span class="opt">,</span> <span class="kwc">re</span><span class="opt">:</span><span class="kwd">compile</span><span class="opt">(</span>Pat<span class="opt">, [</span>caseless<span class="opt">])}</span>
+		<span class="opt">||</span> Pat <span class="opt">&lt;-</span> <span class="kwd">patterns</span><span class="opt">()],</span>
+    <span class="opt">{</span>RawSize<span class="opt">, [</span>B3<span class="opt">,</span> B2<span class="opt">,</span> B1 <span class="opt">|</span> _<span class="opt">]} =</span> <span class="kwa">receive</span>
+				    <span class="opt">{</span>data<span class="opt">,</span> Data<span class="opt">} -&gt;</span> Data
+				  <span class="kwa">end</span><span class="opt">,</span>
+    L <span class="opt">= [</span><span class="kwb">size</span><span class="opt">(</span>X<span class="opt">) ||</span> X <span class="opt">&lt;- [</span>B1<span class="opt">,</span> B2<span class="opt">,</span> B3<span class="opt">]],</span>
+    Size <span class="opt">=</span> <span class="kwc">lists</span><span class="opt">:</span><span class="kwd">sum</span><span class="opt">(</span>L<span class="opt">),</span>
+    PIDS <span class="opt">= [{</span><span class="kwb">spawn_link</span><span class="opt">(</span><span class="kwd">matcher</span><span class="opt">(</span>S<span class="opt">,</span> B2<span class="opt">,</span> B3<span class="opt">,</span> MR<span class="opt">)),</span>
+	     <span class="kwd">printer</span><span class="opt">(</span>Pat<span class="opt">)}</span>
+	    <span class="opt">|| {</span>Pat<span class="opt">, {</span>ok<span class="opt">,</span> MR<span class="opt">}} &lt;-</span> Patterns<span class="opt">],</span>
+    Final <span class="opt">=</span> <span class="kwd">apply_final_patterns</span><span class="opt">([</span>B2<span class="opt">,</span>B3<span class="opt">],</span> <span class="kwd">final_patterns</span><span class="opt">()),</span>
+    FinalSize <span class="opt">=</span> <span class="kwb">size</span><span class="opt">(</span>B1<span class="opt">) +</span> <span class="kwb">size</span><span class="opt">(</span>Final<span class="opt">),</span>
+    <span class="kwd">results</span><span class="opt">(</span>PIDS<span class="opt">),</span>
+    <span class="kwc">io</span><span class="opt">:</span><span class="kwd">format</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">~n~b~n~b~n~b~n</span><span class="sng">&quot;</span><span class="opt">,</span>
+	      <span class="opt">[</span>RawSize<span class="opt">,</span> Size<span class="opt">,</span> FinalSize<span class="opt">]),</span>
+    Master <span class="opt">!</span> finish<span class="opt">.</span>
+
+<span class="kwd">apply_final_patterns</span><span class="opt">(</span>S<span class="opt">, [{</span>Pat<span class="opt">,</span> Rep<span class="opt">}|</span>Rest<span class="opt">]) -&gt;</span>
+  <span class="kwd">apply_final_patterns</span><span class="opt">(</span><span class="kwc">re</span><span class="opt">:</span><span class="kwd">replace</span><span class="opt">(</span>S<span class="opt">,</span> Pat<span class="opt">,</span> Rep<span class="opt">,[{</span>return<span class="opt">,</span><span class="kwb">binary</span><span class="opt">},</span>caseless<span class="opt">,</span>global<span class="opt">,</span>never_utf<span class="opt">]),</span> Rest<span class="opt">);</span>
+<span class="kwd">apply_final_patterns</span><span class="opt">(</span>S<span class="opt">, []) -&gt;</span>
+  S<span class="opt">.</span>
+
+<span class="kwd">matcher</span><span class="opt">(</span>S<span class="opt">,</span> B2<span class="opt">,</span> B3<span class="opt">,</span> MR<span class="opt">) -&gt;</span>
+    <span class="kwa">fun</span> <span class="opt">() -&gt;</span>
+	    S <span class="opt">!</span>
+	      <span class="opt">{</span><span class="kwb">self</span><span class="opt">(),</span> <span class="kwd">countMatches</span><span class="opt">(</span>B2<span class="opt">,</span> MR<span class="opt">) +</span> <span class="kwd">countMatches</span><span class="opt">(</span>B3<span class="opt">,</span> MR<span class="opt">)}</span>
+    <span class="kwa">end</span><span class="opt">.</span>
+
+<span class="kwd">printer</span><span class="opt">(</span>Pat<span class="opt">) -&gt;</span>
+    <span class="kwa">fun</span> <span class="opt">(</span>Num<span class="opt">) -&gt;</span> <span class="kwc">io</span><span class="opt">:</span><span class="kwd">format</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">~s ~b~n</span><span class="sng">&quot;</span><span class="opt">, [</span>Pat<span class="opt">,</span> Num<span class="opt">])</span> <span class="kwa">end</span><span class="opt">.</span>
+
+<span class="kwd">countMatches</span><span class="opt">(</span>Data<span class="opt">,</span> RE<span class="opt">) -&gt;</span>
+    <span class="kwa">case</span> <span class="kwc">re</span><span class="opt">:</span><span class="kwd">run</span><span class="opt">(</span>Data<span class="opt">,</span> RE<span class="opt">, [</span>global<span class="opt">])</span> <span class="kwa">of</span>
+      <span class="opt">{</span>match<span class="opt">,</span> M<span class="opt">} -&gt;</span> <span class="kwb">length</span><span class="opt">(</span>M<span class="opt">);</span>
+      nomatch <span class="opt">-&gt;</span> <span class="num">0</span>
+    <span class="kwa">end</span><span class="opt">.</span>
+
+<span class="kwd">results</span><span class="opt">([{</span>PID<span class="opt">,</span> Fin<span class="opt">} |</span> R<span class="opt">]) -&gt;</span>
+    <span class="kwa">receive</span> <span class="opt">{</span>PID<span class="opt">,</span> Ret<span class="opt">} -&gt;</span> <span class="kwd">Fin</span><span class="opt">(</span>Ret<span class="opt">),</span> <span class="kwd">results</span><span class="opt">(</span>R<span class="opt">)</span> <span class="kwa">end</span><span class="opt">;</span>
+<span class="kwd">results</span><span class="opt">([]) -&gt;</span> ok<span class="opt">.</span>
+
+<span class="kwd">patterns</span><span class="opt">() -&gt;</span>
+    <span class="opt">[</span><span class="sng">&quot;agggtaaa|tttaccct&quot;</span><span class="opt">,</span> <span class="sng">&quot;[cgt]gggtaaa|tttaccc[acg]&quot;</span><span class="opt">,</span>
+     <span class="sng">&quot;a[act]ggtaaa|tttacc[agt]t&quot;</span><span class="opt">,</span>
+     <span class="sng">&quot;ag[act]gtaaa|tttac[agt]ct&quot;</span><span class="opt">,</span>
+     <span class="sng">&quot;agg[act]taaa|ttta[agt]cct&quot;</span><span class="opt">,</span>
+     <span class="sng">&quot;aggg[acg]aaa|ttt[cgt]ccct&quot;</span><span class="opt">,</span>
+     <span class="sng">&quot;agggt[cgt]aa|tt[acg]accct&quot;</span><span class="opt">,</span>
+     <span class="sng">&quot;agggta[cgt]a|t[acg]taccct&quot;</span><span class="opt">,</span>
+     <span class="sng">&quot;agggtaa[cgt]|[acg]ttaccct&quot;</span><span class="opt">].</span>
+
+<span class="kwd">final_patterns</span><span class="opt">() -&gt;</span>
+  <span class="opt">[</span>
+    <span class="opt">{</span><span class="sng">&quot;tHa[Nt]&quot;</span><span class="opt">,</span> <span class="sng">&quot;&lt;4&gt;&quot;</span><span class="opt">},</span>
+    <span class="opt">{</span><span class="sng">&quot;aND|caN|Ha[DS]|WaS&quot;</span><span class="opt">,</span> <span class="sng">&quot;&lt;3&gt;&quot;</span><span class="opt">},</span>
+    <span class="opt">{</span><span class="sng">&quot;a[NSt]|BY&quot;</span><span class="opt">,</span> <span class="sng">&quot;&lt;2&gt;&quot;</span><span class="opt">},</span>
+    <span class="opt">{</span><span class="sng">&quot;&lt;[^&gt;]*&gt;&quot;</span><span class="opt">,</span> <span class="sng">&quot;|&quot;</span><span class="opt">},</span>
+    <span class="opt">{</span><span class="sng">&quot;</span><span class="esc">\\</span><span class="sng">|[^|][^|]*</span><span class="esc">\\</span><span class="sng">|&quot;</span><span class="opt">,</span> <span class="sng">&quot;-&quot;</span><span class="opt">}</span>
+  <span class="opt">].</span>
+
+<span class="kwd">read</span><span class="opt">() -&gt;</span>
+    Port <span class="opt">=</span> <span class="kwb">open_port</span><span class="opt">({</span>fd<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> <span class="num">1</span><span class="opt">}, [</span>in<span class="opt">,</span> <span class="kwb">binary</span><span class="opt">, {</span>line<span class="opt">,</span> <span class="num">256</span><span class="opt">}]),</span>
+    <span class="kwd">read</span><span class="opt">(</span>Port<span class="opt">,</span> <span class="num">0</span><span class="opt">, [], []).</span>
+
+<span class="kwd">read</span><span class="opt">(</span>Port<span class="opt">,</span> Size<span class="opt">,</span> Seg<span class="opt">,</span> R<span class="opt">) -&gt;</span>
+    <span class="kwa">receive</span>
+      <span class="opt">{</span>Port<span class="opt">, {</span>data<span class="opt">, {</span>eol<span class="opt">, &lt;&lt;</span>$<span class="opt">&gt;:</span><span class="num">8</span><span class="opt">,</span> _<span class="opt">/</span><span class="kwb">binary</span><span class="opt">&gt;&gt; =</span> Line<span class="opt">}}} -&gt;</span>
+	  <span class="kwd">read</span><span class="opt">(</span>Port<span class="opt">,</span> Size <span class="opt">+</span> <span class="kwb">size</span><span class="opt">(</span>Line<span class="opt">) +</span> <span class="num">1</span><span class="opt">, [],</span>
+	       <span class="opt">[</span><span class="kwd">iolist_to_binary</span><span class="opt">(</span><span class="kwc">lists</span><span class="opt">:</span><span class="kwd">reverse</span><span class="opt">(</span>Seg<span class="opt">, [])) |</span> R<span class="opt">]);</span>
+      <span class="opt">{</span>Port<span class="opt">, {</span>data<span class="opt">, {</span>eol<span class="opt">,</span> Line<span class="opt">}}} -&gt;</span>
+	  <span class="kwd">read</span><span class="opt">(</span>Port<span class="opt">,</span> Size <span class="opt">+</span> <span class="kwb">size</span><span class="opt">(</span>Line<span class="opt">) +</span> <span class="num">1</span><span class="opt">, [</span>Line <span class="opt">|</span> Seg<span class="opt">],</span> R<span class="opt">);</span>
+      <span class="opt">{</span><span class="sng">&#39;EXIT&#39;</span><span class="opt">,</span> Port<span class="opt">,</span> normal<span class="opt">} -&gt;</span>
+	  <span class="opt">{</span>Size<span class="opt">, [</span><span class="kwd">iolist_to_binary</span><span class="opt">(</span><span class="kwc">lists</span><span class="opt">:</span><span class="kwd">reverse</span><span class="opt">(</span>Seg<span class="opt">, [])) |</span> R<span class="opt">]};</span>
+      Other <span class="opt">-&gt;</span>
+	  <span class="kwc">io</span><span class="opt">:</span><span class="kwd">format</span><span class="opt">(</span><span class="sng">&quot;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Wrong!</span> <span class="ipl">~p~n</span><span class="sng">&quot;</span><span class="opt">, [</span>Other<span class="opt">]),</span>
+	  <span class="kwb">exit</span><span class="opt">(</span>bad_data<span class="opt">)</span>
+    <span class="kwa">end</span><span class="opt">.</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Erlang/OTP 27 [erts-15.0]
+[source] [64-bit] [smp:4:4]
+[ds:4:4:10] [async-threads:1] [jit:ns]
+
+
+
+ Thu, 16 Jan 2025 01:55:32 GMT
+
+MAKE:
+mv regexredux.erlang-6.erlang regexredux.erl
+/opt/src/otp_src_27.0/bin/erlc regexredux.erl
+
+1.86s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/otp_src_27.0/bin/erl -smp enable -noshell -run -noinput -run regexredux main 0 &lt; regexredux-input5000000.txt
+
+PROGRAM OUTPUT:
+agggtaaa|tttaccct 356
+[cgt]gggtaaa|tttaccc[acg] 1250
+a[act]ggtaaa|tttacc[agt]t 4252
+ag[act]gtaaa|tttac[agt]ct 2894
+agg[act]taaa|ttta[agt]cct 5435
+aggg[acg]aaa|ttt[cgt]ccct 1537
+agggt[cgt]aa|tt[acg]accct 1431
+agggta[cgt]a|t[acg]taccct 1608
+agggtaa[cgt]|[acg]ttaccct 2178
+
+50833411
+50000000
+27388361
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

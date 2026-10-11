@@ -1,0 +1,5 @@
+name: benchmark-support
+dependencies:
+  regexp:
+    url: github.com/close2/toit-dartino-regexp
+    version: =0.4.1

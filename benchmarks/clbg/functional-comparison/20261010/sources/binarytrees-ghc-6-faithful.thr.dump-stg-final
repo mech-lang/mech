@@ -1,0 +1,1103 @@
+
+==================== Final STG: ====================
+2026-10-10 14:39:20.980177 UTC
+
+Main.$tc'Node3 :: GHC.Prim.Addr#
+[GblId, Unf=OtherCon []] =
+    "'Node"#;
+
+Main.$tc'Nil3 :: GHC.Prim.Addr#
+[GblId, Unf=OtherCon []] =
+    "'Nil"#;
+
+Main.$tcTree2 :: GHC.Prim.Addr#
+[GblId, Unf=OtherCon []] =
+    "Tree"#;
+
+Main.$trModule2 :: GHC.Prim.Addr#
+[GblId, Unf=OtherCon []] =
+    "Main"#;
+
+Main.$trModule4 :: GHC.Prim.Addr#
+[GblId, Unf=OtherCon []] =
+    "main"#;
+
+Main.$WNode [InlPrag=INLINE[final] CONLIKE]
+  :: Main.Tree %1 -> Main.Tree %1 -> Main.Tree
+[GblId[DataConWrapper], Arity=2, Str=<SL><SL>, Unf=OtherCon []] =
+    {} \r [conrep_s3hX conrep1_s3hY]
+        case conrep_s3hX of conrep2_s3hZ {
+        __DEFAULT ->
+        case conrep1_s3hY of conrep3_s3i0 {
+        __DEFAULT -> Main.Node [conrep2_s3hZ conrep3_s3i0];
+        };
+        };
+
+leafNil_rpe :: GHC.Types.Int -> Main.Tree
+[GblId, Arity=1, Str=<A>, Unf=OtherCon []] =
+    {} \r [ds_s3i1] Main.Nil [];
+
+Main.$trModule3 :: GHC.Types.TrName
+[GblId, Unf=OtherCon []] =
+    GHC.Types.TrNameS! [Main.$trModule4];
+
+Main.$trModule1 :: GHC.Types.TrName
+[GblId, Unf=OtherCon []] =
+    GHC.Types.TrNameS! [Main.$trModule2];
+
+Main.$trModule :: GHC.Types.Module
+[GblId, Unf=OtherCon []] =
+    GHC.Types.Module! [Main.$trModule3 Main.$trModule1];
+
+Main.$tcTree1 :: GHC.Types.TrName
+[GblId, Unf=OtherCon []] =
+    GHC.Types.TrNameS! [Main.$tcTree2];
+
+Main.$tcTree :: GHC.Types.TyCon
+[GblId, Unf=OtherCon []] =
+    GHC.Types.TyCon! [9208051040442588375#Word64
+                      2694919957537544827#Word64
+                      Main.$trModule
+                      Main.$tcTree1
+                      0#
+                      GHC.Types.krep$*];
+
+Main.$tc'Nil1 [InlPrag=[~]] :: GHC.Types.KindRep
+[GblId, Unf=OtherCon []] =
+    GHC.Types.KindRepTyConApp! [Main.$tcTree GHC.Types.[]];
+
+Main.$tc'Nil2 :: GHC.Types.TrName
+[GblId, Unf=OtherCon []] =
+    GHC.Types.TrNameS! [Main.$tc'Nil3];
+
+Main.$tc'Nil :: GHC.Types.TyCon
+[GblId, Unf=OtherCon []] =
+    GHC.Types.TyCon! [15703065417820164806#Word64
+                      7212711407268931041#Word64
+                      Main.$trModule
+                      Main.$tc'Nil2
+                      0#
+                      Main.$tc'Nil1];
+
+$krep_r3hS :: GHC.Types.KindRep
+[GblId, Unf=OtherCon []] =
+    GHC.Types.KindRepFun! [Main.$tc'Nil1 Main.$tc'Nil1];
+
+Main.$tc'Node1 [InlPrag=[~]] :: GHC.Types.KindRep
+[GblId, Unf=OtherCon []] =
+    GHC.Types.KindRepFun! [Main.$tc'Nil1 $krep_r3hS];
+
+Main.$tc'Node2 :: GHC.Types.TrName
+[GblId, Unf=OtherCon []] =
+    GHC.Types.TrNameS! [Main.$tc'Node3];
+
+Main.$tc'Node :: GHC.Types.TyCon
+[GblId, Unf=OtherCon []] =
+    GHC.Types.TyCon! [11019788924731710585#Word64
+                      649625707236464705#Word64
+                      Main.$trModule
+                      Main.$tc'Node2
+                      0#
+                      Main.$tc'Node1];
+
+Rec {
+$wmake'_r3hT :: GHC.Types.Int -> GHC.Prim.Int# -> Main.Tree
+[GblId, Arity=2, Str=<MA><1L>, Unf=OtherCon []] =
+    {} \r [ds_s3i2 ww_s3i3]
+        case ww_s3i3<TagProper> of ds1_s3i4 {
+          __DEFAULT ->
+              case ds_s3i2 of ds2_s3i5 {
+              GHC.Types.I# ipv_s3i6 ->
+              case -# [ds1_s3i4 1#] of sat_s3i9 [Dmd=1L] {
+              __DEFAULT ->
+              case -# [ipv_s3i6 1#] of sat_s3i7 {
+              __DEFAULT ->
+              let {
+                sat_s3i8 [Occ=Once1, Dmd=MA] :: GHC.Types.Int
+                [LclId] =
+                    GHC.Types.I#! [sat_s3i7];
+              } in 
+                case $wmake'_r3hT sat_s3i8 sat_s3i9 of conrep_s3ia {
+                __DEFAULT ->
+                case -# [ds1_s3i4 1#] of sat_s3id [Dmd=1L] {
+                __DEFAULT ->
+                case +# [ipv_s3i6 1#] of sat_s3ib {
+                __DEFAULT ->
+                let {
+                  sat_s3ic [Occ=Once1, Dmd=MA] :: GHC.Types.Int
+                  [LclId] =
+                      GHC.Types.I#! [sat_s3ib];
+                } in 
+                  case $wmake'_r3hT sat_s3ic sat_s3id of conrep1_s3ie {
+                  __DEFAULT -> Main.Node [conrep_s3ia conrep1_s3ie];
+                  };
+                };
+                };
+                };
+              };
+              };
+              };
+          0# ->
+              let {
+                sat_s3if [Occ=Once1, Dmd=A] :: GHC.Types.Int
+                [LclId] =
+                    GHC.Types.I#! [0#];
+              } in 
+                case leafNil_rpe sat_s3if of conrep_s3ig {
+                __DEFAULT ->
+                case leafNil_rpe sat_s3if of conrep1_s3ii {
+                __DEFAULT -> Main.Node [conrep_s3ig conrep1_s3ii];
+                };
+                };
+        };
+end Rec }
+
+make_rpc :: GHC.Types.Int -> Main.Tree
+[GblId, Arity=1, Str=<1P(1L)>, Unf=OtherCon []] =
+    {} \r [d_s3ij]
+        case d_s3ij of wild_s3ik {
+        GHC.Types.I# ww_s3il [Occ=Once1] -> $wmake'_r3hT wild_s3ik ww_s3il;
+        };
+
+Rec {
+$wtailCheck_r3hU :: Main.Tree -> GHC.Prim.Int# -> GHC.Prim.Int#
+[GblId[StrictWorker([!])], Arity=2, Str=<1L><L>, Unf=OtherCon []] =
+    {} \r [ds_s3im ww_s3in]
+        case ds_s3im<TagProper> of wild_s3io {
+          Main.Nil -> ww_s3in<TagProper>;
+          Main.Node l_s3ip [Occ=Once1] r_s3iq [Occ=Once1] ->
+              case +# [ww_s3in 1#] of sat_s3ir {
+              __DEFAULT ->
+              case $wtailCheck_r3hU r_s3iq sat_s3ir of ww1_s3is {
+              __DEFAULT -> $wtailCheck_r3hU l_s3ip ww1_s3is;
+              };
+              };
+        };
+end Rec }
+
+Rec {
+$wsumT_r3hV
+  :: GHC.Types.Int -> GHC.Prim.Int# -> GHC.Prim.Int# -> GHC.Prim.Int#
+[GblId, Arity=3, Str=<LP(SL)><1L><L>, Unf=OtherCon []] =
+    {} \r [d_s3it ww_s3iu ww1_s3iv]
+        case ww_s3iu<TagProper> of ds_s3iw {
+          __DEFAULT ->
+              case make_rpc d_s3it of sat_s3ix [Dmd=1L] {
+              __DEFAULT ->
+              case $wtailCheck_r3hU sat_s3ix 0# of ww2_s3iy {
+              __DEFAULT ->
+              case +# [ww1_s3iv ww2_s3iy] of sat_s3iA {
+              __DEFAULT ->
+              case -# [ds_s3iw 1#] of sat_s3iz [Dmd=1L] {
+              __DEFAULT -> $wsumT_r3hV d_s3it sat_s3iz sat_s3iA;
+              };
+              };
+              };
+              };
+          0# -> ww1_s3iv<TagProper>;
+        };
+end Rec }
+
+Rec {
+$s$wdepth_r3hW
+  :: GHC.Prim.Int#
+     -> GHC.Prim.Int# -> [(GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)]
+[GblId, Arity=2, Str=<L><L>, Unf=OtherCon []] =
+    {} \r [sc_s3iB ww_s3iC]
+        case <=# [sc_s3iB ww_s3iC] of lwild_s3iD {
+          __DEFAULT -> [] [];
+          1# ->
+              case -# [ww_s3iC sc_s3iB] of sat_s3iF {
+              __DEFAULT ->
+              case +# [sat_s3iF 4#] of i#_s3iE {
+              __DEFAULT ->
+              let {
+                n_s3iG :: GHC.Types.Int
+                [LclId] =
+                    {i#_s3iE} \u []
+                        case >=# [i#_s3iE 0#] of lwild1_s3iH {
+                          __DEFAULT -> GHC.Internal.Real.overflowError;
+                          1# ->
+                              case <# [i#_s3iE 64#] of sat_s3iJ {
+                              __DEFAULT ->
+                              case negateInt# [sat_s3iJ] of sat_s3iK {
+                              __DEFAULT ->
+                              case uncheckedIShiftL# [1# i#_s3iE] of sat_s3iI {
+                              __DEFAULT ->
+                              case andI# [sat_s3iI sat_s3iK] of sat_s3iL {
+                              __DEFAULT -> GHC.Types.I# [sat_s3iL];
+                              };
+                              };
+                              };
+                              };
+                        }; } in
+              let {
+                sat_s3iU [Occ=Once1]
+                  :: [(GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)]
+                [LclId] =
+                    {ww_s3iC, sc_s3iB} \u []
+                        case +# [sc_s3iB 2#] of sat_s3iT {
+                        __DEFAULT -> $s$wdepth_r3hW sat_s3iT ww_s3iC;
+                        }; } in
+              let {
+                sat_s3iR [Occ=Once1] :: GHC.Types.Int
+                [LclId] =
+                    {sc_s3iB, n_s3iG} \u []
+                        case n_s3iG of wild_s3iN {
+                        GHC.Types.I# ww1_s3iO [Occ=Once1] ->
+                        let {
+                          sat_s3iP [Occ=Once1, Dmd=LP(SL)] :: GHC.Types.Int
+                          [LclId] =
+                              GHC.Types.I#! [sc_s3iB];
+                        } in 
+                          case $wsumT_r3hV sat_s3iP ww1_s3iO 0# of ww2_s3iQ {
+                          __DEFAULT -> GHC.Types.I# [ww2_s3iQ];
+                          };
+                        }; } in
+              let {
+                sat_s3iM [Occ=Once1] :: GHC.Types.Int
+                [LclId] =
+                    GHC.Types.I#! [sc_s3iB]; } in
+              let {
+                sat_s3iS [Occ=Once1]
+                  :: (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
+                [LclId] =
+                    (,,)! [n_s3iG sat_s3iM sat_s3iR];
+              } in  : [sat_s3iS sat_s3iU];
+              };
+              };
+        };
+end Rec }
+
+Rec {
+$lgo1_g3mJ [Occ=LoopBreaker]
+  :: [(GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)]
+     -> GHC.Prim.State# GHC.Prim.RealWorld
+     -> (# GHC.Prim.State# GHC.Prim.RealWorld,
+           [(GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)] #)
+[LclId, Arity=2, Str=<1L><L>] =
+    {} \r [ds3_s3ko void_XF]
+        case ds3_s3ko of wild4_s3kq {
+          [] -> (# #) [GHC.Types.[]];
+          : y_s3kr [Occ=Once1!] ys_s3ks [Occ=Once1] ->
+              let {
+                sat_s3kB [Occ=Once1]
+                  :: Control.Parallel.Strategies.Lift
+                       (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
+                [LclId] =
+                    {y_s3kr} \u []
+                        case y_s3kr of wild5_s3kt {
+                        (,,) x1_s3ku [Occ=Once1] x2_s3kv [Occ=Once1] x3_s3kw [Occ=Once1] ->
+                        case seq# [x3_s3kw GHC.Prim.realWorld#] of ds4_s3kx {
+                        (# #) ipv7_s3kz [Occ=Once1] ->
+                        let {
+                          sat_s3kA [Occ=Once1]
+                            :: (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
+                          [LclId] =
+                              (,,)! [x1_s3ku x2_s3kv ipv7_s3kz];
+                        } in  Control.Parallel.Strategies.Lift [sat_s3kA];
+                        };
+                        };
+              } in 
+                case spark# [sat_s3kB GHC.Prim.void#] of ds4_s3kC {
+                (# #) ipv5_s3kE [Occ=Once1!] ->
+                case $lgo1_g3mJ ys_s3ks GHC.Prim.void# of ds5_s3kF {
+                (# #) ipv7_s3kH [Occ=Once1] ->
+                let {
+                  sat_s3kK [Occ=Once1]
+                    :: (GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)
+                  [LclId] =
+                      {ipv5_s3kE} \u []
+                          case ipv5_s3kE of wild5_s3kI {
+                          Control.Parallel.Strategies.Lift x1_s3kJ [Occ=Once1] -> x1_s3kJ;
+                          }; } in
+                let {
+                  sat_s3kL [Occ=Once1]
+                    :: [(GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)]
+                  [LclId] =
+                      :! [sat_s3kK ipv7_s3kH];
+                } in  (# #) [sat_s3kL];
+                };
+                };
+        };
+end Rec }
+
+Main.main1
+  :: GHC.Prim.State# GHC.Prim.RealWorld
+     -> (# GHC.Prim.State# GHC.Prim.RealWorld, () #)
+[GblId, Arity=1, Str=<L>, Unf=OtherCon []] =
+    {} \r [void_0E]
+        case
+            GHC.Internal.Foreign.Marshal.Alloc.$wallocaBytesAligned
+                4# 4# GHC.Internal.System.Environment.getArgs2 GHC.Prim.void#
+        of
+        ds1_s3iW
+        {
+        (# #) ipv1_s3iY [Occ=Once1!] ->
+        case
+            GHC.Internal.Read.$w$sreadNumber2
+                GHC.Internal.Read.$fReadInt2
+                GHC.Internal.Text.ParserCombinators.ReadPrec.minPrec
+                GHC.Internal.Text.ParserCombinators.ReadP.$fApplicativeP_$cpure
+        of
+        wild_s3iZ
+        {
+        (# #) ww_s3j0 [Occ=Once1] ->
+        let {
+          sat_s3jj [Occ=Once1] :: GHC.Internal.Base.String
+          [LclId] =
+              {ipv1_s3iY} \u []
+                  case ipv1_s3iY of wild1_s3j2 {
+                    [] ->
+                        let {
+                          sat_s3je [Occ=Once1] :: GHC.Types.Int
+                          [LclId] =
+                              GHC.Types.I#! [35#]; } in
+                        let {
+                          sat_s3jd [Occ=Once1] :: GHC.Types.Int
+                          [LclId] =
+                              GHC.Types.I#! [28#]; } in
+                        let {
+                          sat_s3jc [Occ=Once1] :: GHC.Types.Int
+                          [LclId] =
+                              GHC.Types.I#! [31#]; } in
+                        let {
+                          sat_s3ja [Occ=Once1] :: [GHC.Types.Char]
+                          [LclId] =
+                              {} \u []
+                                  case
+                                      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-6-faithful.hs"#
+                                  of
+                                  sat_s3j9
+                                  {
+                                  __DEFAULT -> GHC.CString.unpackCString# sat_s3j9;
+                                  }; } in
+                        let {
+                          sat_s3j8 [Occ=Once1] :: [GHC.Types.Char]
+                          [LclId] =
+                              {} \u []
+                                  case "Main"# of sat_s3j7 {
+                                  __DEFAULT -> GHC.CString.unpackCString# sat_s3j7;
+                                  }; } in
+                        let {
+                          sat_s3j6 [Occ=Once1] :: [GHC.Types.Char]
+                          [LclId] =
+                              {} \u []
+                                  case "main"# of sat_s3j5 {
+                                  __DEFAULT -> GHC.CString.unpackCString# sat_s3j5;
+                                  }; } in
+                        let {
+                          sat_s3jf [Occ=Once1] :: GHC.Internal.Stack.Types.SrcLoc
+                          [LclId] =
+                              GHC.Internal.Stack.Types.SrcLoc! [sat_s3j6
+                                                                sat_s3j8
+                                                                sat_s3ja
+                                                                sat_s3jd
+                                                                sat_s3jc
+                                                                sat_s3jd
+                                                                sat_s3je]; } in
+                        let {
+                          sat_s3j4 [Occ=Once1] :: [GHC.Types.Char]
+                          [LclId] =
+                              {} \u []
+                                  case "head"# of sat_s3j3 {
+                                  __DEFAULT -> GHC.CString.unpackCString# sat_s3j3;
+                                  }; } in
+                        let {
+                          sat_s3jg [Occ=Once1, Dmd=1S]
+                            :: ?callStack::GHC.Internal.Stack.Types.CallStack
+                          [LclId] =
+                              GHC.Internal.Stack.Types.PushCallStack! [sat_s3j4
+                                                                       sat_s3jf
+                                                                       GHC.Internal.Stack.Types.EmptyCallStack];
+                        } in  GHC.Internal.List.head1 sat_s3jg;
+                    : x_s3jh [Occ=Once1] _ [Occ=Dead] -> x_s3jh;
+                  }; } in
+        let {
+          sat_s3j1 [Occ=Once1, Dmd=1L]
+            :: GHC.Internal.Text.ParserCombinators.ReadP.P GHC.Types.Int
+          [LclId] =
+              GHC.Internal.Text.ParserCombinators.ReadP.Look! [ww_s3j0];
+        } in 
+          case
+              GHC.Internal.Text.ParserCombinators.ReadP.run sat_s3j1 sat_s3jj
+          of
+          sat_s3jk [Dmd=1L]
+          {
+          __DEFAULT ->
+          case GHC.Internal.System.IO.readIO8 sat_s3jk of wild1_s3jl {
+            [] ->
+                GHC.Internal.IO.Exception.ioError1
+                    GHC.Internal.System.IO.readIO5 GHC.Prim.void#;
+            : x_s3jn [Occ=Once1!] ds_s3jo [Occ=Once1!] ->
+                case ds_s3jo of wild2_s3jp {
+                  [] ->
+                      let {
+                        maxN_s3jq :: GHC.Types.Int
+                        [LclId] =
+                            {x_s3jn} \u []
+                                case x_s3jn of wild3_s3jr {
+                                GHC.Types.I# y1_s3js [Occ=Once1] ->
+                                case <=# [6# y1_s3js] of lwild_s3jt {
+                                  __DEFAULT -> GHC.Types.I# [6#];
+                                  1# -> wild3_s3jr<TagProper>;
+                                };
+                                }; } in
+                      let {
+                        sat_s3kg [Occ=Once1] :: GHC.Internal.Base.String
+                        [LclId] =
+                            {maxN_s3jq} \u []
+                                let {
+                                  sat_s3kf [Occ=Once1, Dmd=ML] :: [Text.Printf.UPrintf]
+                                  [LclId] =
+                                      {maxN_s3jq} \s []
+                                          let {
+                                            stretchN_s3jw :: GHC.Types.Int
+                                            [LclId] =
+                                                {maxN_s3jq} \u []
+                                                    case maxN_s3jq of wild3_s3jx {
+                                                    GHC.Types.I# x1_s3jy [Occ=Once1] ->
+                                                    case +# [x1_s3jy 1#] of sat_s3jz {
+                                                    __DEFAULT -> GHC.Types.I# [sat_s3jz];
+                                                    };
+                                                    };
+                                          } in 
+                                            case "stretch tree"# of x1_s3jX {
+                                            __DEFAULT ->
+                                            let {
+                                              x2_s3jY [Occ=OnceL1] :: [GHC.Types.Char]
+                                              [LclId] =
+                                                  {x1_s3jX} \u []
+                                                      GHC.CString.unpackCString# x1_s3jX; } in
+                                            let {
+                                              sat_s3ka [Occ=Once1]
+                                                :: Text.Printf.FieldFormat
+                                                   -> GHC.Internal.Show.ShowS
+                                              [LclId] =
+                                                  {x2_s3jY} \r [ufmt_s3jZ]
+                                                      case ufmt_s3jZ of wild3_s3k0 {
+                                                      Text.Printf.FieldFormat ww1_s3k1 [Occ=Once1]
+                                                                              ww2_s3k2 [Occ=Once1]
+                                                                              ww3_s3k3 [Occ=Once1]
+                                                                              _ [Occ=Dead]
+                                                                              _ [Occ=Dead]
+                                                                              _ [Occ=Dead]
+                                                                              ww7_s3k7 [Occ=Once1!] ->
+                                                      case ww7_s3k7 of wild4_s3k8 {
+                                                      GHC.Types.C# ww8_s3k9 [Occ=Once1] ->
+                                                      Text.Printf.$wformatString
+                                                          Text.Printf.$fIsCharChar
+                                                          x2_s3jY
+                                                          ww1_s3k1
+                                                          ww2_s3k2
+                                                          ww3_s3k3
+                                                          ww8_s3k9;
+                                                      };
+                                                      }; } in
+                                            let {
+                                              sat_s3jW [Occ=Once1]
+                                                :: [GHC.Types.Char] -> Text.Printf.FormatParse
+                                              [LclId] =
+                                                  {} \r [ds2_s3jS]
+                                                      case ds2_s3jS of wild3_s3jT {
+                                                        [] -> Text.Printf.errorShortFormat;
+                                                        : c1_s3jU [Occ=Once1] cs_s3jV [Occ=Once1] ->
+                                                            Text.Printf.FormatParse [GHC.Types.[]
+                                                                                     c1_s3jU
+                                                                                     cs_s3jV];
+                                                      }; } in
+                                            let {
+                                              sat_s3kb [Occ=Once1]
+                                                :: (Text.Printf.ModifierParser,
+                                                    Text.Printf.FieldFormatter)
+                                              [LclId] =
+                                                  (,)! [sat_s3jW sat_s3ka]; } in
+                                            let {
+                                              sat_s3kc [Occ=Once1] :: [Text.Printf.UPrintf]
+                                              [LclId] =
+                                                  :! [sat_s3kb GHC.Types.[]]; } in
+                                            let {
+                                              sat_s3jQ [Occ=Once1]
+                                                :: Text.Printf.FieldFormat
+                                                   -> GHC.Internal.Show.ShowS
+                                              [LclId] =
+                                                  {stretchN_s3jw} \r [eta_B0]
+                                                      Text.Printf.$fPrintfArgInt_$sformatInt
+                                                          stretchN_s3jw eta_B0; } in
+                                            let {
+                                              sat_s3jR [Occ=Once1]
+                                                :: (Text.Printf.ModifierParser,
+                                                    Text.Printf.FieldFormatter)
+                                              [LclId] =
+                                                  (,)! [Text.Printf.$wparseIntFormat sat_s3jQ]; } in
+                                            let {
+                                              sat_s3kd [Occ=Once1] :: [Text.Printf.UPrintf]
+                                              [LclId] =
+                                                  :! [sat_s3jR sat_s3kc]; } in
+                                            let {
+                                              x1_s3jA [Occ=OnceL1] :: GHC.Types.Int
+                                              [LclId] =
+                                                  {stretchN_s3jw} \u []
+                                                      case
+                                                          make_rpc stretchN_s3jw
+                                                      of
+                                                      sat_s3jB [Dmd=1L]
+                                                      {
+                                                      __DEFAULT ->
+                                                      case
+                                                          $wtailCheck_r3hU sat_s3jB 0#
+                                                      of
+                                                      ww1_s3jC
+                                                      {
+                                                      __DEFAULT -> GHC.Types.I# [ww1_s3jC];
+                                                      };
+                                                      }; } in
+                                            let {
+                                              sat_s3jO [Occ=Once1]
+                                                :: Text.Printf.FieldFormat
+                                                   -> GHC.Internal.Show.ShowS
+                                              [LclId] =
+                                                  {x1_s3jA} \r [ufmt_s3jD]
+                                                      case ufmt_s3jD of wild3_s3jE {
+                                                      Text.Printf.FieldFormat ww1_s3jF [Occ=Once1]
+                                                                              ww2_s3jG [Occ=Once1]
+                                                                              ww3_s3jH [Occ=Once1]
+                                                                              ww4_s3jI [Occ=Once1]
+                                                                              ww5_s3jJ [Occ=Once1]
+                                                                              ww6_s3jK [Occ=Once1]
+                                                                              ww7_s3jL [Occ=Once1!] ->
+                                                      case ww7_s3jL of wild4_s3jM {
+                                                      GHC.Types.C# ww8_s3jN [Occ=Once1] ->
+                                                      case ww2_s3jG of ww2_t3mL [Occ=Once1] {
+                                                      __DEFAULT ->
+                                                      Text.Printf.$w$sformatInt
+                                                          x1_s3jA
+                                                          ww1_s3jF
+                                                          ww2_t3mL
+                                                          ww3_s3jH
+                                                          ww4_s3jI
+                                                          ww5_s3jJ
+                                                          ww6_s3jK
+                                                          ww8_s3jN;
+                                                      };
+                                                      };
+                                                      }; } in
+                                            let {
+                                              sat_s3jP [Occ=Once1]
+                                                :: (Text.Printf.ModifierParser,
+                                                    Text.Printf.FieldFormatter)
+                                              [LclId] =
+                                                  (,)! [Text.Printf.$wparseIntFormat sat_s3jO]; } in
+                                            let {
+                                              sat_s3ke [Occ=Once1, Dmd=1L] :: [Text.Printf.UPrintf]
+                                              [LclId] =
+                                                  :! [sat_s3jP sat_s3kd];
+                                            } in  GHC.Internal.List.reverse1 sat_s3ke GHC.Types.[];
+                                            };
+                                } in 
+                                  case "%s of depth %d\t check: %d\n"# of sat_s3ju {
+                                  __DEFAULT ->
+                                  case GHC.CString.unpackCString# sat_s3ju of sat_s3jv [Dmd=1L] {
+                                  __DEFAULT -> Text.Printf.uprintfs sat_s3jv sat_s3kf GHC.Types.[];
+                                  };
+                                  };
+                      } in 
+                        case
+                            GHC.Internal.IO.Handle.Text.hPutStr2
+                                GHC.Internal.IO.Handle.FD.stdout
+                                sat_s3kg
+                                GHC.Types.False
+                                GHC.Prim.void#
+                        of
+                        ds2_s3kh
+                        {
+                        (# #) _ [Occ=Dead] ->
+                        case make_rpc maxN_s3jq of long_s3kk {
+                        __DEFAULT ->
+                        case maxN_s3jq of wild3_s3kl {
+                        GHC.Types.I# ww1_s3km ->
+                        case $s$wdepth_r3hW 4# ww1_s3km of sat_s3kM [Dmd=1L] {
+                        __DEFAULT ->
+                        case $lgo1_g3mJ sat_s3kM GHC.Prim.realWorld# of ds3_s3kN {
+                        (# #) ipv5_s3kP [Occ=Once1] ->
+                        let-no-escape {
+                          $w$j_s3kQ [InlPrag=[2], Occ=OnceL1!T[1], Dmd=LC(S,!P(L,L!A))]
+                            :: GHC.Prim.State# GHC.Prim.RealWorld
+                               -> (# GHC.Prim.State# GHC.Prim.RealWorld, () #)
+                          [LclId[JoinId(1)(Nothing)], Arity=1, Str=<L>, Unf=OtherCon []] =
+                              {long_s3kk, ww1_s3km} \r [void_XF]
+                                  let {
+                                    sat_s3lR [Occ=Once1] :: GHC.Internal.Base.String
+                                    [LclId] =
+                                        {long_s3kk, ww1_s3km} \u []
+                                            let {
+                                              sat_s3lQ [Occ=Once1, Dmd=ML] :: [Text.Printf.UPrintf]
+                                              [LclId] =
+                                                  {long_s3kk, ww1_s3km} \s []
+                                                      case "long lived tree"# of x1_s3ly {
+                                                      __DEFAULT ->
+                                                      let {
+                                                        x2_s3lz [Occ=OnceL1] :: [GHC.Types.Char]
+                                                        [LclId] =
+                                                            {x1_s3ly} \u []
+                                                                GHC.CString.unpackCString#
+                                                                    x1_s3ly; } in
+                                                      let {
+                                                        sat_s3lL [Occ=Once1]
+                                                          :: Text.Printf.FieldFormat
+                                                             -> GHC.Internal.Show.ShowS
+                                                        [LclId] =
+                                                            {x2_s3lz} \r [ufmt_s3lA]
+                                                                case ufmt_s3lA of wild4_s3lB {
+                                                                Text.Printf.FieldFormat ww2_s3lC [Occ=Once1]
+                                                                                        ww3_s3lD [Occ=Once1]
+                                                                                        ww4_s3lE [Occ=Once1]
+                                                                                        _ [Occ=Dead]
+                                                                                        _ [Occ=Dead]
+                                                                                        _ [Occ=Dead]
+                                                                                        ww8_s3lI [Occ=Once1!] ->
+                                                                case ww8_s3lI of wild5_s3lJ {
+                                                                GHC.Types.C# ww9_s3lK [Occ=Once1] ->
+                                                                Text.Printf.$wformatString
+                                                                    Text.Printf.$fIsCharChar
+                                                                    x2_s3lz
+                                                                    ww2_s3lC
+                                                                    ww3_s3lD
+                                                                    ww4_s3lE
+                                                                    ww9_s3lK;
+                                                                };
+                                                                }; } in
+                                                      let {
+                                                        sat_s3lx [Occ=Once1]
+                                                          :: [GHC.Types.Char]
+                                                             -> Text.Printf.FormatParse
+                                                        [LclId] =
+                                                            {} \r [ds4_s3lt]
+                                                                case ds4_s3lt of wild4_s3lu {
+                                                                  [] ->
+                                                                      Text.Printf.errorShortFormat;
+                                                                  : c1_s3lv [Occ=Once1]
+                                                                    cs_s3lw [Occ=Once1] ->
+                                                                      Text.Printf.FormatParse [GHC.Types.[]
+                                                                                               c1_s3lv
+                                                                                               cs_s3lw];
+                                                                }; } in
+                                                      let {
+                                                        sat_s3lM [Occ=Once1]
+                                                          :: (Text.Printf.ModifierParser,
+                                                              Text.Printf.FieldFormatter)
+                                                        [LclId] =
+                                                            (,)! [sat_s3lx sat_s3lL]; } in
+                                                      let {
+                                                        sat_s3lN [Occ=Once1]
+                                                          :: [Text.Printf.UPrintf]
+                                                        [LclId] =
+                                                            :! [sat_s3lM GHC.Types.[]]; } in
+                                                      let {
+                                                        sat_s3lr [Occ=Once1]
+                                                          :: Text.Printf.FieldFormat
+                                                             -> GHC.Internal.Show.ShowS
+                                                        [LclId] =
+                                                            {ww1_s3km} \r [ufmt_s3l9]
+                                                                case ufmt_s3l9 of wild4_s3la {
+                                                                Text.Printf.FieldFormat ww2_s3lb [Occ=Once1]
+                                                                                        ww3_s3lc [Occ=Once1]
+                                                                                        ww4_s3ld [Occ=Once1]
+                                                                                        ww5_s3le [Occ=Once1]
+                                                                                        ww6_s3lf [Occ=Once1]
+                                                                                        ww7_s3lg
+                                                                                        ww8_s3lh [Occ=Once1!] ->
+                                                                case ww8_s3lh of wild5_s3li {
+                                                                GHC.Types.C# ww9_s3lj [Occ=Once1] ->
+                                                                let {
+                                                                  sat_s3lq [Occ=Once1]
+                                                                    :: GHC.Num.Integer.Integer
+                                                                  [LclId] =
+                                                                      GHC.Num.Integer.IS! [ww1_s3km]; } in
+                                                                let {
+                                                                  sat_s3lp [Occ=Once1]
+                                                                    :: GHC.Internal.Maybe.Maybe
+                                                                         GHC.Num.Integer.Integer
+                                                                  [LclId] =
+                                                                      {ww7_s3lg} \u []
+                                                                          case
+                                                                              ww7_s3lg
+                                                                          of
+                                                                          wild6_s3lk
+                                                                          { [] ->
+                                                                                Text.Printf.$fPrintfArgInt27<TagProper>;
+                                                                            : _ [Occ=Dead]
+                                                                              _ [Occ=Dead] ->
+                                                                                case
+                                                                                    GHC.Internal.List.lookup
+                                                                                        GHC.Classes.$fEqList_$s$fEqList1
+                                                                                        wild6_s3lk
+                                                                                        Text.Printf.intModifierMap
+                                                                                of
+                                                                                wild7_s3ln
+                                                                                { GHC.Internal.Maybe.Nothing ->
+                                                                                      Text.Printf.$fPrintfArgInt1;
+                                                                                  GHC.Internal.Maybe.Just _ [Occ=Dead] ->
+                                                                                      wild7_s3ln<TagProper>;
+                                                                                };
+                                                                          };
+                                                                } in 
+                                                                  case
+                                                                      ww3_s3lc
+                                                                  of
+                                                                  ww3_t3mN [Occ=Once1]
+                                                                  {
+                                                                  __DEFAULT ->
+                                                                  Text.Printf.$wformatIntegral
+                                                                      sat_s3lp
+                                                                      sat_s3lq
+                                                                      ww2_s3lb
+                                                                      ww3_t3mN
+                                                                      ww4_s3ld
+                                                                      ww5_s3le
+                                                                      ww6_s3lf
+                                                                      ww7_s3lg
+                                                                      ww9_s3lj;
+                                                                  };
+                                                                };
+                                                                }; } in
+                                                      let {
+                                                        sat_s3ls [Occ=Once1]
+                                                          :: (Text.Printf.ModifierParser,
+                                                              Text.Printf.FieldFormatter)
+                                                        [LclId] =
+                                                            (,)! [Text.Printf.$wparseIntFormat
+                                                                  sat_s3lr]; } in
+                                                      let {
+                                                        sat_s3lO [Occ=Once1]
+                                                          :: [Text.Printf.UPrintf]
+                                                        [LclId] =
+                                                            :! [sat_s3ls sat_s3lN]; } in
+                                                      let {
+                                                        x1_s3kU [Occ=OnceL1] :: GHC.Types.Int
+                                                        [LclId] =
+                                                            {long_s3kk} \u []
+                                                                case
+                                                                    $wtailCheck_r3hU long_s3kk 0#
+                                                                of
+                                                                ww2_s3kV
+                                                                {
+                                                                __DEFAULT ->
+                                                                GHC.Types.I# [ww2_s3kV];
+                                                                }; } in
+                                                      let {
+                                                        sat_s3l7 [Occ=Once1]
+                                                          :: Text.Printf.FieldFormat
+                                                             -> GHC.Internal.Show.ShowS
+                                                        [LclId] =
+                                                            {x1_s3kU} \r [ufmt_s3kW]
+                                                                case ufmt_s3kW of wild4_s3kX {
+                                                                Text.Printf.FieldFormat ww2_s3kY [Occ=Once1]
+                                                                                        ww3_s3kZ [Occ=Once1]
+                                                                                        ww4_s3l0 [Occ=Once1]
+                                                                                        ww5_s3l1 [Occ=Once1]
+                                                                                        ww6_s3l2 [Occ=Once1]
+                                                                                        ww7_s3l3 [Occ=Once1]
+                                                                                        ww8_s3l4 [Occ=Once1!] ->
+                                                                case ww8_s3l4 of wild5_s3l5 {
+                                                                GHC.Types.C# ww9_s3l6 [Occ=Once1] ->
+                                                                case
+                                                                    ww3_s3kZ
+                                                                of
+                                                                ww3_t3mP [Occ=Once1]
+                                                                {
+                                                                __DEFAULT ->
+                                                                Text.Printf.$w$sformatInt
+                                                                    x1_s3kU
+                                                                    ww2_s3kY
+                                                                    ww3_t3mP
+                                                                    ww4_s3l0
+                                                                    ww5_s3l1
+                                                                    ww6_s3l2
+                                                                    ww7_s3l3
+                                                                    ww9_s3l6;
+                                                                };
+                                                                };
+                                                                }; } in
+                                                      let {
+                                                        sat_s3l8 [Occ=Once1]
+                                                          :: (Text.Printf.ModifierParser,
+                                                              Text.Printf.FieldFormatter)
+                                                        [LclId] =
+                                                            (,)! [Text.Printf.$wparseIntFormat
+                                                                  sat_s3l7]; } in
+                                                      let {
+                                                        sat_s3lP [Occ=Once1, Dmd=1L]
+                                                          :: [Text.Printf.UPrintf]
+                                                        [LclId] =
+                                                            :! [sat_s3l8 sat_s3lO];
+                                                      } in 
+                                                        GHC.Internal.List.reverse1
+                                                            sat_s3lP GHC.Types.[];
+                                                      };
+                                            } in 
+                                              case "%s of depth %d\t check: %d\n"# of sat_s3kS {
+                                              __DEFAULT ->
+                                              case
+                                                  GHC.CString.unpackCString# sat_s3kS
+                                              of
+                                              sat_s3kT [Dmd=1L]
+                                              {
+                                              __DEFAULT ->
+                                              Text.Printf.uprintfs sat_s3kT sat_s3lQ GHC.Types.[];
+                                              };
+                                              };
+                                  } in 
+                                    GHC.Internal.IO.Handle.Text.hPutStr2
+                                        GHC.Internal.IO.Handle.FD.stdout
+                                        sat_s3lR
+                                        GHC.Types.False
+                                        GHC.Prim.void#;
+                        } in 
+                          let-no-escape {
+                            Rec {
+                            go2_s3lS [Occ=LoopBreakerT[2], Dmd=SC(S,C(1,L))]
+                              :: [(GHC.Types.Int, GHC.Types.Int, GHC.Types.Int)]
+                                 -> GHC.Prim.State# GHC.Prim.RealWorld
+                                 -> (# GHC.Prim.State# GHC.Prim.RealWorld, () #)
+                            [LclId[JoinId(2)(Just [!])],
+                             Arity=2,
+                             Str=<1L><L>,
+                             Unf=OtherCon []] =
+                                {go2_s3lS, $w$j_s3kQ} \r [ds4_s3lT void_XF]
+                                    case ds4_s3lT<TagProper> of wild4_s3lV {
+                                      [] -> $w$j_s3kQ GHC.Prim.void#;
+                                      : y_s3lW [Occ=Once1!] ys_s3lX [Occ=Once1] ->
+                                          case y_s3lW of wild5_s3lY {
+                                          (,,) m_s3lZ [Occ=Once1!]
+                                               d_s3m0 [Occ=OnceL1]
+                                               i_s3m1 [Occ=OnceL1] ->
+                                          let {
+                                            sat_s3mA [Occ=Once1] :: GHC.Internal.Base.String
+                                            [LclId] =
+                                                {i_s3m1, d_s3m0, m_s3lZ} \u []
+                                                    let {
+                                                      sat_s3mz [Occ=Once1, Dmd=ML]
+                                                        :: [Text.Printf.UPrintf]
+                                                      [LclId] =
+                                                          {i_s3m1, d_s3m0, m_s3lZ} \s []
+                                                              let {
+                                                                x1_s3md [Occ=OnceL1]
+                                                                  :: [GHC.Types.Char]
+                                                                [LclId] =
+                                                                    {m_s3lZ} \u []
+                                                                        case m_s3lZ of wild6_s3me {
+                                                                        GHC.Types.I# n_s3mf [Occ=Once1] ->
+                                                                        let {
+                                                                          sat_s3mi [Occ=Once1,
+                                                                                    Dmd=ML]
+                                                                            :: [GHC.Types.Char]
+                                                                          [LclId] =
+                                                                              {} \s []
+                                                                                  case
+                                                                                      "\t trees"#
+                                                                                  of
+                                                                                  sat_s3mh
+                                                                                  {
+                                                                                  __DEFAULT ->
+                                                                                  GHC.CString.unpackCString#
+                                                                                      sat_s3mh;
+                                                                                  };
+                                                                        } in 
+                                                                          case
+                                                                              GHC.Internal.Show.itos
+                                                                                  n_s3mf
+                                                                                  GHC.Types.[]
+                                                                          of
+                                                                          sat_s3mg [Dmd=1L]
+                                                                          {
+                                                                          __DEFAULT ->
+                                                                          GHC.Internal.Base.++
+                                                                              sat_s3mg sat_s3mi;
+                                                                          };
+                                                                        }; } in
+                                                              let {
+                                                                sat_s3mu [Occ=Once1]
+                                                                  :: Text.Printf.FieldFormat
+                                                                     -> GHC.Internal.Show.ShowS
+                                                                [LclId] =
+                                                                    {x1_s3md} \r [ufmt_s3mj]
+                                                                        case
+                                                                            ufmt_s3mj
+                                                                        of
+                                                                        wild6_s3mk
+                                                                        {
+                                                                        Text.Printf.FieldFormat ww2_s3ml [Occ=Once1]
+                                                                                                ww3_s3mm [Occ=Once1]
+                                                                                                ww4_s3mn [Occ=Once1]
+                                                                                                _ [Occ=Dead]
+                                                                                                _ [Occ=Dead]
+                                                                                                _ [Occ=Dead]
+                                                                                                ww8_s3mr [Occ=Once1!] ->
+                                                                        case
+                                                                            ww8_s3mr
+                                                                        of
+                                                                        wild7_s3ms
+                                                                        {
+                                                                        GHC.Types.C# ww9_s3mt [Occ=Once1] ->
+                                                                        Text.Printf.$wformatString
+                                                                            Text.Printf.$fIsCharChar
+                                                                            x1_s3md
+                                                                            ww2_s3ml
+                                                                            ww3_s3mm
+                                                                            ww4_s3mn
+                                                                            ww9_s3mt;
+                                                                        };
+                                                                        }; } in
+                                                              let {
+                                                                sat_s3mc [Occ=Once1]
+                                                                  :: [GHC.Types.Char]
+                                                                     -> Text.Printf.FormatParse
+                                                                [LclId] =
+                                                                    {} \r [ds5_s3m8]
+                                                                        case
+                                                                            ds5_s3m8
+                                                                        of
+                                                                        wild6_s3m9
+                                                                        { [] ->
+                                                                              Text.Printf.errorShortFormat;
+                                                                          : c1_s3ma [Occ=Once1]
+                                                                            cs_s3mb [Occ=Once1] ->
+                                                                              Text.Printf.FormatParse [GHC.Types.[]
+                                                                                                       c1_s3ma
+                                                                                                       cs_s3mb];
+                                                                        }; } in
+                                                              let {
+                                                                sat_s3mv [Occ=Once1]
+                                                                  :: (Text.Printf.ModifierParser,
+                                                                      Text.Printf.FieldFormatter)
+                                                                [LclId] =
+                                                                    (,)! [sat_s3mc sat_s3mu]; } in
+                                                              let {
+                                                                sat_s3mw [Occ=Once1]
+                                                                  :: [Text.Printf.UPrintf]
+                                                                [LclId] =
+                                                                    :! [sat_s3mv GHC.Types.[]]; } in
+                                                              let {
+                                                                sat_s3m6 [Occ=Once1]
+                                                                  :: Text.Printf.FieldFormat
+                                                                     -> GHC.Internal.Show.ShowS
+                                                                [LclId] =
+                                                                    {d_s3m0} \r [eta_B0]
+                                                                        Text.Printf.$fPrintfArgInt_$sformatInt
+                                                                            d_s3m0 eta_B0; } in
+                                                              let {
+                                                                sat_s3m7 [Occ=Once1]
+                                                                  :: (Text.Printf.ModifierParser,
+                                                                      Text.Printf.FieldFormatter)
+                                                                [LclId] =
+                                                                    (,)! [Text.Printf.$wparseIntFormat
+                                                                          sat_s3m6]; } in
+                                                              let {
+                                                                sat_s3mx [Occ=Once1]
+                                                                  :: [Text.Printf.UPrintf]
+                                                                [LclId] =
+                                                                    :! [sat_s3m7 sat_s3mw]; } in
+                                                              let {
+                                                                sat_s3m4 [Occ=Once1]
+                                                                  :: Text.Printf.FieldFormat
+                                                                     -> GHC.Internal.Show.ShowS
+                                                                [LclId] =
+                                                                    {i_s3m1} \r [eta_B0]
+                                                                        Text.Printf.$fPrintfArgInt_$sformatInt
+                                                                            i_s3m1 eta_B0; } in
+                                                              let {
+                                                                sat_s3m5 [Occ=Once1]
+                                                                  :: (Text.Printf.ModifierParser,
+                                                                      Text.Printf.FieldFormatter)
+                                                                [LclId] =
+                                                                    (,)! [Text.Printf.$wparseIntFormat
+                                                                          sat_s3m4]; } in
+                                                              let {
+                                                                sat_s3my [Occ=Once1, Dmd=1L]
+                                                                  :: [Text.Printf.UPrintf]
+                                                                [LclId] =
+                                                                    :! [sat_s3m5 sat_s3mx];
+                                                              } in 
+                                                                GHC.Internal.List.reverse1
+                                                                    sat_s3my GHC.Types.[];
+                                                    } in 
+                                                      case
+                                                          "%s of depth %d\t check: %d\n"#
+                                                      of
+                                                      sat_s3m2
+                                                      {
+                                                      __DEFAULT ->
+                                                      case
+                                                          GHC.CString.unpackCString# sat_s3m2
+                                                      of
+                                                      sat_s3m3 [Dmd=1L]
+                                                      {
+                                                      __DEFAULT ->
+                                                      Text.Printf.uprintfs
+                                                          sat_s3m3 sat_s3mz GHC.Types.[];
+                                                      };
+                                                      };
+                                          } in 
+                                            case
+                                                GHC.Internal.IO.Handle.Text.hPutStr2
+                                                    GHC.Internal.IO.Handle.FD.stdout
+                                                    sat_s3mA
+                                                    GHC.Types.False
+                                                    GHC.Prim.void#
+                                            of
+                                            ds5_s3mB
+                                            {
+                                            (# #) _ [Occ=Dead] ->
+                                            case ys_s3lX of ys_t3mR [Occ=Once1] {
+                                            __DEFAULT -> go2_s3lS ys_t3mR GHC.Prim.void#;
+                                            };
+                                            };
+                                          };
+                                    };
+                            end Rec }
+                          } in  go2_s3lS ipv5_s3kP GHC.Prim.void#;
+                        };
+                        };
+                        };
+                        };
+                        };
+                  : _ [Occ=Dead] _ [Occ=Dead] ->
+                      GHC.Internal.IO.Exception.ioError1
+                          GHC.Internal.System.IO.readIO2 GHC.Prim.void#;
+                };
+          };
+          };
+        };
+        };
+
+Main.main :: GHC.Types.IO ()
+[GblId, Arity=1, Str=<L>, Unf=OtherCon []] =
+    {} \r [void_0E] Main.main1 GHC.Prim.void#;
+
+Main.main2
+  :: GHC.Prim.State# GHC.Prim.RealWorld
+     -> (# GHC.Prim.State# GHC.Prim.RealWorld, () #)
+[GblId, Arity=1, Str=<L>, Unf=OtherCon []] =
+    {} \r [void_0E]
+        GHC.Internal.TopHandler.runMainIO1 Main.main1 GHC.Prim.void#;
+
+:Main.main :: GHC.Types.IO ()
+[GblId, Arity=1, Str=<L>, Unf=OtherCon []] =
+    {} \r [void_0E] Main.main2 GHC.Prim.void#;
+
+Main.Nil [InlPrag=CONLIKE] :: Main.Tree
+[GblId[DataCon], Caf=NoCafRefs, Unf=OtherCon []] =
+    Main.Nil! [];
+
+Main.Node [InlPrag=CONLIKE]
+  :: Main.Tree %1 -> Main.Tree %1 -> Main.Tree
+[GblId[DataCon], Arity=2, Caf=NoCafRefs, Unf=OtherCon []] =
+    {} \r [eta_B0 eta_B1]
+        case eta_B0 of eta_t3mT [Occ=Once1] {
+        __DEFAULT ->
+        case eta_B1 of eta_t3mV [Occ=Once1] {
+        __DEFAULT -> Main.Node [eta_t3mT eta_t3mV];
+        };
+        };
+

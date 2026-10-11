@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "benchmarks": 8,
+  "runtime_categories": 15,
+  "geometric_mean_lines": 8,
+  "geometric_mean_markers": 23,
+  "compact_only_profiles": 7,
+  "faint_benchmark_inputs": 184,
+  "inputs_per_mean": 8,
+  "background": "white",
+  "source_metric": "LOC"
+}

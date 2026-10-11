@@ -1,0 +1,50 @@
+excluded fannkuchredux-gcc-6-gcc unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-gcc-6-llvm unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-gpp-6-gcc unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-gpp-6-llvm unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-rust-6 unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-rust-6-panic-abort unmodified source requires x86 intrinsics; ARM host
+prepared fannkuchredux-rust-4
+prepared fannkuchredux-rust-4-panic-abort
+prepared fannkuchredux-gcc-5-gcc
+prepared fannkuchredux-gcc-5-llvm
+prepared fannkuchredux-rust-5
+prepared fannkuchredux-rust-5-panic-abort
+prepared fannkuchredux-gpp-5-gcc
+prepared fannkuchredux-gpp-5-llvm
+prepared fannkuchredux-go-3
+prepared fannkuchredux-chapel-2
+prepared fannkuchredux-julia-2
+excluded fannkuchredux-gpp-4-gcc ody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-I/opt/homebrew/opt/boost/include', '-L/opt/homebrew/opt/boost/lib', '-lboost_thread', '-lboost_system']' returned non-zero exit status 1.
+excluded fannkuchredux-gpp-4-llvm ibrary/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-I/opt/homebrew/opt/boost/include', '-L/opt/homebrew/opt/boost/lib', '-lboost_thread', '-lboost_system', '-lc++']' returned non-zero exit status 1.
+excluded fannkuchredux-gpp-2-gcc ody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-I/opt/homebrew/opt/boost/include', '-L/opt/homebrew/opt/boost/lib', '-lboost_thread', '-lboost_system']' returned non-zero exit status 1.
+excluded fannkuchredux-gpp-2-llvm ibrary/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-I/opt/homebrew/opt/boost/include', '-L/opt/homebrew/opt/boost/lib', '-lboost_thread', '-lboost_system', '-lc++']' returned non-zero exit status 1.
+prepared fannkuchredux-rust-2
+prepared fannkuchredux-rust-2-panic-abort
+excluded fannkuchredux-graalvmaot-1 'NoneType' object has no attribute 'group'
+prepared fannkuchredux-julia-3
+prepared fannkuchredux-gcc-2-gcc
+prepared fannkuchredux-gcc-2-llvm
+prepared fannkuchredux-gpp-1-gcc
+prepared fannkuchredux-gpp-1-llvm
+prepared fannkuchredux-go-1
+prepared fannkuchredux-go-2
+excluded fannkuchredux-gcc-4-gcc unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-gcc-4-llvm unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-gpp-7-gcc unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-gpp-7-llvm unmodified source requires x86 intrinsics; ARM host
+excluded fannkuchredux-graalvmaot-3 'NoneType' object has no attribute 'group'
+prepared fannkuchredux-gcc-3-gcc
+prepared fannkuchredux-gcc-3-llvm
+prepared fannkuchredux-gpp-3-gcc
+prepared fannkuchredux-gpp-3-llvm
+prepared fannkuchredux-gcc-8-gcc
+prepared fannkuchredux-gcc-8-llvm
+prepared fannkuchredux-gcc-1-gcc
+prepared fannkuchredux-gcc-1-llvm
+prepared fannkuchredux-julia-1
+prepared fannkuchredux-go-8
+prepared fannkuchredux-graalvmaot-2
+excluded fannkuchredux-graalvmaot-8 'NoneType' object has no attribute 'group'
+prepared mech-fannkuch-simd
+prepared mech-fannkuch-scalar

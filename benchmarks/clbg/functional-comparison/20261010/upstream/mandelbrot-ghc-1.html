@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>mandelbrot Haskell GHC program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>mandelbrot Haskell GHC program</h1>
+    <aside>
+      <p><a href="../description/mandelbrot.html#mandelbrot">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+
+<span class="slc">-- contributed by Greg Buchholz</span>
+<span class="slc">-- fix overflowing Chars by switching to Word8</span>
+<span class="slc">--   and use vectors/bytestrings instead of lists -- Artem Pelenitsyn</span>
+
+
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Unboxed <span class="kwb">as</span> V
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>ByteString <span class="kwb">as</span> B
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>ByteString<span class="opt">.</span>Builder <span class="kwb">as</span> B
+<span class="kwb">import</span> Data<span class="opt">.</span>Complex
+<span class="kwb">import</span> Data<span class="opt">.</span>Bool
+<span class="kwb">import</span> Data<span class="opt">.</span>Word
+<span class="kwb">import</span> System<span class="opt">.</span>Environment
+<span class="kwb">import</span> System<span class="opt">.</span>IO <span class="kwc">(</span>stdout<span class="kwc">)</span>
+
+<span class="kwa">type</span> C <span class="opt">=</span> Complex Double
+<span class="kwa">type</span> V <span class="opt">=</span> V<span class="opt">.</span>Vector
+f <span class="opt">=</span> fromIntegral <span class="slc">-- conversions b/w numeric types</span>
+
+main <span class="opt">=</span> <span class="kwd">do</span>   <span class="kwc">[</span>arg<span class="kwc">]</span> <span class="opt">&lt;-</span> getArgs
+            <span class="kwd">let</span> width <span class="opt">=</span> read arg
+            <span class="kwd">let</span> pts <span class="opt">=</span> points width
+            putStr <span class="opt">$</span> <span class="sng">&quot;P4</span><span class="esc">\n</span><span class="sng">&quot;</span> <span class="opt">++</span> arg <span class="opt">++</span> <span class="sng">&quot; &quot;</span> <span class="opt">++</span> arg <span class="opt">++</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">&quot;</span>
+            B<span class="opt">.</span>hPutBuilder stdout <span class="opt">$</span> makePBM <span class="num">0 0</span> <span class="kwc">(</span>fractal pts<span class="kwc">)</span>
+
+limit  <span class="opt">=</span> <span class="num">4</span>    <span class="slc">-- max magnitude squared</span>
+iter   <span class="opt">=</span> <span class="num">50</span><span class="opt">+</span><span class="num">1</span> <span class="slc">-- add one to compensate for the &#39;iterate&#39; function</span>
+
+points :: Int <span class="opt">-&gt;</span> V C
+points w <span class="opt">=</span> V<span class="opt">.</span>generate <span class="kwc">(</span>w <span class="opt">*</span> w<span class="kwc">)</span> gen <span class="slc">-- generate vector of length width^2</span>
+  <span class="kwb">where</span>
+    gen i <span class="opt">=</span> <span class="kwc">(</span><span class="num">2</span><span class="opt">*</span><span class="kwc">(</span>f x<span class="kwc">)</span><span class="opt">/</span><span class="kwc">(</span>f w<span class="kwc">)</span> <span class="opt">-</span> <span class="num">1.5</span><span class="kwc">)</span> :<span class="opt">+</span> <span class="kwc">(</span><span class="num">2</span><span class="opt">*</span><span class="kwc">(</span>f y<span class="kwc">)</span><span class="opt">/</span><span class="kwc">(</span>f w<span class="kwc">)</span> <span class="opt">-</span> <span class="num">1</span><span class="kwc">)</span>
+      <span class="kwb">where</span> <span class="kwc">(</span>y<span class="kwc">,</span> x<span class="kwc">)</span> <span class="opt">=</span> quotRem i w
+
+mandel :: C <span class="opt">-&gt;</span> C <span class="opt">-&gt;</span> C
+mandel c z <span class="opt">=</span> z <span class="opt">*</span> z <span class="opt">+</span> c
+
+fractal :: V C <span class="opt">-&gt;</span> V Bool <span class="slc">-- for every point check if it goes to &quot;infinity&quot;</span>
+fractal <span class="opt">=</span> V<span class="opt">.</span>map <span class="kwc">((\</span>f<span class="opt">-&gt;</span> iter <span class="opt">==</span> length <span class="kwc">(</span>takeIter <span class="kwc">(</span>iterate f <span class="kwc">(</span><span class="num">0</span>:<span class="opt">+</span><span class="num">0</span><span class="kwc">))))</span> <span class="opt">.</span> mandel<span class="kwc">)</span>
+        <span class="kwb">where</span> takeIter a <span class="opt">=</span> take iter <span class="kwc">(</span>takeWhile <span class="kwc">(</span>\x<span class="opt">-&gt;</span> magnitudeSq x <span class="opt">&lt;</span> limit<span class="kwc">)</span> a<span class="kwc">)</span>
+
+magnitudeSq :: C <span class="opt">-&gt;</span> Double
+magnitudeSq <span class="kwc">(</span>x :<span class="opt">+</span> y<span class="kwc">)</span> <span class="opt">=</span> x<span class="opt">*</span>x <span class="opt">+</span> y<span class="opt">*</span>y
+
+makePBM :: Int <span class="opt">-&gt;</span> Word8 <span class="opt">-&gt;</span> V Bool <span class="opt">-&gt;</span> B<span class="opt">.</span>Builder
+makePBM i acc v <span class="opt">|</span> Just <span class="kwc">(</span>x<span class="kwc">,</span> xs<span class="kwc">)</span> <span class="opt">&lt;-</span> V<span class="opt">.</span>uncons v <span class="opt">=</span> <span class="kwd">case</span> i <span class="kwd">of</span>
+                    <span class="num">8</span> <span class="opt">-&gt;</span> B<span class="opt">.</span>word8 <span class="kwc">(</span>fromIntegral acc<span class="kwc">)</span> <span class="opt">&lt;&gt;</span> makePBM <span class="num">0 0</span> v
+                    _ <span class="opt">-&gt;</span> makePBM <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">) (</span>bool <span class="kwc">(</span>acc<span class="opt">*</span><span class="num">2</span><span class="kwc">) (</span>acc<span class="opt">*</span><span class="num">2</span><span class="opt">+</span><span class="num">1</span><span class="kwc">)</span> x<span class="kwc">)</span> xs
+                <span class="opt">|</span> otherwise <span class="opt">=</span> B<span class="opt">.</span>word8 <span class="kwc">(</span>acc <span class="opt">*</span> <span class="num">2</span><span class="opt">^</span><span class="kwc">(</span><span class="num">8</span><span class="opt">-</span>i<span class="kwc">))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 08:21:10 GMT
+
+MAKE:
+mv mandelbrot.ghc mandelbrot.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XMagicHash -XUnboxedTuples mandelbrot.hs -o mandelbrot.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( mandelbrot.hs, mandelbrot.o )
+[2 of 2] Linking mandelbrot.ghc_run
+rm mandelbrot.hs
+
+18.33 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./mandelbrot.ghc_run +RTS -N4 -RTS 16000
+
+(BINARY) PROGRAM OUTPUT NOT SHOWN
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

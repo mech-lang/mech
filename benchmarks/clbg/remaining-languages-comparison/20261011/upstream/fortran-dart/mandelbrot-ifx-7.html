@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>mandelbrot Intel Fortran&nbsp;#7 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>mandelbrot Intel Fortran&nbsp;#7 program</h1>
+    <aside>
+      <p><a href="../description/mandelbrot.html#mandelbrot">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">! The Computer Language Benchmarks Game</span>
+<span class="slc">! https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">!</span>
+<span class="slc">! Author: Jannis Teunissen</span>
+<span class="slc">! Heavily based on Fortran code contributed by Pascal Parois</span>
+<span class="slc">!</span>
+<span class="slc">! Compilation:</span>
+<span class="slc">! gfortran -pipe -O3 -fomit-frame-pointer -march=core2 \</span>
+<span class="slc">!          -fopenmp mandelbrot.f90 -o mandelbrot</span>
+<span class="slc">! ifort -O3 -march=core2 -qopenmp mandelbrot.f90 -o mandelbrot</span>
+<span class="kwa">program</span> mandelbrot
+  <span class="kwa">use</span> iso_fortran_env<span class="opt">,</span> dp <span class="opt">=&gt;</span> real64
+
+  <span class="kwa">implicit none</span>
+
+  <span class="kwa">integer</span><span class="opt">,</span> <span class="kwa">parameter</span>  <span class="opt">::</span> max_iterations <span class="opt">=</span> <span class="num">50</span> <span class="slc">! How many Mandelbrot iterations</span>
+  <span class="kwa">integer</span><span class="opt">,</span> <span class="kwa">parameter</span>  <span class="opt">::</span> buf_size       <span class="opt">=</span> <span class="num">32</span> <span class="slc">! Buffer size for arrays</span>
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwa">parameter</span> <span class="opt">::</span> threshold      <span class="opt">=</span> <span class="num">4.0</span>_dp <span class="slc">! Threshold for iterations</span>
+
+  <span class="kwa">integer</span>                       <span class="opt">::</span> i<span class="opt">,</span> j<span class="opt">,</span> k<span class="opt">,</span> n<span class="opt">,</span> pos<span class="opt">,</span> my_unit
+  <span class="kwa">integer</span>                       <span class="opt">::</span> bytepos<span class="opt">,</span> nx<span class="opt">,</span> width
+  <span class="kwa">integer</span><span class="opt">(</span>int8<span class="opt">),</span> allocatable    <span class="opt">::</span> <span class="kwd">buffer</span><span class="opt">(:, :)</span>
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> <span class="kwa">dimension</span><span class="opt">(</span>buf_size<span class="opt">) ::</span> cr<span class="opt">,</span> ci<span class="opt">,</span> zr<span class="opt">,</span> zi<span class="opt">,</span> tr<span class="opt">,</span> ti
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">)                      ::</span> cte
+  <span class="kwa">real</span><span class="opt">(</span>dp<span class="opt">),</span> allocatable         <span class="opt">::</span> <span class="kwd">cr_values</span><span class="opt">(:),</span> <span class="kwd">ci_values</span><span class="opt">(:)</span>
+  <span class="kwa">character</span><span class="opt">(</span>len<span class="opt">=</span><span class="num">64</span><span class="opt">)             ::</span> argv<span class="opt">,</span> header
+  <span class="kwa">character</span><span class="opt">(</span>len<span class="opt">=:),</span> allocatable <span class="opt">::</span> char_output
+  <span class="kwa">character</span><span class="opt">(</span>len<span class="opt">=*),</span> <span class="kwa">parameter</span>   <span class="opt">::</span> output_style <span class="opt">=</span> <span class="sng">&quot;multiple_strings&quot;</span>
+
+  <span class="slc">! Get bitmap size from command line argument</span>
+  <span class="kwa">call</span> <span class="kwd">get_command_argument</span><span class="opt">(</span><span class="num">1</span><span class="opt">,</span> argv<span class="opt">)</span>
+  <span class="kwa">read</span><span class="opt">(</span>argv<span class="opt">, *)</span> width
+
+  <span class="slc">! Determine smallest multiple of buf_size greater or equal to width</span>
+  nx <span class="opt">=</span> <span class="kwd">ceiling</span><span class="opt">(</span>width<span class="opt">/</span><span class="kwa">real</span><span class="opt">(</span>buf_size<span class="opt">,</span> dp<span class="opt">)) *</span> buf_size
+
+  <span class="slc">! Allocate results buffer</span>
+  <span class="kwd">allocate</span><span class="opt">(</span><span class="kwd">buffer</span><span class="opt">(</span>nx<span class="opt">/</span><span class="num">8</span><span class="opt">,</span> width<span class="opt">))</span>
+  buffer <span class="opt">=</span> <span class="num">0</span>
+
+  <span class="slc">! Set complex coordinates from [-1.5 - i -- 0.5 + i]</span>
+  <span class="kwd">allocate</span><span class="opt">(</span><span class="kwd">cr_values</span><span class="opt">(</span>nx<span class="opt">))</span>
+  <span class="kwd">allocate</span><span class="opt">(</span><span class="kwd">ci_values</span><span class="opt">(</span>width<span class="opt">))</span>
+  cte <span class="opt">=</span> <span class="num">2.0</span>_dp<span class="opt">/</span>width <span class="slc">! Step size</span>
+  cr_values <span class="opt">= [(</span>cte <span class="opt">*</span> i <span class="opt">-</span> <span class="num">1.5</span>_dp<span class="opt">,</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">,</span> nx<span class="opt">-</span><span class="num">1</span><span class="opt">)]</span>
+  ci_values <span class="opt">= [(</span>cte <span class="opt">*</span> i <span class="opt">-</span> <span class="num">1</span><span class="opt">,</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">,</span> width<span class="opt">-</span><span class="num">1</span><span class="opt">)]</span>
+
+  <span class="slc">!$omp parallel do private(i, j, k, n, bytepos, pos) &amp;</span>
+  <span class="slc">!$omp private(zr, zi, cr, ci, tr, ti) schedule(guided)</span>
+  <span class="kwa">do</span> i <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> width
+     pos     <span class="opt">=</span> <span class="num">1</span>
+     bytepos <span class="opt">=</span> <span class="num">8</span>
+     ci      <span class="opt">=</span> <span class="kwd">ci_values</span><span class="opt">(</span>i<span class="opt">)</span>
+
+     <span class="kwa">do</span> j <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> nx<span class="opt">,</span> buf_size
+        <span class="slc">! Set initial values (together with ci above)</span>
+        cr <span class="opt">=</span> <span class="kwd">cr_values</span><span class="opt">(</span>j<span class="opt">:</span>j<span class="opt">+</span>buf_size<span class="opt">-</span><span class="num">1</span><span class="opt">)</span>
+        zr <span class="opt">=</span> <span class="num">0.0</span>_dp
+        zi <span class="opt">=</span> <span class="num">0.0</span>_dp
+        tr <span class="opt">=</span> <span class="num">0.0</span>_dp
+        ti <span class="opt">=</span> <span class="num">0.0</span>_dp
+
+        <span class="slc">! Perform very simple loop unrolling</span>
+        <span class="kwa">do</span> k <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> max_iterations<span class="opt">/</span><span class="num">2</span>
+           <span class="slc">! Update the real and complex parts</span>
+           zi <span class="opt">=</span> <span class="num">2</span><span class="opt">*</span>zr<span class="opt">*</span>zi<span class="opt">+</span>ci
+           zr <span class="opt">=</span> tr<span class="opt">-</span>ti<span class="opt">+</span>cr
+           ti <span class="opt">=</span> zi<span class="opt">*</span>zi
+           tr <span class="opt">=</span> zr<span class="opt">*</span>zr
+           <span class="slc">! One more update</span>
+           zi <span class="opt">=</span> <span class="num">2</span><span class="opt">*</span>zr<span class="opt">*</span>zi<span class="opt">+</span>ci
+           zr <span class="opt">=</span> tr<span class="opt">-</span>ti<span class="opt">+</span>cr
+           ti <span class="opt">=</span> zi<span class="opt">*</span>zi
+           tr <span class="opt">=</span> zr<span class="opt">*</span>zr
+
+           <span class="slc">! Check if all values have exceeded the threshold</span>
+           <span class="kwa">if</span> <span class="opt">(</span><span class="kwd">all</span><span class="opt">(</span>tr <span class="opt">+</span> ti <span class="opt">&gt;</span> threshold<span class="opt">))</span> exit
+        <span class="kwa">end do</span>
+
+        <span class="slc">! Store results in buffer</span>
+        <span class="kwa">do</span> k <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> buf_size
+           <span class="slc">! Pack boolean values into bytes</span>
+           bytepos <span class="opt">=</span> bytepos <span class="opt">-</span> <span class="num">1</span>
+           <span class="kwa">if</span> <span class="opt">(</span><span class="kwd">tr</span><span class="opt">(</span>k<span class="opt">)+</span><span class="kwd">ti</span><span class="opt">(</span>k<span class="opt">) &lt;</span> threshold <span class="opt">.</span>and<span class="opt">.</span> j <span class="opt">&lt;=</span> width<span class="opt">)</span> <span class="kwa">then</span>
+              <span class="kwd">buffer</span><span class="opt">(</span>pos<span class="opt">,</span> i<span class="opt">) =</span> <span class="kwd">ibset</span><span class="opt">(</span><span class="kwd">buffer</span><span class="opt">(</span>pos<span class="opt">,</span> i<span class="opt">),</span> bytepos<span class="opt">)</span>
+           <span class="kwa">end if</span>
+
+           <span class="slc">! Advance at the end of the byte</span>
+           <span class="kwa">if</span> <span class="opt">(</span>bytepos <span class="opt">==</span> <span class="num">0</span><span class="opt">)</span> <span class="kwa">then</span>
+              bytepos <span class="opt">=</span> <span class="num">8</span>
+              pos     <span class="opt">=</span> pos <span class="opt">+</span> <span class="num">1</span>
+           <span class="kwa">end if</span>
+        <span class="kwa">end do</span>
+     <span class="kwa">end do</span>
+  <span class="kwa">end do</span>
+  <span class="slc">!$omp end parallel do</span>
+
+  <span class="slc">! pbm header</span>
+  <span class="kwa">write</span><span class="opt">(</span>header<span class="opt">,</span> <span class="sng">&quot;(a,i0,a,i0,a)&quot;</span><span class="opt">)</span> <span class="sng">&quot;P4&quot;</span> <span class="opt">//</span> <span class="kwd">new_line</span><span class="opt">(</span><span class="sng">&quot;a&quot;</span><span class="opt">), &amp;</span>
+       width<span class="opt">,</span> <span class="sng">&quot; &quot;</span><span class="opt">,</span> width<span class="opt">,</span> <span class="kwd">new_line</span><span class="opt">(</span><span class="sng">&quot;a&quot;</span><span class="opt">)</span>
+
+  i <span class="opt">=</span> <span class="kwd">ceiling</span><span class="opt">(</span>width<span class="opt">/</span><span class="num">8.0</span>_dp<span class="opt">)</span>
+
+  <span class="slc">! Fortran allows to write binary output (stream access) to files, but not to</span>
+  <span class="slc">! stdout. Some tricks are therefore required.</span>
+
+  select <span class="kwd">case</span> <span class="opt">(</span>output_style<span class="opt">)</span>
+  <span class="kwd">case</span> <span class="opt">(</span><span class="sng">&quot;one_big_string&quot;</span><span class="opt">)</span>
+     <span class="slc">! Convert binary data to one big string</span>
+     <span class="kwd">allocate</span><span class="opt">(</span><span class="kwa">character</span><span class="opt">(</span>len<span class="opt">=</span>i<span class="opt">*</span>width<span class="opt">) ::</span> char_output<span class="opt">)</span>
+     char_output <span class="opt">=</span> <span class="kwd">transfer</span><span class="opt">(</span><span class="kwd">buffer</span><span class="opt">(</span><span class="num">1</span><span class="opt">:</span>i<span class="opt">, :),</span> char_output<span class="opt">)</span>
+     <span class="kwa">write</span><span class="opt">(*,</span> <span class="sng">&#39;(a)&#39;</span><span class="opt">,</span> advance<span class="opt">=</span><span class="sng">&#39;no&#39;</span><span class="opt">)</span> <span class="kwd">trim</span><span class="opt">(</span>header<span class="opt">)</span>
+     <span class="kwa">write</span><span class="opt">(*,</span> <span class="sng">&#39;(a)&#39;</span><span class="opt">,</span> advance<span class="opt">=</span><span class="sng">&#39;no&#39;</span><span class="opt">)</span> char_output
+  <span class="kwd">case</span> <span class="opt">(</span><span class="sng">&quot;multiple_strings&quot;</span><span class="opt">)</span>
+     <span class="slc">! This avoids problems with ifort for larger output sizes</span>
+     <span class="kwd">allocate</span><span class="opt">(</span><span class="kwa">character</span><span class="opt">(</span>len<span class="opt">=</span>i<span class="opt">) ::</span> char_output<span class="opt">)</span>
+     <span class="kwa">write</span><span class="opt">(*,</span> <span class="sng">&#39;(a)&#39;</span><span class="opt">,</span> advance<span class="opt">=</span><span class="sng">&#39;no&#39;</span><span class="opt">)</span> <span class="kwd">trim</span><span class="opt">(</span>header<span class="opt">)</span>
+     <span class="kwa">do</span> j <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span> width
+        char_output <span class="opt">=</span> <span class="kwd">transfer</span><span class="opt">(</span><span class="kwd">buffer</span><span class="opt">(</span><span class="num">1</span><span class="opt">:</span>i<span class="opt">,</span> j<span class="opt">),</span> char_output<span class="opt">)</span>
+        <span class="kwa">write</span><span class="opt">(*,</span> <span class="sng">&#39;(a)&#39;</span><span class="opt">,</span> advance<span class="opt">=</span><span class="sng">&#39;no&#39;</span><span class="opt">)</span> char_output
+     <span class="kwa">end do</span>
+  case default
+     <span class="slc">! Write unformatted data to stdout, by opening it as a file</span>
+     <span class="kwa">open</span><span class="opt">(</span>newunit<span class="opt">=</span>my_unit<span class="opt">,</span> file<span class="opt">=</span><span class="sng">&quot;/dev/stdout&quot;</span><span class="opt">,</span> access<span class="opt">=</span><span class="sng">&#39;stream&#39;</span><span class="opt">, &amp;</span>
+          form<span class="opt">=</span><span class="sng">&#39;unformatted&#39;</span><span class="opt">,</span> action<span class="opt">=</span><span class="sng">&#39;write&#39;</span><span class="opt">)</span>
+     <span class="kwa">write</span><span class="opt">(</span>my_unit<span class="opt">)</span> <span class="kwd">trim</span><span class="opt">(</span>header<span class="opt">)</span>
+     <span class="kwa">write</span><span class="opt">(</span>my_unit<span class="opt">)</span> <span class="kwd">buffer</span><span class="opt">(</span><span class="num">1</span><span class="opt">:</span>i<span class="opt">, :)</span>
+     <span class="kwd">flush</span><span class="opt">(</span>my_unit<span class="opt">)</span>
+     <span class="kwa">close</span><span class="opt">(</span>my_unit<span class="opt">)</span>
+  <span class="kwa">end</span> select
+
+<span class="kwa">end program</span> mandelbrot
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+ifx (IFX)
+2024.1.0 20240308
+
+
+ Sat, 11 Jan 2025 20:18:05 GMT
+
+MAKE:
+mv mandelbrot.ifx-7.ifx mandelbrot.ifx-7.f90
+~/intel/oneapi/compiler/latest/bin/ifx -O3 -march=ivybridge -ipo -qopenmp mandelbrot.ifx-7.f90 -o mandelbrot.ifx-7.ifx_run
+rm mandelbrot.ifx-7.f90
+
+5.17s to complete and log all make actions
+
+COMMAND LINE:
+ ./mandelbrot.ifx-7.ifx_run 16000
+
+(BINARY) PROGRAM OUTPUT NOT SHOWN
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

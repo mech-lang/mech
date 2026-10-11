@@ -1,0 +1,7 @@
+rows := 0..2
+columns := 0..33
+C(i<u64>, j<u64>) => <f64> := number/to-f64(7 / j)
+A := [[C(i, j) | j <- columns]' | i <- rows]'
+io/write("must not print")
+x := [1.0 | j <- columns]'
+io/write(text/join-terminated(number/format(A ** x, 0), " "))

@@ -1,0 +1,66 @@
+{
+  "source_report": "apple-m3-improved-corner-25000000.json",
+  "metric": "gzip1_bytes",
+  "strict_small_reference": false,
+  "time_baseline_seconds": null,
+  "normalization": "Each time divided by the Rust #7 median in the same batch; raw samples/medians retained. Repeated configurations use the latest batch. Byte-identical Mech executables with identical runtime policy in one batch share the median of their pooled samples.",
+  "size_baseline": 245,
+  "languages": {
+    "c": {
+      "fastest": "knucleotide-gcc-1-gcc-fastmath",
+      "smallest": "knucleotide-gcc-1-gcc-fastmath",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "chapel": {
+      "fastest": "knucleotide-chapel-4",
+      "smallest": "knucleotide-chapel-3",
+      "time_cost": 1.2258718311834824,
+      "size_cost": 1.030214424951267,
+      "log2_line_length": 0.296930077203216
+    },
+    "cpp": {
+      "fastest": "knucleotide-gpp-2-llvm-fastmath",
+      "smallest": "knucleotide-gpp-3-llvm-native",
+      "time_cost": 1.4300137172165124,
+      "size_cost": 1.2788074133763094,
+      "log2_line_length": 0.6262333859965793
+    },
+    "go": {
+      "fastest": "knucleotide-go-7",
+      "smallest": "knucleotide-go-8",
+      "time_cost": 11.550924802177594,
+      "size_cost": 2.1322537112010798,
+      "log2_line_length": 3.695097227011398
+    },
+    "java": {
+      "fastest": "knucleotide-graalvmaot-1",
+      "smallest": "knucleotide-graalvmaot-8",
+      "time_cost": 15.54043473282033,
+      "size_cost": 2.3148387096774194,
+      "log2_line_length": 4.139047539028102
+    },
+    "julia": {
+      "fastest": "knucleotide-julia-6",
+      "smallest": "knucleotide-julia-1",
+      "time_cost": 24.581124698254687,
+      "size_cost": 1.3695014662756597,
+      "log2_line_length": 4.641700711208877
+    },
+    "mech": {
+      "fastest": "mech-compact-final-std1-simd0-p4",
+      "smallest": "mech-compact-final-std1-simd0-p4",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "rust": {
+      "fastest": "knucleotide-rust-6-panicabort",
+      "smallest": "knucleotide-rust-1",
+      "time_cost": 14.157026681852322,
+      "size_cost": 1.5622641509433963,
+      "log2_line_length": 3.8772429259884356
+    }
+  }
+}

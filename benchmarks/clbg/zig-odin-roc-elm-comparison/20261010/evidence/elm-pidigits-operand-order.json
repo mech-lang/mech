@@ -1,0 +1,11 @@
+{
+  "status": "superseded-unfinished-candidate",
+  "at": "2026-10-11T01:55:12.997630+00:00",
+  "key": "pidigits:pidigits-elm-idiomatic",
+  "source_sha256": "4eed47d879ab6987bdb0b522a3d1acf9a6214a580b4a2e827a7406e12610a96c",
+  "binary_sha256": "fbdd6e3c98486a294cd788246d703e77de3f397714b26966788fd22953feee6d",
+  "samples_admitted": 0,
+  "process": "7762  7696 39:12 100.0 300400 /Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/elm-runner.cjs /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/pidigits-elm-idiomatic.js 10000",
+  "reason": "The application passed a small scalar as the first operand of dwayne/elm-natural mulHelper, whose second operand drives its schoolbook multiplication. This performs quadratic repeated partial-sum traversal for large-by-small multiplication. A commutative operand-order correction preserves the full LFT algorithm, all signed floor extractions and LOC; the unfinished old candidate is replaced, not scored.",
+  "library": "dwayne/elm-natural 1.1.1 Natural.elm:951-1070"
+}

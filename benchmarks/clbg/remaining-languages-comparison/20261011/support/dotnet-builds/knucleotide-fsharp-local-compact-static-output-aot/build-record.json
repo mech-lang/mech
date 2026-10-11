@@ -1,0 +1,69 @@
+{
+  "id": "knucleotide-fsharp-local-compact-static-output-aot",
+  "key": "knucleotide:knucleotide-fsharp-local-compact-static-output-aot",
+  "benchmark": "knucleotide",
+  "language": "fsharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharp-local-compact-static-output.fs",
+  "source_sha256": "4cddefdea835f3f007aeaf307c7437089f64408d6d8496b97ebb902686401fa5",
+  "source_url": null,
+  "local_adaptation": true,
+  "adaptations": [
+    "Locally authored F# application. All seven widths build complete growable maps; packed keys retain all 36 bits.",
+    "Use ordinary statically resolved .NET number/text formatting, because this FSharp.Core printf path invokes generic methods through reflection that NativeAOT cannot create. All changed application output expressions count. Limit async scheduling to eight workers."
+  ],
+  "physical_loc": 25,
+  "normalized_loc": 26,
+  "expansions": [
+    {
+      "line": 4,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharp-local-compact-static-output-aot/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-static-output-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/knucleotide-fsharp-local-compact-static-output-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-static-output-aot/app",
+  "binary_sha256": "ee572f53ae00825f6e6e0f3225d07d0c478dc7ce5bbb5aa9629cc1504309dbfb",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-static-output-aot/app"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharp-local-compact-static-output-aot/app": "ee572f53ae00825f6e6e0f3225d07d0c478dc7ce5bbb5aa9629cc1504309dbfb"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 242,
+    "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+    "reference_match": true
+  },
+  "published_elapsed_hint": null,
+  "timing_selection_reasons": [
+    "Fewest normalized source lines among accepted candidates."
+  ]
+}

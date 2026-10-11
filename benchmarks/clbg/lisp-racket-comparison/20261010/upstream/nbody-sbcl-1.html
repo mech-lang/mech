@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>n-body Lisp SBCL program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>n-body Lisp SBCL program</h1>
+    <aside>
+      <p><a href="../description/nbody.html#nbody">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">;;   The Computer Language Benchmarks Game</span>
+<span class="slc">;;   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">;;;</span>
+<span class="slc">;;; contributed by Patrick Frankenberger</span>
+<span class="slc">;;; modified by Juho Snellman 2005-11-18</span>
+<span class="slc">;;;   * About 40% speedup on SBCL, 90% speedup on CMUCL</span>
+<span class="slc">;;;   * Represent a body as a DEFSTRUCT with (:TYPE VECTOR DOUBLE-FLOAT), a</span>
+<span class="slc">;;;     not as a structure that contains vectors</span>
+<span class="slc">;;;   * Inline APPLYFORCES</span>
+<span class="slc">;;;   * Replace (/ DT DISTANCE DISTANCE DISTANCE) with</span>
+<span class="slc">;;;     (/ DT (* DISTANCE DISTANCE DISTANCE)), as is done in the other</span>
+<span class="slc">;;;     implementations of this test.</span>
+<span class="slc">;;;   * Add a couple of declarations</span>
+<span class="slc">;;;   * Heavily rewritten for style (represent system as a list instead of</span>
+<span class="slc">;;;     an array to make the nested iterations over it less clumsy, use</span>
+<span class="slc">;;;     INCF/DECF where appropriate, break very long lines, etc)</span>
+
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="opt">+</span>days-per-year<span class="opt">+</span> <span class="num">365.24</span>d0<span class="opt">)</span>
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="opt">+</span>solar-mass<span class="opt">+ (*</span> <span class="num">4</span>d0 pi pi<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defstruct</span> <span class="opt">(</span><span class="kwa">body</span> <span class="opt">(</span><span class="kwc">:type</span> <span class="opt">(</span><span class="kwa">vector</span> double-float<span class="opt">))</span>
+                 <span class="opt">(</span><span class="kwc">:conc</span>-name nil<span class="opt">)</span>
+                 <span class="opt">(</span><span class="kwc">:constructor</span> make-body <span class="opt">(</span><span class="kwa">x</span> y z vx vy vz mass<span class="opt">)))</span>
+  x y z
+  vx vy vz
+  mass<span class="opt">)</span>
+<span class="opt">(</span><span class="kwa">deftype</span> body <span class="opt">() &#39;(</span><span class="kwa">vector</span> double-float <span class="num">7</span><span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="kwd">*jupiter*</span>
+  <span class="opt">(</span><span class="kwa">make-body</span> <span class="num">4.84143144246472090</span>d0
+             -<span class="num">1.16032004402742839</span>d0
+             -<span class="num">1.03622044471123109</span>d-1
+             <span class="opt">(*</span> <span class="num">1.66007664274403694</span>d-3 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">7.69901118419740425</span>d-3 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> -<span class="num">6.90460016972063023</span>d-5  <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">9.54791938424326609</span>d-4 <span class="opt">+</span>solar-mass<span class="opt">+)))</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="kwd">*saturn*</span>
+  <span class="opt">(</span><span class="kwa">make-body</span> <span class="num">8.34336671824457987</span>d0
+             <span class="num">4.12479856412430479</span>d0
+             -<span class="num">4.03523417114321381</span>d-1
+             <span class="opt">(*</span> -<span class="num">2.76742510726862411</span>d-3 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">4.99852801234917238</span>d-3 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">2.30417297573763929</span>d-5 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">2.85885980666130812</span>d-4 <span class="opt">+</span>solar-mass<span class="opt">+)))</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="kwd">*uranus*</span>
+  <span class="opt">(</span><span class="kwa">make-body</span> <span class="num">1.28943695621391310</span>d1
+             -<span class="num">1.51111514016986312</span>d1
+             -<span class="num">2.23307578892655734</span>d-1
+             <span class="opt">(*</span> <span class="num">2.96460137564761618</span>d-03 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">2.37847173959480950</span>d-03 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> -<span class="num">2.96589568540237556</span>d-05 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">4.36624404335156298</span>d-05 <span class="opt">+</span>solar-mass<span class="opt">+)))</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="kwd">*neptune*</span>
+  <span class="opt">(</span><span class="kwa">make-body</span> <span class="num">1.53796971148509165</span>d<span class="opt">+</span><span class="num">01</span>
+             -<span class="num">2.59193146099879641</span>d<span class="opt">+</span><span class="num">01</span>
+             <span class="num">1.79258772950371181</span>d-01
+             <span class="opt">(*</span> <span class="num">2.68067772490389322</span>d-03 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">1.62824170038242295</span>d-03 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> -<span class="num">9.51592254519715870</span>d-05 <span class="opt">+</span>days-per-year<span class="opt">+)</span>
+             <span class="opt">(*</span> <span class="num">5.15138902046611451</span>d-05 <span class="opt">+</span>solar-mass<span class="opt">+)))</span>
+
+<span class="opt">(</span><span class="kwa">defparameter</span> <span class="kwd">*sun*</span>
+  <span class="opt">(</span><span class="kwa">make-body</span> <span class="num">0.0</span>d0 <span class="num">0.0</span>d0 <span class="num">0.0</span>d0 <span class="num">0.0</span>d0 <span class="num">0.0</span>d0 <span class="num">0.0</span>d0 <span class="opt">+</span>solar-mass<span class="opt">+))</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">inline</span> applyforces<span class="opt">))</span>
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">applyforces</span> <span class="opt">(</span><span class="kwa">a</span> b dt<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> body a b<span class="opt">) (</span><span class="kwa">type</span> double-float dt<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ((</span><span class="kwa">dx</span> <span class="opt">(</span><span class="kwa">-</span> <span class="opt">(</span><span class="kwa">x</span> a<span class="opt">) (</span><span class="kwa">x</span> b<span class="opt">)))</span>
+         <span class="opt">(</span><span class="kwa">dy</span> <span class="opt">(</span><span class="kwa">-</span> <span class="opt">(</span><span class="kwa">y</span> a<span class="opt">) (</span><span class="kwa">y</span> b<span class="opt">)))</span>
+         <span class="opt">(</span><span class="kwa">dz</span> <span class="opt">(</span><span class="kwa">-</span> <span class="opt">(</span><span class="kwa">z</span> a<span class="opt">) (</span><span class="kwa">z</span> b<span class="opt">)))</span>
+	 <span class="opt">(</span><span class="kwa">distance</span> <span class="opt">(</span><span class="kwa">sqrt</span> <span class="opt">(+ (*</span> dx dx<span class="opt">) (*</span> dy dy<span class="opt">) (*</span> dz dz<span class="opt">))))</span>
+	 <span class="opt">(</span><span class="kwa">mag</span> <span class="opt">(/</span> dt <span class="opt">(*</span> distance distance distance<span class="opt">)))</span>
+         <span class="opt">(</span><span class="kwa">dxmag</span> <span class="opt">(*</span> dx mag<span class="opt">))</span>
+         <span class="opt">(</span><span class="kwa">dymag</span> <span class="opt">(*</span> dy mag<span class="opt">))</span>
+         <span class="opt">(</span><span class="kwa">dzmag</span> <span class="opt">(*</span> dz mag<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">decf</span> <span class="opt">(</span><span class="kwa">vx</span> a<span class="opt">) (*</span> dxmag <span class="opt">(</span><span class="kwa">mass</span> b<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">decf</span> <span class="opt">(</span><span class="kwa">vy</span> a<span class="opt">) (*</span> dymag <span class="opt">(</span><span class="kwa">mass</span> b<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">decf</span> <span class="opt">(</span><span class="kwa">vz</span> a<span class="opt">) (*</span> dzmag <span class="opt">(</span><span class="kwa">mass</span> b<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">vx</span> b<span class="opt">) (*</span> dxmag <span class="opt">(</span><span class="kwa">mass</span> a<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">vy</span> b<span class="opt">) (*</span> dymag <span class="opt">(</span><span class="kwa">mass</span> a<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">vz</span> b<span class="opt">) (*</span> dzmag <span class="opt">(</span><span class="kwa">mass</span> a<span class="opt">))))</span>
+  nil<span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">advance</span> <span class="opt">(</span><span class="kwa">system</span> dt<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">double-float</span> dt<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">loop</span> for <span class="opt">(</span><span class="kwa">a</span> . rest<span class="opt">)</span> on system do
+        <span class="opt">(</span><span class="kwa">dolist</span> <span class="opt">(</span><span class="kwa">b</span> rest<span class="opt">)</span>
+          <span class="opt">(</span><span class="kwa">applyforces</span> a b dt<span class="opt">)))</span>
+  <span class="opt">(</span><span class="kwa">dolist</span> <span class="opt">(</span><span class="kwa">b</span> system<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">x</span> b<span class="opt">) (*</span> dt <span class="opt">(</span><span class="kwa">vx</span> b<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">y</span> b<span class="opt">) (*</span> dt <span class="opt">(</span><span class="kwa">vy</span> b<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">z</span> b<span class="opt">) (*</span> dt <span class="opt">(</span><span class="kwa">vz</span> b<span class="opt">)))))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">energy</span> <span class="opt">(</span><span class="kwa">system</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">e</span> <span class="num">0.0</span>d0<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">double-float</span> e<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">loop</span> for <span class="opt">(</span><span class="kwa">a</span> . rest<span class="opt">)</span> on system do
+          <span class="opt">(</span><span class="kwa">incf</span> e <span class="opt">(*</span> <span class="num">0.5</span>d0
+                     <span class="opt">(</span><span class="kwa">mass</span> a<span class="opt">)</span>
+                     <span class="opt">(+ (* (</span><span class="kwa">vx</span> a<span class="opt">) (</span><span class="kwa">vx</span> a<span class="opt">))</span>
+                        <span class="opt">(* (</span><span class="kwa">vy</span> a<span class="opt">) (</span><span class="kwa">vy</span> a<span class="opt">))</span>
+                        <span class="opt">(* (</span><span class="kwa">vz</span> a<span class="opt">) (</span><span class="kwa">vz</span> a<span class="opt">)))))</span>
+          <span class="opt">(</span><span class="kwa">dolist</span> <span class="opt">(</span><span class="kwa">b</span> rest<span class="opt">)</span>
+            <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ((</span><span class="kwa">dx</span> <span class="opt">(</span><span class="kwa">-</span> <span class="opt">(</span><span class="kwa">x</span> a<span class="opt">) (</span><span class="kwa">x</span> b<span class="opt">)))</span>
+                   <span class="opt">(</span><span class="kwa">dy</span> <span class="opt">(</span><span class="kwa">-</span> <span class="opt">(</span><span class="kwa">y</span> a<span class="opt">) (</span><span class="kwa">y</span> b<span class="opt">)))</span>
+                   <span class="opt">(</span><span class="kwa">dz</span> <span class="opt">(</span><span class="kwa">-</span> <span class="opt">(</span><span class="kwa">z</span> a<span class="opt">) (</span><span class="kwa">z</span> b<span class="opt">)))</span>
+                   <span class="opt">(</span><span class="kwa">dist</span> <span class="opt">(</span><span class="kwa">sqrt</span> <span class="opt">(+ (*</span> dx dx<span class="opt">) (*</span> dy dy<span class="opt">) (*</span> dz dz<span class="opt">)))))</span>
+              <span class="opt">(</span><span class="kwa">decf</span> e <span class="opt">(/ (* (</span><span class="kwa">mass</span> a<span class="opt">) (</span><span class="kwa">mass</span> b<span class="opt">))</span> dist<span class="opt">)))))</span>
+    e<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">offset-momentum</span> <span class="opt">(</span><span class="kwa">system</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">px</span> <span class="num">0.0</span>d0<span class="opt">)</span>
+	<span class="opt">(</span><span class="kwa">py</span> <span class="num">0.0</span>d0<span class="opt">)</span>
+	<span class="opt">(</span><span class="kwa">pz</span> <span class="num">0.0</span>d0<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">dolist</span> <span class="opt">(</span><span class="kwa">p</span> system<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">incf</span> px <span class="opt">(* (</span><span class="kwa">vx</span> p<span class="opt">) (</span><span class="kwa">mass</span> p<span class="opt">)))</span>
+      <span class="opt">(</span><span class="kwa">incf</span> py <span class="opt">(* (</span><span class="kwa">vy</span> p<span class="opt">) (</span><span class="kwa">mass</span> p<span class="opt">)))</span>
+      <span class="opt">(</span><span class="kwa">incf</span> pz <span class="opt">(* (</span><span class="kwa">vz</span> p<span class="opt">) (</span><span class="kwa">mass</span> p<span class="opt">))))</span>
+    <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">vx</span> <span class="opt">(</span><span class="kwa">car</span> system<span class="opt">)) (/ (</span><span class="kwa">-</span> px<span class="opt">) +</span>solar-mass<span class="opt">+)</span>
+          <span class="opt">(</span><span class="kwa">vy</span> <span class="opt">(</span><span class="kwa">car</span> system<span class="opt">)) (/ (</span><span class="kwa">-</span> py<span class="opt">) +</span>solar-mass<span class="opt">+)</span>
+          <span class="opt">(</span><span class="kwa">vz</span> <span class="opt">(</span><span class="kwa">car</span> system<span class="opt">)) (/ (</span><span class="kwa">-</span> pz<span class="opt">) +</span>solar-mass<span class="opt">+))</span>
+    nil<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">nbody</span> <span class="opt">(</span><span class="kwa">n</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> n<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">system</span> <span class="opt">(</span><span class="kwa">list</span> <span class="kwd">*sun* *jupiter* *saturn* *uranus* *neptune*</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">offset-momentum</span> system<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;~,9F~%&quot;</span> <span class="opt">(</span><span class="kwa">energy</span> system<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">i</span> n<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">advance</span> system <span class="num">0.01</span>d0<span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;~,9F~%&quot;</span> <span class="opt">(</span><span class="kwa">energy</span> system<span class="opt">))))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">main</span> <span class="opt">()</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">n</span> <span class="opt">(</span><span class="kwa">parse-integer</span> <span class="opt">(</span><span class="kwa">or</span> <span class="opt">(</span><span class="kwa">car</span> <span class="opt">(</span><span class="kwa">last</span> <span class="opt">#+</span>sbcl sb-ext<span class="opt">:*</span>posix-argv<span class="opt">*</span>
+                                         <span class="opt">#+</span>cmu  extensions<span class="opt">:*</span>command-line-strings<span class="opt">*</span>
+					 <span class="opt">#+</span>gcl  si<span class="opt">::*</span>command-args<span class="opt">*))</span> <span class="sng">&quot;1&quot;</span><span class="opt">))))</span>
+    <span class="opt">(</span><span class="kwa">nbody</span> n<span class="opt">)))</span>
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+SBCL 2.4.8
+
+
+ Mon, 13 Jan 2025 02:51:12 GMT
+
+MAKE:
+cp: 'nbody.sbcl' and './nbody.sbcl' are the same file
+SBCL built with: /opt/src/sbcl-2.4.8/bin/sbcl --userinit /dev/null --batch --eval '(load &quot;nbody.sbcl_compile&quot;)'
+### START nbody.sbcl_compile
+(handler-bind ((sb-ext:defconstant-uneql      (lambda (c) (abort c))))      (require :sb-concurrency)      (load (compile-file &quot;nbody.sbcl&quot; ))) (save-lisp-and-die &quot;sbcl.core&quot; :purify t)
+### END nbody.sbcl_compile
+
+; compiling file &quot;/home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/nbody.sbcl&quot; (written 26 APR 2018 12:49:01 PM):
+
+; wrote /home/dunham/all-benchmarksgame/benchmarksgame_i53330/nbody/tmp/nbody.fasl
+; compilation finished in 0:00:00.192
+### START nbody.sbcl_run
+(main) (quit)
+### END nbody.sbcl_run
+
+
+2.64s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/sbcl-2.4.8/bin/sbcl --dynamic-space-size 500 --noinform --core sbcl.core --userinit /dev/null --load nbody.sbcl_run 50000000
+
+PROGRAM OUTPUT:
+-0.169075164
+-0.169059907
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

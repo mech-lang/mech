@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="all" >
+<meta name="description" content="Performance measurements for all the Toit toy benchmark programs." >
+<title>Toit performance measurements (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article,footer{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}code, h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}nav p{margin:0 .5em}ul{clear:left;margin:-0.3em 0 1.5em;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a,span{border-bottom: .1em solid #333;padding-bottom: .1em}.best{font-weight:bold}.message{font-size: .8em}table{color:#333;margin:1.3em auto 0;text-align:right}tbody::after{content:"-";display:block;line-height:2.6em;visibility:hidden}td{border-bottom: .15em dotted #eee;padding: .7em 0 0 1em}td a, th a{display:block}td:first-child,th:first-child{text-align:left;padding-left:0}th{font-weight:normal;padding:0 0 0 1em}@media only screen{th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7){display:none}}@media only screen and (min-width: 27em){th:nth-child(3),td:nth-child(3){display:table-cell}}@media only screen and (min-width: 38em){th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6){display:table-cell}}@media only screen and (min-width: 47em){th:nth-child(7),td:nth-child(7){display:table-cell}}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+
+<article>
+  <div>
+    <h1>all Toit programs & measurements</h1>
+    <aside>
+      <p>File system caches and swap are cleared before measurements are made for each program — so each program has a similiar initial context. That makes the first measurements different from later measurements.
+    </aside>
+  </div>
+  <section>
+    <table>
+      <tbody>
+      <tr>
+        <td colspan="7" class="message"><p>v2.0.0-alpha.174<br>
+
+
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/binarytrees-toit-1.html"><span>binary-trees&nbsp;</span></a>
+          <td>0.08
+          <td>0.169
+          <td>72,729
+          <td>397
+          <td>1.02
+          <td>&nbsp;7
+        <tr>
+          <td><a href="../program/binarytrees-toit-1.html"><span>binary-trees&nbsp;</span></a>
+          <td>2,135.50
+          <td>2,135.330
+          <td>387,981
+          <td>397
+          <td>1.02
+          <td>&nbsp;21
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/binarytrees-toit-2.html"><span>binary-trees&nbsp;&nbsp;#2</span></a>
+          <td>0.09
+          <td>0.181
+          <td>72,561
+          <td>383
+          <td>1.02
+          <td>&nbsp;7
+        <tr>
+          <td><a href="../program/binarytrees-toit-2.html"><span>binary-trees&nbsp;&nbsp;#2</span></a>
+          <td>666.67—672.97
+          <td>660.327
+          <td>810,852
+          <td>383
+          <td>1.02
+          <td>&nbsp;21
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/fannkuchredux-toit-8.html"><span>fannkuch-redux&nbsp;&nbsp;#8</span></a>
+          <td>11.77
+          <td>11.819
+          <td>72,647
+          <td>416
+          <td>1.03
+          <td>&nbsp;10
+        <tr>
+          <td><a href="../program/fannkuchredux-toit-8.html"><span>fannkuch-redux&nbsp;&nbsp;#8</span></a>
+          <td>2,130.68
+          <td>2,130.659
+          <td>72,884
+          <td>416
+          <td>1.03
+          <td>&nbsp;12
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/fasta-toit-8.html"><span>fasta&nbsp;&nbsp;#8</span></a>
+          <td>4.14
+          <td>4.184
+          <td>75,137
+          <td>728
+          <td>1.10
+          <td>&nbsp;250,000
+        <tr>
+          <td><a href="../program/fasta-toit-8.html"><span>fasta&nbsp;&nbsp;#8</span></a>
+          <td>410.36
+          <td>410.664
+          <td>334,307
+          <td>728
+          <td>1.10
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/fasta-toit-1.html"><span>fasta&nbsp;</span></a>
+          <td>0.88
+          <td>0.917
+          <td>76,812
+          <td>965
+          <td>1.14
+          <td>&nbsp;250,000
+        <tr>
+          <td><a href="../program/fasta-toit-1.html"><span>fasta&nbsp;</span></a>
+          <td>77.34—83.63
+          <td>74.484
+          <td>433,250
+          <td>965
+          <td>1.14
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/knucleotide-toit-8.html"><span>k-nucleotide&nbsp;&nbsp;#8</span></a>
+          <td>176.75—178.57
+          <td>174.859
+          <td>98,521
+          <td>558
+          <td>1.33
+          <td>&nbsp;250,000
+        <tr>
+          <td><a href="../program/knucleotide-toit-8.html"><span>k-nucleotide&nbsp;&nbsp;#8</span></a>
+          <td>
+          <td class="message">Timed&nbsp;Out
+          <td>
+          <td>
+          <td>1.33
+          <td>&nbsp;25,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/mandelbrot-toit-8.html"><span>mandelbrot&nbsp;&nbsp;#8</span></a>
+          <td>7.08
+          <td>7.126
+          <td>72,966
+          <td>421
+          <td>1.29
+          <td>&nbsp;1,000
+        <tr>
+          <td><a href="../program/mandelbrot-toit-8.html"><span>mandelbrot&nbsp;&nbsp;#8</span></a>
+          <td>1,819.10
+          <td>1,819.087
+          <td>105,435
+          <td>421
+          <td>1.29
+          <td>&nbsp;16,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/nbody-toit-8.html"><span>n-body&nbsp;&nbsp;#8</span></a>
+          <td>5.38
+          <td>5.421
+          <td>72,724
+          <td>1129
+          <td>1.15
+          <td>&nbsp;500,000
+        <tr>
+          <td><a href="../program/nbody-toit-8.html"><span>n-body&nbsp;&nbsp;#8</span></a>
+          <td>503.47
+          <td>503.470
+          <td>72,851
+          <td>1129
+          <td>1.15
+          <td>&nbsp;50,000,000
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/revcomp-toit-1.html"><span>reverse-complement&nbsp;</span></a>
+          <td>0.33
+          <td>0.384
+          <td>82,149
+          <td>578
+          <td>1.14
+          <td>&nbsp;250,000
+        <tr>
+          <td><a href="../program/revcomp-toit-1.html"><span>reverse-complement&nbsp;</span></a>
+          <td>102.63—105.13
+          <td>102.741
+          <td>1,078,194
+          <td>578
+          <td>1.14
+          <td>&nbsp;100,000,001
+      <tbody>
+        <tr>
+          <th>&nbsp;
+          <th>Mean&nbsp;or&nbsp;95%&nbsp;CI
+          <th>elapsed
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+          <th>&nbsp;
+        <tr>
+          <th>source
+          <th>cpu&nbsp;secs
+          <th>secs
+          <th>mem
+          <th>gz
+          <th>make&nbsp;secs
+          <th>N
+        <tr>
+          <td><a href="../program/spectralnorm-toit-8.html"><span>spectral-norm&nbsp;&nbsp;#8</span></a>
+          <td>2.34
+          <td>2.634
+          <td>72,905
+          <td>329
+          <td>1.19
+          <td>&nbsp;500
+        <tr>
+          <td><a href="../program/spectralnorm-toit-8.html"><span>spectral-norm&nbsp;&nbsp;#8</span></a>
+          <td>344.59
+          <td>344.594
+          <td>73,794
+          <td>329
+          <td>1.19
+          <td>&nbsp;5,500
+    </table>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../how-programs-are-measured.html"><span>How programs are measured</span></a>
+    </ul>
+  </nav>
+</footer>
+

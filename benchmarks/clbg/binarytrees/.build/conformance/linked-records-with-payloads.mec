@@ -1,0 +1,11 @@
+<entry> := <{value<u64>, factor<f64>, enabled<bool>, next<ref>}>
+Echo(row<entry>) = (result<entry>) :=
+  result := row.
+Test(value<u64>, factor<f64>, enabled<bool>) = (result<u64>) :=
+  tail := memory/allocate({value: 7, factor: factor, enabled: enabled, next: memory/null()})
+  head := memory/allocate({value: value, factor: 2.5, enabled: false, next: tail})
+  first := Echo(memory/read(head, <entry>))
+  last := memory/read(first.next, <entry>)
+  result := control/select(first.value == 29 && first.factor == 2.5 && last.factor == 1.25 && last.enabled && last.next == memory/null(), first.value + last.value, 0).
+result := memory/with-arena(2, <entry>, Test, (29, 1.25, true))
+io/print("{}\n", result)

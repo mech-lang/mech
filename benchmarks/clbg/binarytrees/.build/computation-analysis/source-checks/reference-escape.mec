@@ -1,0 +1,4 @@
+Test(n<u64>) = (result<ref>) :=
+  result := heap/new-refs((heap/null(), heap/null())).
+r := memory/with-ref-arena(1, 2, Test, 0)
+io/print("{}\n", 1)

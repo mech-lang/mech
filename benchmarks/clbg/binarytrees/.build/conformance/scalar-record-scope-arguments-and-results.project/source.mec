@@ -1,0 +1,6 @@
+<row> := <{value<u64>, factor<f64>, enabled<bool>}>
+Test(row<row>) = (result<row>) :=
+  h := memory/allocate(row)
+  result := memory/read(h, <row>).
+r := memory/with-arena(1, <row>, Test, {value: 23, factor: 1.25, enabled: true})
+io/print("{}\n", control/select(r.factor == 1.25 && r.enabled, r.value, 0))

@@ -1,0 +1,113 @@
+{
+  "status": "nineteen-pairs-admitted-one-allocation-gap",
+  "coverage": "All twenty compact/performance pairs were attempted and measured. Nineteen pairs are admitted: all ten Mojo benchmarks and nine Futhark benchmarks. Futhark binary-trees is excluded as an allocation-model mismatch.",
+  "pairs": {
+    "mojo": {
+      "nbody": {
+        "compact": "nbody-compact.mojo",
+        "performance": "nbody-optimized.mojo",
+        "techniques": "Compact literals and direct state flow; SIMD pair updates and compile-time unrolling in Mojo, explicit scalar state in Futhark. All ten pairs and five positions every step."
+      },
+      "spectralnorm": {
+        "compact": "spectralnorm-small.mojo",
+        "performance": "spectralnorm.mojo",
+        "techniques": "Compact four-function multiplication; SIMD/parallel row kernels in Mojo, four-row shared-load tiling in Futhark. Evaluate every coefficient during all forty products."
+      },
+      "mandelbrot": {
+        "compact": "mandelbrot-compact.mojo",
+        "performance": "mandelbrot-optimized.mojo",
+        "techniques": "Scalar compact loop; four-lane masked iteration and parallel rows. Same grid, fifty-iteration escape loop and complete PBM, no analytic interior tests."
+      },
+      "knucleotide": {
+        "compact": "knucleotide-compact.mojo",
+        "performance": "knucleotide-optimized.mojo",
+        "techniques": "Serial compact growing maps; rolling keys, one-search entry increments, 32 partitions/eight workers, bounded reserve plus fixed-shape inner updates in Futhark. Retain all keys."
+      },
+      "revcomp": {
+        "compact": "revcomp-compact.mojo",
+        "performance": "revcomp-optimized.mojo",
+        "techniques": "Compact parsing/reversal/wrapping; a reusable complement lookup and parallel output construction. Preserve headers, every input base and sixty-column output."
+      },
+      "fasta": {
+        "compact": "fasta-compact.mojo",
+        "performance": "fasta-optimized.mojo",
+        "techniques": "Compact single record generator; UInt32 LCG state and parallel floating-CDF conversion after sequential generation. Preserve every RNG update."
+      },
+      "binarytrees": {
+        "compact": "binarytrees-compact.mojo",
+        "performance": "binarytrees-optimized.mojo",
+        "techniques": "Compact recursive construction and traversal; eight independent CPU workers in the performance form. Every node, including leaves, receives one 16-byte apr_palloc allocation from the existing Apache APR pool. Each temporary tree is built, walked and cleared separately; stretch pool is destroyed before long-lived allocation."
+      },
+      "fannkuchredux": {
+        "compact": "fannkuchredux.mojo",
+        "performance": "fannkuchredux-optimized.mojo",
+        "techniques": "Compact factoradic enumeration; disjoint worker ranges, native pointer updates in Mojo and fixed-size array loops in Futhark. Enumerate all permutations."
+      },
+      "regexredux": {
+        "compact": "regexredux-compact.mojo",
+        "performance": "regexredux-optimized.mojo",
+        "techniques": "Compact pattern literals; parallel independent searches and general one-pass replacement/bit-mask access improvements. Keep all nine searches and five ordered substitutions."
+      },
+      "pidigits": {
+        "compact": "pidigits-compact.mojo",
+        "performance": "pidigits-optimized.mojo",
+        "techniques": "Compact ordinary unbounded-integer operators; fused GMP product/sum in Mojo, leading-limb quotient estimation with exact corrections in Futhark. Preserve sequential LFT and dual extraction."
+      }
+    },
+    "futhark": {
+      "nbody": {
+        "compact": "nbody.fut",
+        "performance": "nbody-optimized.fut",
+        "techniques": "Compact literals and direct state flow; SIMD pair updates and compile-time unrolling in Mojo, explicit scalar state in Futhark. All ten pairs and five positions every step."
+      },
+      "spectralnorm": {
+        "compact": "spectralnorm.fut",
+        "performance": "spectralnorm-optimized.fut",
+        "techniques": "Compact four-function multiplication; SIMD/parallel row kernels in Mojo, four-row shared-load tiling in Futhark. Evaluate every coefficient during all forty products."
+      },
+      "mandelbrot": {
+        "compact": "mandelbrot.fut",
+        "performance": "mandelbrot-optimized.fut",
+        "techniques": "Scalar compact loop; four-lane masked iteration and parallel rows. Same grid, fifty-iteration escape loop and complete PBM, no analytic interior tests."
+      },
+      "knucleotide": {
+        "compact": "knucleotide-compact.fut",
+        "performance": "knucleotide-optimized.fut",
+        "techniques": "Serial compact growing maps; rolling keys, one-search entry increments, 32 partitions/eight workers, bounded reserve plus fixed-shape inner updates in Futhark. Retain all keys."
+      },
+      "revcomp": {
+        "compact": "revcomp-compact.fut",
+        "performance": "revcomp-optimized.fut",
+        "techniques": "Compact parsing/reversal/wrapping; a reusable complement lookup and parallel output construction. Preserve headers, every input base and sixty-column output."
+      },
+      "fasta": {
+        "compact": "fasta-compact.fut",
+        "performance": "fasta-optimized.fut",
+        "techniques": "Compact single record generator; UInt32 LCG state and parallel floating-CDF conversion after sequential generation. Preserve every RNG update."
+      },
+      "binarytrees": {
+        "compact": "binarytrees.fut",
+        "performance": "binarytrees-optimized.fut",
+        "techniques": "Attempted flat/indexed-array construction and traversal. Excluded after allocation audit: per-node heap/library-pool allocations are missing.",
+        "status": "unsupported-allocation-model",
+        "reason": "The array representation constructs and traverses all node values, but omits the required per-node heap/library-pool allocations. Futhark 0.27.1 has flattened array values and no recursive heap-reference data model or outgoing C allocator calls. A native tree executor would violate the language-source rule."
+      },
+      "fannkuchredux": {
+        "compact": "fannkuchredux.fut",
+        "performance": "fannkuchredux-optimized.fut",
+        "techniques": "Compact factoradic enumeration; disjoint worker ranges, native pointer updates in Mojo and fixed-size array loops in Futhark. Enumerate all permutations."
+      },
+      "regexredux": {
+        "compact": "regexredux-compact.fut",
+        "performance": "regexredux-optimized.fut",
+        "techniques": "Compact pattern literals; parallel independent searches and general one-pass replacement/bit-mask access improvements. Keep all nine searches and five ordered substitutions."
+      },
+      "pidigits": {
+        "compact": "pidigits.fut",
+        "performance": "pidigits-optimized.fut",
+        "techniques": "Compact ordinary unbounded-integer operators; fused GMP product/sum in Mojo, leading-limb quotient estimation with exact corrections in Futhark. Preserve sequential LFT and dual extraction."
+      }
+    }
+  },
+  "selection": "After measurement, select the lowest-LOC and lowest-median-time admitted source from the complete candidate pool. A performance attempt may lose to its baseline; both attempts are recorded."
+}

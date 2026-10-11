@@ -1,0 +1,60 @@
+{
+  "programs": [
+    {
+      "key": "binarytrees:binarytrees-zig-arena-compact",
+      "id": "binarytrees-zig-arena-compact",
+      "benchmark": "binarytrees",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-zig-arena-compact.zig",
+      "source_sha256": "81af06556379389ee22cfdd45c50dab1e6134769f6def30ca67763d3d8415594",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored full pointer-tree workload using the language\u2019s general standard arena allocator. Every leaf/interior makes a separate equal-size Node allocation; both children are recursively allocated. Temporary arenas reset only after complete construction/check; stretch storage is released before a separately allocated long-lived tree, which remains live through all temporary work. Application allocator/thread plumbing counts toward LOC. No flat/indexed tree or native executor."
+      ],
+      "libraries": []
+    },
+    {
+      "key": "binarytrees:binarytrees-zig-arena-parallel",
+      "id": "binarytrees-zig-arena-parallel",
+      "benchmark": "binarytrees",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-zig-arena-parallel.zig",
+      "source_sha256": "e73f078c62f6b500f9d6d22e8e750be5df5cf5ca100bd5182b6d58291ab32de9",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored full pointer-tree workload using the language\u2019s general standard arena allocator and at most eight native workers. Every leaf/interior makes a separate equal-size Node allocation; both children are recursively allocated. Temporary arenas reset only after complete construction/check; stretch storage is released before a separately allocated long-lived tree, which remains live through all temporary work. Application allocator/thread plumbing counts toward LOC. No flat/indexed tree or native executor."
+      ],
+      "libraries": []
+    },
+    {
+      "key": "binarytrees:binarytrees-odin-arena-compact",
+      "id": "binarytrees-odin-arena-compact",
+      "benchmark": "binarytrees",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-odin-arena-compact.odin",
+      "source_sha256": "017ac5f09bf7911f3eb578552aa67c7a9fd7c72eca7fcdf85dd70d360316b794",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored full pointer-tree workload using the language\u2019s general standard arena allocator. Every leaf/interior makes a separate equal-size Node allocation; both children are recursively allocated. Temporary arenas reset only after complete construction/check; stretch storage is released before a separately allocated long-lived tree, which remains live through all temporary work. Application allocator/thread plumbing counts toward LOC. No flat/indexed tree or native executor."
+      ],
+      "libraries": []
+    },
+    {
+      "key": "binarytrees:binarytrees-odin-arena-parallel",
+      "id": "binarytrees-odin-arena-parallel",
+      "benchmark": "binarytrees",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/binarytrees-odin-arena-parallel.odin",
+      "source_sha256": "1d68787e2bb6a45c7749bfd016d69ce9c64379205017bb8a78aa206805abeb2a",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored full pointer-tree workload using the language\u2019s general standard arena allocator and at most eight native workers. Every leaf/interior makes a separate equal-size Node allocation; both children are recursively allocated. Temporary arenas reset only after complete construction/check; stretch storage is released before a separately allocated long-lived tree, which remains live through all temporary work. Application allocator/thread plumbing counts toward LOC. No flat/indexed tree or native executor."
+      ],
+      "libraries": []
+    }
+  ]
+}

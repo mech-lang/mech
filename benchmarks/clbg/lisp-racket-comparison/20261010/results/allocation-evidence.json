@@ -1,0 +1,38 @@
+[
+  {
+    "id": "binarytrees-sbcl-3",
+    "file": "results/binarytrees-sbcl-3.allocation.txt",
+    "sha256": "a915b992389a03b0b09129e6d9dbc517ead79c991fb58850722b55c9ce38f968",
+    "finding": "Native saved-core constructor creates 63 distinct cons cells at depth 5, and two depth-zero invocations produce distinct pairs. Recursive constructor, walker and root retention are disassembled. Every node is a two-slot cons; default GC, no pool."
+  },
+  {
+    "id": "binarytrees-sbcl-1-faithful",
+    "file": "results/binarytrees-sbcl-1-faithful.allocation.txt",
+    "sha256": "326a98ab44b4ca6cf986628f4f1b9f7b24365bcb12b90375c1196e6ffc569539",
+    "finding": "Native saved-core constructor creates 63 distinct cons cells at depth 5, and two depth-zero invocations produce distinct pairs. Recursive constructor, walker and root retention are disassembled. Every node is a two-slot cons; default GC, no pool."
+  },
+  {
+    "id": "binarytrees-racket-4",
+    "file": "results/binarytrees-racket-4.allocation.txt",
+    "sha256": "c68561d529c70124213de5c7e2bb0d9b30a1f390d1ad39bc92d2e98912dd1170",
+    "finding": "Native compiled-module constructor makes 63 identity-distinct allocated nodes at depth 5 and two independent depth-zero calls are distinct. Each pair has two child fields; original struct variant 1 also retains its ordinary item field. Source constructs before traversal and retains the long-lived root; default GC, no pool."
+  },
+  {
+    "id": "binarytrees-racket-2",
+    "file": "results/binarytrees-racket-2.allocation.txt",
+    "sha256": "c68561d529c70124213de5c7e2bb0d9b30a1f390d1ad39bc92d2e98912dd1170",
+    "finding": "Native compiled-module constructor makes 63 identity-distinct allocated nodes at depth 5 and two independent depth-zero calls are distinct. Each pair has two child fields; original struct variant 1 also retains its ordinary item field. Source constructs before traversal and retains the long-lived root; default GC, no pool."
+  },
+  {
+    "id": "binarytrees-racket-3",
+    "file": "results/binarytrees-racket-3.allocation.txt",
+    "sha256": "c68561d529c70124213de5c7e2bb0d9b30a1f390d1ad39bc92d2e98912dd1170",
+    "finding": "Native compiled-module constructor makes 63 identity-distinct allocated nodes at depth 5 and two independent depth-zero calls are distinct. Each pair has two child fields; original struct variant 1 also retains its ordinary item field. Source constructs before traversal and retains the long-lived root; default GC, no pool."
+  },
+  {
+    "id": "binarytrees-racket-1",
+    "file": "results/binarytrees-racket-1.allocation.txt",
+    "sha256": "c68561d529c70124213de5c7e2bb0d9b30a1f390d1ad39bc92d2e98912dd1170",
+    "finding": "Native compiled-module constructor makes 63 identity-distinct allocated nodes at depth 5 and two independent depth-zero calls are distinct. Each pair has two child fields; original struct variant 1 also retains its ordinary item field. Source constructs before traversal and retains the long-lived root; default GC, no pool."
+  }
+]

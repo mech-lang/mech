@@ -1,0 +1,17 @@
+frequencies(h<{u64:u64}>, width<u64>) = (output<string>) :=
+  keys := sequence/decode(map/keys(h), 2, width, "ACGT")
+  counts := map/values(h)
+  order := sequence/sort-indices(counts, "desc", keys, "asc")
+  percentages := 100.0 * number/to-f64(sequence/select(counts, order)) / number/to-f64(stats/sum(counts))
+  output := string/concat(text/join-terminated(text/zip(sequence/select(keys, order), number/format(percentages, 3), " "), "\n"), "\n").
+lookup(counts<{u64:u64}>, query<string>) = (output<string>) :=
+  key := query |> bytes/encode(_, "ACGT", "exact") |> sequence/pack(_, 2)
+  output := string/concat(number/format(map/get(counts, key), 0), string/concat("\t", string/concat(query, "\n"))).
+sequence := io/read() |> text/record(_, ">THREE", ">") |> bytes/encode(_, "ACGT", "ignore-ascii-case")
+io/write(frequencies(map/histogram(sequence/packed-windows(sequence, 2, 1)), 1))
+io/write(frequencies(map/histogram(sequence/packed-windows(sequence, 2, 2)), 2))
+io/write(lookup(map/histogram(sequence/packed-windows(sequence, 2, 3)), "GGT"))
+io/write(lookup(map/histogram(sequence/packed-windows(sequence, 2, 4)), "GGTA"))
+io/write(lookup(map/histogram(sequence/packed-windows(sequence, 2, 6)), "GGTATT"))
+io/write(lookup(map/histogram(sequence/packed-windows(sequence, 2, 12)), "GGTATTTTAATT"))
+io/write(lookup(map/histogram(sequence/packed-windows(sequence, 2, 18)), "GGTATTTTAATTTATAGT"))

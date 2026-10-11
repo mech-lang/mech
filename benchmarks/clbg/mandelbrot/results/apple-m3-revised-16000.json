@@ -1,0 +1,697 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T18:07:03.364891+00:00",
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "logical_cpus": 8,
+    "cpu": "Apple M3"
+  },
+  "toolchain_versions": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "julia": "julia version 1.13.1",
+    "go": "go version go1.27.1 darwin/arm64",
+    "java": "openjdk version \"27\" 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+    "gcc": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "gpp": "g++-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "llvm": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg"
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-revised-16000.compiler.tar.gz",
+    "sha256": "be4b3919e084bd5a617326892585f4b72ac9d81fd983cae6c4ffc7d7f6edfe20",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "Cargo.lock": "c1411387d302746b4b547ae5a5261e0e3cb8ad34148fd945af5ea30827cfca05",
+      "Cargo.toml": "b98e0c170b770803e732df39f37e2c4e5c4ce43c5a46d8650a5f3956c8bccaf4",
+      "benchmarks/clbg/mandelbrot/.gitignore": "b2b592f9ecd265530206ebf051c0bdecc9277580c00a692f428139948d588fc7",
+      "benchmarks/clbg/mandelbrot/README.md": "916159a88e1bb3905b657d5da332a27868ee57c1ec3826d5faddc291ac5753a6",
+      "benchmarks/clbg/mandelbrot/confirm.py": "e210eac69e20f2580bda7cf78c0d6b845a5a8d25afd54e844c9b8775e030f433",
+      "benchmarks/clbg/mandelbrot/corner_chart.py": "d1accebbf23b8091f5798a177992629c74b9613f8e5ec9403a0f73e0b68762f8",
+      "benchmarks/clbg/mandelbrot/fetch_sources.py": "be17c0caf00753b83bce3f239f6b263e277f72649626095feafa07c76fedbf77",
+      "benchmarks/clbg/mandelbrot/fix_worker_metadata.py": "0e3bb9873f13be6a97439a9719b11e00da602d76199ab36a41ada7b76486b979",
+      "benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+      "benchmarks/clbg/mandelbrot/mandelbrot-compact.mec": "89ebdc902c202c58cc29ff02a2d1ce5f78e8257257dd2755498e2f13ba1b3b50",
+      "benchmarks/clbg/mandelbrot/mandelbrot-program.mec": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+      "benchmarks/clbg/mandelbrot/mandelbrot-unrolled-10.mec": "dbd2ee3618de1252a9c37c8f07f89838c8b17dff28923de888c7001f6bc45f5d",
+      "benchmarks/clbg/mandelbrot/mandelbrot-unrolled-add.mec": "443c345e72e35e042ddb9c0c2b084e6bca2986ae67a204146a8cc4bb69773de0",
+      "benchmarks/clbg/mandelbrot/mandelbrot-unrolled.mec": "2914b1f966a61f74ddc3d2462dae7b45365aa70e4a5c63ac7af04f910a8835b1",
+      "benchmarks/clbg/mandelbrot/mandelbrot.mec": "fa906382c589e92c47ba9fb0db79059b7282df013317a565d740d5dafb8859cf",
+      "benchmarks/clbg/mandelbrot/manifest.json": "d624e575bee09fe48681b43f637253901c27a010ed4d3c97481982c0eb800484",
+      "benchmarks/clbg/mandelbrot/mech-driver/Cargo.lock": "154b7ba0463000cbbbac81972010c547d436f609a9f8fe67388141e35a7d58d7",
+      "benchmarks/clbg/mandelbrot/mech-driver/Cargo.toml": "7444dfff4d0901708e6c768acc1cb2fbc422da26da42833cd1ff0be9d5f3f89a",
+      "benchmarks/clbg/mandelbrot/mech-driver/src/compiled-main.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "benchmarks/clbg/mandelbrot/mech-driver/tests/native_map.rs": "4a8b5f14055c5a9ad1784163b2f82f494d1f6c3fe81c13c2a85342b9178285a6",
+      "benchmarks/clbg/mandelbrot/native_study.py": "3f2824fbaa03a43fe525eec0a3de42bbcd0547473caf328fc6d20bef68d40330",
+      "benchmarks/clbg/mandelbrot/plot.py": "5af6b18d30a26e22eba7656ec78090b50c01ec214fde74eb55a1029a200bb6a5",
+      "benchmarks/clbg/mandelbrot/plot_native.py": "d7f4392fab345d953473db72ff48aa193888c5cc5ffea35821797671272770d9",
+      "benchmarks/clbg/mandelbrot/prototype-sources/README-previous.md": "00bc6aeab25d1e3ba6a8f43af813c052e08c4d3685b7234e3729624300819bec",
+      "benchmarks/clbg/mandelbrot/prototype-sources/mandelbrot-compact.mec": "89ebdc902c202c58cc29ff02a2d1ce5f78e8257257dd2755498e2f13ba1b3b50",
+      "benchmarks/clbg/mandelbrot/prototype-sources/mandelbrot-unrolled-add.mec": "443c345e72e35e042ddb9c0c2b084e6bca2986ae67a204146a8cc4bb69773de0",
+      "benchmarks/clbg/mandelbrot/revised_corner.py": "89f90fa41b5db7d106cadbab749d1f924e659f626fa3d9d01571735d1835b2a6",
+      "benchmarks/clbg/mandelbrot/run.py": "54100a7047c46096ad82c6563c0e17fc90c2ef8d3370ef07dcf74e637f5f322b",
+      "benchmarks/clbg/mandelbrot/rust-deps/Cargo.lock": "e5714b40ec94e81bfc1c8ee35d335a5251d066929a53c6f032ddfe42e4bb0507",
+      "benchmarks/clbg/mandelbrot/rust-deps/Cargo.toml": "0366149a6d15d57506dffefa08a7c76767f254ae0f7fca896398c609584d590e",
+      "benchmarks/clbg/mandelbrot/rust-deps/src/lib.rs": "768ac763a3411618658567bb9289aa94919b85b62beaa1d23dd7718e75a8e4bb",
+      "benchmarks/clbg/mandelbrot/upstream/mandelbrot-200.pbm": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "benchmarks/clbg/mandelbrot/verify_program.py": "6d430a219aa307cea8d8b6bd2537b35c606ed6c4b12b46c97362036f183ebf35",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "hosts/gpu/Cargo.toml": "76027bf1af852a2617c394a4e7d8a25856050ce52b9f9f703c1a4182d5b54e46",
+      "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+      "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+      "hosts/gpu/src/batched/mod.rs": "f2ce0842ed10633b024a7846f48ed25faec21949b58fefb742499adcb07df23b",
+      "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+      "hosts/gpu/src/bin/mech-native-map.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+      "hosts/gpu/src/fused_f64/map_runner.c": "1a6e8e14c1cb7d64061a29a0bffc5a7f4067bda87c2762eb0ab77ba3a23286c5",
+      "hosts/gpu/src/fused_f64/map_runner.rs": "f93ffdff7f74a0f6a8144d09bc8fb8b0f3d829fe1da133599319dd66d7b665ca",
+      "hosts/gpu/src/fused_f64/mod.rs": "6689dc62ef438bddf23999abb4db6ea2632908b88e9ef9d3307f672d02bc5c50",
+      "hosts/gpu/src/fused_f64/native.rs": "7eccad1d7823290a503fb0e3dcbacc376d68d51a378c1156559a2ad2c58ad32c",
+      "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+      "hosts/gpu/src/fused_f64/runner.rs": "149d02e2024b04d7956a98d8efa63119182c65394cb7060b529f6397cf34cae8",
+      "hosts/gpu/src/lib.rs": "cdb837cd48a6533704f14b5b7296d9b7f25db0972905add73b5929bfb0c0527a",
+      "hosts/gpu/src/native_build.rs": "6db45616557b3f16bb7501a539b4f20d3023865fc8a3853085c97ebf5d8ed90a",
+      "hosts/gpu/src/sequence/application.rs.in": "3c1f9ba1877e8fef953acd731be89560f25fb5fb17bc7dc15f01a8cb742edb79",
+      "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d",
+      "src/cli/commands/build.rs": "f1c616abe74e102fefd429edf72d8aa4fd07549ce58ee2eeb0d181ed38ab2056",
+      "src/engine/Cargo.toml": "53d1489619006a3d44b4a08cdf3da1188b31d9b9c9939c1ac24af0c8a43ed373",
+      "src/engine/src/lib.rs": "b42f05e3644b9260912c60ec30a3d00e54b83bfb2388d3df81cda783866f5be8",
+      "src/engine/src/native_sequence/grid.rs": "937f5ae4fac23068149c03bf20f263475043b9f2f5b6ed3f5e0dee0f79a629ba",
+      "src/engine/src/native_sequence/mod.rs": "594db1637518c11b31b60c2034ce676ae7e6c3e443f1b53c5e1faf3a5dda08dc",
+      "src/engine/src/resident/numeric/mod.rs": "e7d2470fb7602ec3658b93b43b64b259a3f28ac453eda3b53f9da8db7c765c39",
+      "src/stdlib/Cargo.toml": "7e7fee937d6587e6170210f392d67e356b391b74c607257a02ccceb20988ce0e",
+      "src/stdlib/src/lib.rs": "297943ecb7f87a98d0579f088db6f60b8a013dc943d1d22916086c0b82ad66aa",
+      "src/stdlib/src/native_sequence.rs": "2aea45cff996ba3487973f84f83faca27a1f74870bfaf79ba0cadb9880a68a92"
+    }
+  },
+  "protocol": {
+    "size": 16000,
+    "samples": 5,
+    "requested_threads": 8,
+    "controlled_only": false,
+    "environment": {
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8",
+      "OMP_DYNAMIC": "FALSE",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "RAYON_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "seed": 20261009,
+    "sample_order": [
+      [
+        "mech-program-simd",
+        "mandelbrot-rust-4",
+        "mech-program-simd-loop-fma",
+        "mech-program-compact"
+      ],
+      [
+        "mech-program-compact",
+        "mech-program-simd-loop-fma",
+        "mandelbrot-rust-4",
+        "mech-program-simd"
+      ],
+      [
+        "mech-program-compact",
+        "mech-program-simd",
+        "mandelbrot-rust-4",
+        "mech-program-simd-loop-fma"
+      ],
+      [
+        "mandelbrot-rust-4",
+        "mech-program-compact",
+        "mech-program-simd",
+        "mech-program-simd-loop-fma"
+      ],
+      [
+        "mandelbrot-rust-4",
+        "mech-program-simd-loop-fma",
+        "mech-program-compact",
+        "mech-program-simd"
+      ]
+    ],
+    "timed_region": "Fresh process through exit, including initialization/JIT and complete PBM output to a temporary regular file. Excludes AOT builds and output validation.",
+    "official_reference_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/mandelbrot-output.txt",
+    "official_reference_200_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "full_input_reference": "locally compiled unmodified Rust #4; every candidate additionally compared with full image; differing pixels retained and reported",
+    "full_input_reference_image": {
+      "bytes": 32000015,
+      "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be"
+    },
+    "source_metric": "Comment removal, whitespace collapse, UTF-8, gzip level 1 with mtime=0; also nonblank noncomment physical LOC. Local metric, not guaranteed CLBG gz.",
+    "source_scope": "Mech rows marked source_program count complete .mec including argument access, grid/map-until, the Mech-defined kernel and image/pbm output. Cranelift lowers recurrence and column traversal; generic thread scheduler/PBM library and compiler excluded. Older rows count kernel only and must be kept out of a complete-program size comparison. Grid coordinator extension is experimental; kernel uses the normal canonical artifact compiler. Competitors: complete unchanged upstream programs.",
+    "floating_point": "Native C/C++ disables contraction; fastmath configurations explicitly relax IEEE semantics; LLVM also tests fastmath with contraction disabled. Go tests default and compiler -d=fmahash=n. Mech FMA opt-in. Official N=200 requires byte equality; larger images record exact equality and differing pixel count.",
+    "threads": "Runtime controls request the chosen worker count where supported; each row records actual source worker policy. Fixed or automatic policies remain unmodified.",
+    "status": "full input; local protocol"
+  },
+  "programs": [
+    {
+      "id": "mandelbrot-rust-4",
+      "language": "rust",
+      "variant": 4,
+      "path": "upstream/mandelbrot-rust-4.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-rust-4.html",
+      "sha256": "5d7cbf0a4536913670781be454d9fc95817e7f09cacd7082186b176bab08830c",
+      "upstream_starred": false,
+      "published_secs": 0.95,
+      "published_gz": 1301,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:59:15 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-ada39ec68f280726.rlib mandelbrot.rs -o mandelbrot.rust-4.rust_run\n\n12.26 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.rust-4.rust_run 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "source": {
+        "paths": [
+          "upstream/mandelbrot-rust-4.rs"
+        ],
+        "sha256": "5d7cbf0a4536913670781be454d9fc95817e7f09cacd7082186b176bab08830c",
+        "physical_lines": 180,
+        "nonblank_noncomment_lines": 146,
+        "normalized_bytes": 3149,
+        "gzip1_bytes": 1277
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/librayon-df4ef925755eec75.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/upstream/mandelbrot-rust-4.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-rust-4"
+      ],
+      "generation_command": null,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-rust-4",
+        "16000"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mandelbrot-rust-4",
+        "200"
+      ],
+      "worker_policy": "Rayon threads: 8",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.655247792,
+        0.664163458,
+        0.6623205,
+        0.702203542,
+        0.666749958
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.664163458,
+      "min_seconds": 0.655247792,
+      "max_seconds": 0.702203542
+    },
+    {
+      "id": "mech-program-compact",
+      "language": "mech",
+      "path": "mandelbrot-compact-program.mec",
+      "simd": false,
+      "loop_fma": false,
+      "source_program": true,
+      "packed_bits": true,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "a093d0b356a1269c937ee7b5b21bce940f508662beed8fa6001e356391a08b8c",
+      "generated_c_sha256": "209063ff800888ec642304f8c4089a72673710c911ffebfeceeab248f855ffa9",
+      "native_object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+      "execution_mode": "experimental v0.4 Mech-defined kernel through canonical compiler; Cranelift AOT recurrence and column traversal; generic grid scheduler and PBM library runtime",
+      "source_scope": "complete source program",
+      "source": {
+        "paths": [
+          "mandelbrot-compact-program.mec"
+        ],
+        "sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+        "physical_lines": 20,
+        "nonblank_noncomment_lines": 20,
+        "normalized_bytes": 503,
+        "gzip1_bytes": 289
+      },
+      "compile_command": null,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+        "--backend",
+        "cranelift",
+        "--no-config",
+        "--keep-project",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-compact",
+        "--scalar"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-compact",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-compact",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        3.340490959,
+        3.3246215,
+        3.536746458,
+        3.353953875,
+        3.642767334
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 3.353953875,
+      "min_seconds": 3.3246215,
+      "max_seconds": 3.642767334
+    },
+    {
+      "id": "mech-program-simd",
+      "language": "mech",
+      "path": "mandelbrot-program.mec",
+      "simd": true,
+      "loop_fma": false,
+      "source_program": true,
+      "packed_bits": true,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "a093d0b356a1269c937ee7b5b21bce940f508662beed8fa6001e356391a08b8c",
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+      "execution_mode": "experimental v0.4 Mech-defined kernel through canonical compiler; Cranelift AOT recurrence and column traversal; generic grid scheduler and PBM library runtime",
+      "source_scope": "complete source program",
+      "source": {
+        "paths": [
+          "mandelbrot-program.mec"
+        ],
+        "sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+        "physical_lines": 29,
+        "nonblank_noncomment_lines": 29,
+        "normalized_bytes": 1061,
+        "gzip1_bytes": 456
+      },
+      "compile_command": null,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+        "--backend",
+        "cranelift",
+        "--no-config",
+        "--keep-project",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-simd"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-simd",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-simd",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.840569833,
+        0.807397583,
+        0.815533917,
+        0.84497975,
+        0.820037333
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.820037333,
+      "min_seconds": 0.807397583,
+      "max_seconds": 0.84497975
+    },
+    {
+      "id": "mech-program-simd-loop-fma",
+      "language": "mech",
+      "path": "mandelbrot-program.mec",
+      "simd": true,
+      "loop_fma": true,
+      "source_program": true,
+      "packed_bits": true,
+      "upstream_starred": false,
+      "public_build": true,
+      "mech_compiler_executable_sha256": "a093d0b356a1269c937ee7b5b21bce940f508662beed8fa6001e356391a08b8c",
+      "generated_c_sha256": "0d442a69533edc4868567f8f10762f2e706e8851aab56f8c7d92d3b1d4dabfe1",
+      "native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+      "execution_mode": "experimental v0.4 Mech-defined kernel through canonical compiler; Cranelift AOT recurrence and column traversal; generic grid scheduler and PBM library runtime",
+      "source_scope": "complete source program",
+      "source": {
+        "paths": [
+          "mandelbrot-program.mec"
+        ],
+        "sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+        "physical_lines": 29,
+        "nonblank_noncomment_lines": 29,
+        "normalized_bytes": 1061,
+        "gzip1_bytes": 456
+      },
+      "compile_command": null,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+        "--backend",
+        "cranelift",
+        "--no-config",
+        "--keep-project",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-simd-loop-fma",
+        "--fp-contract-loop"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-simd-loop-fma",
+        "16000",
+        "8"
+      ],
+      "correctness_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/mech-program-simd-loop-fma",
+        "200",
+        "8"
+      ],
+      "worker_policy": "8 pthread workers (including main)",
+      "thread_controlled": true,
+      "samples_seconds": [
+        0.687081541,
+        0.687112292,
+        0.690476292,
+        0.694854833,
+        0.683684416
+      ],
+      "samples_images": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "exact_reference_match": true,
+          "different_pixels": 0
+        }
+      ],
+      "correctness_200": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5"
+      },
+      "warmup_image": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "exact_reference_match": true,
+        "different_pixels": 0
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.687112292,
+      "min_seconds": 0.683684416,
+      "max_seconds": 0.694854833
+    }
+  ],
+  "excluded": [],
+  "endpoints": {
+    "time_baseline_seconds": 0.664163458,
+    "size_baseline_bytes": 289,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 3,
+        "fastest": "mech-program-simd-loop-fma",
+        "smallest": "mech-program-compact",
+        "same_entry": false,
+        "smallest_time_over_fastest": 4.881231079766508,
+        "fastest_size_over_smallest": 1.5778546712802768,
+        "log2_tradeoff_distance": 2.3800014676498393,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.5778546712802768,
+            "time_ratio": 1.0345529910198703
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 5.049892213431592
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-rust-4",
+        "smallest": "mandelbrot-rust-4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.418685121107266,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 4.418685121107266,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  },
+  "nonheroic_endpoints": {
+    "time_baseline_seconds": 0.664163458,
+    "size_baseline_bytes": 289,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 3,
+        "fastest": "mech-program-simd-loop-fma",
+        "smallest": "mech-program-compact",
+        "same_entry": false,
+        "smallest_time_over_fastest": 4.881231079766508,
+        "fastest_size_over_smallest": 1.5778546712802768,
+        "log2_tradeoff_distance": 2.3800014676498393,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.5778546712802768,
+            "time_ratio": 1.0345529910198703
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 5.049892213431592
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-rust-4",
+        "smallest": "mandelbrot-rust-4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.418685121107266,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 4.418685121107266,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  },
+  "exact_image_endpoints": {
+    "time_baseline_seconds": 0.664163458,
+    "size_baseline_bytes": 289,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 3,
+        "fastest": "mech-program-simd-loop-fma",
+        "smallest": "mech-program-compact",
+        "same_entry": false,
+        "smallest_time_over_fastest": 4.881231079766508,
+        "fastest_size_over_smallest": 1.5778546712802768,
+        "log2_tradeoff_distance": 2.3800014676498393,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.5778546712802768,
+            "time_ratio": 1.0345529910198703
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 5.049892213431592
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 1,
+        "fastest": "mandelbrot-rust-4",
+        "smallest": "mandelbrot-rust-4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 4.418685121107266,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 4.418685121107266,
+            "time_ratio": 1.0
+          }
+        }
+      }
+    }
+  }
+}

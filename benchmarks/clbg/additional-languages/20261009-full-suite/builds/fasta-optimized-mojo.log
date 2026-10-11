@@ -1,0 +1,39 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:15:12: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        rng[i] = seed
+        ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:26:20: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                out[j] = 10
+                ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:28:36: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                var p = Float64(rng[i]) / 139968.0
+                                ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:30:51: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                while k + 1 < choices and p >= cdf[k]:
+                                               ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:32:20: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                out[j] = alphabet[k]
+                ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:32:34: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                out[j] = alphabet[k]
+                         ~~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:47:16: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            dst[j] = 10 if j % 61 == 60 or i >= 2 * n else alu[i % 287]
+            ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:47:63: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            dst[j] = 10 if j % 61 == 60 or i >= 2 * n else alu[i % 287]
+                                                           ~~~^~~~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo:3:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/common.mojo:33:35: warning: '__add__' is deprecated, use 'unsafe_offset' instead
+            1, bytes.unsafe_ptr() + written, len(bytes) - written)
+               ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+<unknown>:0: note: '__add__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-bccef62.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

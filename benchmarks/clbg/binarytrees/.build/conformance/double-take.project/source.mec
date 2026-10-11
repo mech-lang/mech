@@ -1,0 +1,4 @@
+a := heap/new-refs((heap/null(), heap/null()))
+(l, r) := heap/take-refs(a, 2)
+(x, y) := heap/take-refs(a, 2)
+io/print("{}\n", 1)

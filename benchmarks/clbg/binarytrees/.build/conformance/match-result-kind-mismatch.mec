@@ -1,0 +1,2 @@
+result := (true ? | true => 1 | false => 1.25)
+io/print("{}\n", result)

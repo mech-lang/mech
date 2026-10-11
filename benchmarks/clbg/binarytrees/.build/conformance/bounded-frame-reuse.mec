@@ -1,0 +1,15 @@
+Leaf(n<u64>) = (result<u64>) :=
+  a := heap/new-refs((heap/null(), heap/null()))
+  result := control/select(a != heap/null(), 1, 0).
+More(i<u64>, n<u64>, sum<u64>) = (more<bool>) :=
+  more := i < n.
+Step(i<u64>, n<u64>, sum<u64>) = (next<u64>, stop<u64>, check<u64>) :=
+  count := memory/with-frame(Leaf, 0)
+  next := i + 1
+  stop := n
+  check := sum + count.
+Test(n<u64>) = (result<u64>) :=
+  (i, stop, result) := control/while((0, 100, 0), More, Step).
+
+result := memory/with-ref-arena(1, 2, Test, 0)
+io/print("{}\n", result)

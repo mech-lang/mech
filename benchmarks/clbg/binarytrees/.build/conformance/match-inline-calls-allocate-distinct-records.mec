@@ -1,0 +1,11 @@
+<row> := <{value<u64>}>
+Leaf(n<u64>) => <ref>
+  | 0 => memory/allocate({value: 0})
+  | k => memory/allocate({value: k}).
+Test(n<u64>) = (result<u64>) :=
+  a := (true ? | true => Leaf(0) | false => Leaf(1))
+  b := (true ? | true => Leaf(0) | false => Leaf(1))
+  c := Leaf(1)
+  result := (a != b && b != c && a != c ? | true => 1 | false => 0).
+r := memory/with-arena(3, <row>, Test, 0)
+io/print("{}\n", r)

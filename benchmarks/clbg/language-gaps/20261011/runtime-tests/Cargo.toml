@@ -1,0 +1,9 @@
+[package]
+name = "mech-bigint-runtime-tests"
+version = "0.0.0"
+edition = "2024"
+publish = false
+[dependencies]
+rug = { version = "=1.28.1", default-features = false, features = ["integer"] }
+gmp-mpfr-sys = { version = "=1.6.8", default-features = false, features = ["use-system-libs"] }
+[workspace]

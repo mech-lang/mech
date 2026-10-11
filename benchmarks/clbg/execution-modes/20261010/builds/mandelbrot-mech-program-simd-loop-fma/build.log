@@ -1,0 +1,1 @@
+ld: warning: no platform load command found in '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/mandelbrot-mech-program-simd-loop-fma/mech-grid.o', assuming: macOS

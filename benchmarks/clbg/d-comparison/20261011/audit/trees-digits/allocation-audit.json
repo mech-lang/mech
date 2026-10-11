@@ -1,0 +1,116 @@
+{
+  "binarytrees-region-instrumented.d": {
+    "tests": [
+      {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/binarytrees-region-instrumented",
+          "0"
+        ],
+        "exit": 0,
+        "bytes": 143,
+        "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+        "expected_node_allocations": 4398,
+        "expected_traversal_calls": 4398,
+        "expected_leaf_allocations": 2240,
+        "reference_match": true
+      },
+      {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/binarytrees-region-instrumented",
+          "6"
+        ],
+        "exit": 0,
+        "bytes": 143,
+        "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+        "expected_node_allocations": 4398,
+        "expected_traversal_calls": 4398,
+        "expected_leaf_allocations": 2240,
+        "reference_match": true
+      },
+      {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/binarytrees-region-instrumented",
+          "10"
+        ],
+        "exit": 0,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "expected_node_allocations": 135854,
+        "expected_traversal_calls": 135854,
+        "expected_leaf_allocations": 68608,
+        "reference_match": true
+      },
+      {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/binarytrees-region-instrumented",
+          "11"
+        ],
+        "exit": 0,
+        "bytes": 224,
+        "sha256": "6a73faa10b2efe64e6263a2b4c42b7ca6f864147f39a480ade7bebcba3fd8410",
+        "expected_node_allocations": 271710,
+        "expected_traversal_calls": 271710,
+        "expected_leaf_allocations": 137216,
+        "reference_match": true
+      }
+    ],
+    "checks": "Exact constructor/allocator-call count, exact leaf count and one traversal call for every allocated node; Region additionally verifies unique node addresses within every complete tree and retained long-lived tree final traversal."
+  },
+  "binarytrees-gc-instrumented.d": {
+    "tests": [
+      {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/binarytrees-gc-instrumented",
+          "0"
+        ],
+        "exit": 0,
+        "bytes": 143,
+        "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+        "expected_node_allocations": 4398,
+        "expected_traversal_calls": 4398,
+        "expected_leaf_allocations": 2240,
+        "reference_match": true
+      },
+      {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/binarytrees-gc-instrumented",
+          "6"
+        ],
+        "exit": 0,
+        "bytes": 143,
+        "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+        "expected_node_allocations": 4398,
+        "expected_traversal_calls": 4398,
+        "expected_leaf_allocations": 2240,
+        "reference_match": true
+      },
+      {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/binarytrees-gc-instrumented",
+          "10"
+        ],
+        "exit": 0,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "expected_node_allocations": 135854,
+        "expected_traversal_calls": 135854,
+        "expected_leaf_allocations": 68608,
+        "reference_match": true
+      },
+      {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/binarytrees-gc-instrumented",
+          "11"
+        ],
+        "exit": 0,
+        "bytes": 224,
+        "sha256": "6a73faa10b2efe64e6263a2b4c42b7ca6f864147f39a480ade7bebcba3fd8410",
+        "expected_node_allocations": 271710,
+        "expected_traversal_calls": 271710,
+        "expected_leaf_allocations": 137216,
+        "reference_match": true
+      }
+    ],
+    "checks": "Exact constructor/allocator-call count, exact leaf count and one traversal call for every allocated node; Region additionally verifies unique node addresses within every complete tree and retained long-lived tree final traversal."
+  }
+}

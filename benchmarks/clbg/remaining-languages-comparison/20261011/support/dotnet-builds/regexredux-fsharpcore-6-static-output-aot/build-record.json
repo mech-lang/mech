@@ -1,0 +1,65 @@
+{
+  "id": "regexredux-fsharpcore-6-static-output-aot",
+  "key": "regexredux:regexredux-fsharpcore-6-static-output-aot",
+  "benchmark": "regexredux",
+  "language": "fsharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/regexredux-fsharpcore-6-static-output.fs",
+  "source_sha256": "ee82cb382b59f52fd09106b1a4843ffdc7781f72db561097cc31045568af30a9",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/regexredux-fsharpcore-6.fs",
+  "original_source_sha256": "4fcf77c033e959328809011b76e7f905611ce59ef44e56ea9597ebb60550d8d2",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-fsharpcore-6.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:52:06 GMT\n\nMAKE:\ncp regexredux.fsharpcore-6.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/program.fsproj (in 730 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/regexredux/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.27\n\n12.16s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 0 < regexredux-input5000000.txt\n\nPROGRAM OUTPUT:\nagggtaaa|tttaccct 356\n[cgt]gggtaaa|tttaccc[acg] 1250\na[act]ggtaaa|tttacc[agt]t 4252\nag[act]gtaaa|tttac[agt]ct 2894\nagg[act]taaa|ttta[agt]cct 5435\naggg[acg]aaa|ttt[cgt]ccct 1537\nagggt[cgt]aa|tt[acg]accct 1431\nagggta[cgt]a|t[acg]taccct 1608\nagggtaa[cgt]|[acg]ttaccct 2178\n\n50833411\n50000000\n27388361",
+  "adaptations": [
+    "Use ordinary statically resolved .NET number/text formatting, because this FSharp.Core printf path invokes generic methods through reflection that NativeAOT cannot create. All changed application output expressions count. Limit async scheduling to eight workers."
+  ],
+  "local_adaptation": false,
+  "physical_loc": 50,
+  "normalized_loc": 50,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/regexredux-fsharpcore-6-static-output-aot/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-static-output-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/regexredux-fsharpcore-6-static-output-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-static-output-aot/app",
+  "binary_sha256": "16a271cbabf2c7ad2bd54a5052ca7f6cdbe59b5184e48a6eb6c9cb349c96c6d0",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-static-output-aot/app"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/regexredux-fsharpcore-6-static-output-aot/app": "16a271cbabf2c7ad2bd54a5052ca7f6cdbe59b5184e48a6eb6c9cb349c96c6d0"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 262,
+    "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 1.808,
+  "timing_selection_reasons": [
+    "Lowest officially published elapsed time at the prescribed full workload; local timing still required."
+  ]
+}

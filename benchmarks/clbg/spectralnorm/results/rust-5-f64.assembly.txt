@@ -1,0 +1,366 @@
+Hot matrix traversal and division routines extracted from llvm-objdump --demangle --disassemble --no-show-raw-insn.
+
+00000001000015cc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>>:
+1000015cc:     	sub	sp, sp, #0x120
+1000015d0:     	stp	d11, d10, [sp, #0xa0]
+1000015d4:     	stp	d9, d8, [sp, #0xb0]
+1000015d8:     	stp	x28, x27, [sp, #0xc0]
+1000015dc:     	stp	x26, x25, [sp, #0xd0]
+1000015e0:     	stp	x24, x23, [sp, #0xe0]
+1000015e4:     	stp	x22, x21, [sp, #0xf0]
+1000015e8:     	stp	x20, x19, [sp, #0x100]
+1000015ec:     	stp	x29, x30, [sp, #0x110]
+1000015f0:     	add	x29, sp, #0x110
+1000015f4:     	str	x0, [sp]
+1000015f8:     	str	x3, [sp, #0x10]
+1000015fc:     	lsr	x19, x0, #1
+100001600:     	cmp	x19, x3
+100001604:     	b.hs	0x100001718 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x14c>
+100001608:     	ldp	x8, x20, [x4, #0x8]
+10000160c:     	add	x9, x20, x8
+100001610:     	subs	x9, x9, x20
+100001614:     	csel	x9, xzr, x9, lo
+100001618:     	cmp	x8, x9
+10000161c:     	csel	x21, x8, x9, lo
+100001620:     	cbz	x21, 0x1000017d0 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x204>
+100001624:     	ldr	x19, [x4]
+100001628:     	ldr	x8, [x5, #0x8]
+10000162c:     	cbz	x8, 0x10000182c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x260>
+100001630:     	mov	x24, #0x0               ; =0
+100001634:     	ldr	x22, [x5]
+100001638:     	add	x23, x22, x8, lsl #4
+10000163c:     	fmov	d8, #1.00000000
+100001640:     	fmov	d9, #0.50000000
+100001644:     	mov	x25, #0x0               ; =0
+100001648:     	stp	xzr, xzr, [sp, #0x80]
+10000164c:     	stp	xzr, xzr, [x29, #-0x80]
+100001650:     	add	x8, x24, x20
+100001654:     	lsl	x9, x8, #1
+100001658:     	mov	w10, #0x1               ; =1
+10000165c:     	bfi	x10, x8, #1, #63
+100001660:     	ucvtf	d10, x9
+100001664:     	ucvtf	d11, x10
+100001668:     	add	x26, x22, x25, lsl #3
+10000166c:     	add	x8, x25, #0x1
+100001670:     	ldp	d0, d1, [x26]
+100001674:     	ucvtf	d4, x25
+100001678:     	fadd	d2, d10, d4
+10000167c:     	fadd	d3, d2, d8
+100001680:     	fmul	d2, d2, d3
+100001684:     	fmul	d2, d2, d9
+100001688:     	fadd	d2, d2, d4
+10000168c:     	fadd	d2, d2, d8
+100001690:     	ucvtf	d5, x8
+100001694:     	fadd	d3, d10, d5
+100001698:     	fadd	d6, d3, d8
+10000169c:     	fmul	d3, d3, d6
+1000016a0:     	fmul	d3, d3, d9
+1000016a4:     	fadd	d3, d3, d5
+1000016a8:     	fadd	d3, d3, d8
+1000016ac:     	fadd	d6, d11, d4
+1000016b0:     	fadd	d7, d6, d8
+1000016b4:     	fmul	d6, d6, d7
+1000016b8:     	fmul	d6, d6, d9
+1000016bc:     	fadd	d4, d6, d4
+1000016c0:     	fadd	d4, d4, d8
+1000016c4:     	fadd	d6, d11, d5
+1000016c8:     	fadd	d7, d6, d8
+1000016cc:     	fmul	d6, d6, d7
+1000016d0:     	fmul	d6, d6, d9
+1000016d4:     	fadd	d5, d6, d5
+1000016d8:     	fadd	d5, d5, d8
+1000016dc:     	add	x0, sp, #0x80
+1000016e0:     	sub	x1, x29, #0x80
+1000016e4:     	bl	0x10000216c <rust_5_f64_denominator::div_and_add>
+1000016e8:     	add	x25, x25, #0x2
+1000016ec:     	add	x8, x26, #0x10
+1000016f0:     	cmp	x8, x23
+1000016f4:     	b.ne	0x100001668 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x9c>
+1000016f8:     	ldr	q0, [sp, #0x80]
+1000016fc:     	ldur	q1, [x29, #-0x80]
+100001700:     	faddp.2d	v0, v0, v1
+100001704:     	str	q0, [x19, x24, lsl #4]
+100001708:     	add	x24, x24, #0x1
+10000170c:     	cmp	x24, x21
+100001710:     	b.ne	0x100001644 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x78>
+100001714:     	b	0x1000017d0 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x204>
+100001718:     	tbz	w1, #0x0, 0x1000017f8 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x22c>
+10000171c:     	mov	x20, x5
+100001720:     	mov	x21, x4
+100001724:     	mov	x22, x2
+100001728:     	bl	0x100006a88 <rayon_core::current_num_threads>
+10000172c:     	mov	x4, x21
+100001730:     	mov	x5, x20
+100001734:     	lsr	x8, x22, #1
+100001738:     	cmp	x8, x0
+10000173c:     	csel	x8, x8, x0, hi
+100001740:     	str	x8, [sp, #0x8]
+100001744:     	stur	x19, [x29, #-0x80]
+100001748:     	ldr	x8, [x21, #0x8]
+10000174c:     	subs	x8, x8, x19
+100001750:     	b.lo	0x100001814 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x248>
+100001754:     	ldr	x9, [x4]
+100001758:     	add	x10, x9, x19, lsl #4
+10000175c:     	ldr	x11, [x4, #0x10]
+100001760:     	add	x12, x11, x19
+100001764:     	mov	x13, sp
+100001768:     	sub	x14, x29, #0x80
+10000176c:     	stp	x13, x14, [sp, #0x18]
+100001770:     	add	x13, sp, #0x8
+100001774:     	stp	x13, x10, [sp, #0x28]
+100001778:     	stp	x8, x12, [sp, #0x38]
+10000177c:     	stp	x5, x14, [sp, #0x48]
+100001780:     	stp	x13, x9, [sp, #0x58]
+100001784:     	stp	x19, x11, [sp, #0x68]
+100001788:     	str	x5, [sp, #0x78]
+10000178c:     	adrp	x0, 0x100060000 <dyld_stub_binder+0x100060000>
+100001790:     	add	x0, x0, #0xc80
+100001794:     	ldr	x8, [x0]
+100001798:     	blr	x8
+10000179c:     	ldr	x1, [x0]
+1000017a0:     	cbnz	x1, 0x1000017c4 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x1f8>
+1000017a4:     	mov	x19, x0
+1000017a8:     	bl	0x1000057bc <rayon_core::registry::global_registry>
+1000017ac:     	ldr	x8, [x0]
+1000017b0:     	ldr	x1, [x19]
+1000017b4:     	cbz	x1, 0x10000185c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x290>
+1000017b8:     	ldr	x9, [x1, #0x110]
+1000017bc:     	cmp	x9, x8
+1000017c0:     	b.ne	0x10000186c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x2a0>
+1000017c4:     	add	x0, sp, #0x18
+1000017c8:     	mov	w2, #0x0                ; =0
+1000017cc:     	bl	0x100001b2c <rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}>
+1000017d0:     	ldp	x29, x30, [sp, #0x110]
+1000017d4:     	ldp	x20, x19, [sp, #0x100]
+1000017d8:     	ldp	x22, x21, [sp, #0xf0]
+1000017dc:     	ldp	x24, x23, [sp, #0xe0]
+1000017e0:     	ldp	x26, x25, [sp, #0xd0]
+1000017e4:     	ldp	x28, x27, [sp, #0xc0]
+1000017e8:     	ldp	d9, d8, [sp, #0xb0]
+1000017ec:     	ldp	d11, d10, [sp, #0xa0]
+1000017f0:     	add	sp, sp, #0x120
+1000017f4:     	ret
+1000017f8:     	cbz	x2, 0x100001608 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x3c>
+1000017fc:     	lsr	x8, x2, #1
+100001800:     	str	x8, [sp, #0x8]
+100001804:     	stur	x19, [x29, #-0x80]
+100001808:     	ldr	x8, [x4, #0x8]
+10000180c:     	subs	x8, x8, x19
+100001810:     	b.hs	0x100001754 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x188>
+100001814:     	adrp	x0, 0x100049000 <GCC_except_table590+0x10>
+100001818:     	add	x0, x0, #0x8d8
+10000181c:     	adrp	x2, 0x10005c000 <dyld_stub_binder+0x10005c000>
+100001820:     	add	x2, x2, #0x150
+100001824:     	mov	w1, #0x13               ; =19
+100001828:     	bl	0x1000469bc <core::panicking::panic_fmt>
+10000182c:     	lsl	x1, x21, #4
+100001830:     	mov	x0, x19
+100001834:     	ldp	x29, x30, [sp, #0x110]
+100001838:     	ldp	x20, x19, [sp, #0x100]
+10000183c:     	ldp	x22, x21, [sp, #0xf0]
+100001840:     	ldp	x24, x23, [sp, #0xe0]
+100001844:     	ldp	x26, x25, [sp, #0xd0]
+100001848:     	ldp	x28, x27, [sp, #0xc0]
+10000184c:     	ldp	d9, d8, [sp, #0xb0]
+100001850:     	ldp	d11, d10, [sp, #0xa0]
+100001854:     	add	sp, sp, #0x120
+100001858:     	b	0x100046bec <dyld_stub_binder+0x100046bec>
+10000185c:     	add	x0, x8, #0x80
+100001860:     	add	x1, sp, #0x18
+100001864:     	bl	0x100040e80 <<rayon_core::registry::Registry>::in_worker_cold::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>>
+100001868:     	b	0x1000017d0 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x204>
+10000186c:     	add	x0, x8, #0x80
+100001870:     	add	x2, sp, #0x18
+100001874:     	bl	0x100041088 <<rayon_core::registry::Registry>::in_worker_cross::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>>
+100001878:     	b	0x1000017d0 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::mult_at_av::{closure#0}>::{closure#0}>>+0x204>
+
+
+000000010000187c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>>:
+10000187c:     	sub	sp, sp, #0x120
+100001880:     	stp	d11, d10, [sp, #0xa0]
+100001884:     	stp	d9, d8, [sp, #0xb0]
+100001888:     	stp	x28, x27, [sp, #0xc0]
+10000188c:     	stp	x26, x25, [sp, #0xd0]
+100001890:     	stp	x24, x23, [sp, #0xe0]
+100001894:     	stp	x22, x21, [sp, #0xf0]
+100001898:     	stp	x20, x19, [sp, #0x100]
+10000189c:     	stp	x29, x30, [sp, #0x110]
+1000018a0:     	add	x29, sp, #0x110
+1000018a4:     	str	x0, [sp]
+1000018a8:     	str	x3, [sp, #0x10]
+1000018ac:     	lsr	x19, x0, #1
+1000018b0:     	cmp	x19, x3
+1000018b4:     	b.hs	0x1000019c8 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x14c>
+1000018b8:     	ldp	x8, x20, [x4, #0x8]
+1000018bc:     	add	x9, x20, x8
+1000018c0:     	subs	x9, x9, x20
+1000018c4:     	csel	x9, xzr, x9, lo
+1000018c8:     	cmp	x8, x9
+1000018cc:     	csel	x21, x8, x9, lo
+1000018d0:     	cbz	x21, 0x100001a80 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x204>
+1000018d4:     	ldr	x19, [x4]
+1000018d8:     	ldr	x8, [x5, #0x8]
+1000018dc:     	cbz	x8, 0x100001adc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x260>
+1000018e0:     	mov	x24, #0x0               ; =0
+1000018e4:     	ldr	x22, [x5]
+1000018e8:     	add	x23, x22, x8, lsl #4
+1000018ec:     	fmov	d8, #1.00000000
+1000018f0:     	fmov	d9, #0.50000000
+1000018f4:     	mov	x25, #0x0               ; =0
+1000018f8:     	stp	xzr, xzr, [sp, #0x80]
+1000018fc:     	stp	xzr, xzr, [x29, #-0x80]
+100001900:     	add	x8, x24, x20
+100001904:     	lsl	x9, x8, #1
+100001908:     	mov	w10, #0x1               ; =1
+10000190c:     	bfi	x10, x8, #1, #63
+100001910:     	ucvtf	d10, x9
+100001914:     	ucvtf	d11, x10
+100001918:     	add	x26, x22, x25, lsl #3
+10000191c:     	add	x8, x25, #0x1
+100001920:     	ldp	d0, d1, [x26]
+100001924:     	ucvtf	d4, x25
+100001928:     	fadd	d2, d10, d4
+10000192c:     	fadd	d3, d2, d8
+100001930:     	fmul	d2, d2, d3
+100001934:     	fmul	d2, d2, d9
+100001938:     	fadd	d2, d2, d10
+10000193c:     	fadd	d2, d2, d8
+100001940:     	ucvtf	d5, x8
+100001944:     	fadd	d3, d10, d5
+100001948:     	fadd	d6, d3, d8
+10000194c:     	fmul	d3, d3, d6
+100001950:     	fmul	d3, d3, d9
+100001954:     	fadd	d3, d3, d10
+100001958:     	fadd	d3, d3, d8
+10000195c:     	fadd	d4, d11, d4
+100001960:     	fadd	d6, d4, d8
+100001964:     	fmul	d4, d4, d6
+100001968:     	fmul	d4, d4, d9
+10000196c:     	fadd	d4, d4, d11
+100001970:     	fadd	d4, d4, d8
+100001974:     	fadd	d5, d11, d5
+100001978:     	fadd	d6, d5, d8
+10000197c:     	fmul	d5, d5, d6
+100001980:     	fmul	d5, d5, d9
+100001984:     	fadd	d5, d5, d11
+100001988:     	fadd	d5, d5, d8
+10000198c:     	add	x0, sp, #0x80
+100001990:     	sub	x1, x29, #0x80
+100001994:     	bl	0x10000216c <rust_5_f64_denominator::div_and_add>
+100001998:     	add	x25, x25, #0x2
+10000199c:     	add	x8, x26, #0x10
+1000019a0:     	cmp	x8, x23
+1000019a4:     	b.ne	0x100001918 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x9c>
+1000019a8:     	ldr	q0, [sp, #0x80]
+1000019ac:     	ldur	q1, [x29, #-0x80]
+1000019b0:     	faddp.2d	v0, v0, v1
+1000019b4:     	str	q0, [x19, x24, lsl #4]
+1000019b8:     	add	x24, x24, #0x1
+1000019bc:     	cmp	x24, x21
+1000019c0:     	b.ne	0x1000018f4 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x78>
+1000019c4:     	b	0x100001a80 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x204>
+1000019c8:     	tbz	w1, #0x0, 0x100001aa8 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x22c>
+1000019cc:     	mov	x20, x5
+1000019d0:     	mov	x21, x4
+1000019d4:     	mov	x22, x2
+1000019d8:     	bl	0x100006a88 <rayon_core::current_num_threads>
+1000019dc:     	mov	x4, x21
+1000019e0:     	mov	x5, x20
+1000019e4:     	lsr	x8, x22, #1
+1000019e8:     	cmp	x8, x0
+1000019ec:     	csel	x8, x8, x0, hi
+1000019f0:     	str	x8, [sp, #0x8]
+1000019f4:     	stur	x19, [x29, #-0x80]
+1000019f8:     	ldr	x8, [x21, #0x8]
+1000019fc:     	subs	x8, x8, x19
+100001a00:     	b.lo	0x100001ac4 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x248>
+100001a04:     	ldr	x9, [x4]
+100001a08:     	add	x10, x9, x19, lsl #4
+100001a0c:     	ldr	x11, [x4, #0x10]
+100001a10:     	add	x12, x11, x19
+100001a14:     	mov	x13, sp
+100001a18:     	sub	x14, x29, #0x80
+100001a1c:     	stp	x13, x14, [sp, #0x18]
+100001a20:     	add	x13, sp, #0x8
+100001a24:     	stp	x13, x10, [sp, #0x28]
+100001a28:     	stp	x8, x12, [sp, #0x38]
+100001a2c:     	stp	x5, x14, [sp, #0x48]
+100001a30:     	stp	x13, x9, [sp, #0x58]
+100001a34:     	stp	x19, x11, [sp, #0x68]
+100001a38:     	str	x5, [sp, #0x78]
+100001a3c:     	adrp	x0, 0x100060000 <dyld_stub_binder+0x100060000>
+100001a40:     	add	x0, x0, #0xc80
+100001a44:     	ldr	x8, [x0]
+100001a48:     	blr	x8
+100001a4c:     	ldr	x1, [x0]
+100001a50:     	cbnz	x1, 0x100001a74 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x1f8>
+100001a54:     	mov	x19, x0
+100001a58:     	bl	0x1000057bc <rayon_core::registry::global_registry>
+100001a5c:     	ldr	x8, [x0]
+100001a60:     	ldr	x1, [x19]
+100001a64:     	cbz	x1, 0x100001b0c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x290>
+100001a68:     	ldr	x9, [x1, #0x110]
+100001a6c:     	cmp	x9, x8
+100001a70:     	b.ne	0x100001b1c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x2a0>
+100001a74:     	add	x0, sp, #0x18
+100001a78:     	mov	w2, #0x0                ; =0
+100001a7c:     	bl	0x100001e30 <rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}>
+100001a80:     	ldp	x29, x30, [sp, #0x110]
+100001a84:     	ldp	x20, x19, [sp, #0x100]
+100001a88:     	ldp	x22, x21, [sp, #0xf0]
+100001a8c:     	ldp	x24, x23, [sp, #0xe0]
+100001a90:     	ldp	x26, x25, [sp, #0xd0]
+100001a94:     	ldp	x28, x27, [sp, #0xc0]
+100001a98:     	ldp	d9, d8, [sp, #0xb0]
+100001a9c:     	ldp	d11, d10, [sp, #0xa0]
+100001aa0:     	add	sp, sp, #0x120
+100001aa4:     	ret
+100001aa8:     	cbz	x2, 0x1000018b8 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x3c>
+100001aac:     	lsr	x8, x2, #1
+100001ab0:     	str	x8, [sp, #0x8]
+100001ab4:     	stur	x19, [x29, #-0x80]
+100001ab8:     	ldr	x8, [x4, #0x8]
+100001abc:     	subs	x8, x8, x19
+100001ac0:     	b.hs	0x100001a04 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x188>
+100001ac4:     	adrp	x0, 0x100049000 <GCC_except_table590+0x10>
+100001ac8:     	add	x0, x0, #0x8d8
+100001acc:     	adrp	x2, 0x10005c000 <dyld_stub_binder+0x10005c000>
+100001ad0:     	add	x2, x2, #0x150
+100001ad4:     	mov	w1, #0x13               ; =19
+100001ad8:     	bl	0x1000469bc <core::panicking::panic_fmt>
+100001adc:     	lsl	x1, x21, #4
+100001ae0:     	mov	x0, x19
+100001ae4:     	ldp	x29, x30, [sp, #0x110]
+100001ae8:     	ldp	x20, x19, [sp, #0x100]
+100001aec:     	ldp	x22, x21, [sp, #0xf0]
+100001af0:     	ldp	x24, x23, [sp, #0xe0]
+100001af4:     	ldp	x26, x25, [sp, #0xd0]
+100001af8:     	ldp	x28, x27, [sp, #0xc0]
+100001afc:     	ldp	d9, d8, [sp, #0xb0]
+100001b00:     	ldp	d11, d10, [sp, #0xa0]
+100001b04:     	add	sp, sp, #0x120
+100001b08:     	b	0x100046bec <dyld_stub_binder+0x100046bec>
+100001b0c:     	add	x0, x8, #0x80
+100001b10:     	add	x1, sp, #0x18
+100001b14:     	bl	0x100040f84 <<rayon_core::registry::Registry>::in_worker_cold::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>>
+100001b18:     	b	0x100001a80 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x204>
+100001b1c:     	add	x0, x8, #0x80
+100001b20:     	add	x2, sp, #0x18
+100001b24:     	bl	0x100041160 <<rayon_core::registry::Registry>::in_worker_cross::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>>
+100001b28:     	b	0x100001a80 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<rust_5_f64_denominator::F64x2>>, rayon::iter::for_each::ForEachConsumer<rust_5_f64_denominator::mult<rust_5_f64_denominator::a>::{closure#0}>>+0x204>
+
+
+000000010000216c <rust_5_f64_denominator::div_and_add>:
+10000216c:     	mov.d	v0[1], v1[0]
+100002170:     	mov.d	v2[1], v3[0]
+100002174:     	fdiv.2d	v1, v0, v2
+100002178:     	ldr	q2, [x0]
+10000217c:     	fadd.2d	v1, v1, v2
+100002180:     	str	q1, [x0]
+100002184:     	mov.d	v4[1], v5[0]
+100002188:     	fdiv.2d	v0, v0, v4
+10000218c:     	ldr	q1, [x1]
+100002190:     	fadd.2d	v0, v0, v1
+100002194:     	str	q0, [x1]
+100002198:     	ret
+

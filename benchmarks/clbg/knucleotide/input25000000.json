@@ -1,0 +1,11 @@
+{
+  "fasta_n": 25000000,
+  "bytes": 254166745,
+  "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+  "three_letters": 125000000,
+  "generation_command": [
+    "benchmarks/clbg/knucleotide/.build/fasta",
+    "25000000"
+  ],
+  "small_input_matches_official": true
+}

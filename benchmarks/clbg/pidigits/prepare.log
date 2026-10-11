@@ -1,0 +1,79 @@
+prepared mech-pidigits
+prepared mech-pidigits-gated
+prepared pidigits-rust-4
+prepared pidigits-gpp-4
+prepared pidigits-gcc-2
+prepared pidigits-gcc-1
+prepared pidigits-chapel-2
+prepared pidigits-go-4
+prepared pidigits-php-5
+prepared pidigits-php-4
+prepared pidigits-julia-3
+excluded pidigits-node-4 :internal/modules/cjs/loader:1872:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-node-4.js'
+  ]
+}
+
+Node.js v24.19.0
+
+prepared pidigits-go-3
+excluded pidigits-racket-2 runtime not configured
+prepared pidigits-python3-3
+excluded pidigits-lua-1 w/lib/lua/5.5/bn.so'
+	no file '/opt/homebrew/lib/lua/5.5/loadall.so'
+	no file './bn.so'
+stack traceback:
+	[C]: in global 'require'
+	...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua:7: in main chunk
+	[C]: in ?
+
+prepared pidigits-julia-4
+prepared pidigits-python3-4
+excluded pidigits-graalvmaot-5 ava:101: error: cannot find symbol
+    public void duringSetup(DuringSetupAccess access) {
+                            ^
+  symbol:   class DuringSetupAccess
+  location: class pidigits_ForeignRegistrationFeature
+4 errors
+
+excluded pidigits-racket-1 runtime not configured
+prepared pidigits-node-2
+excluded pidigits-perl-1 nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-perl-1.pl line 10.
+Math::BigInt::GMP missing! at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-perl-1.pl line 13.
+
+prepared pidigits-ruby-1
+excluded pidigits-graalvmaot-4 cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-graalvmaot-4.java/pidigits.java:15: error: package jextract_gmp does not exist
+import jextract_gmp.gmp_h;
+                   ^
+1 error
+
+excluded pidigits-lua-7 ua/5.5/c-gmp.so'
+	no file '/opt/homebrew/lib/lua/5.5/loadall.so'
+	no file './c-gmp.so'
+stack traceback:
+	[C]: in global 'require'
+	...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua:10: in main chunk
+	[C]: in ?
+
+excluded pidigits-perl-4 04/mech/benchmarks/clbg/pidigits/upstream/pidigits-perl-4.pl line 10.
+BEGIN failed--compilation aborted at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-perl-4.pl line 10.
+
+excluded pidigits-ruby-5 im310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/gmp.so (LoadError)
+	from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-ruby-5.rb:7:in '<main>'
+
+excluded pidigits-lua-1-luajit /usr/local/lib/lua/5.1/bn.so'
+	no file '/usr/local/lib/lua/5.1/loadall.so'
+stack traceback:
+	[C]: in function 'require'
+	...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-1.lua:7: in main chunk
+	[C]: at 0x01009ab3d8
+
+excluded pidigits-lua-7-luajit /local/lib/lua/5.1/c-gmp.so'
+	no file '/usr/local/lib/lua/5.1/loadall.so'
+stack traceback:
+	[C]: in function 'require'
+	...ech/benchmarks/clbg/pidigits/upstream/pidigits-lua-7.lua:10: in main chunk
+	[C]: at 0x0100ef73d8
+

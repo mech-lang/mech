@@ -1,0 +1,1248 @@
+{
+  "created_at": "2026-10-09T19:57:19.583291+00:00",
+  "machine": "Apple M3",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.2\nBuildVersion:\t\t25C56",
+  "full_steps": 50000000,
+  "sample_count": 5,
+  "energy_tolerance": 1e-08,
+  "protocol": "Sequential fresh processes, randomized complete rounds. Blocking wait for process exit, without timeout polling; a separate watchdog kills only a stalled process after 180 seconds. Stdout to regular files. Builds, warmups, validation, conditions checks, and hashing excluded from samples. All samples retained.",
+  "requested_workers": 8,
+  "environment": {
+    "GOMAXPROCS": "8",
+    "AMBER_THREADS": "8",
+    "OMP_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "8"
+  },
+  "reference": {
+    "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+    "binary_sha256": "113a7afc89b55a9ea30beb14fe9b7c2d0805fbee52f46b6ce29530d549b31f0d",
+    "build": [
+      "clang",
+      "-O3",
+      "-ffp-contract=off",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gcc-3.c",
+      "-lm"
+    ]
+  },
+  "array_source_commit": "27ae402a948ec85c02125a64363e29585ed21e41",
+  "programs": {
+    "mech": {
+      "label": "Mech (AOT, compact)",
+      "normalized_loc": 20,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-compact"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "binary_sha256": "d0996b429202cd64256d39b3c0f8bf95e9f42c583ad897e613f9b012520c67a9",
+      "runtime_commit": null,
+      "source_provenance": "v0.4 integration; pure Mech matrix initialization and implicit final result; byte-identical native object to 32-line baseline",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 1.107906667,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 2,
+          "seconds": 1.124298208,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 3,
+          "seconds": 1.12151,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 4,
+          "seconds": 1.124407541,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 5,
+          "seconds": 1.132926208,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.035587625
+      },
+      "median_seconds": 1.124298208,
+      "sample_stdev_seconds": 0.009070587736296692,
+      "time_over_mech_compact": 1.0
+    },
+    "mech-optimized": {
+      "label": "Mech (AOT, optimized)",
+      "normalized_loc": 25,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "runtime_commit": null,
+      "source_provenance": "v0.4 integration; pure Mech matrix initialization and implicit final result; byte-identical native object to 37-line baseline",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 1.053447291,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 2,
+          "seconds": 1.051482416,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 3,
+          "seconds": 1.052297209,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 4,
+          "seconds": 1.055495291,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 5,
+          "seconds": 1.055585833,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.032097459
+      },
+      "median_seconds": 1.053447291,
+      "sample_stdev_seconds": 0.001852122389022119,
+      "time_over_mech_compact": 0.9369820955900696
+    },
+    "k": {
+      "label": "K (Growler, compact/optimized)",
+      "normalized_loc": 36,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/growler",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.k"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.k",
+      "source_sha256": "2959dfe06e689010eda151dbd6aca7b3299b5fe12d0caabb263311830cd94fc1",
+      "binary_sha256": "87b25c5f8e9f0b62bdf2aefc04618c6df07554ea99778c534223ad326870a90d",
+      "runtime_commit": "48067b30de7c63f2d457727245ba34f7a714d1ce",
+      "source_provenance": "locally simplified initialization/reporting; original advance algorithm",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 23.266050208,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 2,
+          "seconds": 23.288837708,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 3,
+          "seconds": 23.330118917,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 4,
+          "seconds": 23.312178708,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 5,
+          "seconds": 23.323584375,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.4543625
+      },
+      "median_seconds": 23.312178708,
+      "sample_stdev_seconds": 0.026469794537122733,
+      "time_over_mech_compact": 20.734871355411787
+    },
+    "bqn": {
+      "label": "BQN (CBQN, compact)",
+      "normalized_loc": 26,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-compact.bqn"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-compact.bqn",
+      "source_sha256": "93dca70492c1923f6790d488200e65a84cbdfc72da4e5fdcca5a2bc65e89ba75",
+      "binary_sha256": "588c7a127cdf25001145f3f1a2e1b46b25f21df7d09b17f9c58a2b8bc7cb8b6d",
+      "runtime_commit": "c893d3e7828899a50150df03ad33c9052fa51d3c",
+      "source_provenance": "locally simplified initialization/reporting; original full-pair advance algorithm",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 31.329284709,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 2,
+          "seconds": 31.36282475,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 3,
+          "seconds": 31.387954667,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 4,
+          "seconds": 31.469790125,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 5,
+          "seconds": 31.482017375,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.629022583
+      },
+      "median_seconds": 31.387954667,
+      "sample_stdev_seconds": 0.06693671055834702,
+      "time_over_mech_compact": 27.917819706246476
+    },
+    "bqn-optimized": {
+      "label": "BQN (CBQN, optimized)",
+      "normalized_loc": 39,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.bqn"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.bqn",
+      "source_sha256": "1f13dbbee9e775f6574c465944fa2bb14c41dcdbe9640c36daa7ca1701ea36b1",
+      "binary_sha256": "588c7a127cdf25001145f3f1a2e1b46b25f21df7d09b17f9c58a2b8bc7cb8b6d",
+      "runtime_commit": "c893d3e7828899a50150df03ad33c9052fa51d3c",
+      "source_provenance": "locally optimized pure BQN",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 18.778935625,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        },
+        {
+          "round": 2,
+          "seconds": 19.013348375,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        },
+        {
+          "round": 3,
+          "seconds": 18.91070275,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        },
+        {
+          "round": 4,
+          "seconds": 18.866810541,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        },
+        {
+          "round": 5,
+          "seconds": 18.89028725,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.385205166
+      },
+      "median_seconds": 18.89028725,
+      "sample_stdev_seconds": 0.08440410948923474,
+      "time_over_mech_compact": 16.801847690928636
+    }
+  },
+  "verification": [
+    {
+      "program": "mech",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "k",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "bqn",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "mech",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "k",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "bqn",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "mech",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "k",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "bqn",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "mech",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "k",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "bqn",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "mech",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "k",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "bqn",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "mech",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "k",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "bqn",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    }
+  ],
+  "status": "complete",
+  "sample_order": [
+    [
+      "mech",
+      "bqn-optimized",
+      "mech-optimized",
+      "bqn",
+      "k"
+    ],
+    [
+      "mech-optimized",
+      "k",
+      "mech",
+      "bqn",
+      "bqn-optimized"
+    ],
+    [
+      "bqn",
+      "bqn-optimized",
+      "k",
+      "mech",
+      "mech-optimized"
+    ],
+    [
+      "k",
+      "mech-optimized",
+      "mech",
+      "bqn",
+      "bqn-optimized"
+    ],
+    [
+      "k",
+      "bqn",
+      "mech",
+      "bqn-optimized",
+      "mech-optimized"
+    ]
+  ],
+  "selection_pilots": [
+    "candidate-pilots.json",
+    "candidate-pilots-2.json",
+    "candidate-pilots-3.json",
+    "compaction-pilots.json"
+  ],
+  "selection": "K retains the winning published cached-pair advance algorithm and simplifies setup/reporting. BQN compact retains the published full-pair advance algorithm with matrix data; BQN optimized retains the winning flat-pair advance algorithm with shared state and cached indices.",
+  "earlier_results": [
+    "results.json",
+    "comparison.json",
+    "comparison-compact.json"
+  ],
+  "compiler_source_compaction": {
+    "created_at": "2026-10-09T19:56:26.479743+00:00",
+    "driver_sha256": "648732c12233a9fd96d69dd2a8990b47980bf8bfdf1ab22aaa0bb2ee78fc7ddb",
+    "compiler_files": {
+      "hosts/gpu/src/fused_f64/mod.rs": "6c6a2664e86d1977017240469c8da5151db02ef3575f7aa3400c3c7a644c7ab4",
+      "hosts/gpu/src/fused_f64/runner.rs": "1249907f7fcb777cf9f09ddd3e57268149b5aad2c4cb5a209a36b8ccf41318db"
+    },
+    "programs": {
+      "compact": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+        "normalized_loc": 20,
+        "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+        "object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+        "binary_sha256": "d0996b429202cd64256d39b3c0f8bf95e9f42c583ad897e613f9b012520c67a9",
+        "generation": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+          "0",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact.o",
+          "--fp-contract",
+          "--algebraic-powers"
+        ],
+        "link": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact.o",
+          "-lm",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact"
+        ],
+        "same_object_as_baseline": true,
+        "same_generated_runner_as_baseline": true
+      },
+      "optimized": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+        "normalized_loc": 25,
+        "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+        "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+        "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+        "generation": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+          "0",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized.o",
+          "--fp-contract",
+          "--algebraic-powers",
+          "--pack-state-tails"
+        ],
+        "link": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized.o",
+          "-lm",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized"
+        ],
+        "same_object_as_baseline": true,
+        "same_generated_runner_as_baseline": true
+      },
+      "compact-baseline": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "normalized_loc": 32,
+        "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+        "object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+        "binary_sha256": "794e34d68b99342b4594f39922afa857cde8d00eda55aaa7121ab66ce176d8b2",
+        "generation": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+          "0",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline.o",
+          "--fp-contract",
+          "--algebraic-powers",
+          "--output",
+          "energy"
+        ],
+        "link": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline.o",
+          "-lm",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/compact-baseline"
+        ],
+        "frozen_object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479"
+      },
+      "optimized-baseline": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise-mass.mec",
+        "normalized_loc": 37,
+        "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+        "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+        "binary_sha256": "a8866afa845eed570348e233ed1bd008e2d771bf2a1951d7699febfe8b76248c",
+        "generation": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+          "0",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise-mass.mec",
+          "emit-cranelift-simd",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline.o",
+          "--fp-contract",
+          "--algebraic-powers",
+          "--output",
+          "energy",
+          "--pack-state-tails"
+        ],
+        "link": [
+          "/opt/homebrew/opt/llvm@22/bin/clang-22",
+          "-O3",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline.c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline.o",
+          "-lm",
+          "-o",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-source-compact/optimized-baseline"
+        ],
+        "frozen_object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232"
+      }
+    },
+    "checks": [
+      {
+        "program": "compact",
+        "steps": 0,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169075164"
+        ]
+      },
+      {
+        "program": "compact",
+        "steps": 1,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169074954"
+        ]
+      },
+      {
+        "program": "compact",
+        "steps": 10,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169073022"
+        ]
+      },
+      {
+        "program": "compact",
+        "steps": 1000,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169087605"
+        ]
+      },
+      {
+        "program": "compact",
+        "steps": 10000,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169016441"
+        ]
+      },
+      {
+        "program": "compact",
+        "steps": 1000000,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169086185"
+        ]
+      },
+      {
+        "program": "compact",
+        "steps": 50000000,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169059907"
+        ]
+      },
+      {
+        "program": "optimized",
+        "steps": 0,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169075164"
+        ]
+      },
+      {
+        "program": "optimized",
+        "steps": 1,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169074954"
+        ]
+      },
+      {
+        "program": "optimized",
+        "steps": 10,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169073022"
+        ]
+      },
+      {
+        "program": "optimized",
+        "steps": 1000,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169087605"
+        ]
+      },
+      {
+        "program": "optimized",
+        "steps": 10000,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169016441"
+        ]
+      },
+      {
+        "program": "optimized",
+        "steps": 1000000,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169086185"
+        ]
+      },
+      {
+        "program": "optimized",
+        "steps": 50000000,
+        "state_components": 30,
+        "bit_identical": true,
+        "output": [
+          "-0.169075164",
+          "-0.169059907"
+        ]
+      }
+    ],
+    "status": "complete"
+  },
+  "timer_change": "Same blocking-wait protocol as comparison-compact.json; all five endpoints remeasured. Earlier samples remain separate.",
+  "expected_full_energy": [
+    -0.169075164,
+    -0.169059907
+  ],
+  "finished_at": "2026-10-09T20:03:48.220905+00:00",
+  "final_conditions": {
+    "ac_power": true,
+    "low_power_mode": 0,
+    "active_compilers": []
+  }
+}

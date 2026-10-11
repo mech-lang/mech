@@ -1,0 +1,87 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "key": "knucleotide:knucleotide-odin-parallel-entry",
+      "case": 1,
+      "sequence_length": 56,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "full_output_match": true,
+      "input_sha256": "c2b1e7f62f52fe1e8fb4f2cc0729a17027e1e9d06b88bed99c6c8b73312e3581",
+      "output_sha256": "b78a320c50dc309dd7ec1c43eaef6a552aa4403c4d62a5b41a3360b0e2bc1e42",
+      "source_sha256": "5dfa908f80f8138223e129e56348deddf6a07573a35c68f258761299fd579e09",
+      "binary_sha256": "e9bef584c262adad3488dd7441bc5b995e0e1882a24661168f8fa244ae7bace2"
+    },
+    {
+      "key": "knucleotide:knucleotide-elm-core-dict",
+      "case": 1,
+      "sequence_length": 56,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "full_output_match": true,
+      "input_sha256": "c2b1e7f62f52fe1e8fb4f2cc0729a17027e1e9d06b88bed99c6c8b73312e3581",
+      "output_sha256": "b78a320c50dc309dd7ec1c43eaef6a552aa4403c4d62a5b41a3360b0e2bc1e42",
+      "source_sha256": "55dcf173e56390782e6719865775bb9e0e10a750b84af56aeb57af890b3ee7a4",
+      "binary_sha256": "d9d14c53d98de0b42bac9c05a80d4578e5eace4f3c4c14f69226ff3c61b36c17"
+    },
+    {
+      "key": "knucleotide:knucleotide-odin-parallel-entry",
+      "case": 2,
+      "sequence_length": 56,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "full_output_match": true,
+      "input_sha256": "658c8b7ba519cbc2b282f9f0ac113686e92da1ad281cfeb543613cc860b938b7",
+      "output_sha256": "dd8c6a84caf7295a600676d83165c97f18b2587905a01b123e9a873f8980e90b",
+      "source_sha256": "5dfa908f80f8138223e129e56348deddf6a07573a35c68f258761299fd579e09",
+      "binary_sha256": "e9bef584c262adad3488dd7441bc5b995e0e1882a24661168f8fa244ae7bace2"
+    },
+    {
+      "key": "knucleotide:knucleotide-elm-core-dict",
+      "case": 2,
+      "sequence_length": 56,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "full_output_match": true,
+      "input_sha256": "658c8b7ba519cbc2b282f9f0ac113686e92da1ad281cfeb543613cc860b938b7",
+      "output_sha256": "dd8c6a84caf7295a600676d83165c97f18b2587905a01b123e9a873f8980e90b",
+      "source_sha256": "55dcf173e56390782e6719865775bb9e0e10a750b84af56aeb57af890b3ee7a4",
+      "binary_sha256": "d9d14c53d98de0b42bac9c05a80d4578e5eace4f3c4c14f69226ff3c61b36c17"
+    }
+  ],
+  "distinct_full_keys": [
+    46438350027,
+    3488677067
+  ],
+  "shared_low_32_bits": 3488677067,
+  "reason": "Independent complete seven-map oracle on lowercase/CRLF inputs, record termination, and width-eighteen keys that collide if their upper four bits are discarded. Both long words occur once and must remain distinct."
+}

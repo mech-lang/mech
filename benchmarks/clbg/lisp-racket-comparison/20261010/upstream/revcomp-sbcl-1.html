@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement Lisp SBCL program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement Lisp SBCL program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">;;; The Computer Language Benchmarks Game</span>
+<span class="slc">;;; https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">;;; Michael Weber 2006-07-18</span>
+<span class="slc">;;; Changes by Stefan Lang 2007-02-08</span>
+
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="opt">+</span>buffer-size<span class="opt">+ (</span><span class="kwa">expt</span> <span class="num">2 15</span><span class="opt">))</span>
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="kwe">+newline+</span> <span class="opt">(</span><span class="kwa">char-code</span> <span class="opt">#</span><span class="esc">\N</span>ewline<span class="opt">))</span>
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="kwe">+ub+</span> <span class="opt">&#39;(</span><span class="kwa">unsigned-byte</span> <span class="num">8</span><span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defconstant</span> <span class="kwe">+lut+</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">lut</span> <span class="opt">(</span><span class="kwa">make-array</span> <span class="num">256</span> <span class="kwc">:element</span>-type <span class="kwe">+ub+</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">loop</span> for a across <span class="sng">&quot;wsatugcyrkmbdhvnWSATUGCYRKMBDHVN&quot;</span>
+          for b across <span class="sng">&quot;WSTAACGRYMKVHDBNWSTAACGRYMKVHDBN&quot;</span>
+          do <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> lut <span class="opt">(</span><span class="kwa">char-code</span> a<span class="opt">)) (</span><span class="kwa">char-code</span> b<span class="opt">)))</span>
+    lut<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">slice</span> <span class="opt">(</span><span class="kwa">array</span> start end<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">))</span>
+           <span class="opt">((</span><span class="kwa">simple-array</span> <span class="opt">#</span>.<span class="kwe">+ub+</span><span class="opt">)</span> array<span class="opt">)</span>
+           <span class="opt">(</span><span class="kwa">fixnum</span> start end<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">res</span> <span class="opt">(</span><span class="kwa">make-array</span> <span class="opt">(</span><span class="kwa">-</span> end start<span class="opt">)</span> <span class="kwc">:element</span>-type <span class="kwe">+ub+</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">loop</span> for i from start below end
+          for j from <span class="num">0</span>
+          do <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> res j<span class="opt">) (</span><span class="kwa">aref</span> array i<span class="opt">)))</span>
+    res<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">main</span> <span class="opt">()</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">)))</span>
+  <span class="opt">(</span><span class="kwa">with-open-file</span> <span class="opt">(</span><span class="kwa">in</span> <span class="sng">&quot;/dev/stdin&quot;</span> <span class="kwc">:element</span>-type <span class="kwe">+ub+</span><span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">with-open-file</span> <span class="opt">(</span><span class="kwa">out</span> <span class="sng">&quot;/dev/stdout&quot;</span> <span class="kwc">:element</span>-type <span class="kwe">+ub+</span> <span class="kwc">:direction :output :if</span>-exists <span class="kwc">:append</span><span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">i-buf</span> <span class="opt">(</span><span class="kwa">make-array</span> <span class="opt">+</span>buffer-size<span class="opt">+</span> <span class="kwc">:element</span>-type <span class="kwe">+ub+</span><span class="opt">))</span>
+            <span class="opt">(</span><span class="kwa">o-buf</span> <span class="opt">(</span><span class="kwa">make-array</span> <span class="opt">+</span>buffer-size<span class="opt">+</span> <span class="kwc">:element</span>-type <span class="kwe">+ub+</span><span class="opt">))</span>
+            <span class="opt">(</span><span class="kwa">chunks</span> nil<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">list</span> chunks<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">flet</span> <span class="opt">((</span><span class="kwa">flush-chunks</span> <span class="opt">()</span>
+                 <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">j</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">k</span> <span class="num">0</span><span class="opt">))</span>
+                   <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> j k<span class="opt">))</span>
+                   <span class="slc">;; reverse, complement, filter out old newlines, put newlines back in after 60 chars,</span>
+                   <span class="slc">;; buffer output, and write buffers.  all in one go :(</span>
+                   <span class="opt">(</span><span class="kwa">loop</span> for chunk in chunks
+                         do <span class="opt">(</span><span class="kwa">loop</span> for i from <span class="opt">(</span><span class="kwa">1-</span> <span class="opt">(</span><span class="kwa">length</span> <span class="opt">(</span><span class="kwa">the</span> <span class="opt">(</span><span class="kwa">simple-array</span> <span class="opt">#</span>.<span class="kwe">+ub+</span><span class="opt">)</span> chunk<span class="opt">)))</span> downto <span class="num">0</span>
+                                  for byte <span class="opt">= (</span><span class="kwa">aref</span> chunk i<span class="opt">)</span>
+                                  unless <span class="opt">(=</span> byte <span class="kwe">+newline+</span><span class="opt">)</span>
+				  do <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> o-buf k<span class="opt">) (</span><span class="kwa">aref</span> <span class="kwe">+lut+</span> byte<span class="opt">)</span> j <span class="opt">(</span><span class="kwa">1</span><span class="opt">+</span> j<span class="opt">)</span> k <span class="opt">(</span><span class="kwa">1</span><span class="opt">+</span> k<span class="opt">))</span>
+                                  if <span class="opt">(=</span> j <span class="num">60</span><span class="opt">)</span> do <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> o-buf k<span class="opt">)</span> <span class="kwe">+newline+</span> j <span class="num">0</span> k <span class="opt">(</span><span class="kwa">1</span><span class="opt">+</span> k<span class="opt">))</span>
+                                  if <span class="opt">(&gt;</span> k <span class="opt">(</span><span class="kwa">-</span> <span class="opt">+</span>buffer-size<span class="opt">+</span> <span class="num">2</span><span class="opt">))</span> do <span class="opt">(</span><span class="kwa">write-sequence</span> o-buf out <span class="kwc">:end</span> <span class="opt">(</span><span class="kwa">shiftf</span> k <span class="num">0</span><span class="opt">)))</span>
+                         finally <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(</span><span class="kwa">plusp</span> k<span class="opt">)</span>
+                                   <span class="opt">(</span><span class="kwa">write-sequence</span> o-buf out <span class="kwc">:end</span> k<span class="opt">))</span>
+                                 <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(</span><span class="kwa">plusp</span> j<span class="opt">)</span>
+                                   <span class="opt">(</span><span class="kwa">write-byte</span> <span class="kwe">+newline+</span> out<span class="opt">)))</span>
+                   <span class="opt">(</span><span class="kwa">setf</span> chunks nil<span class="opt">))))</span>
+          <span class="opt">(</span><span class="kwa">prog</span> <span class="opt">((</span><span class="kwa">start</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">end</span> <span class="num">0</span><span class="opt">))</span>
+           read-chunk
+             <span class="opt">(</span><span class="kwa">setf</span> end <span class="opt">(</span><span class="kwa">read-sequence</span> i-buf in<span class="opt">))</span>
+             <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(</span><span class="kwa">zerop</span> end<span class="opt">) (</span><span class="kwa">go</span> end-of-input<span class="opt">))</span>
+           parse-chunk
+             <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">bod</span> <span class="opt">(</span><span class="kwa">position</span> <span class="opt">#</span>.<span class="opt">(</span><span class="kwa">char-code</span> <span class="opt">#</span>\<span class="opt">&gt;)</span> i-buf <span class="kwc">:start</span> start <span class="kwc">:end</span> end<span class="opt">)))</span>
+               <span class="opt">(</span><span class="kwa">cond</span> <span class="opt">((</span><span class="kwa">numberp</span> bod<span class="opt">)</span>
+                      <span class="opt">(</span><span class="kwa">push</span> <span class="opt">(</span><span class="kwa">slice</span> i-buf start bod<span class="opt">)</span> chunks<span class="opt">)</span>
+                      <span class="opt">(</span><span class="kwa">setf</span> start bod<span class="opt">)</span>
+                      <span class="opt">(</span><span class="kwa">flush-chunks</span><span class="opt">)</span>
+                      <span class="slc">;; parse description</span>
+                      <span class="opt">(</span><span class="kwa">loop</span> for eod <span class="opt">= (</span><span class="kwa">position</span> <span class="kwe">+newline+</span> i-buf <span class="kwc">:start</span> start <span class="kwc">:end</span> end<span class="opt">)</span>
+                            do <span class="opt">(</span><span class="kwa">cond</span> <span class="opt">((</span><span class="kwa">numberp</span> eod<span class="opt">)</span>
+                                      <span class="opt">(</span><span class="kwa">write-sequence</span> i-buf out <span class="kwc">:start</span> start <span class="kwc">:end</span> <span class="opt">(</span><span class="kwa">incf</span> eod<span class="opt">))</span>
+                                      <span class="opt">(</span><span class="kwa">setf</span> start eod<span class="opt">)</span>
+                                      <span class="opt">(</span><span class="kwa">go</span> parse-chunk<span class="opt">))</span>
+                                     <span class="opt">(</span><span class="kwa">t</span> <span class="opt">(</span><span class="kwa">write-sequence</span> i-buf out <span class="kwc">:start</span> start <span class="kwc">:end</span> end<span class="opt">)</span>
+                                        <span class="opt">(</span><span class="kwa">setf</span> start <span class="num">0</span><span class="opt">)</span>
+                                        <span class="opt">(</span><span class="kwa">setf</span> end <span class="opt">(</span><span class="kwa">read-sequence</span> i-buf in<span class="opt">))))))</span>
+                     <span class="opt">(</span><span class="kwa">t</span> <span class="opt">(</span><span class="kwa">push</span> <span class="opt">(</span><span class="kwa">slice</span> i-buf start end<span class="opt">)</span> chunks<span class="opt">)</span>
+                        <span class="opt">(</span><span class="kwa">setf</span> start <span class="num">0</span><span class="opt">)</span>
+                        <span class="opt">(</span><span class="kwa">go</span> read-chunk<span class="opt">))))</span>
+           end-of-input
+             <span class="opt">(</span><span class="kwa">flush-chunks</span><span class="opt">)))))))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+SBCL 2.4.8
+
+
+ Mon, 13 Jan 2025 03:56:37 GMT
+
+MAKE:
+cp: 'revcomp.sbcl' and './revcomp.sbcl' are the same file
+SBCL built with: /opt/src/sbcl-2.4.8/bin/sbcl --userinit /dev/null --batch --eval '(load &quot;revcomp.sbcl_compile&quot;)'
+### START revcomp.sbcl_compile
+(handler-bind ((sb-ext:defconstant-uneql      (lambda (c) (abort c))))      (require :sb-concurrency)      (load (compile-file &quot;revcomp.sbcl&quot; ))) (save-lisp-and-die &quot;sbcl.core&quot; :purify t)
+### END revcomp.sbcl_compile
+
+; compiling file &quot;/home/dunham/all-benchmarksgame/benchmarksgame_i53330/revcomp/tmp/revcomp.sbcl&quot; (written 26 APR 2018 12:49:58 PM):
+
+; wrote /home/dunham/all-benchmarksgame/benchmarksgame_i53330/revcomp/tmp/revcomp.fasl
+; compilation finished in 0:00:00.108
+### START revcomp.sbcl_run
+(main) (quit)
+### END revcomp.sbcl_run
+
+
+2.58s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/sbcl-2.4.8/bin/sbcl --dynamic-space-size 8192 --noinform --core sbcl.core --userinit /dev/null --load revcomp.sbcl_run 0 &lt; revcomp-input100000001.txt
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

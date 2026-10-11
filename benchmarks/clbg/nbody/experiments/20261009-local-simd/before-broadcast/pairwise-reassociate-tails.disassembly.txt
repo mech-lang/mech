@@ -1,0 +1,323 @@
+_mech_turns
+100003458:     	cmp	x1, #0x0
+10000345c:     	b.eq	0x100003960 <_mech_turns+0x6e8>
+100003460:     	sub	x1, x1, #0x1
+100003464:     	ldr	q8, [sp, #0x130]
+100003468:     	ldur	q19, [sp, #0x50]
+10000346c:     	fsub.2d	v20, v8, v19
+100003470:     	ldr	q23, [sp, #0x200]
+100003474:     	fmul.2d	v17, v20, v23
+100003478:     	ldur	q22, [sp]
+10000347c:     	mov	d7, v22[1]
+100003480:     	mov.16b	v12, v18
+100003484:     	fsub	d25, d12, d7
+100003488:     	str	q7, [sp, #0x1a0]
+10000348c:     	fmov	d2, d25
+100003490:     	ldur	q16, [sp, #0x10]
+100003494:     	str	q25, [sp, #0x190]
+100003498:     	fsub	d29, d12, d16
+10000349c:     	mov.d	v2[1], v29[0]
+1000034a0:     	ldur	q31, [sp, #0x70]
+1000034a4:     	str	q29, [sp, #0x180]
+1000034a8:     	fsub.2d	v30, v8, v31
+1000034ac:     	uzp2.2d	v4, v30, v20
+1000034b0:     	uzp1.2d	v5, v30, v20
+1000034b4:     	ldr	q29, [sp, #0x1f0]
+1000034b8:     	mov.16b	v3, v29
+1000034bc:     	fmla.2d	v3, v5, v5
+1000034c0:     	fmla.2d	v3, v4, v4
+1000034c4:     	fmla.2d	v3, v2, v2
+1000034c8:     	fsqrt.2d	v4, v3
+1000034cc:     	fmul.2d	v4, v3, v4
+1000034d0:     	fdiv.2d	v10, v21, v4
+1000034d4:     	uzp2.2d	v11, v10, v10
+1000034d8:     	mov.16b	v13, v11
+1000034dc:     	ldr	q24, [sp, #0x1e0]
+1000034e0:     	fmul.2d	v7, v30, v24
+1000034e4:     	uzp1.2d	v18, v10, v10
+1000034e8:     	ldur	q24, [sp, #0x90]
+1000034ec:     	str	q18, [sp, #0x170]
+1000034f0:     	fsub.2d	v22, v8, v24
+1000034f4:     	ldr	q29, [sp, #0x1d0]
+1000034f8:     	fmul.2d	v18, v22, v29
+1000034fc:     	mov	d4, v12[1]
+100003500:     	mov.16b	v0, v4
+100003504:     	fsub	d16, d12, d0
+100003508:     	str	q0, [sp, #0x160]
+10000350c:     	fmov	d2, d16
+100003510:     	ldur	q0, [sp]
+100003514:     	str	q16, [sp, #0x150]
+100003518:     	fsub	d4, d12, d0
+10000351c:     	mov.d	v2[1], v4[0]
+100003520:     	ldur	q27, [sp, #0xd0]
+100003524:     	str	q4, [sp, #0x140]
+100003528:     	fsub.2d	v29, v8, v27
+10000352c:     	uzp2.2d	v4, v29, v22
+100003530:     	uzp1.2d	v5, v29, v22
+100003534:     	ldr	q0, [sp, #0x1f0]
+100003538:     	mov.16b	v3, v0
+10000353c:     	fmla.2d	v3, v5, v5
+100003540:     	fmla.2d	v3, v4, v4
+100003544:     	fmla.2d	v3, v2, v2
+100003548:     	fsqrt.2d	v4, v3
+10000354c:     	fmul.2d	v4, v3, v4
+100003550:     	fdiv.2d	v23, v21, v4
+100003554:     	uzp2.2d	v16, v23, v23
+100003558:     	ldr	q9, [sp, #0x1c0]
+10000355c:     	fmul.2d	v4, v29, v9
+100003560:     	uzp1.2d	v0, v23, v23
+100003564:     	mov.16b	v5, v6
+100003568:     	fmls.2d	v5, v4, v0
+10000356c:     	fmls.2d	v5, v18, v16
+100003570:     	ldr	q18, [sp, #0x170]
+100003574:     	fmls.2d	v5, v7, v18
+100003578:     	mov.16b	v19, v13
+10000357c:     	fmls.2d	v5, v17, v19
+100003580:     	fmla.2d	v8, v5, v21
+100003584:     	ldur	q19, [sp, #0x50]
+100003588:     	str	q8, [sp, #0x130]
+10000358c:     	fsub.2d	v19, v27, v19
+100003590:     	ldr	q18, [sp, #0x200]
+100003594:     	fmul.2d	v31, v19, v18
+100003598:     	ldr	q6, [sp, #0x160]
+10000359c:     	ldur	q26, [sp, #0x10]
+1000035a0:     	fsub	d17, d6, d26
+1000035a4:     	fmov	d2, d17
+1000035a8:     	ldur	q6, [sp]
+1000035ac:     	ldr	q7, [sp, #0x1a0]
+1000035b0:     	str	q17, [sp, #0x120]
+1000035b4:     	fsub	d28, d6, d7
+1000035b8:     	mov.d	v2[1], v28[0]
+1000035bc:     	ldur	q1, [sp, #0x70]
+1000035c0:     	str	q28, [sp, #0x110]
+1000035c4:     	fsub.2d	v25, v24, v1
+1000035c8:     	uzp2.2d	v4, v19, v25
+1000035cc:     	uzp1.2d	v7, v19, v25
+1000035d0:     	ldr	q1, [sp, #0x1f0]
+1000035d4:     	mov.16b	v3, v1
+1000035d8:     	fmla.2d	v3, v7, v7
+1000035dc:     	fmla.2d	v3, v4, v4
+1000035e0:     	fmla.2d	v3, v2, v2
+1000035e4:     	fsqrt.2d	v4, v3
+1000035e8:     	fmul.2d	v4, v3, v4
+1000035ec:     	fdiv.2d	v14, v21, v4
+1000035f0:     	uzp1.2d	v26, v14, v14
+1000035f4:     	ldur	q1, [sp, #0x70]
+1000035f8:     	fsub.2d	v18, v27, v1
+1000035fc:     	ldr	q24, [sp, #0x1e0]
+100003600:     	fmul.2d	v24, v18, v24
+100003604:     	ldr	q6, [sp, #0x160]
+100003608:     	ldur	q27, [sp]
+10000360c:     	fsub	d1, d6, d27
+100003610:     	fmov	d2, d1
+100003614:     	ldr	q7, [sp, #0x1a0]
+100003618:     	str	q1, [sp, #0x100]
+10000361c:     	fsub	d15, d6, d7
+100003620:     	mov.d	v2[1], v15[0]
+100003624:     	ldur	q1, [sp, #0x90]
+100003628:     	ldur	q27, [sp, #0xd0]
+10000362c:     	stur	q15, [sp, #0xf0]
+100003630:     	fsub.2d	v8, v27, v1
+100003634:     	uzp2.2d	v4, v8, v18
+100003638:     	uzp1.2d	v7, v8, v18
+10000363c:     	ldr	q17, [sp, #0x1f0]
+100003640:     	mov.16b	v3, v17
+100003644:     	fmla.2d	v3, v7, v7
+100003648:     	fmla.2d	v3, v4, v4
+10000364c:     	fmla.2d	v3, v2, v2
+100003650:     	fsqrt.2d	v4, v3
+100003654:     	fmul.2d	v4, v3, v4
+100003658:     	fdiv.2d	v17, v21, v4
+10000365c:     	uzp2.2d	v28, v17, v17
+100003660:     	ldr	q4, [sp, #0x1d0]
+100003664:     	fmul.2d	v27, v8, v4
+100003668:     	uzp1.2d	v7, v17, v17
+10000366c:     	ldr	q2, [sp, #0x1b0]
+100003670:     	fmul.2d	v29, v29, v2
+100003674:     	ldur	q4, [sp, #0xe0]
+100003678:     	fmla.2d	v4, v29, v0
+10000367c:     	fmls.2d	v4, v27, v7
+100003680:     	fmls.2d	v4, v24, v28
+100003684:     	fmls.2d	v4, v31, v26
+100003688:     	ldur	q27, [sp, #0xd0]
+10000368c:     	fmla.2d	v27, v4, v21
+100003690:     	ldur	q0, [sp, #0x50]
+100003694:     	ldur	q24, [sp, #0x90]
+100003698:     	stur	q27, [sp, #0xd0]
+10000369c:     	fsub.2d	v31, v24, v0
+1000036a0:     	ldr	q0, [sp, #0x200]
+1000036a4:     	fmul.2d	v15, v31, v0
+1000036a8:     	ldur	q0, [sp]
+1000036ac:     	ldur	q6, [sp, #0x10]
+1000036b0:     	fsub	d29, d0, d6
+1000036b4:     	fmov	d2, d29
+1000036b8:     	ldr	q0, [sp, #0x1a0]
+1000036bc:     	ldur	q24, [sp, #0x10]
+1000036c0:     	stur	q29, [sp, #0xc0]
+1000036c4:     	fsub	d24, d0, d24
+1000036c8:     	mov.16b	v0, v24
+1000036cc:     	mov.d	v2[1], v0[0]
+1000036d0:     	stur	q0, [sp, #0xb0]
+1000036d4:     	ldur	q1, [sp, #0x50]
+1000036d8:     	ldur	q0, [sp, #0x70]
+1000036dc:     	fsub.2d	v0, v0, v1
+1000036e0:     	uzp2.2d	v24, v31, v0
+1000036e4:     	uzp1.2d	v27, v31, v0
+1000036e8:     	ldr	q29, [sp, #0x1f0]
+1000036ec:     	mov.16b	v3, v29
+1000036f0:     	fmla.2d	v3, v27, v27
+1000036f4:     	fmla.2d	v3, v24, v24
+1000036f8:     	fmla.2d	v3, v2, v2
+1000036fc:     	fsqrt.2d	v24, v3
+100003700:     	fmul.2d	v24, v3, v24
+100003704:     	fdiv.2d	v11, v21, v24
+100003708:     	uzp1.2d	v24, v11, v11
+10000370c:     	ldr	q27, [sp, #0x1e0]
+100003710:     	fmul.2d	v29, v25, v27
+100003714:     	uzp2.2d	v27, v14, v14
+100003718:     	ldr	q1, [sp, #0x1c0]
+10000371c:     	fmul.2d	v1, v8, v1
+100003720:     	ldr	q2, [sp, #0x1b0]
+100003724:     	fmul.2d	v22, v22, v2
+100003728:     	ldur	q3, [sp, #0xa0]
+10000372c:     	fmla.2d	v3, v22, v16
+100003730:     	fmla.2d	v3, v1, v7
+100003734:     	fmls.2d	v3, v29, v27
+100003738:     	fmls.2d	v3, v15, v24
+10000373c:     	ldur	q16, [sp, #0x90]
+100003740:     	fmla.2d	v16, v3, v21
+100003744:     	ldr	q22, [sp, #0x200]
+100003748:     	stur	q16, [sp, #0x90]
+10000374c:     	fmul.2d	v16, v0, v22
+100003750:     	uzp2.2d	v7, v11, v11
+100003754:     	ldr	q1, [sp, #0x1d0]
+100003758:     	fmul.2d	v22, v25, v1
+10000375c:     	ldr	q6, [sp, #0x1c0]
+100003760:     	fmul.2d	v18, v18, v6
+100003764:     	ldr	q25, [sp, #0x1b0]
+100003768:     	fmul.2d	v25, v30, v25
+10000376c:     	ldr	q1, [sp, #0x170]
+100003770:     	ldur	q2, [sp, #0x80]
+100003774:     	fmla.2d	v2, v25, v1
+100003778:     	fmla.2d	v2, v18, v28
+10000377c:     	fmla.2d	v2, v22, v27
+100003780:     	fmls.2d	v2, v16, v7
+100003784:     	ldur	q1, [sp, #0x70]
+100003788:     	fmla.2d	v1, v2, v21
+10000378c:     	stur	q1, [sp, #0x70]
+100003790:     	ldr	q1, [sp, #0x1e0]
+100003794:     	fmul.2d	v16, v0, v1
+100003798:     	ldr	q30, [sp, #0x1d0]
+10000379c:     	fmul.2d	v18, v31, v30
+1000037a0:     	ldr	q22, [sp, #0x1c0]
+1000037a4:     	fmul.2d	v19, v19, v22
+1000037a8:     	ldr	q25, [sp, #0x1b0]
+1000037ac:     	fmul.2d	v20, v20, v25
+1000037b0:     	ldur	q27, [sp, #0x60]
+1000037b4:     	mov.16b	v29, v13
+1000037b8:     	fmla.2d	v27, v20, v29
+1000037bc:     	fmla.2d	v27, v19, v26
+1000037c0:     	fmla.2d	v27, v18, v24
+1000037c4:     	fmla.2d	v27, v16, v7
+1000037c8:     	ldur	q19, [sp, #0x50]
+1000037cc:     	fmla.2d	v19, v27, v21
+1000037d0:     	stur	q19, [sp, #0x50]
+1000037d4:     	ldr	d31, 0x100003a70 <_mech_turns+0x7f8>
+1000037d8:     	ldr	q0, [sp, #0x180]
+1000037dc:     	fmul	d7, d0, d31
+1000037e0:     	mov	d20, v10[1]
+1000037e4:     	ldr	d22, 0x100003a78 <_mech_turns+0x800>
+1000037e8:     	ldr	q6, [sp, #0x190]
+1000037ec:     	fmul	d19, d6, d22
+1000037f0:     	ldr	d25, 0x100003a80 <_mech_turns+0x808>
+1000037f4:     	ldr	q16, [sp, #0x140]
+1000037f8:     	fmul	d26, d16, d25
+1000037fc:     	mov	d24, v23[1]
+100003800:     	ldr	d30, 0x100003a88 <_mech_turns+0x810>
+100003804:     	ldr	q9, [sp, #0x150]
+100003808:     	fmul	d28, d9, d30
+10000380c:     	ldur	q18, [sp, #0x20]
+100003810:     	fmsub	d28, d28, d23, d18
+100003814:     	fmsub	d26, d26, d24, d28
+100003818:     	fmsub	d19, d19, d10, d26
+10000381c:     	fmsub	d26, d7, d20, d19
+100003820:     	ldr	d0, 0x100003a90 <_mech_turns+0x818>
+100003824:     	fmadd	d7, d26, d0, d12
+100003828:     	fmov	d12, d7
+10000382c:     	ldr	q8, [sp, #0x120]
+100003830:     	fmul	d29, d8, d31
+100003834:     	ldur	q15, [sp, #0xf0]
+100003838:     	fmul	d13, d15, d22
+10000383c:     	mov	d7, v17[1]
+100003840:     	ldr	q1, [sp, #0x100]
+100003844:     	fmul	d28, d1, d25
+100003848:     	ldr	d19, 0x100003a98 <_mech_turns+0x820>
+10000384c:     	fmul	d9, d9, d19
+100003850:     	mov	d18, v18[1]
+100003854:     	fmadd	d18, d9, d23, d18
+100003858:     	fmsub	d18, d28, d17, d18
+10000385c:     	fmsub	d18, d13, d7, d18
+100003860:     	fmsub	d23, d29, d14, d18
+100003864:     	ldr	q6, [sp, #0x160]
+100003868:     	fmadd	d18, d23, d0, d6
+10000386c:     	mov.d	v12[1], v18[0]
+100003870:     	ldur	q9, [sp, #0xc0]
+100003874:     	fmul	d18, d9, d31
+100003878:     	ldr	q29, [sp, #0x110]
+10000387c:     	fmul	d28, d29, d22
+100003880:     	mov	d13, v14[1]
+100003884:     	fmul	d1, d1, d30
+100003888:     	fmul	d6, d16, d19
+10000388c:     	ldur	q16, [sp, #0x30]
+100003890:     	fmadd	d6, d6, d24, d16
+100003894:     	fmadd	d6, d1, d17, d6
+100003898:     	fmsub	d6, d28, d13, d6
+10000389c:     	fmsub	d17, d18, d11, d6
+1000038a0:     	ldur	q1, [sp]
+1000038a4:     	fmadd	d6, d17, d0, d1
+1000038a8:     	fmov	d6, d6
+1000038ac:     	ldur	q1, [sp, #0xb0]
+1000038b0:     	stur	q6, [sp]
+1000038b4:     	fmul	d24, d1, d31
+1000038b8:     	mov	d18, v11[1]
+1000038bc:     	fmul	d28, d29, d25
+1000038c0:     	fmul	d29, d15, d30
+1000038c4:     	ldr	q6, [sp, #0x190]
+1000038c8:     	fmul	d31, d6, d19
+1000038cc:     	mov	d6, v16[1]
+1000038d0:     	fmadd	d6, d31, d10, d6
+1000038d4:     	fmadd	d6, d29, d7, d6
+1000038d8:     	fmadd	d6, d28, d13, d6
+1000038dc:     	fmsub	d7, d24, d18, d6
+1000038e0:     	ldr	q16, [sp, #0x1a0]
+1000038e4:     	fmadd	d16, d7, d0, d16
+1000038e8:     	ldur	q24, [sp]
+1000038ec:     	mov.d	v24[1], v16[0]
+1000038f0:     	stur	q24, [sp]
+1000038f4:     	fmul	d16, d1, d22
+1000038f8:     	fmul	d22, d9, d25
+1000038fc:     	fmul	d24, d8, d30
+100003900:     	ldr	q25, [sp, #0x180]
+100003904:     	fmul	d6, d25, d19
+100003908:     	ldur	q29, [sp, #0x40]
+10000390c:     	fmadd	d6, d6, d20, d29
+100003910:     	fmadd	d6, d24, d14, d6
+100003914:     	fmadd	d6, d22, d11, d6
+100003918:     	fmadd	d29, d16, d18, d6
+10000391c:     	ldur	q1, [sp, #0x10]
+100003920:     	fmadd	d0, d29, d0, d1
+100003924:     	stur	q0, [sp, #0x10]
+100003928:     	fmov	d18, d26
+10000392c:     	mov.d	v18[1], v23[0]
+100003930:     	fmov	d16, d17
+100003934:     	mov.d	v16[1], v7[0]
+100003938:     	stur	q4, [sp, #0xe0]
+10000393c:     	stur	q3, [sp, #0xa0]
+100003940:     	stur	q2, [sp, #0x80]
+100003944:     	stur	q27, [sp, #0x60]
+100003948:     	stur	q29, [sp, #0x40]
+10000394c:     	stur	q16, [sp, #0x30]
+100003950:     	stur	q18, [sp, #0x20]
+100003954:     	mov.16b	v18, v12
+100003958:     	mov.16b	v6, v5
+10000395c:     	b	0x100003458 <_mech_turns+0x1e0>

@@ -1,0 +1,10 @@
+splitting /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/ada/fasta-gnat-5-faithful.adb into:
+   fasta.adb
+   sequence-data.ads
+   sequence-creation.ads
+   sequence.ads
+   sequence-creation.adb
+   line_io.ads
+   line_io.adb
+   lcg_random.ads
+   lcg_random.adb

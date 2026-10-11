@@ -1,0 +1,4 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/binarytrees-swift-1.swift:65:6: warning: immutable value 'i' was never used; consider replacing with '_' or removing it
+        for i in 1...iterations {
+            ^
+            _

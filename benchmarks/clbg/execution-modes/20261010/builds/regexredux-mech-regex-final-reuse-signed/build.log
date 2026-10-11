@@ -1,0 +1,81 @@
+   Compiling unicode-ident v1.0.26
+   Compiling libc v0.2.190
+   Compiling indexmap v2.14.2
+   Compiling cfg-if v1.0.5
+   Compiling smallvec v1.16.2
+   Compiling hybrid-array v0.4.15
+   Compiling crc32fast v1.5.2
+   Compiling num-integer v0.1.47
+   Compiling proc-macro2 v1.0.107
+   Compiling writeable v0.6.4
+   Compiling icu_properties_data v2.3.0
+   Compiling litemap v0.8.3
+   Compiling arbitrary v1.5.0
+   Compiling quote v1.0.47
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling log v0.4.34
+   Compiling gimli v0.33.0
+   Compiling regalloc2 v0.15.2
+   Compiling digest v0.11.3
+   Compiling cpufeatures v0.3.1
+   Compiling cranelift-control v0.131.3
+   Compiling num-rational v0.4.2
+   Compiling simba v0.9.1
+   Compiling crossbeam-utils v0.8.23
+   Compiling serde_json v1.0.151
+   Compiling sha2 v0.11.0
+   Compiling synstructure v0.14.0
+   Compiling cpufeatures v0.2.17
+   Compiling sha2 v0.10.9
+   Compiling zerofrom-derive v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling zerovec-derive v0.11.6
+   Compiling displaydoc v0.2.7
+   Compiling zerofrom v0.1.8
+   Compiling serde_derive v1.0.229
+   Compiling nalgebra-macros v0.3.0
+   Compiling yoke v0.8.3
+   Compiling cranelift-codegen v0.131.3
+   Compiling grapheme_macro v2.0.0
+   Compiling zerovec v0.11.8
+   Compiling zerotrie v0.2.5
+   Compiling nalgebra v0.34.2
+   Compiling crossbeam-epoch v0.9.21
+   Compiling mach2 v0.4.3
+   Compiling crossbeam-deque v0.8.8
+   Compiling aho-corasick v1.1.5
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib)
+   Compiling rayon-core v1.13.0
+   Compiling tinystr v0.8.4
+   Compiling potential_utf v0.1.6
+   Compiling icu_locale_core v2.3.0
+   Compiling icu_collections v2.3.0
+   Compiling regex-automata v0.4.18
+   Compiling icu_provider v2.3.1
+   Compiling serde v1.0.229
+   Compiling icu_properties v2.3.0
+   Compiling region v3.0.2
+   Compiling bincode v2.0.1
+   Compiling object v0.39.1
+   Compiling grapheme v1.3.0
+   Compiling gmp-mpfr-sys v1.6.8
+   Compiling wasmtime-internal-jit-icache-coherence v44.0.3
+   Compiling rug v1.28.1
+   Compiling rayon v1.12.0
+   Compiling regex v1.13.1
+   Compiling libloading v0.8.9
+   Compiling regexredux v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/regexredux-mech-regex-final-reuse-signed)
+   Compiling mech-core v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/core)
+   Compiling cranelift-module v0.131.3
+   Compiling cranelift-native v0.131.3
+   Compiling cranelift-frontend v0.131.3
+   Compiling cranelift-jit v0.131.3
+   Compiling cranelift-object v0.131.3
+   Compiling mech-syntax v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/syntax)
+   Compiling mech-engine v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine)
+   Compiling mech-compute v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/compute)
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 1m 02s

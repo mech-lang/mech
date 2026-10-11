@@ -1,0 +1,953 @@
+{
+  "created_at": "2026-10-09T18:51:48.725295+00:00",
+  "machine": "Apple M3",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.2\nBuildVersion:\t\t25C56",
+  "full_steps": 50000000,
+  "sample_count": 5,
+  "energy_tolerance": 1e-08,
+  "protocol": "Sequential fresh processes; randomized complete rounds; full stdout to regular files; runtime builds, warm-ups, validation/hashing excluded from samples. No discarded samples.",
+  "requested_workers": 8,
+  "environment": {
+    "GOMAXPROCS": "8",
+    "AMBER_THREADS": "8",
+    "OMP_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "8"
+  },
+  "reference": {
+    "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+    "binary_sha256": "113a7afc89b55a9ea30beb14fe9b7c2d0805fbee52f46b6ce29530d549b31f0d",
+    "build": [
+      "clang",
+      "-O3",
+      "-ffp-contract=off",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gcc-3.c",
+      "-lm"
+    ]
+  },
+  "array_source_commit": "27ae402a948ec85c02125a64363e29585ed21e41",
+  "programs": {
+    "mech": {
+      "label": "Mech (AOT, compact)",
+      "normalized_loc": 32,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.mec",
+      "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "binary_sha256": "ea853a1d836b803ce9cf14631e6948b31375205849706f1697b52765e4189f56",
+      "runtime_commit": null,
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 1.1537745,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 2,
+          "seconds": 1.15413475,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 3,
+          "seconds": 1.153842416,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 4,
+          "seconds": 1.157564708,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 5,
+          "seconds": 1.146171125,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.034962458
+      },
+      "median_seconds": 1.153842416,
+      "sample_stdev_seconds": 0.004183889768070065,
+      "time_over_mech_compact": 1.0
+    },
+    "mech-optimized": {
+      "label": "Mech (AOT, optimized)",
+      "normalized_loc": 37,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-optimized"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-pairwise-mass.mec",
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "binary_sha256": "107aeba5684de79eb1ed8f5907fb5d4ef47efc91d30c24d1e843b30f614ebabc",
+      "runtime_commit": null,
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 1.094141666,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 2,
+          "seconds": 1.102703917,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 3,
+          "seconds": 1.102737708,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 4,
+          "seconds": 1.08279225,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 5,
+          "seconds": 1.095809459,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.032344167
+      },
+      "median_seconds": 1.095809459,
+      "sample_stdev_seconds": 0.008179467256901407,
+      "time_over_mech_compact": 0.9497046076697531
+    },
+    "amber": {
+      "label": "K (Amber)",
+      "normalized_loc": 43,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/amber",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.growler.k"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.growler.k",
+      "source_sha256": "dde8bfa6794a2d8c42baa5ab734eddd8ed5a5bc2eb4bf606d2cffae0891415d8",
+      "binary_sha256": "c01fe0e3cac0d73b0b07e55cfb2c1b2312d211c6364d07ab56183ff9d012cb13",
+      "runtime_commit": "1a996571e6c16094ca3660fc1f9d68fa1291ad3c",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 29.397657375,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 2,
+          "seconds": 29.802781125,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 3,
+          "seconds": 29.8733195,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 4,
+          "seconds": 29.847198792,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 5,
+          "seconds": 29.835301375,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.577912125
+      },
+      "median_seconds": 29.835301375,
+      "sample_stdev_seconds": 0.1992830703049781,
+      "time_over_mech_compact": 25.85734495567374
+    },
+    "goal": {
+      "label": "Goal",
+      "normalized_loc": 45,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/goal",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.goal"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.goal",
+      "source_sha256": "010e42ed1a8d6c4f684b8f118d29bc273ac3e9388bf610230b2045f252374036",
+      "binary_sha256": "4057a0c62a6ef9ec46587e93e75398d0149ab3e71795d921e24a4ca2d9bd1649",
+      "runtime_commit": "01a02a9f3b3b61a615d86c2c3ed3ba8e9fedd53b",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 57.353666166,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 5
+        },
+        {
+          "round": 2,
+          "seconds": 58.728097791,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 5
+        },
+        {
+          "round": 3,
+          "seconds": 57.888891333,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 5
+        },
+        {
+          "round": 4,
+          "seconds": 57.939981458,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 5
+        },
+        {
+          "round": 5,
+          "seconds": 58.277144167,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 5
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 1.118620042
+      },
+      "median_seconds": 57.939981458,
+      "sample_stdev_seconds": 0.5083251258773833,
+      "time_over_mech_compact": 50.214813266147075
+    },
+    "bqn": {
+      "label": "BQN (CBQN)",
+      "normalized_loc": 63,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.bqn"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.bqn",
+      "source_sha256": "e3b62031dda631428991460bf15529bf6f66b4b5fdd370f3932f0514e4c7a50c",
+      "binary_sha256": "588c7a127cdf25001145f3f1a2e1b46b25f21df7d09b17f9c58a2b8bc7cb8b6d",
+      "runtime_commit": "c893d3e7828899a50150df03ad33c9052fa51d3c",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 31.423368334,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 2,
+          "seconds": 31.666437834,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 3,
+          "seconds": 31.503872459,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 4,
+          "seconds": 31.557138583,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 5,
+          "seconds": 31.529578291,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.637487666
+      },
+      "median_seconds": 31.529578291,
+      "sample_stdev_seconds": 0.08834611815011219,
+      "time_over_mech_compact": 27.325723039635594
+    }
+  },
+  "verification": [
+    {
+      "program": "mech",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "amber",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "goal",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "bqn",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "mech",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "amber",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "goal",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "bqn",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "mech",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "amber",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "goal",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "bqn",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "mech",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "amber",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "goal",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "bqn",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "mech",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "amber",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "goal",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "bqn",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "mech",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "amber",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "goal",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "bqn",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    }
+  ],
+  "status": "complete",
+  "sample_order": [
+    [
+      "amber",
+      "bqn",
+      "mech",
+      "goal",
+      "mech-optimized"
+    ],
+    [
+      "bqn",
+      "goal",
+      "amber",
+      "mech-optimized",
+      "mech"
+    ],
+    [
+      "goal",
+      "amber",
+      "bqn",
+      "mech",
+      "mech-optimized"
+    ],
+    [
+      "mech",
+      "goal",
+      "mech-optimized",
+      "bqn",
+      "amber"
+    ],
+    [
+      "mech-optimized",
+      "mech",
+      "amber",
+      "bqn",
+      "goal"
+    ]
+  ],
+  "expected_full_energy": [
+    -0.169075164,
+    -0.169059907
+  ],
+  "finished_at": "2026-10-09T19:02:08.852238+00:00",
+  "final_conditions": {
+    "ac_power": true,
+    "low_power_mode": 0,
+    "active_compilers": []
+  }
+}

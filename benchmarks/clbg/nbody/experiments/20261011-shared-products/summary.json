@@ -1,0 +1,103 @@
+{
+  "status": "passed",
+  "selected": {
+    "fast": "pairwise-seed8",
+    "compact": "compact-regions8"
+  },
+  "comparisons": [
+    {
+      "report": "confirmation-50m.json",
+      "candidate": "pairwise-seed8",
+      "baseline": "pairwise-before",
+      "before_seconds": 1.052554708,
+      "after_seconds": 1.038263625,
+      "median_ratio": 0.9864224796189881,
+      "paired_geomean_ratio": 0.9870365073348609,
+      "paired_bootstrap_95": [
+        0.9812368377470368,
+        0.9916622395374715
+      ]
+    },
+    {
+      "report": "replication-50m.json",
+      "candidate": "pairwise-seed8",
+      "baseline": "pairwise-before",
+      "before_seconds": 1.054018666,
+      "after_seconds": 1.039486459,
+      "median_ratio": 0.9862125714953894,
+      "paired_geomean_ratio": 0.9858590876451697,
+      "paired_bootstrap_95": [
+        0.983894527998528,
+        0.9881919100986076
+      ]
+    }
+  ],
+  "completed_samples": 49,
+  "confirmation_samples": 63,
+  "tests": {
+    "fused": 32,
+    "native_map": 14
+  },
+  "source_changes": false,
+  "specialized_host_kernel": false,
+  "workload": {
+    "steps": 50000000,
+    "bodies": 5,
+    "pairs_per_step": 10,
+    "velocity_components": 3,
+    "initial_and_final_energy": true
+  },
+  "control_sources": {
+    "nbody-gpp-6-llvm-native": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-6.cpp",
+      "source_sha256": "38b69a7d86681bd080b5d3ebff0fb10c847598910f41569ce3188d8aba94808f"
+    },
+    "chapel-3": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-chapel-3.chpl",
+      "source_sha256": "fb698d60d235ca97553a22a1c36156cc9ab9bfec6b4948017219de06b5bd070f"
+    },
+    "rust-3": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+      "source_sha256": "34c935a74f929712bf8864697763c7d37806eb97ffdbad5e987346f5e761c994"
+    },
+    "nbody-zig-2-faithful": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+      "source_sha256": "0d5f3bc93014a64edf43caa6a5e95619c8ce924e14bd30bd3598b329eb9e65e8",
+      "build_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/zig/zig-aarch64-macos-0.17.0/zig",
+        "build-exe",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+        "-O",
+        "ReleaseFast",
+        "-mcpu=native",
+        "-fllvm",
+        "-lc",
+        "-femit-bin=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/nbody-zig-2-faithful"
+      ]
+    }
+  },
+  "compiler_pins": {
+    "hosts/gpu/src/fused_f64/mod.rs": "c34e939be71b5db73b9dff23c03ec0db748f874ad7a9f90ec263a8570574971c",
+    "hosts/gpu/src/fused_f64/native.rs": "37d0c34abd60b137e77770584960f679aef836c3269034280055b5dd68628579",
+    "hosts/gpu/src/fused_f64/runner.rs": "0fd44bfc3e2fb9ea48a9582abaf7084b8cd2e11599f7332d29ba3dba571a26d7",
+    "hosts/gpu/src/fused_f64/map_runner.rs": "fd70647e126f8b03272423d5e30e4d47804c26d10bb38dfdeafc9eba7b3a9419"
+  },
+  "reports": {
+    "source-pilot-50m.json": "5226e081ad6f9cd97be6c81239debab2cd87c71a178b4b439db55063909beda9",
+    "compiler-pilot-50m.json": "800af4155da542644b7558ff9a89bf6587a84f73c0a6cc0ae6ae7824b57cf813",
+    "pressure-pilot-50m.json": "d9b55d097ed720f5a32ba9c8aab7a661602ddaefb9964f1c2f4a1e8abc9d4f12",
+    "confirmation-50m.json": "20982060a3dee73a74cbb48c870cfc8f35e5ceec246cdb1a128a12e86c2fe4f5",
+    "replication-50m.json": "e134c5634c4fb29add40281685147d339a4e68b61c54b90eea95d5bf5b087e59"
+  },
+  "independent_state_audit_sha256": "b9a2beba07b2c55736c8df4bb29b6bd704ae6c05d9e62a5fb3102547caccadf0",
+  "independent_max_scaled_error": 2.8703706078658797e-12,
+  "default_object_verification_sha256": "b519bacbbe176655a374f4cde5ad5bc0545d955785eb7b32fd4b6d32fe5f1fc0",
+  "discarded_constant_pressure_prototype": true,
+  "shared_product_pass": "Available opt-in; no measured fast benchmark improvement, so not selected.",
+  "selected_report": "replication-50m.json",
+  "previous_audit": {
+    "path": "nbody/experiments/20261011-competitor-techniques/summary.json",
+    "sha256": "fd9456d11ff4c4ec57b9fa1e7d59f312f4e9cd47c8e7562dd05bf4d8e1fb28c3"
+  },
+  "selected_object_verification_sha256": "01604133e3f158e82cbb40d8f0f4bbb9a53b35ff85129153af360828f6786b3b"
+}

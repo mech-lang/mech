@@ -1,0 +1,19 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on shared package cache
+   Compiling mech-combinatorics v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/combinatorics)
+   Compiling mech-set v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/set)
+   Compiling mech-math v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/machines/math)
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib)
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 8m 20s
+     Running unittests src/lib.rs (benchmarks/clbg/nbody/mech-driver/target/release/deps/mech_gpu-ef7ddad041539b16)
+
+running 2 tests
+test control::bigint::tests::signed_arithmetic_aliasing_and_reused_storage ... ok
+test control::bigint::tests::floor_division_and_session_retirement ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.00s
+

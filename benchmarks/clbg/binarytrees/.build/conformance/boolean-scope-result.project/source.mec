@@ -1,0 +1,7 @@
+<row> := <{value<bool>}>
+Test(n<bool>) = (result<bool>) :=
+  h := memory/allocate({value: n})
+  row := memory/read(h, <row>)
+  result := row.value.
+r := memory/with-arena(1, <row>, Test, true)
+io/print("{}\n", control/select(r == true, 1, 0))

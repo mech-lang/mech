@@ -1,0 +1,15 @@
+<state> := <{k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>}>
+Extract(s<state>, j<u64>) => <u64> := (s.q * j + s.r) / s.t
+Label(count<u64>) => <u64> := io/print("\t:{}\n", count)
+NoLabel(count<u64>) => <u64> := 0
+More(s<state>) => <bool> := s.count < s.n
+Produce(s<state>, digit<u64>) => <state> :=
+  io/print("{}", digit)
+  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)
+  {k: s.k, count: s.count + 1, n: s.n, q: s.q * 10, r: (s.r - s.t * digit) * 10, t: s.t}
+Consume(s<state>, digit<u64>) => <state> := {k: s.k + 1, count: s.count, n: s.n, q: s.q * s.k, r: (s.r + s.q * 2) * (2 * s.k + 1), t: s.t * (2 * s.k + 1)}
+Step(s<state>) => <state> := Extract(s, 3) |> control/if(_ == Extract(s, 4), Produce, Consume, (s, _))
+Finish(count<u64>) => <u64> := io/write(text/format("{}\t:{}\n", text/repeat(" ", 10 - number/mod(count, 10)), count))
+initial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1)}
+state := control/while(initial, More, Step)
+finished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)

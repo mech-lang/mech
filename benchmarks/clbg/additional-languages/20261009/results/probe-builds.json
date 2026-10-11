@@ -1,0 +1,86 @@
+[
+  {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/nbody-unrolled.fut",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/nbody-unrolled-binary",
+    "command": [
+      "/opt/homebrew/bin/futhark",
+      "multicore",
+      "--library",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/nbody-unrolled/program",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/nbody-unrolled.fut"
+    ],
+    "c_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-mcpu=apple-m3",
+      "-ffp-contract=off",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-I",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/nbody-unrolled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/adapters/futhark.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/nbody-unrolled/program.c",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/nbody-unrolled-binary",
+      "-lm",
+      "-lpthread"
+    ]
+  },
+  {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/regex-fast-program.fut",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/regex-fast-program-binary",
+    "command": [
+      "/opt/homebrew/bin/futhark",
+      "multicore",
+      "--library",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/regex-fast-program/program",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/regex-fast-program.fut"
+    ],
+    "c_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-mcpu=apple-m3",
+      "-ffp-contract=off",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-I",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/regex-fast-program",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/adapters/futhark.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/regex-fast-program/program.c",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/regex-fast-program-binary",
+      "-lm",
+      "-lpthread"
+    ]
+  },
+  {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/knucleotide-fast.fut",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/knucleotide-fast-binary",
+    "command": [
+      "/opt/homebrew/bin/futhark",
+      "multicore",
+      "--library",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/knucleotide-fast/program",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/knucleotide-fast.fut"
+    ],
+    "c_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-mcpu=apple-m3",
+      "-ffp-contract=off",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-I",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/knucleotide-fast",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/adapters/futhark.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/builds/knucleotide-fast/program.c",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/probes/knucleotide-fast-binary",
+      "-lm",
+      "-lpthread"
+    ]
+  }
+]

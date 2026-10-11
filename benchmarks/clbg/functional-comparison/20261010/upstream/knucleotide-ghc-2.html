@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Haskell GHC&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Haskell GHC&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Contributed by cahu ette</span>
+
+
+<span class="kwb">module</span> Main <span class="kwb">where</span>
+
+<span class="kwb">import</span> Data<span class="opt">.</span>Bits
+<span class="kwb">import</span> Data<span class="opt">.</span>List
+<span class="kwb">import</span> Data<span class="opt">.</span>Word
+<span class="kwb">import</span> Data<span class="opt">.</span>Hashable
+<span class="kwb">import</span> Data<span class="opt">.</span>Traversable
+<span class="kwb">import</span> Text<span class="opt">.</span>Printf
+
+<span class="kwb">import</span> Data<span class="opt">.</span>STRef
+<span class="kwb">import</span> Control<span class="opt">.</span>Monad
+<span class="kwb">import</span> Control<span class="opt">.</span>Monad<span class="opt">.</span>ST
+<span class="kwb">import</span> Control<span class="opt">.</span>Parallel<span class="opt">.</span>Strategies
+
+
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Map<span class="opt">.</span>Strict           <span class="kwb">as</span> M
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>HashTable<span class="opt">.</span>Class      <span class="kwb">as</span> HC
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>HashTable<span class="opt">.</span>ST<span class="opt">.</span>Basic   <span class="kwb">as</span> H
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>ByteString<span class="opt">.</span>Char8     <span class="kwb">as</span> B
+
+
+<span class="kwa">type</span> HashTable s k v <span class="opt">=</span> H<span class="opt">.</span>HashTable s k v
+
+
+<span class="com">{- By using only 2 bits to encode keys, it&#39;s important to use a different table</span>
+<span class="com"> - for different key sizes. Otherwise, if we encode &#39;A&#39; as 0x00, &quot;AT&quot; and</span>
+<span class="com"> - &quot;AAT&quot; would map to the same bucket in the table.</span>
+<span class="com"> -</span>
+<span class="com"> - We could use 3 bits per letter to avoid this problem if needed.</span>
+<span class="com"> -}</span>
+bitsForChar :: Char <span class="opt">-&gt;</span> Word64
+bitsForChar <span class="sng">&#39;a&#39;</span> <span class="opt">=</span> <span class="num">0</span>
+bitsForChar <span class="sng">&#39;A&#39;</span> <span class="opt">=</span> <span class="num">0</span>
+bitsForChar <span class="sng">&#39;c&#39;</span> <span class="opt">=</span> <span class="num">1</span>
+bitsForChar <span class="sng">&#39;C&#39;</span> <span class="opt">=</span> <span class="num">1</span>
+bitsForChar <span class="sng">&#39;g&#39;</span> <span class="opt">=</span> <span class="num">2</span>
+bitsForChar <span class="sng">&#39;G&#39;</span> <span class="opt">=</span> <span class="num">2</span>
+bitsForChar <span class="sng">&#39;t&#39;</span> <span class="opt">=</span> <span class="num">3</span>
+bitsForChar <span class="sng">&#39;T&#39;</span> <span class="opt">=</span> <span class="num">3</span>
+bitsForChar _   <span class="opt">=</span> error <span class="sng">&quot;Ay, Caramba!&quot;</span>
+
+
+charForBits :: Word64 <span class="opt">-&gt;</span> Char
+charForBits <span class="num">0</span> <span class="opt">=</span> <span class="sng">&#39;A&#39;</span>
+charForBits <span class="num">1</span> <span class="opt">=</span> <span class="sng">&#39;C&#39;</span>
+charForBits <span class="num">2</span> <span class="opt">=</span> <span class="sng">&#39;G&#39;</span>
+charForBits <span class="num">3</span> <span class="opt">=</span> <span class="sng">&#39;T&#39;</span>
+charForBits _ <span class="opt">=</span> error <span class="sng">&quot;Ay, Caramba!&quot;</span>
+
+
+packKey :: B<span class="opt">.</span>ByteString <span class="opt">-&gt;</span> Word64
+packKey <span class="opt">=</span> go zeroBits
+  <span class="kwb">where</span>
+    go k bs <span class="opt">=</span> <span class="kwd">case</span> B<span class="opt">.</span>uncons bs <span class="kwd">of</span>
+        Nothing      <span class="opt">-&gt;</span> k
+        Just <span class="kwc">(</span>c<span class="kwc">,</span> cs<span class="kwc">)</span> <span class="opt">-&gt;</span> go <span class="kwc">(</span>unsafeShiftL k <span class="num">2</span> <span class="opt">.|.</span> bitsForChar c<span class="kwc">)</span> cs
+<span class="com">{-# INLINE packKey #-}</span>
+
+unpackKey :: Int <span class="opt">-&gt;</span> Word64 <span class="opt">-&gt;</span> B<span class="opt">.</span>ByteString
+unpackKey <span class="opt">=</span> go <span class="kwc">[]</span>
+  <span class="kwb">where</span>
+    go s <span class="num">0</span> _ <span class="opt">=</span> B<span class="opt">.</span>pack s
+    go s l i <span class="opt">=</span> go <span class="kwc">(</span>charForBits <span class="kwc">(</span>i <span class="opt">.&amp;.</span> <span class="num">3</span><span class="kwc">)</span> : s<span class="kwc">) (</span>l<span class="opt">-</span><span class="num">1</span><span class="kwc">) (</span>unsafeShiftR i <span class="num">2</span><span class="kwc">)</span>
+<span class="com">{-# INLINE unpackKey #-}</span>
+
+
+updateTable :: <span class="kwc">(</span>Eq k<span class="kwc">,</span> Hashable k<span class="kwc">)</span>
+            <span class="opt">=&gt;</span> HashTable s k <span class="kwc">(</span>STRef s Int<span class="kwc">)</span>
+            <span class="opt">-&gt;</span> <span class="kwc">(</span>Int <span class="opt">-&gt;</span> Int<span class="kwc">)</span>
+            <span class="opt">-&gt;</span> k
+            <span class="opt">-&gt;</span> ST s <span class="kwc">()</span>
+updateTable t f k <span class="opt">=</span> <span class="kwd">do</span>
+    mv <span class="opt">&lt;-</span> H<span class="opt">.</span>lookup t k
+    <span class="kwd">case</span> mv <span class="kwd">of</span>
+        Nothing <span class="opt">-&gt;</span> newSTRef <span class="num">1</span> <span class="opt">&gt;&gt;=</span> H<span class="opt">.</span>insert t k
+        Just v  <span class="opt">-&gt;</span> modifySTRef&#39; v f
+<span class="com">{-# INLINE updateTable #-}</span>
+
+
+getVal :: <span class="kwc">(</span>Eq k<span class="kwc">,</span> Hashable k<span class="kwc">)</span>
+       <span class="opt">=&gt;</span> HashTable s k <span class="kwc">(</span>STRef s Int<span class="kwc">)</span>
+       <span class="opt">-&gt;</span> k
+       <span class="opt">-&gt;</span> ST s Int
+getVal t k <span class="opt">=</span> <span class="kwd">do</span>
+    mv <span class="opt">&lt;-</span> H<span class="opt">.</span>lookup t k
+    <span class="kwd">case</span> mv <span class="kwd">of</span> Nothing <span class="opt">-&gt;</span> return <span class="num">0</span>
+               Just sv <span class="opt">-&gt;</span> readSTRef sv
+<span class="slc">--{-# INLINE getVal #-}</span>
+
+
+tableToList :: HashTable s k <span class="kwc">(</span>STRef s a<span class="kwc">)</span> <span class="opt">-&gt;</span> ST s <span class="kwc">[(</span>k<span class="kwc">,</span> a<span class="kwc">)]</span>
+tableToList t <span class="opt">=</span> <span class="kwd">do</span>
+    pairs <span class="opt">&lt;-</span> HC<span class="opt">.</span>toList t
+    forM pairs <span class="opt">$</span> \<span class="kwc">(</span>k<span class="kwc">,</span> v<span class="kwc">)</span> <span class="opt">-&gt;</span> <span class="kwd">do</span>
+        a <span class="opt">&lt;-</span> readSTRef v
+        return <span class="kwc">(</span>k<span class="kwc">,</span> a<span class="kwc">)</span>
+
+
+countOccurrences :: Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> B<span class="opt">.</span>ByteString <span class="opt">-&gt;</span> ST s <span class="kwc">(</span>HashTable s Word64 <span class="kwc">(</span>STRef s Int<span class="kwc">))</span>
+countOccurrences jumpSize frameSize input <span class="opt">=</span> <span class="kwd">do</span>
+    t <span class="opt">&lt;-</span> H<span class="opt">.</span>new
+
+    <span class="kwd">let</span> go bs <span class="opt">=</span> unless <span class="kwc">(</span>B<span class="opt">.</span>length bs <span class="opt">&lt;</span> frameSize<span class="kwc">)</span> <span class="opt">$</span> <span class="kwd">do</span>
+            <span class="kwd">let</span> k <span class="opt">=</span> takeFrame bs
+            updateTable t <span class="kwc">(</span><span class="opt">+</span><span class="num">1</span><span class="kwc">) (</span>packKey k<span class="kwc">)</span>
+            go <span class="kwc">(</span>nextFrame bs<span class="kwc">)</span>
+
+    go input
+    return t
+
+  <span class="kwb">where</span>
+    takeFrame <span class="opt">=</span> B<span class="opt">.</span>take frameSize
+    nextFrame <span class="opt">=</span> B<span class="opt">.</span>drop jumpSize
+
+
+extractSequence :: String <span class="opt">-&gt;</span> B<span class="opt">.</span>ByteString <span class="opt">-&gt;</span> B<span class="opt">.</span>ByteString
+extractSequence s <span class="opt">=</span> findSeq
+  <span class="kwb">where</span>
+    prefix <span class="opt">=</span> B<span class="opt">.</span>pack <span class="kwc">(</span><span class="sng">&#39;&gt;&#39;</span> : s<span class="kwc">)</span>
+    skipSeq <span class="opt">=</span>
+          B<span class="opt">.</span>dropWhile <span class="kwc">(</span><span class="opt">/=</span> <span class="sng">&#39;&gt;&#39;</span><span class="kwc">)</span>
+        <span class="opt">.</span> B<span class="opt">.</span>drop <span class="num">1</span>
+    takeSeq <span class="opt">=</span>
+          B<span class="opt">.</span>filter    <span class="kwc">(</span><span class="opt">/=</span> <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span>
+        <span class="opt">.</span> B<span class="opt">.</span>takeWhile <span class="kwc">(</span><span class="opt">/=</span>  <span class="sng">&#39;&gt;&#39;</span><span class="kwc">)</span> <span class="slc">-- extract until next header</span>
+        <span class="opt">.</span> B<span class="opt">.</span>dropWhile <span class="kwc">(</span><span class="opt">/=</span> <span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwc">)</span> <span class="slc">-- skip header</span>
+    findSeq str
+        <span class="opt">|</span> prefix `B<span class="opt">.</span>isPrefixOf` str  <span class="opt">=</span>  takeSeq str
+        <span class="opt">|</span> otherwise                  <span class="opt">=</span>  findSeq <span class="kwc">(</span>skipSeq str<span class="kwc">)</span>
+
+
+
+main :: IO <span class="kwc">()</span>
+main <span class="opt">=</span> <span class="kwd">do</span>
+    s <span class="opt">&lt;-</span> extractSequence <span class="sng">&quot;THREE&quot;</span> <span class="opt">&lt;$&gt;</span> B<span class="opt">.</span>getContents
+
+    <span class="kwd">let</span> keys    <span class="opt">=</span> <span class="kwc">[</span><span class="sng">&quot;GGT&quot;</span><span class="kwc">,</span><span class="sng">&quot;GGTA&quot;</span><span class="kwc">,</span><span class="sng">&quot;GGTATT&quot;</span><span class="kwc">,</span><span class="sng">&quot;GGTATTTTAATT&quot;</span><span class="kwc">,</span><span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span><span class="kwc">]</span>
+    <span class="kwd">let</span> threads <span class="opt">=</span> <span class="kwc">[</span><span class="num">0</span> <span class="opt">..</span> <span class="num">63</span><span class="kwc">]</span>
+
+    <span class="kwd">let</span> threadWorkOcc key tid <span class="opt">=</span> runST <span class="opt">$</span> <span class="kwd">do</span>
+            t <span class="opt">&lt;-</span> countOccurrences <span class="kwc">(</span>length threads<span class="kwc">) (</span>B<span class="opt">.</span>length key<span class="kwc">) (</span>B<span class="opt">.</span>drop tid s<span class="kwc">)</span>
+            getVal t <span class="kwc">(</span>packKey key<span class="kwc">)</span>
+
+    <span class="kwd">let</span> calcOcc key <span class="opt">=</span> sum <span class="opt">$</span> runEval <span class="opt">$</span>
+            mapM <span class="kwc">(</span>rpar <span class="opt">.</span> threadWorkOcc <span class="kwc">(</span>B<span class="opt">.</span>pack key<span class="kwc">))</span> threads
+
+    <span class="kwd">let</span> threadWorkFreq len tid <span class="opt">=</span> runST <span class="opt">$</span> <span class="kwd">do</span>
+            t  <span class="opt">&lt;-</span> countOccurrences <span class="kwc">(</span>length threads<span class="kwc">)</span> len <span class="kwc">(</span>B<span class="opt">.</span>drop tid s<span class="kwc">)</span>
+            vs <span class="opt">&lt;-</span> tableToList t
+            return <span class="opt">$</span> map <span class="kwc">(</span>\<span class="kwc">(</span>k<span class="kwc">,</span> v<span class="kwc">)</span> <span class="opt">-&gt;</span> <span class="kwc">(</span>B<span class="opt">.</span>unpack <span class="kwc">(</span>unpackKey len k<span class="kwc">),</span> freq v<span class="kwc">))</span> vs
+          <span class="kwb">where</span>
+            freq v <span class="opt">=</span> <span class="num">100</span> <span class="opt">*</span> fromIntegral v <span class="opt">/</span> fromIntegral <span class="kwc">(</span>B<span class="opt">.</span>length s <span class="opt">-</span> len <span class="opt">+</span> <span class="num">1</span><span class="kwc">)</span>
+
+    <span class="kwd">let</span> calcFreq len <span class="opt">=</span>
+            <span class="kwd">let</span> l <span class="opt">=</span> concat <span class="opt">$</span> runEval <span class="opt">$</span> mapM <span class="kwc">(</span>rpar <span class="opt">.</span> threadWorkFreq len<span class="kwc">)</span> threads
+                m <span class="opt">=</span> foldr <span class="kwc">(</span>uncurry <span class="opt">$</span> M<span class="opt">.</span>insertWith <span class="kwc">(</span><span class="opt">+</span><span class="kwc">))</span> M<span class="opt">.</span>empty l
+            <span class="kwd">in</span>
+                M<span class="opt">.</span>toList m
+
+    <span class="kwd">let</span> resultsOcc <span class="opt">=</span> map <span class="kwc">(</span>\k <span class="opt">-&gt;</span> <span class="kwc">(</span>k<span class="kwc">,</span> calcOcc k<span class="kwc">))</span> keys
+
+    printFreq <span class="kwc">(</span>calcFreq <span class="num">1</span><span class="kwc">)</span>
+    putStrLn <span class="sng">&quot;&quot;</span>
+    printFreq <span class="kwc">(</span>calcFreq <span class="num">2</span><span class="kwc">)</span>
+    putStrLn <span class="sng">&quot;&quot;</span>
+    forM_ resultsOcc <span class="opt">$</span> \<span class="kwc">(</span>k<span class="kwc">,</span> r<span class="kwc">)</span> <span class="opt">-&gt;</span> printf <span class="sng">&quot;%d</span><span class="esc">\t</span><span class="sng">%s</span><span class="esc">\n</span><span class="sng">&quot;</span> r k
+
+  <span class="kwb">where</span>
+
+    sortFreq <span class="opt">=</span> sortBy
+        <span class="kwc">(</span>\ <span class="kwc">(</span>k :: String<span class="kwc">,</span> v :: Double<span class="kwc">) (</span>k&#39;<span class="kwc">,</span> v&#39;<span class="kwc">)</span> <span class="opt">-&gt;</span>
+            <span class="kwc">(</span>compare v&#39; v<span class="kwc">)</span> <span class="opt">`mappend`</span> <span class="kwc">(</span>compare k k&#39;<span class="kwc">))</span>
+
+    printFreq :: <span class="kwc">[(</span>String<span class="kwc">,</span> Double<span class="kwc">)]</span> <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+    printFreq l <span class="opt">=</span> forM_ <span class="kwc">(</span>sortFreq l<span class="kwc">)</span> <span class="opt">$</span> uncurry <span class="kwc">(</span>printf <span class="sng">&quot;%s %.3f</span><span class="esc">\n</span><span class="sng">&quot;</span><span class="kwc">)</span>
+        
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 08:06:52 GMT
+
+MAKE:
+mv knucleotide.ghc-2.ghc knucleotide.ghc-2.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -funbox-strict-fields -XScopedTypeVariables -package hashable -package unordered-containers -package  pvar -package ghc-compact knucleotide.ghc-2.hs -o knucleotide.ghc-2.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( knucleotide.ghc-2.hs, knucleotide.ghc-2.o )
+[2 of 2] Linking knucleotide.ghc-2.ghc_run
+rm knucleotide.ghc-2.hs
+
+22.17 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./knucleotide.ghc-2.ghc_run +RTS -N4 -K2048M -RTS 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

@@ -1,0 +1,863 @@
+//! Canonical-source IR for closed native loops and small immutable byte vectors.
+//! Loop bodies, predicates and range callbacks are ordinary Mech functions.
+use super::{text, visit};
+use mech_syntax::document::{
+    parse_canonical_document, AnyCallArgumentSyntax, AstNode, DocumentId, FunctionCallSyntax,
+    ParseConfig, Revision, StringLiteralSyntax, SyntaxKind, SyntaxNode, TextSnapshot,
+    TupleDestructureSyntax, VariableDefineSyntax,
+};
+use std::collections::{BTreeMap, BTreeSet};
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Kind {
+    Integer,
+    Float,
+    Boolean,
+    Bytes(usize),
+    ReadBytes,
+    Floats,
+    Tuple(Vec<Kind>),
+    Text,
+}
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Expr {
+    pub kind: Kind,
+    pub op: Op,
+}
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Op {
+    Integer(u64),
+    Float(u64),
+    Boolean(bool),
+    Text(String),
+    ReadBytes(Vec<u8>),
+    Floats(Vec<u64>),
+    Parameter(usize),
+    Tuple(Vec<Expr>),
+    Field(Box<Expr>, usize),
+    Primitive(String, Vec<Expr>),
+    Loop {
+        initial: Box<Expr>,
+        predicate: String,
+        step: String,
+    },
+    Branch {
+        condition: Box<Expr>,
+        yes: String,
+        no: String,
+        state: Box<Expr>,
+    },
+    Call(String, Vec<Expr>),
+    Parallel {
+        start: Box<Expr>,
+        end: Box<Expr>,
+        grain: Box<Expr>,
+        function: String,
+        arguments: Box<Expr>,
+        reductions: Vec<String>,
+    },
+    Write {
+        id: usize,
+        text: String,
+    },
+    Scan {
+        id: usize,
+        count: Box<Expr>,
+        state: Box<Expr>,
+        function: String,
+        width: Box<Expr>,
+        separator: String,
+        buffer: Box<Expr>,
+    },
+}
+#[derive(Clone, Debug)]
+pub struct Function {
+    pub inputs: Vec<Kind>,
+    pub output: Expr,
+}
+#[derive(Clone, Debug)]
+pub struct Program {
+    pub functions: BTreeMap<String, Function>,
+    pub output: Expr,
+    pub format: String,
+    pub argument_count: usize,
+    pub effects: Vec<Expr>,
+}
+#[derive(Clone)]
+struct SourceFunction {
+    inputs: Vec<(String, Kind)>,
+    outputs: Vec<(String, Kind)>,
+    body: SyntaxNode,
+}
+fn parameter(node: &SyntaxNode) -> Result<(String, Kind), String> {
+    let name = node
+        .children()
+        .find(|n| n.kind() == SyntaxKind::Identifier)
+        .ok_or("parameter name")?;
+    let annotation = node
+        .children()
+        .find(|n| n.kind() == SyntaxKind::KindAnnotation)
+        .ok_or("parameter kind required")?;
+    let s = text(&annotation)?.replace(' ', "");
+    let kind = match s.as_str() {
+        "<u64>" => Kind::Integer,
+        "<f64>" => Kind::Float,
+        "<bool>" => Kind::Boolean,
+        "<[u8]>" => Kind::ReadBytes,
+        "<[f64]>" => Kind::Floats,
+        _ => {
+            let n = s
+                .strip_prefix("<[u8]:")
+                .and_then(|s| s.strip_suffix(",1>"))
+                .and_then(|s| s.parse().ok())
+                .ok_or("native control supports u64, bool and fixed byte columns")?;
+            if !(1..=64).contains(&n) {
+                return Err("fixed byte length must be 1..64".into());
+            }
+            Kind::Bytes(n)
+        }
+    };
+    Ok((text(&name)?, kind))
+}
+fn args(node: &SyntaxNode) -> Result<(String, Vec<SyntaxNode>), String> {
+    let call = FunctionCallSyntax::cast(node.clone()).ok_or("function call")?;
+    let name = text(call.function().ok_or("function name")?.syntax())?;
+    let arguments = call
+        .arguments()
+        .ok_or("call arguments")?
+        .arguments()
+        .into_iter()
+        .map(|a| match a {
+            AnyCallArgumentSyntax::Positional(x) => {
+                Ok(x.value().ok_or("argument")?.syntax().clone())
+            }
+            _ => Err("positional arguments required".into()),
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    Ok((name, arguments))
+}
+fn tuple(items: Vec<Expr>) -> Expr {
+    Expr {
+        kind: Kind::Tuple(items.iter().map(|e| e.kind.clone()).collect()),
+        op: Op::Tuple(items),
+    }
+}
+fn flat(kind: &Kind) -> Vec<Kind> {
+    match kind {
+        Kind::Tuple(k) => k.clone(),
+        k => vec![k.clone()],
+    }
+}
+struct Lower<'a> {
+    source: &'a BTreeMap<String, SourceFunction>,
+    functions: BTreeMap<String, Function>,
+    active: BTreeSet<String>,
+    catalog: &'a [&'a str],
+    argument_count: usize,
+    next_effect: usize,
+}
+impl Lower<'_> {
+    fn function(&mut self, name: &str) -> Result<Function, String> {
+        if let Some(f) = self.functions.get(name) {
+            return Ok(f.clone());
+        }
+        if !self.active.insert(name.to_owned()) {
+            return Err("recursive functions unsupported in closed native loops".into());
+        }
+        let source = self
+            .source
+            .get(name)
+            .ok_or_else(|| format!("undefined source function {name}"))?
+            .clone();
+        let mut locals = BTreeMap::new();
+        for (i, (name, kind)) in source.inputs.iter().enumerate() {
+            if locals
+                .insert(
+                    name.clone(),
+                    Expr {
+                        kind: kind.clone(),
+                        op: Op::Parameter(i),
+                    },
+                )
+                .is_some()
+            {
+                return Err("duplicate parameter".into());
+            }
+        }
+        for statement in source
+            .body
+            .children()
+            .filter(|n| n.kind() == SyntaxKind::Statement)
+        {
+            self.statement(&statement, &mut locals)?;
+        }
+        let mut values = Vec::new();
+        for (name, kind) in &source.outputs {
+            let value = locals
+                .get(name)
+                .ok_or_else(|| format!("undefined output {name}"))?
+                .clone();
+            if &value.kind != kind {
+                return Err(format!(
+                    "{name}: declared output differs from body {:?}",
+                    value.kind
+                ));
+            }
+            values.push(value);
+        }
+        let output = if values.len() == 1 {
+            values.remove(0)
+        } else {
+            tuple(values)
+        };
+        let f = Function {
+            inputs: source.inputs.iter().map(|(_, k)| k.clone()).collect(),
+            output,
+        };
+        self.functions.insert(name.to_owned(), f.clone());
+        self.active.remove(name);
+        Ok(f)
+    }
+    fn statement(
+        &mut self,
+        node: &SyntaxNode,
+        vars: &mut BTreeMap<String, Expr>,
+    ) -> Result<(), String> {
+        if let Some(d) = node.children().find_map(VariableDefineSyntax::cast) {
+            if d.mutability_marker().is_some() {
+                return Err("native control uses immutable loop state".into());
+            }
+            let name = text(d.name().ok_or("definition name")?.syntax())?;
+            let value = self.expr(d.value().ok_or("definition value")?.syntax(), vars)?;
+            if vars.insert(name, value).is_some() {
+                return Err("duplicate definition".into());
+            }
+            return Ok(());
+        }
+        if let Some(d) = node.children().find_map(TupleDestructureSyntax::cast) {
+            let value = self.expr(d.value().ok_or("destructure value")?.syntax(), vars)?;
+            let Kind::Tuple(kinds) = &value.kind else {
+                return Err("destructure requires tuple".into());
+            };
+            let names = d.names();
+            if names.len() != kinds.len() {
+                return Err("destructure arity".into());
+            }
+            for (i, name) in names.into_iter().enumerate() {
+                if vars
+                    .insert(
+                        text(name.syntax())?,
+                        Expr {
+                            kind: kinds[i].clone(),
+                            op: Op::Field(Box::new(value.clone()), i),
+                        },
+                    )
+                    .is_some()
+                {
+                    return Err("duplicate definition".into());
+                }
+            }
+            return Ok(());
+        }
+        Err("native control statements require definitions or tuple destructuring".into())
+    }
+    fn expr(&mut self, node: &SyntaxNode, vars: &BTreeMap<String, Expr>) -> Result<Expr, String> {
+        let s = text(node)?;
+        let s = s.trim();
+        if let Some(e) = vars.get(s) {
+            return Ok(e.clone());
+        }
+        if node.kind() == SyntaxKind::Number {
+            if s.contains('.') || s.contains('e') || s.ends_with("f64") {
+                let value = s
+                    .strip_suffix("f64")
+                    .unwrap_or(s)
+                    .parse::<f64>()
+                    .map_err(|_| "f64 literal required")?;
+                return Ok(Expr {
+                    kind: Kind::Float,
+                    op: Op::Float(value.to_bits()),
+                });
+            }
+            return Ok(Expr {
+                kind: Kind::Integer,
+                op: Op::Integer(s.parse().map_err(|_| "u64 literal required")?),
+            });
+        }
+        if let Some(l) = StringLiteralSyntax::cast(node.clone()) {
+            return Ok(Expr {
+                kind: Kind::Text,
+                op: Op::Text(l.decoded_text().ok_or("invalid string escape")?),
+            });
+        }
+        if s == "true" || s == "false" {
+            return Ok(Expr {
+                kind: Kind::Boolean,
+                op: Op::Boolean(s == "true"),
+            });
+        }
+        if node.kind() == SyntaxKind::Tuple {
+            let items = node
+                .children()
+                .filter(|n| n.kind() == SyntaxKind::Expression)
+                .map(|n| self.expr(&n, vars))
+                .collect::<Result<Vec<_>, _>>()?;
+            if items.is_empty() {
+                return Err("empty tuple".into());
+            }
+            return Ok(tuple(items));
+        }
+        if node.kind() == SyntaxKind::FunctionCall {
+            let (name, a) = args(node)?;
+            if self.source.contains_key(&name) {
+                let f = self.function(&name)?;
+                let values = a
+                    .iter()
+                    .map(|x| self.expr(x, vars))
+                    .collect::<Result<Vec<_>, _>>()?;
+                if values.iter().map(|e| e.kind.clone()).collect::<Vec<_>>() != f.inputs {
+                    return Err(format!("{name}: incompatible source arguments"));
+                }
+                return Ok(Expr {
+                    kind: f.output.kind,
+                    op: Op::Call(name, values),
+                });
+            }
+            if !self.catalog.contains(&name.as_str()) {
+                return Err(format!("unsupported native control operation {name}"));
+            }
+            if !self.active.is_empty()
+                && matches!(
+                    name.as_str(),
+                    "io/write" | "io/write-scan" | "io/argument-u64" | "parallel/reduce-ranges"
+                )
+            {
+                return Err("native source callbacks must be pure; host IO and scheduling belong at the entry".into());
+            }
+            if name == "control/while" {
+                if a.len() != 3 {
+                    return Err("control/while arity".into());
+                }
+                let initial = self.expr(&a[0], vars)?;
+                let predicate = text(&a[1])?.trim().to_owned();
+                let step = text(&a[2])?.trim().to_owned();
+                let p = self.function(&predicate)?;
+                let f = self.function(&step)?;
+                if p.inputs != flat(&initial.kind)
+                    || p.output.kind != Kind::Boolean
+                    || f.inputs != p.inputs
+                    || f.output.kind != initial.kind
+                {
+                    return Err("loop callback signatures must preserve the state".into());
+                }
+                return Ok(Expr {
+                    kind: initial.kind.clone(),
+                    op: Op::Loop {
+                        initial: Box::new(initial),
+                        predicate,
+                        step,
+                    },
+                });
+            }
+            if name == "control/if" {
+                if a.len() != 4 {
+                    return Err("control/if arity".into());
+                }
+                let condition = self.expr(&a[0], vars)?;
+                let state = self.expr(&a[3], vars)?;
+                let yes = text(&a[1])?.trim().to_owned();
+                let no = text(&a[2])?.trim().to_owned();
+                let y = self.function(&yes)?;
+                let n = self.function(&no)?;
+                if condition.kind != Kind::Boolean
+                    || y.inputs != flat(&state.kind)
+                    || n.inputs != y.inputs
+                    || n.output.kind != y.output.kind
+                {
+                    return Err("conditional callback signatures".into());
+                }
+                return Ok(Expr {
+                    kind: y.output.kind,
+                    op: Op::Branch {
+                        condition: Box::new(condition),
+                        yes,
+                        no,
+                        state: Box::new(state),
+                    },
+                });
+            }
+            if name == "parallel/reduce-ranges" {
+                if a.len() != 6 {
+                    return Err("parallel/reduce-ranges arity".into());
+                }
+                let start = self.expr(&a[0], vars)?;
+                let end = self.expr(&a[1], vars)?;
+                let grain = self.expr(&a[2], vars)?;
+                let function = text(&a[3])?.trim().to_owned();
+                let arguments = self.expr(&a[4], vars)?;
+                let reducers = self.expr(&a[5], vars)?;
+                let Op::Text(reducers) = reducers.op else {
+                    return Err("constant reducers required".into());
+                };
+                let reductions: Vec<_> = reducers.split(',').map(str::to_owned).collect();
+                let f = self.function(&function)?;
+                let mut inputs = vec![Kind::Integer; 2];
+                inputs.extend(flat(&arguments.kind));
+                if inputs.iter().any(|kind| kind != &Kind::Integer) {
+                    return Err("parallel range arguments must be u64 scalars".into());
+                }
+                if [start.kind.clone(), end.kind.clone(), grain.kind.clone()]
+                    != [const { Kind::Integer }; 3]
+                    || f.inputs != inputs
+                    || flat(&f.output.kind) != vec![Kind::Integer; reductions.len()]
+                    || reductions.iter().any(|s| s != "sum" && s != "max")
+                {
+                    return Err("parallel range signature/reducers".into());
+                }
+                return Ok(Expr {
+                    kind: f.output.kind,
+                    op: Op::Parallel {
+                        start: Box::new(start),
+                        end: Box::new(end),
+                        grain: Box::new(grain),
+                        function,
+                        arguments: Box::new(arguments),
+                        reductions,
+                    },
+                });
+            }
+            if name == "io/write-scan" {
+                if a.len() != 6 {
+                    return Err("io/write-scan expects count, state, source step, width, separator, buffer size".into());
+                }
+                let count = self.expr(&a[0], vars)?;
+                let state = self.expr(&a[1], vars)?;
+                let function = text(&a[2])?.trim().to_owned();
+                let width = self.expr(&a[3], vars)?;
+                let separator = self.expr(&a[4], vars)?;
+                let buffer = self.expr(&a[5], vars)?;
+                let Op::Text(separator) = separator.op else {
+                    return Err("constant scan separator required".into());
+                };
+                let kinds = flat(&state.kind);
+                let callback = self.function(&function)?;
+                let mut expected = kinds.clone();
+                expected.push(Kind::Integer);
+                if [count.kind.clone(), width.kind.clone(), buffer.kind.clone()]
+                    != [const { Kind::Integer }; 3]
+                    || kinds.len() > 32
+                    || kinds
+                        .iter()
+                        .any(|k| !matches!(k, Kind::Integer | Kind::Float | Kind::Boolean))
+                    || callback.inputs != kinds
+                    || flat(&callback.output.kind) != expected
+                {
+                    return Err("scan step must return its scalar state followed by one unsigned byte value".into());
+                }
+                let id = self.next_effect;
+                self.next_effect += 1;
+                return Ok(Expr {
+                    kind: state.kind.clone(),
+                    op: Op::Scan {
+                        id,
+                        count: Box::new(count),
+                        state: Box::new(state),
+                        function,
+                        width: Box::new(width),
+                        separator,
+                        buffer: Box::new(buffer),
+                    },
+                });
+            }
+            let values = a
+                .iter()
+                .map(|x| self.expr(x, vars))
+                .collect::<Result<Vec<_>, _>>()?;
+            self.primitive(name, values)
+        } else {
+            let children: Vec<_> = node.children().collect();
+            if children.len() >= 3 && children.len() % 2 == 1 {
+                let mut value = self.expr(&children[0], vars)?;
+                for pair in children[1..].chunks(2) {
+                    let op = text(&pair[0])?;
+                    let rhs = self.expr(&pair[1], vars)?;
+                    value = self.primitive(op.trim().to_owned(), vec![value, rhs])?;
+                }
+                return Ok(value);
+            }
+            if children.len() == 1 {
+                return self.expr(&children[0], vars);
+            }
+            Err(format!(
+                "unsupported native control syntax {:?}: {s}",
+                node.kind()
+            ))
+        }
+    }
+    fn primitive(&mut self, name: String, values: Vec<Expr>) -> Result<Expr, String> {
+        let kinds: Vec<_> = values.iter().map(|e| e.kind.clone()).collect();
+        let int = Kind::Integer;
+        let boolean = Kind::Boolean;
+        let kind = match name.as_str() {
+            "+" | "-" | "*" | "/" if kinds == [Kind::Float, Kind::Float] => Kind::Float,
+            "==" | "!=" | "<" | "<=" | ">" | ">=" if kinds == [Kind::Float, Kind::Float] => boolean,
+            "number/to-f64" if kinds == [int.clone()] => Kind::Float,
+            "bytes/from-text" if kinds == [Kind::Text] => {
+                let Op::Text(s) = &values[0].op else {
+                    return Err("constant byte text required by this native subset".into());
+                };
+                return Ok(Expr {
+                    kind: Kind::ReadBytes,
+                    op: Op::ReadBytes(s.as_bytes().to_vec()),
+                });
+            }
+            "sequence/f64-values" if kinds.len() == 1 && matches!(kinds[0], Kind::Tuple(_)) => {
+                let Op::Tuple(items) = &values[0].op else {
+                    return Err("constant f64 values required".into());
+                };
+                let bits = items
+                    .iter()
+                    .map(|e| match e.op {
+                        Op::Float(v) => Ok(v),
+                        Op::Integer(v) => Ok((v as f64).to_bits()),
+                        _ => Err("literal numeric values required"),
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                if bits.is_empty() || bits.len() > 4096 {
+                    return Err("constant f64 column length must be 1..4096".into());
+                }
+                return Ok(Expr {
+                    kind: Kind::Floats,
+                    op: Op::Floats(bits),
+                });
+            }
+            "sequence/cumulative-sum" if kinds == [Kind::Floats] => {
+                let Op::Floats(bits) = &values[0].op else {
+                    return Err(
+                        "this native subset folds cumulative sums of constant columns".into(),
+                    );
+                };
+                let mut sum = 0.0;
+                let out = bits
+                    .iter()
+                    .map(|&bits| {
+                        sum += f64::from_bits(bits);
+                        sum.to_bits()
+                    })
+                    .collect();
+                return Ok(Expr {
+                    kind: Kind::Floats,
+                    op: Op::Floats(out),
+                });
+            }
+            "sequence/length"
+                if kinds.len() == 1 && matches!(kinds[0], Kind::ReadBytes | Kind::Floats) =>
+            {
+                int
+            }
+            "sequence/get"
+                if kinds.len() == 2 && kinds[0] == Kind::ReadBytes && kinds[1] == int =>
+            {
+                int
+            }
+            "sequence/get" if kinds.len() == 2 && kinds[0] == Kind::Floats && kinds[1] == int => {
+                Kind::Float
+            }
+            "io/write" if kinds == [Kind::Text] => {
+                let Op::Text(text) = &values[0].op else {
+                    return Err("constant write text required by this native subset".into());
+                };
+                let id = self.next_effect;
+                self.next_effect += 1;
+                return Ok(Expr {
+                    kind: Kind::Integer,
+                    op: Op::Write {
+                        id,
+                        text: text.clone(),
+                    },
+                });
+            }
+            "+" | "-" | "*" | "/" | "number/mod" | "number/max"
+                if kinds == [int.clone(), int.clone()] =>
+            {
+                int
+            }
+            "==" | "!=" if kinds == [boolean.clone(), boolean.clone()] => boolean,
+            "==" | "!=" | "<" | "<=" | ">" | ">=" if kinds == [int.clone(), int.clone()] => boolean,
+            "&&" | "||" if kinds == [boolean.clone(), boolean.clone()] => boolean,
+            "control/select" if kinds.len() == 3 && kinds[0] == boolean && kinds[1] == kinds[2] => {
+                kinds[1].clone()
+            }
+            "number/factorial" if kinds == [int.clone()] => int,
+            "number/bounded" if kinds == vec![int.clone(); 3] => int,
+            "io/argument-u64" if kinds == [int.clone()] => {
+                let Op::Integer(i) = values[0].op else {
+                    return Err("argument index must be constant".into());
+                };
+                if !(1..=32).contains(&i) {
+                    return Err("argument index 1..32".into());
+                }
+                self.argument_count = self.argument_count.max(i as usize);
+                int
+            }
+            "sequence/iota-bytes" | "sequence/zero-bytes" if kinds == [int.clone()] => {
+                let Op::Integer(n) = values[0].op else {
+                    return Err("small byte length must be constant".into());
+                };
+                if !(1..=64).contains(&n) {
+                    return Err("byte length 1..64".into());
+                }
+                Kind::Bytes(n as usize)
+            }
+            "sequence/get"
+                if kinds.len() == 2 && matches!(kinds[0], Kind::Bytes(_)) && kinds[1] == int =>
+            {
+                int
+            }
+            "sequence/set" | "sequence/rotate-prefix"
+                if kinds.len() == 3
+                    && matches!(kinds[0], Kind::Bytes(_))
+                    && kinds[1] == int
+                    && kinds[2] == int =>
+            {
+                kinds[0].clone()
+            }
+            "sequence/reverse-prefix"
+                if kinds.len() == 2 && matches!(kinds[0], Kind::Bytes(_)) && kinds[1] == int =>
+            {
+                kinds[0].clone()
+            }
+            _ => return Err(format!("{name}: incompatible native kinds {kinds:?}")),
+        };
+        Ok(Expr {
+            kind,
+            op: Op::Primitive(name, values),
+        })
+    }
+}
+
+pub fn compile(source: &str, catalog: &[&str]) -> Result<Program, String> {
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(1), Revision(0), source).map_err(|e| format!("{e:?}"))?,
+        ParseConfig::default(),
+    );
+    if !parsed.diagnostics.is_empty() {
+        return Err(format!(
+            "canonical control diagnostics: {:?}",
+            parsed.diagnostics
+        ));
+    }
+    let mut defs = Vec::new();
+    visit(&parsed.syntax(), SyntaxKind::FunctionDefine, &mut defs);
+    let mut functions = BTreeMap::new();
+    for node in defs {
+        let name = text(
+            &node
+                .children()
+                .find(|n| n.kind() == SyntaxKind::Identifier)
+                .ok_or("function name")?,
+        )?;
+        let inputs = node
+            .children()
+            .filter(|n| n.kind() == SyntaxKind::FunctionArg)
+            .map(|n| parameter(&n))
+            .collect::<Result<Vec<_>, _>>()?;
+        let body = node
+            .children()
+            .find(|n| n.kind() == SyntaxKind::FunctionDefineStatements)
+            .ok_or("statement body required")?;
+        let out = body
+            .children()
+            .find(|n| {
+                matches!(
+                    n.kind(),
+                    SyntaxKind::FunctionOutArg | SyntaxKind::FunctionOutArgs
+                )
+            })
+            .ok_or("function outputs")?;
+        let mut outputs = Vec::new();
+        visit(&out, SyntaxKind::FunctionArg, &mut outputs);
+        let outputs = outputs
+            .iter()
+            .map(parameter)
+            .collect::<Result<Vec<_>, _>>()?;
+        if outputs.is_empty() {
+            return Err("function output required".into());
+        }
+        if functions
+            .insert(
+                name,
+                SourceFunction {
+                    inputs,
+                    outputs,
+                    body,
+                },
+            )
+            .is_some()
+        {
+            return Err("duplicate function".into());
+        }
+    }
+    let mut lower = Lower {
+        source: &functions,
+        functions: BTreeMap::new(),
+        active: BTreeSet::new(),
+        catalog,
+        argument_count: 0,
+        next_effect: 0,
+    };
+    let mut vars = BTreeMap::new();
+    let mut roots = Vec::new();
+    visit(&parsed.syntax(), SyntaxKind::MechCodeAlt, &mut roots);
+    let mut output = None;
+    let mut effects = Vec::new();
+    let mut effect_ids = BTreeSet::new();
+    fn collect_effects(e: &Expr, ids: &mut BTreeSet<usize>) -> bool {
+        let mut new = false;
+        match &e.op {
+            Op::Write { id, .. } => new |= ids.insert(*id),
+            Op::Scan {
+                id,
+                count,
+                state,
+                width,
+                buffer,
+                ..
+            } => {
+                for e in [count, state, width, buffer] {
+                    new |= collect_effects(e, ids);
+                }
+                new |= ids.insert(*id);
+            }
+            Op::Tuple(a) | Op::Call(_, a) | Op::Primitive(_, a) => {
+                for e in a {
+                    new |= collect_effects(e, ids);
+                }
+            }
+            Op::Field(e, _) => new |= collect_effects(e, ids),
+            Op::Loop { initial, .. } => new |= collect_effects(initial, ids),
+            Op::Branch {
+                condition, state, ..
+            } => {
+                new |= collect_effects(condition, ids);
+                new |= collect_effects(state, ids);
+            }
+            Op::Parallel {
+                start,
+                end,
+                grain,
+                arguments,
+                ..
+            } => {
+                for e in [start, end, grain, arguments] {
+                    new |= collect_effects(e, ids);
+                }
+            }
+            _ => {}
+        }
+        new
+    }
+    for root in roots {
+        if root.children().all(|n| n.kind() == SyntaxKind::Comment) {
+            continue;
+        }
+        if root
+            .children()
+            .any(|n| n.kind() == SyntaxKind::FunctionDefine)
+        {
+            continue;
+        }
+        let mut stmt = Vec::new();
+        visit(&root, SyntaxKind::Statement, &mut stmt);
+        if stmt.iter().any(|s| {
+            s.children().any(|c| {
+                matches!(
+                    c.kind(),
+                    SyntaxKind::VariableDefine | SyntaxKind::TupleDestructure
+                )
+            })
+        }) {
+            for s in stmt {
+                lower.statement(&s, &mut vars)?;
+                for value in vars.values() {
+                    if collect_effects(value, &mut effect_ids) {
+                        effects.push(value.clone());
+                    }
+                }
+            }
+            continue;
+        }
+        let mut calls = Vec::new();
+        visit(&root, SyntaxKind::FunctionCall, &mut calls);
+        let call = calls.first().ok_or("top-level output call required")?;
+        let (name, a) = args(call)?;
+        let mut nested = Vec::new();
+        if name == "io/write" && a.len() == 1 {
+            visit(&a[0], SyntaxKind::FunctionCall, &mut nested);
+        }
+        if name == "io/write-scan" || (name == "io/write" && a.len() == 1 && nested.is_empty()) {
+            let value = lower.expr(call, &vars)?;
+            collect_effects(&value, &mut effect_ids);
+            effects.push(value);
+            continue;
+        }
+        if name != "io/write" || a.len() != 1 || output.is_some() {
+            return Err("one io/write required".into());
+        }
+        let mut f = Vec::new();
+        visit(&a[0], SyntaxKind::FunctionCall, &mut f);
+        let (name, a) = args(f.first().ok_or("text/format output required")?)?;
+        if name != "text/format" || a.len() < 2 {
+            return Err("text/format expects format and scalar fields".into());
+        }
+        let format = lower.expr(&a[0], &vars)?;
+        let Op::Text(format) = format.op else {
+            return Err("constant format required".into());
+        };
+        let values = a[1..]
+            .iter()
+            .map(|x| lower.expr(x, &vars))
+            .collect::<Result<Vec<_>, _>>()?;
+        if values.iter().any(|v| v.kind != Kind::Integer)
+            || (format.matches("{}").count() + format.matches("{:i64}").count()) != values.len()
+            || values.len() > 64
+            || format
+                .replace("{}", "")
+                .replace("{:i64}", "")
+                .contains(['{', '}'])
+        {
+            return Err("format field count/kinds".into());
+        }
+        output = Some((format, tuple(values)));
+    }
+    let (format, output) = match output {
+        Some(out) => out,
+        None if !effects.is_empty() => (String::new(), tuple(Vec::new())),
+        None => return Err("missing native control output".into()),
+    };
+    // IO and range scheduling belong only to the outer coordinator.
+    fn pure(e: &Expr) -> bool {
+        match &e.op {
+            Op::Primitive(n, a) => n != "io/argument-u64" && a.iter().all(pure),
+            Op::Tuple(a) | Op::Call(_, a) => a.iter().all(pure),
+            Op::Field(e, _) => pure(e),
+            Op::Loop { initial, .. } => pure(initial),
+            Op::Branch {
+                condition, state, ..
+            } => pure(condition) && pure(state),
+            Op::Parallel { .. } => false,
+            Op::Write { .. } | Op::Scan { .. } => false,
+            _ => true,
+        }
+    }
+    if lower.functions.values().any(|f| !pure(&f.output)) {
+        return Err("native callback must be pure".into());
+    }
+    Ok(Program {
+        functions: lower.functions,
+        output,
+        format,
+        argument_count: lower.argument_count,
+        effects,
+    })
+}

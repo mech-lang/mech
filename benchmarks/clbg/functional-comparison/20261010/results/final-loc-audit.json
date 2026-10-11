@@ -1,0 +1,1105 @@
+{
+  "status": "passed",
+  "timing_report_sha256": "cf0d7c024e599c847232a9eed77edc56c88ad26d2292022f3d242c9af3be8d2b",
+  "source_audit_sha256": "05c8ac995ff3b6aedcdd98fac656d852a215e4b02637e91ca4e6ed2a1f969533",
+  "audit_script_sha256": "d9329b52cba1b1917eb65cb017060367b767ee16d81db3d4cff9988672d72eb1",
+  "rows": {
+    "fannkuchredux:fannkuchredux-ghc-6": {
+      "source_sha256": "16ebcd654ac4b2f1d3c5d0ed52971c428beff030a1d94c9526a96a011c13d07c",
+      "physical_loc": 110,
+      "expansions": [],
+      "normalized_loc": 110,
+      "initial_normalized_loc": 110
+    },
+    "fannkuchredux:fannkuchredux-ghc-1": {
+      "source_sha256": "010c75e293708c1ff2c1934870bbe971ef79881ddcff25057f49f684bc5ab9fb",
+      "physical_loc": 30,
+      "expansions": [
+        {
+          "line": 42,
+          "extra_lines": 1,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "let (chksm, mflops) = pfold (0,0) $ map (\\(i, p) -> let flops = flopS p in (checksum i flops, flops)) $ zip [0..] (permut n)"
+        }
+      ],
+      "normalized_loc": 31,
+      "initial_normalized_loc": 30
+    },
+    "fannkuchredux:fannkuchredux-ghc-3": {
+      "source_sha256": "7315f719ff3fda9ee17c5a45da916f835aefa002e7f57b82a4da947ce58247a2",
+      "physical_loc": 82,
+      "expansions": [],
+      "normalized_loc": 82,
+      "initial_normalized_loc": 82
+    },
+    "fannkuchredux:fannkuchredux-ghc-5": {
+      "source_sha256": "8ad7a1182e1b29dcf80088b31c0f15e8101349df2dea59e25bed5f301ba6de11",
+      "physical_loc": 66,
+      "expansions": [],
+      "normalized_loc": 66,
+      "initial_normalized_loc": 66
+    },
+    "fannkuchredux:fannkuchredux-ghc-2": {
+      "source_sha256": "9237684751d0121b647b2a304ac767e5b073e0676eb9aed3605a5c247ccdf326",
+      "physical_loc": 48,
+      "expansions": [],
+      "normalized_loc": 48,
+      "initial_normalized_loc": 48
+    },
+    "fannkuchredux:fannkuchredux-ghc-4": {
+      "source_sha256": "03ed342defa07c782fec93326020ca7f74e2357f416463eed9342b58542f7614",
+      "physical_loc": 62,
+      "expansions": [],
+      "normalized_loc": 62,
+      "initial_normalized_loc": 62
+    },
+    "fasta:fasta-ghc-3": {
+      "source_sha256": "985e310e539089ed0b3fa0b08360d33471f399c42bf51df1b8a72dce3bfbfdd0",
+      "physical_loc": 68,
+      "expansions": [],
+      "normalized_loc": 68,
+      "initial_normalized_loc": 68
+    },
+    "fasta:fasta-ghc-1": {
+      "source_sha256": "49cc1c2df1f33e42b45588ceee7f8c44b87fac92facee2796f77e1d07e625b79",
+      "physical_loc": 68,
+      "expansions": [],
+      "normalized_loc": 68,
+      "initial_normalized_loc": 68
+    },
+    "knucleotide:knucleotide-ghc-2": {
+      "source_sha256": "627049ebdd2ed6975bbd02b19c2a7122b3c8e3f2890c86810d906cd99a6fed02",
+      "physical_loc": 129,
+      "expansions": [],
+      "normalized_loc": 129,
+      "initial_normalized_loc": 129
+    },
+    "mandelbrot:mandelbrot-ghc-1": {
+      "source_sha256": "0b728992a551dfaeaec136e0406b85469161ec1ddb9e5ab2cedadc33ce45ae37",
+      "physical_loc": 35,
+      "expansions": [],
+      "normalized_loc": 35,
+      "initial_normalized_loc": 35
+    },
+    "nbody:nbody-ghc-1": {
+      "source_sha256": "893e606afb0d9e7d90d0dce496b470912b5cd23b9605c3f3ee1a6e3e73883c8e",
+      "physical_loc": 134,
+      "expansions": [
+        {
+          "line": 182,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "x <- peek v1;          poke        v1   (x+u)"
+        },
+        {
+          "line": 183,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "y <- peekElemOff v1 1; pokeElemOff v1 1 (y+v)"
+        },
+        {
+          "line": 184,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "z <- peekElemOff v1 2; pokeElemOff v1 2 (z+w)"
+        },
+        {
+          "line": 187,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "x <- peek v1;          poke        v1   (x-u)"
+        },
+        {
+          "line": 188,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "y <- peekElemOff v1 1; pokeElemOff v1 1 (y-v)"
+        },
+        {
+          "line": 189,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "z <- peekElemOff v1 2; pokeElemOff v1 2 (z-w)"
+        }
+      ],
+      "normalized_loc": 140,
+      "initial_normalized_loc": 140
+    },
+    "nbody:nbody-ghc-2": {
+      "source_sha256": "454ae201c30d93e0bcc1d5f914172c244bc2eaa2ed8e485cb7c51ee8ed081356",
+      "physical_loc": 166,
+      "expansions": [],
+      "normalized_loc": 166,
+      "initial_normalized_loc": 166
+    },
+    "pidigits:pidigits-ghc-6": {
+      "source_sha256": "91fae8b100e9873a978882102e652c60d51db566757ecd501a9c4690f2481324",
+      "physical_loc": 14,
+      "expansions": [
+        {
+          "line": 20,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "where j = i + 1; m = if k<=0 then 9 else k - 1"
+        },
+        {
+          "line": 23,
+          "extra_lines": 3,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "where k = j+1; t@(n,a,d)=k&s; q=3$t; r=4$t"
+        }
+      ],
+      "normalized_loc": 18,
+      "initial_normalized_loc": 18
+    },
+    "pidigits:pidigits-ghc-1": {
+      "source_sha256": "3db72bb6be6d5d9b3d06b2fe8225df9df258f1bb2cd57739a14167e8595fc373",
+      "physical_loc": 22,
+      "expansions": [
+        {
+          "line": 13,
+          "extra_lines": 1,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "cons z k = let den = 2*k+1 in comp z (fromIntegral k, fromIntegral (2*den), 0, fromIntegral den)"
+        }
+      ],
+      "normalized_loc": 23,
+      "initial_normalized_loc": 22
+    },
+    "pidigits:pidigits-ghc-2": {
+      "source_sha256": "be059d7a242741fca485fa44e8790fcde81244d648456f08435417a4c404d980",
+      "physical_loc": 33,
+      "expansions": [],
+      "normalized_loc": 33,
+      "initial_normalized_loc": 33
+    },
+    "pidigits:pidigits-ghc-5": {
+      "source_sha256": "fea60b74dbb6d3dfec8550ea6408e657dd08b9e2fcc67912508aa3ce35d7493c",
+      "physical_loc": 64,
+      "expansions": [
+        {
+          "line": 77,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "mpzInitSetUi n1 4; mpzInitSetUi n2 3; mpzInitSetUi d 1"
+        },
+        {
+          "line": 78,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "mpzInitSetUi u 0; mpzInitSetUi v 0; mpzInitSetUi w 0"
+        },
+        {
+          "line": 84,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "mpzTdivQ u n1 d; mpzTdivQ v n2 d"
+        },
+        {
+          "line": 89,
+          "extra_lines": 3,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "mpzMulSi u n1 k2; mpzAdd v n2 n2; mpzMulSi w n1 k; mpzAdd n1 u v"
+        },
+        {
+          "line": 90,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "mpzMulSi u n2 (k + 3); mpzAdd n2 w u; mpzMulSi d d (k2 + 2)"
+        },
+        {
+          "line": 94,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "putStr $ show c; when (n <= 0) $ putStrLn $ \"\\t:\" ++ show ni"
+        },
+        {
+          "line": 96,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "mpzMulSi u u (-10); mpzMul u d u; mpzMulSi n1 n1 10"
+        },
+        {
+          "line": 97,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "mpzAdd n1 n1 u; mpzMulSi n2 n2 10; mpzAdd n2 n2 u"
+        }
+      ],
+      "normalized_loc": 79,
+      "initial_normalized_loc": 79
+    },
+    "pidigits:pidigits-ghc-3": {
+      "source_sha256": "d6ed647dc1582d56c2119f2c11ebe45657673fb387479d779af88a66474f94af",
+      "physical_loc": 11,
+      "expansions": [],
+      "normalized_loc": 11,
+      "initial_normalized_loc": 11
+    },
+    "pidigits:pidigits-ghc-4": {
+      "source_sha256": "766258ab1ae8b5b8a8900d158cb336535b3c7747553f03e3de34f1c75bf16636",
+      "physical_loc": 14,
+      "expansions": [
+        {
+          "line": 16,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "where k = i+10; j = min n k"
+        },
+        {
+          "line": 21,
+          "extra_lines": 3,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "where k = j+1; t@(n,a,d)=k&s; q=3$s; r=4$s"
+        }
+      ],
+      "normalized_loc": 18,
+      "initial_normalized_loc": 18
+    },
+    "regexredux:regexredux-ghc-3": {
+      "source_sha256": "da838e66bc5b2f9ce67e7b2dc2d290e783dae31c685496bc53d27786e99a4c56",
+      "physical_loc": 199,
+      "expansions": [],
+      "normalized_loc": 199,
+      "initial_normalized_loc": 199
+    },
+    "revcomp:revcomp-ghc-2": {
+      "source_sha256": "93bbf18cd15ca30373ad85318b7617393ac5578d8cd8050940a5caa2805972ce",
+      "physical_loc": 59,
+      "expansions": [],
+      "normalized_loc": 59,
+      "initial_normalized_loc": 59
+    },
+    "revcomp:revcomp-ghc-4": {
+      "source_sha256": "c8246fbb8e0402c232527c548dd50a294f810860deaa93f8417367f574fdba16",
+      "physical_loc": 69,
+      "expansions": [],
+      "normalized_loc": 69,
+      "initial_normalized_loc": 69
+    },
+    "spectralnorm:spectralnorm-ghc-2": {
+      "source_sha256": "2a62d198bcd1d5723c8d7385050f7812296c29191d525d6185cac7d97b269667",
+      "physical_loc": 22,
+      "expansions": [],
+      "normalized_loc": 22,
+      "initial_normalized_loc": 22
+    },
+    "spectralnorm:spectralnorm-ghc-4": {
+      "source_sha256": "b7d624f2f446811e4f1ff6d545fd6861929d452b46dc9d5353ceff294cf5cae9",
+      "physical_loc": 74,
+      "expansions": [],
+      "normalized_loc": 74,
+      "initial_normalized_loc": 74
+    },
+    "fannkuchredux:fannkuchredux-ocaml-1": {
+      "source_sha256": "300fe21fdf0b5d82e5c3180ebfc2e0da03f8ab3e7698cab18ad20cf4a90a69e3",
+      "physical_loc": 49,
+      "expansions": [
+        {
+          "line": 13,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and maxflips = ref 0"
+        },
+        {
+          "line": 14,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and checksum = ref 0"
+        },
+        {
+          "line": 15,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and nperm = ref 0"
+        },
+        {
+          "line": 16,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and r = ref n in"
+        },
+        {
+          "line": 21,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "while !r != 1 do count.(!r-1) <- !r; r := !r - 1; done;"
+        },
+        {
+          "line": 43,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "if !r == n then begin go := false; r := 0; end"
+        }
+      ],
+      "normalized_loc": 55,
+      "initial_normalized_loc": 55
+    },
+    "fannkuchredux:fannkuchredux-ocaml-2": {
+      "source_sha256": "aa727c32bc49458f7dc4c4d486a9754f5378b8776255e57d2a5dd9f36fbd6f27",
+      "physical_loc": 45,
+      "expansions": [
+        {
+          "line": 55,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let csum = ref 0 and m = ref 0 in"
+        }
+      ],
+      "normalized_loc": 46,
+      "initial_normalized_loc": 46
+    },
+    "fasta:fasta-ocaml-3": {
+      "source_sha256": "78fc3ab6e8b24d5b3d5a306bb437577e7b38b39ac143a8cab44c1ab638caa80f",
+      "physical_loc": 67,
+      "expansions": [
+        {
+          "line": 11,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and ia = 3877"
+        },
+        {
+          "line": 12,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and ic = 29573"
+        },
+        {
+          "line": 14,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let last = ref 42 and im_f = float im"
+        },
+        {
+          "line": 24,
+          "extra_lines": 1,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "let make a = let p = ref 0.0 in"
+        },
+        {
+          "line": 32,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let i = ref 0 and ps = t.probs in"
+        },
+        {
+          "line": 60,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "if w <= len then (output_substring stdout s i0 w; print_char '\\n'; i0 + w)"
+        },
+        {
+          "line": 61,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "else (output_substring stdout s i0 len; write s 0 l (w - len))"
+        },
+        {
+          "line": 66,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and i0 = ref 0 in"
+        }
+      ],
+      "normalized_loc": 76,
+      "initial_normalized_loc": 75
+    },
+    "mandelbrot:mandelbrot-ocaml-6": {
+      "source_sha256": "eeae7cf662bfa209b41485feb73b78ca41501b655f877286d522f23011122cfc",
+      "physical_loc": 35,
+      "expansions": [
+        {
+          "line": 20,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let fw = float w /. 2. and fh = float h /. 2. in"
+        },
+        {
+          "line": 22,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let red_h = h - 1 and red_w = w - 1 and byte = ref 0 in"
+        },
+        {
+          "line": 27,
+          "extra_lines": 4,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and zr = ref 0. and zi = ref 0. and trmti = ref 0. and n = ref 0 in"
+        },
+        {
+          "line": 32,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let tr = !zr *. !zr and ti = !zi *. !zi in"
+        },
+        {
+          "line": 36,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "end else if incr n; !n = niter then begin"
+        }
+      ],
+      "normalized_loc": 44,
+      "initial_normalized_loc": 44
+    },
+    "mandelbrot:mandelbrot-ocaml-1": {
+      "source_sha256": "1f3dffadc19679be4b6d2d306d17b733f602a8856c1f953a49352ff9690c6f92",
+      "physical_loc": 65,
+      "expansions": [
+        {
+          "line": 23,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and ptr = ref 0 in"
+        },
+        {
+          "line": 26,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let red_w = w - 1 and red_h_hi = h_hi - 1 and byte = ref 0 in"
+        },
+        {
+          "line": 31,
+          "extra_lines": 4,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and zr = ref 0. and zi = ref 0. and trmti = ref 0. and n = ref 0 in"
+        },
+        {
+          "line": 36,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let tr = !zr *. !zr and ti = !zi *. !zi in"
+        },
+        {
+          "line": 40,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "end else if incr n; !n = niter then begin"
+        },
+        {
+          "line": 65,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let rows = w / workers and rem = w mod workers in"
+        }
+      ],
+      "normalized_loc": 75,
+      "initial_normalized_loc": 75
+    },
+    "nbody:nbody-ocaml-1": {
+      "source_sha256": "c01e053c04764ed4861fd5839ff7e6bed2472589803e45579e6fbf797e36f3b8",
+      "physical_loc": 89,
+      "expansions": [
+        {
+          "line": 22,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let dx = b.x -. b'.x  and dy = b.y -. b'.y  and dz = b.z -. b'.z in"
+        },
+        {
+          "line": 50,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let dx = b.x -. b'.x  and dy = b.y -. b'.y  and dz = b.z -. b'.z in"
+        },
+        {
+          "line": 59,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let px = ref 0. and py = ref 0. and pz = ref 0. in"
+        }
+      ],
+      "normalized_loc": 95,
+      "initial_normalized_loc": 95
+    },
+    "pidigits:pidigits-ocaml-5": {
+      "source_sha256": "98109e6b36285d941dd7d8adbdb2dae6a6d752ea9cd40fa02372810b6b721cc4",
+      "physical_loc": 32,
+      "expansions": [],
+      "normalized_loc": 32,
+      "initial_normalized_loc": 32
+    },
+    "pidigits:pidigits-ocaml-7": {
+      "source_sha256": "7e4d3ef208238b07a6dd68ef4c24bd35aa2fd1d2e4904bb4c3d343782204a404",
+      "physical_loc": 47,
+      "expansions": [
+        {
+          "line": 40,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "then (eliminate_digit z d; Some d)"
+        }
+      ],
+      "normalized_loc": 48,
+      "initial_normalized_loc": 48
+    },
+    "regexredux:regexredux-ocaml-2": {
+      "source_sha256": "a8ccf6249871c86477a2b77cd4911e569131e075117b98397656c864cb36eb71",
+      "physical_loc": 38,
+      "expansions": [],
+      "normalized_loc": 38,
+      "initial_normalized_loc": 38
+    },
+    "regexredux:regexredux-ocaml-3": {
+      "source_sha256": "b85b674dc3efbc06802741ce06991728274a6339af7f65c9f2882421be869cbe",
+      "physical_loc": 42,
+      "expansions": [],
+      "normalized_loc": 42,
+      "initial_normalized_loc": 42
+    },
+    "revcomp:revcomp-ocaml-1": {
+      "source_sha256": "7c29fac0d938ae02fdf26308dbf9e070eb8d465ae8694a3a0dedd42a6c219d23",
+      "physical_loc": 143,
+      "expansions": [
+        {
+          "line": 9,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and lines_per_worker ="
+        },
+        {
+          "line": 20,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let set_case (i, c) = set (i, c); set (Char.uppercase_ascii i, c) in"
+        },
+        {
+          "line": 21,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let set_bidirect (i, c) = set_case (i, c); set_case (c, i) in"
+        },
+        {
+          "line": 36,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let put_ack = put out_ack and get_ack = get in_ack"
+        },
+        {
+          "line": 37,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and put_end_ack = put out_end and get_end_ack = get in_end in"
+        },
+        {
+          "line": 43,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and buf = Bytes.create (lines_per_worker * chars_per_line + 2)"
+        },
+        {
+          "line": 44,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and len = ref (String.length beg) in"
+        },
+        {
+          "line": 50,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let ri = red_len - i and tmp = Bytes.get buf i in"
+        },
+        {
+          "line": 55,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let len = !len and dne = ref 0 in"
+        }
+      ],
+      "normalized_loc": 153,
+      "initial_normalized_loc": 153
+    },
+    "revcomp:revcomp-ocaml-3": {
+      "source_sha256": "68cb10475bf6d62957f6922e1e4294adf23d9be4186f88299afb32d4430ce9f9",
+      "physical_loc": 143,
+      "expansions": [
+        {
+          "line": 9,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and lines_per_worker ="
+        },
+        {
+          "line": 37,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let put_ack = put out_ack and get_ack = get in_ack"
+        },
+        {
+          "line": 38,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and put_end_ack = put out_end and get_end_ack = get in_end in"
+        },
+        {
+          "line": 44,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and buf = Bytes.create (lines_per_worker * chars_per_line + 2)"
+        },
+        {
+          "line": 45,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and len = ref (Bytes.length beg) in"
+        },
+        {
+          "line": 51,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let ri = red_len - i and tmp = Bytes.get buf i in"
+        },
+        {
+          "line": 56,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let len = !len and dne = ref 0 in"
+        }
+      ],
+      "normalized_loc": 151,
+      "initial_normalized_loc": 151
+    },
+    "revcomp:revcomp-ocaml-2": {
+      "source_sha256": "349eb1136bdf1f53049bc4108fad2d44e26af2fa8d29d7aa8c7c06cb70b88205",
+      "physical_loc": 21,
+      "expansions": [
+        {
+          "line": 9,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "String.blit \"TVGHEFCDIJMLKNOPQYSAABWXRZ\" 0 t 65 26; Bytes.blit t 65 t 97 26;"
+        },
+        {
+          "line": 19,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "if !bi<60 then bi:=!bi+1 else ( print_bytes b; bi:=1 )"
+        }
+      ],
+      "normalized_loc": 23,
+      "initial_normalized_loc": 23
+    },
+    "spectralnorm:spectralnorm-ocaml-2": {
+      "source_sha256": "5d797e98c096ee3ef410f293fa8f56beab835f62c029380104c9645b2e36bcd7",
+      "physical_loc": 30,
+      "expansions": [
+        {
+          "line": 29,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "eval_A_times_u u w; eval_At_times_u w v"
+        },
+        {
+          "line": 34,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let u = Array.make n 1.0  and  v = Array.make n 0.0 in"
+        },
+        {
+          "line": 36,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "eval_AtA_times_u u v; eval_AtA_times_u v u"
+        },
+        {
+          "line": 39,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let vv = ref 0.0  and  vBv = ref 0.0 in"
+        }
+      ],
+      "normalized_loc": 34,
+      "initial_normalized_loc": 34
+    },
+    "binarytrees:binarytrees-ghc-5-faithful": {
+      "source_sha256": "1e6341d6251c4b21418fe1b798f319f6355683d7d3a58867bfd9ad052d339d3e",
+      "physical_loc": 39,
+      "expansions": [],
+      "normalized_loc": 39,
+      "initial_normalized_loc": 39
+    },
+    "binarytrees:binarytrees-ghc-3-faithful": {
+      "source_sha256": "8d7c4d52edcd0dce558e01ab95572cced1d675bfd9abd78b3e57f9d8d2322cfa",
+      "physical_loc": 37,
+      "expansions": [],
+      "normalized_loc": 37,
+      "initial_normalized_loc": 37
+    },
+    "binarytrees:binarytrees-ghc-7-faithful": {
+      "source_sha256": "12da07031a477c5d9f2a0d435b47a40534c4644ea9d8123f7c7ad3f99b3be057",
+      "physical_loc": 79,
+      "expansions": [],
+      "normalized_loc": 79,
+      "initial_normalized_loc": 79
+    },
+    "binarytrees:binarytrees-ghc-1-faithful": {
+      "source_sha256": "980fe0e71100f472e8d1083fd16c46b383cbe59c808309a723f9de2b91e3d218",
+      "physical_loc": 36,
+      "expansions": [],
+      "normalized_loc": 36,
+      "initial_normalized_loc": 36
+    },
+    "binarytrees:binarytrees-ghc-2-faithful": {
+      "source_sha256": "2b6e73c30164d23962144ce67025d4683c86b1d3fe34d54ed676412616bfa3ad",
+      "physical_loc": 37,
+      "expansions": [],
+      "normalized_loc": 37,
+      "initial_normalized_loc": 37
+    },
+    "binarytrees:binarytrees-ghc-6-faithful": {
+      "source_sha256": "106b89d1b2cd0886e283313b5d621d662733f08cb135ad18fe718f7381930cc2",
+      "physical_loc": 41,
+      "expansions": [],
+      "normalized_loc": 41,
+      "initial_normalized_loc": 41
+    },
+    "binarytrees:binarytrees-ghc-4-faithful": {
+      "source_sha256": "ab8abb7fd39555fd6969eb2ced2ecd9715bf0713906a693d16a82fa4da689d16",
+      "physical_loc": 80,
+      "expansions": [],
+      "normalized_loc": 80,
+      "initial_normalized_loc": 80
+    },
+    "fasta:fasta-ghc-2-faithful": {
+      "source_sha256": "6273c921810c7da24449df69520ea3494c136e1635e3c38e89fadba0d4d762f8",
+      "physical_loc": 80,
+      "expansions": [],
+      "normalized_loc": 80,
+      "initial_normalized_loc": 80
+    },
+    "fasta:fasta-ghc-4-faithful": {
+      "source_sha256": "002e6bd290e0b75a04d3f4ec8cd4d8a746efe835d25a7439a4daa42a8cbf5efc",
+      "physical_loc": 169,
+      "expansions": [
+        {
+          "line": 176,
+          "extra_lines": 1,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "uncons (prev, ((c,p):xs)) = let p' = p + prev in Just"
+        }
+      ],
+      "normalized_loc": 170,
+      "initial_normalized_loc": 169
+    },
+    "fasta:fasta-ghc-6-faithful": {
+      "source_sha256": "e4a31555230ee7df58d755ab958680a51cc9c966aad0570b83e039e58b9d24bf",
+      "physical_loc": 131,
+      "expansions": [
+        {
+          "line": 77,
+          "extra_lines": 1,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "prng todo n s = let s' = (ia * s + ic) `rem` im in do"
+        }
+      ],
+      "normalized_loc": 132,
+      "initial_normalized_loc": 131
+    },
+    "fasta:fasta-ghc-5-faithful": {
+      "source_sha256": "5959ec8ac108be7f890adea5f8b4f14eda62b6b33a33332577e4cd0ab98e870c",
+      "physical_loc": 164,
+      "expansions": [
+        {
+          "line": 159,
+          "extra_lines": 1,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "uncons (prev, ((c,p):xs)) = let p' = p + prev in Just"
+        }
+      ],
+      "normalized_loc": 165,
+      "initial_normalized_loc": 164
+    },
+    "knucleotide:knucleotide-ghc-3-faithful": {
+      "source_sha256": "43893b362c41f763a8ab71a1bb0442803ac35525edeeb2c1008c01451c224410",
+      "physical_loc": 227,
+      "expansions": [],
+      "normalized_loc": 227,
+      "initial_normalized_loc": 227
+    },
+    "knucleotide:knucleotide-ghc-1-faithful": {
+      "source_sha256": "01f1aabe366056cb3bdfd070ab0b012e666b717a3d6db86c651f6d40d1fc1ac3",
+      "physical_loc": 79,
+      "expansions": [],
+      "normalized_loc": 79,
+      "initial_normalized_loc": 79
+    },
+    "mandelbrot:mandelbrot-ghc-3-faithful": {
+      "source_sha256": "561d590a4ed9e91013b382ef0ed368de32b30961c5a03450de26501e1138dd91",
+      "physical_loc": 216,
+      "expansions": [],
+      "normalized_loc": 216,
+      "initial_normalized_loc": 216
+    },
+    "mandelbrot:mandelbrot-ghc-2-faithful": {
+      "source_sha256": "b5a5a57bf0efbc4c4f6a27efd576b3f6c08cb6984c890cbafaa49f8db45b57a7",
+      "physical_loc": 48,
+      "expansions": [],
+      "normalized_loc": 48,
+      "initial_normalized_loc": 48
+    },
+    "binarytrees:binarytrees-ocaml-2-faithful": {
+      "source_sha256": "7203519c6d4ef21aff37b7685377028678599325693ae0603eb5ab0d24b357ef",
+      "physical_loc": 50,
+      "expansions": [
+        {
+          "line": 19,
+          "extra_lines": 1,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "let max_depth = (let n = try int_of_string(Array.get Sys.argv 1) with _ -> 10 in"
+        },
+        {
+          "line": 32,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let niter = 1 lsl (max_depth - d + min_depth) and c = ref 0 in"
+        },
+        {
+          "line": 47,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "| -1 -> Unix.close input; Unix.close output; (let v = f x in fun () -> v)"
+        }
+      ],
+      "normalized_loc": 54,
+      "initial_normalized_loc": 53
+    },
+    "binarytrees:binarytrees-ocaml-5-faithful": {
+      "source_sha256": "44879d76861173902de2b75eb9f857ef537ff0804294c755db853ea10e507622",
+      "physical_loc": 26,
+      "expansions": [
+        {
+          "line": 19,
+          "extra_lines": 1,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "let max_depth = (let n = try int_of_string(Array.get Sys.argv 1) with _ -> 10 in"
+        }
+      ],
+      "normalized_loc": 27,
+      "initial_normalized_loc": 26
+    },
+    "fannkuchredux:fannkuchredux-ocaml-3-faithful": {
+      "source_sha256": "472b0dc26eb5c625a605ca0fb2004ffc305cfefd3d2426b9192a3803e17ea682",
+      "physical_loc": 104,
+      "expansions": [
+        {
+          "line": 29,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and idx = ref idx in"
+        },
+        {
+          "line": 46,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "while let aug_c = c.(!i) + 1 in c.(!i) <- aug_c; aug_c > !i do"
+        },
+        {
+          "line": 60,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let f = ref p.(0) and res = ref (if p.(0) = 0 then 0 else 1) in"
+        },
+        {
+          "line": 67,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let lo = ref 1 and hi = ref (!f - 1) in"
+        },
+        {
+          "line": 89,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and rem = Perm.facts.(n) mod workers in"
+        },
+        {
+          "line": 96,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let c = ref 0 and m = ref 0 in"
+        },
+        {
+          "line": 105,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and lo = int_of_string lo and hi = int_of_string hi in"
+        },
+        {
+          "line": 107,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and c = ref 0 and m = ref 0"
+        },
+        {
+          "line": 108,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and red_hi = hi - 1 in"
+        }
+      ],
+      "normalized_loc": 115,
+      "initial_normalized_loc": 115
+    },
+    "fannkuchredux:fannkuchredux-ocaml-4-faithful": {
+      "source_sha256": "939492655db542696b88812d97a487a03f14ff38b4878814165fad4f00b5a0f5",
+      "physical_loc": 106,
+      "expansions": [
+        {
+          "line": 29,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and idx = ref idx in"
+        },
+        {
+          "line": 46,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "while let aug_c = c.(!i) + 1 in c.(!i) <- aug_c; aug_c > !i do"
+        },
+        {
+          "line": 60,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let f = ref p.(0) and res = ref (if p.(0) = 0 then 0 else 1) in"
+        },
+        {
+          "line": 67,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let lo = ref 1 and hi = ref (!f - 1) in"
+        },
+        {
+          "line": 87,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and rem = Perm.facts.(n) mod workers in"
+        },
+        {
+          "line": 89,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and red_workers = workers - 1 in"
+        },
+        {
+          "line": 97,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and c = ref 0 and m = ref 0"
+        },
+        {
+          "line": 98,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and red_hi = hi - 1 in"
+        },
+        {
+          "line": 114,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "let c = ref 0 and m = ref 0 in"
+        }
+      ],
+      "normalized_loc": 116,
+      "initial_normalized_loc": 116
+    },
+    "fasta:fasta-ocaml-6-faithful": {
+      "source_sha256": "c76ab55e6ea3891e2f5172d69534b01d8a774c8696b9faec4d49f28426ee3069",
+      "physical_loc": 95,
+      "expansions": [
+        {
+          "line": 38,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "print_char '>'; print_string id;"
+        },
+        {
+          "line": 39,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "print_char ' '; print_string desc;"
+        },
+        {
+          "line": 79,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "if w <= len then (output stdout s i0 w; print_char '\\n'; i0 + w)"
+        },
+        {
+          "line": 80,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "else (output stdout s i0 len; write s 0 l (w - len))"
+        },
+        {
+          "line": 89,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "and i0 = ref 0 in"
+        }
+      ],
+      "normalized_loc": 101,
+      "initial_normalized_loc": 101
+    },
+    "knucleotide:knucleotide-ocaml-1-faithful": {
+      "source_sha256": "ee70f98889ee566d947a39eadb4f6237f6404d570122963080deb3a6e76deacb",
+      "physical_loc": 52,
+      "expansions": [
+        {
+          "line": 69,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "(Buffer.add_string buf (String.uppercase_ascii line); raise Exit)"
+        }
+      ],
+      "normalized_loc": 53,
+      "initial_normalized_loc": 53
+    },
+    "knucleotide:knucleotide-ocaml-2-faithful": {
+      "source_sha256": "fe4f18881224133a36e9c9cac505d5a3809a5ec1aa33f5186d06def85c2b1a51",
+      "physical_loc": 87,
+      "expansions": [
+        {
+          "line": 70,
+          "extra_lines": 1,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "(Buffer.add_string buf (String.uppercase_ascii line); raise Exit)"
+        },
+        {
+          "line": 83,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "| -1 -> Unix.close input; Unix.close output; (let v = f x in fun () -> v)"
+        },
+        {
+          "line": 104,
+          "extra_lines": 2,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "let module M = C(struct let k = i let dna = dna_three end) in"
+        },
+        {
+          "line": 108,
+          "extra_lines": 2,
+          "reason": "Additional nested or adjacent let bindings on the same source line count separately.",
+          "source": "let module M = C(struct let k = String.length k let dna = dna_three end) in"
+        }
+      ],
+      "normalized_loc": 94,
+      "initial_normalized_loc": 90
+    },
+    "knucleotide:knucleotide-ocaml-3-faithful": {
+      "source_sha256": "a5f07bb79caebfae884171c6ebe34d4f958f6bf6013c78b37d3c29cd512b9c4e",
+      "physical_loc": 191,
+      "expansions": [
+        {
+          "line": 202,
+          "extra_lines": 2,
+          "reason": "Packed independent statements or bindings; structural collection/record separators excluded.",
+          "source": "| -1 -> Unix.close input; Unix.close output; (let v = f x in fun () -> v)"
+        }
+      ],
+      "normalized_loc": 193,
+      "initial_normalized_loc": 193
+    }
+  },
+  "policy": "Physical nonblank/noncomment lines, semantic pragmas included, plus independently packed sequencing statements, bindings, nested let bindings and adjacent module declarations. Structural collection separators and strings/comments are excluded. Source and timing hashes remain unchanged."
+}

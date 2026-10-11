@@ -1,0 +1,26 @@
+[
+  {
+    "name": "cl-ppcre",
+    "local_path": "benchmarks/clbg/lisp-racket-comparison/20261010/support/cl-ppcre",
+    "repository": "https://github.com/edicl/cl-ppcre.git",
+    "commit": "a2ea581c23fdc184168423adbd4b4c1f48d42743",
+    "worktree_clean": true,
+    "retention": "Installed clean dependency checkout excluded; restore by cloning and checking out this exact commit."
+  },
+  {
+    "name": "lbn",
+    "local_path": "benchmarks/clbg/pidigits/.build/lbn",
+    "repository": "https://github.com/LuaDist/lbn.git",
+    "commit": "338fc3ac0e3708f0fb8db541729b87b844aef7d0",
+    "worktree_clean": true,
+    "retention": "Installed clean dependency checkout excluded; restore by cloning and checking out this exact commit."
+  },
+  {
+    "name": "lrexlib",
+    "local_path": "benchmarks/clbg/regexredux/.build/lrexlib",
+    "repository": "https://github.com/rrthomas/lrexlib.git",
+    "commit": "037e40b36bf5e594225f956b95aa3c05da3b6a3a",
+    "worktree_clean": true,
+    "retention": "Installed clean dependency checkout excluded; restore by cloning and checking out this exact commit."
+  }
+]

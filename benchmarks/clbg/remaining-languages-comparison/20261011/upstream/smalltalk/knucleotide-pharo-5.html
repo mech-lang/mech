@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Pharo Smalltalk&nbsp;#5 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Pharo Smalltalk&nbsp;#5 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">&quot;* The Computer Language Benchmarks Game</span>
+<span class="com">    https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com">    contributed by Andres Valloud</span>
+<span class="com">    modified by Isaac Gouy for Pharo *&quot;</span><span class="opt">!</span>
+
+<span class="kwc">Object</span> <span class="kwb">subclass:</span> <span class="kwd">#BenchmarksGame</span>
+   <span class="kwb">instanceVariableNames:</span> <span class="sng">&#39;&#39;</span>
+   <span class="kwb">classVariableNames:</span> <span class="sng">&#39;&#39;</span>
+   <span class="kwb">poolDictionaries:</span> <span class="sng">&#39;&#39;</span>
+   <span class="kwb">category:</span> <span class="sng">&#39;benchmarks game&#39;</span><span class="opt">!</span>
+
+<span class="opt">!</span><span class="kwc">SequenceableCollection</span> <span class="kwb">methodsFor:</span> <span class="sng">&#39;benchmarks game&#39;</span><span class="opt">!</span>
+
+<span class="kwb">substringFrequencies:</span> aLength <span class="kwb">using:</span> aDictionary
+   <span class="kwd">| buffer |</span>
+   buffer <span class="opt">:</span><span class="kwb">=</span> <span class="kwc">String</span> <span class="kwb">new:</span> aLength<span class="opt">.</span>
+   <span class="num">1</span> <span class="kwb">to:</span> <span class="kwa">self</span> size <span class="kwb">-</span> aLength <span class="kwb">+</span> <span class="num">1</span> <span class="kwb">do:</span>
+      <span class="opt">[</span><span class="kwd">:i</span> |
+         <span class="kwd">| answer |</span>
+         buffer <span class="kwb">replaceFrom:</span> <span class="num">1</span> <span class="kwb">to:</span> aLength <span class="kwb">with:</span> <span class="kwa">self</span> <span class="kwb">startingAt:</span> i<span class="opt">.</span>
+         answer <span class="opt">:</span><span class="kwb">=</span> aDictionary
+            <span class="kwb">at:</span> buffer
+            <span class="kwb">putValueOf:</span> <span class="opt">[</span><span class="kwd">:sum</span> | sum <span class="kwb">+</span> <span class="num">1</span><span class="opt">]</span>
+            <span class="kwb">ifAbsentPutValueOf:</span> <span class="num">1</span><span class="opt">.</span>
+         answer <span class="kwb">=</span> <span class="num">1</span> <span class="kwb">ifTrue:</span> <span class="opt">[</span>buffer <span class="opt">:</span><span class="kwb">=</span> <span class="kwc">String</span> <span class="kwb">new:</span> aLength<span class="opt">].</span>
+      <span class="opt">].</span>
+   <span class="opt">^</span>aDictionary<span class="opt">! !</span>
+
+<span class="opt">!</span><span class="kwc">Dictionary</span> <span class="kwb">methodsFor:</span> <span class="sng">&#39;benchmarks game&#39;</span><span class="opt">!</span>
+
+<span class="kwb">at:</span> key <span class="kwb">putValueOf:</span> putBlock <span class="kwb">ifAbsentPutValueOf:</span> absentBlock
+   <span class="com">&quot;* Set the value at key to be the value of evaluating putBlock</span>
+<span class="com">    with the existing value. If key is not found, create a new</span>
+<span class="com">    entry for key and set is value to the evaluation of</span>
+<span class="com">    absentBlock. Answer the result of evaluating either block. *&quot;</span>
+
+   <span class="kwd">| index element anObject |</span>
+   key <span class="kwb">==</span> <span class="kwa">nil</span> <span class="kwb">ifTrue:</span>
+      <span class="opt">[^</span><span class="kwa">self</span>
+         <span class="kwb">subscriptBoundsErrorFor:</span> <span class="kwd">#at:putValueOf:ifAbsentPutValueOf:</span>
+         <span class="kwb">index:</span> key
+         <span class="kwb">value:</span> absentBlock value<span class="opt">].</span>
+   index <span class="opt">:</span><span class="kwb">=</span> <span class="kwa">self</span> <span class="kwb">findElementOrNil:</span> key<span class="opt">.</span>
+   element <span class="opt">:</span><span class="kwb">=</span> <span class="kwa">self</span> <span class="kwb">basicAt:</span> index<span class="opt">.</span>
+   element <span class="kwb">==</span> <span class="kwa">nil</span>
+      <span class="kwb">ifTrue:</span> <span class="opt">[</span><span class="kwa">self</span> <span class="kwb">atNewIndex:</span> index <span class="kwb">put:</span>
+         <span class="opt">(</span><span class="kwa">self</span> <span class="kwb">createKey:</span> key <span class="kwb">value:</span> <span class="opt">(</span>anObject <span class="opt">:</span><span class="kwb">=</span> absentBlock value<span class="opt">))]</span>
+      <span class="kwb">ifFalse:</span> <span class="opt">[</span>element <span class="kwb">value:</span> <span class="opt">(</span>anObject <span class="opt">:</span><span class="kwb">=</span> putBlock <span class="kwb">value:</span> element value<span class="opt">)].</span>
+   <span class="opt">^</span>anObject<span class="opt">! !</span>
+
+<span class="opt">!</span><span class="kwc">BenchmarksGame</span> class <span class="kwb">methodsFor:</span> <span class="sng">&#39;private&#39;</span><span class="opt">!</span>
+
+<span class="kwb">readFasta:</span> sequenceName <span class="kwb">from:</span> input
+   <span class="kwd">| sc gt lf prefix description buffer byte line |</span>
+   sc <span class="opt">:</span><span class="kwb">=</span> <span class="opt">$;</span> asciiValue<span class="opt">.</span>
+   gt <span class="opt">:</span><span class="kwb">=</span> <span class="num">$&gt;</span> asciiValue<span class="opt">.</span>
+   lf <span class="opt">:</span><span class="kwb">=</span> <span class="kwc">Character</span> lf asciiValue<span class="opt">.</span>
+   prefix <span class="opt">:</span><span class="kwb">=</span> <span class="sng">&#39;&gt;&#39;</span>,sequenceName<span class="opt">.</span>
+
+   <span class="com">&quot;* find start of particular fasta sequence *&quot;</span>
+   <span class="opt">[(</span>input atEnd<span class="opt">)</span> <span class="kwb">or:</span> <span class="opt">[</span>
+         <span class="opt">(</span>input peek <span class="kwb">=</span> gt<span class="opt">)</span>
+            <span class="kwb">ifTrue:</span> <span class="opt">[((</span>line <span class="opt">:</span><span class="kwb">=</span> <span class="opt">(</span>input <span class="kwb">upTo:</span> lf<span class="opt">)</span> asString<span class="opt">)</span>
+               <span class="kwb">findString:</span> prefix<span class="opt">)</span> <span class="kwb">=</span> <span class="num">1</span><span class="opt">]</span>
+            <span class="kwb">ifFalse:</span> <span class="opt">[</span>input <span class="kwb">skipTo:</span> lf<span class="opt">.</span> <span class="kwa">false</span><span class="opt">].</span>
+          <span class="opt">]</span>
+   <span class="opt">]</span> whileFalse<span class="opt">.</span>
+
+   <span class="com">&quot;* line-by-line read - it would be a lot faster to block read *&quot;</span>
+   description <span class="opt">:</span><span class="kwb">=</span> line<span class="opt">.</span>
+   buffer <span class="opt">:</span><span class="kwb">=</span> <span class="kwc">ReadWriteStream</span> <span class="kwb">on:</span> <span class="opt">(</span><span class="kwc">String</span> <span class="kwb">new:</span> <span class="num">1028</span><span class="opt">).</span>
+   <span class="opt">[(</span>input atEnd<span class="opt">)</span> <span class="kwb">or:</span> <span class="opt">[(</span>byte <span class="opt">:</span><span class="kwb">=</span> input peek<span class="opt">)</span> <span class="kwb">=</span> gt<span class="opt">]]</span> <span class="kwb">whileFalse:</span> <span class="opt">[</span>
+      <span class="opt">(</span>byte <span class="kwb">=</span> sc<span class="opt">)</span>
+         <span class="kwb">ifTrue:</span> <span class="opt">[</span>input <span class="kwb">upTo:</span> lf<span class="opt">]</span>
+         <span class="kwb">ifFalse:</span> <span class="opt">[</span>buffer <span class="kwb">nextPutAll:</span> <span class="opt">(</span>input <span class="kwb">upTo:</span> lf<span class="opt">)</span> asString<span class="opt">]</span>
+      <span class="opt">].</span>
+   <span class="opt">^</span><span class="kwc">Association</span> <span class="kwb">key:</span> description <span class="kwb">value:</span> buffer contents <span class="opt">!</span>
+
+<span class="kwb">knucleotideFrom:</span> input <span class="kwb">to:</span> output
+   <span class="com">&quot;Same as av3, but create less strings while updating the frequencies&quot;</span>
+
+   <span class="kwd">| sequence writeFrequencies writeCount |</span>
+
+   sequence <span class="opt">:</span><span class="kwb">=</span> <span class="opt">(</span><span class="kwa">self</span> <span class="kwb">readFasta:</span> <span class="sng">&#39;THREE&#39;</span> <span class="kwb">from:</span> input<span class="opt">)</span> value asUppercase<span class="opt">.</span>
+
+   writeFrequencies <span class="opt">:</span><span class="kwb">=</span>
+      <span class="opt">[</span><span class="kwd">:k</span> | <span class="kwd">| frequencies count |</span>
+      frequencies <span class="opt">:</span><span class="kwb">=</span> <span class="kwc">SortedCollection</span> <span class="kwb">sortBlock:</span> <span class="opt">[</span><span class="kwd">:a :b</span>|
+      <span class="opt">(</span>a value <span class="kwb">=</span> b value<span class="opt">)</span> <span class="kwb">ifTrue:</span> <span class="opt">[</span>b key &lt; a key<span class="opt">]</span> <span class="kwb">ifFalse:</span> <span class="opt">[</span>b value &lt; a value<span class="opt">]].</span>
+
+   count <span class="opt">:</span><span class="kwb">=</span> <span class="num">0.0</span><span class="opt">.</span>
+   <span class="opt">(</span>sequence <span class="kwb">substringFrequencies:</span> k <span class="kwb">using:</span> <span class="opt">(</span><span class="kwc">Dictionary</span> <span class="kwb">new:</span> <span class="num">1024</span><span class="opt">))</span>
+      <span class="kwb">associationsDo:</span> <span class="opt">[</span><span class="kwd">:each</span>|
+         frequencies <span class="kwb">add:</span> each<span class="opt">.</span> count <span class="opt">:</span><span class="kwb">=</span> count <span class="kwb">+</span> each value<span class="opt">].</span>
+
+   frequencies <span class="kwb">do:</span> <span class="opt">[</span><span class="kwd">:each</span> | <span class="kwd">| percentage |</span>
+      percentage <span class="opt">:</span><span class="kwb">=</span> <span class="opt">(</span>each value <span class="kwb">/</span> count<span class="opt">)</span> <span class="kwb">*</span> <span class="num">100.0</span><span class="opt">.</span>
+      output
+         <span class="kwb">nextPutAll:</span> each key<span class="opt">;</span> space<span class="opt">;</span>
+         <span class="kwb">print:</span> percentage <span class="kwb">digits:</span> <span class="num">3</span><span class="opt">;</span> nl<span class="opt">]].</span>
+
+   writeCount <span class="opt">:</span><span class="kwb">=</span> <span class="opt">[</span><span class="kwd">:nucleotideFragment</span> | <span class="kwd">| frequencies count |</span>
+      frequencies <span class="opt">:</span><span class="kwb">=</span> sequence <span class="kwb">substringFrequencies:</span> nucleotideFragment size
+         <span class="kwb">using:</span> <span class="opt">(</span><span class="kwc">Dictionary</span> <span class="kwb">new:</span> <span class="num">1024</span><span class="opt">).</span>
+      count <span class="opt">:</span><span class="kwb">=</span> frequencies <span class="kwb">at:</span> nucleotideFragment <span class="kwb">ifAbsent:</span> <span class="opt">[</span><span class="num">0</span><span class="opt">].</span>
+      output <span class="kwb">print:</span> count<span class="opt">;</span> tab<span class="opt">;</span> <span class="kwb">nextPutAll:</span> nucleotideFragment<span class="opt">;</span> nl<span class="opt">].</span>
+
+   writeFrequencies <span class="kwb">value:</span> <span class="num">1</span><span class="opt">.</span> output nl<span class="opt">.</span>
+   writeFrequencies <span class="kwb">value:</span> <span class="num">2</span><span class="opt">.</span> output nl<span class="opt">.</span>
+
+   writeCount <span class="kwb">value:</span> <span class="sng">&#39;GGT&#39;</span><span class="opt">.</span>
+   writeCount <span class="kwb">value:</span> <span class="sng">&#39;GGTA&#39;</span><span class="opt">.</span>
+   writeCount <span class="kwb">value:</span> <span class="sng">&#39;GGTATT&#39;</span><span class="opt">.</span>
+   writeCount <span class="kwb">value:</span> <span class="sng">&#39;GGTATTTTAATT&#39;</span><span class="opt">.</span>
+   writeCount <span class="kwb">value:</span> <span class="sng">&#39;GGTATTTTAATTTATAGT&#39;</span><span class="opt">.! !</span>
+
+
+<span class="opt">!</span><span class="kwc">BenchmarksGame</span> class <span class="kwb">methodsFor:</span> <span class="sng">&#39;initialize-release&#39;</span><span class="opt">!</span>
+
+<span class="kwb">do:</span> n
+   <span class="kwa">self</span> <span class="kwb">knucleotideFrom:</span> <span class="kwc">Stdio</span> stdin <span class="kwb">to:</span> <span class="kwc">Stdio</span> stdout<span class="opt">! !</span>
+
+<span class="opt">!</span><span class="kwc">Stream</span> <span class="kwb">methodsFor:</span> <span class="sng">&#39;benchmarks game&#39;</span><span class="opt">!</span>
+
+<span class="kwb">print:</span> number <span class="kwb">digits:</span> decimalPlaces
+   <span class="kwd">| precision rounded |</span>
+   decimalPlaces <span class="kwb">&lt;=</span> <span class="num">0</span> <span class="kwb">ifTrue:</span> <span class="opt">[^</span> number rounded printString<span class="opt">].</span>
+   precision <span class="opt">:</span><span class="kwb">=</span> <span class="opt">(</span><span class="num">10</span> <span class="kwb">raisedTo:</span> decimalPlaces negated<span class="opt">)</span> asFloat<span class="opt">.</span>
+   rounded <span class="opt">:</span><span class="kwb">=</span> number <span class="kwb">roundTo:</span> precision<span class="opt">.</span>
+   <span class="kwa">self</span> <span class="kwb">nextPutAll:</span> 
+      <span class="opt">((</span>rounded <span class="kwb">asScaledDecimal:</span> decimalPlaces<span class="opt">)</span> printString <span class="kwb">copyUpTo:</span> <span class="num">$s</span><span class="opt">)!</span>
+
+<span class="kwb">nl</span>
+   <span class="kwa">self</span> <span class="kwb">nextPut:</span> <span class="kwc">Character</span> lf<span class="opt">! !</span>
+
+
+<span class="opt">!</span><span class="kwc">StdioStream</span> instance <span class="kwb">methodsFor:</span> <span class="sng">&#39;positioning&#39;</span><span class="opt">!</span>
+
+<span class="kwb">skipTo:</span> anObject 
+   <span class="com">&quot;Set the access position of the receiver to be past the next occurrence of </span>
+<span class="com">   anObject. Answer whether anObject is found.&quot;</span>
+
+   <span class="opt">[</span><span class="kwa">self</span> atEnd<span class="opt">]</span>
+      <span class="kwb">whileFalse:</span> <span class="opt">[</span><span class="kwa">self</span> next <span class="kwb">=</span> anObject <span class="kwb">ifTrue:</span> <span class="opt">[^</span><span class="kwa">true</span><span class="opt">]].</span>
+   <span class="opt">^</span><span class="kwa">false</span><span class="opt">! !</span>
+
+
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Pharo 12.0.0
+Pharo-12.0.0+SNAPSHOT.build.1507.sha.
+a4f8da8972214b9c9c39c33e826394a109911041 (64 Bit)
+
+Compiler: 5.4.0 20160609
+
+
+ Thu, 16 Jan 2025 10:52:33 GMT
+
+MAKE:
+cp /opt/src/pharo-vm-Linux-x86_64-stable/Pharo12.0-SNAPSHOT-64bit-a4f8da8.image knucleotide.pharo-5.pharo_run.image
+cp /opt/src/pharo-vm-Linux-x86_64-stable/Pharo12.0-SNAPSHOT-64bit-a4f8da8.changes knucleotide.pharo-5.pharo_run.changes
+ln -s /opt/src/pharo-vm-Linux-x86_64-stable/Pharo12.0-64bit-a4f8da8.sources .
+cat Include/pharo/make.st
+| prog |
+
+(SystemWindow windowsIn: World
+      satisfying: [:w | w model canDiscardEdits])
+   do: [:w | w delete].
+
+   &quot;load program to be measured&quot;
+prog := Smalltalk getSystemAttribute: 3.
+(prog notNil) ifTrue: [prog asFileReference fileIn].
+
+ImageCleaner cleanUpForRelease.
+Smalltalk garbageCollect.
+SmalltalkImage current snapshot: true andQuit: true.
+/opt/src/pharo-vm-Linux-x86_64-stable/pharo --headless knucleotide.pharo-5.pharo_run.image Include/pharo/make.st knucleotide.pharo-5.pharo
+cat Include/pharo/main.st
+
+BenchmarksGame do: (Smalltalk getSystemAttribute: 3) asInteger.!
+SmalltalkImage current snapshot: false andQuit: true!
+
+
+
+30.02s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/pharo-vm-Linux-x86_64-stable/pharo --headless knucleotide.pharo-5.pharo_run.image Include/pharo/main.st 0 &lt; knucleotide-input25000000.txt
+
+EMPTY 
+
+
+PROGRAM OUTPUT:
+[31mSubscriptOutOfBounds: 745 is not between 1 and 0 in a Dictionary()
+[0mDictionary(Object)&gt;&gt;basicAt:
+Dictionary&gt;&gt;at:putValueOf:ifAbsentPutValueOf:
+ByteString(SequenceableCollection)&gt;&gt;substringFrequencies:using:
+[:k | | frequencies count |
+      frequencies := SortedCollection sortBlock: [:a :b|
+      (a value = b value) ifTrue: [b key &lt; a key] ifFalse: [b value &lt; a value]].
+
+   count := 0.0.
+   (sequence substringFrequencies: k using: (Dictionary new: 1024))
+      associationsDo: [:each|
+         frequencies add: each. count := count + each value].
+
+   frequencies do: [:each | | percentage |
+      percentage := (each value / count) * 100.0.
+      output
+         nextPutAll: each key; space;
+         print: percentage digits: 3; nl]] in BenchmarksGame class&gt;&gt;knucleotideFrom:to: in Block: [:k | | frequencies count |
+      frequencies [..]
+BenchmarksGame class&gt;&gt;knucleotideFrom:to:
+BenchmarksGame class&gt;&gt;do:
+UndefinedObject&gt;&gt;DoIt
+OCReceiverDoItSemanticScope(OCDoItSemanticScope)&gt;&gt;evaluateDoIt:
+OpalCompiler&gt;&gt;evaluate
+DoItChunk&gt;&gt;importFor:logSource:
+[ :declaration |
+		value := declaration importFor: nil logSource: logSource  ] in CodeImporter&gt;&gt;evaluate in Block: [ :declaration |...
+OrderedCollection&gt;&gt;do:
+CodeImporter&gt;&gt;evaluate
+[ codeImporter evaluate ] in STCommandLineHandler&gt;&gt;installSourceFile: in Block: [ codeImporter evaluate ]
+FullBlockClosure(BlockClosure)&gt;&gt;on:do:
+STCommandLineHandler&gt;&gt;handleErrorsDuring:reference:
+STCommandLineHandler&gt;&gt;installSourceFile:
+[ :reference |
+		self installSourceFile: reference ] in [ sourceFiles do: [ :reference |
+		self installSourceFile: reference ]
+	] in STCommandLineHandler&gt;&gt;installSourceFiles in Block: [ :reference |...
+OrderedCollection&gt;&gt;do:
+[ sourceFiles do: [ :reference |
+		self installSourceFile: reference ]
+	] in STCommandLineHandler&gt;&gt;installSourceFiles in Block: [ sourceFiles do: [ :reference |...
+FullBlockClosure(BlockClosure)&gt;&gt;ensure:
+STCommandLineHandler&gt;&gt;installSourceFiles
+STCommandLineHandler&gt;&gt;activate
+STCommandLineHandler class(CommandLineHandler class)&gt;&gt;activateWith:
+[ aCommandLinehandler activateWith: commandLine ] in PharoCommandLineHandler(BasicCommandLineHandler)&gt;&gt;activateSubCommand: in Block: [ aCommandLinehandler activateWith: commandLine ]
+FullBlockClosure(BlockClosure)&gt;&gt;on:do:
+PharoCommandLineHandler(BasicCommandLineHandler)&gt;&gt;activateSubCommand:
+PharoCommandLineHandler(BasicCommandLineHandler)&gt;&gt;handleSubcommand
+PharoCommandLineHandler(BasicCommandLineHandler)&gt;&gt;handleArgument:
+[ self handleArgument: self firstArgument ] in [ [ self handleArgument: self firstArgument ]
+		on: Exit
+		do: [ :exit |
+			&quot;If the command line is protected by password, we just exit the image because in non-headless mode the handleExit will let the image open. If the password protection is enabled, it is to avoid to let the access to the image.&quot;
+			self class commandLinePasswordManager hasPasswordSet
+				ifTrue: [ Smalltalk snapshot: false andQuit: true ].
+			self handleExit: exit ] ] in PharoCommandLineHandler(BasicCommandLineHandler)&gt;&gt;activate in Block: [ self handleArgument: self firstArgument ]
+[0m    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

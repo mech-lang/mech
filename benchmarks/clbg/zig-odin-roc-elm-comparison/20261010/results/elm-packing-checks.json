@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "n": 1,
+      "full_output_match": true,
+      "output_sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a"
+    },
+    {
+      "n": 2,
+      "full_output_match": true,
+      "output_sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a"
+    },
+    {
+      "n": 3,
+      "full_output_match": true,
+      "output_sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3"
+    },
+    {
+      "n": 4,
+      "full_output_match": true,
+      "output_sha256": "890d8d8d321817f27ab4b2d922865a014c08b4f5064b41eb070ad475c72c0553"
+    },
+    {
+      "n": 5,
+      "full_output_match": true,
+      "output_sha256": "e9a8b35247e69dddecaf5a1d4427d747d7690dee1f9366bd0f1a5617ee550578"
+    },
+    {
+      "n": 6,
+      "full_output_match": true,
+      "output_sha256": "8b3142d97484900e73159068876753e0072acee75e85f0187265281d089bb0de"
+    },
+    {
+      "n": 7,
+      "full_output_match": true,
+      "output_sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f"
+    },
+    {
+      "n": 8,
+      "full_output_match": true,
+      "output_sha256": "66af13d659e1cb5687f27dd8a463a9ce871df7faf2c76f122fe80d1f75ffd3ed"
+    },
+    {
+      "n": 9,
+      "full_output_match": true,
+      "output_sha256": "8240a83dc671a1906b1f4ce51a46866362bec862c62128f4429ec1f3e7bf1bb8"
+    }
+  ],
+  "source_sha256": "19d38f478245ebf29b623fae41cce49b325172f44f9700b925c757265ac10801",
+  "binary_sha256": "6bb2e8bc0b44b607ee7a3aeabce0b47a6c47ba0bb583f4db8020fe8e181b7297",
+  "baseline_source_sha256": "6a1f36b2ac6e9bffea518fedb4c73bf82e786181b38a0910b02da0007cb3a523",
+  "baseline_binary_sha256": "e91e71644e960ff2109e0d5e2d6752cd6ab4e35d5f9f0228ee8166dfe294f6bf",
+  "representation": {
+    "radix": 16,
+    "maximum_packed_digits": 13,
+    "maximum_value": 4503599627370495,
+    "largest_exact_integer": 9007199254740991,
+    "division": "floor of division by an exact power of sixteen; no truncating 32-bit integer division",
+    "fallback": "All larger input sizes retain the complete general list/array permutation implementation."
+  }
+}

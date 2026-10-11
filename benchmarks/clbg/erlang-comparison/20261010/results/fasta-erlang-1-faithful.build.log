@@ -1,0 +1,4 @@
+fasta.erl:83:21: Warning: variable 'Freq' is unused
+%   83| choose_base([{_Base,Freq} | Bases], Prob) ->
+%     |                     ^
+

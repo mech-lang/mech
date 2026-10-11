@@ -1,0 +1,2 @@
+n := number/bounded(io/argument-u64(1), 3, 7)
+io/print("{}\n", n)

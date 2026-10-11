@@ -1,0 +1,11 @@
+Warning at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/mandelbrot.fut:3:8-9:
+  Unused name "x".
+
+Warning at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/mandelbrot.fut:3:10-11:
+  Unused name "y".
+
+Warning at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/mandelbrot.fut:3:18-19:
+  Unused name "k".
+
+Warning at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/stdlib/common.fut:5:8-9:
+  Unused name "x".

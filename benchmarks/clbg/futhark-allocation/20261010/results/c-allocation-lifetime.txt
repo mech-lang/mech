@@ -1,0 +1,44 @@
+FUTHARK_FUN_ATTR int futrts_allocate_6798(struct futhark_context *ctx, struct memblock *mem_out_p_7777, int64_t a_7675, int64_t b_7676)
+{
+    (void) ctx;
+    
+    int err = 0;
+    struct memblock mem_7758;
+    
+    mem_7758.references = NULL;
+    
+    struct memblock mem_out_7773;
+    
+    mem_out_7773.references = NULL;
+    if (memblock_alloc(ctx, &mem_7758, (int64_t) 16, "mem_7758")) {
+        err = 1;
+        goto cleanup;
+    }
+    ((int64_t *) mem_7758.mem)[(int64_t) 0] = a_7675;
+    ((int64_t *) mem_7758.mem)[(int64_t) 1] = b_7676;
+    if (memblock_set(ctx, &mem_out_7773, &mem_7758, "mem_7758") != 0)
+        return 1;
+    if (memblock_set(ctx, &*mem_out_p_7777, &mem_out_7773, "mem_out_7773") != 0)
+        return 1;
+    
+  cleanup:
+    {
+        if (memblock_unref(ctx, &mem_7758, "mem_7758") != 0)
+            return 1;
+        if (memblock_unref(ctx, &mem_out_7773, "mem_out_7773") != 0)
+            return 1;
+    }
+    return err;
+}
+
+if (futrts_allocate_6798(ctx, &ext_mem_7766, allocate_arg0_7755, allocate_arg1_7754) != 0) {
+            err = 1;
+            goto cleanup;
+        }
+        // probes/node-noinline.fut:6:8-29
+        // probes/node-noinline.fut:6:8-29
+        lmad_copy_8b(ctx, 1, (uint64_t *) mem_7761.mem, i_7751 * (int64_t) 2, (int64_t []) {(int64_t) 1}, (uint64_t *) ext_mem_7766.mem, (int64_t) 0, (int64_t []) {(int64_t) 1}, (int64_t []) {(int64_t) 2});
+        if (memblock_unref(ctx, &ext_mem_7766, "ext_mem_7766") != 0)
+            return 1;
+    }
+    if (memblock_set(ctx, &me

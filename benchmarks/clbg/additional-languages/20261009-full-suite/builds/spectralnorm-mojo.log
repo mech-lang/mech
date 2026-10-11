@@ -1,0 +1,18 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/spectralnorm.mojo:21:52: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            var values = SIMD[DType.float64, 2](src[j], src[j + 1])
+                                                ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/spectralnorm.mojo:21:60: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            var values = SIMD[DType.float64, 2](src[j], src[j + 1])
+                                                        ~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/spectralnorm.mojo:26:21: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            s += src[j] * (coefficient[1](Int64(j), Int64(i)) if transpose else coefficient[1](Int64(i), Int64(j)))
+                 ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/spectralnorm.mojo:27:12: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        dst[i] = s
+        ~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-7d890d9.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

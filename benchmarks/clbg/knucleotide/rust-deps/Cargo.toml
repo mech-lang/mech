@@ -1,0 +1,19 @@
+[package]
+name = "knucleotide-upstream-deps"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[dependencies]
+futures = "=0.1.31"
+futures-cpupool = "=0.1.8"
+tokio-threadpool = "=0.1.18"
+indexmap = "=1.9.3"
+itertools = "=0.8.2"
+num = "=0.2.1"
+num-traits = "=0.2.19"
+num_cpus = "=1.17.0"
+scoped_threadpool = "=0.1.9"
+fxhash = "=0.2.1"
+fnv = "=1.0.7"
+hashbrown = "=0.15.5"
+[workspace]

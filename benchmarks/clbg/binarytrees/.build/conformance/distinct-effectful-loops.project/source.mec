@@ -1,0 +1,10 @@
+More(i<u64>, n<u64>) = (more<bool>) :=
+  more := i < n.
+Step(i<u64>, n<u64>) = (next<u64>, stop<u64>) :=
+  ignored := io/print("step={}\n", i)
+  next := i + 1
+  stop := n.
+first := io/print("first={}\n", 1)
+(i, n) := control/while((0, 3), More, Step)
+(j, m) := control/while((0, 3), More, Step)
+last := io/print("last={}\n", i)

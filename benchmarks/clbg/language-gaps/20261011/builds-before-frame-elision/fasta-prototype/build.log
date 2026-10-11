@@ -1,0 +1,12 @@
+   Compiling simba v0.9.1
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib)
+   Compiling either v1.19.0
+   Compiling mech-language-gaps-fasta-prototype v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/builds/fasta-prototype)
+   Compiling rayon v1.12.0
+   Compiling nalgebra v0.34.2
+   Compiling mech-core v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/core)
+   Compiling mech-syntax v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/syntax)
+   Compiling mech-engine v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine)
+   Compiling mech-compute v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/compute)
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 46.56s

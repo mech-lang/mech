@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>mandelbrot Lisp SBCL&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>mandelbrot Lisp SBCL&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/mandelbrot.html#mandelbrot">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">;;   The Computer Language Benchmarks Game</span>
+<span class="slc">;;   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">;;;</span>
+<span class="slc">;;; resubmitted by Wade Humeniuk (Fix Stream Problem)</span>
+<span class="slc">;;; resubmitted by Jon Smith (Remove silly assertion causing it to break on 16000 size)</span>
+<span class="slc">;;; re-resubmitted by Jon Smith (with a silly hack to make it parallel).</span>
+<span class="slc">;;; Original contributed by Yannick Gingras</span>
+<span class="slc">;;;</span>
+<span class="slc">;;; To compile</span>
+<span class="slc">;;; sbcl --load mandelbrot.lisp --eval &quot;(save-lisp-and-die \&quot;mandelbrot.core\&quot; :purify t :toplevel (lambda () (main) (quit)))&quot;</span>
+<span class="slc">;;; To run</span>
+<span class="slc">;;; sbcl --noinform --core mandelbrot.core %A</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">render</span> <span class="opt">(</span><span class="kwa">size</span> stream<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> fixnum size<span class="opt">) (</span><span class="kwa">stream</span> stream<span class="opt">)</span>
+	   <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">)))</span>
+  <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ((</span><span class="kwa">code</span> <span class="num">0</span><span class="opt">)</span> 
+	 <span class="opt">(</span><span class="kwa">bit</span> <span class="num">0</span><span class="opt">)</span>
+         <span class="opt">(</span><span class="kwa">zr</span> <span class="num">0.0</span>d0<span class="opt">)</span>
+	 <span class="opt">(</span><span class="kwa">zi</span> <span class="num">0.0</span>d0<span class="opt">)</span>
+	 <span class="opt">(</span><span class="kwa">tr</span> <span class="num">0.0</span>d0<span class="opt">)</span>
+	 <span class="opt">(</span><span class="kwa">delta</span> <span class="opt">(/</span> <span class="num">2</span>d0 size<span class="opt">))</span>
+         <span class="opt">(</span><span class="kwa">base-real</span> -<span class="num">1.5</span>d0<span class="opt">)</span> 
+	 <span class="opt">(</span><span class="kwa">base-imag</span> -<span class="num">1.0</span>d0<span class="opt">)</span>
+         <span class="opt">(</span><span class="kwa">buffer</span> <span class="opt">(</span><span class="kwa">make-array</span> <span class="opt">(*</span> size <span class="opt">(</span><span class="kwa">ceiling</span> size <span class="num">8</span><span class="opt">))</span> <span class="kwc">:element</span>-type <span class="opt">&#39;(</span><span class="kwa">unsigned-byte</span> <span class="num">8</span><span class="opt">)))</span>
+         <span class="opt">(</span><span class="kwa">index</span> <span class="num">0</span><span class="opt">))</span>
+
+    <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> <span class="opt">(</span><span class="kwa">unsigned-byte</span> <span class="num">8</span><span class="opt">)</span> code <span class="opt">)</span>
+             <span class="opt">(</span><span class="kwa">type</span> double-float zr zi tr base-real base-imag delta<span class="opt">)</span>
+             <span class="opt">(</span><span class="kwa">type</span> fixnum index bit<span class="opt">))</span>
+
+    <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">y</span> size<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">setf</span> base-imag <span class="opt">(</span><span class="kwa">-</span> <span class="num">1.0</span>d0 <span class="opt">(*</span> delta y<span class="opt">)))</span>
+      <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">x</span> size<span class="opt">)</span>
+	<span class="opt">(</span><span class="kwa">setf</span> base-real <span class="opt">(+</span> -<span class="num">1.5</span>d0 <span class="opt">(*</span> delta x<span class="opt">))</span>
+	      zr base-real
+	      zi base-imag<span class="opt">)</span>
+        <span class="opt">(</span><span class="kwa">setf</span> code  
+	      <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">n</span> <span class="num">50</span><span class="opt">)</span>
+		    <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(&lt;</span> <span class="num">4.0</span>d0 <span class="opt">(+ (*</span> zr zr<span class="opt">) (*</span> zi zi<span class="opt">)))</span>
+		      <span class="opt">(</span><span class="kwa">return</span> t<span class="opt">))</span>
+		    <span class="opt">(</span><span class="kwa">setf</span> tr <span class="opt">(+ (*</span> zr zr<span class="opt">) (</span><span class="kwa">-</span> <span class="opt">(*</span> zi zi<span class="opt">))</span> base-real<span class="opt">)</span>
+			  zi <span class="opt">(+ (*</span> <span class="num">2.0</span>d0 zr zi<span class="opt">)</span> base-imag<span class="opt">)</span>
+			  zr tr<span class="opt">))</span>
+		  <span class="opt">(</span><span class="kwa">ash</span> code <span class="num">1</span><span class="opt">)</span>
+		  <span class="opt">(</span><span class="kwa">logior</span> <span class="opt">(</span><span class="kwa">ash</span> code <span class="num">1</span><span class="opt">) #</span>x01<span class="opt">)))</span>
+	<span class="opt">(</span><span class="kwa">when</span> <span class="opt">(= (</span><span class="kwa">incf</span> bit<span class="opt">)</span> <span class="num">8</span><span class="opt">)</span>
+	  <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> buffer index<span class="opt">)</span> code
+		bit <span class="num">0</span> code <span class="num">0</span><span class="opt">)</span>
+	  <span class="opt">(</span><span class="kwa">incf</span> index<span class="opt">))))</span>
+
+    <span class="opt">(</span><span class="kwa">write-sequence</span> buffer stream<span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">par-render</span> <span class="opt">(</span><span class="kwa">size</span> stream<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> fixnum size<span class="opt">)		(</span><span class="kwa">stream</span> stream<span class="opt">)</span>
+	   <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">)))</span>
+
+  <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ((</span><span class="kwa">buffer</span> <span class="opt">(</span><span class="kwa">make-array</span> <span class="opt">(*</span> size <span class="opt">(</span><span class="kwa">ceiling</span> size <span class="num">8</span><span class="opt">))</span> <span class="kwc">:element</span>-type <span class="opt">&#39;(</span><span class="kwa">unsigned-byte</span> <span class="num">8</span><span class="opt">)))</span>
+	 <span class="opt">(</span><span class="kwa">quarter-size</span> <span class="opt">(</span><span class="kwa">ceiling</span> size <span class="num">4</span><span class="opt">))</span>
+	 <span class="opt">(</span><span class="kwa">quarter-array</span> <span class="opt">(</span><span class="kwa">ceiling</span> <span class="opt">(</span><span class="kwa">the</span> <span class="opt">(</span><span class="kwa">unsigned-byte</span> <span class="num">32</span><span class="opt">) (*</span> size size<span class="opt">))</span> <span class="num">32</span><span class="opt">)))</span>
+    
+
+    <span class="opt">(</span><span class="kwa">labels</span> <span class="opt">((</span><span class="kwa">render-sub</span> <span class="opt">(</span><span class="kwa">y-start</span> y-end index<span class="opt">)</span>
+	       <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">code</span> <span class="num">0</span><span class="opt">)</span> 
+		     <span class="opt">(</span><span class="kwa">bit</span> <span class="num">0</span><span class="opt">)</span>
+		     <span class="opt">(</span><span class="kwa">zr</span> <span class="num">0.0</span>d0<span class="opt">) (</span><span class="kwa">zi</span> <span class="num">0.0</span>d0<span class="opt">) (</span><span class="kwa">tr</span> <span class="num">0.0</span>d0<span class="opt">)</span>
+		     <span class="opt">(</span><span class="kwa">delta</span> <span class="opt">(/</span> <span class="num">2</span>d0 size<span class="opt">))</span>
+		     <span class="opt">(</span><span class="kwa">base-real</span> -<span class="num">1.5</span>d0<span class="opt">)  (</span><span class="kwa">base-imag</span> -<span class="num">1.0</span>d0<span class="opt">))</span>
+		 <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> <span class="opt">(</span><span class="kwa">unsigned-byte</span> <span class="num">8</span><span class="opt">)</span> code<span class="opt">)</span>
+			  <span class="opt">(</span><span class="kwa">type</span> double-float zr zi tr base-real base-imag delta<span class="opt">)</span>
+			  <span class="opt">(</span><span class="kwa">type</span> fixnum index bit<span class="opt">))</span>
+
+
+		 <span class="opt">(</span><span class="kwa">do</span> <span class="opt">((</span><span class="kwa">y</span> y-start <span class="opt">(</span><span class="kwa">1</span><span class="opt">+</span> y<span class="opt">)))</span>
+		     <span class="opt">((=</span> y y-end<span class="opt">))</span>
+		   <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> <span class="opt">(</span><span class="kwa">unsigned-byte</span> <span class="num">32</span><span class="opt">)</span> y<span class="opt">))</span>
+
+		   <span class="opt">(</span><span class="kwa">setf</span> base-imag <span class="opt">(</span><span class="kwa">-</span> <span class="num">1.0</span>d0 <span class="opt">(*</span> delta y<span class="opt">)))</span>
+		   <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">x</span> size<span class="opt">)</span>
+		     <span class="opt">(</span><span class="kwa">setf</span> base-real <span class="opt">(+</span> -<span class="num">1.5</span>d0 <span class="opt">(*</span> delta x<span class="opt">))</span>
+			   zr base-real
+			   zi base-imag<span class="opt">)</span>
+		     <span class="opt">(</span><span class="kwa">setf</span> code  
+			   <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">n</span> <span class="num">50</span><span class="opt">)</span>
+				 <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(&lt;</span> <span class="num">4.0</span>d0 <span class="opt">(+ (*</span> zr zr<span class="opt">) (*</span> zi zi<span class="opt">)))</span>
+				   <span class="opt">(</span><span class="kwa">return</span> t<span class="opt">))</span>
+				 <span class="opt">(</span><span class="kwa">setf</span> tr <span class="opt">(+ (*</span> zr zr<span class="opt">) (</span><span class="kwa">-</span> <span class="opt">(*</span> zi zi<span class="opt">))</span> base-real<span class="opt">)</span>
+				       zi <span class="opt">(+ (*</span> <span class="num">2.0</span>d0 zr zi<span class="opt">)</span> base-imag<span class="opt">)</span>
+				       zr tr<span class="opt">))</span>
+			       <span class="opt">(</span><span class="kwa">ash</span> code <span class="num">1</span><span class="opt">)</span>
+			       <span class="opt">(</span><span class="kwa">logior</span> <span class="opt">(</span><span class="kwa">ash</span> code <span class="num">1</span><span class="opt">) #</span>x01<span class="opt">)))</span>
+		     <span class="opt">(</span><span class="kwa">when</span> <span class="opt">(= (</span><span class="kwa">incf</span> bit<span class="opt">)</span> <span class="num">8</span><span class="opt">)</span>
+		       <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> buffer index<span class="opt">)</span> code
+			     bit <span class="num">0</span> 
+			     code <span class="num">0</span><span class="opt">)</span>
+		       <span class="opt">(</span><span class="kwa">incf</span> index<span class="opt">))</span>
+		     <span class="opt">)))))</span>
+      <span class="opt">(</span><span class="kwa">let</span> <span class="opt">(</span><span class="kwa">threads</span><span class="opt">)</span>
+	<span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">i</span> <span class="num">4</span><span class="opt">)</span>
+	  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">start</span> <span class="opt">(*</span> i quarter-size<span class="opt">))</span>
+		<span class="opt">(</span><span class="kwa">end</span> <span class="opt">(* (+</span> i <span class="num">1</span><span class="opt">)</span> quarter-size<span class="opt">))</span>
+		<span class="opt">(</span><span class="kwa">idx</span> <span class="opt">(*</span> i quarter-array<span class="opt">)))</span>
+	    <span class="opt">(</span><span class="kwa">push</span> <span class="opt">(</span><span class="kwa">sb-thread</span><span class="kwc">:make</span>-thread <span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">() (</span><span class="kwa">render-sub</span> start end idx<span class="opt">)))</span> threads<span class="opt">)))</span>
+	<span class="opt">(</span><span class="kwa">dolist</span> <span class="opt">(</span><span class="kwa">thread</span> threads<span class="opt">)</span>
+	  <span class="opt">(</span><span class="kwa">sb-thread</span><span class="kwc">:join</span>-thread thread<span class="opt">)))</span>
+      <span class="opt">(</span><span class="kwa">write-sequence</span> buffer stream<span class="opt">))))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">main</span> <span class="opt">()</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">3</span><span class="opt">)))</span>
+  <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ((</span><span class="kwa">args</span> sb-ext<span class="opt">:*</span>posix-argv<span class="opt">*)</span>
+	 <span class="opt">(</span><span class="kwa">n</span> <span class="opt">(</span><span class="kwa">parse-integer</span> <span class="opt">(</span><span class="kwa">second</span> args<span class="opt">))))</span>
+    <span class="opt">(</span><span class="kwa">with-open-stream</span> <span class="opt">(</span><span class="kwa">stream</span> <span class="opt">(</span><span class="kwa">sb-sys</span><span class="kwc">:make</span>-fd-stream <span class="opt">(</span><span class="kwa">sb-sys</span><span class="kwc">:fd</span>-stream-fd sb-sys<span class="opt">:</span><span class="kwd">*stdout*</span><span class="opt">)</span>
+						     <span class="kwc">:element</span>-type <span class="kwc">:default</span>
+						     <span class="kwc">:buffering :full</span>
+						     <span class="kwc">:output</span> t <span class="kwc">:input</span> nil<span class="opt">))</span>
+
+      <span class="opt">(</span><span class="kwa">format</span> stream <span class="sng">&quot;P4~%~d ~d~%&quot;</span> n n<span class="opt">)</span>
+      <span class="opt">#+</span>sb-thread<span class="opt">(</span><span class="kwa">par-render</span> n stream<span class="opt">)</span>
+      <span class="opt">#</span>-sb-thread<span class="opt">(</span><span class="kwa">render</span> n stream<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">force-output</span> stream<span class="opt">))))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+SBCL 2.4.8
+
+
+ Mon, 13 Jan 2025 02:32:05 GMT
+
+MAKE:
+cp: 'mandelbrot.sbcl-3.sbcl' and './mandelbrot.sbcl-3.sbcl' are the same file
+SBCL built with: /opt/src/sbcl-2.4.8/bin/sbcl --userinit /dev/null --batch --eval '(load &quot;mandelbrot.sbcl-3.sbcl_compile&quot;)'
+### START mandelbrot.sbcl-3.sbcl_compile
+(handler-bind ((sb-ext:defconstant-uneql      (lambda (c) (abort c))))      (require :sb-concurrency)      (load (compile-file &quot;mandelbrot.sbcl-3.sbcl&quot; ))) (save-lisp-and-die &quot;sbcl.core&quot; :purify t)
+### END mandelbrot.sbcl-3.sbcl_compile
+
+; compiling file &quot;/home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/mandelbrot.sbcl-3.sbcl&quot; (written 26 APR 2018 12:48:32 PM):
+
+; wrote /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/mandelbrot.sbcl-3.fasl
+; compilation finished in 0:00:00.087
+### START mandelbrot.sbcl-3.sbcl_run
+(main) (quit)
+### END mandelbrot.sbcl-3.sbcl_run
+
+
+2.59s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/sbcl-2.4.8/bin/sbcl  --noinform --core sbcl.core --userinit /dev/null --load mandelbrot.sbcl-3.sbcl_run 16000
+
+(BINARY) PROGRAM OUTPUT NOT SHOWN
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

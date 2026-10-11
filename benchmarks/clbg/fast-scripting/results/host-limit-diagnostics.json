@@ -1,0 +1,19 @@
+{
+  "benchmark": "mandelbrot",
+  "source_id": "mandelbrot-php-3",
+  "required_system_v_segment_bytes": 32000000,
+  "observed_system_v_limits": {
+    "shmmax": 4194304,
+    "shmall": 1024,
+    "shmmni": 32,
+    "shmseg": 8
+  },
+  "full_run_exit_status": 1,
+  "source_behavior": "The unchanged source exits when shmop_open cannot allocate the full image segment.",
+  "configuration_attempt": "sudo -n sysctl -w kern.sysv.shmmax=67108864",
+  "configuration_result": "sudo: a password is required",
+  "user_assistance_requested": [
+    "sudo sysctl -w kern.sysv.shmmax=67108864",
+    "sudo sysctl -w kern.sysv.shmall=16384"
+  ]
+}

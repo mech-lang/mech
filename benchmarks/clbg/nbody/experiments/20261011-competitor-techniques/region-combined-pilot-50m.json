@@ -1,0 +1,814 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-11T13:45:26.479807+00:00",
+  "steps": 50000000,
+  "samples": 3,
+  "required_power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "programs": [
+    {
+      "id": "compact-before",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-current-before",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before.o",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before"
+      ],
+      "object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+      "binary_sha256": "a582dcae88618170a7c3b52a6e653c3598d948ac4de909a382b74e6a25fe9339",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.102737125,
+        1.121584959,
+        1.142107625
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "compact-before.disassembly.txt",
+        "loop_start_hex": "0x1000034f4",
+        "loop_backedge_hex": "0x100003970",
+        "static_instructions": 288,
+        "stack_load_instructions": 81,
+        "stack_store_instructions": 26,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.121584959,
+      "stdev_seconds": 0.019691186423072247
+    },
+    {
+      "id": "pairwise-before",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-current-before",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before"
+      ],
+      "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+      "binary_sha256": "d2120116edfc33d4a791bd751bff6db100661ef7836051419563da006d646a24",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.030920959,
+        1.051955625,
+        1.047761084
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-before.disassembly.txt",
+        "loop_start_hex": "0x1000034f0",
+        "loop_backedge_hex": "0x100003954",
+        "static_instructions": 282,
+        "stack_load_instructions": 59,
+        "stack_store_instructions": 21,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.047761084,
+      "stdev_seconds": 0.011132842987813626
+    },
+    {
+      "id": "rust-3",
+      "language": "rust",
+      "loc": 196,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference",
+        "{n}"
+      ],
+      "binary_sha256": "f22eda84ff2640cc3830589c20739917f8282474af30b5184e8202cfe1941d6b",
+      "samples_seconds": [
+        1.052844792,
+        1.068702458,
+        1.069411667
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.068702458,
+      "stdev_seconds": 0.009366873327840572
+    },
+    {
+      "id": "chapel-3",
+      "language": "chapel",
+      "loc": 79,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+        "--n={n}"
+      ],
+      "binary_sha256": "a57be549397679c1cf1ef9c4702a3e3de3863899ee11b328bc06d8e996772f7d",
+      "samples_seconds": [
+        0.932193334,
+        0.956965416,
+        0.953303792
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 0.953303792,
+      "stdev_seconds": 0.013371081817999739
+    },
+    {
+      "id": "nbody-gpp-6-llvm-native",
+      "language": "cpp",
+      "loc": 202,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-gpp-6-llvm-native",
+        "{n}"
+      ],
+      "binary_sha256": "0c211e6499d12227c8d424673c1e8d123ae0eb301f9368addd6a2de7c192297b",
+      "samples_seconds": [
+        0.877831334,
+        0.8794485,
+        0.887079
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 0.8794485,
+      "stdev_seconds": 0.004938945274872466
+    },
+    {
+      "id": "compact-regions16seed",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions16seed",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16seed.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16seed.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-regions",
+        "16",
+        "--simplify-square-seeds"
+      ],
+      "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16seed.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16seed.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16seed"
+      ],
+      "object_sha256": "b7f18a3c22203d204ceab4f704d2c52417e5601b71ca3bd4f89678353d8155d4",
+      "binary_sha256": "43447ce59830ae39a82f1614ab04f84ecef3c791474dcf72d12953466c53ce88",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16seed",
+        "{n}"
+      ],
+      "state_control": "compact-before",
+      "preserves_bits": true,
+      "samples_seconds": [
+        1.081466375,
+        1.095053792,
+        1.093191916
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "compact-regions16seed.disassembly.txt",
+        "loop_start_hex": "0x100003530",
+        "loop_backedge_hex": "0x10000396c",
+        "static_instructions": 272,
+        "stack_load_instructions": 68,
+        "stack_store_instructions": 26,
+        "fused_instructions": 60,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.093191916,
+      "stdev_seconds": 0.007366283489815284
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions16seed",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16seed.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16seed.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails",
+        "--schedule-regions",
+        "16",
+        "--simplify-square-seeds"
+      ],
+      "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16seed.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16seed.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16seed"
+      ],
+      "object_sha256": "39a7b4a6cb18dcdc041d7f92589e80c7891cadaf22224574b96cf0453cb78d2f",
+      "binary_sha256": "b69ae6511a42ae203383b704ea606321ab077cec749d81ed07d51e36cd01df98",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16seed",
+        "{n}"
+      ],
+      "state_control": "pairwise-before",
+      "preserves_bits": true,
+      "samples_seconds": [
+        1.033337167,
+        1.039004459,
+        1.051971917
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-regions16seed.disassembly.txt",
+        "loop_start_hex": "0x100003504",
+        "loop_backedge_hex": "0x100003950",
+        "static_instructions": 276,
+        "stack_load_instructions": 56,
+        "stack_store_instructions": 21,
+        "fused_instructions": 60,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.039004459,
+      "stdev_seconds": 0.009552722763323576
+    },
+    {
+      "id": "compact-regions16demand",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions16demand",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16demand.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16demand.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-regions",
+        "16",
+        "--schedule"
+      ],
+      "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16demand.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16demand.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16demand"
+      ],
+      "object_sha256": "f57a0389ff38d135bedc584d09a84d5a4a613efd413189249ee3b1185ee5d0fc",
+      "binary_sha256": "052d48de4cb07a9a415a4bfa2b8d534208fb97f8e9d872d30434915bce7204d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions16demand",
+        "{n}"
+      ],
+      "state_control": "compact-before",
+      "preserves_bits": true,
+      "samples_seconds": [
+        1.090035166,
+        1.095553333,
+        1.097181333
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "compact-regions16demand.disassembly.txt",
+        "loop_start_hex": "0x100003518",
+        "loop_backedge_hex": "0x100003974",
+        "static_instructions": 280,
+        "stack_load_instructions": 74,
+        "stack_store_instructions": 26,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.095553333,
+      "stdev_seconds": 0.0037454028228344235
+    },
+    {
+      "id": "pairwise-regions16demand",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions16demand",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16demand.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16demand.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails",
+        "--schedule-regions",
+        "16",
+        "--schedule"
+      ],
+      "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16demand.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16demand.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16demand"
+      ],
+      "object_sha256": "93bfdec7192a7a06e4866291cbe38f97aa46a8b68f521c71882f08a92990379d",
+      "binary_sha256": "78a830c903704e58055048a2eb7758dcfda6dd25976d93b60d1149546a963ddf",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions16demand",
+        "{n}"
+      ],
+      "state_control": "pairwise-before",
+      "preserves_bits": true,
+      "samples_seconds": [
+        1.032337333,
+        1.039090083,
+        1.04712675
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-regions16demand.disassembly.txt",
+        "loop_start_hex": "0x1000034fc",
+        "loop_backedge_hex": "0x100003958",
+        "static_instructions": 280,
+        "stack_load_instructions": 56,
+        "stack_store_instructions": 20,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.039090083,
+      "stdev_seconds": 0.00740399108849724
+    },
+    {
+      "id": "compact-regions8",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions8",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-regions",
+        "8"
+      ],
+      "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8"
+      ],
+      "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+      "binary_sha256": "946b2b49b0a6a2aae7476104cc29f2c33026bf032d9ccf1461921c4c2abbedea",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8",
+        "{n}"
+      ],
+      "state_control": "compact-before",
+      "preserves_bits": true,
+      "samples_seconds": [
+        1.079797958,
+        1.083805375,
+        1.085569375
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "compact-regions8.disassembly.txt",
+        "loop_start_hex": "0x1000034fc",
+        "loop_backedge_hex": "0x100003968",
+        "static_instructions": 284,
+        "stack_load_instructions": 74,
+        "stack_store_instructions": 26,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.083805375,
+      "stdev_seconds": 0.0029574860157398223
+    },
+    {
+      "id": "pairwise-regions8",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions8",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions8.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions8.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails",
+        "--schedule-regions",
+        "8"
+      ],
+      "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions8.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions8.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions8"
+      ],
+      "object_sha256": "ffdb479571100f95271f2cd64a49ed56de30bc2a03d77cc2219170d02b4977bb",
+      "binary_sha256": "e7117cea56fd2ab93202c1f67d25efa0d685add4aedeb179f54b98296b46e980",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-regions8",
+        "{n}"
+      ],
+      "state_control": "pairwise-before",
+      "preserves_bits": true,
+      "samples_seconds": [
+        1.040179584,
+        1.043325625,
+        1.050944416
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-regions8.disassembly.txt",
+        "loop_start_hex": "0x1000034e8",
+        "loop_backedge_hex": "0x100003948",
+        "static_instructions": 281,
+        "stack_load_instructions": 58,
+        "stack_store_instructions": 21,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "median_seconds": 1.043325625,
+      "stdev_seconds": 0.005535117557673409
+    }
+  ],
+  "state_checks": [
+    {
+      "id": "compact-regions16seed",
+      "control": "compact-before",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions16seed",
+      "control": "compact-before",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions16seed",
+      "control": "compact-before",
+      "steps": 1000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions16seed",
+      "control": "compact-before",
+      "steps": 10000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "control": "pairwise-before",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "control": "pairwise-before",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "control": "pairwise-before",
+      "steps": 1000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions16seed",
+      "control": "pairwise-before",
+      "steps": 10000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions16demand",
+      "control": "compact-before",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions16demand",
+      "control": "compact-before",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions16demand",
+      "control": "compact-before",
+      "steps": 1000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions16demand",
+      "control": "compact-before",
+      "steps": 10000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions16demand",
+      "control": "pairwise-before",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions16demand",
+      "control": "pairwise-before",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions16demand",
+      "control": "pairwise-before",
+      "steps": 1000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions16demand",
+      "control": "pairwise-before",
+      "steps": 10000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions8",
+      "control": "compact-before",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions8",
+      "control": "compact-before",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions8",
+      "control": "compact-before",
+      "steps": 1000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "compact-regions8",
+      "control": "compact-before",
+      "steps": 10000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions8",
+      "control": "pairwise-before",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions8",
+      "control": "pairwise-before",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions8",
+      "control": "pairwise-before",
+      "steps": 1000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-regions8",
+      "control": "pairwise-before",
+      "steps": 10000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    }
+  ],
+  "expected_energy": [
+    -0.169075164,
+    -0.169059907
+  ],
+  "discarded_samples": [],
+  "sample_order": [
+    [
+      "chapel-3",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-before",
+      "pairwise-regions16seed",
+      "pairwise-regions16demand",
+      "compact-before",
+      "rust-3",
+      "compact-regions8",
+      "pairwise-regions8",
+      "compact-regions16seed",
+      "compact-regions16demand"
+    ],
+    [
+      "pairwise-regions16seed",
+      "compact-regions16demand",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-before",
+      "compact-regions8",
+      "pairwise-regions8",
+      "pairwise-regions16demand",
+      "rust-3",
+      "chapel-3",
+      "compact-regions16seed",
+      "compact-before"
+    ],
+    [
+      "pairwise-regions16seed",
+      "compact-regions8",
+      "pairwise-regions16demand",
+      "pairwise-regions8",
+      "rust-3",
+      "pairwise-before",
+      "compact-before",
+      "nbody-gpp-6-llvm-native",
+      "compact-regions16demand",
+      "compact-regions16seed",
+      "chapel-3"
+    ]
+  ],
+  "compiler_sha256": {
+    "hosts/gpu/Cargo.toml": "cc569b29f75657e1ec2e641eece8f188306bd96f1b71d87d19ca59348c5165c0",
+    "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+    "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+    "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+    "hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+    "hosts/gpu/src/fused_f64/map_runner.c": "1a6e8e14c1cb7d64061a29a0bffc5a7f4067bda87c2762eb0ab77ba3a23286c5",
+    "hosts/gpu/src/fused_f64/map_runner.rs": "cc05cc7b7db2828b8c5ad824d702de9d553e122892217b512107b4db37535417",
+    "hosts/gpu/src/fused_f64/mod.rs": "d14a3f0a8f9a181f498cd51ddf65356b91a8359b7d0743027f9cd74d3d484863",
+    "hosts/gpu/src/fused_f64/native.rs": "57dc9e23916d35312a33840fd98eea22f0b778ede612e40ba4c20a6404f06275",
+    "hosts/gpu/src/fused_f64/resident.rs": "ead9028913cef1d380a938642c66aeab39b18a206a82b176d65ca5ff9841ef97",
+    "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+    "hosts/gpu/src/fused_f64/runner.rs": "b25af92942958bf2e2d44030b07a16b8d1f52180b87b307a5339e2603c341fcc"
+  },
+  "probe_sha256": "986d0e1dceb326849d6eb7352a5d637795ee81af9c88e17f9f5f36a171827199",
+  "programs_manifest_sha256": "7a0067cdb36c845d85d4798f4f1f83b5dc2201de1593f821bd81b10c810de148",
+  "protocol": "Fresh sequential processes through exit; full input, initial/final output and startup counted; builds, full validation and one full-workload warmup excluded. Seeded shuffled rounds; AC/LPM and competing compiler checks. LOC only.",
+  "finished_at": "2026-10-11T13:46:06.792611+00:00"
+}

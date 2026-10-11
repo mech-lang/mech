@@ -1,0 +1,93 @@
+CODEGEN compact-baseline {"disassembly_path": "compact-baseline.disassembly.txt", "loop_start_hex": "0x1000034f4", "loop_backedge_hex": "0x100003970", "static_instructions": 288, "stack_load_instructions": 81, "stack_store_instructions": 26, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-baseline {"disassembly_path": "pairwise-baseline.disassembly.txt", "loop_start_hex": "0x10000358c", "loop_backedge_hex": "0x100003974", "static_instructions": 251, "stack_load_instructions": 58, "stack_store_instructions": 22, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-mass-baseline {"disassembly_path": "pairwise-mass-baseline.disassembly.txt", "loop_start_hex": "0x1000034ec", "loop_backedge_hex": "0x100003950", "static_instructions": 282, "stack_load_instructions": 70, "stack_store_instructions": 27, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-mass-tails {"disassembly_path": "pairwise-mass-tails.disassembly.txt", "loop_start_hex": "0x1000034f0", "loop_backedge_hex": "0x100003954", "static_instructions": 282, "stack_load_instructions": 59, "stack_store_instructions": 21, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-reassociate-tails {"disassembly_path": "pairwise-reassociate-tails.disassembly.txt", "loop_start_hex": "0x1000034e8", "loop_backedge_hex": "0x10000395c", "static_instructions": 286, "stack_load_instructions": 62, "stack_store_instructions": 24, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+SAMPLE 1 pairwise-reassociate-tails 1.064306292
+SAMPLE 1 before-broadcast-pairwise-baseline 1.109746250
+SAMPLE 1 before-broadcast-compact-baseline 1.164858292
+SAMPLE 1 nbody-gpp-6-llvm-native 0.878070250
+SAMPLE 1 pairwise-baseline 1.110546125
+SAMPLE 1 compact-baseline 1.121837458
+SAMPLE 1 rust-3 1.057709042
+SAMPLE 1 pairwise-mass-baseline 1.077922041
+SAMPLE 1 chapel-3 0.936902958
+SAMPLE 1 pairwise-mass-tails 1.049067583
+SAMPLE 1 nbody-gcc-8-llvm-fastmath 1.525985750
+SAMPLE 2 before-broadcast-pairwise-baseline 1.121943542
+SAMPLE 2 compact-baseline 1.121990166
+SAMPLE 2 pairwise-baseline 1.123398583
+SAMPLE 2 nbody-gcc-8-llvm-fastmath 1.530111917
+SAMPLE 2 pairwise-mass-tails 1.051324250
+SAMPLE 2 rust-3 1.068145500
+SAMPLE 2 pairwise-mass-baseline 1.075227459
+SAMPLE 2 before-broadcast-compact-baseline 1.167025084
+SAMPLE 2 nbody-gpp-6-llvm-native 0.891225125
+SAMPLE 2 pairwise-reassociate-tails 1.162755959
+SAMPLE 2 chapel-3 0.962578958
+SAMPLE 3 compact-baseline 1.127243500
+SAMPLE 3 pairwise-reassociate-tails 1.065353500
+SAMPLE 3 before-broadcast-compact-baseline 1.171370084
+SAMPLE 3 pairwise-mass-baseline 1.077682458
+SAMPLE 3 pairwise-baseline 1.133023791
+SAMPLE 3 nbody-gcc-8-llvm-fastmath 1.537861667
+SAMPLE 3 nbody-gpp-6-llvm-native 0.906731167
+SAMPLE 3 pairwise-mass-tails 1.055246959
+SAMPLE 3 before-broadcast-pairwise-baseline 1.140699667
+SAMPLE 3 chapel-3 0.952406250
+SAMPLE 3 rust-3 1.079624542
+SAMPLE 4 before-broadcast-pairwise-baseline 1.134494625
+SAMPLE 4 pairwise-reassociate-tails 1.057893375
+SAMPLE 4 pairwise-mass-baseline 1.076273583
+SAMPLE 4 compact-baseline 1.121187000
+SAMPLE 4 nbody-gpp-6-llvm-native 0.898970666
+SAMPLE 4 pairwise-mass-tails 1.053052375
+SAMPLE 4 pairwise-baseline 1.133880000
+SAMPLE 4 nbody-gcc-8-llvm-fastmath 1.539573000
+SAMPLE 4 before-broadcast-compact-baseline 1.180849291
+SAMPLE 4 chapel-3 0.961151750
+SAMPLE 4 rust-3 1.087666958
+SAMPLE 5 pairwise-baseline 1.137002458
+SAMPLE 5 pairwise-mass-baseline 1.075825792
+SAMPLE 5 nbody-gcc-8-llvm-fastmath 1.539445667
+SAMPLE 5 nbody-gpp-6-llvm-native 0.903767959
+SAMPLE 5 compact-baseline 1.139387167
+SAMPLE 5 pairwise-mass-tails 1.053443375
+SAMPLE 5 pairwise-reassociate-tails 1.060001709
+SAMPLE 5 before-broadcast-pairwise-baseline 1.129854625
+SAMPLE 5 before-broadcast-compact-baseline 1.168187375
+SAMPLE 5 rust-3 1.089046125
+SAMPLE 5 chapel-3 0.958233916
+SAMPLE 6 pairwise-mass-baseline 1.084154666
+SAMPLE 6 chapel-3 0.960899208
+SAMPLE 6 rust-3 1.088155917
+SAMPLE 6 pairwise-baseline 1.140947791
+SAMPLE 6 before-broadcast-compact-baseline 1.162623875
+SAMPLE 6 pairwise-reassociate-tails 1.063000667
+SAMPLE 6 pairwise-mass-tails 1.061808708
+SAMPLE 6 nbody-gcc-8-llvm-fastmath 1.541311917
+SAMPLE 6 compact-baseline 1.121134541
+SAMPLE 6 nbody-gpp-6-llvm-native 0.908067375
+SAMPLE 6 before-broadcast-pairwise-baseline 1.138438334
+SAMPLE 7 pairwise-reassociate-tails 1.073517167
+SAMPLE 7 compact-baseline 1.120591041
+SAMPLE 7 pairwise-mass-tails 1.052206334
+SAMPLE 7 before-broadcast-pairwise-baseline 1.128375750
+SAMPLE 7 chapel-3 0.964720500
+SAMPLE 7 nbody-gpp-6-llvm-native 0.905690458
+SAMPLE 7 pairwise-mass-baseline 1.081009708
+SAMPLE 7 pairwise-baseline 1.140261500
+SAMPLE 7 before-broadcast-compact-baseline 1.168643917
+SAMPLE 7 rust-3 1.092021791
+SAMPLE 7 nbody-gcc-8-llvm-fastmath 1.541104292
+RESULT nbody-gpp-6-llvm-native 0.903767959 202 LOC
+RESULT chapel-3 0.960899208 79 LOC
+RESULT pairwise-mass-tails 1.053052375 37 LOC
+RESULT pairwise-reassociate-tails 1.064306292 38 LOC
+RESULT pairwise-mass-baseline 1.077682458 37 LOC
+RESULT rust-3 1.087666958 196 LOC
+RESULT compact-baseline 1.121837458 32 LOC
+RESULT before-broadcast-pairwise-baseline 1.129854625 38 LOC
+RESULT pairwise-baseline 1.133880000 38 LOC
+RESULT before-broadcast-compact-baseline 1.168187375 32 LOC
+RESULT nbody-gcc-8-llvm-fastmath 1.539445667 127 LOC

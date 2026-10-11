@@ -1,0 +1,1 @@
+fn main() { let root = std::env::var("CARGO_MANIFEST_DIR").unwrap(); println!("cargo:rustc-link-arg={root}/mech-sequence.o"); println!("cargo:rerun-if-changed=mech-sequence.o"); println!("cargo:rerun-if-changed=constants.json"); }

@@ -1,0 +1,366 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/knucleotide-sbcl-2.lisp" (written 10 OCT 2026 06:58:31 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/knucleotide-sbcl-2.lisp
+; in: DEFUN SLICE-AND-DICE
+;     (EXPT 4 K)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The result is a (VALUES (OR (INTEGER 1 1) (INTEGER 4)) &OPTIONAL), not a (VALUES
+;                                                                                 FIXNUM
+;                                                                                 &OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The result is a (VALUES (OR (INTEGER 1 1) (INTEGER 4)) &OPTIONAL), not a (VALUES
+;                                                                                 (UNSIGNED-BYTE
+;                                                                                  64)
+;                                                                                 &OPTIONAL).
+;       etc.
+
+;     (1- (EXPT 4 K))
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (RATIONAL 0), not a FIXNUM.
+;       The result is a (VALUES (INTEGER -1) &OPTIONAL), not a (VALUES FIXNUM
+;                                                                      &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 5) because:
+;       The first argument is a (RATIONAL 0), not a (UNSIGNED-BYTE 64).
+;       The result is a (VALUES (INTEGER -1) &OPTIONAL), not a (VALUES
+;                                                               (UNSIGNED-BYTE
+;                                                                64)
+;                                                               &OPTIONAL).
+;       etc.
+
+;     (LOGAND MASK (LETTER-TO-NUM GENE I GENE-NUM))
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (INTEGER -1), not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (INTEGER -1), not a (UNSIGNED-BYTE 64).
+;       The second argument is a INTEGER, not a (UNSIGNED-BYTE 64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+;     (EXPT 4 K)
+; 
+; note: doing signed word to integer coercion (cost 20)
+
+; in: DECLAIM (INLINE LETTER-TO-NUM)
+;     (DECLAIM (INLINE LETTER-TO-NUM))
+; ==>
+;   (SB-C::%PROCLAIM '(INLINE LETTER-TO-NUM) (SB-C:SOURCE-LOCATION))
+; 
+; caught STYLE-WARNING:
+;   Proclaiming COMMON-LISP-USER::LETTER-TO-NUM to be INLINE, but 1 call to it was
+;   previously compiled. A declaration of NOTINLINE at the call site will eliminate
+;   this warning, as will proclaiming and defining the function before its first
+;   potential use.
+
+; in: DEFUN LETTER-TO-NUM
+;     (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+;     (LOGXOR (ASH IDX 2) 1)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+;     (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+;     (LOGXOR (ASH IDX 2) 2)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+;     (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+;     (LOGXOR (ASH IDX 2) 3)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+; in: DEFUN GENE-TO-NUM
+;     (LETTER-TO-NUM GENE I GENE-NUM)
+; --> BLOCK ECASE LET COND IF 
+; ==>
+;   (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+; --> BLOCK ECASE LET COND IF IF LOGXOR 
+; ==>
+;   (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+; --> BLOCK ECASE LET COND IF IF 
+; ==>
+;   (LOGXOR (ASH IDX 2) 1)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+; --> BLOCK ECASE LET COND IF IF IF LOGXOR 
+; ==>
+;   (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+; --> BLOCK ECASE LET COND IF IF IF 
+; ==>
+;   (LOGXOR (ASH IDX 2) 2)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+; --> BLOCK ECASE LET COND IF IF IF IF LOGXOR 
+; ==>
+;   (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+; --> BLOCK ECASE LET COND IF IF IF IF 
+; ==>
+;   (LOGXOR (ASH IDX 2) 3)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+; in: DEFUN PRINT-OCCURENCE
+;     (GENE-TO-NUM SLICE)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (OR (INTEGER * -4) (INTEGER 0 0) (INTEGER 4)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+; 
+; compilation unit finished
+;   caught 1 STYLE-WARNING condition
+;   printed 25 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/knucleotide-sbcl-2/program.fasl
+; compilation finished in 0:00:00.020

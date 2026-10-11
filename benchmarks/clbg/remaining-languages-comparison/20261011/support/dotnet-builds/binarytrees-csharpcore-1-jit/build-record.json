@@ -1,0 +1,58 @@
+{
+  "id": "binarytrees-csharpcore-1-jit",
+  "key": "binarytrees:binarytrees-csharpcore-1-jit",
+  "benchmark": "binarytrees",
+  "language": "csharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/binarytrees-csharpcore-1.cs",
+  "source_sha256": "e01cdaa95eccd7c9e05b3075827758dc84ff90ca87bcd7028c4851cc49e80e1a",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/binarytrees-csharpcore-1.cs",
+  "original_source_sha256": "e01cdaa95eccd7c9e05b3075827758dc84ff90ca87bcd7028c4851cc49e80e1a",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-csharpcore-1.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 06:54:51 GMT\n\nMAKE:\ncp binarytrees.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj (in 1.04 sec).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(15,18): warning CS8618: Non-nullable field 'left' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(15,18): warning CS8618: Non-nullable field 'right' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(15,18): warning CS8618: Non-nullable field 'left' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/Program.cs(15,18): warning CS8618: Non-nullable field 'right' must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring the field as nullable. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/binarytrees/tmp/program.csproj]\n    2 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:06.27\n\n8.11s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+  "adaptations": [
+    "Source review: each leaf/interior node is a distinct heap object with the same two child fields. The long-lived root is constructed before temporary loops and traversed afterward."
+  ],
+  "local_adaptation": false,
+  "physical_loc": 63,
+  "normalized_loc": 63,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/binarytrees-csharpcore-1-jit/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-1-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/binarytrees-csharpcore-1-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-1-jit/app.dll",
+  "binary_sha256": "618b53ee38e47139546f3d9099041cd69d662d4fb6e49547c7015f4ebf90728f",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-1-jit/app.dll",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-1-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-1-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-1-jit/app.pdb": "ea5a5b365a2bc2438dfa74d13a63aa6960e5f2e1742a58d6b0c05fc53b34da81",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-1-jit/app.dll": "618b53ee38e47139546f3d9099041cd69d662d4fb6e49547c7015f4ebf90728f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/binarytrees-csharpcore-1-jit/app.deps.json": "6a462ac6276fa69b78e97b74d8228965ed0a0cd3ca99b82010e58d6384d0db61"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

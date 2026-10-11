@@ -1,0 +1,37 @@
+[
+  {
+    "id": "pairwise-before",
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-before-default-verification.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-before-default-verification.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails"
+    ],
+    "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+    "previous_object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+    "status": "bit-identical"
+  },
+  {
+    "id": "compact-regions8",
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compact-regions8-default-verification.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compact-regions8-default-verification.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-regions",
+      "8"
+    ],
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "previous_object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "status": "bit-identical"
+  }
+]

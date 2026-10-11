@@ -1,0 +1,149 @@
+# PODNAME: Alien::Build::Manual::Alien
+# ABSTRACT: General alien author documentation
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Manual::Alien - General alien author documentation
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ perldoc Alien::Build::Manual::Alien
+
+=head1 DESCRIPTION
+
+The goal of the L<Alien> namespace is to provide non-CPAN dependencies (so called "Alien" dependencies) for
+CPAN modules. The history and intent of this idea is documented in the documentation-only L<Alien> module.
+The C<Alien-Build> distribution provides a framework for building aliens. The intent is to fix bugs and
+enhance the interface of a number of common tools so that all aliens may benefit. The distribution is broken
+up into these parts:
+
+=over 4
+
+=item The Alien Installer (configure / build-time)
+
+L<Alien::Build> and L<alienfile> are used to detect and install aliens. They are further documented in
+L<Alien::Build::Manual::AlienAuthor>.
+
+=item The Alien Runtime (runtime)
+
+L<Alien::Base> is the base class for aliens in the C<Alien-Build> system. Its use by Alien consumers
+is documented in L<Alien::Build::Manual::AlienUser>.
+
+=item The Plugin system (configure / build-time)
+
+Because many packages are implemented using different tools, the detection, build and install logic
+for a particular L<Alien> can vary a lot.  As such, much of L<Alien::Build> is implemented as a
+series of plugins that inherit from L<Alien::Build::Plugin>.  An overview of building your own
+plugins is documented in L<Alien::Build::Manual::PluginAuthor>.
+
+=back
+
+Additional useful documentation may be found here:
+
+=over 4
+
+=item FAQ
+
+L<Alien::Build::Manual::FAQ>
+
+=item Contributing
+
+L<Alien::Build::Manual::Contributing>
+
+=back
+
+=head1 SEE ALSO
+
+=over 4
+
+=item L<Alien::Build::Manual>
+
+Other L<Alien::Build> manuals.
+
+=back
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

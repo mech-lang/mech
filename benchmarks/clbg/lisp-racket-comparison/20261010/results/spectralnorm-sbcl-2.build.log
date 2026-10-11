@@ -1,0 +1,79 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/spectralnorm-sbcl-2.lisp" (written 10 OCT 2026 06:58:32 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/spectralnorm-sbcl-2.lisp
+; in: DEFUN MAIN
+;     (- (* 2 N) 1)
+; 
+; note: forced to do -/SIGNED-SIGNED=>S128 (cost 10)
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER -9223372036854775808 -2)
+;                                   (INTEGER 0 0) (INTEGER 2 9223372036854775806)), not a FIXNUM.
+;       The result is a (VALUES
+;                        (OR (INTEGER -9223372036854775809 -3) (INTEGER -1 -1)
+;                            (INTEGER 1 9223372036854775805))
+;                        &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 5) because:
+;       The first argument is a (OR (INTEGER -9223372036854775808 -2)
+;                                   (INTEGER 0 0) (INTEGER 2 9223372036854775806)), not a (UNSIGNED-BYTE
+;                                                                                          64).
+;       The result is a (VALUES
+;                        (OR (INTEGER -9223372036854775809 -3) (INTEGER -1 -1)
+;                            (INTEGER 1 9223372036854775805))
+;                        &OPTIONAL), not a (VALUES (UNSIGNED-BYTE 64) &OPTIONAL).
+;       etc.
+
+;     (- (* 2 N) 2)
+; 
+; note: forced to do -/SIGNED-SIGNED=>S128 (cost 10)
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER -9223372036854775808 -2)
+;                                   (INTEGER 0 0) (INTEGER 2 9223372036854775806)), not a FIXNUM.
+;       The result is a (VALUES
+;                        (OR (INTEGER -9223372036854775810 -4) (INTEGER -2 -2)
+;                            (MOD 9223372036854775805))
+;                        &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 5) because:
+;       The first argument is a (OR (INTEGER -9223372036854775808 -2)
+;                                   (INTEGER 0 0) (INTEGER 2 9223372036854775806)), not a (UNSIGNED-BYTE
+;                                                                                          64).
+;       The result is a (VALUES
+;                        (OR (INTEGER -9223372036854775810 -4) (INTEGER -2 -2)
+;                            (MOD 9223372036854775805))
+;                        &OPTIONAL), not a (VALUES (UNSIGNED-BYTE 64) &OPTIONAL).
+;       etc.
+
+;     (* (- (* 2 N) 1) (- (* 2 N) 2))
+; 
+; note: forced to do */S128*S128=>S128 (cost 12)
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER -9223372036854775809 -3)
+;                                   (INTEGER -1 -1)
+;                                   (INTEGER 1 9223372036854775805)), not a FIXNUM.
+;       The second argument is a (OR (INTEGER -9223372036854775810 -4)
+;                                    (INTEGER -2 -2) (MOD 9223372036854775805)), not a FIXNUM.
+;       The result is a (VALUES
+;                        (INTEGER -85070591730234615856620279821087277050
+;                         85070591730234615893513767968506380290)
+;                        &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER -9223372036854775809 -3)
+;                                   (INTEGER -1 -1)
+;                                   (INTEGER 1 9223372036854775805)), not a FIXNUM.
+;       The second argument is a (OR (INTEGER -9223372036854775810 -4)
+;                                    (INTEGER -2 -2) (MOD 9223372036854775805)), not a FIXNUM.
+;       The result is a (VALUES
+;                        (INTEGER -85070591730234615856620279821087277050
+;                         85070591730234615893513767968506380290)
+;                        &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+;     (FORMAT T "~11,9F~%" (SQRT (THE (DOUBLE-FLOAT 0.0d0) (/ VBV VV))))
+; 
+; note: doing float to pointer coercion (cost 13)
+; 
+; compilation unit finished
+;   printed 4 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/spectralnorm-sbcl-2/program.fasl
+; compilation finished in 0:00:00.007

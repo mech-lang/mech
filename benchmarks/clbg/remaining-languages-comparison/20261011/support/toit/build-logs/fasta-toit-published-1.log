@@ -1,0 +1,7 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-published-1.toit:22:12: warning: Class 'Buffer' is deprecated. Use 'io.Buffer' instead
+  lines := Buffer
+           ^~~~~~
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-published-1.toit:63:12: warning: Class 'Buffer' is deprecated. Use 'io.Buffer' instead
+  lines := Buffer
+           ^~~~~~
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-published-1: replacing existing signature

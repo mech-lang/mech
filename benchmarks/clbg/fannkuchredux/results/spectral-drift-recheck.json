@@ -1,0 +1,207 @@
+{
+  "all_outputs_passed": true,
+  "native_objects_identical": true,
+  "measurement_batches": [
+    {
+      "workers": 8,
+      "samples": 9,
+      "sample_order": [
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "mech-integer-simd1-u4-r4-p8-g4-current"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "mech-integer-simd1-u4-r4-p8-g4-current"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "mech-integer-simd1-u4-r4-p8-g4-current"
+        ]
+      ],
+      "programs": [
+        {
+          "benchmark": "spectralnorm",
+          "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+          "runtime_environment": {
+            "MECH_SEQUENCE_PARTITIONS": "8",
+            "MECH_ARRAY_GRAIN": "4"
+          },
+          "expected_small": "1.274219991\n",
+          "expected_full": "1.274224153\n",
+          "id": "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-integer-simd1-u4-r4-p8-g4",
+            "5500"
+          ],
+          "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+          "samples_seconds": [
+            0.197362292,
+            0.1846255,
+            0.2060725,
+            0.173908833,
+            0.178830083,
+            0.173393875,
+            0.192660291,
+            0.18035575,
+            0.175372875
+          ],
+          "median_seconds": 0.18035575
+        },
+        {
+          "benchmark": "spectralnorm",
+          "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+          "runtime_environment": {
+            "MECH_SEQUENCE_PARTITIONS": "8",
+            "MECH_ARRAY_GRAIN": "4"
+          },
+          "expected_small": "1.274219991\n",
+          "expected_full": "1.274224153\n",
+          "id": "mech-integer-simd1-u4-r4-p8-g4-current",
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/extra-regressions/mech-integer-simd1-u4-r4-p8-g4",
+            "5500"
+          ],
+          "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+          "samples_seconds": [
+            0.130239792,
+            0.234336958,
+            0.195620542,
+            0.185825875,
+            0.197372291,
+            0.176622583,
+            0.186742,
+            0.1763825,
+            0.193898625
+          ],
+          "median_seconds": 0.186742
+        }
+      ]
+    },
+    {
+      "workers": 1,
+      "samples": 9,
+      "sample_order": [
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "mech-integer-simd1-u4-r4-p8-g4-current"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "mech-integer-simd1-u4-r4-p8-g4-current"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "mech-integer-simd1-u4-r4-p8-g4-current"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-current",
+          "mech-integer-simd1-u4-r4-p8-g4-previous"
+        ],
+        [
+          "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "mech-integer-simd1-u4-r4-p8-g4-current"
+        ]
+      ],
+      "programs": [
+        {
+          "benchmark": "spectralnorm",
+          "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+          "runtime_environment": {
+            "MECH_SEQUENCE_PARTITIONS": "8",
+            "MECH_ARRAY_GRAIN": "4"
+          },
+          "expected_small": "1.274219991\n",
+          "expected_full": "1.274224153\n",
+          "id": "mech-integer-simd1-u4-r4-p8-g4-previous",
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/.build/mech-integer-simd1-u4-r4-p8-g4",
+            "5500"
+          ],
+          "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+          "samples_seconds": [
+            0.630933083,
+            0.617861958,
+            0.618092125,
+            0.617262292,
+            0.618383834,
+            0.616572083,
+            0.617216834,
+            0.61871,
+            0.616639125
+          ],
+          "median_seconds": 0.617861958
+        },
+        {
+          "benchmark": "spectralnorm",
+          "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+          "runtime_environment": {
+            "MECH_SEQUENCE_PARTITIONS": "8",
+            "MECH_ARRAY_GRAIN": "4"
+          },
+          "expected_small": "1.274219991\n",
+          "expected_full": "1.274224153\n",
+          "id": "mech-integer-simd1-u4-r4-p8-g4-current",
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/extra-regressions/mech-integer-simd1-u4-r4-p8-g4",
+            "5500"
+          ],
+          "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+          "samples_seconds": [
+            0.619737666,
+            0.617976834,
+            0.61915325,
+            0.616736583,
+            0.618896375,
+            0.618043875,
+            0.61755375,
+            0.617289541,
+            0.619875208
+          ],
+          "median_seconds": 0.618043875
+        }
+      ]
+    }
+  ],
+  "protocol": "Shuffled sequential fresh processes; output comparison excluded; no concurrent builds/tests."
+}

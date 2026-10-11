@@ -1,0 +1,5 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fortran/fasta-fortran-3.f90:22:7:
+
+   22 |   use iso_fortran_env
+      |       1
+Warning: Use of the NUMERIC_STORAGE_SIZE named constant from intrinsic module ISO_FORTRAN_ENV at (1) is incompatible with option -fdefault-real-8

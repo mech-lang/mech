@@ -1,0 +1,6 @@
+<row> := <{value<u64>}>
+Read(n<u64>) = (result<u64>) :=
+  row := memory/read(memory/null(), <row>)
+  result := row.value.
+result := (true ? | true => 17 | false => Read(0))
+io/print("{}\n", result)

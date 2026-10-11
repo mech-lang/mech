@@ -1,0 +1,36 @@
+<state> := <{k<u64>, count<u64>, n<u64>, q<bigint>, r<bigint>, t<bigint>, scratch<bigint>}>
+Extract(s<state>, j<u64>) = (digit<u64>) :=
+  product := bigint/multiply-u64-into(s.scratch, s.q, j)
+  numerator := bigint/add-into(product, product, s.r)
+  digit := bigint/floor-u64(numerator, s.t).
+Label(count<u64>) => <u64> := io/print("\t:{}\n", count)
+NoLabel(count<u64>) => <u64> := 0
+More(s<state>) => <bool> := s.count < s.n
+Produce(s<state>, digit<u64>) = (next<state>) :=
+  remainder := bigint/subtract-multiple-u64(s.r, s.t, digit)
+  r := bigint/multiply-u64-into(remainder, remainder, 10)
+  q := bigint/multiply-u64-into(s.q, s.q, 10)
+  output := io/print("{}", digit)
+  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)
+  next := {k: s.k, count: s.count + 1, n: s.n, q: q, r: r, t: s.t, scratch: s.scratch}.
+Consume(s<state>, digit<u64>) = (next<state>) :=
+  numerator := bigint/add-multiple-u64(s.r, s.q, 2)
+  r := bigint/multiply-u64-into(numerator, numerator, 2 * s.k + 1)
+  q := bigint/multiply-u64-into(s.q, s.q, s.k)
+  t := bigint/multiply-u64-into(s.t, s.t, 2 * s.k + 1)
+  next := {k: s.k + 1, count: s.count, n: s.n, q: q, r: r, t: t, scratch: s.scratch}.
+ExtractStep(s<state>) = (next<state>) :=
+  first := Extract(s, 3)
+  second := Extract(s, 4)
+  next := control/if(first == second, Produce, Consume, (s, first)).
+Step(s<state>) => <state> := (bigint/less-equal(s.q, s.r) ? | true => ExtractStep(s) | * => Consume(s, 0))
+NeedsSpace(column<u64>) => <bool> := column < 10
+Space(column<u64>) = (next<u64>) :=
+  output := io/print(" ")
+  next := column + 1.
+Finish(count<u64>) = (done<u64>) :=
+  column := control/while(number/mod(count, 10), NeedsSpace, Space)
+  done := Label(count).
+initial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1), scratch: bigint/new(0)}
+state := control/while(initial, More, Step)
+finished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)

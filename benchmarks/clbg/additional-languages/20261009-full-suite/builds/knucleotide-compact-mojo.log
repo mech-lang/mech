@@ -1,0 +1,7 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-compact.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/common.mojo:22:68: warning: '__add__' is deprecated, use 'unsafe_offset' instead
+        var got = external_call["read", Int](0, bytes.unsafe_ptr() + used, 65536)
+                                                ~~~~~~~~~~~~~~~~~~~^~~~~~
+<unknown>:0: note: '__add__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-11db27e.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

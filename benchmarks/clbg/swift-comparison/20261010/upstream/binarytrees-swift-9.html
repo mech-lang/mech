@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>binary-trees Swift&nbsp;#9 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>binary-trees Swift&nbsp;#9 program</h1>
+    <aside>
+      <p><a href="../description/binarytrees.html#binarytrees">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">// The Computer Language Benchmark Game</span>
+<span class="slc">// https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">//</span>
+<span class="slc">// contributed by Ralph Ganszky</span>
+
+<span class="slc">//    Swift binary-trees program should use ARC</span>
+<span class="slc">//    https://docs.swift.org/swift-book/LanguageGuide/AutomaticReferenceCounting.html</span>
+
+
+<span class="kwa">import</span> Dispatch
+<span class="kwa">import</span> Foundation
+<span class="kwa">import</span> apr
+
+<span class="kwa">let</span> <span class="kwc">nullptr</span> <span class="opt">=</span> <span class="kwd">OpaquePointer</span><span class="opt">(</span>bitPattern<span class="opt">:</span> <span class="kwb">UInt</span><span class="opt">.</span>max<span class="opt">)!</span>
+
+<span class="kwa">struct</span> Node <span class="opt">{</span>
+    <span class="kwa">var</span> <span class="kwc">left</span><span class="opt">:</span> OpaquePointer
+    <span class="kwa">var</span> <span class="kwc">right</span><span class="opt">:</span> OpaquePointer
+
+    <span class="kwa">func</span> <span class="kwd">check</span><span class="opt">() -&gt;</span> <span class="kwb">Int</span> <span class="opt">{</span>
+	<span class="kwa">if</span> <span class="kwc">left</span> <span class="opt">!=</span> <span class="kwc">nullptr</span> <span class="opt">{</span>
+	    <span class="kwa">let</span> <span class="kwc">l</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span>Node<span class="opt">&gt;(</span><span class="kwc">left</span><span class="opt">)</span>
+	    <span class="kwa">let</span> <span class="kwc">r</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span>Node<span class="opt">&gt;(</span><span class="kwc">right</span><span class="opt">)</span>
+	    <span class="kwa">return</span> <span class="kwc">l</span><span class="opt">[</span><span class="num">0</span><span class="opt">].</span><span class="kwd">check</span><span class="opt">() +</span> <span class="kwc">r</span><span class="opt">[</span><span class="num">0</span><span class="opt">].</span><span class="kwd">check</span><span class="opt">() +</span> <span class="num">1</span>
+	<span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+	    <span class="kwa">return</span> <span class="num">1</span>
+	<span class="opt">}</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">CreateTree</span><span class="opt">(</span>_ depth<span class="opt">:</span> <span class="kwb">Int</span><span class="opt">,</span> _ pool<span class="opt">:</span> OpaquePointer<span class="opt">) -&gt;</span> OpaquePointer <span class="opt">{</span>
+    <span class="kwa">let</span> <span class="kwc">nodePtr</span> <span class="opt">=</span> <span class="kwd">OpaquePointer</span><span class="opt">(</span><span class="kwd">apr_palloc</span><span class="opt">(</span>pool<span class="opt">,</span> MemoryLayout<span class="opt">&lt;</span>Node<span class="opt">&gt;.</span>stride<span class="opt">))!</span>
+    <span class="kwa">let</span> <span class="kwc">node</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span>Node<span class="opt">&gt;(</span><span class="kwc">nodePtr</span><span class="opt">)</span>
+    <span class="kwa">if</span> depth <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">{</span>
+	<span class="kwc">node</span><span class="opt">[</span><span class="num">0</span><span class="opt">].</span><span class="kwc">left</span> <span class="opt">=</span> <span class="kwd">CreateTree</span><span class="opt">(</span>depth<span class="opt">-</span><span class="num">1</span><span class="opt">,</span> pool<span class="opt">)</span>
+	<span class="kwc">node</span><span class="opt">[</span><span class="num">0</span><span class="opt">].</span><span class="kwc">right</span> <span class="opt">=</span> <span class="kwd">CreateTree</span><span class="opt">(</span>depth<span class="opt">-</span><span class="num">1</span><span class="opt">,</span> pool<span class="opt">)</span>
+    <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+	<span class="kwc">node</span><span class="opt">[</span><span class="num">0</span><span class="opt">].</span><span class="kwc">left</span> <span class="opt">=</span> <span class="kwc">nullptr</span>
+	<span class="kwc">node</span><span class="opt">[</span><span class="num">0</span><span class="opt">].</span><span class="kwc">right</span> <span class="opt">=</span> <span class="kwc">nullptr</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> <span class="kwc">nodePtr</span>
+<span class="opt">}</span>
+
+<span class="kwa">let</span> <span class="kwc">minDepth</span> <span class="opt">=</span> <span class="num">4</span>
+<span class="kwa">let</span> <span class="kwc">maxDepth</span><span class="opt">:</span> <span class="kwb">Int</span>
+<span class="kwa">if</span> CommandLine<span class="opt">.</span>argc <span class="opt">&gt;</span> <span class="num">1</span> <span class="opt">{</span>
+    <span class="kwa">let</span> <span class="kwc">arg</span> <span class="opt">=</span> <span class="kwb">Int</span><span class="opt">(</span>CommandLine<span class="opt">.</span>arguments<span class="opt">[</span><span class="num">1</span><span class="opt">])</span> ?? <span class="num">10</span>
+    <span class="kwc">maxDepth</span> <span class="opt">= (</span><span class="kwc">arg</span> <span class="opt">&gt;</span> <span class="kwc">minDepth</span> <span class="opt">+</span> <span class="num">2</span><span class="opt">)</span> ? <span class="kwc">arg</span> <span class="opt">:</span> <span class="kwc">minDepth</span> <span class="opt">+</span> <span class="num">2</span>
+<span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+    <span class="kwc">maxDepth</span> <span class="opt">=</span> <span class="num">10</span>
+<span class="opt">}</span>
+
+<span class="kwa">guard</span> <span class="kwd">apr_pool_initialize</span><span class="opt">() ==</span> APR_SUCCESS <span class="kwa">else</span> <span class="opt">{</span>
+    <span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;Can&#39;t initialize apr_pool&quot;</span><span class="opt">)</span>
+    <span class="kwd">exit</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span>
+<span class="opt">}</span>
+
+<span class="kwa">var</span> <span class="kwc">pool</span><span class="opt">:</span> OpaquePointer? <span class="opt">=</span> <span class="kwb">nil</span>
+<span class="kwa">guard</span> <span class="kwd">apr_pool_create_unmanaged_ex</span><span class="opt">(&amp;</span><span class="kwc">pool</span><span class="opt">,</span> <span class="kwb">nil</span><span class="opt">,</span> <span class="kwb">nil</span><span class="opt">) ==</span> APR_SUCCESS  <span class="kwa">else</span> <span class="opt">{</span>
+    <span class="kwd">apr_pool_terminate</span><span class="opt">()</span>
+    <span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;Can&#39;t create unmanaged pool&quot;</span><span class="opt">)</span>
+    <span class="kwd">exit</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span>
+<span class="opt">}</span>
+
+<span class="slc">// Create big tree in first pool</span>
+<span class="kwa">let</span> <span class="kwc">treePtr</span> <span class="opt">=</span> <span class="kwd">CreateTree</span><span class="opt">(</span><span class="kwc">maxDepth</span><span class="opt">+</span><span class="num">1</span><span class="opt">,</span> <span class="kwc">pool</span><span class="opt">!)</span>
+<span class="kwa">let</span> <span class="kwc">tree</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span>Node<span class="opt">&gt;(</span><span class="kwc">treePtr</span><span class="opt">)</span> 
+
+<span class="slc">//    Swift binary-trees program should use ARC</span>
+
+<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;stretch tree of depth</span> <span class="ipl">\(maxDepth+1)</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">\(tree[0].check())</span><span class="sng">&quot;</span><span class="opt">)</span>
+
+<span class="slc">// Release big tree</span>
+<span class="kwd">apr_pool_clear</span><span class="opt">(</span><span class="kwc">pool</span><span class="opt">!);</span>
+
+<span class="slc">// Create long living tree</span>
+<span class="kwa">let</span> <span class="kwc">longLivingTreePtr</span> <span class="opt">=</span> <span class="kwd">CreateTree</span><span class="opt">(</span><span class="kwc">maxDepth</span><span class="opt">,</span> <span class="kwc">pool</span><span class="opt">!)</span>
+
+<span class="slc">// Allocate trees of increasing depth up to maxDepth depth</span>
+<span class="kwa">let</span> <span class="kwc">depths</span> <span class="opt">= (</span><span class="kwc">maxDepth</span><span class="opt">-</span><span class="kwc">minDepth</span><span class="opt">)/</span><span class="num">2</span><span class="opt">+</span><span class="num">1</span>
+<span class="kwa">var</span> <span class="kwc">results</span> <span class="opt">= [</span><span class="kwb">String</span><span class="opt">](</span>repeating<span class="opt">:</span> <span class="sng">&quot;&quot;</span><span class="opt">,</span> count<span class="opt">:</span> <span class="kwc">depths</span><span class="opt">)</span>
+<span class="kwa">let</span> <span class="kwc">rQueue</span> <span class="opt">=</span> <span class="kwd">DispatchQueue</span><span class="opt">(</span>label<span class="opt">:</span> <span class="sng">&quot;Result&quot;</span><span class="opt">,</span> attributes<span class="opt">: [])</span>
+<span class="kwa">let</span> <span class="kwc">queue</span> <span class="opt">=</span> <span class="kwd">DispatchQueue</span><span class="opt">(</span>label<span class="opt">:</span> <span class="sng">&quot;Worker&quot;</span><span class="opt">,</span> attributes<span class="opt">: .</span>concurrent<span class="opt">)</span>
+DispatchQueue<span class="opt">.</span><span class="kwd">concurrentPerform</span><span class="opt">(</span>iterations<span class="opt">:</span> <span class="kwc">depths</span><span class="opt">) {</span>
+    idx <span class="kwa">in</span>
+
+    <span class="slc">// Create depth pool</span>
+    <span class="kwa">var</span> <span class="kwc">depthPool</span><span class="opt">:</span> OpaquePointer? <span class="opt">=</span> <span class="kwb">nil</span>
+    <span class="kwa">guard</span> <span class="kwd">apr_pool_create_unmanaged_ex</span><span class="opt">(&amp;</span><span class="kwc">depthPool</span><span class="opt">,</span> <span class="kwb">nil</span><span class="opt">,</span> <span class="kwb">nil</span><span class="opt">) ==</span> APR_SUCCESS  <span class="kwa">else</span> <span class="opt">{</span>
+	<span class="kwd">apr_pool_terminate</span><span class="opt">()</span>
+	<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;Can&#39;t create unmanaged depth pool&quot;</span><span class="opt">)</span>
+	<span class="kwd">exit</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">let</span> <span class="kwc">currentDepth</span> <span class="opt">=</span> <span class="kwc">minDepth</span> <span class="opt">+</span> idx <span class="opt">*</span> <span class="num">2</span>
+    <span class="kwa">let</span> <span class="kwc">iterations</span> <span class="opt">=</span> <span class="num">1</span> <span class="opt">&lt;&lt; (</span><span class="kwc">maxDepth</span> <span class="opt">-</span> <span class="kwc">currentDepth</span> <span class="opt">+</span> <span class="kwc">minDepth</span><span class="opt">)</span>
+    <span class="kwa">var</span> <span class="kwc">totalCheckSum</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="kwa">for</span> _ <span class="kwa">in</span> <span class="num">1</span><span class="opt">...</span><span class="kwc">iterations</span> <span class="opt">{</span>
+	<span class="kwa">let</span> <span class="kwc">tree1Ptr</span> <span class="opt">=</span> <span class="kwd">CreateTree</span><span class="opt">(</span><span class="kwc">currentDepth</span><span class="opt">,</span> <span class="kwc">depthPool</span><span class="opt">!)</span>
+	<span class="kwa">let</span> <span class="kwc">tree1</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span>Node<span class="opt">&gt;(</span><span class="kwc">tree1Ptr</span><span class="opt">)</span>
+	<span class="kwc">totalCheckSum</span> <span class="opt">+=</span> <span class="kwc">tree1</span><span class="opt">[</span><span class="num">0</span><span class="opt">].</span><span class="kwd">check</span><span class="opt">()</span>
+	<span class="kwd">apr_pool_clear</span><span class="opt">(</span><span class="kwc">depthPool</span><span class="opt">!);</span>
+    <span class="opt">}</span>
+
+    <span class="slc">// Release depth pool</span>
+    <span class="kwd">apr_pool_destroy</span><span class="opt">(</span><span class="kwc">depthPool</span><span class="opt">!)</span>
+
+    <span class="slc">// Store result string</span>
+    <span class="kwc">rQueue</span><span class="opt">.</span>async <span class="opt">{</span>
+	<span class="kwc">results</span><span class="opt">[</span>idx<span class="opt">] =</span> <span class="sng">&quot;</span><span class="ipl">\(iterations)</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">trees of depth</span> <span class="ipl">\(currentDepth)</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">\(totalCheckSum)</span><span class="sng">&quot;</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="slc">// Print output in correnct order</span>
+<span class="kwc">rQueue</span><span class="opt">.</span>sync <span class="opt">{</span>
+    <span class="kwa">for</span> result <span class="kwa">in</span> <span class="kwc">results</span> <span class="opt">{</span>
+	<span class="kwd">print</span><span class="opt">(</span>result<span class="opt">)</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwa">let</span> <span class="kwc">longLivingTree</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span>Node<span class="opt">&gt;(</span><span class="kwc">longLivingTreePtr</span><span class="opt">)</span>
+<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;long lived tree of depth</span> <span class="ipl">\(maxDepth)</span><span class="sng"></span><span class="esc">\t</span> <span class="sng">check:</span> <span class="ipl">\(longLivingTree[0].check())</span><span class="sng">&quot;</span><span class="opt">)</span>
+
+<span class="slc">// Release long living tree</span>
+<span class="kwd">apr_pool_destroy</span><span class="opt">(</span><span class="kwc">pool</span><span class="opt">!);</span>
+
+<span class="kwd">apr_pool_terminate</span><span class="opt">()</span>
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Swift version 6.0.3
+(swift-6.0.3-RELEASE)
+Target: x86_64-unknown-linux-gnu
+
+
+ Sat, 22 Feb 2025 23:44:50 GMT
+
+MAKE:
+/opt/src/swift-6.0.3-RELEASE/usr/bin/swiftc binarytrees.swift-9.swift -Ounchecked -wmo  -o binarytrees.swift-9.swift_run
+binarytrees.swift-9.swift:12:8: error: no such module 'apr'
+ 10 | import Dispatch
+ 11 | import Foundation
+ 12 | import apr
+    |        `- error: no such module 'apr'
+ 13 | 
+ 14 | let nullptr = OpaquePointer(bitPattern: UInt.max)!
+make: [/home/dunham/all-benchmarksgame/2000-benchmarksgame/nanobench/makefiles/u64q.programs.Makefile:479: binarytrees.swift-9.swift_run] Error 1 (ignored)
+
+8.81 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./binarytrees.swift-9.swift_run 7
+
+EMPTY 
+
+
+PROGRAM OUTPUT:
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

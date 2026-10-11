@@ -1,0 +1,179 @@
+{
+  "policy": "Nonblank, noncomment application lines with independent assignments/statements expanded. One expression may contain nested calls or literal collections. Control header plus its single body statement may share a physical line; punctuation-only braces may share a line with adjacent code. Apply equally to every language.",
+  "scope": "New illustrative artifacts only; frozen measured sources, manifests, charts and published LOC are unchanged.",
+  "d_reflows": [
+    {
+      "benchmark": "regexredux",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/regexredux/compact.d",
+      "original_source_sha256": "f0f0377040a19a3c2b6225c888b9e7bc42e01f529746d3532e738234cb0d98e0",
+      "reflow_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/regexredux.reflow.d",
+      "reflow_source_sha256": "27e7819323ed90854b5d9d1c3c4c9dd9b43c81bb329e53add56f8c9be17d29ac",
+      "nonwhitespace_tokens_identical": true,
+      "nonwhitespace_token_sha256": "67ddfce0ac774596b10c128b5edb68a06c76eaac28bcddeee386758c0e0fa012",
+      "original_loc": {
+        "physical_loc": 12,
+        "normalized_loc": 12,
+        "expansions": []
+      },
+      "reflow_loc": {
+        "physical_loc": 9,
+        "normalized_loc": 9,
+        "expansions": []
+      },
+      "changes": [
+        {
+          "original_line": 8,
+          "kind": "Join a control header with its one existing body statement."
+        },
+        {
+          "original_line": 10,
+          "kind": "Join a control header with its one existing body statement."
+        },
+        {
+          "original_line": 13,
+          "kind": "Attach closing brace after preceding single statement or closing brace."
+        }
+      ],
+      "execution_status": "Compiled with frozen D flags; complete small and full canonical output validated. No algorithm or nonwhitespace token changed."
+    },
+    {
+      "benchmark": "fasta",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/fasta/compact.d",
+      "original_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reflow_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/fasta.reflow.d",
+      "reflow_source_sha256": "89c2255e66066cf42a8bfab90e52156b5e519fcba167a2d2c2a7cbfd7e6e39ed",
+      "nonwhitespace_tokens_identical": true,
+      "nonwhitespace_token_sha256": "48ff04458904b33a86d24c13f8244c4eb44dab21df89dd4c7a87c2cb681c6a5c",
+      "original_loc": {
+        "physical_loc": 28,
+        "normalized_loc": 29,
+        "expansions": [
+          {
+            "line": 8,
+            "extra_lines": 1,
+            "reason": "Independent statements or initialized bindings packed on one source line."
+          }
+        ]
+      },
+      "reflow_loc": {
+        "physical_loc": 22,
+        "normalized_loc": 23,
+        "expansions": [
+          {
+            "line": 7,
+            "extra_lines": 1,
+            "reason": "Independent statements or initialized bindings packed on one source line."
+          }
+        ]
+      },
+      "changes": [
+        {
+          "original_line": 7,
+          "kind": "Join a control header with its one existing body statement."
+        },
+        {
+          "original_line": 15,
+          "kind": "Attach closing brace after preceding single statement or closing brace."
+        },
+        {
+          "original_line": 18,
+          "kind": "Attach closing brace after preceding single statement or closing brace."
+        },
+        {
+          "original_line": 19,
+          "kind": "Attach closing brace after preceding single statement or closing brace."
+        },
+        {
+          "original_line": 23,
+          "kind": "Join a control header with its one existing body statement."
+        },
+        {
+          "original_line": 29,
+          "kind": "Attach closing brace after preceding single statement or closing brace."
+        }
+      ],
+      "execution_status": "Compiled with frozen D flags; complete small and full canonical output validated. No algorithm or nonwhitespace token changed."
+    },
+    {
+      "benchmark": "pidigits",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/compact.d",
+      "original_source_sha256": "e2a99730b9893a03bb3d9962b3e1bc3ff432e1142ddd854b88def9eb26ff74c6",
+      "reflow_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/pidigits.reflow.d",
+      "reflow_source_sha256": "e298ccf298905fdb55dc7a523d6e477dd51f99f51d1fa7c100e0e268a291fcce",
+      "nonwhitespace_tokens_identical": true,
+      "nonwhitespace_token_sha256": "fe45b1cd4e3cdab7550ea36c607b9d62087c9338a284869279f405bcff504d15",
+      "original_loc": {
+        "physical_loc": 29,
+        "normalized_loc": 29,
+        "expansions": []
+      },
+      "reflow_loc": {
+        "physical_loc": 21,
+        "normalized_loc": 21,
+        "expansions": []
+      },
+      "changes": [
+        {
+          "original_line": 5,
+          "kind": "Attach opening brace to preceding header."
+        },
+        {
+          "original_line": 12,
+          "kind": "Attach opening brace to preceding header."
+        },
+        {
+          "original_line": 16,
+          "kind": "Join a control header with its one existing body statement."
+        },
+        {
+          "original_line": 20,
+          "kind": "Join a control header with its one existing body statement."
+        },
+        {
+          "original_line": 24,
+          "kind": "Join a control header with its one existing body statement."
+        },
+        {
+          "original_line": 28,
+          "kind": "Attach closing brace after preceding single statement or closing brace."
+        },
+        {
+          "original_line": 29,
+          "kind": "Join a control header with its one existing body statement."
+        },
+        {
+          "original_line": 31,
+          "kind": "Attach closing brace after preceding single statement or closing brace."
+        }
+      ],
+      "execution_status": "Compiled with frozen D flags; complete small and full canonical output validated. No algorithm or nonwhitespace token changed."
+    }
+  ],
+  "hypothetical_mech": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/regexredux.hypothetical.mec",
+    "sha256": "5ac2c75e2bae711b74399d0015756978dc1968c23e493b6bc404a8047484f4dd",
+    "physical_nonblank_loc": 8,
+    "normalized_loc": 8,
+    "status": "Hypothetical; uncompiled and unmeasured. Missing general lowerings/APIs identified explicitly.",
+    "independent_expressions_per_line": 1,
+    "assignments_packed": false,
+    "cleanup_source_literal_identical_to_measured_mech": true,
+    "decoded_cleanup_regex_utf8_hex": "3e5b5e0a5d2a0a7c0a",
+    "work": "Nine separate case-sensitive nonoverlapping searches and five sequential substitutions.",
+    "missing_compiled_path_features": [
+      "String-vector literal and string-comprehension lowering",
+      "General sequence/zip to typed pairs",
+      "General left sequence/fold over text state and pairs",
+      "Typed pair parameter/projection admission in this native sequence path",
+      "Mixed string/integer text/format admission in this native sequence path"
+    ],
+    "existing_language_features": [
+      "Expression-bodied arrow functions",
+      "Array/comprehension syntax",
+      "Tuple kind/literal syntax and one-based dot projection",
+      "Immutable bindings and ordinary nested function calls",
+      "Existing generic regex/count-bytes and regex/replace-bytes operations"
+    ]
+  },
+  "warning": "D current measured regex12LOC is not an absolute minimum; demonstrated equivalent-token reflow is9LOC. Hypothetical Mech8LOC must not replace measured Mech24LOC before implementation, complete validation and measurement."
+}

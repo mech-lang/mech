@@ -1,0 +1,330 @@
+_mech_turns
+10000304c:     	stp	d24, d23, [sp, #0x88]
+100003050:     	stp	d7, d5, [sp, #0x120]
+100003054:     	stp	d17, d16, [sp, #0x110]
+100003058:     	stp	d20, d19, [sp, #0x98]
+10000305c:     	stp	d6, d1, [sp, #0xa8]
+100003060:     	stp	d29, d3, [sp, #0x130]
+100003064:     	stp	d2, d0, [sp, #0x140]
+100003068:     	fsub	d23, d0, d1
+10000306c:     	fsub	d10, d5, d6
+100003070:     	mov.16b	v26, v18
+100003074:     	fsub	d9, d18, d19
+100003078:     	fsub	d11, d1, d2
+10000307c:     	fsub	d21, d6, d7
+100003080:     	fsub	d25, d19, d20
+100003084:     	fsub	d3, d1, d3
+100003088:     	fsub	d12, d6, d16
+10000308c:     	fsub	d31, d19, d28
+100003090:     	fsub	d4, d1, d29
+100003094:     	fsub	d22, d6, d17
+100003098:     	fsub	d18, d19, d27
+10000309c:     	movi.2d	v30, #0000000000000000
+1000030a0:     	fmadd	d0, d23, d23, d30
+1000030a4:     	fmadd	d1, d11, d11, d30
+1000030a8:     	stp	d21, d11, [sp, #0x78]
+1000030ac:     	fmadd	d2, d3, d3, d30
+1000030b0:     	mov.16b	v13, v14
+1000030b4:     	mov.16b	v14, v3
+1000030b8:     	stp	d12, d3, [sp, #0x60]
+1000030bc:     	fmadd	d3, d4, d4, d30
+1000030c0:     	mov.16b	v19, v4
+1000030c4:     	stp	d22, d4, [sp, #0x48]
+1000030c8:     	fmadd	d0, d10, d10, d0
+1000030cc:     	fmadd	d1, d21, d21, d1
+1000030d0:     	fmadd	d2, d12, d12, d2
+1000030d4:     	mov.16b	v29, v12
+1000030d8:     	fmadd	d3, d22, d22, d3
+1000030dc:     	fmadd	d0, d9, d9, d0
+1000030e0:     	mov.16b	v5, v25
+1000030e4:     	str	d25, [sp, #0x70]
+1000030e8:     	fmadd	d1, d25, d25, d1
+1000030ec:     	fmadd	d2, d31, d31, d2
+1000030f0:     	mov.16b	v25, v31
+1000030f4:     	str	d31, [sp, #0x58]
+1000030f8:     	fsqrt	d4, d0
+1000030fc:     	fmadd	d3, d18, d18, d3
+100003100:     	fmul	d0, d0, d4
+100003104:     	fsqrt	d4, d1
+100003108:     	fmul	d4, d1, d4
+10000310c:     	fsqrt	d1, d2
+100003110:     	fmul	d2, d2, d1
+100003114:     	fsqrt	d1, d3
+100003118:     	fmul	d3, d3, d1
+10000311c:     	fmov	d31, x8
+100003120:     	fdiv	d1, d31, d0
+100003124:     	fmov	d0, x9
+100003128:     	fmul	d24, d23, d0
+10000312c:     	fmadd	d15, d24, d1, d15
+100003130:     	fmul	d24, d10, d0
+100003134:     	ldr	d6, [sp, #0xd0]
+100003138:     	fmadd	d6, d24, d1, d6
+10000313c:     	str	d6, [sp, #0xd0]
+100003140:     	fmul	d0, d9, d0
+100003144:     	fmadd	d0, d0, d1, d13
+100003148:     	stp	d0, d18, [sp, #0x38]
+10000314c:     	fdiv	d8, d31, d4
+100003150:     	fmov	d0, x10
+100003154:     	fmul	d4, d11, d0
+100003158:     	ldr	d6, [sp, #0x108]
+10000315c:     	fmadd	d4, d4, d8, d6
+100003160:     	fmul	d24, d21, d0
+100003164:     	ldr	d6, [sp, #0xf8]
+100003168:     	fmadd	d12, d24, d8, d6
+10000316c:     	fmul	d24, d5, d0
+100003170:     	ldr	d5, [sp, #0x100]
+100003174:     	fmadd	d13, d24, d8, d5
+100003178:     	fdiv	d11, d31, d2
+10000317c:     	fmov	d24, x11
+100003180:     	fmul	d2, d14, d24
+100003184:     	fmadd	d2, d2, d11, d4
+100003188:     	fmul	d4, d29, d24
+10000318c:     	fmadd	d4, d4, d11, d12
+100003190:     	fmul	d12, d25, d24
+100003194:     	fmadd	d13, d12, d11, d13
+100003198:     	fdiv	d12, d31, d3
+10000319c:     	fmov	d14, x12
+1000031a0:     	fmul	d3, d19, d14
+1000031a4:     	fmadd	d2, d3, d12, d2
+1000031a8:     	fmul	d3, d22, d14
+1000031ac:     	fmadd	d3, d3, d12, d4
+1000031b0:     	fmul	d4, d18, d14
+1000031b4:     	fmadd	d4, d4, d12, d13
+1000031b8:     	fmov	d13, x13
+1000031bc:     	fmul	d23, d23, d13
+1000031c0:     	fmadd	d5, d23, d1, d2
+1000031c4:     	fmul	d2, d10, d13
+1000031c8:     	fmadd	d2, d2, d1, d3
+1000031cc:     	str	d2, [sp, #0xf8]
+1000031d0:     	fmul	d2, d9, d13
+1000031d4:     	fmadd	d1, d2, d1, d4
+1000031d8:     	stp	d1, d5, [sp, #0x100]
+1000031dc:     	ldp	d2, d1, [sp, #0x140]
+1000031e0:     	fsub	d4, d1, d2
+1000031e4:     	ldr	d1, [sp, #0x128]
+1000031e8:     	fsub	d5, d1, d7
+1000031ec:     	fmadd	d1, d4, d4, d30
+1000031f0:     	fmadd	d1, d5, d5, d1
+1000031f4:     	fsub	d6, d26, d20
+1000031f8:     	fmadd	d1, d6, d6, d1
+1000031fc:     	fsqrt	d2, d1
+100003200:     	fmul	d7, d1, d2
+100003204:     	ldp	d2, d1, [sp, #0x138]
+100003208:     	fsub	d23, d1, d2
+10000320c:     	ldr	d1, [sp, #0x120]
+100003210:     	fsub	d21, d1, d16
+100003214:     	fmadd	d1, d23, d23, d30
+100003218:     	fmadd	d1, d21, d21, d1
+10000321c:     	str	d21, [sp, #0x30]
+100003220:     	fsub	d22, d20, d28
+100003224:     	fmadd	d1, d22, d22, d1
+100003228:     	stp	d23, d22, [sp, #0x20]
+10000322c:     	fsqrt	d2, d1
+100003230:     	fmul	d16, d1, d2
+100003234:     	ldr	d1, [sp, #0x140]
+100003238:     	ldr	d2, [sp, #0x130]
+10000323c:     	fsub	d29, d1, d2
+100003240:     	ldr	d2, [sp, #0x120]
+100003244:     	fsub	d2, d2, d17
+100003248:     	fmadd	d3, d29, d29, d30
+10000324c:     	stp	d2, d29, [sp, #0x10]
+100003250:     	fmadd	d17, d2, d2, d3
+100003254:     	fsub	d3, d20, d27
+100003258:     	fmadd	d17, d3, d3, d17
+10000325c:     	str	d3, [sp, #0x8]
+100003260:     	fsqrt	d25, d17
+100003264:     	fmul	d17, d17, d25
+100003268:     	fdiv	d7, d31, d7
+10000326c:     	fmul	d25, d4, d0
+100003270:     	mov.16b	v10, v26
+100003274:     	fmadd	d18, d25, d7, d15
+100003278:     	fmul	d25, d5, d0
+10000327c:     	ldr	d1, [sp, #0xd0]
+100003280:     	fmadd	d19, d25, d7, d1
+100003284:     	fmul	d0, d6, d0
+100003288:     	ldr	d1, [sp, #0x38]
+10000328c:     	fmadd	d20, d0, d7, d1
+100003290:     	fdiv	d0, d31, d16
+100003294:     	fmul	d16, d23, d24
+100003298:     	ldr	d1, [sp, #0xc8]
+10000329c:     	fmadd	d16, d16, d0, d1
+1000032a0:     	fmul	d25, d21, d24
+1000032a4:     	ldr	d1, [sp, #0xc0]
+1000032a8:     	fmadd	d26, d25, d0, d1
+1000032ac:     	fmul	d25, d22, d24
+1000032b0:     	ldr	d1, [sp, #0xb8]
+1000032b4:     	fmadd	d15, d25, d0, d1
+1000032b8:     	fdiv	d25, d31, d17
+1000032bc:     	fmul	d17, d29, d14
+1000032c0:     	fmadd	d16, d17, d25, d16
+1000032c4:     	fmul	d17, d2, d14
+1000032c8:     	fmadd	d17, d17, d25, d26
+1000032cc:     	fmul	d26, d3, d14
+1000032d0:     	fmadd	d26, d26, d25, d15
+1000032d4:     	fmul	d4, d4, d13
+1000032d8:     	fmadd	d16, d4, d7, d16
+1000032dc:     	fmul	d4, d5, d13
+1000032e0:     	fmadd	d5, d4, d7, d17
+1000032e4:     	fmul	d4, d6, d13
+1000032e8:     	fmadd	d6, d4, d7, d26
+1000032ec:     	ldr	d4, [sp, #0x148]
+1000032f0:     	ldr	d7, [sp, #0x138]
+1000032f4:     	fsub	d7, d4, d7
+1000032f8:     	ldr	d4, [sp, #0x118]
+1000032fc:     	ldr	d1, [sp, #0x128]
+100003300:     	fsub	d17, d1, d4
+100003304:     	fmadd	d4, d7, d7, d30
+100003308:     	fmadd	d4, d17, d17, d4
+10000330c:     	mov.16b	v3, v28
+100003310:     	fsub	d21, d10, d28
+100003314:     	fmadd	d4, d21, d21, d4
+100003318:     	fsqrt	d26, d4
+10000331c:     	mov.16b	v2, v27
+100003320:     	fmul	d22, d4, d26
+100003324:     	ldp	d26, d4, [sp, #0x130]
+100003328:     	fsub	d26, d4, d26
+10000332c:     	ldp	d27, d4, [sp, #0x110]
+100003330:     	fsub	d15, d4, d27
+100003334:     	fmadd	d4, d26, d26, d30
+100003338:     	fmadd	d27, d15, d15, d4
+10000333c:     	fsub	d23, d28, d2
+100003340:     	fmadd	d27, d23, d23, d27
+100003344:     	fsqrt	d28, d27
+100003348:     	fmul	d27, d27, d28
+10000334c:     	fdiv	d22, d31, d22
+100003350:     	fmul	d28, d7, d24
+100003354:     	fmadd	d18, d28, d22, d18
+100003358:     	fmul	d28, d17, d24
+10000335c:     	fmadd	d19, d28, d22, d19
+100003360:     	fmul	d24, d21, d24
+100003364:     	fmadd	d20, d24, d22, d20
+100003368:     	fdiv	d24, d31, d27
+10000336c:     	fmul	d27, d26, d14
+100003370:     	ldp	d4, d1, [sp, #0xe8]
+100003374:     	fmadd	d27, d27, d24, d4
+100003378:     	fmul	d28, d15, d14
+10000337c:     	fmadd	d28, d28, d24, d1
+100003380:     	fmul	d29, d23, d14
+100003384:     	ldr	d1, [sp, #0xe0]
+100003388:     	fmadd	d29, d29, d24, d1
+10000338c:     	fmul	d7, d7, d13
+100003390:     	fmadd	d7, d7, d22, d27
+100003394:     	fmul	d17, d17, d13
+100003398:     	fmadd	d17, d17, d22, d28
+10000339c:     	fmul	d21, d21, d13
+1000033a0:     	fmadd	d21, d21, d22, d29
+1000033a4:     	ldr	d22, [sp, #0x148]
+1000033a8:     	ldp	d1, d27, [sp, #0x128]
+1000033ac:     	fsub	d22, d22, d27
+1000033b0:     	ldr	d27, [sp, #0x110]
+1000033b4:     	fsub	d27, d1, d27
+1000033b8:     	fmadd	d28, d22, d22, d30
+1000033bc:     	fmadd	d28, d27, d27, d28
+1000033c0:     	fsub	d29, d10, d2
+1000033c4:     	fmadd	d28, d29, d29, d28
+1000033c8:     	fsqrt	d30, d28
+1000033cc:     	fmul	d28, d28, d30
+1000033d0:     	fdiv	d28, d31, d28
+1000033d4:     	fmul	d30, d22, d14
+1000033d8:     	fmadd	d4, d30, d28, d18
+1000033dc:     	fmul	d18, d27, d14
+1000033e0:     	fmadd	d9, d18, d28, d19
+1000033e4:     	str	d9, [sp, #0xd0]
+1000033e8:     	fmul	d18, d29, d14
+1000033ec:     	fmadd	d14, d18, d28, d20
+1000033f0:     	fmul	d18, d22, d13
+1000033f4:     	fmul	d19, d27, d13
+1000033f8:     	fmul	d20, d29, d13
+1000033fc:     	ldr	d1, [sp, #0xd8]
+100003400:     	fmadd	d18, d18, d28, d1
+100003404:     	ldr	d1, [sp, #0x90]
+100003408:     	fmadd	d19, d19, d28, d1
+10000340c:     	ldr	d1, [sp, #0x88]
+100003410:     	fmadd	d20, d20, d28, d1
+100003414:     	fmov	d22, x14
+100003418:     	ldr	d1, [sp, #0x80]
+10000341c:     	fmul	d27, d1, d22
+100003420:     	fmadd	d28, d27, d8, d16
+100003424:     	ldr	d1, [sp, #0x78]
+100003428:     	fmul	d16, d1, d22
+10000342c:     	fmadd	d27, d16, d8, d5
+100003430:     	ldr	d1, [sp, #0x70]
+100003434:     	fmul	d5, d1, d22
+100003438:     	fmadd	d29, d5, d8, d6
+10000343c:     	ldp	d1, d6, [sp, #0x60]
+100003440:     	fmul	d5, d6, d22
+100003444:     	fmadd	d5, d5, d11, d7
+100003448:     	fmul	d6, d1, d22
+10000344c:     	fmadd	d6, d6, d11, d17
+100003450:     	ldr	d1, [sp, #0x58]
+100003454:     	fmul	d7, d1, d22
+100003458:     	fmadd	d7, d7, d11, d21
+10000345c:     	ldr	d1, [sp, #0x50]
+100003460:     	fmul	d16, d1, d22
+100003464:     	ldr	d1, [sp, #0x48]
+100003468:     	fmul	d17, d1, d22
+10000346c:     	ldr	d1, [sp, #0x40]
+100003470:     	fmul	d21, d1, d22
+100003474:     	mov.16b	v22, v2
+100003478:     	fmadd	d16, d16, d12, d18
+10000347c:     	fmadd	d17, d17, d12, d19
+100003480:     	fmadd	d18, d21, d12, d20
+100003484:     	mov.16b	v21, v3
+100003488:     	fmov	d19, x15
+10000348c:     	ldr	d1, [sp, #0x20]
+100003490:     	fmul	d20, d1, d19
+100003494:     	fmadd	d12, d20, d0, d5
+100003498:     	ldr	d1, [sp, #0x30]
+10000349c:     	fmul	d5, d1, d19
+1000034a0:     	fmadd	d8, d5, d0, d6
+1000034a4:     	ldr	d1, [sp, #0x28]
+1000034a8:     	fmul	d5, d1, d19
+1000034ac:     	fmadd	d30, d5, d0, d7
+1000034b0:     	ldp	d1, d0, [sp, #0x10]
+1000034b4:     	fmul	d0, d0, d19
+1000034b8:     	fmul	d1, d1, d19
+1000034bc:     	ldr	d2, [sp, #0x8]
+1000034c0:     	fmul	d2, d2, d19
+1000034c4:     	ldp	d20, d19, [sp, #0x98]
+1000034c8:     	fmadd	d0, d0, d25, d16
+1000034cc:     	ldp	d16, d7, [sp, #0x118]
+1000034d0:     	fmadd	d1, d1, d25, d17
+1000034d4:     	fmadd	d2, d2, d25, d18
+1000034d8:     	mov.16b	v18, v10
+1000034dc:     	fmov	d3, x16
+1000034e0:     	fmul	d5, d26, d3
+1000034e4:     	mov.16b	v26, v29
+1000034e8:     	fmul	d6, d15, d3
+1000034ec:     	mov.16b	v15, v4
+1000034f0:     	fmul	d3, d23, d3
+1000034f4:     	fmadd	d10, d5, d24, d0
+1000034f8:     	ldp	d5, d29, [sp, #0x128]
+1000034fc:     	fmadd	d23, d6, d24, d1
+100003500:     	ldp	d6, d1, [sp, #0xa8]
+100003504:     	fmadd	d24, d3, d24, d2
+100003508:     	ldr	d3, [sp, #0x138]
+10000350c:     	ldp	d2, d0, [sp, #0x140]
+100003510:     	fmadd	d0, d4, d31, d0
+100003514:     	fmadd	d5, d9, d31, d5
+100003518:     	fmadd	d18, d14, d31, d18
+10000351c:     	ldp	d4, d17, [sp, #0x108]
+100003520:     	fmadd	d1, d4, d31, d1
+100003524:     	ldr	d4, [sp, #0xf8]
+100003528:     	fmadd	d6, d4, d31, d6
+10000352c:     	ldr	d4, [sp, #0x100]
+100003530:     	fmadd	d19, d4, d31, d19
+100003534:     	stp	d27, d28, [sp, #0xc0]
+100003538:     	fmadd	d2, d28, d31, d2
+10000353c:     	fmadd	d7, d27, d31, d7
+100003540:     	str	d26, [sp, #0xb8]
+100003544:     	fmadd	d20, d26, d31, d20
+100003548:     	stp	d12, d8, [sp, #0xe8]
+10000354c:     	fmadd	d3, d12, d31, d3
+100003550:     	fmadd	d16, d8, d31, d16
+100003554:     	stp	d10, d30, [sp, #0xd8]
+100003558:     	fmadd	d28, d30, d31, d21
+10000355c:     	fmadd	d29, d10, d31, d29
+100003560:     	fmadd	d17, d23, d31, d17
+100003564:     	fmadd	d27, d24, d31, d22
+100003568:     	subs	x1, x1, #0x1
+10000356c:     	b.ne	0x10000304c <_mech_turns+0x11c>

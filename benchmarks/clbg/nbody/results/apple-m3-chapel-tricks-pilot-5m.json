@@ -1,0 +1,1172 @@
+{
+  "created_at": "2026-10-07T11:23:47.342247+00:00",
+  "steps": 5000000,
+  "samples": 3,
+  "hardware": {
+    "cpu": "Apple M3"
+  },
+  "toolchain_versions": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)\n",
+    "clang": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg\n"
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-chapel-tricks-pilot-5m.compiler.tar.gz",
+    "sha256": "86c8dd2889ad35c83bfde4766bb8c08f8761271587bf232018b5d8eda647b0f0",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "note": "Exact compiler/runtime/source/script snapshot; apply on this v0.4 base. Pinned competitor sources are separately hashed in manifest.json."
+  },
+  "compiler_sha256": {
+    "hosts/gpu/Cargo.toml": "0feeb6388428311681cfa0c193c9f92f5a0e96f46905ffa15ead56f10a01ad9f",
+    "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+    "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+    "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+    "hosts/gpu/src/fused_f64/mod.rs": "4c4221c657e311d3c3e5169ad00c4343f6beaa3ed017b4a6b4f3b542ac570bfd",
+    "hosts/gpu/src/fused_f64/native.rs": "2d547f7de59e87a53cc727d854cd2400435ffaf418f113c26841975218b9f163",
+    "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+    "hosts/gpu/src/fused_f64/runner.rs": "0917147e1f35aaea13393752a44b43454bcf5b32a73bd645d4369e311de7c933"
+  },
+  "sample_order": [
+    [
+      "mech-sqrt-fma",
+      "mech-pairwise-fma-pressure",
+      "mech-pairwise-fma",
+      "rust-3",
+      "mech-pairwise-fma-depth",
+      "mech-factored-fma-pressure",
+      "mech-pairwise-strict",
+      "mech-sqrt-fma-pressure",
+      "chapel-3",
+      "mech-power-fma-pressure",
+      "mech-sqrt-fma-depth"
+    ],
+    [
+      "mech-sqrt-fma-pressure",
+      "mech-factored-fma-pressure",
+      "mech-sqrt-fma",
+      "mech-power-fma-pressure",
+      "mech-pairwise-strict",
+      "rust-3",
+      "mech-sqrt-fma-depth",
+      "mech-pairwise-fma-depth",
+      "chapel-3",
+      "mech-pairwise-fma-pressure",
+      "mech-pairwise-fma"
+    ],
+    [
+      "mech-factored-fma-pressure",
+      "mech-pairwise-fma",
+      "rust-3",
+      "mech-pairwise-fma-depth",
+      "mech-pairwise-strict",
+      "mech-sqrt-fma-pressure",
+      "mech-pairwise-fma-pressure",
+      "mech-sqrt-fma-depth",
+      "mech-power-fma-pressure",
+      "chapel-3",
+      "mech-sqrt-fma"
+    ]
+  ],
+  "protocol": "Fresh processes; startup/initialization/energy included, AOT builds excluded; one discarded warmup; shuffled sequential samples; Mech source only, generic compiler/runtime excluded.",
+  "workload": "Same five bodies, ten unique pairs, dt=0.01, momentum offset and two energy outputs. Pairwise Mech changes velocity accumulation order and shares d*mag; it is an authored accuracy-validated alternative, not strict-bit-identical to the earlier source.",
+  "state_reference_source_sha256": "d516e54fd3f9cb15abf404f922a3166f257b2eedf43bcb2f6fc7c79a3d0bf05a",
+  "expected_energy": [
+    -0.169075164,
+    -0.169083134
+  ],
+  "full_state_checks": [
+    {
+      "id": "mech-sqrt-fma",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-sqrt-fma",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-sqrt-fma",
+      "steps": 1000,
+      "max_scaled_resident_error": 4.992641004966365e-15,
+      "max_scaled_rust_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "mech-sqrt-fma",
+      "steps": 10000,
+      "max_scaled_resident_error": 1.1403351764505075e-12,
+      "max_scaled_rust_error": 1.6789902801406242e-12
+    },
+    {
+      "id": "mech-sqrt-fma-depth",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-sqrt-fma-depth",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-sqrt-fma-depth",
+      "steps": 1000,
+      "max_scaled_resident_error": 4.992641004966365e-15,
+      "max_scaled_rust_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "mech-sqrt-fma-depth",
+      "steps": 10000,
+      "max_scaled_resident_error": 1.1403351764505075e-12,
+      "max_scaled_rust_error": 1.6789902801406242e-12
+    },
+    {
+      "id": "mech-sqrt-fma-pressure",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-sqrt-fma-pressure",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-sqrt-fma-pressure",
+      "steps": 1000,
+      "max_scaled_resident_error": 4.992641004966365e-15,
+      "max_scaled_rust_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "mech-sqrt-fma-pressure",
+      "steps": 10000,
+      "max_scaled_resident_error": 1.1403351764505075e-12,
+      "max_scaled_rust_error": 1.6789902801406242e-12
+    },
+    {
+      "id": "mech-power-fma-pressure",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-power-fma-pressure",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-power-fma-pressure",
+      "steps": 1000,
+      "max_scaled_resident_error": 4.992641004966365e-15,
+      "max_scaled_rust_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "mech-power-fma-pressure",
+      "steps": 10000,
+      "max_scaled_resident_error": 1.566968776955946e-12,
+      "max_scaled_rust_error": 1.6789902801406242e-12
+    },
+    {
+      "id": "mech-factored-fma-pressure",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-factored-fma-pressure",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-factored-fma-pressure",
+      "steps": 1000,
+      "max_scaled_resident_error": 4.992641004966365e-15,
+      "max_scaled_rust_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "mech-factored-fma-pressure",
+      "steps": 10000,
+      "max_scaled_resident_error": 2.6439961331448103e-12,
+      "max_scaled_rust_error": 2.072342297765317e-12
+    },
+    {
+      "id": "mech-pairwise-strict",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-pairwise-strict",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-pairwise-strict",
+      "steps": 1000,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 1.2169562449605648e-14
+    },
+    {
+      "id": "mech-pairwise-strict",
+      "steps": 10000,
+      "max_scaled_resident_error": 5.9392457106762735e-15,
+      "max_scaled_rust_error": 2.2571944313654058e-12
+    },
+    {
+      "id": "mech-pairwise-fma",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-pairwise-fma",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-pairwise-fma",
+      "steps": 1000,
+      "max_scaled_resident_error": 3.276420659509173e-15,
+      "max_scaled_rust_error": 8.893141790096435e-15
+    },
+    {
+      "id": "mech-pairwise-fma",
+      "steps": 10000,
+      "max_scaled_resident_error": 7.788214517745473e-13,
+      "max_scaled_rust_error": 1.4783729795908584e-12
+    },
+    {
+      "id": "mech-pairwise-fma-depth",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-pairwise-fma-depth",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-pairwise-fma-depth",
+      "steps": 1000,
+      "max_scaled_resident_error": 3.276420659509173e-15,
+      "max_scaled_rust_error": 8.893141790096435e-15
+    },
+    {
+      "id": "mech-pairwise-fma-depth",
+      "steps": 10000,
+      "max_scaled_resident_error": 7.788214517745473e-13,
+      "max_scaled_rust_error": 1.4783729795908584e-12
+    },
+    {
+      "id": "mech-pairwise-fma-pressure",
+      "steps": 0,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.465003555274769e-16
+    },
+    {
+      "id": "mech-pairwise-fma-pressure",
+      "steps": 1,
+      "max_scaled_resident_error": 0.0,
+      "max_scaled_rust_error": 3.462799593712276e-16
+    },
+    {
+      "id": "mech-pairwise-fma-pressure",
+      "steps": 1000,
+      "max_scaled_resident_error": 3.276420659509173e-15,
+      "max_scaled_rust_error": 8.893141790096435e-15
+    },
+    {
+      "id": "mech-pairwise-fma-pressure",
+      "steps": 10000,
+      "max_scaled_resident_error": 7.788214517745473e-13,
+      "max_scaled_rust_error": 1.4783729795908584e-12
+    }
+  ],
+  "programs": [
+    {
+      "id": "rust-3",
+      "language": "rust",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference"
+      ],
+      "compile_command": [
+        "rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference"
+      ],
+      "source": {
+        "paths": [
+          "upstream/nbody-rust-3.rs"
+        ],
+        "sha256": {
+          "upstream/nbody-rust-3.rs": "34c935a74f929712bf8864697763c7d37806eb97ffdbad5e987346f5e761c994"
+        },
+        "physical_lines": 239,
+        "nonblank_noncomment_lines": 196,
+        "normalized_bytes": 4449,
+        "gzip1_bytes": 1748
+      },
+      "binary_sha256": "f22eda84ff2640cc3830589c20739917f8282474af30b5184e8202cfe1941d6b",
+      "samples_seconds": [
+        0.208720333,
+        0.211171958,
+        0.210487333
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [],
+      "median_seconds": 0.210487333
+    },
+    {
+      "id": "chapel-3",
+      "language": "chapel",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference"
+      ],
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "source": {
+        "paths": [
+          "upstream/nbody-chapel-3.chpl"
+        ],
+        "sha256": {
+          "upstream/nbody-chapel-3.chpl": "fb698d60d235ca97553a22a1c36156cc9ab9bfec6b4948017219de06b5bd070f"
+        },
+        "physical_lines": 131,
+        "nonblank_noncomment_lines": 79,
+        "normalized_bytes": 2194,
+        "gzip1_bytes": 972
+      },
+      "binary_sha256": "bf94fdce292029d5d9ea6adb3140d677729a82fee63f484483a3c437b6cf5482",
+      "samples_seconds": [
+        0.237719792,
+        0.235751292,
+        0.238218083
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [],
+      "median_seconds": 0.237719792
+    },
+    {
+      "id": "mech-sqrt-fma",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-chapel-tricks.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody.mec"
+        ],
+        "sha256": {
+          "nbody.mec": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1364,
+        "gzip1_bytes": 735
+      },
+      "native_object_sha256": "4c1452617d12a6398f5ae8d80d7729fff657eb95eb0aa8a55bc6f32c2359b3f2",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-sqrt-fma.disassembly.txt",
+        "loop_start_hex": "0x100003488",
+        "loop_backedge_hex": "0x10000396c",
+        "static_instructions": 314,
+        "stack_load_instructions": 89,
+        "stack_store_instructions": 33,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "9ef935cbb6a8091057334b25db017abc5e243032d94d517c9b20967cd618ff75",
+      "samples_seconds": [
+        0.218411958,
+        0.216477583,
+        0.218903708
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.20362
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.200995
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.201155
+        }
+      ],
+      "median_seconds": 0.218411958,
+      "median_kernel_seconds": 0.201155
+    },
+    {
+      "id": "mech-sqrt-fma-depth",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-depth-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-depth-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-depth-chapel-tricks.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-depth-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-depth-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-depth-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody.mec"
+        ],
+        "sha256": {
+          "nbody.mec": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1364,
+        "gzip1_bytes": 735
+      },
+      "native_object_sha256": "4c1452617d12a6398f5ae8d80d7729fff657eb95eb0aa8a55bc6f32c2359b3f2",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-sqrt-fma-depth.disassembly.txt",
+        "loop_start_hex": "0x100003488",
+        "loop_backedge_hex": "0x10000396c",
+        "static_instructions": 314,
+        "stack_load_instructions": 89,
+        "stack_store_instructions": 33,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "a00c754dc86fbcba87ce99a7f13eeca40f002a42c5b1549e5ca05dc6a28f6703",
+      "samples_seconds": [
+        0.215651875,
+        0.216283917,
+        0.219006083
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.200503
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.200994
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.203531
+        }
+      ],
+      "median_seconds": 0.216283917,
+      "median_kernel_seconds": 0.200994
+    },
+    {
+      "id": "mech-sqrt-fma-pressure",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-pressure"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-pressure-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-pressure-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-pressure-chapel-tricks.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-pressure"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-pressure-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-pressure-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-sqrt-fma-pressure-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody.mec"
+        ],
+        "sha256": {
+          "nbody.mec": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1364,
+        "gzip1_bytes": 735
+      },
+      "native_object_sha256": "4c1452617d12a6398f5ae8d80d7729fff657eb95eb0aa8a55bc6f32c2359b3f2",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-sqrt-fma-pressure.disassembly.txt",
+        "loop_start_hex": "0x100003488",
+        "loop_backedge_hex": "0x10000396c",
+        "static_instructions": 314,
+        "stack_load_instructions": 89,
+        "stack_store_instructions": 33,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "8025f11d9a61b14877e6de8febada75f27e088470f549b9cb6f5545c7c9a384c",
+      "samples_seconds": [
+        0.219293666,
+        0.216241709,
+        0.217548833
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.203589
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.201165
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.201231
+        }
+      ],
+      "median_seconds": 0.217548833,
+      "median_kernel_seconds": 0.201231
+    },
+    {
+      "id": "mech-power-fma-pressure",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-pressure"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-power-fma-pressure-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-power.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-power-fma-pressure-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-power-fma-pressure-chapel-tricks.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-pressure"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-power-fma-pressure-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-power-fma-pressure-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-power-fma-pressure-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody-power.mec"
+        ],
+        "sha256": {
+          "nbody-power.mec": "a62941f0665a17fcbdff910a325b37971e44c284ff3f1109e3a6117d6c33694d"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1350,
+        "gzip1_bytes": 732
+      },
+      "native_object_sha256": "4c1452617d12a6398f5ae8d80d7729fff657eb95eb0aa8a55bc6f32c2359b3f2",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-power-fma-pressure.disassembly.txt",
+        "loop_start_hex": "0x100003488",
+        "loop_backedge_hex": "0x10000396c",
+        "static_instructions": 314,
+        "stack_load_instructions": 89,
+        "stack_store_instructions": 33,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "4e2f1a5b8f05c823b4214af2a5af6766cf02ae40a24c38a2a1359da867080c13",
+      "samples_seconds": [
+        0.21676925,
+        0.213640042,
+        0.216370084
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.201306
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.200233
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.201347
+        }
+      ],
+      "median_seconds": 0.216370084,
+      "median_kernel_seconds": 0.201306
+    },
+    {
+      "id": "mech-factored-fma-pressure",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-pressure"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-factored-fma-pressure-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-factored.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-factored-fma-pressure-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-factored-fma-pressure-chapel-tricks.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-pressure"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-factored-fma-pressure-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-factored-fma-pressure-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-factored-fma-pressure-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody-factored.mec"
+        ],
+        "sha256": {
+          "nbody-factored.mec": "5835f437f8538a15d102e6c7e02b342c0928699431f8bdb1b54acecc2a12e170"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1368,
+        "gzip1_bytes": 740
+      },
+      "native_object_sha256": "f87448dff2cc3d18445e88103980655ecfb11952e6c0c5b5818141735bb1a59e",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-factored-fma-pressure.disassembly.txt",
+        "loop_start_hex": "0x10000355c",
+        "loop_backedge_hex": "0x100003950",
+        "static_instructions": 254,
+        "stack_load_instructions": 58,
+        "stack_store_instructions": 22,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "1f7848a7f47eddba6015ace5e57eba2d5e0184959f50171e6257abd0d302cb11",
+      "samples_seconds": [
+        0.217514417,
+        0.221305833,
+        0.221173708
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.205321
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.205893
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.204588
+        }
+      ],
+      "median_seconds": 0.221173708,
+      "median_kernel_seconds": 0.205321
+    },
+    {
+      "id": "mech-pairwise-strict",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-strict-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-strict-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-strict-chapel-tricks.o",
+        "--output",
+        "energy"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-strict-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-strict-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-strict-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody-pairwise.mec"
+        ],
+        "sha256": {
+          "nbody-pairwise.mec": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728"
+        },
+        "physical_lines": 41,
+        "nonblank_noncomment_lines": 38,
+        "normalized_bytes": 1728,
+        "gzip1_bytes": 877
+      },
+      "native_object_sha256": "57220c04151d1cc9938b81d2b5d164354e38b1b1b493e91121e306fbc4054a9b",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-pairwise-strict.disassembly.txt",
+        "loop_start_hex": "0x100003388",
+        "loop_backedge_hex": "0x100003880",
+        "static_instructions": 319,
+        "stack_load_instructions": 52,
+        "stack_store_instructions": 19,
+        "fused_instructions": 0,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "85ecb4350eb64a33a1cb7ad4b5c70be24100c47eb3058dc3818e1992ed8e1f89",
+      "samples_seconds": [
+        0.234955417,
+        0.230775584,
+        0.234242666
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.218863
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.216445
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.218264
+        }
+      ],
+      "median_seconds": 0.234242666,
+      "median_kernel_seconds": 0.218264
+    },
+    {
+      "id": "mech-pairwise-fma",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-chapel-tricks.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody-pairwise.mec"
+        ],
+        "sha256": {
+          "nbody-pairwise.mec": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728"
+        },
+        "physical_lines": 41,
+        "nonblank_noncomment_lines": 38,
+        "normalized_bytes": 1728,
+        "gzip1_bytes": 877
+      },
+      "native_object_sha256": "527db7887fdadbb1a29818fdf98f59308f1abdfb4d387883741aad827c7467ff",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-pairwise-fma.disassembly.txt",
+        "loop_start_hex": "0x10000358c",
+        "loop_backedge_hex": "0x100003974",
+        "static_instructions": 251,
+        "stack_load_instructions": 58,
+        "stack_store_instructions": 22,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "f01d4c6c7ee3ed1918229b0ceecc69dd85a180d149ffdf60703c1f94c3f69705",
+      "samples_seconds": [
+        0.211597583,
+        0.2105395,
+        0.212453375
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.196736
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.196474
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.196717
+        }
+      ],
+      "median_seconds": 0.211597583,
+      "median_kernel_seconds": 0.196717
+    },
+    {
+      "id": "mech-pairwise-fma-depth",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-depth-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-depth-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-depth-chapel-tricks.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-depth-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-depth-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-depth-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody-pairwise.mec"
+        ],
+        "sha256": {
+          "nbody-pairwise.mec": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728"
+        },
+        "physical_lines": 41,
+        "nonblank_noncomment_lines": 38,
+        "normalized_bytes": 1728,
+        "gzip1_bytes": 877
+      },
+      "native_object_sha256": "527db7887fdadbb1a29818fdf98f59308f1abdfb4d387883741aad827c7467ff",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-pairwise-fma-depth.disassembly.txt",
+        "loop_start_hex": "0x10000358c",
+        "loop_backedge_hex": "0x100003974",
+        "static_instructions": 251,
+        "stack_load_instructions": 58,
+        "stack_store_instructions": 22,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "84107efc67960770316bbc378a857eb0f9fdea6e71694870d51f6757923ec9df",
+      "samples_seconds": [
+        0.209565875,
+        0.21187475,
+        0.222751833
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.193989
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.196881
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.205977
+        }
+      ],
+      "median_seconds": 0.21187475,
+      "median_kernel_seconds": 0.196881
+    },
+    {
+      "id": "mech-pairwise-fma-pressure",
+      "language": "mech",
+      "execution_mode": "Cranelift SIMD AOT",
+      "native_flags": [
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-pressure"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-pressure-chapel-tricks"
+      ],
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-pressure-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-pressure-chapel-tricks.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-pressure"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-pressure-chapel-tricks.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-pressure-chapel-tricks.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-pairwise-fma-pressure-chapel-tricks"
+      ],
+      "source": {
+        "paths": [
+          "nbody-pairwise.mec"
+        ],
+        "sha256": {
+          "nbody-pairwise.mec": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728"
+        },
+        "physical_lines": 41,
+        "nonblank_noncomment_lines": 38,
+        "normalized_bytes": 1728,
+        "gzip1_bytes": 877
+      },
+      "native_object_sha256": "527db7887fdadbb1a29818fdf98f59308f1abdfb4d387883741aad827c7467ff",
+      "codegen": {
+        "disassembly_path": "apple-m3-chapel-tricks-pilot-5m.mech-pairwise-fma-pressure.disassembly.txt",
+        "loop_start_hex": "0x10000358c",
+        "loop_backedge_hex": "0x100003974",
+        "static_instructions": 251,
+        "stack_load_instructions": 58,
+        "stack_store_instructions": 22,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "binary_sha256": "83c6ec6af66bc75c44fc76570ac3bf535a6d5f85ba095c8e07ad19a2ef437f3b",
+      "samples_seconds": [
+        0.211901875,
+        0.209855041,
+        0.210973167
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n",
+        "-0.169075164\n-0.169083134\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.198011
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.195557
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 0.19669
+        }
+      ],
+      "median_seconds": 0.210973167,
+      "median_kernel_seconds": 0.19669
+    }
+  ]
+}

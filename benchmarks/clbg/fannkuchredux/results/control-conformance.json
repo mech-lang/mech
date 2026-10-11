@@ -1,0 +1,34 @@
+{
+  "compiler_executable_sha256": "6c71444441482c8d5ca77cc74670e1343ac2fb112715c265d79cb9eb9d5aedb0",
+  "byte_index_policy": "stack",
+  "all_passed": true,
+  "checked_results": 2544,
+  "byte_shapes": [
+    1,
+    2,
+    15,
+    16,
+    17,
+    32,
+    33,
+    64
+  ],
+  "all_prefix_lengths": true,
+  "all_byte_values": true,
+  "huge_rotation_distance": true,
+  "immutable_aliases": true,
+  "branch_proof_scope": true,
+  "positive_index_wrap_proof": true,
+  "scalar_and_simd": true,
+  "range_partitions_and_workers": true,
+  "independent_permutation_reference_n": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ]
+}

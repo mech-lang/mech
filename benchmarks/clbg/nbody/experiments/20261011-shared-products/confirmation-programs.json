@@ -1,0 +1,252 @@
+[
+  {
+    "id": "pairwise-before",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-current-before",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before"
+    ],
+    "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+    "binary_sha256": "d2120116edfc33d4a791bd751bff6db100661ef7836051419563da006d646a24",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before",
+      "{n}"
+    ]
+  },
+  {
+    "id": "rust-3",
+    "language": "rust",
+    "loc": 196,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference",
+      "{n}"
+    ],
+    "binary_sha256": "f22eda84ff2640cc3830589c20739917f8282474af30b5184e8202cfe1941d6b"
+  },
+  {
+    "id": "chapel-3",
+    "language": "chapel",
+    "loc": 79,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+      "--n={n}"
+    ],
+    "binary_sha256": "a57be549397679c1cf1ef9c4702a3e3de3863899ee11b328bc06d8e996772f7d"
+  },
+  {
+    "id": "nbody-gpp-6-llvm-native",
+    "language": "cpp",
+    "loc": 202,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-gpp-6-llvm-native",
+      "{n}"
+    ],
+    "binary_sha256": "0c211e6499d12227c8d424673c1e8d123ae0eb301f9368addd6a2de7c192297b"
+  },
+  {
+    "id": "compact-regions8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-regions",
+      "8"
+    ],
+    "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8"
+    ],
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "binary_sha256": "946b2b49b0a6a2aae7476104cc29f2c33026bf032d9ccf1461921c4c2abbedea",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8",
+      "{n}"
+    ],
+    "preserves_bits": true
+  },
+  {
+    "id": "nbody-zig-2-faithful",
+    "language": "zig",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+    "source_sha256": "0d5f3bc93014a64edf43caa6a5e95619c8ce924e14bd30bd3598b329eb9e65e8",
+    "loc": 117,
+    "build_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/zig/zig-aarch64-macos-0.17.0/zig",
+      "build-exe",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+      "-O",
+      "ReleaseFast",
+      "-mcpu=native",
+      "-fllvm",
+      "-lc",
+      "-femit-bin=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/nbody-zig-2-faithful"
+    ],
+    "binary_sha256": "8f1eb83ecca6beb33caca90237f07864c83d8050e566abba7abd1cd231990a66",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/nbody-zig-2-faithful",
+      "{n}"
+    ]
+  },
+  {
+    "id": "pairwise-seed8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/driver-seed8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8"
+    ],
+    "driver_sha256": "74ac7e189a33d5b26814861e7726dc5bb10ec294682704a1b6b0f6daa0468e01",
+    "object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+    "binary_sha256": "462a91334f74b3b942c9b7fba3ba1443a1f737c8d504d25b3c8d074f80b03609",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8",
+      "{n}"
+    ],
+    "state_control": "pairwise-before",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-shared-seed8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/driver-shared-seed8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-shared-seed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-shared-seed8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--share-scaled-products",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-shared-seed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-shared-seed8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-shared-seed8"
+    ],
+    "driver_sha256": "74ac7e189a33d5b26814861e7726dc5bb10ec294682704a1b6b0f6daa0468e01",
+    "object_sha256": "6aa65dd599b6d419244677e51457a19d43b6f4a2ed033ab749621dbd871f2598",
+    "binary_sha256": "5f9ae7170066cbbd7098a500265733b6f73ae8d2621def625e8ed70e25eca62d",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-shared-seed8",
+      "{n}"
+    ],
+    "state_control": "pairwise-before",
+    "preserves_bits": false
+  },
+  {
+    "id": "compiler-shared-regions8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/driver-shared",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compiler-shared-regions8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compiler-shared-regions8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--share-scaled-products",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compiler-shared-regions8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compiler-shared-regions8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compiler-shared-regions8"
+    ],
+    "driver_sha256": "74ac7e189a33d5b26814861e7726dc5bb10ec294682704a1b6b0f6daa0468e01",
+    "object_sha256": "e2d3a88cd06c9aea3e9dc357461b784aa5a8579bb83c07da4fd820ff762a3450",
+    "binary_sha256": "910306753f02128548c7c14e4e53b0a91cdd4d20717ec18956692e71185e05da",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compiler-shared-regions8",
+      "{n}"
+    ],
+    "state_control": "pairwise-before",
+    "preserves_bits": false
+  }
+]

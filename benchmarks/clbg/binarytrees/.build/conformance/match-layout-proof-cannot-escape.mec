@@ -1,0 +1,4 @@
+<row> := <{value<u64>}>
+r := (false ? | true => memory/allocate({value: 1}) | false => memory/null())
+h := memory/allocate({value: 2})
+io/print("{}\n", 1)

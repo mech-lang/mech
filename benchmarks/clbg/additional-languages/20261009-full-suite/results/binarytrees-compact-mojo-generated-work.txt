@@ -1,0 +1,3937 @@
+binaries/binarytrees-compact-mojo:
+(__TEXT,__text) section
+_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node]):
+00000001000035f8	stp	x20, x19, [sp, #-0x20]!
+00000001000035fc	stp	x29, x30, [sp, #0x10]
+0000000100003600	cbz	x0, 0x100003674
+0000000100003604	sub	x20, x0, #0x1
+0000000100003608	mov	x0, x20
+000000010000360c	bl	"_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node])"
+0000000100003610	mov	x19, x0
+0000000100003614	mov	x0, x20
+0000000100003618	bl	"_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node])"
+000000010000361c	mov	x20, x0
+0000000100003620	cmp	x2, x3
+0000000100003624	b.lt	0x100003658
+0000000100003628	cmp	x3, #0x0
+000000010000362c	cset	w8, eq
+0000000100003630	orr	x8, x8, x3, lsl #1
+0000000100003634	mov	x0, x1
+0000000100003638	mov	x1, x2
+000000010000363c	mov	x2, x3
+0000000100003640	mov	x3, x8
+0000000100003644	bl	"_std::collections::list::List::_realloc(::List[$0],::SIMD[DType.int, 1]){conforms_to($0, ::AnyType & ::Movable)},T=[typevalue<#kgen.instref<binarytrees-compact::Node>>, struct<(scalar<index>, scalar<index>) memoryOnly>]"
+0000000100003648	mov	x8, x1
+000000010000364c	mov	x1, x0
+0000000100003650	mov	x3, x2
+0000000100003654	mov	x2, x8
+0000000100003658	add	x8, x1, x2, lsl #4
+000000010000365c	stp	x19, x20, [x8]
+0000000100003660	add	x0, x2, #0x1
+0000000100003664	add	x2, x2, #0x1
+0000000100003668	ldp	x29, x30, [sp, #0x10]
+000000010000366c	ldp	x20, x19, [sp], #0x20
+0000000100003670	ret
+0000000100003674	mov	x19, #0x0
+0000000100003678	mov	x20, #0x0
+000000010000367c	cmp	x2, x3
+0000000100003680	b.ge	0x100003628
+0000000100003684	b	0x100003658
+_binarytrees-compact::check(::List[binarytrees-compact::Node],::SIMD[DType.int, 1]):
+0000000100003688	sub	sp, sp, #0xa0
+000000010000368c	stp	x26, x25, [sp, #0x50]
+0000000100003690	stp	x24, x23, [sp, #0x60]
+0000000100003694	stp	x22, x21, [sp, #0x70]
+0000000100003698	stp	x20, x19, [sp, #0x80]
+000000010000369c	stp	x29, x30, [sp, #0x90]
+00000001000036a0	cbz	x3, 0x100003728
+00000001000036a4	mov	x20, x2
+00000001000036a8	mov	x19, x1
+00000001000036ac	mov	x21, x0
+00000001000036b0	mov	x22, #0x0
+00000001000036b4	adrp	x23, 4 ; 0x100007000
+00000001000036b8	add	x23, x23, #0x470
+00000001000036bc	adrp	x8, 4 ; 0x100007000
+00000001000036c0	ldr	q0, [x8, #0x3c0]
+00000001000036c4	str	q0, [sp, #0x10]
+00000001000036c8	adrp	x24, 4 ; 0x100007000
+00000001000036cc	add	x24, x24, #0x440
+00000001000036d0	adrp	x8, 4 ; 0x100007000
+00000001000036d4	ldr	q0, [x8, #0x3d0]
+00000001000036d8	str	q0, [sp]
+00000001000036dc	sub	x5, x3, #0x1
+00000001000036e0	str	x23, [sp, #0x20]
+00000001000036e4	ldp	q0, q1, [sp]
+00000001000036e8	stur	q1, [sp, #0x28]
+00000001000036ec	str	x24, [sp, #0x38]
+00000001000036f0	stur	q0, [sp, #0x40]
+00000001000036f4	cmp	x5, x19
+00000001000036f8	b.hs	0x10000374c
+00000001000036fc	add	x25, x21, x5, lsl #4
+0000000100003700	ldr	x3, [x25]
+0000000100003704	mov	x0, x21
+0000000100003708	mov	x1, x19
+000000010000370c	mov	x2, x20
+0000000100003710	bl	"_binarytrees-compact::check(::List[binarytrees-compact::Node],::SIMD[DType.int, 1])"
+0000000100003714	ldr	x3, [x25, #0x8]
+0000000100003718	add	x8, x22, x0
+000000010000371c	add	x22, x8, #0x1
+0000000100003720	cbnz	x3, 0x1000036dc
+0000000100003724	b	0x10000372c
+0000000100003728	mov	x22, #0x0
+000000010000372c	mov	x0, x22
+0000000100003730	ldp	x29, x30, [sp, #0x90]
+0000000100003734	ldp	x20, x19, [sp, #0x80]
+0000000100003738	ldp	x22, x21, [sp, #0x70]
+000000010000373c	ldp	x24, x23, [sp, #0x60]
+0000000100003740	ldp	x26, x25, [sp, #0x50]
+0000000100003744	add	sp, sp, #0xa0
+0000000100003748	ret
+000000010000374c	sub	x7, x19, #0x1
+0000000100003750	adrp	x2, 4 ; 0x100007000
+0000000100003754	add	x2, x2, #0x480
+0000000100003758	add	x4, sp, #0x20
+000000010000375c	add	x6, sp, #0x38
+0000000100003760	mov	w0, #0x10
+0000000100003764	mov	w1, #0x22
+0000000100003768	mov	w3, #0x8c
+000000010000376c	bl	"_std::builtin::debug_assert::_debug_assert_fail_format[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](::SourceLocation,*$0),Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>],[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+_main:
+0000000100003770	stp	x28, x27, [sp, #-0x60]!
+0000000100003774	stp	x26, x25, [sp, #0x10]
+0000000100003778	stp	x24, x23, [sp, #0x20]
+000000010000377c	stp	x22, x21, [sp, #0x30]
+0000000100003780	stp	x20, x19, [sp, #0x40]
+0000000100003784	stp	x29, x30, [sp, #0x50]
+0000000100003788	sub	sp, sp, #0x1, lsl #12
+000000010000378c	sub	sp, sp, #0xa0
+0000000100003790	mov	x19, x1
+0000000100003794	mov	x20, x0
+0000000100003798	bl	0x100007300 ; symbol stub for: _KGEN_CompilerRT_AsyncRT_GetCurrentCPUDevice
+000000010000379c	cbnz	x0, 0x1000037c0
+00000001000037a0	adrp	x0, 4 ; 0x100007000
+00000001000037a4	add	x0, x0, #0x6b0
+00000001000037a8	adrp	x2, 3 ; 0x100006000
+00000001000037ac	add	x2, x2, #0x9b8
+00000001000037b0	adrp	x3, 3 ; 0x100006000
+00000001000037b4	add	x3, x3, #0x9bc
+00000001000037b8	mov	w1, #0x7
+00000001000037bc	bl	0x10000733c ; symbol stub for: _KGEN_CompilerRT_GetOrCreateGlobal
+00000001000037c0	mov	x0, x20
+00000001000037c4	mov	x1, x19
+00000001000037c8	bl	0x100007360 ; symbol stub for: _KGEN_CompilerRT_SetArgV
+00000001000037cc	bl	0x100007354 ; symbol stub for: _KGEN_CompilerRT_PrintStackTraceOnFault
+00000001000037d0	mov	w8, #0x8
+00000001000037d4	stp	x8, xzr, [sp, #0x90]
+00000001000037d8	add	x0, sp, #0x90
+00000001000037dc	bl	0x100007330 ; symbol stub for: _KGEN_CompilerRT_GetArgV
+00000001000037e0	adrp	x9, 4 ; 0x100007000
+00000001000037e4	add	x9, x9, #0x470
+00000001000037e8	ldp	x8, x10, [sp, #0x90]
+00000001000037ec	str	x9, [sp, #0x78]
+00000001000037f0	adrp	x9, 4 ; 0x100007000
+00000001000037f4	ldr	q0, [x9, #0x3c0]
+00000001000037f8	adrp	x9, 4 ; 0x100007000
+00000001000037fc	add	x9, x9, #0x440
+0000000100003800	stur	q0, [sp, #0x80]
+0000000100003804	str	x9, [sp, #0x90]
+0000000100003808	adrp	x9, 4 ; 0x100007000
+000000010000380c	ldr	q0, [x9, #0x3d0]
+0000000100003810	stur	q0, [sp, #0x98]
+0000000100003814	subs	x7, x10, #0x1
+0000000100003818	b.ls	0x100004bf8
+000000010000381c	ldp	x1, x2, [x8, #0x10]
+0000000100003820	cmp	x2, #0x1
+0000000100003824	b.lt	0x100003da8
+0000000100003828	mov	x8, #0x0
+000000010000382c	mov	w9, #0x20
+0000000100003830	mov	x25, x1
+0000000100003834	ldrsb	w20, [x25]
+0000000100003838	sub	w10, w20, #0x9
+000000010000383c	sub	w11, w20, #0x1c
+0000000100003840	cmp	w10, #0x5
+0000000100003844	ccmp	w11, #0x3, #0x0, hs
+0000000100003848	ccmp	w20, w9, #0x4, hs
+000000010000384c	cset	w10, eq
+0000000100003850	tbnz	w20, #0x1f, 0x10000386c
+0000000100003854	cbz	w10, 0x10000386c
+0000000100003858	sub	x8, x8, #0x1
+000000010000385c	add	x25, x25, #0x1
+0000000100003860	cmn	x2, x8
+0000000100003864	b.ne	0x100003834
+0000000100003868	b	0x100003da8
+000000010000386c	cmp	w20, #0x2b
+0000000100003870	cset	w9, eq
+0000000100003874	cmp	w20, #0x2d
+0000000100003878	csinc	w26, w9, wzr, ne
+000000010000387c	mov	x9, #-0x8000000000000000
+0000000100003880	cinv	x21, x9, ne
+0000000100003884	sub	x22, x26, x8
+0000000100003888	cmp	x22, x2
+000000010000388c	b.ge	0x100003da8
+0000000100003890	add	x8, x22, #0x1
+0000000100003894	cmp	x8, x2
+0000000100003898	mov	x23, x2
+000000010000389c	mov	x24, x1
+00000001000038a0	b.ge	0x100003b38
+00000001000038a4	add	x8, x25, x26
+00000001000038a8	ldrsb	w19, [x8, #0x1]
+00000001000038ac	tbnz	w19, #0x1f, 0x1000038d0
+00000001000038b0	stp	xzr, xzr, [sp, #0x60]
+00000001000038b4	mov	x8, #-0x7f00000000000000
+00000001000038b8	str	x8, [sp, #0x70]
+00000001000038bc	add	x0, sp, #0x60
+00000001000038c0	mov	x1, #0x0
+00000001000038c4	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+00000001000038c8	strb	w19, [x0]
+00000001000038cc	b	0x100003b08
+00000001000038d0	and	w8, w19, #0xff
+00000001000038d4	dup.4s	v0, w8
+00000001000038d8	adrp	x8, 4 ; 0x100007000
+00000001000038dc	ldr	q1, [x8, #0x3e0]
+00000001000038e0	cmhs.4s	v0, v0, v1
+00000001000038e4	addv.4s	s0, v0
+00000001000038e8	fmov	w8, s0
+00000001000038ec	neg	w27, w8
+00000001000038f0	and	w9, w27, #0xf
+00000001000038f4	mov	x8, #-0x8000000000000000
+00000001000038f8	orr	x28, x8, x9, lsl #56
+00000001000038fc	stp	xzr, xzr, [sp, #0x90]
+0000000100003900	str	x28, [sp, #0xa0]
+0000000100003904	add	x0, sp, #0x90
+0000000100003908	mov	x1, #0x0
+000000010000390c	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+0000000100003910	mov	w8, #0xbf
+0000000100003914	and	w8, w19, w8
+0000000100003918	str	w8, [sp, #0x20]
+000000010000391c	ubfx	w8, w19, #6, #2
+0000000100003920	str	w8, [sp, #0x18]
+0000000100003924	mov	w8, #-0x80
+0000000100003928	bfxil	w8, w19, #6, #2
+000000010000392c	str	w8, [sp, #0x10]
+0000000100003930	and	w8, w27, #0x7
+0000000100003934	cmp	w8, #0x1
+0000000100003938	stp	x28, x21, [sp, #0x28]
+000000010000393c	b.ne	0x100004ad0
+0000000100003940	strb	w19, [x0]
+0000000100003944	add	x0, sp, #0x90
+0000000100003948	mov	x1, #0x0
+000000010000394c	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+0000000100003950	ldp	x21, x28, [sp, #0x98]
+0000000100003954	tbz	x28, #0x3e, 0x100003978
+0000000100003958	ldr	x8, [sp, #0x90]
+000000010000395c	sub	x0, x8, #0x8
+0000000100003960	mov	x8, #-0x1
+0000000100003964	ldaddal	x8, x8, [x0]
+0000000100003968	cmp	x8, #0x1
+000000010000396c	b.ne	0x100003978
+0000000100003970	dmb	ishld
+0000000100003974	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003978	ubfx	x8, x28, #56, #5
+000000010000397c	cmp	x28, #0x0
+0000000100003980	csel	x8, x8, x21, mi
+0000000100003984	cmp	x8, #0x17
+0000000100003988	b.gt	0x100003a18
+000000010000398c	stp	xzr, xzr, [sp, #0x60]
+0000000100003990	mov	x8, #-0x8000000000000000
+0000000100003994	str	x8, [sp, #0x70]
+0000000100003998	stp	xzr, xzr, [sp, #0x90]
+000000010000399c	ldr	x8, [sp, #0x28]
+00000001000039a0	str	x8, [sp, #0xa0]
+00000001000039a4	add	x0, sp, #0x90
+00000001000039a8	mov	x1, #0x0
+00000001000039ac	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+00000001000039b0	and	w8, w27, #0x7
+00000001000039b4	cmp	w8, #0x1
+00000001000039b8	b.ne	0x100004af4
+00000001000039bc	strb	w19, [x0]
+00000001000039c0	ldr	x21, [sp, #0x30]
+00000001000039c4	add	x0, sp, #0x90
+00000001000039c8	mov	x1, #0x0
+00000001000039cc	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+00000001000039d0	mov	x1, x0
+00000001000039d4	ldp	x9, x8, [sp, #0x98]
+00000001000039d8	ubfx	x10, x8, #56, #5
+00000001000039dc	cmp	x8, #0x0
+00000001000039e0	csel	x2, x10, x9, mi
+00000001000039e4	add	x0, sp, #0x60
+00000001000039e8	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+00000001000039ec	ldrb	w8, [sp, #0xa7]
+00000001000039f0	tbz	w8, #0x6, 0x100003b08
+00000001000039f4	ldr	x8, [sp, #0x90]
+00000001000039f8	sub	x0, x8, #0x8
+00000001000039fc	mov	x8, #-0x1
+0000000100003a00	ldaddal	x8, x8, [x0]
+0000000100003a04	cmp	x8, #0x1
+0000000100003a08	b.ne	0x100003b08
+0000000100003a0c	dmb	ishld
+0000000100003a10	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003a14	b	0x100003b08
+0000000100003a18	add	x28, x8, #0x7
+0000000100003a1c	and	x8, x28, #0xfffffffffffffff8
+0000000100003a20	adds	x1, x8, #0x8
+0000000100003a24	b.mi	0x100003e0c
+0000000100003a28	mov	w0, #0x1
+0000000100003a2c	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+0000000100003a30	cbz	x0, 0x100004a98
+0000000100003a34	mov	w8, #0x1
+0000000100003a38	str	x8, [x0], #0x8
+0000000100003a3c	asr	x8, x28, #3
+0000000100003a40	stp	x0, xzr, [sp, #0x60]
+0000000100003a44	orr	x8, x8, #0x4000000000000000
+0000000100003a48	stp	x8, xzr, [sp, #0x70]
+0000000100003a4c	str	xzr, [sp, #0x1090]
+0000000100003a50	add	x8, sp, #0x60
+0000000100003a54	str	x8, [sp, #0x1098]
+0000000100003a58	ldr	x8, [sp, #0x28]
+0000000100003a5c	stp	xzr, x8, [sp, #0x80]
+0000000100003a60	add	x0, sp, #0x78
+0000000100003a64	mov	x1, #0x0
+0000000100003a68	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+0000000100003a6c	and	w8, w27, #0x7
+0000000100003a70	cmp	w8, #0x1
+0000000100003a74	b.ne	0x100004b3c
+0000000100003a78	strb	w19, [x0]
+0000000100003a7c	ldr	x21, [sp, #0x30]
+0000000100003a80	add	x0, sp, #0x78
+0000000100003a84	mov	x1, #0x0
+0000000100003a88	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+0000000100003a8c	mov	x1, x0
+0000000100003a90	ldp	x9, x8, [sp, #0x80]
+0000000100003a94	ubfx	x10, x8, #56, #5
+0000000100003a98	cmp	x8, #0x0
+0000000100003a9c	csel	x2, x10, x9, mi
+0000000100003aa0	add	x0, sp, #0x90
+0000000100003aa4	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=true"
+0000000100003aa8	ldrb	w8, [sp, #0x8f]
+0000000100003aac	tbz	w8, #0x6, 0x100003ad0
+0000000100003ab0	ldr	x8, [sp, #0x78]
+0000000100003ab4	sub	x0, x8, #0x8
+0000000100003ab8	mov	x8, #-0x1
+0000000100003abc	ldaddal	x8, x8, [x0]
+0000000100003ac0	cmp	x8, #0x1
+0000000100003ac4	b.ne	0x100003ad0
+0000000100003ac8	dmb	ishld
+0000000100003acc	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003ad0	ldr	x2, [sp, #0x1090]
+0000000100003ad4	cmp	x2, #0x1, lsl #12
+0000000100003ad8	b.le	0x100003af8
+0000000100003adc	ldr	x0, [sp, #0x1098]
+0000000100003ae0	add	x19, sp, #0x90
+0000000100003ae4	add	x1, sp, #0x90
+0000000100003ae8	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100003aec	mov	x2, #0x0
+0000000100003af0	str	xzr, [sp, #0x1090]
+0000000100003af4	b	0x100003afc
+0000000100003af8	add	x19, sp, #0x90
+0000000100003afc	ldr	x0, [sp, #0x1098]
+0000000100003b00	mov	x1, x19
+0000000100003b04	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100003b08	ldrb	w9, [x25, x26]
+0000000100003b0c	ldr	x8, [sp, #0x70]
+0000000100003b10	cmp	w9, #0x30
+0000000100003b14	tbz	x8, #0x3e, 0x100003b38
+0000000100003b18	ldr	x8, [sp, #0x60]
+0000000100003b1c	sub	x0, x8, #0x8
+0000000100003b20	mov	x8, #-0x1
+0000000100003b24	ldaddal	x8, x8, [x0]
+0000000100003b28	cmp	x8, #0x1
+0000000100003b2c	b.ne	0x100003b38
+0000000100003b30	dmb	ishld
+0000000100003b34	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003b38	adrp	x1, 4 ; 0x100007000
+0000000100003b3c	add	x1, x1, #0x580
+0000000100003b40	add	x19, sp, #0x78
+0000000100003b44	add	x3, sp, #0x78
+0000000100003b48	mov	w0, #0x9
+0000000100003b4c	mov	x2, #0x0
+0000000100003b50	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100003b54	ldp	x11, x8, [sp, #0x80]
+0000000100003b58	cmn	x8, #0x1
+0000000100003b5c	ldr	x9, [sp, #0x78]
+0000000100003b60	csel	x10, x9, x19, gt
+0000000100003b64	ubfx	x12, x8, #56, #5
+0000000100003b68	csel	x11, x11, x12, gt
+0000000100003b6c	cbz	x11, 0x100004c1c
+0000000100003b70	ldrsb	w19, [x10]
+0000000100003b74	mov	x2, x23
+0000000100003b78	mov	x1, x24
+0000000100003b7c	tbz	w19, #0x1f, 0x100003bd8
+0000000100003b80	mvn	w11, w19, lsl #24
+0000000100003b84	clz	w11, w11
+0000000100003b88	mov	w12, #0x6
+0000000100003b8c	mov	w13, #-0x6
+0000000100003b90	madd	w12, w11, w12, w13
+0000000100003b94	and	x12, x12, #0xfe
+0000000100003b98	mov	w13, #0x7f
+0000000100003b9c	lsr	w13, w13, w11
+0000000100003ba0	and	w13, w13, w19
+0000000100003ba4	lsl	x19, x13, x12
+0000000100003ba8	cmp	w11, #0x1
+0000000100003bac	b.eq	0x100003bd8
+0000000100003bb0	sub	x11, x11, #0x1
+0000000100003bb4	sub	x12, x12, #0x6
+0000000100003bb8	add	x10, x10, #0x1
+0000000100003bbc	ldrb	w13, [x10], #0x1
+0000000100003bc0	and	x13, x13, #0x3f
+0000000100003bc4	lsl	x13, x13, x12
+0000000100003bc8	orr	x19, x13, x19
+0000000100003bcc	sub	x12, x12, #0x6
+0000000100003bd0	sub	x11, x11, #0x1
+0000000100003bd4	cbnz	x11, 0x100003bbc
+0000000100003bd8	tbz	x8, #0x3e, 0x100003c00
+0000000100003bdc	sub	x0, x9, #0x8
+0000000100003be0	mov	x8, #-0x1
+0000000100003be4	ldaddal	x8, x8, [x0]
+0000000100003be8	cmp	x8, #0x1
+0000000100003bec	b.ne	0x100003c00
+0000000100003bf0	dmb	ishld
+0000000100003bf4	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003bf8	mov	x1, x24
+0000000100003bfc	mov	x2, x23
+0000000100003c00	mov	x8, #0x0
+0000000100003c04	add	x11, x1, #0x1
+0000000100003c08	mov	w10, #0x1
+0000000100003c0c	mov	w12, #0xa
+0000000100003c10	mov	x13, #-0x3333333333333334
+0000000100003c14	movk	x13, #0xccc, lsl #48
+0000000100003c18	add	x9, x11, x22
+0000000100003c1c	add	x15, x22, #0x1
+0000000100003c20	mvn	x14, x22
+0000000100003c24	sub	x16, x2, x22
+0000000100003c28	mov	x0, x10
+0000000100003c2c	mov	x17, x0
+0000000100003c30	cbz	x16, 0x100003da0
+0000000100003c34	ldurb	w0, [x9, #-0x1]
+0000000100003c38	cmp	w0, #0x5f
+0000000100003c3c	b.ne	0x100003c5c
+0000000100003c40	add	x9, x9, #0x1
+0000000100003c44	add	x15, x15, #0x1
+0000000100003c48	sub	x14, x14, #0x1
+0000000100003c4c	sub	x16, x16, #0x1
+0000000100003c50	mov	w0, #0x1
+0000000100003c54	tbz	w17, #0x0, 0x100003c2c
+0000000100003c58	b	0x100003da8
+0000000100003c5c	cmp	w0, #0x30
+0000000100003c60	ccmp	w19, w0, #0x0, hs
+0000000100003c64	b.lo	0x100004a0c
+0000000100003c68	sub	x15, x0, #0x30
+0000000100003c6c	sub	x10, x21, x15
+0000000100003c70	cmp	x8, x10
+0000000100003c74	b.hi	0x100003ce0
+0000000100003c78	mov	w10, #0x0
+0000000100003c7c	add	x15, x15, x8
+0000000100003c80	neg	x22, x14
+0000000100003c84	cmp	x22, x2
+0000000100003c88	mov	x8, x15
+0000000100003c8c	b.ge	0x100003c18
+0000000100003c90	mov	w10, #0x0
+0000000100003c94	ldrb	w8, [x9]
+0000000100003c98	subs	w9, w8, #0xb
+0000000100003c9c	cmp	w8, #0x20
+0000000100003ca0	and	w14, w8, #0xfe
+0000000100003ca4	ccmp	w14, #0xc, #0x4, ne
+0000000100003ca8	ccmn	w9, #0x2, #0x2, ne
+0000000100003cac	cset	w9, lo
+0000000100003cb0	sub	w14, w8, #0x1f
+0000000100003cb4	cmp	w8, #0xb
+0000000100003cb8	ccmn	w14, #0x3, #0x2, ne
+0000000100003cbc	csel	w9, wzr, w9, hs
+0000000100003cc0	cmp	wzr, w8, lsl #24
+0000000100003cc4	csinc	w9, w9, wzr, le
+0000000100003cc8	cmp	w9, #0x0
+0000000100003ccc	csinc	x8, x12, xzr, ne
+0000000100003cd0	mul	x8, x8, x15
+0000000100003cd4	cbz	w9, 0x100003c18
+0000000100003cd8	cmp	x15, x13
+0000000100003cdc	b.ls	0x100003c18
+0000000100003ce0	add	x3, sp, #0x78
+0000000100003ce4	mov	w0, #0xa
+0000000100003ce8	bl	"_std::collections::string::string::_str_to_base_error[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1]](::SIMD[DType.int, 1],::StringSpan[$0, $1, $2]),str_slice.mut`=false"
+0000000100003cec	adrp	x8, 4 ; 0x100007000
+0000000100003cf0	add	x8, x8, #0x6c0
+0000000100003cf4	str	x8, [sp, #0x90]
+0000000100003cf8	adrp	x8, 4 ; 0x100007000
+0000000100003cfc	ldr	q0, [x8, #0x3f0]
+0000000100003d00	stur	q0, [sp, #0x98]
+0000000100003d04	add	x0, sp, #0x78
+0000000100003d08	add	x1, sp, #0x90
+0000000100003d0c	bl	"_std::builtin::error::Error::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0),Ts.values`2x=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]]"
+0000000100003d10	mov	x19, x0
+0000000100003d14	mov	x20, x1
+0000000100003d18	mov	x21, x2
+0000000100003d1c	mov	x0, x3
+0000000100003d20	mov	x1, x4
+0000000100003d24	ldrb	w8, [sp, #0xa7]
+0000000100003d28	tbz	w8, #0x6, 0x100003d60
+0000000100003d2c	ldr	x8, [sp, #0x90]
+0000000100003d30	sub	x8, x8, #0x8
+0000000100003d34	mov	x9, #-0x1
+0000000100003d38	ldaddal	x9, x9, [x8]
+0000000100003d3c	cmp	x9, #0x1
+0000000100003d40	b.ne	0x100003d60
+0000000100003d44	dmb	ishld
+0000000100003d48	mov	x22, x0
+0000000100003d4c	mov	x0, x8
+0000000100003d50	mov	x23, x1
+0000000100003d54	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003d58	mov	x1, x23
+0000000100003d5c	mov	x0, x22
+0000000100003d60	ldrb	w8, [sp, #0x8f]
+0000000100003d64	tbz	w8, #0x6, 0x100003dc4
+0000000100003d68	ldr	x8, [sp, #0x78]
+0000000100003d6c	sub	x8, x8, #0x8
+0000000100003d70	mov	x9, #-0x1
+0000000100003d74	ldaddal	x9, x9, [x8]
+0000000100003d78	cmp	x9, #0x1
+0000000100003d7c	b.ne	0x100003dc4
+0000000100003d80	dmb	ishld
+0000000100003d84	mov	x22, x0
+0000000100003d88	mov	x0, x8
+0000000100003d8c	mov	x23, x1
+0000000100003d90	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003d94	mov	x1, x23
+0000000100003d98	mov	x0, x22
+0000000100003d9c	b	0x100003dc4
+0000000100003da0	orr	w9, w10, w17
+0000000100003da4	tbz	w9, #0x0, 0x100004a88
+0000000100003da8	add	x3, sp, #0x90
+0000000100003dac	mov	w0, #0xa
+0000000100003db0	bl	"_std::collections::string::string::_str_to_base_error[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1]](::SIMD[DType.int, 1],::StringSpan[$0, $1, $2]),str_slice.mut`=false"
+0000000100003db4	ldp	x19, x20, [sp, #0x90]
+0000000100003db8	ldr	x21, [sp, #0xa0]
+0000000100003dbc	mov	x0, #-0x1
+0000000100003dc0	bl	"_std::builtin::error::StackTrace::collect_if_enabled(::SIMD[DType.int, 1])"
+0000000100003dc4	mov	w9, #0x1
+0000000100003dc8	stp	x19, x20, [sp, #0x38]
+0000000100003dcc	stp	x21, x0, [sp, #0x48]
+0000000100003dd0	mov	w10, #0x6
+0000000100003dd4	cmp	x8, #0x6
+0000000100003dd8	csel	x24, x8, x10, gt
+0000000100003ddc	strb	w1, [sp, #0x58]
+0000000100003de0	tbz	w9, #0x0, 0x100003e44
+0000000100003de4	tst	w1, #0xff
+0000000100003de8	b.eq	0x1000047e8
+0000000100003dec	mov	x8, #0x0
+0000000100003df0	ldr	x1, [x0, #0x10]
+0000000100003df4	mov	x9, #0x7fffffffffffffff
+0000000100003df8	ldrb	w10, [x1, x8]
+0000000100003dfc	cbz	w10, 0x1000043bc
+0000000100003e00	add	x8, x8, #0x1
+0000000100003e04	cmp	x8, x9
+0000000100003e08	b.ne	0x100003df8
+0000000100003e0c	mov	w8, #0x23
+0000000100003e10	adrp	x9, 4 ; 0x100007000
+0000000100003e14	add	x9, x9, #0x7e0
+0000000100003e18	stp	x9, x8, [sp, #0x90]
+0000000100003e1c	mov	x8, #0x2000000000000000
+0000000100003e20	str	x8, [sp, #0xa0]
+0000000100003e24	adrp	x2, 4 ; 0x100007000
+0000000100003e28	add	x2, x2, #0x780
+0000000100003e2c	add	x4, sp, #0x90
+0000000100003e30	mov	w0, #0x30f
+0000000100003e34	mov	w1, #0xe
+0000000100003e38	mov	w3, #0x21
+0000000100003e3c	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100003e40	brk	#0x1
+0000000100003e44	add	x8, x24, #0x1
+0000000100003e48	str	x8, [sp, #0x30]
+0000000100003e4c	mov	x0, x24
+0000000100003e50	mov	w1, #0x8
+0000000100003e54	mov	x2, #0x0
+0000000100003e58	mov	x3, #0x0
+0000000100003e5c	bl	"_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node])"
+0000000100003e60	mov	x23, x0
+0000000100003e64	mov	x0, x24
+0000000100003e68	bl	"_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node])"
+0000000100003e6c	mov	x19, x0
+0000000100003e70	mov	x20, x1
+0000000100003e74	mov	x22, x2
+0000000100003e78	mov	x21, x3
+0000000100003e7c	cmp	x2, x3
+0000000100003e80	b.lt	0x100003eac
+0000000100003e84	cmp	x21, #0x0
+0000000100003e88	cset	w8, eq
+0000000100003e8c	orr	x3, x8, x21, lsl #1
+0000000100003e90	mov	x0, x20
+0000000100003e94	mov	x1, x22
+0000000100003e98	mov	x2, x21
+0000000100003e9c	bl	"_std::collections::list::List::_realloc(::List[$0],::SIMD[DType.int, 1]){conforms_to($0, ::AnyType & ::Movable)},T=[typevalue<#kgen.instref<binarytrees-compact::Node>>, struct<(scalar<index>, scalar<index>) memoryOnly>]"
+0000000100003ea0	mov	x20, x0
+0000000100003ea4	mov	x22, x1
+0000000100003ea8	mov	x21, x2
+0000000100003eac	add	x8, x20, x22, lsl #4
+0000000100003eb0	stp	x23, x19, [x8]
+0000000100003eb4	adrp	x1, 4 ; 0x100007000
+0000000100003eb8	add	x1, x1, #0x580
+0000000100003ebc	add	x19, sp, #0x78
+0000000100003ec0	add	x0, x24, #0x1
+0000000100003ec4	add	x3, sp, #0x78
+0000000100003ec8	mov	x2, #0x0
+0000000100003ecc	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100003ed0	ldp	x10, x8, [sp, #0x80]
+0000000100003ed4	cmn	x8, #0x1
+0000000100003ed8	ldr	x9, [sp, #0x78]
+0000000100003edc	csel	x2, x9, x19, gt
+0000000100003ee0	ubfx	x8, x8, #56, #5
+0000000100003ee4	csel	x3, x10, x8, gt
+0000000100003ee8	adrp	x0, 4 ; 0x100007000
+0000000100003eec	add	x0, x0, #0x530
+0000000100003ef0	mov	w1, #0x16
+0000000100003ef4	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100003ef8	stp	x0, x1, [sp, #0x90]
+0000000100003efc	str	x2, [sp, #0xa0]
+0000000100003f00	ldrb	w8, [sp, #0x8f]
+0000000100003f04	tbz	w8, #0x6, 0x100003f28
+0000000100003f08	ldr	x8, [sp, #0x78]
+0000000100003f0c	sub	x0, x8, #0x8
+0000000100003f10	mov	x8, #-0x1
+0000000100003f14	ldaddal	x8, x8, [x0]
+0000000100003f18	cmp	x8, #0x1
+0000000100003f1c	b.ne	0x100003f28
+0000000100003f20	dmb	ishld
+0000000100003f24	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003f28	ldp	x10, x8, [sp, #0x98]
+0000000100003f2c	cmn	x8, #0x1
+0000000100003f30	add	x19, sp, #0x90
+0000000100003f34	ldr	x9, [sp, #0x90]
+0000000100003f38	csel	x0, x9, x19, gt
+0000000100003f3c	ubfx	x8, x8, #56, #5
+0000000100003f40	csel	x1, x10, x8, gt
+0000000100003f44	adrp	x2, 4 ; 0x100007000
+0000000100003f48	add	x2, x2, #0x570
+0000000100003f4c	mov	w3, #0x9
+0000000100003f50	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100003f54	stp	x0, x1, [sp, #0x60]
+0000000100003f58	str	x2, [sp, #0x70]
+0000000100003f5c	ldrb	w8, [sp, #0xa7]
+0000000100003f60	tbz	w8, #0x6, 0x100003f84
+0000000100003f64	ldr	x8, [sp, #0x90]
+0000000100003f68	sub	x0, x8, #0x8
+0000000100003f6c	mov	x8, #-0x1
+0000000100003f70	ldaddal	x8, x8, [x0]
+0000000100003f74	cmp	x8, #0x1
+0000000100003f78	b.ne	0x100003f84
+0000000100003f7c	dmb	ishld
+0000000100003f80	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100003f84	add	x1, x22, #0x1
+0000000100003f88	add	x3, x22, #0x1
+0000000100003f8c	mov	x0, x20
+0000000100003f90	mov	x2, x21
+0000000100003f94	bl	"_binarytrees-compact::check(::List[binarytrees-compact::Node],::SIMD[DType.int, 1])"
+0000000100003f98	adrp	x1, 4 ; 0x100007000
+0000000100003f9c	add	x1, x1, #0x580
+0000000100003fa0	add	x3, sp, #0x90
+0000000100003fa4	mov	x2, #0x0
+0000000100003fa8	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100003fac	ldp	x10, x8, [sp, #0x98]
+0000000100003fb0	cmn	x8, #0x1
+0000000100003fb4	ldr	x9, [sp, #0x90]
+0000000100003fb8	csel	x2, x9, x19, gt
+0000000100003fbc	ubfx	x8, x8, #56, #5
+0000000100003fc0	csel	x3, x10, x8, gt
+0000000100003fc4	ldp	x11, x8, [sp, #0x68]
+0000000100003fc8	cmn	x8, #0x1
+0000000100003fcc	add	x9, sp, #0x60
+0000000100003fd0	ldr	x10, [sp, #0x60]
+0000000100003fd4	csel	x0, x10, x9, gt
+0000000100003fd8	ubfx	x8, x8, #56, #5
+0000000100003fdc	csel	x1, x11, x8, gt
+0000000100003fe0	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100003fe4	stp	x0, x1, [sp, #0x78]
+0000000100003fe8	str	x2, [sp, #0x88]
+0000000100003fec	ldrb	w8, [sp, #0xa7]
+0000000100003ff0	tbz	w8, #0x6, 0x100004014
+0000000100003ff4	ldr	x8, [sp, #0x90]
+0000000100003ff8	sub	x0, x8, #0x8
+0000000100003ffc	mov	x8, #-0x1
+0000000100004000	ldaddal	x8, x8, [x0]
+0000000100004004	cmp	x8, #0x1
+0000000100004008	b.ne	0x100004014
+000000010000400c	dmb	ishld
+0000000100004010	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100004014	ldrb	w8, [sp, #0x77]
+0000000100004018	tbz	w8, #0x6, 0x10000403c
+000000010000401c	ldr	x8, [sp, #0x60]
+0000000100004020	sub	x0, x8, #0x8
+0000000100004024	mov	x8, #-0x1
+0000000100004028	ldaddal	x8, x8, [x0]
+000000010000402c	cmp	x8, #0x1
+0000000100004030	b.ne	0x10000403c
+0000000100004034	dmb	ishld
+0000000100004038	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+000000010000403c	ldp	x11, x8, [sp, #0x80]
+0000000100004040	cmn	x8, #0x1
+0000000100004044	add	x9, sp, #0x78
+0000000100004048	ldr	x10, [sp, #0x78]
+000000010000404c	csel	x0, x10, x9, gt
+0000000100004050	ubfx	x8, x8, #56, #5
+0000000100004054	csel	x1, x11, x8, gt
+0000000100004058	adrp	x2, 3 ; 0x100007000
+000000010000405c	add	x2, x2, #0x8b0
+0000000100004060	mov	w3, #0x1
+0000000100004064	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100004068	stp	x0, x1, [sp, #0x90]
+000000010000406c	str	x2, [sp, #0xa0]
+0000000100004070	ldrb	w8, [sp, #0x8f]
+0000000100004074	tbz	w8, #0x6, 0x100004098
+0000000100004078	ldr	x8, [sp, #0x78]
+000000010000407c	sub	x0, x8, #0x8
+0000000100004080	mov	x8, #-0x1
+0000000100004084	ldaddal	x8, x8, [x0]
+0000000100004088	cmp	x8, #0x1
+000000010000408c	b.ne	0x100004098
+0000000100004090	dmb	ishld
+0000000100004094	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100004098	ldp	x11, x8, [sp, #0x98]
+000000010000409c	cmn	x8, #0x1
+00000001000040a0	add	x9, sp, #0x90
+00000001000040a4	ldr	x10, [sp, #0x90]
+00000001000040a8	csel	x1, x10, x9, gt
+00000001000040ac	ubfx	x8, x8, #56, #5
+00000001000040b0	csel	x2, x11, x8, gt
+00000001000040b4	mov	w0, #0x1
+00000001000040b8	bl	0x1000073b4 ; symbol stub for: _write
+00000001000040bc	ldrb	w8, [sp, #0xa7]
+00000001000040c0	tbz	w8, #0x6, 0x1000040e4
+00000001000040c4	ldr	x8, [sp, #0x90]
+00000001000040c8	sub	x0, x8, #0x8
+00000001000040cc	mov	x8, #-0x1
+00000001000040d0	ldaddal	x8, x8, [x0]
+00000001000040d4	cmp	x8, #0x1
+00000001000040d8	b.ne	0x1000040e4
+00000001000040dc	dmb	ishld
+00000001000040e0	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000040e4	sub	x0, x24, #0x1
+00000001000040e8	mov	w1, #0x8
+00000001000040ec	mov	x2, #0x0
+00000001000040f0	mov	x3, #0x0
+00000001000040f4	bl	"_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node])"
+00000001000040f8	mov	x22, x0
+00000001000040fc	sub	x0, x24, #0x1
+0000000100004100	bl	"_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node])"
+0000000100004104	mov	x19, x0
+0000000100004108	mov	x0, x1
+000000010000410c	mov	x1, x2
+0000000100004110	mov	x2, x3
+0000000100004114	cmp	x1, x3
+0000000100004118	b.lt	0x10000412c
+000000010000411c	cmp	x2, #0x0
+0000000100004120	cset	w8, eq
+0000000100004124	orr	x3, x8, x2, lsl #1
+0000000100004128	bl	"_std::collections::list::List::_realloc(::List[$0],::SIMD[DType.int, 1]){conforms_to($0, ::AnyType & ::Movable)},T=[typevalue<#kgen.instref<binarytrees-compact::Node>>, struct<(scalar<index>, scalar<index>) memoryOnly>]"
+000000010000412c	stp	x2, x0, [sp, #0x10]
+0000000100004130	add	x8, x0, x1, lsl #4
+0000000100004134	stp	x22, x19, [x8]
+0000000100004138	add	x8, x24, #0x1
+000000010000413c	cmp	x8, #0x5
+0000000100004140	str	x24, [sp, #0x20]
+0000000100004144	str	x1, [sp, #0x8]
+0000000100004148	b.ge	0x1000043f8
+000000010000414c	cmp	x21, #0x1
+0000000100004150	b.lt	0x10000415c
+0000000100004154	mov	x0, x20
+0000000100004158	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+000000010000415c	adrp	x1, 3 ; 0x100007000
+0000000100004160	add	x1, x1, #0x580
+0000000100004164	add	x19, sp, #0x78
+0000000100004168	add	x3, sp, #0x78
+000000010000416c	ldr	x0, [sp, #0x20]
+0000000100004170	mov	x2, #0x0
+0000000100004174	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100004178	ldp	x10, x8, [sp, #0x80]
+000000010000417c	cmn	x8, #0x1
+0000000100004180	ldr	x9, [sp, #0x78]
+0000000100004184	csel	x2, x9, x19, gt
+0000000100004188	ubfx	x8, x8, #56, #5
+000000010000418c	csel	x3, x10, x8, gt
+0000000100004190	adrp	x0, 3 ; 0x100007000
+0000000100004194	add	x0, x0, #0x510
+0000000100004198	mov	w1, #0x19
+000000010000419c	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+00000001000041a0	stp	x0, x1, [sp, #0x90]
+00000001000041a4	str	x2, [sp, #0xa0]
+00000001000041a8	ldrb	w8, [sp, #0x8f]
+00000001000041ac	ldp	x19, x20, [sp, #0x10]
+00000001000041b0	tbz	w8, #0x6, 0x1000041d4
+00000001000041b4	ldr	x8, [sp, #0x78]
+00000001000041b8	sub	x0, x8, #0x8
+00000001000041bc	mov	x8, #-0x1
+00000001000041c0	ldaddal	x8, x8, [x0]
+00000001000041c4	cmp	x8, #0x1
+00000001000041c8	b.ne	0x1000041d4
+00000001000041cc	dmb	ishld
+00000001000041d0	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000041d4	ldp	x11, x8, [sp, #0x98]
+00000001000041d8	cmn	x8, #0x1
+00000001000041dc	add	x9, sp, #0x90
+00000001000041e0	ldr	x10, [sp, #0x90]
+00000001000041e4	csel	x0, x10, x9, gt
+00000001000041e8	ubfx	x8, x8, #56, #5
+00000001000041ec	csel	x1, x11, x8, gt
+00000001000041f0	adrp	x2, 3 ; 0x100007000
+00000001000041f4	add	x2, x2, #0x570
+00000001000041f8	mov	w3, #0x9
+00000001000041fc	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100004200	stp	x0, x1, [sp, #0x60]
+0000000100004204	str	x2, [sp, #0x70]
+0000000100004208	ldrb	w8, [sp, #0xa7]
+000000010000420c	tbz	w8, #0x6, 0x100004230
+0000000100004210	ldr	x8, [sp, #0x90]
+0000000100004214	sub	x0, x8, #0x8
+0000000100004218	mov	x8, #-0x1
+000000010000421c	ldaddal	x8, x8, [x0]
+0000000100004220	cmp	x8, #0x1
+0000000100004224	b.ne	0x100004230
+0000000100004228	dmb	ishld
+000000010000422c	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100004230	ldr	x8, [sp, #0x8]
+0000000100004234	add	x1, x8, #0x1
+0000000100004238	add	x3, x8, #0x1
+000000010000423c	mov	x0, x20
+0000000100004240	mov	x2, x19
+0000000100004244	bl	"_binarytrees-compact::check(::List[binarytrees-compact::Node],::SIMD[DType.int, 1])"
+0000000100004248	cmp	x19, #0x1
+000000010000424c	b.lt	0x100004260
+0000000100004250	mov	x19, x0
+0000000100004254	mov	x0, x20
+0000000100004258	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+000000010000425c	mov	x0, x19
+0000000100004260	adrp	x1, 3 ; 0x100007000
+0000000100004264	add	x1, x1, #0x580
+0000000100004268	add	x19, sp, #0x90
+000000010000426c	add	x3, sp, #0x90
+0000000100004270	mov	x2, #0x0
+0000000100004274	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100004278	ldp	x10, x8, [sp, #0x98]
+000000010000427c	cmn	x8, #0x1
+0000000100004280	ldr	x9, [sp, #0x90]
+0000000100004284	csel	x2, x9, x19, gt
+0000000100004288	ubfx	x8, x8, #56, #5
+000000010000428c	csel	x3, x10, x8, gt
+0000000100004290	ldp	x11, x8, [sp, #0x68]
+0000000100004294	cmn	x8, #0x1
+0000000100004298	add	x9, sp, #0x60
+000000010000429c	ldr	x10, [sp, #0x60]
+00000001000042a0	csel	x0, x10, x9, gt
+00000001000042a4	ubfx	x8, x8, #56, #5
+00000001000042a8	csel	x1, x11, x8, gt
+00000001000042ac	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+00000001000042b0	stp	x0, x1, [sp, #0x78]
+00000001000042b4	str	x2, [sp, #0x88]
+00000001000042b8	ldrb	w8, [sp, #0xa7]
+00000001000042bc	tbz	w8, #0x6, 0x1000042e0
+00000001000042c0	ldr	x8, [sp, #0x90]
+00000001000042c4	sub	x0, x8, #0x8
+00000001000042c8	mov	x8, #-0x1
+00000001000042cc	ldaddal	x8, x8, [x0]
+00000001000042d0	cmp	x8, #0x1
+00000001000042d4	b.ne	0x1000042e0
+00000001000042d8	dmb	ishld
+00000001000042dc	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000042e0	ldrb	w8, [sp, #0x77]
+00000001000042e4	tbz	w8, #0x6, 0x100004308
+00000001000042e8	ldr	x8, [sp, #0x60]
+00000001000042ec	sub	x0, x8, #0x8
+00000001000042f0	mov	x8, #-0x1
+00000001000042f4	ldaddal	x8, x8, [x0]
+00000001000042f8	cmp	x8, #0x1
+00000001000042fc	b.ne	0x100004308
+0000000100004300	dmb	ishld
+0000000100004304	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100004308	ldp	x11, x8, [sp, #0x80]
+000000010000430c	cmn	x8, #0x1
+0000000100004310	add	x9, sp, #0x78
+0000000100004314	ldr	x10, [sp, #0x78]
+0000000100004318	csel	x0, x10, x9, gt
+000000010000431c	ubfx	x8, x8, #56, #5
+0000000100004320	csel	x1, x11, x8, gt
+0000000100004324	adrp	x2, 3 ; 0x100007000
+0000000100004328	add	x2, x2, #0x8b0
+000000010000432c	mov	w3, #0x1
+0000000100004330	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100004334	stp	x0, x1, [sp, #0x90]
+0000000100004338	str	x2, [sp, #0xa0]
+000000010000433c	ldrb	w8, [sp, #0x8f]
+0000000100004340	tbz	w8, #0x6, 0x100004364
+0000000100004344	ldr	x8, [sp, #0x78]
+0000000100004348	sub	x0, x8, #0x8
+000000010000434c	mov	x8, #-0x1
+0000000100004350	ldaddal	x8, x8, [x0]
+0000000100004354	cmp	x8, #0x1
+0000000100004358	b.ne	0x100004364
+000000010000435c	dmb	ishld
+0000000100004360	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100004364	ldp	x11, x8, [sp, #0x98]
+0000000100004368	cmn	x8, #0x1
+000000010000436c	add	x9, sp, #0x90
+0000000100004370	ldr	x10, [sp, #0x90]
+0000000100004374	csel	x1, x10, x9, gt
+0000000100004378	ubfx	x8, x8, #56, #5
+000000010000437c	csel	x2, x11, x8, gt
+0000000100004380	mov	w0, #0x1
+0000000100004384	bl	0x1000073b4 ; symbol stub for: _write
+0000000100004388	ldrb	w8, [sp, #0xa7]
+000000010000438c	tbz	w8, #0x6, 0x1000043b0
+0000000100004390	ldr	x8, [sp, #0x90]
+0000000100004394	sub	x0, x8, #0x8
+0000000100004398	mov	x8, #-0x1
+000000010000439c	ldaddal	x8, x8, [x0]
+00000001000043a0	cmp	x8, #0x1
+00000001000043a4	b.ne	0x1000043b0
+00000001000043a8	dmb	ishld
+00000001000043ac	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000043b0	bl	0x100007324 ; symbol stub for: _KGEN_CompilerRT_DestroyGlobals
+00000001000043b4	mov	w0, #0x0
+00000001000043b8	b	0x1000049e8
+00000001000043bc	cmp	x8, #0x17
+00000001000043c0	b.hi	0x100004840
+00000001000043c4	mov	x2, #0x0
+00000001000043c8	stp	xzr, xzr, [sp, #0x78]
+00000001000043cc	mov	x8, #-0x8000000000000000
+00000001000043d0	str	x8, [sp, #0x88]
+00000001000043d4	ldrb	w8, [x1, x2]
+00000001000043d8	cbz	w8, 0x1000043f0
+00000001000043dc	add	x2, x2, #0x1
+00000001000043e0	mov	x8, #0x7fffffffffffffff
+00000001000043e4	cmp	x2, x8
+00000001000043e8	b.ne	0x1000043d4
+00000001000043ec	mov	x2, #0x7fffffffffffffff
+00000001000043f0	add	x0, sp, #0x78
+00000001000043f4	b	0x1000048e4
+00000001000043f8	mov	w27, #0x0
+00000001000043fc	add	x8, x24, #0x4
+0000000100004400	str	x8, [sp, #0x28]
+0000000100004404	mov	w28, #0x6
+0000000100004408	mov	w23, #0x4
+000000010000440c	b	0x10000443c
+0000000100004410	mov	x8, #0x7ffffffffffffffe
+0000000100004414	cmp	x28, x8
+0000000100004418	cset	w8, eq
+000000010000441c	ldr	x9, [sp, #0x30]
+0000000100004420	cmp	x28, x9
+0000000100004424	mov	x23, x28
+0000000100004428	add	x28, x28, #0x2
+000000010000442c	cset	w9, ge
+0000000100004430	orr	w9, w27, w9
+0000000100004434	mov	x27, x8
+0000000100004438	tbnz	w9, #0x0, 0x10000414c
+000000010000443c	ldr	x8, [sp, #0x28]
+0000000100004440	sub	x8, x8, x23
+0000000100004444	mov	w9, #0x1
+0000000100004448	lsl	x24, x9, x8
+000000010000444c	mov	x22, #0x0
+0000000100004450	bics	x25, x24, x24, asr #63
+0000000100004454	b.eq	0x100004548
+0000000100004458	cbnz	x23, 0x100004488
+000000010000445c	b	0x100004518
+0000000100004460	add	x9, x20, x8, lsl #4
+0000000100004464	stp	x19, x26, [x9]
+0000000100004468	add	x1, x8, #0x1
+000000010000446c	add	x3, x8, #0x1
+0000000100004470	mov	x0, x20
+0000000100004474	mov	x2, x21
+0000000100004478	bl	"_binarytrees-compact::check(::List[binarytrees-compact::Node],::SIMD[DType.int, 1])"
+000000010000447c	add	x22, x0, x22
+0000000100004480	subs	x25, x25, #0x1
+0000000100004484	b.eq	0x100004548
+0000000100004488	sub	x0, x23, #0x1
+000000010000448c	mov	x1, x20
+0000000100004490	mov	x2, #0x0
+0000000100004494	mov	x3, x21
+0000000100004498	bl	"_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node])"
+000000010000449c	mov	x19, x0
+00000001000044a0	sub	x0, x23, #0x1
+00000001000044a4	bl	"_binarytrees-compact::build(::SIMD[DType.int, 1],::List[binarytrees-compact::Node])"
+00000001000044a8	mov	x26, x0
+00000001000044ac	mov	x20, x1
+00000001000044b0	mov	x8, x2
+00000001000044b4	mov	x21, x3
+00000001000044b8	cmp	x2, x3
+00000001000044bc	b.lt	0x100004460
+00000001000044c0	cmp	x21, #0x0
+00000001000044c4	cset	w9, eq
+00000001000044c8	orr	x3, x9, x21, lsl #1
+00000001000044cc	mov	x0, x20
+00000001000044d0	mov	x1, x8
+00000001000044d4	mov	x2, x21
+00000001000044d8	bl	"_std::collections::list::List::_realloc(::List[$0],::SIMD[DType.int, 1]){conforms_to($0, ::AnyType & ::Movable)},T=[typevalue<#kgen.instref<binarytrees-compact::Node>>, struct<(scalar<index>, scalar<index>) memoryOnly>]"
+00000001000044dc	mov	x20, x0
+00000001000044e0	mov	x8, x1
+00000001000044e4	mov	x21, x2
+00000001000044e8	b	0x100004460
+00000001000044ec	mov	x8, #0x0
+00000001000044f0	add	x9, x20, x8, lsl #4
+00000001000044f4	stp	xzr, xzr, [x9]
+00000001000044f8	add	x1, x8, #0x1
+00000001000044fc	add	x3, x8, #0x1
+0000000100004500	mov	x0, x20
+0000000100004504	mov	x2, x21
+0000000100004508	bl	"_binarytrees-compact::check(::List[binarytrees-compact::Node],::SIMD[DType.int, 1])"
+000000010000450c	add	x22, x0, x22
+0000000100004510	subs	x25, x25, #0x1
+0000000100004514	b.eq	0x100004548
+0000000100004518	cmp	x21, #0x0
+000000010000451c	b.gt	0x1000044ec
+0000000100004520	cset	w8, eq
+0000000100004524	orr	x3, x8, x21, lsl #1
+0000000100004528	mov	x0, x20
+000000010000452c	mov	x1, #0x0
+0000000100004530	mov	x2, x21
+0000000100004534	bl	"_std::collections::list::List::_realloc(::List[$0],::SIMD[DType.int, 1]){conforms_to($0, ::AnyType & ::Movable)},T=[typevalue<#kgen.instref<binarytrees-compact::Node>>, struct<(scalar<index>, scalar<index>) memoryOnly>]"
+0000000100004538	mov	x20, x0
+000000010000453c	mov	x8, x1
+0000000100004540	mov	x21, x2
+0000000100004544	b	0x1000044f0
+0000000100004548	add	x3, sp, #0x90
+000000010000454c	mov	x0, x24
+0000000100004550	adrp	x19, 3 ; 0x100007000
+0000000100004554	add	x19, x19, #0x580
+0000000100004558	mov	x1, x19
+000000010000455c	mov	x2, #0x0
+0000000100004560	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100004564	ldp	x10, x8, [sp, #0x98]
+0000000100004568	cmn	x8, #0x1
+000000010000456c	ldr	x9, [sp, #0x90]
+0000000100004570	add	x24, sp, #0x90
+0000000100004574	csel	x0, x9, x24, gt
+0000000100004578	ubfx	x8, x8, #56, #5
+000000010000457c	csel	x1, x10, x8, gt
+0000000100004580	adrp	x2, 3 ; 0x100007000
+0000000100004584	add	x2, x2, #0x550
+0000000100004588	mov	w3, #0x11
+000000010000458c	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100004590	stp	x0, x1, [sp, #0x60]
+0000000100004594	str	x2, [sp, #0x70]
+0000000100004598	ldrb	w8, [sp, #0xa7]
+000000010000459c	mov	x26, #-0x1
+00000001000045a0	tbz	w8, #0x6, 0x1000045c0
+00000001000045a4	ldr	x8, [sp, #0x90]
+00000001000045a8	sub	x0, x8, #0x8
+00000001000045ac	ldaddal	x26, x8, [x0]
+00000001000045b0	cmp	x8, #0x1
+00000001000045b4	b.ne	0x1000045c0
+00000001000045b8	dmb	ishld
+00000001000045bc	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000045c0	add	x3, sp, #0x78
+00000001000045c4	mov	x0, x23
+00000001000045c8	mov	x1, x19
+00000001000045cc	mov	x2, #0x0
+00000001000045d0	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+00000001000045d4	ldp	x10, x8, [sp, #0x80]
+00000001000045d8	cmn	x8, #0x1
+00000001000045dc	ldr	x9, [sp, #0x78]
+00000001000045e0	add	x23, sp, #0x78
+00000001000045e4	csel	x2, x9, x23, gt
+00000001000045e8	ubfx	x8, x8, #56, #5
+00000001000045ec	csel	x3, x10, x8, gt
+00000001000045f0	ldp	x10, x8, [sp, #0x68]
+00000001000045f4	cmn	x8, #0x1
+00000001000045f8	ldr	x9, [sp, #0x60]
+00000001000045fc	add	x25, sp, #0x60
+0000000100004600	csel	x0, x9, x25, gt
+0000000100004604	ubfx	x8, x8, #56, #5
+0000000100004608	csel	x1, x10, x8, gt
+000000010000460c	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100004610	stp	x0, x1, [sp, #0x90]
+0000000100004614	str	x2, [sp, #0xa0]
+0000000100004618	ldrb	w8, [sp, #0x8f]
+000000010000461c	tbz	w8, #0x6, 0x10000463c
+0000000100004620	ldr	x8, [sp, #0x78]
+0000000100004624	sub	x0, x8, #0x8
+0000000100004628	ldaddal	x26, x8, [x0]
+000000010000462c	cmp	x8, #0x1
+0000000100004630	b.ne	0x10000463c
+0000000100004634	dmb	ishld
+0000000100004638	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+000000010000463c	ldrb	w8, [sp, #0x77]
+0000000100004640	tbz	w8, #0x6, 0x100004660
+0000000100004644	ldr	x8, [sp, #0x60]
+0000000100004648	sub	x0, x8, #0x8
+000000010000464c	ldaddal	x26, x8, [x0]
+0000000100004650	cmp	x8, #0x1
+0000000100004654	b.ne	0x100004660
+0000000100004658	dmb	ishld
+000000010000465c	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100004660	ldp	x10, x8, [sp, #0x98]
+0000000100004664	cmn	x8, #0x1
+0000000100004668	ldr	x9, [sp, #0x90]
+000000010000466c	csel	x0, x9, x24, gt
+0000000100004670	ubfx	x8, x8, #56, #5
+0000000100004674	csel	x1, x10, x8, gt
+0000000100004678	adrp	x2, 3 ; 0x100007000
+000000010000467c	add	x2, x2, #0x570
+0000000100004680	mov	w3, #0x9
+0000000100004684	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100004688	stp	x0, x1, [sp, #0x60]
+000000010000468c	str	x2, [sp, #0x70]
+0000000100004690	ldrb	w8, [sp, #0xa7]
+0000000100004694	tbz	w8, #0x6, 0x1000046b4
+0000000100004698	ldr	x8, [sp, #0x90]
+000000010000469c	sub	x0, x8, #0x8
+00000001000046a0	ldaddal	x26, x8, [x0]
+00000001000046a4	cmp	x8, #0x1
+00000001000046a8	b.ne	0x1000046b4
+00000001000046ac	dmb	ishld
+00000001000046b0	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000046b4	add	x3, sp, #0x90
+00000001000046b8	mov	x0, x22
+00000001000046bc	mov	x1, x19
+00000001000046c0	mov	x2, #0x0
+00000001000046c4	bl	"_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+00000001000046c8	ldp	x10, x8, [sp, #0x98]
+00000001000046cc	cmn	x8, #0x1
+00000001000046d0	ldr	x9, [sp, #0x90]
+00000001000046d4	csel	x2, x9, x24, gt
+00000001000046d8	ubfx	x8, x8, #56, #5
+00000001000046dc	csel	x3, x10, x8, gt
+00000001000046e0	ldp	x10, x8, [sp, #0x68]
+00000001000046e4	cmn	x8, #0x1
+00000001000046e8	ldr	x9, [sp, #0x60]
+00000001000046ec	csel	x0, x9, x25, gt
+00000001000046f0	ubfx	x8, x8, #56, #5
+00000001000046f4	csel	x1, x10, x8, gt
+00000001000046f8	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+00000001000046fc	stp	x0, x1, [sp, #0x78]
+0000000100004700	str	x2, [sp, #0x88]
+0000000100004704	ldrb	w8, [sp, #0xa7]
+0000000100004708	tbz	w8, #0x6, 0x100004728
+000000010000470c	ldr	x8, [sp, #0x90]
+0000000100004710	sub	x0, x8, #0x8
+0000000100004714	ldaddal	x26, x8, [x0]
+0000000100004718	cmp	x8, #0x1
+000000010000471c	b.ne	0x100004728
+0000000100004720	dmb	ishld
+0000000100004724	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100004728	ldrb	w8, [sp, #0x77]
+000000010000472c	tbz	w8, #0x6, 0x10000474c
+0000000100004730	ldr	x8, [sp, #0x60]
+0000000100004734	sub	x0, x8, #0x8
+0000000100004738	ldaddal	x26, x8, [x0]
+000000010000473c	cmp	x8, #0x1
+0000000100004740	b.ne	0x10000474c
+0000000100004744	dmb	ishld
+0000000100004748	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+000000010000474c	ldp	x10, x8, [sp, #0x80]
+0000000100004750	cmn	x8, #0x1
+0000000100004754	ldr	x9, [sp, #0x78]
+0000000100004758	csel	x0, x9, x23, gt
+000000010000475c	ubfx	x8, x8, #56, #5
+0000000100004760	csel	x1, x10, x8, gt
+0000000100004764	adrp	x2, 3 ; 0x100007000
+0000000100004768	add	x2, x2, #0x8b0
+000000010000476c	mov	w3, #0x1
+0000000100004770	bl	"_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false"
+0000000100004774	stp	x0, x1, [sp, #0x90]
+0000000100004778	str	x2, [sp, #0xa0]
+000000010000477c	ldrb	w8, [sp, #0x8f]
+0000000100004780	tbz	w8, #0x6, 0x1000047a0
+0000000100004784	ldr	x8, [sp, #0x78]
+0000000100004788	sub	x0, x8, #0x8
+000000010000478c	ldaddal	x26, x8, [x0]
+0000000100004790	cmp	x8, #0x1
+0000000100004794	b.ne	0x1000047a0
+0000000100004798	dmb	ishld
+000000010000479c	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000047a0	ldp	x10, x8, [sp, #0x98]
+00000001000047a4	cmn	x8, #0x1
+00000001000047a8	ldr	x9, [sp, #0x90]
+00000001000047ac	csel	x1, x9, x24, gt
+00000001000047b0	ubfx	x8, x8, #56, #5
+00000001000047b4	csel	x2, x10, x8, gt
+00000001000047b8	mov	w0, #0x1
+00000001000047bc	bl	0x1000073b4 ; symbol stub for: _write
+00000001000047c0	ldrb	w8, [sp, #0xa7]
+00000001000047c4	tbz	w8, #0x6, 0x100004410
+00000001000047c8	ldr	x8, [sp, #0x90]
+00000001000047cc	sub	x0, x8, #0x8
+00000001000047d0	ldaddal	x26, x8, [x0]
+00000001000047d4	cmp	x8, #0x1
+00000001000047d8	b.ne	0x100004410
+00000001000047dc	dmb	ishld
+00000001000047e0	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000047e4	b	0x100004410
+00000001000047e8	adrp	x8, 3 ; 0x100007000
+00000001000047ec	add	x8, x8, #0x630
+00000001000047f0	str	x8, [sp, #0x90]
+00000001000047f4	adrp	x8, 3 ; 0x100007000
+00000001000047f8	ldr	q0, [x8, #0x400]
+00000001000047fc	stur	q0, [sp, #0x98]
+0000000100004800	adrp	x1, 3 ; 0x100007000
+0000000100004804	add	x1, x1, #0x8b0
+0000000100004808	add	x0, sp, #0x90
+000000010000480c	mov	w2, #0x1
+0000000100004810	mov	w3, #0x0
+0000000100004814	mov	w4, #0x2
+0000000100004818	bl	"_std::io::io::print[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2],::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5],::Bool,LITOrigin[$7._mlir_value],::Origin[$7, $8]](*$0,sep:::StringSpan[$4, $5, $6],end:::StringSpan[$7, $8, $9],flush:::Bool,file:::FileDescriptor$)_REMOVED_ARG,Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]]"
+000000010000481c	ldrb	w8, [sp, #0xa7]
+0000000100004820	tbz	w8, #0x6, 0x10000493c
+0000000100004824	ldr	x8, [sp, #0x90]
+0000000100004828	sub	x0, x8, #0x8
+000000010000482c	mov	x8, #-0x1
+0000000100004830	ldaddal	x8, x8, [x0]
+0000000100004834	cmp	x8, #0x1
+0000000100004838	b.eq	0x100004934
+000000010000483c	b	0x10000493c
+0000000100004840	add	x20, x8, #0x7
+0000000100004844	and	x8, x20, #0xfffffffffffffff8
+0000000100004848	adds	x1, x8, #0x8
+000000010000484c	b.mi	0x100003e0c
+0000000100004850	mov	x19, x0
+0000000100004854	mov	w0, #0x1
+0000000100004858	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+000000010000485c	cbz	x0, 0x100004a98
+0000000100004860	mov	x2, #0x0
+0000000100004864	asr	x8, x20, #3
+0000000100004868	mov	w9, #0x1
+000000010000486c	str	x9, [x0], #0x8
+0000000100004870	stp	x0, xzr, [sp, #0x78]
+0000000100004874	orr	x8, x8, #0x4000000000000000
+0000000100004878	str	x8, [sp, #0x88]
+000000010000487c	str	xzr, [sp, #0x1090]
+0000000100004880	add	x8, sp, #0x78
+0000000100004884	str	x8, [sp, #0x1098]
+0000000100004888	ldr	x1, [x19, #0x10]
+000000010000488c	ldrb	w8, [x1, x2]
+0000000100004890	cbz	w8, 0x1000048a8
+0000000100004894	add	x2, x2, #0x1
+0000000100004898	mov	x8, #0x7fffffffffffffff
+000000010000489c	cmp	x2, x8
+00000001000048a0	b.ne	0x10000488c
+00000001000048a4	mov	x2, #0x7fffffffffffffff
+00000001000048a8	add	x0, sp, #0x90
+00000001000048ac	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+00000001000048b0	ldr	x2, [sp, #0x1090]
+00000001000048b4	cmp	x2, #0x1, lsl #12
+00000001000048b8	b.le	0x1000048d8
+00000001000048bc	ldr	x0, [sp, #0x1098]
+00000001000048c0	add	x19, sp, #0x90
+00000001000048c4	add	x1, sp, #0x90
+00000001000048c8	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+00000001000048cc	mov	x2, #0x0
+00000001000048d0	str	xzr, [sp, #0x1090]
+00000001000048d4	b	0x1000048dc
+00000001000048d8	add	x19, sp, #0x90
+00000001000048dc	ldr	x0, [sp, #0x1098]
+00000001000048e0	mov	x1, x19
+00000001000048e4	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+00000001000048e8	ldr	x8, [sp, #0x78]
+00000001000048ec	ldur	q0, [sp, #0x80]
+00000001000048f0	str	x8, [sp, #0x60]
+00000001000048f4	stur	q0, [sp, #0x68]
+00000001000048f8	adrp	x1, 3 ; 0x100007000
+00000001000048fc	add	x1, x1, #0x8b0
+0000000100004900	add	x0, sp, #0x60
+0000000100004904	mov	w2, #0x1
+0000000100004908	mov	w3, #0x0
+000000010000490c	mov	w4, #0x2
+0000000100004910	bl	"_std::io::io::print[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2],::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5],::Bool,LITOrigin[$7._mlir_value],::Origin[$7, $8]](*$0,sep:::StringSpan[$4, $5, $6],end:::StringSpan[$7, $8, $9],flush:::Bool,file:::FileDescriptor$)_REMOVED_ARG,Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]]"
+0000000100004914	ldrb	w8, [sp, #0x77]
+0000000100004918	tbz	w8, #0x6, 0x10000493c
+000000010000491c	ldr	x8, [sp, #0x60]
+0000000100004920	sub	x0, x8, #0x8
+0000000100004924	mov	x8, #-0x1
+0000000100004928	ldaddal	x8, x8, [x0]
+000000010000492c	cmp	x8, #0x1
+0000000100004930	b.ne	0x10000493c
+0000000100004934	dmb	ishld
+0000000100004938	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+000000010000493c	adrp	x8, 3 ; 0x100007000
+0000000100004940	add	x8, x8, #0x600
+0000000100004944	str	x8, [sp, #0x90]
+0000000100004948	adrp	x8, 3 ; 0x100007000
+000000010000494c	ldr	q0, [x8, #0x410]
+0000000100004950	stur	q0, [sp, #0x98]
+0000000100004954	adrp	x2, 3 ; 0x100007000
+0000000100004958	add	x2, x2, #0x8c0
+000000010000495c	adrp	x4, 3 ; 0x100007000
+0000000100004960	add	x4, x4, #0x8b0
+0000000100004964	add	x0, sp, #0x90
+0000000100004968	add	x1, sp, #0x38
+000000010000496c	mov	w3, #0x1
+0000000100004970	mov	w5, #0x1
+0000000100004974	mov	w6, #0x0
+0000000100004978	mov	w7, #0x2
+000000010000497c	bl	"_std::io::io::print[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2],::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5],::Bool,LITOrigin[$7._mlir_value],::Origin[$7, $8]](*$0,sep:::StringSpan[$4, $5, $6],end:::StringSpan[$7, $8, $9],flush:::Bool,file:::FileDescriptor$)_REMOVED_ARG,Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::builtin::error::Error>>, struct<(struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>, struct<(struct<(struct<(variant<struct<()>, struct<(pointer<none>) memoryOnly>>) memoryOnly>) memoryOnly>) memoryOnly>) memoryOnly>]]"
+0000000100004980	ldrb	w8, [sp, #0xa7]
+0000000100004984	tbz	w8, #0x6, 0x1000049a8
+0000000100004988	ldr	x8, [sp, #0x90]
+000000010000498c	sub	x0, x8, #0x8
+0000000100004990	mov	x8, #-0x1
+0000000100004994	ldaddal	x8, x8, [x0]
+0000000100004998	cmp	x8, #0x1
+000000010000499c	b.ne	0x1000049a8
+00000001000049a0	dmb	ishld
+00000001000049a4	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000049a8	ldrb	w8, [sp, #0x4f]
+00000001000049ac	tbz	w8, #0x6, 0x1000049d0
+00000001000049b0	ldr	x8, [sp, #0x38]
+00000001000049b4	sub	x0, x8, #0x8
+00000001000049b8	mov	x8, #-0x1
+00000001000049bc	ldaddal	x8, x8, [x0]
+00000001000049c0	cmp	x8, #0x1
+00000001000049c4	b.ne	0x1000049d0
+00000001000049c8	dmb	ishld
+00000001000049cc	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+00000001000049d0	ldrb	w8, [sp, #0x58]
+00000001000049d4	cmp	w8, #0x1
+00000001000049d8	b.ne	0x1000049e4
+00000001000049dc	ldr	x0, [sp, #0x50]
+00000001000049e0	bl	"_std::memory::arc_pointer::ArcPointer::__deinit__(::ArcPointer[$0]$),T=[typevalue<#kgen.instref<std::memory::owned_pointer::OwnedPointer,T=[typevalue<#kgen.instref<std::simd::SIMD,dtype=ui8,length=1>>, scalar<ui8>]>>, pointer<none>]"
+00000001000049e4	mov	w0, #0x1
+00000001000049e8	add	sp, sp, #0x1, lsl #12
+00000001000049ec	add	sp, sp, #0xa0
+00000001000049f0	ldp	x29, x30, [sp, #0x50]
+00000001000049f4	ldp	x20, x19, [sp, #0x40]
+00000001000049f8	ldp	x22, x21, [sp, #0x30]
+00000001000049fc	ldp	x24, x23, [sp, #0x20]
+0000000100004a00	ldp	x26, x25, [sp, #0x10]
+0000000100004a04	ldp	x28, x27, [sp], #0x60
+0000000100004a08	ret
+0000000100004a0c	sub	w11, w0, #0x9
+0000000100004a10	cmp	w0, #0xb
+0000000100004a14	and	w12, w0, #0xfe
+0000000100004a18	ccmp	w12, #0x1c, #0x4, ne
+0000000100004a1c	cset	w13, eq
+0000000100004a20	cmp	w0, #0x20
+0000000100004a24	ccmp	w12, #0xc, #0x4, ne
+0000000100004a28	ccmp	w11, #0x2, #0x0, ne
+0000000100004a2c	csinc	w11, w13, wzr, hs
+0000000100004a30	cmp	w0, #0x1e
+0000000100004a34	csinc	w11, w11, wzr, ne
+0000000100004a38	tbnz	w0, #0x7, 0x100003da8
+0000000100004a3c	cbz	w11, 0x100003da8
+0000000100004a40	tbnz	w10, #0x0, 0x100003da8
+0000000100004a44	cmp	x2, x15
+0000000100004a48	csel	x10, x2, x15, gt
+0000000100004a4c	add	x10, x10, x14
+0000000100004a50	mov	w11, #0x20
+0000000100004a54	cbz	x10, 0x100004a88
+0000000100004a58	ldrsb	w13, [x9], #0x1
+0000000100004a5c	and	w12, w13, #0xff
+0000000100004a60	sub	w14, w12, #0xe
+0000000100004a64	sub	w15, w12, #0x1f
+0000000100004a68	cmn	w14, #0x5
+0000000100004a6c	ccmn	w15, #0x3, #0x2, lo
+0000000100004a70	ccmp	w12, w11, #0x4, lo
+0000000100004a74	cset	w12, ne
+0000000100004a78	tbnz	w13, #0x1f, 0x100003da8
+0000000100004a7c	sub	x10, x10, #0x1
+0000000100004a80	cbz	w12, 0x100004a54
+0000000100004a84	b	0x100003da8
+0000000100004a88	mov	w9, #0x0
+0000000100004a8c	cmp	w20, #0x2d
+0000000100004a90	cneg	x8, x8, eq
+0000000100004a94	b	0x100003dc8
+0000000100004a98	mov	w8, #0x25
+0000000100004a9c	adrp	x9, 3 ; 0x100007000
+0000000100004aa0	add	x9, x9, #0x7b0
+0000000100004aa4	stp	x9, x8, [sp, #0x90]
+0000000100004aa8	mov	x8, #0x2000000000000000
+0000000100004aac	str	x8, [sp, #0xa0]
+0000000100004ab0	adrp	x2, 3 ; 0x100007000
+0000000100004ab4	add	x2, x2, #0x780
+0000000100004ab8	add	x4, sp, #0x90
+0000000100004abc	mov	w0, #0x293
+0000000100004ac0	mov	w1, #0xe
+0000000100004ac4	mov	w3, #0x21
+0000000100004ac8	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100004acc	brk	#0x1
+0000000100004ad0	and	w8, w27, #0xf
+0000000100004ad4	cmp	w8, #0x2
+0000000100004ad8	b.ne	0x100004b14
+0000000100004adc	ldr	w8, [sp, #0x18]
+0000000100004ae0	orr	w8, w8, #0xc0
+0000000100004ae4	strb	w8, [x0]
+0000000100004ae8	ldr	w8, [sp, #0x20]
+0000000100004aec	strb	w8, [x0, #0x1]
+0000000100004af0	b	0x100003944
+0000000100004af4	cmp	w8, #0x2
+0000000100004af8	b.ne	0x100004b5c
+0000000100004afc	ldr	w8, [sp, #0x18]
+0000000100004b00	orr	w8, w8, #0xc0
+0000000100004b04	strb	w8, [x0]
+0000000100004b08	ldr	w8, [sp, #0x20]
+0000000100004b0c	strb	w8, [x0, #0x1]
+0000000100004b10	b	0x1000039c0
+0000000100004b14	and	w8, w27, #0xf
+0000000100004b18	cmp	w8, #0x3
+0000000100004b1c	b.ne	0x100004b80
+0000000100004b20	mov	w8, #0xe0
+0000000100004b24	strb	w8, [x0]
+0000000100004b28	ldr	w8, [sp, #0x10]
+0000000100004b2c	strb	w8, [x0, #0x1]
+0000000100004b30	ldr	w8, [sp, #0x20]
+0000000100004b34	strb	w8, [x0, #0x2]
+0000000100004b38	b	0x100003944
+0000000100004b3c	cmp	w8, #0x2
+0000000100004b40	b.ne	0x100004b9c
+0000000100004b44	ldr	w8, [sp, #0x18]
+0000000100004b48	orr	w8, w8, #0xc0
+0000000100004b4c	strb	w8, [x0]
+0000000100004b50	ldr	w8, [sp, #0x20]
+0000000100004b54	strb	w8, [x0, #0x1]
+0000000100004b58	b	0x100003a7c
+0000000100004b5c	cmp	w8, #0x3
+0000000100004b60	b.ne	0x100004bc0
+0000000100004b64	mov	w8, #0xe0
+0000000100004b68	strb	w8, [x0]
+0000000100004b6c	ldr	w8, [sp, #0x10]
+0000000100004b70	strb	w8, [x0, #0x1]
+0000000100004b74	ldr	w8, [sp, #0x20]
+0000000100004b78	strb	w8, [x0, #0x2]
+0000000100004b7c	b	0x1000039c0
+0000000100004b80	mov	w8, #0x80f0
+0000000100004b84	strh	w8, [x0]
+0000000100004b88	ldr	w8, [sp, #0x10]
+0000000100004b8c	strb	w8, [x0, #0x2]
+0000000100004b90	ldr	w8, [sp, #0x20]
+0000000100004b94	strb	w8, [x0, #0x3]
+0000000100004b98	b	0x100003944
+0000000100004b9c	cmp	w8, #0x3
+0000000100004ba0	b.ne	0x100004bdc
+0000000100004ba4	mov	w8, #0xe0
+0000000100004ba8	strb	w8, [x0]
+0000000100004bac	ldr	w8, [sp, #0x10]
+0000000100004bb0	strb	w8, [x0, #0x1]
+0000000100004bb4	ldr	w8, [sp, #0x20]
+0000000100004bb8	strb	w8, [x0, #0x2]
+0000000100004bbc	b	0x100003a7c
+0000000100004bc0	mov	w8, #0x80f0
+0000000100004bc4	strh	w8, [x0]
+0000000100004bc8	ldr	w8, [sp, #0x10]
+0000000100004bcc	strb	w8, [x0, #0x2]
+0000000100004bd0	ldr	w8, [sp, #0x20]
+0000000100004bd4	strb	w8, [x0, #0x3]
+0000000100004bd8	b	0x1000039c0
+0000000100004bdc	mov	w8, #0x80f0
+0000000100004be0	strh	w8, [x0]
+0000000100004be4	ldr	w8, [sp, #0x10]
+0000000100004be8	strb	w8, [x0, #0x2]
+0000000100004bec	ldr	w8, [sp, #0x20]
+0000000100004bf0	strb	w8, [x0, #0x3]
+0000000100004bf4	b	0x100003a7c
+0000000100004bf8	adrp	x2, 3 ; 0x100007000
+0000000100004bfc	add	x2, x2, #0x480
+0000000100004c00	add	x4, sp, #0x78
+0000000100004c04	add	x6, sp, #0x90
+0000000100004c08	mov	w0, #0x13
+0000000100004c0c	mov	w1, #0x22
+0000000100004c10	mov	w3, #0x8c
+0000000100004c14	mov	w5, #0x1
+0000000100004c18	bl	"_std::builtin::debug_assert::_debug_assert_fail_format[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](::SourceLocation,*$0),Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>],[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]"
+0000000100004c1c	mov	w8, #0x2d
+0000000100004c20	adrp	x9, 3 ; 0x100007000
+0000000100004c24	add	x9, x9, #0x5d0
+0000000100004c28	stp	x9, x8, [sp, #0x90]
+0000000100004c2c	mov	x8, #0x2000000000000000
+0000000100004c30	str	x8, [sp, #0xa0]
+0000000100004c34	adrp	x2, 3 ; 0x100007000
+0000000100004c38	add	x2, x2, #0x590
+0000000100004c3c	add	x4, sp, #0x90
+0000000100004c40	mov	w0, #0xed
+0000000100004c44	mov	w1, #0x12
+0000000100004c48	mov	w3, #0x31
+0000000100004c4c	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100004c50	brk	#0x1
+_std::builtin::error::StackTrace::collect_if_enabled(::SIMD[DType.int, 1]):
+0000000100004c54	sub	sp, sp, #0x40
+0000000100004c58	stp	x20, x19, [sp, #0x20]
+0000000100004c5c	stp	x29, x30, [sp, #0x30]
+0000000100004c60	tbnz	x0, #0x3f, 0x100004cac
+0000000100004c64	mov	x1, x0
+0000000100004c68	str	xzr, [sp, #0x8]
+0000000100004c6c	add	x0, sp, #0x8
+0000000100004c70	bl	0x100007348 ; symbol stub for: _KGEN_CompilerRT_GetStackTrace
+0000000100004c74	cbz	x0, 0x100004cac
+0000000100004c78	ldr	x19, [sp, #0x8]
+0000000100004c7c	mov	w0, #0x8
+0000000100004c80	mov	w1, #0x18
+0000000100004c84	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+0000000100004c88	cbz	x0, 0x100004cc0
+0000000100004c8c	mov	w1, #0x1
+0000000100004c90	dup.2d	v0, x1
+0000000100004c94	str	q0, [x0]
+0000000100004c98	str	x19, [x0, #0x10]
+0000000100004c9c	ldp	x29, x30, [sp, #0x30]
+0000000100004ca0	ldp	x20, x19, [sp, #0x20]
+0000000100004ca4	add	sp, sp, #0x40
+0000000100004ca8	ret
+0000000100004cac	mov	w1, #0x0
+0000000100004cb0	ldp	x29, x30, [sp, #0x30]
+0000000100004cb4	ldp	x20, x19, [sp, #0x20]
+0000000100004cb8	add	sp, sp, #0x40
+0000000100004cbc	ret
+0000000100004cc0	mov	w8, #0x25
+0000000100004cc4	adrp	x9, 3 ; 0x100007000
+0000000100004cc8	add	x9, x9, #0x7b0
+0000000100004ccc	stp	x9, x8, [sp, #0x8]
+0000000100004cd0	mov	x8, #0x2000000000000000
+0000000100004cd4	str	x8, [sp, #0x18]
+0000000100004cd8	adrp	x2, 3 ; 0x100007000
+0000000100004cdc	add	x2, x2, #0x780
+0000000100004ce0	add	x4, sp, #0x8
+0000000100004ce4	mov	w0, #0x293
+0000000100004ce8	mov	w1, #0xe
+0000000100004cec	mov	w3, #0x21
+0000000100004cf0	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100004cf4	brk	#0x1
+_std::builtin::error::Error::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0),Ts.values`2x=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]]:
+0000000100004cf8	stp	x22, x21, [sp, #-0x30]!
+0000000100004cfc	stp	x20, x19, [sp, #0x10]
+0000000100004d00	stp	x29, x30, [sp, #0x20]
+0000000100004d04	sub	sp, sp, #0x1, lsl #12
+0000000100004d08	sub	sp, sp, #0x30
+0000000100004d0c	mov	x19, x1
+0000000100004d10	mov	x20, x0
+0000000100004d14	ldp	x8, x9, [x0, #0x8]
+0000000100004d18	ldp	x11, x12, [x1, #0x8]
+0000000100004d1c	ubfx	x10, x9, #56, #5
+0000000100004d20	cmp	x9, #0x0
+0000000100004d24	csel	x13, x10, x8, mi
+0000000100004d28	ubfx	x14, x12, #56, #5
+0000000100004d2c	cmp	x12, #0x0
+0000000100004d30	csel	x11, x14, x11, mi
+0000000100004d34	add	x11, x11, x13
+0000000100004d38	cmp	x11, #0x17
+0000000100004d3c	b.gt	0x100004d78
+0000000100004d40	ldr	x11, [x20]
+0000000100004d44	stp	xzr, xzr, [sp, #0x8]
+0000000100004d48	mov	x12, #-0x8000000000000000
+0000000100004d4c	str	x12, [sp, #0x18]
+0000000100004d50	cmn	x9, #0x1
+0000000100004d54	csel	x1, x11, x20, gt
+0000000100004d58	csel	x2, x8, x10, gt
+0000000100004d5c	add	x0, sp, #0x8
+0000000100004d60	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100004d64	ldr	x8, [x19, #0x10]
+0000000100004d68	tbnz	x8, #0x3f, 0x100004e2c
+0000000100004d6c	ldp	x19, x2, [x19]
+0000000100004d70	add	x0, sp, #0x8
+0000000100004d74	b	0x100004e7c
+0000000100004d78	add	x21, x11, #0x7
+0000000100004d7c	and	x8, x21, #0xfffffffffffffff8
+0000000100004d80	adds	x1, x8, #0x8
+0000000100004d84	b.mi	0x100004ec0
+0000000100004d88	mov	w0, #0x1
+0000000100004d8c	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+0000000100004d90	cbz	x0, 0x100004ef8
+0000000100004d94	asr	x8, x21, #3
+0000000100004d98	mov	w9, #0x1
+0000000100004d9c	str	x9, [x0], #0x8
+0000000100004da0	stp	x0, xzr, [sp, #0x8]
+0000000100004da4	orr	x8, x8, #0x4000000000000000
+0000000100004da8	str	x8, [sp, #0x18]
+0000000100004dac	str	xzr, [sp, #0x1020]
+0000000100004db0	add	x8, sp, #0x8
+0000000100004db4	str	x8, [sp, #0x1028]
+0000000100004db8	ldr	x8, [x20, #0x10]
+0000000100004dbc	tbnz	x8, #0x3f, 0x100004e38
+0000000100004dc0	ldp	x20, x2, [x20]
+0000000100004dc4	add	x0, sp, #0x20
+0000000100004dc8	mov	x1, x20
+0000000100004dcc	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100004dd0	ldr	x2, [sp, #0x1020]
+0000000100004dd4	cmp	x2, #0x1, lsl #12
+0000000100004dd8	b.le	0x100004dec
+0000000100004ddc	ldr	x0, [sp, #0x1028]
+0000000100004de0	add	x1, sp, #0x20
+0000000100004de4	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100004de8	str	xzr, [sp, #0x1020]
+0000000100004dec	ldr	x8, [x19, #0x10]
+0000000100004df0	tbnz	x8, #0x3f, 0x100004e58
+0000000100004df4	ldp	x19, x2, [x19]
+0000000100004df8	add	x0, sp, #0x20
+0000000100004dfc	mov	x1, x19
+0000000100004e00	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100004e04	ldr	x2, [sp, #0x1020]
+0000000100004e08	cmp	x2, #0x1, lsl #12
+0000000100004e0c	b.le	0x100004e74
+0000000100004e10	ldr	x0, [sp, #0x1028]
+0000000100004e14	add	x19, sp, #0x20
+0000000100004e18	add	x1, sp, #0x20
+0000000100004e1c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100004e20	mov	x2, #0x0
+0000000100004e24	str	xzr, [sp, #0x1020]
+0000000100004e28	b	0x100004e78
+0000000100004e2c	ubfx	x2, x8, #56, #5
+0000000100004e30	add	x0, sp, #0x8
+0000000100004e34	b	0x100004e7c
+0000000100004e38	ubfx	x2, x8, #56, #5
+0000000100004e3c	add	x0, sp, #0x20
+0000000100004e40	mov	x1, x20
+0000000100004e44	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100004e48	ldr	x2, [sp, #0x1020]
+0000000100004e4c	cmp	x2, #0x1, lsl #12
+0000000100004e50	b.gt	0x100004ddc
+0000000100004e54	b	0x100004dec
+0000000100004e58	ubfx	x2, x8, #56, #5
+0000000100004e5c	add	x0, sp, #0x20
+0000000100004e60	mov	x1, x19
+0000000100004e64	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100004e68	ldr	x2, [sp, #0x1020]
+0000000100004e6c	cmp	x2, #0x1, lsl #12
+0000000100004e70	b.gt	0x100004e10
+0000000100004e74	add	x19, sp, #0x20
+0000000100004e78	ldr	x0, [sp, #0x1028]
+0000000100004e7c	mov	x1, x19
+0000000100004e80	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100004e84	ldp	x19, x20, [sp, #0x8]
+0000000100004e88	ldr	x21, [sp, #0x18]
+0000000100004e8c	mov	x0, #0x0
+0000000100004e90	bl	"_std::builtin::error::StackTrace::collect_if_enabled(::SIMD[DType.int, 1])"
+0000000100004e94	mov	x3, x0
+0000000100004e98	mov	x4, x1
+0000000100004e9c	mov	x0, x19
+0000000100004ea0	mov	x1, x20
+0000000100004ea4	mov	x2, x21
+0000000100004ea8	add	sp, sp, #0x1, lsl #12
+0000000100004eac	add	sp, sp, #0x30
+0000000100004eb0	ldp	x29, x30, [sp, #0x20]
+0000000100004eb4	ldp	x20, x19, [sp, #0x10]
+0000000100004eb8	ldp	x22, x21, [sp], #0x30
+0000000100004ebc	ret
+0000000100004ec0	mov	w8, #0x23
+0000000100004ec4	adrp	x9, 3 ; 0x100007000
+0000000100004ec8	add	x9, x9, #0x7e0
+0000000100004ecc	stp	x9, x8, [sp, #0x20]
+0000000100004ed0	mov	x8, #0x2000000000000000
+0000000100004ed4	str	x8, [sp, #0x30]
+0000000100004ed8	adrp	x2, 3 ; 0x100007000
+0000000100004edc	add	x2, x2, #0x780
+0000000100004ee0	add	x4, sp, #0x20
+0000000100004ee4	mov	w0, #0x30f
+0000000100004ee8	mov	w1, #0xe
+0000000100004eec	mov	w3, #0x21
+0000000100004ef0	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100004ef4	brk	#0x1
+0000000100004ef8	mov	w8, #0x25
+0000000100004efc	adrp	x9, 3 ; 0x100007000
+0000000100004f00	add	x9, x9, #0x7b0
+0000000100004f04	stp	x9, x8, [sp, #0x20]
+0000000100004f08	mov	x8, #0x2000000000000000
+0000000100004f0c	str	x8, [sp, #0x30]
+0000000100004f10	adrp	x2, 3 ; 0x100007000
+0000000100004f14	add	x2, x2, #0x780
+0000000100004f18	add	x4, sp, #0x20
+0000000100004f1c	mov	w0, #0x293
+0000000100004f20	mov	w1, #0xe
+0000000100004f24	mov	w3, #0x21
+0000000100004f28	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100004f2c	brk	#0x1
+_std::builtin::error::Error::write_to[::Writer & ::AnyType](::Error,$0),writer.T`2x1=[typevalue<#kgen.instref<std::format::_utils::_FlushingWriteBuffer,origin._mlir_origin`={  },origin={  },W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096>>, struct<(struct<(array<4096, scalar<ui8>>) memoryOnly>, scalar<index>, pointer<none>) memoryOnly>]:
+0000000100004f30	mov	x8, x0
+0000000100004f34	ldr	x9, [x0, #0x10]
+0000000100004f38	tbnz	x9, #0x3f, 0x100004f4c
+0000000100004f3c	ldp	x8, x2, [x8]
+0000000100004f40	mov	x0, x1
+0000000100004f44	mov	x1, x8
+0000000100004f48	b	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100004f4c	ubfx	x2, x9, #56, #5
+0000000100004f50	mov	x0, x1
+0000000100004f54	mov	x1, x8
+0000000100004f58	b	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+_std::collections::list::List::_realloc(::List[$0],::SIMD[DType.int, 1]){conforms_to($0, ::AnyType & ::Movable)},T=[typevalue<#kgen.instref<binarytrees-compact::Node>>, struct<(scalar<index>, scalar<index>) memoryOnly>]:
+0000000100004f5c	sub	sp, sp, #0x70
+0000000100004f60	stp	x26, x25, [sp, #0x20]
+0000000100004f64	stp	x24, x23, [sp, #0x30]
+0000000100004f68	stp	x22, x21, [sp, #0x40]
+0000000100004f6c	stp	x20, x19, [sp, #0x50]
+0000000100004f70	stp	x29, x30, [sp, #0x60]
+0000000100004f74	tbnz	x3, #0x3f, 0x10000506c
+0000000100004f78	mov	x19, x3
+0000000100004f7c	mov	x22, x2
+0000000100004f80	mov	x20, x1
+0000000100004f84	mov	x21, x0
+0000000100004f88	lsl	x1, x3, #4
+0000000100004f8c	mov	w0, #0x8
+0000000100004f90	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+0000000100004f94	cbz	x0, 0x1000050a4
+0000000100004f98	mov	x23, x0
+0000000100004f9c	cbz	x20, 0x100005034
+0000000100004fa0	lsl	x24, x20, #4
+0000000100004fa4	cmp	x24, #0x4
+0000000100004fa8	b.gt	0x100004fe4
+0000000100004fac	cbz	x24, 0x100005034
+0000000100004fb0	sub	x8, x24, #0x1
+0000000100004fb4	ldrb	w9, [x21]
+0000000100004fb8	strb	w9, [x23]
+0000000100004fbc	ldrb	w9, [x21, x8]
+0000000100004fc0	strb	w9, [x23, x8]
+0000000100004fc4	cmp	x24, #0x3
+0000000100004fc8	b.lt	0x100005034
+0000000100004fcc	sub	x8, x24, #0x2
+0000000100004fd0	ldrb	w9, [x21, #0x1]
+0000000100004fd4	strb	w9, [x23, #0x1]
+0000000100004fd8	ldrb	w9, [x21, x8]
+0000000100004fdc	strb	w9, [x23, x8]
+0000000100004fe0	b	0x100005034
+0000000100004fe4	cmp	x24, #0x10
+0000000100004fe8	b.hi	0x100005004
+0000000100004fec	sub	x8, x24, #0x8
+0000000100004ff0	ldr	x9, [x21]
+0000000100004ff4	str	x9, [x23]
+0000000100004ff8	ldr	x9, [x21, x8]
+0000000100004ffc	str	x9, [x23, x8]
+0000000100005000	b	0x100005034
+0000000100005004	ands	x25, x24, #0x7fffffffffffffe0
+0000000100005008	b.eq	0x10000501c
+000000010000500c	and	x2, x24, #0x7fffffffffffffe0
+0000000100005010	mov	x0, x23
+0000000100005014	mov	x1, x21
+0000000100005018	bl	0x1000073a8 ; symbol stub for: _memcpy
+000000010000501c	cmp	x25, x24
+0000000100005020	b.eq	0x100005034
+0000000100005024	add	x0, x23, x25
+0000000100005028	add	x1, x21, x25
+000000010000502c	and	x2, x24, #0x10
+0000000100005030	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005034	cmp	x22, #0x1
+0000000100005038	b.lt	0x100005044
+000000010000503c	mov	x0, x21
+0000000100005040	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100005044	mov	x0, x23
+0000000100005048	mov	x1, x20
+000000010000504c	mov	x2, x19
+0000000100005050	ldp	x29, x30, [sp, #0x60]
+0000000100005054	ldp	x20, x19, [sp, #0x50]
+0000000100005058	ldp	x22, x21, [sp, #0x40]
+000000010000505c	ldp	x24, x23, [sp, #0x30]
+0000000100005060	ldp	x26, x25, [sp, #0x20]
+0000000100005064	add	sp, sp, #0x70
+0000000100005068	ret
+000000010000506c	mov	w8, #0x23
+0000000100005070	adrp	x9, 2 ; 0x100007000
+0000000100005074	add	x9, x9, #0x7e0
+0000000100005078	stp	x9, x8, [sp, #0x8]
+000000010000507c	mov	x8, #0x2000000000000000
+0000000100005080	str	x8, [sp, #0x18]
+0000000100005084	adrp	x2, 2 ; 0x100007000
+0000000100005088	add	x2, x2, #0x780
+000000010000508c	add	x4, sp, #0x8
+0000000100005090	mov	w0, #0x30f
+0000000100005094	mov	w1, #0xe
+0000000100005098	mov	w3, #0x21
+000000010000509c	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+00000001000050a0	brk	#0x1
+00000001000050a4	mov	w8, #0x25
+00000001000050a8	adrp	x9, 2 ; 0x100007000
+00000001000050ac	add	x9, x9, #0x7b0
+00000001000050b0	stp	x9, x8, [sp, #0x8]
+00000001000050b4	mov	x8, #0x2000000000000000
+00000001000050b8	str	x8, [sp, #0x18]
+00000001000050bc	adrp	x2, 2 ; 0x100007000
+00000001000050c0	add	x2, x2, #0x780
+00000001000050c4	add	x4, sp, #0x8
+00000001000050c8	mov	w0, #0x293
+00000001000050cc	mov	w1, #0xe
+00000001000050d0	mov	w3, #0x21
+00000001000050d4	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+00000001000050d8	brk	#0x1
+_std::collections::string::string::String::__init__[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](*$0,sep:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],end:::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()]),Ts.values`2x=[[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]:
+00000001000050dc	stp	x28, x27, [sp, #-0x40]!
+00000001000050e0	stp	x22, x21, [sp, #0x10]
+00000001000050e4	stp	x20, x19, [sp, #0x20]
+00000001000050e8	stp	x29, x30, [sp, #0x30]
+00000001000050ec	sub	sp, sp, #0x1, lsl #12
+00000001000050f0	sub	sp, sp, #0x10
+00000001000050f4	mov	x21, x3
+00000001000050f8	mov	x19, x2
+00000001000050fc	mov	x20, x1
+0000000100005100	mov	x22, x0
+0000000100005104	mov	x1, #0x0
+0000000100005108	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_TotalWritableBytes>>, struct<(scalar<index>) memoryOnly>]"
+000000010000510c	add	x8, x0, x19
+0000000100005110	cmp	x8, #0x17
+0000000100005114	b.gt	0x100005158
+0000000100005118	stp	xzr, xzr, [x21]
+000000010000511c	mov	x8, #-0x8000000000000000
+0000000100005120	str	x8, [x21, #0x10]
+0000000100005124	mov	x0, x22
+0000000100005128	mov	x1, x21
+000000010000512c	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100005130	mov	x0, x21
+0000000100005134	mov	x1, x20
+0000000100005138	mov	x2, x19
+000000010000513c	add	sp, sp, #0x1, lsl #12
+0000000100005140	add	sp, sp, #0x10
+0000000100005144	ldp	x29, x30, [sp, #0x30]
+0000000100005148	ldp	x20, x19, [sp, #0x20]
+000000010000514c	ldp	x22, x21, [sp, #0x10]
+0000000100005150	ldp	x28, x27, [sp], #0x40
+0000000100005154	b	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100005158	add	x8, x8, #0x7
+000000010000515c	asr	x9, x8, #3
+0000000100005160	str	x9, [x21, #0x10]
+0000000100005164	and	x8, x8, #0xfffffffffffffff8
+0000000100005168	adds	x1, x8, #0x8
+000000010000516c	b.mi	0x1000051e4
+0000000100005170	mov	w0, #0x1
+0000000100005174	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+0000000100005178	cbz	x0, 0x10000521c
+000000010000517c	mov	w8, #0x1
+0000000100005180	str	x8, [x0], #0x8
+0000000100005184	stp	x0, xzr, [x21]
+0000000100005188	ldr	x8, [x21, #0x10]
+000000010000518c	orr	x8, x8, #0x4000000000000000
+0000000100005190	str	x8, [x21, #0x10]
+0000000100005194	str	xzr, [sp, #0x1000]
+0000000100005198	str	x21, [sp, #0x1008]
+000000010000519c	mov	x1, sp
+00000001000051a0	mov	x0, x22
+00000001000051a4	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FlushingWriteBuffer,origin._mlir_origin`={  },origin={  },W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096>>, struct<(struct<(array<4096, scalar<ui8>>) memoryOnly>, scalar<index>, pointer<none>) memoryOnly>]"
+00000001000051a8	mov	x0, sp
+00000001000051ac	mov	x1, x20
+00000001000051b0	mov	x2, x19
+00000001000051b4	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+00000001000051b8	ldr	x0, [sp, #0x1008]
+00000001000051bc	ldr	x2, [sp, #0x1000]
+00000001000051c0	mov	x1, sp
+00000001000051c4	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+00000001000051c8	add	sp, sp, #0x1, lsl #12
+00000001000051cc	add	sp, sp, #0x10
+00000001000051d0	ldp	x29, x30, [sp, #0x30]
+00000001000051d4	ldp	x20, x19, [sp, #0x20]
+00000001000051d8	ldp	x22, x21, [sp, #0x10]
+00000001000051dc	ldp	x28, x27, [sp], #0x40
+00000001000051e0	ret
+00000001000051e4	mov	w8, #0x23
+00000001000051e8	adrp	x9, 2 ; 0x100007000
+00000001000051ec	add	x9, x9, #0x7e0
+00000001000051f0	stp	x9, x8, [sp]
+00000001000051f4	mov	x8, #0x2000000000000000
+00000001000051f8	str	x8, [sp, #0x10]
+00000001000051fc	adrp	x2, 2 ; 0x100007000
+0000000100005200	add	x2, x2, #0x780
+0000000100005204	mov	x4, sp
+0000000100005208	mov	w0, #0x30f
+000000010000520c	mov	w1, #0xe
+0000000100005210	mov	w3, #0x21
+0000000100005214	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100005218	brk	#0x1
+000000010000521c	mov	w8, #0x25
+0000000100005220	adrp	x9, 2 ; 0x100007000
+0000000100005224	add	x9, x9, #0x7b0
+0000000100005228	stp	x9, x8, [sp]
+000000010000522c	mov	x8, #0x2000000000000000
+0000000100005230	str	x8, [sp, #0x10]
+0000000100005234	adrp	x2, 2 ; 0x100007000
+0000000100005238	add	x2, x2, #0x780
+000000010000523c	mov	x4, sp
+0000000100005240	mov	w0, #0x293
+0000000100005244	mov	w1, #0xe
+0000000100005248	mov	w3, #0x21
+000000010000524c	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100005250	brk	#0x1
+_std::collections::string::string::String::_add[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1],::Bool,LITOrigin[$3._mlir_value],::Origin[$3, $4]](::Span[$0, $1, ::SIMD[DType.uint8, 1], $2, AddressSpace.GENERIC],::Span[$3, $4, ::SIMD[DType.uint8, 1], $5, AddressSpace.GENERIC]),lhs.mut`2x=false,rhs.mut`2x3=false:
+0000000100005254	sub	sp, sp, #0x70
+0000000100005258	stp	x24, x23, [sp, #0x30]
+000000010000525c	stp	x22, x21, [sp, #0x40]
+0000000100005260	stp	x20, x19, [sp, #0x50]
+0000000100005264	stp	x29, x30, [sp, #0x60]
+0000000100005268	mov	x20, x3
+000000010000526c	mov	x19, x2
+0000000100005270	mov	x21, x1
+0000000100005274	mov	x22, x0
+0000000100005278	add	x23, x3, x1
+000000010000527c	cmp	x23, #0x17
+0000000100005280	b.gt	0x100005290
+0000000100005284	stp	xzr, xzr, [sp]
+0000000100005288	mov	x8, #-0x8000000000000000
+000000010000528c	b	0x1000052e0
+0000000100005290	add	x24, x23, #0x7
+0000000100005294	and	x8, x24, #0xfffffffffffffff8
+0000000100005298	adds	x1, x8, #0x8
+000000010000529c	b.mi	0x1000054bc
+00000001000052a0	mov	w0, #0x1
+00000001000052a4	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+00000001000052a8	cbz	x0, 0x1000054f4
+00000001000052ac	asr	x9, x24, #3
+00000001000052b0	mov	w8, #0x1
+00000001000052b4	str	x8, [x0], #0x8
+00000001000052b8	stp	x0, xzr, [sp]
+00000001000052bc	orr	x8, x9, #0x4000000000000000
+00000001000052c0	str	x8, [sp, #0x10]
+00000001000052c4	tbnz	x9, #0x3f, 0x1000052e0
+00000001000052c8	str	x23, [sp, #0x8]
+00000001000052cc	mov	x0, sp
+00000001000052d0	mov	x1, #0x0
+00000001000052d4	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+00000001000052d8	cbnz	x21, 0x1000052fc
+00000001000052dc	b	0x1000053b0
+00000001000052e0	and	x8, x8, #0xe0ffffffffffffff
+00000001000052e4	orr	x8, x8, x23, lsl #56
+00000001000052e8	str	x8, [sp, #0x10]
+00000001000052ec	mov	x0, sp
+00000001000052f0	mov	x1, #0x0
+00000001000052f4	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+00000001000052f8	cbz	x21, 0x1000053b0
+00000001000052fc	cmp	x21, #0x4
+0000000100005300	b.gt	0x10000533c
+0000000100005304	sub	x8, x21, #0x1
+0000000100005308	ldrb	w9, [x22]
+000000010000530c	strb	w9, [x0]
+0000000100005310	ldrb	w9, [x22, x8]
+0000000100005314	strb	w9, [x0, x8]
+0000000100005318	cmp	x21, #0x3
+000000010000531c	b.lt	0x1000053b0
+0000000100005320	sub	x8, x21, #0x2
+0000000100005324	ldrb	w9, [x22, #0x1]
+0000000100005328	strb	w9, [x0, #0x1]
+000000010000532c	ldrb	w9, [x22, x8]
+0000000100005330	strb	w9, [x0, x8]
+0000000100005334	cbnz	x20, 0x1000053b4
+0000000100005338	b	0x10000549c
+000000010000533c	cmp	x21, #0x10
+0000000100005340	b.hi	0x100005368
+0000000100005344	cmp	x21, #0x8
+0000000100005348	b.lo	0x10000546c
+000000010000534c	sub	x8, x21, #0x8
+0000000100005350	ldr	x9, [x22]
+0000000100005354	str	x9, [x0]
+0000000100005358	ldr	x9, [x22, x8]
+000000010000535c	str	x9, [x0, x8]
+0000000100005360	cbnz	x20, 0x1000053b4
+0000000100005364	b	0x10000549c
+0000000100005368	ands	x8, x21, #0x7fffffffffffffe0
+000000010000536c	b.eq	0x100005390
+0000000100005370	mov	x9, #0x0
+0000000100005374	add	x10, x22, x9
+0000000100005378	ldp	q0, q1, [x10]
+000000010000537c	add	x10, x0, x9
+0000000100005380	add	x9, x9, #0x20
+0000000100005384	stp	q0, q1, [x10]
+0000000100005388	cmp	x9, x8
+000000010000538c	b.lo	0x100005374
+0000000100005390	subs	x9, x21, x8
+0000000100005394	b.eq	0x1000053b0
+0000000100005398	add	x10, x0, x8
+000000010000539c	add	x8, x22, x8
+00000001000053a0	ldrb	w11, [x8], #0x1
+00000001000053a4	strb	w11, [x10], #0x1
+00000001000053a8	subs	x9, x9, #0x1
+00000001000053ac	b.ne	0x1000053a0
+00000001000053b0	cbz	x20, 0x10000549c
+00000001000053b4	add	x8, x0, x21
+00000001000053b8	cmp	x20, #0x4
+00000001000053bc	b.gt	0x1000053f4
+00000001000053c0	sub	x9, x20, #0x1
+00000001000053c4	ldrb	w10, [x19]
+00000001000053c8	strb	w10, [x8]
+00000001000053cc	ldrb	w10, [x19, x9]
+00000001000053d0	strb	w10, [x8, x9]
+00000001000053d4	cmp	x20, #0x3
+00000001000053d8	b.lt	0x10000549c
+00000001000053dc	sub	x9, x20, #0x2
+00000001000053e0	ldrb	w10, [x19, #0x1]
+00000001000053e4	strb	w10, [x8, #0x1]
+00000001000053e8	ldrb	w10, [x19, x9]
+00000001000053ec	strb	w10, [x8, x9]
+00000001000053f0	b	0x10000549c
+00000001000053f4	cmp	x20, #0x10
+00000001000053f8	b.hi	0x10000541c
+00000001000053fc	cmp	x20, #0x8
+0000000100005400	b.lo	0x100005488
+0000000100005404	sub	x9, x20, #0x8
+0000000100005408	ldr	x10, [x19]
+000000010000540c	str	x10, [x8]
+0000000100005410	ldr	x10, [x19, x9]
+0000000100005414	str	x10, [x8, x9]
+0000000100005418	b	0x10000549c
+000000010000541c	ands	x9, x20, #0x7fffffffffffffe0
+0000000100005420	b.eq	0x100005444
+0000000100005424	mov	x10, #0x0
+0000000100005428	add	x11, x19, x10
+000000010000542c	ldp	q0, q1, [x11]
+0000000100005430	add	x11, x8, x10
+0000000100005434	add	x10, x10, #0x20
+0000000100005438	stp	q0, q1, [x11]
+000000010000543c	cmp	x10, x9
+0000000100005440	b.lo	0x100005428
+0000000100005444	subs	x8, x20, x9
+0000000100005448	b.eq	0x10000549c
+000000010000544c	add	x10, x21, x9
+0000000100005450	add	x10, x0, x10
+0000000100005454	add	x9, x19, x9
+0000000100005458	ldrb	w11, [x9], #0x1
+000000010000545c	strb	w11, [x10], #0x1
+0000000100005460	subs	x8, x8, #0x1
+0000000100005464	b.ne	0x100005458
+0000000100005468	b	0x10000549c
+000000010000546c	sub	x8, x21, #0x4
+0000000100005470	ldr	w9, [x22]
+0000000100005474	str	w9, [x0]
+0000000100005478	ldr	w9, [x22, x8]
+000000010000547c	str	w9, [x0, x8]
+0000000100005480	cbnz	x20, 0x1000053b4
+0000000100005484	b	0x10000549c
+0000000100005488	sub	x9, x20, #0x4
+000000010000548c	ldr	w10, [x19]
+0000000100005490	str	w10, [x8]
+0000000100005494	ldr	w10, [x19, x9]
+0000000100005498	str	w10, [x8, x9]
+000000010000549c	ldp	x0, x1, [sp]
+00000001000054a0	ldr	x2, [sp, #0x10]
+00000001000054a4	ldp	x29, x30, [sp, #0x60]
+00000001000054a8	ldp	x20, x19, [sp, #0x50]
+00000001000054ac	ldp	x22, x21, [sp, #0x40]
+00000001000054b0	ldp	x24, x23, [sp, #0x30]
+00000001000054b4	add	sp, sp, #0x70
+00000001000054b8	ret
+00000001000054bc	mov	w8, #0x23
+00000001000054c0	adrp	x9, 2 ; 0x100007000
+00000001000054c4	add	x9, x9, #0x7e0
+00000001000054c8	stp	x9, x8, [sp, #0x18]
+00000001000054cc	mov	x8, #0x2000000000000000
+00000001000054d0	str	x8, [sp, #0x28]
+00000001000054d4	adrp	x2, 2 ; 0x100007000
+00000001000054d8	add	x2, x2, #0x780
+00000001000054dc	add	x4, sp, #0x18
+00000001000054e0	mov	w0, #0x30f
+00000001000054e4	mov	w1, #0xe
+00000001000054e8	mov	w3, #0x21
+00000001000054ec	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+00000001000054f0	brk	#0x1
+00000001000054f4	mov	w8, #0x25
+00000001000054f8	adrp	x9, 2 ; 0x100007000
+00000001000054fc	add	x9, x9, #0x7b0
+0000000100005500	stp	x9, x8, [sp, #0x18]
+0000000100005504	mov	x8, #0x2000000000000000
+0000000100005508	str	x8, [sp, #0x28]
+000000010000550c	adrp	x2, 2 ; 0x100007000
+0000000100005510	add	x2, x2, #0x780
+0000000100005514	add	x4, sp, #0x18
+0000000100005518	mov	w0, #0x293
+000000010000551c	mov	w1, #0xe
+0000000100005520	mov	w3, #0x21
+0000000100005524	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100005528	brk	#0x1
+_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC]):
+000000010000552c	cbz	x2, 0x100005680
+0000000100005530	stp	x24, x23, [sp, #-0x40]!
+0000000100005534	stp	x22, x21, [sp, #0x10]
+0000000100005538	stp	x20, x19, [sp, #0x20]
+000000010000553c	stp	x29, x30, [sp, #0x30]
+0000000100005540	mov	x21, x2
+0000000100005544	mov	x20, x1
+0000000100005548	mov	x19, x0
+000000010000554c	ldr	x8, [x0, #0x10]
+0000000100005550	tbnz	x8, #0x3f, 0x10000555c
+0000000100005554	ldr	x23, [x19, #0x8]
+0000000100005558	b	0x100005560
+000000010000555c	ubfx	x23, x8, #56, #5
+0000000100005560	add	x22, x23, x21
+0000000100005564	add	x1, x23, x21
+0000000100005568	mov	x0, x19
+000000010000556c	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+0000000100005570	add	x8, x0, x23
+0000000100005574	cmp	x21, #0x4
+0000000100005578	b.gt	0x1000055b8
+000000010000557c	sub	x9, x21, #0x1
+0000000100005580	ldrb	w10, [x20]
+0000000100005584	strb	w10, [x8]
+0000000100005588	ldrb	w10, [x20, x9]
+000000010000558c	strb	w10, [x8, x9]
+0000000100005590	cmp	x21, #0x3
+0000000100005594	b.lt	0x100005634
+0000000100005598	sub	x9, x21, #0x2
+000000010000559c	ldrb	w10, [x20, #0x1]
+00000001000055a0	strb	w10, [x8, #0x1]
+00000001000055a4	ldrb	w10, [x20, x9]
+00000001000055a8	strb	w10, [x8, x9]
+00000001000055ac	ldr	x8, [x19, #0x10]
+00000001000055b0	tbz	x8, #0x3f, 0x10000563c
+00000001000055b4	b	0x100005660
+00000001000055b8	cmp	x21, #0x10
+00000001000055bc	b.hi	0x1000055e8
+00000001000055c0	cmp	x21, #0x8
+00000001000055c4	b.lo	0x100005644
+00000001000055c8	sub	x9, x21, #0x8
+00000001000055cc	ldr	x10, [x20]
+00000001000055d0	str	x10, [x8]
+00000001000055d4	ldr	x10, [x20, x9]
+00000001000055d8	str	x10, [x8, x9]
+00000001000055dc	ldr	x8, [x19, #0x10]
+00000001000055e0	tbz	x8, #0x3f, 0x10000563c
+00000001000055e4	b	0x100005660
+00000001000055e8	ands	x9, x21, #0x7fffffffffffffe0
+00000001000055ec	b.eq	0x100005610
+00000001000055f0	mov	x10, #0x0
+00000001000055f4	add	x11, x20, x10
+00000001000055f8	ldp	q0, q1, [x11]
+00000001000055fc	add	x11, x8, x10
+0000000100005600	add	x10, x10, #0x20
+0000000100005604	stp	q0, q1, [x11]
+0000000100005608	cmp	x10, x9
+000000010000560c	b.lo	0x1000055f4
+0000000100005610	subs	x8, x21, x9
+0000000100005614	b.eq	0x100005634
+0000000100005618	add	x10, x23, x9
+000000010000561c	add	x10, x0, x10
+0000000100005620	add	x9, x20, x9
+0000000100005624	ldrb	w11, [x9], #0x1
+0000000100005628	strb	w11, [x10], #0x1
+000000010000562c	subs	x8, x8, #0x1
+0000000100005630	b.ne	0x100005624
+0000000100005634	ldr	x8, [x19, #0x10]
+0000000100005638	tbnz	x8, #0x3f, 0x100005660
+000000010000563c	str	x22, [x19, #0x8]
+0000000100005640	b	0x100005668
+0000000100005644	sub	x9, x21, #0x4
+0000000100005648	ldr	w10, [x20]
+000000010000564c	str	w10, [x8]
+0000000100005650	ldr	w10, [x20, x9]
+0000000100005654	str	w10, [x8, x9]
+0000000100005658	ldr	x8, [x19, #0x10]
+000000010000565c	tbz	x8, #0x3f, 0x10000563c
+0000000100005660	and	x8, x8, #0xe0ffffffffffffff
+0000000100005664	orr	x8, x8, x22, lsl #56
+0000000100005668	and	x8, x8, #0xdfffffffffffffff
+000000010000566c	str	x8, [x19, #0x10]
+0000000100005670	ldp	x29, x30, [sp, #0x30]
+0000000100005674	ldp	x20, x19, [sp, #0x20]
+0000000100005678	ldp	x22, x21, [sp, #0x10]
+000000010000567c	ldp	x24, x23, [sp], #0x40
+0000000100005680	ret
+_std::collections::string::string::String::write_to[::Writer & ::AnyType](::String,$0),writer.T`2x1=[typevalue<#kgen.instref<std::format::_utils::_FixedWriteBuffer>>, struct<(struct<(array<2048, scalar<ui8>>) memoryOnly>, scalar<index>) memoryOnly>]:
+0000000100005684	stp	x24, x23, [sp, #-0x40]!
+0000000100005688	stp	x22, x21, [sp, #0x10]
+000000010000568c	stp	x20, x19, [sp, #0x20]
+0000000100005690	stp	x29, x30, [sp, #0x30]
+0000000100005694	ldr	x8, [x0, #0x10]
+0000000100005698	tbnz	x8, #0x3f, 0x1000056f4
+000000010000569c	ldp	x0, x20, [x0]
+00000001000056a0	ldr	x21, [x1, #0x800]
+00000001000056a4	add	x8, x21, x20
+00000001000056a8	cmp	x8, #0x801
+00000001000056ac	b.ge	0x100005708
+00000001000056b0	cbz	x20, 0x10000579c
+00000001000056b4	add	x8, x1, x21
+00000001000056b8	cmp	x20, #0x4
+00000001000056bc	b.gt	0x10000570c
+00000001000056c0	sub	x9, x20, #0x1
+00000001000056c4	ldrb	w10, [x0]
+00000001000056c8	strb	w10, [x8]
+00000001000056cc	ldrb	w10, [x0, x9]
+00000001000056d0	strb	w10, [x8, x9]
+00000001000056d4	cmp	x20, #0x3
+00000001000056d8	b.lt	0x10000579c
+00000001000056dc	sub	x9, x20, #0x2
+00000001000056e0	ldrb	w10, [x0, #0x1]
+00000001000056e4	strb	w10, [x8, #0x1]
+00000001000056e8	ldrb	w10, [x0, x9]
+00000001000056ec	strb	w10, [x8, x9]
+00000001000056f0	b	0x10000579c
+00000001000056f4	ubfx	x20, x8, #56, #5
+00000001000056f8	ldr	x21, [x1, #0x800]
+00000001000056fc	add	x8, x21, x20
+0000000100005700	cmp	x8, #0x801
+0000000100005704	b.lt	0x1000056b0
+0000000100005708	bl	"_std::format::_utils::_fixed_buffer_exceeded()"
+000000010000570c	cmp	x20, #0x10
+0000000100005710	b.hi	0x100005734
+0000000100005714	cmp	x20, #0x8
+0000000100005718	b.lo	0x100005788
+000000010000571c	sub	x9, x20, #0x8
+0000000100005720	ldr	x10, [x0]
+0000000100005724	str	x10, [x8]
+0000000100005728	ldr	x10, [x0, x9]
+000000010000572c	str	x10, [x8, x9]
+0000000100005730	b	0x10000579c
+0000000100005734	ands	x22, x20, #0x7fffffffffffffe0
+0000000100005738	b.eq	0x10000575c
+000000010000573c	mov	x19, x0
+0000000100005740	add	x0, x1, x21
+0000000100005744	and	x2, x20, #0x7fffffffffffffe0
+0000000100005748	mov	x23, x1
+000000010000574c	mov	x1, x19
+0000000100005750	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005754	mov	x0, x19
+0000000100005758	mov	x1, x23
+000000010000575c	cmp	x22, x20
+0000000100005760	b.eq	0x10000579c
+0000000100005764	add	x8, x1, x21
+0000000100005768	mov	x9, x0
+000000010000576c	add	x0, x8, x22
+0000000100005770	mov	x19, x1
+0000000100005774	add	x1, x9, x22
+0000000100005778	and	x2, x20, #0x1f
+000000010000577c	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005780	mov	x1, x19
+0000000100005784	b	0x10000579c
+0000000100005788	sub	x9, x20, #0x4
+000000010000578c	ldr	w10, [x0]
+0000000100005790	str	w10, [x8]
+0000000100005794	ldr	w10, [x0, x9]
+0000000100005798	str	w10, [x8, x9]
+000000010000579c	ldr	x8, [x1, #0x800]
+00000001000057a0	add	x8, x8, x20
+00000001000057a4	str	x8, [x1, #0x800]
+00000001000057a8	ldp	x29, x30, [sp, #0x30]
+00000001000057ac	ldp	x20, x19, [sp, #0x20]
+00000001000057b0	ldp	x22, x21, [sp, #0x10]
+00000001000057b4	ldp	x24, x23, [sp], #0x40
+00000001000057b8	ret
+_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$):
+00000001000057bc	sub	sp, sp, #0x50
+00000001000057c0	stp	x22, x21, [sp, #0x20]
+00000001000057c4	stp	x20, x19, [sp, #0x30]
+00000001000057c8	stp	x29, x30, [sp, #0x40]
+00000001000057cc	ldr	x8, [x0, #0x10]
+00000001000057d0	tbnz	x8, #0x3f, 0x1000057f4
+00000001000057d4	lsr	x20, x8, #62
+00000001000057d8	cbnz	x20, 0x100005810
+00000001000057dc	ldr	x9, [x0, #0x8]
+00000001000057e0	cmp	x9, x1
+00000001000057e4	csel	x1, x9, x1, gt
+00000001000057e8	cmp	x1, #0x18
+00000001000057ec	b.lt	0x100005824
+00000001000057f0	b	0x100005898
+00000001000057f4	cmp	x1, #0x18
+00000001000057f8	b.ge	0x100005898
+00000001000057fc	ldp	x29, x30, [sp, #0x40]
+0000000100005800	ldp	x20, x19, [sp, #0x30]
+0000000100005804	ldp	x22, x21, [sp, #0x20]
+0000000100005808	add	sp, sp, #0x50
+000000010000580c	ret
+0000000100005810	lsl	x9, x8, #3
+0000000100005814	cmp	x9, x1
+0000000100005818	csel	x1, x9, x1, gt
+000000010000581c	cmp	x1, #0x18
+0000000100005820	b.ge	0x100005898
+0000000100005824	ldp	x19, x2, [x0]
+0000000100005828	lsl	x8, x2, #56
+000000010000582c	orr	x8, x8, #0x8000000000000000
+0000000100005830	stp	xzr, xzr, [sp, #0x8]
+0000000100005834	str	x8, [sp, #0x18]
+0000000100005838	cmp	x2, #0x1
+000000010000583c	b.lt	0x100005854
+0000000100005840	mov	x21, x0
+0000000100005844	add	x0, sp, #0x8
+0000000100005848	mov	x1, x19
+000000010000584c	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005850	mov	x0, x21
+0000000100005854	cbz	x20, 0x100005880
+0000000100005858	sub	x8, x19, #0x8
+000000010000585c	mov	x9, #-0x1
+0000000100005860	ldaddal	x9, x9, [x8]
+0000000100005864	cmp	x9, #0x1
+0000000100005868	b.ne	0x100005880
+000000010000586c	dmb	ishld
+0000000100005870	mov	x19, x0
+0000000100005874	mov	x0, x8
+0000000100005878	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+000000010000587c	mov	x0, x19
+0000000100005880	ldr	x8, [sp, #0x8]
+0000000100005884	str	x8, [x0]
+0000000100005888	ldr	x8, [sp, #0x18]
+000000010000588c	ldur	q0, [sp, #0x10]
+0000000100005890	stur	q0, [x0, #0x8]
+0000000100005894	b	0x1000058d4
+0000000100005898	tbz	x8, #0x3e, 0x1000058c4
+000000010000589c	ldr	x9, [x0]
+00000001000058a0	ldur	x9, [x9, #-0x8]
+00000001000058a4	cmp	x9, #0x1
+00000001000058a8	b.ne	0x1000058c4
+00000001000058ac	lsl	x9, x8, #3
+00000001000058b0	cmn	x8, #0x1
+00000001000058b4	mov	w10, #0x17
+00000001000058b8	csel	x9, x9, x10, gt
+00000001000058bc	cmp	x1, x9
+00000001000058c0	b.le	0x1000058d4
+00000001000058c4	mov	x19, x0
+00000001000058c8	bl	"_std::collections::string::string::String::_realloc_mutable(::String,::SIMD[DType.int, 1])"
+00000001000058cc	mov	x0, x19
+00000001000058d0	ldr	x8, [x19, #0x10]
+00000001000058d4	tbnz	x8, #0x3f, 0x1000057fc
+00000001000058d8	ldr	x0, [x0]
+00000001000058dc	ldp	x29, x30, [sp, #0x40]
+00000001000058e0	ldp	x20, x19, [sp, #0x30]
+00000001000058e4	ldp	x22, x21, [sp, #0x20]
+00000001000058e8	add	sp, sp, #0x50
+00000001000058ec	ret
+_std::collections::string::string::String::_realloc_mutable(::String,::SIMD[DType.int, 1]):
+00000001000058f0	sub	sp, sp, #0x60
+00000001000058f4	stp	x24, x23, [sp, #0x20]
+00000001000058f8	stp	x22, x21, [sp, #0x30]
+00000001000058fc	stp	x20, x19, [sp, #0x40]
+0000000100005900	stp	x29, x30, [sp, #0x50]
+0000000100005904	mov	x19, x0
+0000000100005908	ldr	x21, [x0, #0x10]
+000000010000590c	tbnz	x21, #0x3f, 0x100005998
+0000000100005910	ldp	x24, x20, [x19]
+0000000100005914	lsl	x8, x21, #3
+0000000100005918	cmp	xzr, x21, lsr #62
+000000010000591c	csel	x8, x20, x8, eq
+0000000100005920	lsl	x8, x8, #1
+0000000100005924	cmp	x1, x8
+0000000100005928	csel	x8, x1, x8, gt
+000000010000592c	add	x22, x8, #0x7
+0000000100005930	and	x8, x22, #0xfffffffffffffff8
+0000000100005934	adds	x1, x8, #0x8
+0000000100005938	b.mi	0x1000059bc
+000000010000593c	mov	w0, #0x1
+0000000100005940	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+0000000100005944	cbz	x0, 0x100005ad4
+0000000100005948	mov	w8, #0x1
+000000010000594c	mov	x23, x0
+0000000100005950	str	x8, [x23], #0x8
+0000000100005954	cbz	x20, 0x100005a6c
+0000000100005958	cmp	x20, #0x4
+000000010000595c	b.gt	0x1000059f4
+0000000100005960	sub	x8, x20, #0x1
+0000000100005964	ldrb	w9, [x24]
+0000000100005968	strb	w9, [x23]
+000000010000596c	ldrb	w9, [x24, x8]
+0000000100005970	strb	w9, [x23, x8]
+0000000100005974	cmp	x20, #0x3
+0000000100005978	b.lt	0x100005a6c
+000000010000597c	sub	x8, x20, #0x2
+0000000100005980	ldrb	w9, [x24, #0x1]
+0000000100005984	strb	w9, [x0, #0x9]
+0000000100005988	ldrb	w9, [x24, x8]
+000000010000598c	strb	w9, [x23, x8]
+0000000100005990	tbnz	x21, #0x3e, 0x100005a70
+0000000100005994	b	0x100005a90
+0000000100005998	ubfx	x20, x21, #56, #5
+000000010000599c	mov	w8, #0x2e
+00000001000059a0	mov	x24, x19
+00000001000059a4	cmp	x1, x8
+00000001000059a8	csel	x8, x1, x8, gt
+00000001000059ac	add	x22, x8, #0x7
+00000001000059b0	and	x8, x22, #0xfffffffffffffff8
+00000001000059b4	adds	x1, x8, #0x8
+00000001000059b8	b.pl	0x10000593c
+00000001000059bc	mov	w8, #0x23
+00000001000059c0	adrp	x9, 2 ; 0x100007000
+00000001000059c4	add	x9, x9, #0x7e0
+00000001000059c8	stp	x9, x8, [sp, #0x8]
+00000001000059cc	mov	x8, #0x2000000000000000
+00000001000059d0	str	x8, [sp, #0x18]
+00000001000059d4	adrp	x2, 2 ; 0x100007000
+00000001000059d8	add	x2, x2, #0x780
+00000001000059dc	add	x4, sp, #0x8
+00000001000059e0	mov	w0, #0x30f
+00000001000059e4	mov	w1, #0xe
+00000001000059e8	mov	w3, #0x21
+00000001000059ec	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+00000001000059f0	brk	#0x1
+00000001000059f4	cmp	x20, #0x10
+00000001000059f8	b.hi	0x100005a20
+00000001000059fc	cmp	x20, #0x8
+0000000100005a00	b.lo	0x100005ab8
+0000000100005a04	add	x8, x24, x20
+0000000100005a08	ldr	x9, [x24]
+0000000100005a0c	str	x9, [x0, #0x8]
+0000000100005a10	ldur	x8, [x8, #-0x8]
+0000000100005a14	str	x8, [x0, x20]
+0000000100005a18	tbnz	x21, #0x3e, 0x100005a70
+0000000100005a1c	b	0x100005a90
+0000000100005a20	ands	x8, x20, #0x7fffffffffffffe0
+0000000100005a24	b.eq	0x100005a48
+0000000100005a28	mov	x9, #0x0
+0000000100005a2c	add	x10, x24, x9
+0000000100005a30	ldp	q0, q1, [x10]
+0000000100005a34	add	x10, x23, x9
+0000000100005a38	add	x9, x9, #0x20
+0000000100005a3c	stp	q0, q1, [x10]
+0000000100005a40	cmp	x9, x8
+0000000100005a44	b.lo	0x100005a2c
+0000000100005a48	subs	x9, x20, x8
+0000000100005a4c	b.eq	0x100005a6c
+0000000100005a50	add	x10, x8, x0
+0000000100005a54	add	x10, x10, #0x8
+0000000100005a58	add	x8, x24, x8
+0000000100005a5c	ldrb	w11, [x8], #0x1
+0000000100005a60	strb	w11, [x10], #0x1
+0000000100005a64	subs	x9, x9, #0x1
+0000000100005a68	b.ne	0x100005a5c
+0000000100005a6c	tbz	x21, #0x3e, 0x100005a90
+0000000100005a70	ldr	x8, [x19]
+0000000100005a74	sub	x0, x8, #0x8
+0000000100005a78	mov	x8, #-0x1
+0000000100005a7c	ldaddal	x8, x8, [x0]
+0000000100005a80	cmp	x8, #0x1
+0000000100005a84	b.ne	0x100005a90
+0000000100005a88	dmb	ishld
+0000000100005a8c	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100005a90	asr	x8, x22, #3
+0000000100005a94	stp	x23, x20, [x19]
+0000000100005a98	orr	x8, x8, #0x4000000000000000
+0000000100005a9c	str	x8, [x19, #0x10]
+0000000100005aa0	ldp	x29, x30, [sp, #0x50]
+0000000100005aa4	ldp	x20, x19, [sp, #0x40]
+0000000100005aa8	ldp	x22, x21, [sp, #0x30]
+0000000100005aac	ldp	x24, x23, [sp, #0x20]
+0000000100005ab0	add	sp, sp, #0x60
+0000000100005ab4	ret
+0000000100005ab8	sub	x8, x20, #0x4
+0000000100005abc	ldr	w9, [x24]
+0000000100005ac0	str	w9, [x23]
+0000000100005ac4	ldr	w9, [x24, x8]
+0000000100005ac8	str	w9, [x23, x8]
+0000000100005acc	tbnz	x21, #0x3e, 0x100005a70
+0000000100005ad0	b	0x100005a90
+0000000100005ad4	mov	w8, #0x25
+0000000100005ad8	adrp	x9, 2 ; 0x100007000
+0000000100005adc	add	x9, x9, #0x7b0
+0000000100005ae0	stp	x9, x8, [sp, #0x8]
+0000000100005ae4	mov	x8, #0x2000000000000000
+0000000100005ae8	str	x8, [sp, #0x18]
+0000000100005aec	adrp	x2, 2 ; 0x100007000
+0000000100005af0	add	x2, x2, #0x780
+0000000100005af4	add	x4, sp, #0x8
+0000000100005af8	mov	w0, #0x293
+0000000100005afc	mov	w1, #0xe
+0000000100005b00	mov	w3, #0x21
+0000000100005b04	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100005b08	brk	#0x1
+_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false:
+0000000100005b0c	stp	x24, x23, [sp, #-0x40]!
+0000000100005b10	stp	x22, x21, [sp, #0x10]
+0000000100005b14	stp	x20, x19, [sp, #0x20]
+0000000100005b18	stp	x29, x30, [sp, #0x30]
+0000000100005b1c	mov	x19, x2
+0000000100005b20	mov	x21, x1
+0000000100005b24	mov	x20, x0
+0000000100005b28	cmp	x2, #0x1, lsl #12
+0000000100005b2c	b.le	0x100005b64
+0000000100005b30	ldr	x0, [x20, #0x1008]
+0000000100005b34	ldr	x2, [x20, #0x1000]
+0000000100005b38	mov	x1, x20
+0000000100005b3c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100005b40	str	xzr, [x20, #0x1000]
+0000000100005b44	ldr	x0, [x20, #0x1008]
+0000000100005b48	mov	x1, x21
+0000000100005b4c	mov	x2, x19
+0000000100005b50	ldp	x29, x30, [sp, #0x30]
+0000000100005b54	ldp	x20, x19, [sp, #0x20]
+0000000100005b58	ldp	x22, x21, [sp, #0x10]
+0000000100005b5c	ldp	x24, x23, [sp], #0x40
+0000000100005b60	b	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100005b64	ldr	x2, [x20, #0x1000]
+0000000100005b68	add	x8, x2, x19
+0000000100005b6c	cmp	x8, #0x1, lsl #12
+0000000100005b70	b.le	0x100005b88
+0000000100005b74	ldr	x0, [x20, #0x1008]
+0000000100005b78	mov	x1, x20
+0000000100005b7c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100005b80	mov	x2, #0x0
+0000000100005b84	str	xzr, [x20, #0x1000]
+0000000100005b88	cbz	x19, 0x100005c48
+0000000100005b8c	add	x8, x20, x2
+0000000100005b90	cmp	x19, #0x4
+0000000100005b94	b.gt	0x100005bcc
+0000000100005b98	sub	x9, x19, #0x1
+0000000100005b9c	ldrb	w10, [x21]
+0000000100005ba0	strb	w10, [x8]
+0000000100005ba4	ldrb	w10, [x21, x9]
+0000000100005ba8	strb	w10, [x8, x9]
+0000000100005bac	cmp	x19, #0x3
+0000000100005bb0	b.lt	0x100005c48
+0000000100005bb4	sub	x9, x19, #0x2
+0000000100005bb8	ldrb	w10, [x21, #0x1]
+0000000100005bbc	strb	w10, [x8, #0x1]
+0000000100005bc0	ldrb	w10, [x21, x9]
+0000000100005bc4	strb	w10, [x8, x9]
+0000000100005bc8	b	0x100005c48
+0000000100005bcc	cmp	x19, #0x10
+0000000100005bd0	b.hi	0x100005bf4
+0000000100005bd4	cmp	x19, #0x8
+0000000100005bd8	b.lo	0x100005c34
+0000000100005bdc	sub	x9, x19, #0x8
+0000000100005be0	ldr	x10, [x21]
+0000000100005be4	str	x10, [x8]
+0000000100005be8	ldr	x10, [x21, x9]
+0000000100005bec	str	x10, [x8, x9]
+0000000100005bf0	b	0x100005c48
+0000000100005bf4	ands	x22, x19, #0x7fffffffffffffe0
+0000000100005bf8	b.eq	0x100005c14
+0000000100005bfc	add	x0, x20, x2
+0000000100005c00	mov	x23, x2
+0000000100005c04	and	x2, x19, #0x7fffffffffffffe0
+0000000100005c08	mov	x1, x21
+0000000100005c0c	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005c10	mov	x2, x23
+0000000100005c14	cmp	x22, x19
+0000000100005c18	b.eq	0x100005c48
+0000000100005c1c	add	x8, x20, x2
+0000000100005c20	add	x0, x8, x22
+0000000100005c24	add	x1, x21, x22
+0000000100005c28	and	x2, x19, #0x1f
+0000000100005c2c	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005c30	b	0x100005c48
+0000000100005c34	sub	x9, x19, #0x4
+0000000100005c38	ldr	w10, [x21]
+0000000100005c3c	str	w10, [x8]
+0000000100005c40	ldr	w10, [x21, x9]
+0000000100005c44	str	w10, [x8, x9]
+0000000100005c48	ldr	x8, [x20, #0x1000]
+0000000100005c4c	add	x8, x8, x19
+0000000100005c50	str	x8, [x20, #0x1000]
+0000000100005c54	ldp	x29, x30, [sp, #0x30]
+0000000100005c58	ldp	x20, x19, [sp, #0x20]
+0000000100005c5c	ldp	x22, x21, [sp, #0x10]
+0000000100005c60	ldp	x24, x23, [sp], #0x40
+0000000100005c64	ret
+_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=true:
+0000000100005c68	stp	x24, x23, [sp, #-0x40]!
+0000000100005c6c	stp	x22, x21, [sp, #0x10]
+0000000100005c70	stp	x20, x19, [sp, #0x20]
+0000000100005c74	stp	x29, x30, [sp, #0x30]
+0000000100005c78	mov	x19, x2
+0000000100005c7c	mov	x21, x1
+0000000100005c80	mov	x20, x0
+0000000100005c84	cmp	x2, #0x1, lsl #12
+0000000100005c88	b.le	0x100005cc0
+0000000100005c8c	ldr	x0, [x20, #0x1008]
+0000000100005c90	ldr	x2, [x20, #0x1000]
+0000000100005c94	mov	x1, x20
+0000000100005c98	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100005c9c	str	xzr, [x20, #0x1000]
+0000000100005ca0	ldr	x0, [x20, #0x1008]
+0000000100005ca4	mov	x1, x21
+0000000100005ca8	mov	x2, x19
+0000000100005cac	ldp	x29, x30, [sp, #0x30]
+0000000100005cb0	ldp	x20, x19, [sp, #0x20]
+0000000100005cb4	ldp	x22, x21, [sp, #0x10]
+0000000100005cb8	ldp	x24, x23, [sp], #0x40
+0000000100005cbc	b	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100005cc0	ldr	x2, [x20, #0x1000]
+0000000100005cc4	add	x8, x2, x19
+0000000100005cc8	cmp	x8, #0x1, lsl #12
+0000000100005ccc	b.le	0x100005ce4
+0000000100005cd0	ldr	x0, [x20, #0x1008]
+0000000100005cd4	mov	x1, x20
+0000000100005cd8	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100005cdc	mov	x2, #0x0
+0000000100005ce0	str	xzr, [x20, #0x1000]
+0000000100005ce4	cbz	x19, 0x100005da4
+0000000100005ce8	add	x8, x20, x2
+0000000100005cec	cmp	x19, #0x4
+0000000100005cf0	b.gt	0x100005d28
+0000000100005cf4	sub	x9, x19, #0x1
+0000000100005cf8	ldrb	w10, [x21]
+0000000100005cfc	strb	w10, [x8]
+0000000100005d00	ldrb	w10, [x21, x9]
+0000000100005d04	strb	w10, [x8, x9]
+0000000100005d08	cmp	x19, #0x3
+0000000100005d0c	b.lt	0x100005da4
+0000000100005d10	sub	x9, x19, #0x2
+0000000100005d14	ldrb	w10, [x21, #0x1]
+0000000100005d18	strb	w10, [x8, #0x1]
+0000000100005d1c	ldrb	w10, [x21, x9]
+0000000100005d20	strb	w10, [x8, x9]
+0000000100005d24	b	0x100005da4
+0000000100005d28	cmp	x19, #0x10
+0000000100005d2c	b.hi	0x100005d50
+0000000100005d30	cmp	x19, #0x8
+0000000100005d34	b.lo	0x100005d90
+0000000100005d38	sub	x9, x19, #0x8
+0000000100005d3c	ldr	x10, [x21]
+0000000100005d40	str	x10, [x8]
+0000000100005d44	ldr	x10, [x21, x9]
+0000000100005d48	str	x10, [x8, x9]
+0000000100005d4c	b	0x100005da4
+0000000100005d50	ands	x22, x19, #0x7fffffffffffffe0
+0000000100005d54	b.eq	0x100005d70
+0000000100005d58	add	x0, x20, x2
+0000000100005d5c	mov	x23, x2
+0000000100005d60	and	x2, x19, #0x7fffffffffffffe0
+0000000100005d64	mov	x1, x21
+0000000100005d68	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005d6c	mov	x2, x23
+0000000100005d70	cmp	x22, x19
+0000000100005d74	b.eq	0x100005da4
+0000000100005d78	add	x8, x20, x2
+0000000100005d7c	add	x0, x8, x22
+0000000100005d80	add	x1, x21, x22
+0000000100005d84	and	x2, x19, #0x1f
+0000000100005d88	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005d8c	b	0x100005da4
+0000000100005d90	sub	x9, x19, #0x4
+0000000100005d94	ldr	w10, [x21]
+0000000100005d98	str	w10, [x8]
+0000000100005d9c	ldr	w10, [x21, x9]
+0000000100005da0	str	w10, [x8, x9]
+0000000100005da4	ldr	x8, [x20, #0x1000]
+0000000100005da8	add	x8, x8, x19
+0000000100005dac	str	x8, [x20, #0x1000]
+0000000100005db0	ldp	x29, x30, [sp, #0x30]
+0000000100005db4	ldp	x20, x19, [sp, #0x20]
+0000000100005db8	ldp	x22, x21, [sp, #0x10]
+0000000100005dbc	ldp	x24, x23, [sp], #0x40
+0000000100005dc0	ret
+_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false:
+0000000100005dc4	stp	x24, x23, [sp, #-0x40]!
+0000000100005dc8	stp	x22, x21, [sp, #0x10]
+0000000100005dcc	stp	x20, x19, [sp, #0x20]
+0000000100005dd0	stp	x29, x30, [sp, #0x30]
+0000000100005dd4	mov	x19, x2
+0000000100005dd8	mov	x21, x1
+0000000100005ddc	mov	x20, x0
+0000000100005de0	cmp	x2, #0x1, lsl #12
+0000000100005de4	b.le	0x100005e24
+0000000100005de8	ldr	x8, [x20, #0x1008]
+0000000100005dec	ldr	x2, [x20, #0x1000]
+0000000100005df0	ldr	x0, [x8]
+0000000100005df4	mov	x1, x20
+0000000100005df8	bl	0x1000073b4 ; symbol stub for: _write
+0000000100005dfc	str	xzr, [x20, #0x1000]
+0000000100005e00	ldr	x8, [x20, #0x1008]
+0000000100005e04	ldr	x0, [x8]
+0000000100005e08	mov	x1, x21
+0000000100005e0c	mov	x2, x19
+0000000100005e10	ldp	x29, x30, [sp, #0x30]
+0000000100005e14	ldp	x20, x19, [sp, #0x20]
+0000000100005e18	ldp	x22, x21, [sp, #0x10]
+0000000100005e1c	ldp	x24, x23, [sp], #0x40
+0000000100005e20	b	0x1000073b4 ; symbol stub for: _write
+0000000100005e24	ldr	x2, [x20, #0x1000]
+0000000100005e28	add	x8, x2, x19
+0000000100005e2c	cmp	x8, #0x1, lsl #12
+0000000100005e30	b.le	0x100005e4c
+0000000100005e34	ldr	x8, [x20, #0x1008]
+0000000100005e38	ldr	x0, [x8]
+0000000100005e3c	mov	x1, x20
+0000000100005e40	bl	0x1000073b4 ; symbol stub for: _write
+0000000100005e44	mov	x2, #0x0
+0000000100005e48	str	xzr, [x20, #0x1000]
+0000000100005e4c	cbz	x19, 0x100005f0c
+0000000100005e50	add	x8, x20, x2
+0000000100005e54	cmp	x19, #0x4
+0000000100005e58	b.gt	0x100005e90
+0000000100005e5c	sub	x9, x19, #0x1
+0000000100005e60	ldrb	w10, [x21]
+0000000100005e64	strb	w10, [x8]
+0000000100005e68	ldrb	w10, [x21, x9]
+0000000100005e6c	strb	w10, [x8, x9]
+0000000100005e70	cmp	x19, #0x3
+0000000100005e74	b.lt	0x100005f0c
+0000000100005e78	sub	x9, x19, #0x2
+0000000100005e7c	ldrb	w10, [x21, #0x1]
+0000000100005e80	strb	w10, [x8, #0x1]
+0000000100005e84	ldrb	w10, [x21, x9]
+0000000100005e88	strb	w10, [x8, x9]
+0000000100005e8c	b	0x100005f0c
+0000000100005e90	cmp	x19, #0x10
+0000000100005e94	b.hi	0x100005eb8
+0000000100005e98	cmp	x19, #0x8
+0000000100005e9c	b.lo	0x100005ef8
+0000000100005ea0	sub	x9, x19, #0x8
+0000000100005ea4	ldr	x10, [x21]
+0000000100005ea8	str	x10, [x8]
+0000000100005eac	ldr	x10, [x21, x9]
+0000000100005eb0	str	x10, [x8, x9]
+0000000100005eb4	b	0x100005f0c
+0000000100005eb8	ands	x22, x19, #0x7fffffffffffffe0
+0000000100005ebc	b.eq	0x100005ed8
+0000000100005ec0	add	x0, x20, x2
+0000000100005ec4	mov	x23, x2
+0000000100005ec8	and	x2, x19, #0x7fffffffffffffe0
+0000000100005ecc	mov	x1, x21
+0000000100005ed0	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005ed4	mov	x2, x23
+0000000100005ed8	cmp	x22, x19
+0000000100005edc	b.eq	0x100005f0c
+0000000100005ee0	add	x8, x20, x2
+0000000100005ee4	add	x0, x8, x22
+0000000100005ee8	add	x1, x21, x22
+0000000100005eec	and	x2, x19, #0x1f
+0000000100005ef0	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100005ef4	b	0x100005f0c
+0000000100005ef8	sub	x9, x19, #0x4
+0000000100005efc	ldr	w10, [x21]
+0000000100005f00	str	w10, [x8]
+0000000100005f04	ldr	w10, [x21, x9]
+0000000100005f08	str	w10, [x8, x9]
+0000000100005f0c	ldr	x8, [x20, #0x1000]
+0000000100005f10	add	x8, x8, x19
+0000000100005f14	str	x8, [x20, #0x1000]
+0000000100005f18	ldp	x29, x30, [sp, #0x30]
+0000000100005f1c	ldp	x20, x19, [sp, #0x20]
+0000000100005f20	ldp	x22, x21, [sp, #0x10]
+0000000100005f24	ldp	x24, x23, [sp], #0x40
+0000000100005f28	ret
+_std::memory::arc_pointer::ArcPointer::__deinit__(::ArcPointer[$0]$),T=[typevalue<#kgen.instref<std::memory::owned_pointer::OwnedPointer,T=[typevalue<#kgen.instref<std::simd::SIMD,dtype=ui8,length=1>>, scalar<ui8>]>>, pointer<none>]:
+0000000100005f2c	stp	x22, x21, [sp, #-0x30]!
+0000000100005f30	stp	x20, x19, [sp, #0x10]
+0000000100005f34	stp	x29, x30, [sp, #0x20]
+0000000100005f38	mov	x20, #-0x1
+0000000100005f3c	ldaddl	x20, x8, [x0]
+0000000100005f40	cmp	x8, #0x1
+0000000100005f44	b.ne	0x100005f80
+0000000100005f48	mov	x19, x0
+0000000100005f4c	add	x21, x0, #0x8
+0000000100005f50	dmb	ishld
+0000000100005f54	ldr	x0, [x0, #0x10]
+0000000100005f58	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100005f5c	ldaddl	x20, x8, [x21]
+0000000100005f60	cmp	x8, #0x1
+0000000100005f64	b.ne	0x100005f80
+0000000100005f68	dmb	ishld
+0000000100005f6c	mov	x0, x19
+0000000100005f70	ldp	x29, x30, [sp, #0x20]
+0000000100005f74	ldp	x20, x19, [sp, #0x10]
+0000000100005f78	ldp	x22, x21, [sp], #0x30
+0000000100005f7c	b	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100005f80	ldp	x29, x30, [sp, #0x20]
+0000000100005f84	ldp	x20, x19, [sp, #0x10]
+0000000100005f88	ldp	x22, x21, [sp], #0x30
+0000000100005f8c	ret
+_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]:
+0000000100005f90	stp	x28, x27, [sp, #-0x40]!
+0000000100005f94	stp	x22, x21, [sp, #0x10]
+0000000100005f98	stp	x20, x19, [sp, #0x20]
+0000000100005f9c	stp	x29, x30, [sp, #0x30]
+0000000100005fa0	sub	sp, sp, #0x1, lsl #12
+0000000100005fa4	sub	sp, sp, #0x10
+0000000100005fa8	mov	x19, x1
+0000000100005fac	mov	x20, x0
+0000000100005fb0	ldr	x8, [x1, #0x10]
+0000000100005fb4	tbnz	x0, #0x3f, 0x100005fe0
+0000000100005fb8	tbnz	x8, #0x3f, 0x100006034
+0000000100005fbc	ldr	x1, [x19, #0x8]
+0000000100005fc0	cmp	x1, #0x18
+0000000100005fc4	b.lt	0x100006060
+0000000100005fc8	lsr	x9, x8, #62
+0000000100005fcc	lsl	x8, x8, #3
+0000000100005fd0	cmp	x8, x1
+0000000100005fd4	ccmp	x9, #0x0, #0x4, lt
+0000000100005fd8	b.ne	0x100006040
+0000000100005fdc	b	0x100006048
+0000000100005fe0	tbnz	x8, #0x3f, 0x100005fec
+0000000100005fe4	ldr	x22, [x19, #0x8]
+0000000100005fe8	b	0x100005ff0
+0000000100005fec	ubfx	x22, x8, #56, #5
+0000000100005ff0	add	x21, x22, #0x1
+0000000100005ff4	add	x1, x22, #0x1
+0000000100005ff8	mov	x0, x19
+0000000100005ffc	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+0000000100006000	mov	w8, #0x2d
+0000000100006004	strb	w8, [x0, x22]
+0000000100006008	ldr	x8, [x19, #0x10]
+000000010000600c	tbnz	x8, #0x3f, 0x100006020
+0000000100006010	and	x8, x8, #0xdfffffffffffffff
+0000000100006014	stp	x21, x8, [x19, #0x8]
+0000000100006018	tbz	x8, #0x3f, 0x100005fbc
+000000010000601c	b	0x100006034
+0000000100006020	and	x8, x8, #0xe0ffffffffffffff
+0000000100006024	orr	x8, x8, x21, lsl #56
+0000000100006028	and	x8, x8, #0xdfffffffffffffff
+000000010000602c	str	x8, [x19, #0x10]
+0000000100006030	tbz	x8, #0x3f, 0x100005fbc
+0000000100006034	ubfx	x1, x8, #56, #5
+0000000100006038	cmp	x1, #0x18
+000000010000603c	b.lo	0x100006060
+0000000100006040	mov	x0, x19
+0000000100006044	bl	"_std::collections::string::string::String::_realloc_mutable(::String,::SIMD[DType.int, 1])"
+0000000100006048	str	xzr, [sp, #0x1000]
+000000010000604c	str	x19, [sp, #0x1008]
+0000000100006050	mov	x1, sp
+0000000100006054	mov	x0, x19
+0000000100006058	mov	x2, #0x0
+000000010000605c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006060	cbz	x20, 0x1000060b0
+0000000100006064	strb	wzr, [sp, #0x40]
+0000000100006068	mov	w8, #0x3f
+000000010000606c	tbnz	x20, #0x3f, 0x1000060e0
+0000000100006070	mov	x9, #-0x3333333333333334
+0000000100006074	movk	x9, #0xcccd
+0000000100006078	mov	w10, #0xa
+000000010000607c	mov	x11, sp
+0000000100006080	adrp	x12, 1 ; 0x100007000
+0000000100006084	add	x12, x12, #0x700
+0000000100006088	mov	x13, x20
+000000010000608c	umulh	x14, x20, x9
+0000000100006090	lsr	x20, x14, #3
+0000000100006094	msub	x14, x20, x10, x13
+0000000100006098	ldrb	w14, [x12, x14]
+000000010000609c	strb	w14, [x11, x8]
+00000001000060a0	sub	x8, x8, #0x1
+00000001000060a4	cmp	x13, #0xa
+00000001000060a8	b.hs	0x100006088
+00000001000060ac	b	0x10000615c
+00000001000060b0	ldr	x8, [x19, #0x10]
+00000001000060b4	tbnz	x8, #0x3f, 0x10000617c
+00000001000060b8	ldr	x21, [x19, #0x8]
+00000001000060bc	add	x20, x21, #0x1
+00000001000060c0	cmp	x20, #0x18
+00000001000060c4	b.lt	0x10000618c
+00000001000060c8	lsl	x9, x8, #3
+00000001000060cc	cmp	xzr, x8, lsr #62
+00000001000060d0	csel	x8, x21, x9, eq
+00000001000060d4	cmp	x20, x8
+00000001000060d8	b.gt	0x1000061b4
+00000001000060dc	b	0x1000061c8
+00000001000060e0	mov	x9, #0x6666666666666666
+00000001000060e4	movk	x9, #0x6667
+00000001000060e8	mov	w10, #0xa
+00000001000060ec	mov	x11, #-0xa
+00000001000060f0	mov	x12, sp
+00000001000060f4	mov	x13, #-0x6666666666666667
+00000001000060f8	adrp	x14, 1 ; 0x100007000
+00000001000060fc	add	x14, x14, #0x700
+0000000100006100	smulh	x15, x20, x9
+0000000100006104	asr	x16, x15, #2
+0000000100006108	add	x15, x16, x15, lsr #63
+000000010000610c	msub	x15, x15, x10, x20
+0000000100006110	cmn	x20, #0x1
+0000000100006114	cset	w16, gt
+0000000100006118	cmp	x15, #0x0
+000000010000611c	cset	w17, ne
+0000000100006120	tst	w16, w17
+0000000100006124	csel	x17, x11, xzr, ne
+0000000100006128	adds	x15, x17, x15
+000000010000612c	cneg	x15, x15, mi
+0000000100006130	ldrb	w15, [x14, x15]
+0000000100006134	strb	w15, [x12, x8]
+0000000100006138	sub	x8, x8, #0x1
+000000010000613c	smulh	x15, x20, x13
+0000000100006140	asr	x17, x15, #2
+0000000100006144	add	x15, x17, x15, lsr #63
+0000000100006148	mul	x17, x15, x11
+000000010000614c	cmp	x17, x20
+0000000100006150	csel	w16, wzr, w16, eq
+0000000100006154	subs	x20, x16, x15
+0000000100006158	b.ne	0x100006100
+000000010000615c	mov	x9, sp
+0000000100006160	add	x9, x9, x8
+0000000100006164	mov	w10, #0x3f
+0000000100006168	sub	x2, x10, x8
+000000010000616c	add	x1, x9, #0x1
+0000000100006170	mov	x0, x19
+0000000100006174	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006178	b	0x100006200
+000000010000617c	ubfx	x21, x8, #56, #5
+0000000100006180	add	x20, x21, #0x1
+0000000100006184	cmp	x21, #0x16
+0000000100006188	b.hi	0x1000061b4
+000000010000618c	mov	x0, x19
+0000000100006190	mov	x1, x20
+0000000100006194	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+0000000100006198	mov	w8, #0x30
+000000010000619c	strb	w8, [x0, x21]
+00000001000061a0	ldr	x8, [x19, #0x10]
+00000001000061a4	tbz	x8, #0x3f, 0x1000061f4
+00000001000061a8	and	x8, x8, #0xe0ffffffffffffff
+00000001000061ac	orr	x8, x8, x20, lsl #56
+00000001000061b0	b	0x1000061f8
+00000001000061b4	mov	x0, x19
+00000001000061b8	mov	x1, x20
+00000001000061bc	bl	"_std::collections::string::string::String::_realloc_mutable(::String,::SIMD[DType.int, 1])"
+00000001000061c0	ldr	x8, [x19, #0x10]
+00000001000061c4	tbnz	x8, #0x3f, 0x1000061d0
+00000001000061c8	ldr	x21, [x19, #0x8]
+00000001000061cc	b	0x1000061d4
+00000001000061d0	ubfx	x21, x8, #56, #5
+00000001000061d4	add	x20, x21, #0x1
+00000001000061d8	add	x1, x21, #0x1
+00000001000061dc	mov	x0, x19
+00000001000061e0	bl	"_std::collections::string::string::String::unsafe_ptr_mut(::String,::SIMD[DType.int, 1]$)"
+00000001000061e4	mov	w8, #0x30
+00000001000061e8	strb	w8, [x0, x21]
+00000001000061ec	ldr	x8, [x19, #0x10]
+00000001000061f0	tbnz	x8, #0x3f, 0x1000061a8
+00000001000061f4	str	x20, [x19, #0x8]
+00000001000061f8	and	x8, x8, #0xdfffffffffffffff
+00000001000061fc	str	x8, [x19, #0x10]
+0000000100006200	add	sp, sp, #0x1, lsl #12
+0000000100006204	add	sp, sp, #0x10
+0000000100006208	ldp	x29, x30, [sp, #0x30]
+000000010000620c	ldp	x20, x19, [sp, #0x20]
+0000000100006210	ldp	x22, x21, [sp, #0x10]
+0000000100006214	ldp	x28, x27, [sp], #0x40
+0000000100006218	ret
+_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FixedWriteBuffer>>, struct<(struct<(array<2048, scalar<ui8>>) memoryOnly>, scalar<index>) memoryOnly>]:
+000000010000621c	sub	sp, sp, #0x90
+0000000100006220	stp	x24, x23, [sp, #0x50]
+0000000100006224	stp	x22, x21, [sp, #0x60]
+0000000100006228	stp	x20, x19, [sp, #0x70]
+000000010000622c	stp	x29, x30, [sp, #0x80]
+0000000100006230	cbz	x0, 0x1000062b0
+0000000100006234	ldr	x9, [x1, #0x800]
+0000000100006238	tbz	x0, #0x3f, 0x10000625c
+000000010000623c	add	x8, x9, #0x1
+0000000100006240	cmp	x8, #0x801
+0000000100006244	b.ge	0x10000647c
+0000000100006248	mov	w8, #0x2d
+000000010000624c	strb	w8, [x1, x9]
+0000000100006250	ldr	x8, [x1, #0x800]
+0000000100006254	add	x9, x8, #0x1
+0000000100006258	str	x9, [x1, #0x800]
+000000010000625c	cmp	x9, #0x801
+0000000100006260	b.ge	0x10000647c
+0000000100006264	strb	wzr, [sp, #0x4f]
+0000000100006268	mov	w8, #0x3f
+000000010000626c	tbnz	x0, #0x3f, 0x1000062d4
+0000000100006270	mov	x10, #-0x3333333333333334
+0000000100006274	movk	x10, #0xcccd
+0000000100006278	mov	w11, #0xa
+000000010000627c	add	x12, sp, #0xf
+0000000100006280	adrp	x13, 1 ; 0x100007000
+0000000100006284	add	x13, x13, #0x700
+0000000100006288	mov	x14, x0
+000000010000628c	umulh	x15, x0, x10
+0000000100006290	lsr	x0, x15, #3
+0000000100006294	msub	x15, x0, x11, x14
+0000000100006298	ldrb	w15, [x13, x15]
+000000010000629c	strb	w15, [x12, x8]
+00000001000062a0	sub	x8, x8, #0x1
+00000001000062a4	cmp	x14, #0xa
+00000001000062a8	b.hs	0x100006288
+00000001000062ac	b	0x100006350
+00000001000062b0	ldr	x8, [x1, #0x800]
+00000001000062b4	cmp	x8, #0x800
+00000001000062b8	b.gt	0x10000647c
+00000001000062bc	b.eq	0x10000647c
+00000001000062c0	mov	w9, #0x30
+00000001000062c4	strb	w9, [x1, x8]
+00000001000062c8	ldr	x8, [x1, #0x800]
+00000001000062cc	add	x8, x8, #0x1
+00000001000062d0	b	0x100006374
+00000001000062d4	mov	x10, #0x6666666666666666
+00000001000062d8	movk	x10, #0x6667
+00000001000062dc	mov	w11, #0xa
+00000001000062e0	mov	x12, #-0xa
+00000001000062e4	add	x13, sp, #0xf
+00000001000062e8	mov	x14, #-0x6666666666666667
+00000001000062ec	adrp	x15, 1 ; 0x100007000
+00000001000062f0	add	x15, x15, #0x700
+00000001000062f4	smulh	x16, x0, x10
+00000001000062f8	asr	x17, x16, #2
+00000001000062fc	add	x16, x17, x16, lsr #63
+0000000100006300	msub	x16, x16, x11, x0
+0000000100006304	cmn	x0, #0x1
+0000000100006308	cset	w17, gt
+000000010000630c	cmp	x16, #0x0
+0000000100006310	cset	w2, ne
+0000000100006314	tst	w17, w2
+0000000100006318	csel	x2, x12, xzr, ne
+000000010000631c	adds	x16, x2, x16
+0000000100006320	cneg	x16, x16, mi
+0000000100006324	ldrb	w16, [x15, x16]
+0000000100006328	strb	w16, [x13, x8]
+000000010000632c	sub	x8, x8, #0x1
+0000000100006330	smulh	x16, x0, x14
+0000000100006334	asr	x2, x16, #2
+0000000100006338	add	x16, x2, x16, lsr #63
+000000010000633c	mul	x2, x16, x12
+0000000100006340	cmp	x2, x0
+0000000100006344	csel	w17, wzr, w17, eq
+0000000100006348	subs	x0, x17, x16
+000000010000634c	b.ne	0x1000062f4
+0000000100006350	mov	w10, #0x3f
+0000000100006354	sub	x20, x10, x8
+0000000100006358	add	x10, x20, x9
+000000010000635c	cmp	x10, #0x801
+0000000100006360	b.ge	0x10000647c
+0000000100006364	cmp	x8, #0x3f
+0000000100006368	b.ne	0x100006390
+000000010000636c	ldr	x8, [x1, #0x800]
+0000000100006370	add	x8, x8, x20
+0000000100006374	str	x8, [x1, #0x800]
+0000000100006378	ldp	x29, x30, [sp, #0x80]
+000000010000637c	ldp	x20, x19, [sp, #0x70]
+0000000100006380	ldp	x22, x21, [sp, #0x60]
+0000000100006384	ldp	x24, x23, [sp, #0x50]
+0000000100006388	add	sp, sp, #0x90
+000000010000638c	ret
+0000000100006390	add	x10, sp, #0xf
+0000000100006394	add	x21, x10, x8
+0000000100006398	add	x19, x1, x9
+000000010000639c	cmp	x20, #0x4
+00000001000063a0	b.gt	0x1000063e0
+00000001000063a4	mov	w9, #0x3e
+00000001000063a8	sub	x9, x9, x8
+00000001000063ac	ldurb	w10, [x21, #0x1]
+00000001000063b0	strb	w10, [x19]
+00000001000063b4	ldrb	w10, [sp, #0x4e]
+00000001000063b8	strb	w10, [x19, x9]
+00000001000063bc	cmp	x20, #0x3
+00000001000063c0	b.lt	0x10000636c
+00000001000063c4	mov	w9, #0x3d
+00000001000063c8	sub	x8, x9, x8
+00000001000063cc	ldrb	w9, [x21, #0x2]
+00000001000063d0	strb	w9, [x19, #0x1]
+00000001000063d4	ldrb	w9, [sp, #0x4d]
+00000001000063d8	strb	w9, [x19, x8]
+00000001000063dc	b	0x10000636c
+00000001000063e0	cmp	x20, #0x10
+00000001000063e4	b.hi	0x10000640c
+00000001000063e8	cmp	x20, #0x8
+00000001000063ec	b.lo	0x100006460
+00000001000063f0	mov	w9, #0x37
+00000001000063f4	sub	x8, x9, x8
+00000001000063f8	ldur	x9, [x21, #0x1]
+00000001000063fc	str	x9, [x19]
+0000000100006400	ldur	x9, [sp, #0x47]
+0000000100006404	str	x9, [x19, x8]
+0000000100006408	b	0x10000636c
+000000010000640c	ands	x22, x20, #0x7fffffffffffffe0
+0000000100006410	b.eq	0x100006438
+0000000100006414	mov	w9, #0x1f
+0000000100006418	sub	x8, x9, x8
+000000010000641c	and	x8, x8, #0xffffffffffffffe0
+0000000100006420	mov	x23, x1
+0000000100006424	add	x1, x21, #0x1
+0000000100006428	add	x2, x8, #0x20
+000000010000642c	mov	x0, x19
+0000000100006430	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100006434	mov	x1, x23
+0000000100006438	cmp	x22, x20
+000000010000643c	b.eq	0x10000636c
+0000000100006440	add	x8, x21, x22
+0000000100006444	add	x0, x19, x22
+0000000100006448	mov	x19, x1
+000000010000644c	add	x1, x8, #0x1
+0000000100006450	and	x2, x20, #0x1f
+0000000100006454	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100006458	mov	x1, x19
+000000010000645c	b	0x10000636c
+0000000100006460	mov	w9, #0x3b
+0000000100006464	sub	x8, x9, x8
+0000000100006468	ldur	w9, [x21, #0x1]
+000000010000646c	str	w9, [x19]
+0000000100006470	ldur	w9, [sp, #0x4b]
+0000000100006474	str	w9, [x19, x8]
+0000000100006478	b	0x10000636c
+000000010000647c	bl	"_std::format::_utils::_fixed_buffer_exceeded()"
+_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FlushingWriteBuffer,origin._mlir_origin`={  },origin={  },W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096>>, struct<(struct<(array<4096, scalar<ui8>>) memoryOnly>, scalar<index>, pointer<none>) memoryOnly>]:
+0000000100006480	sub	sp, sp, #0x70
+0000000100006484	stp	x20, x19, [sp, #0x50]
+0000000100006488	stp	x29, x30, [sp, #0x60]
+000000010000648c	mov	x19, x1
+0000000100006490	mov	x20, x0
+0000000100006494	tbnz	x0, #0x3f, 0x100006504
+0000000100006498	ldr	x2, [x19, #0x1000]
+000000010000649c	cmp	x2, #0x1, lsl #12
+00000001000064a0	cbz	x20, 0x100006604
+00000001000064a4	b.le	0x1000064b8
+00000001000064a8	ldr	x0, [x19, #0x1008]
+00000001000064ac	mov	x1, x19
+00000001000064b0	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+00000001000064b4	str	xzr, [x19, #0x1000]
+00000001000064b8	mov	x8, #0x0
+00000001000064bc	strb	wzr, [sp, #0x4f]
+00000001000064c0	mov	x9, #-0x3333333333333334
+00000001000064c4	movk	x9, #0xcccd
+00000001000064c8	mov	w10, #0xa
+00000001000064cc	add	x11, sp, #0xf
+00000001000064d0	adrp	x12, 1 ; 0x100007000
+00000001000064d4	add	x12, x12, #0x700
+00000001000064d8	mov	x13, x20
+00000001000064dc	umulh	x14, x20, x9
+00000001000064e0	lsr	x20, x14, #3
+00000001000064e4	msub	x14, x20, x10, x13
+00000001000064e8	add	x15, x11, x8
+00000001000064ec	ldrb	w14, [x12, x14]
+00000001000064f0	strb	w14, [x15, #0x3f]
+00000001000064f4	sub	x8, x8, #0x1
+00000001000064f8	cmp	x13, #0x9
+00000001000064fc	b.hi	0x1000064d8
+0000000100006500	b	0x1000065dc
+0000000100006504	ldr	x2, [x19, #0x1000]
+0000000100006508	add	x8, x2, #0x1
+000000010000650c	cmp	x8, #0x1, lsl #12
+0000000100006510	b.le	0x100006528
+0000000100006514	ldr	x0, [x19, #0x1008]
+0000000100006518	mov	x1, x19
+000000010000651c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006520	mov	x2, #0x0
+0000000100006524	str	xzr, [x19, #0x1000]
+0000000100006528	mov	w8, #0x2d
+000000010000652c	strb	w8, [x19, x2]
+0000000100006530	ldr	x8, [x19, #0x1000]
+0000000100006534	add	x2, x8, #0x1
+0000000100006538	str	x2, [x19, #0x1000]
+000000010000653c	cmp	x2, #0x1, lsl #12
+0000000100006540	b.le	0x100006554
+0000000100006544	ldr	x0, [x19, #0x1008]
+0000000100006548	mov	x1, x19
+000000010000654c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006550	str	xzr, [x19, #0x1000]
+0000000100006554	mov	x8, #0x0
+0000000100006558	strb	wzr, [sp, #0x4f]
+000000010000655c	mov	x9, #0x6666666666666666
+0000000100006560	movk	x9, #0x6667
+0000000100006564	mov	w10, #0xa
+0000000100006568	mov	x11, #-0xa
+000000010000656c	add	x12, sp, #0xf
+0000000100006570	mov	x13, #-0x6666666666666667
+0000000100006574	adrp	x14, 1 ; 0x100007000
+0000000100006578	add	x14, x14, #0x700
+000000010000657c	smulh	x15, x20, x9
+0000000100006580	asr	x16, x15, #2
+0000000100006584	add	x15, x16, x15, lsr #63
+0000000100006588	msub	x15, x15, x10, x20
+000000010000658c	cmn	x20, #0x1
+0000000100006590	cset	w16, gt
+0000000100006594	cmp	x15, #0x0
+0000000100006598	cset	w17, ne
+000000010000659c	tst	w16, w17
+00000001000065a0	csel	x17, x11, xzr, ne
+00000001000065a4	adds	x15, x17, x15
+00000001000065a8	cneg	x15, x15, mi
+00000001000065ac	add	x17, x12, x8
+00000001000065b0	ldrb	w15, [x14, x15]
+00000001000065b4	strb	w15, [x17, #0x3f]
+00000001000065b8	smulh	x15, x20, x13
+00000001000065bc	asr	x17, x15, #2
+00000001000065c0	add	x15, x17, x15, lsr #63
+00000001000065c4	mul	x17, x15, x11
+00000001000065c8	cmp	x17, x20
+00000001000065cc	csel	w16, wzr, w16, eq
+00000001000065d0	sub	x8, x8, #0x1
+00000001000065d4	sub	x20, x16, x15
+00000001000065d8	cbnz	x20, 0x10000657c
+00000001000065dc	add	x9, sp, #0xf
+00000001000065e0	add	x9, x9, x8
+00000001000065e4	neg	x2, x8
+00000001000065e8	add	x1, x9, #0x40
+00000001000065ec	mov	x0, x19
+00000001000065f0	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=true"
+00000001000065f4	ldp	x29, x30, [sp, #0x60]
+00000001000065f8	ldp	x20, x19, [sp, #0x50]
+00000001000065fc	add	sp, sp, #0x70
+0000000100006600	ret
+0000000100006604	b.lt	0x10000661c
+0000000100006608	ldr	x0, [x19, #0x1008]
+000000010000660c	mov	x1, x19
+0000000100006610	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006614	mov	x2, #0x0
+0000000100006618	str	xzr, [x19, #0x1000]
+000000010000661c	mov	w8, #0x30
+0000000100006620	strb	w8, [x19, x2]
+0000000100006624	ldr	x8, [x19, #0x1000]
+0000000100006628	add	x8, x8, #0x1
+000000010000662c	str	x8, [x19, #0x1000]
+0000000100006630	ldp	x29, x30, [sp, #0x60]
+0000000100006634	ldp	x20, x19, [sp, #0x50]
+0000000100006638	add	sp, sp, #0x70
+000000010000663c	ret
+_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FlushingWriteBuffer,origin._mlir_origin`={  },origin={  },W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096>>, struct<(struct<(array<4096, scalar<ui8>>) memoryOnly>, scalar<index>, pointer<none>) memoryOnly>]:
+0000000100006640	sub	sp, sp, #0xa0
+0000000100006644	stp	x26, x25, [sp, #0x50]
+0000000100006648	stp	x24, x23, [sp, #0x60]
+000000010000664c	stp	x22, x21, [sp, #0x70]
+0000000100006650	stp	x20, x19, [sp, #0x80]
+0000000100006654	stp	x29, x30, [sp, #0x90]
+0000000100006658	mov	x19, x1
+000000010000665c	mov	x20, x0
+0000000100006660	tbnz	x0, #0x3f, 0x100006690
+0000000100006664	ldr	x2, [x19, #0x1000]
+0000000100006668	cmp	x2, #0x1, lsl #12
+000000010000666c	b.le	0x100006774
+0000000100006670	ldr	x8, [x19, #0x1008]
+0000000100006674	ldr	x0, [x8]
+0000000100006678	mov	x1, x19
+000000010000667c	bl	0x1000073b4 ; symbol stub for: _write
+0000000100006680	mov	x2, #0x0
+0000000100006684	str	xzr, [x19, #0x1000]
+0000000100006688	cbnz	x20, 0x100006778
+000000010000668c	b	0x1000068a0
+0000000100006690	ldr	x2, [x19, #0x1000]
+0000000100006694	add	x8, x2, #0x1
+0000000100006698	cmp	x8, #0x1, lsl #12
+000000010000669c	b.le	0x1000066b8
+00000001000066a0	ldr	x8, [x19, #0x1008]
+00000001000066a4	ldr	x0, [x8]
+00000001000066a8	mov	x1, x19
+00000001000066ac	bl	0x1000073b4 ; symbol stub for: _write
+00000001000066b0	mov	x2, #0x0
+00000001000066b4	str	xzr, [x19, #0x1000]
+00000001000066b8	mov	w8, #0x2d
+00000001000066bc	strb	w8, [x19, x2]
+00000001000066c0	ldr	x8, [x19, #0x1000]
+00000001000066c4	add	x2, x8, #0x1
+00000001000066c8	str	x2, [x19, #0x1000]
+00000001000066cc	cmp	x2, #0x1, lsl #12
+00000001000066d0	b.le	0x1000066ec
+00000001000066d4	ldr	x8, [x19, #0x1008]
+00000001000066d8	ldr	x0, [x8]
+00000001000066dc	mov	x1, x19
+00000001000066e0	bl	0x1000073b4 ; symbol stub for: _write
+00000001000066e4	mov	x2, #0x0
+00000001000066e8	str	xzr, [x19, #0x1000]
+00000001000066ec	strb	wzr, [sp, #0x4f]
+00000001000066f0	mov	w23, #0x3f
+00000001000066f4	mov	x8, #0x6666666666666666
+00000001000066f8	movk	x8, #0x6667
+00000001000066fc	mov	w9, #0xa
+0000000100006700	mov	x10, #-0xa
+0000000100006704	add	x11, sp, #0xf
+0000000100006708	mov	x12, #-0x6666666666666667
+000000010000670c	adrp	x13, 1 ; 0x100007000
+0000000100006710	add	x13, x13, #0x700
+0000000100006714	smulh	x14, x20, x8
+0000000100006718	asr	x15, x14, #2
+000000010000671c	add	x14, x15, x14, lsr #63
+0000000100006720	msub	x14, x14, x9, x20
+0000000100006724	cmn	x20, #0x1
+0000000100006728	cset	w15, gt
+000000010000672c	cmp	x14, #0x0
+0000000100006730	cset	w16, ne
+0000000100006734	tst	w15, w16
+0000000100006738	csel	x16, x10, xzr, ne
+000000010000673c	adds	x14, x16, x14
+0000000100006740	cneg	x14, x14, mi
+0000000100006744	ldrb	w24, [x13, x14]
+0000000100006748	strb	w24, [x11, x23]
+000000010000674c	sub	x23, x23, #0x1
+0000000100006750	smulh	x14, x20, x12
+0000000100006754	asr	x16, x14, #2
+0000000100006758	add	x14, x16, x14, lsr #63
+000000010000675c	mul	x16, x14, x10
+0000000100006760	cmp	x16, x20
+0000000100006764	csel	w15, wzr, w15, eq
+0000000100006768	subs	x20, x15, x14
+000000010000676c	b.ne	0x100006714
+0000000100006770	b	0x1000067bc
+0000000100006774	cbz	x20, 0x100006880
+0000000100006778	strb	wzr, [sp, #0x4f]
+000000010000677c	mov	w23, #0x3f
+0000000100006780	mov	x8, #-0x3333333333333334
+0000000100006784	movk	x8, #0xcccd
+0000000100006788	mov	w9, #0xa
+000000010000678c	add	x10, sp, #0xf
+0000000100006790	adrp	x11, 1 ; 0x100007000
+0000000100006794	add	x11, x11, #0x700
+0000000100006798	mov	x12, x20
+000000010000679c	umulh	x13, x20, x8
+00000001000067a0	lsr	x20, x13, #3
+00000001000067a4	msub	x13, x20, x9, x12
+00000001000067a8	ldrb	w24, [x11, x13]
+00000001000067ac	strb	w24, [x10, x23]
+00000001000067b0	sub	x23, x23, #0x1
+00000001000067b4	cmp	x12, #0xa
+00000001000067b8	b.hs	0x100006798
+00000001000067bc	add	x8, sp, #0xf
+00000001000067c0	add	x25, x8, x23
+00000001000067c4	add	x21, x25, #0x1
+00000001000067c8	mov	w8, #0x3f
+00000001000067cc	sub	x20, x8, x23
+00000001000067d0	cmp	x20, #0x1, lsl #12
+00000001000067d4	b.le	0x100006804
+00000001000067d8	ldr	x8, [x19, #0x1008]
+00000001000067dc	ldr	x0, [x8]
+00000001000067e0	mov	x1, x19
+00000001000067e4	bl	0x1000073b4 ; symbol stub for: _write
+00000001000067e8	str	xzr, [x19, #0x1000]
+00000001000067ec	ldr	x8, [x19, #0x1008]
+00000001000067f0	ldr	x0, [x8]
+00000001000067f4	mov	x1, x21
+00000001000067f8	mov	x2, x20
+00000001000067fc	bl	0x1000073b4 ; symbol stub for: _write
+0000000100006800	b	0x1000068b4
+0000000100006804	add	x8, x2, x20
+0000000100006808	cmp	x8, #0x1, lsl #12
+000000010000680c	b.le	0x100006828
+0000000100006810	ldr	x8, [x19, #0x1008]
+0000000100006814	ldr	x0, [x8]
+0000000100006818	mov	x1, x19
+000000010000681c	bl	0x1000073b4 ; symbol stub for: _write
+0000000100006820	mov	x2, #0x0
+0000000100006824	str	xzr, [x19, #0x1000]
+0000000100006828	cmp	x23, #0x3f
+000000010000682c	b.ne	0x10000683c
+0000000100006830	ldr	x8, [x19, #0x1000]
+0000000100006834	add	x8, x8, x20
+0000000100006838	b	0x1000068b0
+000000010000683c	add	x22, x19, x2
+0000000100006840	cmp	x20, #0x4
+0000000100006844	b.gt	0x1000068d0
+0000000100006848	mov	w8, #0x3e
+000000010000684c	sub	x8, x8, x23
+0000000100006850	strb	w24, [x22]
+0000000100006854	ldrb	w9, [sp, #0x4e]
+0000000100006858	strb	w9, [x22, x8]
+000000010000685c	cmp	x20, #0x3
+0000000100006860	b.lt	0x100006830
+0000000100006864	mov	w8, #0x3d
+0000000100006868	sub	x8, x8, x23
+000000010000686c	ldrb	w9, [x25, #0x2]
+0000000100006870	strb	w9, [x22, #0x1]
+0000000100006874	ldrb	w9, [sp, #0x4d]
+0000000100006878	strb	w9, [x22, x8]
+000000010000687c	b	0x100006830
+0000000100006880	cmp	x2, #0x1, lsl #12
+0000000100006884	b.ne	0x1000068a0
+0000000100006888	ldr	x8, [x19, #0x1008]
+000000010000688c	ldr	x0, [x8]
+0000000100006890	mov	x1, x19
+0000000100006894	bl	0x1000073b4 ; symbol stub for: _write
+0000000100006898	mov	x2, #0x0
+000000010000689c	str	xzr, [x19, #0x1000]
+00000001000068a0	mov	w8, #0x30
+00000001000068a4	strb	w8, [x19, x2]
+00000001000068a8	ldr	x8, [x19, #0x1000]
+00000001000068ac	add	x8, x8, #0x1
+00000001000068b0	str	x8, [x19, #0x1000]
+00000001000068b4	ldp	x29, x30, [sp, #0x90]
+00000001000068b8	ldp	x20, x19, [sp, #0x80]
+00000001000068bc	ldp	x22, x21, [sp, #0x70]
+00000001000068c0	ldp	x24, x23, [sp, #0x60]
+00000001000068c4	ldp	x26, x25, [sp, #0x50]
+00000001000068c8	add	sp, sp, #0xa0
+00000001000068cc	ret
+00000001000068d0	cmp	x20, #0x10
+00000001000068d4	b.hi	0x1000068fc
+00000001000068d8	cmp	x20, #0x8
+00000001000068dc	b.lo	0x100006930
+00000001000068e0	mov	w8, #0x37
+00000001000068e4	sub	x8, x8, x23
+00000001000068e8	ldr	x9, [x21]
+00000001000068ec	str	x9, [x22]
+00000001000068f0	ldur	x9, [sp, #0x47]
+00000001000068f4	str	x9, [x22, x8]
+00000001000068f8	b	0x100006830
+00000001000068fc	ands	x23, x20, #0x7fffffffffffffe0
+0000000100006900	b.eq	0x100006914
+0000000100006904	mov	x0, x22
+0000000100006908	mov	x1, x21
+000000010000690c	mov	x2, x23
+0000000100006910	bl	0x1000073a8 ; symbol stub for: _memcpy
+0000000100006914	cmp	x23, x20
+0000000100006918	b.eq	0x100006830
+000000010000691c	add	x0, x22, x23
+0000000100006920	add	x1, x21, x23
+0000000100006924	and	x2, x20, #0x1f
+0000000100006928	bl	0x1000073a8 ; symbol stub for: _memcpy
+000000010000692c	b	0x100006830
+0000000100006930	mov	w8, #0x3b
+0000000100006934	sub	x8, x8, x23
+0000000100006938	ldr	w9, [x21]
+000000010000693c	str	w9, [x22]
+0000000100006940	ldur	w9, [sp, #0x4b]
+0000000100006944	str	w9, [x22, x8]
+0000000100006948	b	0x100006830
+_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_TotalWritableBytes>>, struct<(scalar<index>) memoryOnly>]:
+000000010000694c	cbz	x0, 0x1000069b0
+0000000100006950	lsr	x8, x0, #63
+0000000100006954	add	x8, x1, x8
+0000000100006958	sub	x1, x8, #0x1
+000000010000695c	tbnz	x0, #0x3f, 0x100006980
+0000000100006960	mov	x8, #-0x3333333333333334
+0000000100006964	movk	x8, #0xcccd
+0000000100006968	umulh	x9, x0, x8
+000000010000696c	add	x1, x1, #0x1
+0000000100006970	cmp	x0, #0xa
+0000000100006974	lsr	x0, x9, #3
+0000000100006978	b.hs	0x100006968
+000000010000697c	b	0x1000069b0
+0000000100006980	mov	x8, #-0x6666666666666667
+0000000100006984	mov	x9, #-0xa
+0000000100006988	smulh	x10, x0, x8
+000000010000698c	asr	x11, x10, #2
+0000000100006990	add	x10, x11, x10, lsr #63
+0000000100006994	mul	x11, x10, x9
+0000000100006998	cmn	x0, #0x1
+000000010000699c	ccmp	x11, x0, #0x4, gt
+00000001000069a0	cset	w11, ne
+00000001000069a4	add	x1, x1, #0x1
+00000001000069a8	subs	x0, x11, x10
+00000001000069ac	b.ne	0x100006988
+00000001000069b0	add	x0, x1, #0x1
+00000001000069b4	ret
+_std::builtin::_startup::__wrap_and_execute_raising_main[def() raises thin -> None](::SIMD[DType.int32, 1],!kgen.pointer<pointer<scalar<ui8>>>),main_func=binarytrees-compact::main()_closure_0:
+00000001000069b8	b	0x10000730c ; symbol stub for: _KGEN_CompilerRT_AsyncRT_GetOrCreateCPUDevice
+_std::builtin::_startup::__wrap_and_execute_raising_main[def() raises thin -> None](::SIMD[DType.int32, 1],!kgen.pointer<pointer<scalar<ui8>>>),main_func=binarytrees-compact::main()_closure_1:
+00000001000069bc	b	0x100007318 ; symbol stub for: _KGEN_CompilerRT_AsyncRT_ReleaseCPUDevice
+_std::collections::string::string::_str_to_base_error[::Bool,LITOrigin[$0._mlir_value],::Origin[$0, $1]](::SIMD[DType.int, 1],::StringSpan[$0, $1, $2]),str_slice.mut`=false:
+00000001000069c0	stp	x24, x23, [sp, #-0x40]!
+00000001000069c4	stp	x22, x21, [sp, #0x10]
+00000001000069c8	stp	x20, x19, [sp, #0x20]
+00000001000069cc	stp	x29, x30, [sp, #0x30]
+00000001000069d0	sub	sp, sp, #0x1, lsl #12
+00000001000069d4	sub	sp, sp, #0x40
+00000001000069d8	mov	x22, x3
+00000001000069dc	mov	x19, x2
+00000001000069e0	mov	x20, x1
+00000001000069e4	mov	x21, x0
+00000001000069e8	adrp	x8, 1 ; 0x100007000
+00000001000069ec	add	x8, x8, #0x760
+00000001000069f0	str	x8, [sp]
+00000001000069f4	adrp	x8, 1 ; 0x100007000
+00000001000069f8	ldr	q0, [x8, #0x420]
+00000001000069fc	stur	q0, [sp, #0x8]
+0000000100006a00	adrp	x8, 1 ; 0x100007000
+0000000100006a04	add	x8, x8, #0x770
+0000000100006a08	str	x8, [sp, #0x18]
+0000000100006a0c	adrp	x8, 1 ; 0x100007000
+0000000100006a10	ldr	q0, [x8, #0x430]
+0000000100006a14	stur	q0, [sp, #0x20]
+0000000100006a18	mov	w1, #0x2f
+0000000100006a1c	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_TotalWritableBytes>>, struct<(scalar<index>) memoryOnly>]"
+0000000100006a20	add	x8, x19, x0
+0000000100006a24	add	x9, x8, #0x4
+0000000100006a28	cmp	x9, #0x17
+0000000100006a2c	b.gt	0x100006ab0
+0000000100006a30	stp	xzr, xzr, [x22]
+0000000100006a34	mov	x8, #-0x8000000000000000
+0000000100006a38	str	x8, [x22, #0x10]
+0000000100006a3c	adrp	x1, 1 ; 0x100007000
+0000000100006a40	add	x1, x1, #0x730
+0000000100006a44	mov	x0, x22
+0000000100006a48	mov	w2, #0x2f
+0000000100006a4c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006a50	mov	x0, x21
+0000000100006a54	mov	x1, x22
+0000000100006a58	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100006a5c	adrp	x1, 1 ; 0x100007000
+0000000100006a60	add	x1, x1, #0x760
+0000000100006a64	mov	x0, x22
+0000000100006a68	mov	w2, #0x3
+0000000100006a6c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006a70	mov	x0, x22
+0000000100006a74	mov	x1, x20
+0000000100006a78	mov	x2, x19
+0000000100006a7c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006a80	ldp	x10, x8, [sp, #0x20]
+0000000100006a84	ldr	x9, [sp, #0x18]
+0000000100006a88	ubfx	x11, x8, #56, #5
+0000000100006a8c	cmn	x8, #0x1
+0000000100006a90	add	x8, sp, #0x18
+0000000100006a94	csel	x1, x9, x8, gt
+0000000100006a98	csel	x2, x10, x11, gt
+0000000100006a9c	mov	x0, x22
+0000000100006aa0	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006aa4	ldrb	w8, [sp, #0x2f]
+0000000100006aa8	tbnz	w8, #0x6, 0x100006c30
+0000000100006aac	b	0x100006c50
+0000000100006ab0	add	x8, x8, #0x3
+0000000100006ab4	add	x8, x8, #0x8
+0000000100006ab8	asr	x23, x8, #3
+0000000100006abc	str	x23, [x22, #0x10]
+0000000100006ac0	and	x8, x8, #0xfffffffffffffff8
+0000000100006ac4	adds	x1, x8, #0x8
+0000000100006ac8	b.mi	0x100006c94
+0000000100006acc	mov	w0, #0x1
+0000000100006ad0	bl	0x1000072e8 ; symbol stub for: _KGEN_CompilerRT_AlignedAlloc
+0000000100006ad4	cbz	x0, 0x100006ccc
+0000000100006ad8	mov	w8, #0x1
+0000000100006adc	str	x8, [x0], #0x8
+0000000100006ae0	stp	x0, xzr, [x22]
+0000000100006ae4	orr	x8, x23, #0x4000000000000000
+0000000100006ae8	str	x8, [x22, #0x10]
+0000000100006aec	str	xzr, [sp, #0x1030]
+0000000100006af0	str	x22, [sp, #0x1038]
+0000000100006af4	adrp	x1, 1 ; 0x100007000
+0000000100006af8	add	x1, x1, #0x730
+0000000100006afc	add	x0, sp, #0x30
+0000000100006b00	mov	w2, #0x2f
+0000000100006b04	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006b08	ldr	x2, [sp, #0x1030]
+0000000100006b0c	cmp	x2, #0x1, lsl #12
+0000000100006b10	b.le	0x100006b24
+0000000100006b14	ldr	x0, [sp, #0x1038]
+0000000100006b18	add	x1, sp, #0x30
+0000000100006b1c	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006b20	str	xzr, [sp, #0x1030]
+0000000100006b24	add	x1, sp, #0x30
+0000000100006b28	mov	x0, x21
+0000000100006b2c	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FlushingWriteBuffer,origin._mlir_origin`={  },origin={  },W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096>>, struct<(struct<(array<4096, scalar<ui8>>) memoryOnly>, scalar<index>, pointer<none>) memoryOnly>]"
+0000000100006b30	ldr	x2, [sp, #0x1030]
+0000000100006b34	cmp	x2, #0x1, lsl #12
+0000000100006b38	b.le	0x100006b4c
+0000000100006b3c	ldr	x0, [sp, #0x1038]
+0000000100006b40	add	x1, sp, #0x30
+0000000100006b44	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006b48	str	xzr, [sp, #0x1030]
+0000000100006b4c	ldp	x10, x8, [sp, #0x8]
+0000000100006b50	ldr	x9, [sp]
+0000000100006b54	ubfx	x11, x8, #56, #5
+0000000100006b58	cmn	x8, #0x1
+0000000100006b5c	mov	x8, sp
+0000000100006b60	csel	x1, x9, x8, gt
+0000000100006b64	csel	x2, x10, x11, gt
+0000000100006b68	add	x0, sp, #0x30
+0000000100006b6c	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006b70	ldr	x2, [sp, #0x1030]
+0000000100006b74	cmp	x2, #0x1, lsl #12
+0000000100006b78	b.le	0x100006b8c
+0000000100006b7c	ldr	x0, [sp, #0x1038]
+0000000100006b80	add	x1, sp, #0x30
+0000000100006b84	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006b88	str	xzr, [sp, #0x1030]
+0000000100006b8c	add	x0, sp, #0x30
+0000000100006b90	mov	x1, x20
+0000000100006b94	mov	x2, x19
+0000000100006b98	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006b9c	ldr	x2, [sp, #0x1030]
+0000000100006ba0	cmp	x2, #0x1, lsl #12
+0000000100006ba4	b.le	0x100006bb8
+0000000100006ba8	ldr	x0, [sp, #0x1038]
+0000000100006bac	add	x1, sp, #0x30
+0000000100006bb0	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006bb4	str	xzr, [sp, #0x1030]
+0000000100006bb8	ldp	x10, x8, [sp, #0x20]
+0000000100006bbc	ldr	x9, [sp, #0x18]
+0000000100006bc0	ubfx	x11, x8, #56, #5
+0000000100006bc4	cmn	x8, #0x1
+0000000100006bc8	add	x8, sp, #0x18
+0000000100006bcc	csel	x1, x9, x8, gt
+0000000100006bd0	csel	x2, x10, x11, gt
+0000000100006bd4	add	x0, sp, #0x30
+0000000100006bd8	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006bdc	ldr	x2, [sp, #0x1030]
+0000000100006be0	cmp	x2, #0x1, lsl #12
+0000000100006be4	b.le	0x100006c18
+0000000100006be8	ldr	x0, [sp, #0x1038]
+0000000100006bec	add	x19, sp, #0x30
+0000000100006bf0	add	x1, sp, #0x30
+0000000100006bf4	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006bf8	mov	x2, #0x0
+0000000100006bfc	str	xzr, [sp, #0x1030]
+0000000100006c00	ldr	x0, [sp, #0x1038]
+0000000100006c04	mov	x1, x19
+0000000100006c08	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006c0c	ldrb	w8, [sp, #0x2f]
+0000000100006c10	tbnz	w8, #0x6, 0x100006c30
+0000000100006c14	b	0x100006c50
+0000000100006c18	add	x19, sp, #0x30
+0000000100006c1c	ldr	x0, [sp, #0x1038]
+0000000100006c20	mov	x1, x19
+0000000100006c24	bl	"_std::collections::string::string::String::_iadd[LITImmOrigin,::Origin[False, $0]](::String,::Span[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC])"
+0000000100006c28	ldrb	w8, [sp, #0x2f]
+0000000100006c2c	tbz	w8, #0x6, 0x100006c50
+0000000100006c30	ldr	x8, [sp, #0x18]
+0000000100006c34	sub	x0, x8, #0x8
+0000000100006c38	mov	x8, #-0x1
+0000000100006c3c	ldaddal	x8, x8, [x0]
+0000000100006c40	cmp	x8, #0x1
+0000000100006c44	b.ne	0x100006c50
+0000000100006c48	dmb	ishld
+0000000100006c4c	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100006c50	ldrb	w8, [sp, #0x17]
+0000000100006c54	tbz	w8, #0x6, 0x100006c78
+0000000100006c58	ldr	x8, [sp]
+0000000100006c5c	sub	x0, x8, #0x8
+0000000100006c60	mov	x8, #-0x1
+0000000100006c64	ldaddal	x8, x8, [x0]
+0000000100006c68	cmp	x8, #0x1
+0000000100006c6c	b.ne	0x100006c78
+0000000100006c70	dmb	ishld
+0000000100006c74	bl	0x1000072f4 ; symbol stub for: _KGEN_CompilerRT_AlignedFree
+0000000100006c78	add	sp, sp, #0x1, lsl #12
+0000000100006c7c	add	sp, sp, #0x40
+0000000100006c80	ldp	x29, x30, [sp, #0x30]
+0000000100006c84	ldp	x20, x19, [sp, #0x20]
+0000000100006c88	ldp	x22, x21, [sp, #0x10]
+0000000100006c8c	ldp	x24, x23, [sp], #0x40
+0000000100006c90	ret
+0000000100006c94	mov	w8, #0x23
+0000000100006c98	adrp	x9, 1 ; 0x100007000
+0000000100006c9c	add	x9, x9, #0x7e0
+0000000100006ca0	stp	x9, x8, [sp, #0x30]
+0000000100006ca4	mov	x8, #0x2000000000000000
+0000000100006ca8	str	x8, [sp, #0x40]
+0000000100006cac	adrp	x2, 1 ; 0x100007000
+0000000100006cb0	add	x2, x2, #0x780
+0000000100006cb4	add	x4, sp, #0x30
+0000000100006cb8	mov	w0, #0x30f
+0000000100006cbc	mov	w1, #0xe
+0000000100006cc0	mov	w3, #0x21
+0000000100006cc4	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100006cc8	brk	#0x1
+0000000100006ccc	mov	w8, #0x25
+0000000100006cd0	adrp	x9, 1 ; 0x100007000
+0000000100006cd4	add	x9, x9, #0x7b0
+0000000100006cd8	stp	x9, x8, [sp, #0x30]
+0000000100006cdc	mov	x8, #0x2000000000000000
+0000000100006ce0	str	x8, [sp, #0x40]
+0000000100006ce4	adrp	x2, 1 ; 0x100007000
+0000000100006ce8	add	x2, x2, #0x780
+0000000100006cec	add	x4, sp, #0x30
+0000000100006cf0	mov	w0, #0x293
+0000000100006cf4	mov	w1, #0xe
+0000000100006cf8	mov	w3, #0x21
+0000000100006cfc	bl	"_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]"
+0000000100006d00	brk	#0x1
+_std::io::io::_flush(::FileDescriptor):
+0000000100006d04	stp	x20, x19, [sp, #-0x20]!
+0000000100006d08	stp	x29, x30, [sp, #0x10]
+0000000100006d0c	bl	0x100007378 ; symbol stub for: _dup
+0000000100006d10	adrp	x1, 1 ; 0x100007000
+0000000100006d14	add	x1, x1, #0x870
+0000000100006d18	bl	0x100007390 ; symbol stub for: _fdopen
+0000000100006d1c	mov	x19, x0
+0000000100006d20	bl	0x10000739c ; symbol stub for: _fflush
+0000000100006d24	mov	x0, x19
+0000000100006d28	ldp	x29, x30, [sp, #0x10]
+0000000100006d2c	ldp	x20, x19, [sp], #0x20
+0000000100006d30	b	0x100007384 ; symbol stub for: _fclose
+_std::io::io::_printf[KGENParamList[::AnyType],::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],*::AnyType,LITImmOrigin,::Origin[False, $3]](*$0,file:::FileDescriptor),types.values`=[],fmt={ #interp.memref<{[(#interp.memory_handle<16, ~QFIXED_WRITE_BUFFER_BYTES exceeded, increase with: `mojo -D FIXED_WRITE_BUFFER_BYTES=4096`\0A\00~Q string>, const_global, [], [])], []}, 0, 0>, 90 }:
+0000000100006d34	stp	x20, x19, [sp, #-0x20]!
+0000000100006d38	stp	x29, x30, [sp, #0x10]
+0000000100006d3c	bl	0x100007378 ; symbol stub for: _dup
+0000000100006d40	adrp	x1, 1 ; 0x100007000
+0000000100006d44	add	x1, x1, #0x870
+0000000100006d48	bl	0x100007390 ; symbol stub for: _fdopen
+0000000100006d4c	mov	x19, x0
+0000000100006d50	adrp	x1, 1 ; 0x100007000
+0000000100006d54	add	x1, x1, #0x810
+0000000100006d58	bl	0x10000736c ; symbol stub for: _KGEN_CompilerRT_fprintf
+0000000100006d5c	mov	x0, x19
+0000000100006d60	ldp	x29, x30, [sp, #0x10]
+0000000100006d64	ldp	x20, x19, [sp], #0x20
+0000000100006d68	b	0x100007384 ; symbol stub for: _fclose
+_std::io::io::_printf[KGENParamList[::AnyType],::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],*::AnyType,LITImmOrigin,::Origin[False, $3]](*$0,file:::FileDescriptor),types.values`=[[typevalue<#kgen.instref<std::ffi::cstring::CStringSpan,origin._mlir_origin`={  },origin={  }>>, pointer<none>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>],[typevalue<#kgen.instref<std::memory::pointer::Pointer,mut=false,origin._mlir_origin`={  },T=[typevalue<#kgen.instref<std::simd::SIMD,dtype=ui8,length=1>>, scalar<ui8>],origin={  },address_space=0>>, pointer<none>]],fmt={ #interp.memref<{[(#interp.memory_handle<16, ~QAt: %s:%llu:%llu: Assert Error: %s\0A\00~Q string>, const_global, [], [])], []}, 0, 0>, 35 }:
+0000000100006d6c	sub	sp, sp, #0x60
+0000000100006d70	stp	x24, x23, [sp, #0x20]
+0000000100006d74	stp	x22, x21, [sp, #0x30]
+0000000100006d78	stp	x20, x19, [sp, #0x40]
+0000000100006d7c	stp	x29, x30, [sp, #0x50]
+0000000100006d80	mov	x19, x3
+0000000100006d84	mov	x20, x2
+0000000100006d88	mov	x21, x1
+0000000100006d8c	mov	x22, x0
+0000000100006d90	mov	x0, x4
+0000000100006d94	bl	0x100007378 ; symbol stub for: _dup
+0000000100006d98	adrp	x1, 1 ; 0x100007000
+0000000100006d9c	add	x1, x1, #0x870
+0000000100006da0	bl	0x100007390 ; symbol stub for: _fdopen
+0000000100006da4	mov	x23, x0
+0000000100006da8	stp	x20, x19, [sp, #0x10]
+0000000100006dac	stp	x22, x21, [sp]
+0000000100006db0	adrp	x1, 1 ; 0x100007000
+0000000100006db4	add	x1, x1, #0x880
+0000000100006db8	bl	0x10000736c ; symbol stub for: _KGEN_CompilerRT_fprintf
+0000000100006dbc	mov	x0, x23
+0000000100006dc0	ldp	x29, x30, [sp, #0x50]
+0000000100006dc4	ldp	x20, x19, [sp, #0x40]
+0000000100006dc8	ldp	x22, x21, [sp, #0x30]
+0000000100006dcc	ldp	x24, x23, [sp, #0x20]
+0000000100006dd0	add	sp, sp, #0x60
+0000000100006dd4	b	0x100007384 ; symbol stub for: _fclose
+_std::os::os::_abort_report[::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],::Writable & ::AnyType](::SourceLocation,$1),prefix={ #interp.memref<{[(#interp.memory_handle<16, ~QABORT:\00~Q string>, const_global, [], [])], []}, 0, 0>, 6 },message.T`=[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]:
+0000000100006dd8	sub	sp, sp, #0x60
+0000000100006ddc	stp	x29, x30, [sp, #0x50]
+0000000100006de0	mov	x7, x3
+0000000100006de4	mov	x6, x2
+0000000100006de8	mov	x5, x1
+0000000100006dec	mov	x8, x0
+0000000100006df0	mov	w9, #0x1
+0000000100006df4	str	x9, [sp, #0x40]
+0000000100006df8	strb	w9, [sp, #0x38]
+0000000100006dfc	adrp	x10, 1 ; 0x100007000
+0000000100006e00	add	x10, x10, #0x8b0
+0000000100006e04	stp	x10, x9, [sp, #0x28]
+0000000100006e08	adrp	x9, 1 ; 0x100007000
+0000000100006e0c	add	x9, x9, #0x8f0
+0000000100006e10	stp	x4, x9, [sp, #0x10]
+0000000100006e14	mov	w9, #0x2
+0000000100006e18	adrp	x11, 1 ; 0x100007000
+0000000100006e1c	add	x11, x11, #0x8e0
+0000000100006e20	adrp	x0, 1 ; 0x100007000
+0000000100006e24	add	x0, x0, #0x8d0
+0000000100006e28	adrp	x2, 1 ; 0x100007000
+0000000100006e2c	add	x2, x2, #0x8c0
+0000000100006e30	str	xzr, [sp, #0x20]
+0000000100006e34	stp	x11, x9, [sp]
+0000000100006e38	mov	w1, #0x6
+0000000100006e3c	mov	w3, #0x1
+0000000100006e40	mov	x4, x8
+0000000100006e44	bl	"_std::io::io::print[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2],::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5],::Bool,LITOrigin[$7._mlir_value],::Origin[$7, $8]](*$0,sep:::StringSpan[$4, $5, $6],end:::StringSpan[$7, $8, $9],flush:::Bool,file:::FileDescriptor$)_REMOVED_ARG,Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string_span::StringSpan,mut=false,origin._mlir_origin`={  },origin={  }>>, struct<(pointer<none>, scalar<index>)>],[typevalue<#kgen.instref<std::collections::string::string_span::StringSpan,mut=false,origin._mlir_origin`={  },origin={  }>>, struct<(pointer<none>, scalar<index>)>],[typevalue<#kgen.instref<std::reflection::location::SourceLocation>>, struct<(scalar<index>, scalar<index>, struct<(pointer<none>, scalar<index>)>)>],[typevalue<#kgen.instref<std::collections::string::string_span::StringSpan,mut=false,origin._mlir_origin`={  },origin={  }>>, struct<(pointer<none>, scalar<index>)>],[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]]"
+0000000100006e48	ldp	x29, x30, [sp, #0x50]
+0000000100006e4c	add	sp, sp, #0x60
+0000000100006e50	ret
+_std::io::io::print[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2],::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5],::Bool,LITOrigin[$7._mlir_value],::Origin[$7, $8]](*$0,sep:::StringSpan[$4, $5, $6],end:::StringSpan[$7, $8, $9],flush:::Bool,file:::FileDescriptor$)_REMOVED_ARG,Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::builtin::error::Error>>, struct<(struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>, struct<(struct<(struct<(variant<struct<()>, struct<(pointer<none>) memoryOnly>>) memoryOnly>) memoryOnly>) memoryOnly>) memoryOnly>]]:
+0000000100006e54	stp	x28, x27, [sp, #-0x50]!
+0000000100006e58	stp	x24, x23, [sp, #0x10]
+0000000100006e5c	stp	x22, x21, [sp, #0x20]
+0000000100006e60	stp	x20, x19, [sp, #0x30]
+0000000100006e64	stp	x29, x30, [sp, #0x40]
+0000000100006e68	sub	sp, sp, #0x1, lsl #12
+0000000100006e6c	sub	sp, sp, #0x20
+0000000100006e70	mov	x19, x6
+0000000100006e74	mov	x20, x5
+0000000100006e78	mov	x21, x4
+0000000100006e7c	mov	x23, x3
+0000000100006e80	mov	x24, x2
+0000000100006e84	mov	x22, x1
+0000000100006e88	mov	x1, x0
+0000000100006e8c	str	x7, [sp, #0x8]
+0000000100006e90	str	xzr, [sp, #0x1010]
+0000000100006e94	add	x8, sp, #0x8
+0000000100006e98	str	x8, [sp, #0x1018]
+0000000100006e9c	ldr	x8, [x0, #0x10]
+0000000100006ea0	tbnz	x8, #0x3f, 0x100006eac
+0000000100006ea4	ldp	x1, x2, [x1]
+0000000100006ea8	b	0x100006eb0
+0000000100006eac	ubfx	x2, x8, #56, #5
+0000000100006eb0	add	x0, sp, #0x10
+0000000100006eb4	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006eb8	add	x0, sp, #0x10
+0000000100006ebc	mov	x1, x24
+0000000100006ec0	mov	x2, x23
+0000000100006ec4	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006ec8	add	x1, sp, #0x10
+0000000100006ecc	mov	x0, x22
+0000000100006ed0	bl	"_std::builtin::error::Error::write_to[::Writer & ::AnyType](::Error,$0),writer.T`2x1=[typevalue<#kgen.instref<std::format::_utils::_FlushingWriteBuffer,origin._mlir_origin`={  },origin={  },W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096>>, struct<(struct<(array<4096, scalar<ui8>>) memoryOnly>, scalar<index>, pointer<none>) memoryOnly>]"
+0000000100006ed4	add	x0, sp, #0x10
+0000000100006ed8	mov	x1, x21
+0000000100006edc	mov	x2, x20
+0000000100006ee0	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006ee4	ldr	x8, [sp, #0x1018]
+0000000100006ee8	ldr	x2, [sp, #0x1010]
+0000000100006eec	ldr	x0, [x8]
+0000000100006ef0	add	x1, sp, #0x10
+0000000100006ef4	bl	0x1000073b4 ; symbol stub for: _write
+0000000100006ef8	tbz	w19, #0x0, 0x100006f20
+0000000100006efc	ldr	x0, [sp, #0x8]
+0000000100006f00	add	sp, sp, #0x1, lsl #12
+0000000100006f04	add	sp, sp, #0x20
+0000000100006f08	ldp	x29, x30, [sp, #0x40]
+0000000100006f0c	ldp	x20, x19, [sp, #0x30]
+0000000100006f10	ldp	x22, x21, [sp, #0x20]
+0000000100006f14	ldp	x24, x23, [sp, #0x10]
+0000000100006f18	ldp	x28, x27, [sp], #0x50
+0000000100006f1c	b	"_std::io::io::_flush(::FileDescriptor)"
+0000000100006f20	add	sp, sp, #0x1, lsl #12
+0000000100006f24	add	sp, sp, #0x20
+0000000100006f28	ldp	x29, x30, [sp, #0x40]
+0000000100006f2c	ldp	x20, x19, [sp, #0x30]
+0000000100006f30	ldp	x22, x21, [sp, #0x20]
+0000000100006f34	ldp	x24, x23, [sp, #0x10]
+0000000100006f38	ldp	x28, x27, [sp], #0x50
+0000000100006f3c	ret
+_std::io::io::print[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2],::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5],::Bool,LITOrigin[$7._mlir_value],::Origin[$7, $8]](*$0,sep:::StringSpan[$4, $5, $6],end:::StringSpan[$7, $8, $9],flush:::Bool,file:::FileDescriptor$)_REMOVED_ARG,Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]]:
+0000000100006f40	stp	x22, x21, [sp, #-0x30]!
+0000000100006f44	stp	x20, x19, [sp, #0x10]
+0000000100006f48	stp	x29, x30, [sp, #0x20]
+0000000100006f4c	sub	sp, sp, #0x1, lsl #12
+0000000100006f50	sub	sp, sp, #0x20
+0000000100006f54	mov	x19, x3
+0000000100006f58	mov	x20, x2
+0000000100006f5c	mov	x21, x1
+0000000100006f60	mov	x1, x0
+0000000100006f64	str	x4, [sp, #0x8]
+0000000100006f68	str	xzr, [sp, #0x1010]
+0000000100006f6c	add	x8, sp, #0x8
+0000000100006f70	str	x8, [sp, #0x1018]
+0000000100006f74	ldr	x8, [x0, #0x10]
+0000000100006f78	tbnz	x8, #0x3f, 0x100006f84
+0000000100006f7c	ldp	x1, x2, [x1]
+0000000100006f80	b	0x100006f88
+0000000100006f84	ubfx	x2, x8, #56, #5
+0000000100006f88	add	x0, sp, #0x10
+0000000100006f8c	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006f90	add	x0, sp, #0x10
+0000000100006f94	mov	x1, x21
+0000000100006f98	mov	x2, x20
+0000000100006f9c	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100006fa0	ldr	x8, [sp, #0x1018]
+0000000100006fa4	ldr	x2, [sp, #0x1010]
+0000000100006fa8	ldr	x0, [x8]
+0000000100006fac	add	x1, sp, #0x10
+0000000100006fb0	bl	0x1000073b4 ; symbol stub for: _write
+0000000100006fb4	tbz	w19, #0x0, 0x100006fd4
+0000000100006fb8	ldr	x0, [sp, #0x8]
+0000000100006fbc	add	sp, sp, #0x1, lsl #12
+0000000100006fc0	add	sp, sp, #0x20
+0000000100006fc4	ldp	x29, x30, [sp, #0x20]
+0000000100006fc8	ldp	x20, x19, [sp, #0x10]
+0000000100006fcc	ldp	x22, x21, [sp], #0x30
+0000000100006fd0	b	"_std::io::io::_flush(::FileDescriptor)"
+0000000100006fd4	add	sp, sp, #0x1, lsl #12
+0000000100006fd8	add	sp, sp, #0x20
+0000000100006fdc	ldp	x29, x30, [sp, #0x20]
+0000000100006fe0	ldp	x20, x19, [sp, #0x10]
+0000000100006fe4	ldp	x22, x21, [sp], #0x30
+0000000100006fe8	ret
+_std::io::io::print[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2],::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5],::Bool,LITOrigin[$7._mlir_value],::Origin[$7, $8]](*$0,sep:::StringSpan[$4, $5, $6],end:::StringSpan[$7, $8, $9],flush:::Bool,file:::FileDescriptor$)_REMOVED_ARG,Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string_span::StringSpan,mut=false,origin._mlir_origin`={  },origin={  }>>, struct<(pointer<none>, scalar<index>)>],[typevalue<#kgen.instref<std::collections::string::string_span::StringSpan,mut=false,origin._mlir_origin`={  },origin={  }>>, struct<(pointer<none>, scalar<index>)>],[typevalue<#kgen.instref<std::reflection::location::SourceLocation>>, struct<(scalar<index>, scalar<index>, struct<(pointer<none>, scalar<index>)>)>],[typevalue<#kgen.instref<std::collections::string::string_span::StringSpan,mut=false,origin._mlir_origin`={  },origin={  }>>, struct<(pointer<none>, scalar<index>)>],[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>]]:
+0000000100006fec	stp	x28, x27, [sp, #-0x60]!
+0000000100006ff0	stp	x26, x25, [sp, #0x10]
+0000000100006ff4	stp	x24, x23, [sp, #0x20]
+0000000100006ff8	stp	x22, x21, [sp, #0x30]
+0000000100006ffc	stp	x20, x19, [sp, #0x40]
+0000000100007000	stp	x29, x30, [sp, #0x50]
+0000000100007004	sub	sp, sp, #0x1, lsl #12
+0000000100007008	sub	sp, sp, #0x40
+000000010000700c	mov	x28, x7
+0000000100007010	mov	x19, x6
+0000000100007014	mov	x25, x5
+0000000100007018	mov	x27, x4
+000000010000701c	mov	x20, x3
+0000000100007020	mov	x24, x2
+0000000100007024	mov	x2, x1
+0000000100007028	mov	x1, x0
+000000010000702c	ldr	x9, [sp, #0x10d0]
+0000000100007030	ldr	x8, [sp, #0x10c8]
+0000000100007034	stp	x8, x9, [sp, #0x10]
+0000000100007038	ldr	x22, [sp, #0x10c0]
+000000010000703c	ldr	x8, [sp, #0x10a8]
+0000000100007040	str	x8, [sp, #0x8]
+0000000100007044	ldr	x26, [sp, #0x10a0]
+0000000100007048	add	x8, sp, #0x1, lsl #12
+000000010000704c	ldrb	w8, [x8, #0xd8]
+0000000100007050	str	w8, [sp, #0x24]
+0000000100007054	ldr	x23, [sp, #0x10b8]
+0000000100007058	ldr	x21, [sp, #0x10b0]
+000000010000705c	ldr	x8, [sp, #0x10e0]
+0000000100007060	str	x8, [sp, #0x28]
+0000000100007064	str	xzr, [sp, #0x1030]
+0000000100007068	add	x8, sp, #0x28
+000000010000706c	str	x8, [sp, #0x1038]
+0000000100007070	add	x0, sp, #0x30
+0000000100007074	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100007078	add	x0, sp, #0x30
+000000010000707c	mov	x1, x23
+0000000100007080	mov	x2, x22
+0000000100007084	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100007088	add	x0, sp, #0x30
+000000010000708c	mov	x1, x24
+0000000100007090	mov	x2, x20
+0000000100007094	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+0000000100007098	add	x0, sp, #0x30
+000000010000709c	mov	x1, x23
+00000001000070a0	mov	x2, x22
+00000001000070a4	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+00000001000070a8	add	x0, sp, #0x30
+00000001000070ac	mov	x1, x19
+00000001000070b0	mov	x2, x28
+00000001000070b4	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+00000001000070b8	ldr	x2, [sp, #0x1030]
+00000001000070bc	add	x8, x2, #0x1
+00000001000070c0	cmp	x8, #0x1, lsl #12
+00000001000070c4	b.le	0x1000070e0
+00000001000070c8	ldr	x8, [sp, #0x1038]
+00000001000070cc	ldr	x0, [x8]
+00000001000070d0	add	x1, sp, #0x30
+00000001000070d4	bl	0x1000073b4 ; symbol stub for: _write
+00000001000070d8	mov	x2, #0x0
+00000001000070dc	str	xzr, [sp, #0x1030]
+00000001000070e0	mov	w19, #0x3a
+00000001000070e4	add	x8, sp, #0x30
+00000001000070e8	strb	w19, [x8, x2]
+00000001000070ec	ldr	x8, [sp, #0x1030]
+00000001000070f0	add	x8, x8, #0x1
+00000001000070f4	str	x8, [sp, #0x1030]
+00000001000070f8	add	x1, sp, #0x30
+00000001000070fc	mov	x0, x27
+0000000100007100	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FlushingWriteBuffer,origin._mlir_origin`={  },origin={  },W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096>>, struct<(struct<(array<4096, scalar<ui8>>) memoryOnly>, scalar<index>, pointer<none>) memoryOnly>]"
+0000000100007104	ldr	x2, [sp, #0x1030]
+0000000100007108	add	x8, x2, #0x1
+000000010000710c	cmp	x8, #0x1, lsl #12
+0000000100007110	b.le	0x10000712c
+0000000100007114	ldr	x8, [sp, #0x1038]
+0000000100007118	ldr	x0, [x8]
+000000010000711c	add	x1, sp, #0x30
+0000000100007120	bl	0x1000073b4 ; symbol stub for: _write
+0000000100007124	mov	x2, #0x0
+0000000100007128	str	xzr, [sp, #0x1030]
+000000010000712c	add	x8, sp, #0x30
+0000000100007130	strb	w19, [x8, x2]
+0000000100007134	ldr	x8, [sp, #0x1030]
+0000000100007138	add	x8, x8, #0x1
+000000010000713c	str	x8, [sp, #0x1030]
+0000000100007140	add	x1, sp, #0x30
+0000000100007144	mov	x0, x25
+0000000100007148	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FlushingWriteBuffer,origin._mlir_origin`={  },origin={  },W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096>>, struct<(struct<(array<4096, scalar<ui8>>) memoryOnly>, scalar<index>, pointer<none>) memoryOnly>]"
+000000010000714c	add	x0, sp, #0x30
+0000000100007150	mov	x1, x23
+0000000100007154	mov	x2, x22
+0000000100007158	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+000000010000715c	add	x0, sp, #0x30
+0000000100007160	mov	x1, x26
+0000000100007164	ldr	x2, [sp, #0x8]
+0000000100007168	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+000000010000716c	add	x0, sp, #0x30
+0000000100007170	mov	x1, x23
+0000000100007174	mov	x2, x22
+0000000100007178	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+000000010000717c	ldr	x8, [x21, #0x10]
+0000000100007180	tbnz	x8, #0x3f, 0x10000718c
+0000000100007184	ldp	x21, x2, [x21]
+0000000100007188	b	0x100007190
+000000010000718c	ubfx	x2, x8, #56, #5
+0000000100007190	add	x0, sp, #0x30
+0000000100007194	mov	x1, x21
+0000000100007198	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+000000010000719c	add	x0, sp, #0x30
+00000001000071a0	ldp	x1, x2, [sp, #0x10]
+00000001000071a4	bl	"_std::format::_utils::_FlushingWriteBuffer::write_string[::Bool,LITOrigin[$4._mlir_value],::Origin[$4, $5]](::_FlushingWriteBuffer[$0, $1, $2, $3],::StringSpan[$4, $5, $6]),W=[typevalue<#kgen.instref<std::io::file_descriptor::FileDescriptor>>, scalar<index>],capacity_bytes=4096,string.mut`2x1=false"
+00000001000071a8	ldr	x8, [sp, #0x1038]
+00000001000071ac	ldr	x2, [sp, #0x1030]
+00000001000071b0	ldr	x0, [x8]
+00000001000071b4	add	x1, sp, #0x30
+00000001000071b8	bl	0x1000073b4 ; symbol stub for: _write
+00000001000071bc	ldr	w8, [sp, #0x24]
+00000001000071c0	tbz	w8, #0x0, 0x1000071ec
+00000001000071c4	ldr	x0, [sp, #0x28]
+00000001000071c8	add	sp, sp, #0x1, lsl #12
+00000001000071cc	add	sp, sp, #0x40
+00000001000071d0	ldp	x29, x30, [sp, #0x50]
+00000001000071d4	ldp	x20, x19, [sp, #0x40]
+00000001000071d8	ldp	x22, x21, [sp, #0x30]
+00000001000071dc	ldp	x24, x23, [sp, #0x20]
+00000001000071e0	ldp	x26, x25, [sp, #0x10]
+00000001000071e4	ldp	x28, x27, [sp], #0x60
+00000001000071e8	b	"_std::io::io::_flush(::FileDescriptor)"
+00000001000071ec	add	sp, sp, #0x1, lsl #12
+00000001000071f0	add	sp, sp, #0x40
+00000001000071f4	ldp	x29, x30, [sp, #0x50]
+00000001000071f8	ldp	x20, x19, [sp, #0x40]
+00000001000071fc	ldp	x22, x21, [sp, #0x30]
+0000000100007200	ldp	x24, x23, [sp, #0x20]
+0000000100007204	ldp	x26, x25, [sp, #0x10]
+0000000100007208	ldp	x28, x27, [sp], #0x60
+000000010000720c	ret
+_std::builtin::debug_assert::_debug_assert_fail_format[KGENParamList[::Writable & ::AnyType],*::Writable & ::AnyType,LITImmOrigin,::Origin[False, $2]](::SourceLocation,*$0),Ts.values`=[[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>],[typevalue<#kgen.instref<std::collections::string::string::String>>, struct<(pointer<none>, scalar<index>, scalar<index>) memoryOnly>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>]]:
+0000000100007210	stp	x28, x27, [sp, #-0x60]!
+0000000100007214	stp	x26, x25, [sp, #0x10]
+0000000100007218	stp	x24, x23, [sp, #0x20]
+000000010000721c	stp	x22, x21, [sp, #0x30]
+0000000100007220	stp	x20, x19, [sp, #0x40]
+0000000100007224	stp	x29, x30, [sp, #0x50]
+0000000100007228	sub	sp, sp, #0x810
+000000010000722c	mov	x23, x7
+0000000100007230	mov	x24, x6
+0000000100007234	mov	x25, x5
+0000000100007238	mov	x19, x3
+000000010000723c	mov	x20, x2
+0000000100007240	mov	x21, x1
+0000000100007244	mov	x22, x0
+0000000100007248	str	xzr, [sp, #0x808]
+000000010000724c	add	x26, sp, #0x8
+0000000100007250	add	x1, sp, #0x8
+0000000100007254	mov	x0, x4
+0000000100007258	bl	"_std::collections::string::string::String::write_to[::Writer & ::AnyType](::String,$0),writer.T`2x1=[typevalue<#kgen.instref<std::format::_utils::_FixedWriteBuffer>>, struct<(struct<(array<2048, scalar<ui8>>) memoryOnly>, scalar<index>) memoryOnly>]"
+000000010000725c	add	x1, sp, #0x8
+0000000100007260	mov	x0, x25
+0000000100007264	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FixedWriteBuffer>>, struct<(struct<(array<2048, scalar<ui8>>) memoryOnly>, scalar<index>) memoryOnly>]"
+0000000100007268	add	x1, sp, #0x8
+000000010000726c	mov	x0, x24
+0000000100007270	bl	"_std::collections::string::string::String::write_to[::Writer & ::AnyType](::String,$0),writer.T`2x1=[typevalue<#kgen.instref<std::format::_utils::_FixedWriteBuffer>>, struct<(struct<(array<2048, scalar<ui8>>) memoryOnly>, scalar<index>) memoryOnly>]"
+0000000100007274	add	x1, sp, #0x8
+0000000100007278	mov	x0, x23
+000000010000727c	bl	"_std::simd::SIMD::write_to[::Writer & ::AnyType](::SIMD[$0, $1],$2),dtype=index,length=1,writer.T`2x=[typevalue<#kgen.instref<std::format::_utils::_FixedWriteBuffer>>, struct<(struct<(array<2048, scalar<ui8>>) memoryOnly>, scalar<index>) memoryOnly>]"
+0000000100007280	ldr	x8, [sp, #0x808]
+0000000100007284	add	x9, x8, #0x1
+0000000100007288	cmp	x9, #0x801
+000000010000728c	b.lt	0x100007294
+0000000100007290	bl	"_std::format::_utils::_fixed_buffer_exceeded()"
+0000000100007294	strb	wzr, [x26, x8]
+0000000100007298	ldr	x8, [sp, #0x808]
+000000010000729c	add	x8, x8, #0x1
+00000001000072a0	str	x8, [sp, #0x808]
+00000001000072a4	add	x0, sp, #0x8
+00000001000072a8	mov	x1, x22
+00000001000072ac	mov	x2, x21
+00000001000072b0	mov	x3, x20
+00000001000072b4	mov	x4, x19
+00000001000072b8	bl	"_std::builtin::debug_assert::_debug_assert_msg[LITImmOrigin,::Origin[False, $0]](::Pointer[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC],::SIMD[DType.int, 1],::SourceLocation)"
+_std::builtin::debug_assert::_debug_assert_msg[LITImmOrigin,::Origin[False, $0]](::Pointer[False, $0, ::SIMD[DType.uint8, 1], $1, AddressSpace.GENERIC],::SIMD[DType.int, 1],::SourceLocation):
+00000001000072bc	stp	x29, x30, [sp, #-0x10]!
+00000001000072c0	mov	x8, x0
+00000001000072c4	mov	x0, x3
+00000001000072c8	mov	x3, x8
+00000001000072cc	mov	w4, #0x1
+00000001000072d0	bl	"_std::io::io::_printf[KGENParamList[::AnyType],::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],*::AnyType,LITImmOrigin,::Origin[False, $3]](*$0,file:::FileDescriptor),types.values`=[[typevalue<#kgen.instref<std::ffi::cstring::CStringSpan,origin._mlir_origin`={  },origin={  }>>, pointer<none>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>],[typevalue<#kgen.instref<std::simd::SIMD,dtype=index,length=1>>, scalar<index>],[typevalue<#kgen.instref<std::memory::pointer::Pointer,mut=false,origin._mlir_origin`={  },T=[typevalue<#kgen.instref<std::simd::SIMD,dtype=ui8,length=1>>, scalar<ui8>],origin={  },address_space=0>>, pointer<none>]],fmt={ #interp.memref<{[(#interp.memory_handle<16, ~QAt: %s:%llu:%llu: Assert Error: %s\0A\00~Q string>, const_global, [], [])], []}, 0, 0>, 35 }"
+00000001000072d4	brk	#0x1
+_std::format::_utils::_fixed_buffer_exceeded():
+00000001000072d8	stp	x29, x30, [sp, #-0x10]!
+00000001000072dc	mov	w0, #0x1
+00000001000072e0	bl	"_std::io::io::_printf[KGENParamList[::AnyType],::StringSpan[False, ImmStaticOrigin, ::Origin[False, ImmStaticOrigin]()],*::AnyType,LITImmOrigin,::Origin[False, $3]](*$0,file:::FileDescriptor),types.values`=[],fmt={ #interp.memref<{[(#interp.memory_handle<16, ~QFIXED_WRITE_BUFFER_BYTES exceeded, increase with: `mojo -D FIXED_WRITE_BUFFER_BYTES=4096`\0A\00~Q string>, const_global, [], [])], []}, 0, 0>, 90 }"
+00000001000072e4	brk	#0x1

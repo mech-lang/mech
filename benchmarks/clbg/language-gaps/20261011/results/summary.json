@@ -1,0 +1,117 @@
+{
+  "status": "validated",
+  "completed_at": "2026-10-11T17:14:19.861939+00:00",
+  "implemented": [
+    "Uniform expression/block arrow definitions with final expression or binding as return",
+    "Recursive native tuple kind admission",
+    "Immutable arbitrary precision arithmetic and comparison operators with mixed unsigned operands",
+    "Required bigint/u64 conversions through binding/return kind annotations",
+    "Frame ownership, reusable bigint storage, safe borrowed aliases and immutable-result checks",
+    "Inferred per-callee bigint frame elision in compiled and interpreted inline calls"
+  ],
+  "conversion_semantics": {
+    "u64": "Required conversion: negative/overflow bigint values error rather than wrap.",
+    "u64_optional": "Existing language kind is u64-or-empty. Conversion errors currently propagate; converting failures to empty is a proposed semantic extension, not implemented.",
+    "native_optional_kind_lowering": false
+  },
+  "unit_tests": {
+    "engine_native_sequence_passed": 72,
+    "bigint_runtime_passed": 6,
+    "native_feature_passed": 2
+  },
+  "integration_cases_passed": 63,
+  "prototype_complete_output_checks_passed": 140,
+  "old_benchmark_variants_with_identical_native_objects": 15,
+  "old_benchmark_jit_and_interpreted_output_checks_passed": 30,
+  "full_mech_timing_samples": 27,
+  "d_reflow_small_and_full_output_checks_passed": 6,
+  "d_fair_reflow_loc": {
+    "regexredux": 9,
+    "fasta": 23,
+    "pidigits": 21
+  },
+  "new_measured_sources": [
+    {
+      "benchmark": "fasta",
+      "profile": "prototype",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/fasta.prototype.mec",
+      "loc": 11,
+      "median_seconds": 3.086289709,
+      "time_x_current_fastest_mech_aot": 5.595710615962187,
+      "samples_seconds": [
+        3.086289709,
+        3.080410625,
+        3.135125875
+      ]
+    },
+    {
+      "benchmark": "fasta",
+      "profile": "binary-search",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/fasta.binary-search.mec",
+      "loc": 14,
+      "median_seconds": 1.144265042,
+      "time_x_current_fastest_mech_aot": 2.074651651891899,
+      "samples_seconds": [
+        1.144265042,
+        1.136225667,
+        1.146504583
+      ]
+    },
+    {
+      "benchmark": "pidigits",
+      "profile": "prototype",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/language-gaps/20261011/sources/pidigits.prototype.mec",
+      "loc": 21,
+      "median_seconds": 0.443452542,
+      "time_x_current_fastest_mech_aot": 1.4647875917396627,
+      "samples_seconds": [
+        0.443312208,
+        0.443452542,
+        0.444121875
+      ]
+    }
+  ],
+  "hypothetical_sources": {
+    "regexredux": {
+      "loc": 8,
+      "missing": [
+        "Text-vector/comprehension lowering",
+        "General typed zip and left fold",
+        "Pair projection in sequence lowering",
+        "Mixed text/integer formatting"
+      ]
+    },
+    "pidigits": {
+      "loc": 15,
+      "missing": [
+        "General text repetition and mixed formatting in control lowering"
+      ]
+    }
+  },
+  "remaining_general_optimization_opportunities": [
+    "Mixed bigint/scalar lowering without allocating promoted scalar values",
+    "Checked quotient-to-u64 fusion",
+    "Value-preserving add/subtract-multiply fusion"
+  ],
+  "evidence": {
+    "fixtures": "operator-fixtures.json",
+    "regression": "unchanged-benchmarks.json",
+    "prototype_validation": "prototype-validation.json",
+    "timings": "prototype-timings.json",
+    "before_frame_elision": "prototype-timings-before-frame-elision.json",
+    "d_reflow_validation": "d-reflow-validation.json",
+    "scoped_bigint_unsafe_audit": "unsafe-boundaries.json"
+  },
+  "compiler_source_sha256": {
+    "src/engine/src/native_sequence/application.rs": "007d9e52cf70db8d190836175f7f102fef549374d26c7174e64c3ceea4f7e8f3",
+    "src/engine/src/native_sequence/control.rs": "c7f95146f8aa00d3f9bee46b12cf2bf678d81c95a1bb8ee91ddba6921b4df3f1",
+    "src/engine/src/native_sequence/control/analysis.rs": "ea13d53b143ecf9ac77aa29d9e393c2cdec872bc36472f904e7be3996e588d51",
+    "src/stdlib/src/native_sequence.rs": "a123e8204b21de53171546267fdffe164f9e83cfa224028dc8e03ff6d148d8fe",
+    "hosts/gpu/src/control/bigint.rs": "58e118058fc98ac2a3df0d15bb077c5cece2862ba21f820d743db8d9d1939162",
+    "hosts/gpu/src/control/compiler.rs": "f9e93d7b09671aec01a59cd4275a8955daf1f3224cdc82ae2bb1af116becc5c3",
+    "hosts/gpu/src/control/resident.rs": "a0d13e4dae0e13531d80d9830cafad77a807dabc20443fbbe12a7e60d9fa55e1",
+    "benchmarks/clbg/native-features/src/lib.rs": "9873f59efc9520957635509bc5c5dbd417cfdfa6f7083744c030fe8f55581089",
+    "scripts/unsafe-boundaries.allowlist": "2d7d0c199b6fa033f2e3967a807bc1cd6ac7571b5384585a65179400f04f306e"
+  },
+  "publication_status": "Existing measured datasets and benchmark website remain frozen. Hypothetical counts have not been published as measured results."
+}

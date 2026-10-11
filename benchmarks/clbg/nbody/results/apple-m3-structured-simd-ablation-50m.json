@@ -1,0 +1,786 @@
+{
+  "created_at": "2026-10-07T03:23:57.574332+00:00",
+  "steps": 50000000,
+  "samples": 3,
+  "cpu": "Apple M3",
+  "git_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "clang": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg",
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+  "compiler_sha256": {
+    "hosts/gpu/Cargo.toml": "222b3f495dbe94df3f56f2f1974a8382310f6a25581ab984bf865bd3a35d7788",
+    "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+    "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+    "hosts/gpu/src/fused_f64/mod.rs": "84a0fd9189aa2dcdca5b4ad908c6348ce2bce31155a1854a4c83d2c4dfb890d4",
+    "hosts/gpu/src/fused_f64/native.rs": "cc0f46d444690b249ec98b28f00ade0b112d9e216a9275e7d193ebee9219bbaf"
+  },
+  "simd_strategy": "Pair coordinates for multi-column tensors and elements for vectors; preserve reduction and repeated-update order; carry packed state and use explicit lane shuffles.",
+  "source_sha256": {
+    "nbody.mec": "b34d7705a0267d7f32e4bd818102a6a1f607e2559d9744865b4a79df0eca6ac1",
+    "nbody-power.mec": "47f2b4df3c17b88badcdc7f12c226970d8f0ea81799d87d32a2ba208233df076",
+    "nbody-factored.mec": "f39ecd28f0e13faa5c550ff4f414b687e3628f2d357dda9e05e0d26233cc6aeb",
+    "native-main.c": "b3f886b4a30d3c949462ea65555a0e759a0a6658aa2b03e291aa959d1eb3dbd4",
+    "mech-driver/src/compiled-main.rs": "aba4254d421bc9e95bc96becc3f8c49861c59fb7c8527b8bba6f67d5c1c94755",
+    "upstream/nbody-rust-3.rs": "34c935a74f929712bf8864697763c7d37806eb97ffdbad5e987346f5e761c994"
+  },
+  "aot_backport_source": "iros-workshop-benchmarks; scalar AOT commit b10593b75ec8b9283ae33e4ac330c00dda9957d7; autonomous f64/SIMD extension in this worktree",
+  "protocol": "Fresh processes; AOT compilation excluded; JIT/source/activation included. Kernel timing is separate. Same source and flags except vectorization switches for each SIMD ablation.",
+  "expected_energy": [
+    -0.169075164,
+    -0.169059907
+  ],
+  "sample_order": [
+    [
+      "mech-cranelift-jit-simd-sqrt",
+      "mech-cranelift-aot-sqrt",
+      "mech-cranelift-jit-simd-factored",
+      "rust-3",
+      "mech-cranelift-jit-factored",
+      "mech-cranelift-jit-simd-power",
+      "mech-cranelift-aot-power",
+      "mech-cranelift-aot-simd-sqrt",
+      "mech-cranelift-jit-power",
+      "mech-cranelift-aot-simd-factored",
+      "mech-cranelift-jit-sqrt",
+      "mech-cranelift-aot-factored",
+      "rust-3-no-simd",
+      "mech-cranelift-aot-simd-power"
+    ],
+    [
+      "mech-cranelift-aot-sqrt",
+      "mech-cranelift-aot-factored",
+      "mech-cranelift-jit-simd-factored",
+      "mech-cranelift-jit-power",
+      "mech-cranelift-jit-simd-power",
+      "rust-3",
+      "mech-cranelift-aot-simd-factored",
+      "mech-cranelift-jit-simd-sqrt",
+      "mech-cranelift-aot-power",
+      "mech-cranelift-aot-simd-power",
+      "mech-cranelift-jit-sqrt",
+      "mech-cranelift-jit-factored",
+      "rust-3-no-simd",
+      "mech-cranelift-aot-simd-sqrt"
+    ],
+    [
+      "mech-cranelift-aot-simd-factored",
+      "rust-3-no-simd",
+      "mech-cranelift-jit-sqrt",
+      "mech-cranelift-aot-power",
+      "mech-cranelift-jit-simd-factored",
+      "mech-cranelift-jit-simd-power",
+      "mech-cranelift-jit-simd-sqrt",
+      "mech-cranelift-jit-power",
+      "rust-3",
+      "mech-cranelift-aot-simd-power",
+      "mech-cranelift-aot-factored",
+      "mech-cranelift-jit-factored",
+      "mech-cranelift-aot-sqrt",
+      "mech-cranelift-aot-simd-sqrt"
+    ]
+  ],
+  "full_state_checks": [
+    {
+      "id": "mech-cranelift-aot-sqrt",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-sqrt",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-sqrt",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-sqrt",
+      "steps": 10000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-sqrt",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-sqrt",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-sqrt",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-sqrt",
+      "steps": 10000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-power",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-power",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-power",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-power",
+      "steps": 10000,
+      "max_scaled_state_error": 6.272760089132134e-14
+    },
+    {
+      "id": "mech-cranelift-aot-simd-power",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-power",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-power",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-power",
+      "steps": 10000,
+      "max_scaled_state_error": 6.272760089132134e-14
+    },
+    {
+      "id": "mech-cranelift-aot-factored",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-factored",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-factored",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-factored",
+      "steps": 10000,
+      "max_scaled_state_error": 1.0690642279216523e-13
+    },
+    {
+      "id": "mech-cranelift-aot-simd-factored",
+      "steps": 0,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-factored",
+      "steps": 1,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-factored",
+      "steps": 1000,
+      "max_scaled_state_error": 0.0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-factored",
+      "steps": 10000,
+      "max_scaled_state_error": 1.0690642279216523e-13
+    }
+  ],
+  "programs": [
+    {
+      "id": "rust-3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/rust-3"
+      ],
+      "compile_command": [
+        "rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/rust-3"
+      ],
+      "samples_seconds": [
+        1.954992917,
+        1.960245833,
+        1.955409208
+      ],
+      "timing_diagnostics": [],
+      "median_seconds": 1.955409208
+    },
+    {
+      "id": "rust-3-no-simd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/rust-3-no-simd"
+      ],
+      "compile_command": [
+        "rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "-C",
+        "no-vectorize-loops",
+        "-C",
+        "no-vectorize-slp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/rust-3-no-simd"
+      ],
+      "samples_seconds": [
+        2.512797459,
+        2.525666792,
+        2.506599375
+      ],
+      "timing_diagnostics": [],
+      "median_seconds": 2.512797459
+    },
+    {
+      "id": "mech-cranelift-aot-sqrt",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-sqrt"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-sqrt.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-sqrt.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-sqrt"
+      ],
+      "execution_mode": "cranelift-aot",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-sqrt.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-sqrt.o"
+      ],
+      "generated_c_sha256": "14dc151b5943a2c460844ce5a34fd1a75773b392f4956484f5792b5a474190ca",
+      "native_object_sha256": "95b11c5f626e4391bc9a817de33a18353123267e5c163bd16bdb3464bd7db11d",
+      "samples_seconds": [
+        2.418608625,
+        2.422025417,
+        2.420797708
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.403263
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.405958
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.404347
+        }
+      ],
+      "median_seconds": 2.420797708,
+      "median_kernel_seconds": 2.404347,
+      "median_prepare_seconds": 0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-sqrt",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-sqrt"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-sqrt.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-sqrt.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-sqrt"
+      ],
+      "execution_mode": "cranelift-aot-simd",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-sqrt.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-sqrt.o"
+      ],
+      "generated_c_sha256": "14dc151b5943a2c460844ce5a34fd1a75773b392f4956484f5792b5a474190ca",
+      "native_object_sha256": "4c36e0b6dc6a84640cd31db138b083cc35d48bd11671489c014762150f899370",
+      "samples_seconds": [
+        2.180244458,
+        2.181051375,
+        2.181833125
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.164358
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.164236
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.164827
+        }
+      ],
+      "median_seconds": 2.181051375,
+      "median_kernel_seconds": 2.164358,
+      "median_prepare_seconds": 0
+    },
+    {
+      "id": "mech-cranelift-jit-sqrt",
+      "execution_mode": "cranelift-jit",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "jit"
+      ],
+      "samples_seconds": [
+        2.616753125,
+        2.616523916,
+        2.619050708
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.1896245,
+          "kernel_seconds": 2.408901833
+        },
+        {
+          "prepare_seconds": 0.188956334,
+          "kernel_seconds": 2.409122291
+        },
+        {
+          "prepare_seconds": 0.188967708,
+          "kernel_seconds": 2.412185667
+        }
+      ],
+      "median_seconds": 2.616753125,
+      "median_kernel_seconds": 2.409122291,
+      "median_prepare_seconds": 0.188967708
+    },
+    {
+      "id": "mech-cranelift-jit-simd-sqrt",
+      "execution_mode": "cranelift-jit-simd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "jit-simd"
+      ],
+      "samples_seconds": [
+        2.360570958,
+        2.396414083,
+        2.376942
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.188186958,
+          "kernel_seconds": 2.15521875
+        },
+        {
+          "prepare_seconds": 0.189835166,
+          "kernel_seconds": 2.188399084
+        },
+        {
+          "prepare_seconds": 0.18852475,
+          "kernel_seconds": 2.170038708
+        }
+      ],
+      "median_seconds": 2.376942,
+      "median_kernel_seconds": 2.170038708,
+      "median_prepare_seconds": 0.18852475
+    },
+    {
+      "id": "mech-cranelift-aot-power",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-power"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-power.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-power.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-power"
+      ],
+      "execution_mode": "cranelift-aot",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-power.mec",
+        "emit-cranelift",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-power.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-power.o"
+      ],
+      "generated_c_sha256": "14dc151b5943a2c460844ce5a34fd1a75773b392f4956484f5792b5a474190ca",
+      "native_object_sha256": "77b9f5d91ec75606739647715ee41a42300f5659611d3a62cacfc987a1ee2231",
+      "samples_seconds": [
+        8.726374708,
+        8.737629584,
+        8.739072542
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 8.718273
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 8.722638
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 8.720795
+        }
+      ],
+      "median_seconds": 8.737629584,
+      "median_kernel_seconds": 8.720795,
+      "median_prepare_seconds": 0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-power",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-power"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-power.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-power.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-power"
+      ],
+      "execution_mode": "cranelift-aot-simd",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-power.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-power.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-power.o"
+      ],
+      "generated_c_sha256": "14dc151b5943a2c460844ce5a34fd1a75773b392f4956484f5792b5a474190ca",
+      "native_object_sha256": "e3446b5b4c8f0fa9b1f2f7760502cfa03227b73a051a00be1d26e497e36a559a",
+      "samples_seconds": [
+        9.341129542,
+        9.650759584,
+        9.338298417
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 9.324946
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 9.63711
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 9.322279
+        }
+      ],
+      "median_seconds": 9.341129542,
+      "median_kernel_seconds": 9.324946,
+      "median_prepare_seconds": 0
+    },
+    {
+      "id": "mech-cranelift-jit-power",
+      "execution_mode": "cranelift-jit",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-power.mec",
+        "jit"
+      ],
+      "samples_seconds": [
+        8.9888545,
+        8.982556041,
+        8.981779709
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.186250209,
+          "kernel_seconds": 8.7856045
+        },
+        {
+          "prepare_seconds": 0.187562917,
+          "kernel_seconds": 8.777489375
+        },
+        {
+          "prepare_seconds": 0.186290625,
+          "kernel_seconds": 8.777763083
+        }
+      ],
+      "median_seconds": 8.982556041,
+      "median_kernel_seconds": 8.777763083,
+      "median_prepare_seconds": 0.186290625
+    },
+    {
+      "id": "mech-cranelift-jit-simd-power",
+      "execution_mode": "cranelift-jit-simd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-power.mec",
+        "jit-simd"
+      ],
+      "samples_seconds": [
+        9.62903375,
+        9.606338458,
+        9.636080625
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.187173709,
+          "kernel_seconds": 9.42326675
+        },
+        {
+          "prepare_seconds": 0.186480709,
+          "kernel_seconds": 9.401513083
+        },
+        {
+          "prepare_seconds": 0.187144458,
+          "kernel_seconds": 9.430469708
+        }
+      ],
+      "median_seconds": 9.62903375,
+      "median_kernel_seconds": 9.42326675,
+      "median_prepare_seconds": 0.187144458
+    },
+    {
+      "id": "mech-cranelift-aot-factored",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-factored"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-factored.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-factored.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-factored"
+      ],
+      "execution_mode": "cranelift-aot",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-factored.mec",
+        "emit-cranelift",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-factored.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-factored.o"
+      ],
+      "generated_c_sha256": "14dc151b5943a2c460844ce5a34fd1a75773b392f4956484f5792b5a474190ca",
+      "native_object_sha256": "72ae5f316ec3bab3b24c4e2856f2f5c1c86cf4d9e1c3e8e8c047ca44a357b652",
+      "samples_seconds": [
+        2.499431542,
+        2.497257833,
+        2.498542083
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.483331
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.480723
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.481453
+        }
+      ],
+      "median_seconds": 2.498542083,
+      "median_kernel_seconds": 2.481453,
+      "median_prepare_seconds": 0
+    },
+    {
+      "id": "mech-cranelift-aot-simd-factored",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-factored"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-ffp-contract=off",
+        "-fno-math-errno",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-factored.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-factored.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-factored"
+      ],
+      "execution_mode": "cranelift-aot-simd",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-factored.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-factored.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/mech-cranelift-aot-simd-factored.o"
+      ],
+      "generated_c_sha256": "14dc151b5943a2c460844ce5a34fd1a75773b392f4956484f5792b5a474190ca",
+      "native_object_sha256": "ab72a58350a44fc2f0141f2129896de3972a4e6e9226d58ab78a0536a5356e80",
+      "samples_seconds": [
+        2.238329375,
+        2.251580375,
+        2.231910958
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.222879
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.23692
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.220779
+        }
+      ],
+      "median_seconds": 2.238329375,
+      "median_kernel_seconds": 2.222879,
+      "median_prepare_seconds": 0
+    },
+    {
+      "id": "mech-cranelift-jit-factored",
+      "execution_mode": "cranelift-jit",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-factored.mec",
+        "jit"
+      ],
+      "samples_seconds": [
+        2.686232,
+        2.69131525,
+        2.702701166
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.190160083,
+          "kernel_seconds": 2.48333825
+        },
+        {
+          "prepare_seconds": 0.190435667,
+          "kernel_seconds": 2.485082541
+        },
+        {
+          "prepare_seconds": 0.191518875,
+          "kernel_seconds": 2.493134042
+        }
+      ],
+      "median_seconds": 2.69131525,
+      "median_kernel_seconds": 2.485082541,
+      "median_prepare_seconds": 0.190435667
+    },
+    {
+      "id": "mech-cranelift-jit-simd-factored",
+      "execution_mode": "cranelift-jit-simd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled"
+      ],
+      "source_arguments": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-factored.mec",
+        "jit-simd"
+      ],
+      "samples_seconds": [
+        2.433055542,
+        2.439007125,
+        2.432083042
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0.190299458,
+          "kernel_seconds": 2.224677958
+        },
+        {
+          "prepare_seconds": 0.190212416,
+          "kernel_seconds": 2.230764167
+        },
+        {
+          "prepare_seconds": 0.190338667,
+          "kernel_seconds": 2.223454875
+        }
+      ],
+      "median_seconds": 2.433055542,
+      "median_kernel_seconds": 2.224677958,
+      "median_prepare_seconds": 0.190299458
+    }
+  ],
+  "compiler_snapshot": {
+    "path": "compiler-structured-v4-pre-runtime.tar.gz",
+    "sha256": "896131ea67c9dcf314eb634aed31eb4eca9759a5a5e71edd97a7bb64e59811fe",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "note": "Structured SIMD stage before adding generic compiled output and runtime support; source programs omit energy at this stage."
+  },
+  "legacy_harness_snapshot": {
+    "path": "legacy-harness-v1.tar.gz",
+    "sha256": "7eb570bb57ded1d557b36e42a766ff626cbbfa7b1d116a761336951fe8142c76",
+    "note": "Historical handwritten n-body energy adapters and their Cargo entry declarations. Current execution uses the generic runtime and all math is in Mech."
+  }
+}

@@ -1,0 +1,8 @@
+(require :sb-concurrency)
+(handler-bind ((sb-ext:defconstant-uneql (lambda (condition) (declare (ignore condition)) (invoke-restart 'continue))))
+  (multiple-value-bind (fasl warnings failure) (compile-file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/mandelbrot-sbcl-1-faithful.lisp" :output-file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/mandelbrot-sbcl-1-faithful/program.fasl")
+    (declare (ignore warnings))
+    (when failure (error "Benchmark compilation failed"))
+    (load fasl)))
+(in-package :cl-user)
+(sb-ext:save-lisp-and-die "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/binaries/mandelbrot-sbcl-1-faithful.core" :purify t)

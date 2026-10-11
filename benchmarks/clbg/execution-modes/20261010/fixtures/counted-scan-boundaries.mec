@@ -1,0 +1,5 @@
+Byte(i<u64>) = (next<u64>, byte<u64>) :=
+  next := i + 1
+  byte := number/mod(i, 3) + 97.
+last := io/write-scan(19, 0, Byte, 5, "|", 7)
+io/print("end:{}\n", last)

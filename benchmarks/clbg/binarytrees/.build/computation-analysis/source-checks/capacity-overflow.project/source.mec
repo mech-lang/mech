@@ -1,0 +1,9 @@
+Test(n<u64>) = (result<u64>) :=
+  a := heap/new-refs((heap/null(), heap/null()))
+  b := heap/new-refs((heap/null(), heap/null()))
+  c := heap/new-refs((a, b))
+  (l, r) := heap/read-refs(c, 2)
+  result := control/select(a != b && l == a && r == b, 1, 0).
+
+result := memory/with-ref-arena(18446744073709551615, 2, Test, 0)
+io/print("{}\n", result)

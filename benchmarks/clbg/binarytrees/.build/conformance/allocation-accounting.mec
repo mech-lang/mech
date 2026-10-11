@@ -1,0 +1,54 @@
+Leaf(depth<u64>) = (root<ref>) :=
+  root := heap/new-refs((heap/null(), heap/null())).
+Branch(depth<u64>) = (root<ref>) :=
+  left := Make(depth - 1)
+  right := Make(depth - 1)
+  root := heap/new-refs((left, right)).
+Make(depth<u64>) = (root<ref>) :=
+  root := control/if(depth == 0, Leaf, Branch, depth).
+One(left<ref>, right<ref>) = (count<u64>) :=
+  count := 1.
+CountChildren(left<ref>, right<ref>) = (count<u64>) :=
+  count := 1 + Count(left) + Count(right).
+Count(root<ref>) = (count<u64>) :=
+  (left, right) := heap/read-refs(root, 2)
+  count := control/if(left == heap/null(), One, CountChildren, (left, right)).
+DestroyChildren(left<ref>, right<ref>) = (count<u64>) :=
+  count := 1 + Destroy(left) + Destroy(right).
+Destroy(root<ref>) = (count<u64>) :=
+  (left, right) := heap/take-refs(root, 2)
+  count := control/if(left == heap/null(), One, DestroyChildren, (left, right)).
+More(index<u64>, end<u64>, depth<u64>, sum<u64>) = (more<bool>) :=
+  more := index < end.
+Tree(index<u64>, end<u64>, depth<u64>, sum<u64>) = (next<u64>, stop<u64>, d<u64>, check<u64>) :=
+  root := Make(depth)
+  count := Count(root)
+  released := Destroy(root)
+  next := index + 1
+  stop := end
+  d := depth
+  check := sum + count.
+Chunk(start<u64>, end<u64>, depth<u64>) = (check<u64>) :=
+  (index, stop, d, check) := control/while((start, end, depth, 0), More, Tree).
+MoreDepths(depth<u64>, maximum<u64>) = (more<bool>) :=
+  more := depth <= maximum.
+Depth(depth<u64>, maximum<u64>) = (next<u64>, stop<u64>) :=
+  iterations := number/shift-left(1, maximum - depth + 4)
+  check := Chunk(0, iterations, depth)
+  printed := io/print("{}\t trees of depth {}\t check: {}\n", iterations, depth, check)
+  next := depth + 2
+  stop := maximum.
+n := number/bounded(io/argument-u64(1), 0, 21)
+maximum := number/max(6, n)
+stretch := Make(maximum + 1)
+stretch-count := Count(stretch)
+stretch-line := io/print("stretch tree of depth {}\t check: {}\n", maximum + 1, stretch-count)
+stretch-released := Destroy(stretch)
+long-lived := Make(maximum)
+(done, stop) := control/while((4, maximum), MoreDepths, Depth)
+long-count := Count(long-lived)
+long-line := io/print("long lived tree of depth {}\t check: {}\n", maximum, long-count)
+long-released := Destroy(long-lived)
+
+(allocated, freed, live, peak) := heap/stats()
+account := io/print("{} {} {} {}\n", allocated, freed, live, peak)

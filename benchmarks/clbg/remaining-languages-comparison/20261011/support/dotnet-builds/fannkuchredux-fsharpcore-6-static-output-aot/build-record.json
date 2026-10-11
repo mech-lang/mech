@@ -1,0 +1,66 @@
+{
+  "id": "fannkuchredux-fsharpcore-6-static-output-aot",
+  "key": "fannkuchredux:fannkuchredux-fsharpcore-6-static-output-aot",
+  "benchmark": "fannkuchredux",
+  "language": "fsharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/fannkuchredux-fsharpcore-6-static-output.fs",
+  "source_sha256": "445abe83d4bee87bd10998eb85b09b989e69ff388717e004938bc3b99383399f",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/fannkuchredux-fsharpcore-6.fs",
+  "original_source_sha256": "0b21b5743c7caf008a8683ca5937342d72c269f800261fc5dd08c271bc5354dd",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-fsharpcore-6.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:07:21 GMT\n\nMAKE:\ncp fannkuchredux.fsharpcore-6.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/fannkuchredux/tmp/program.fsproj (in 1.95 sec).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/fannkuchredux/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:11.14\n\n13.16s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+  "adaptations": [
+    "Use ordinary statically resolved .NET number/text formatting, because this FSharp.Core printf path invokes generic methods through reflection that NativeAOT cannot create. All changed application output expressions count. Limit async scheduling to eight workers."
+  ],
+  "local_adaptation": false,
+  "physical_loc": 97,
+  "normalized_loc": 97,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/fannkuchredux-fsharpcore-6-static-output-aot/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-6-static-output-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/fannkuchredux-fsharpcore-6-static-output-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-6-static-output-aot/app",
+  "binary_sha256": "c9e5494a327125ae3db9ed32bd67b5cb97676a74d8b1d65e8fdc20a2b255198b",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-6-static-output-aot/app",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/fannkuchredux-fsharpcore-6-static-output-aot/app": "c9e5494a327125ae3db9ed32bd67b5cb97676a74d8b1d65e8fdc20a2b255198b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 24,
+    "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 8.371,
+  "timing_selection_reasons": [
+    "Lowest officially published elapsed time at the prescribed full workload; local timing still required."
+  ]
+}

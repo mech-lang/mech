@@ -1,0 +1,4 @@
+# Current bulk record input and native byte/wrapping implementation; instrumented diagnostic, not ordinary timing.
+byte-record-profile bytes=50000000 read=0.027436 compute=0.001819 write=0.011008
+byte-record-profile bytes=75000000 read=0.039127 compute=0.002255 write=0.017563
+byte-record-profile bytes=125000000 read=0.064819 compute=0.003515 write=0.029318

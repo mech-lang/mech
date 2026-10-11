@@ -1,0 +1,979 @@
+
+==================== Tidy Core ====================
+2026-10-10 14:39:09.386155 UTC
+
+Result size of Tidy Core
+  = {terms: 690, types: 681, coercions: 34, joins: 2/10}
+
+-- RHS size: {terms: 11, types: 4, coercions: 0, joins: 0/0}
+Main.$WNode [InlPrag=INLINE[final] CONLIKE]
+  :: Tree %1 -> Tree %1 -> Tree
+[GblId[DataConWrapper],
+ Arity=2,
+ Str=<SL><SL>,
+ Unf=Unf{Src=StableSystem, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=ALWAYS_IF(arity=2,unsat_ok=True,boring_ok=False)
+         Tmpl= \ (conrep_a1vA [Occ=Once1] :: Tree)
+                 (conrep1_a1vB [Occ=Once1] :: Tree) ->
+                 case conrep_a1vA of conrep2_a1vA [Occ=Once1] { __DEFAULT ->
+                 case conrep1_a1vB of conrep3_a1vB [Occ=Once1] { __DEFAULT ->
+                 Main.Node conrep2_a1vA conrep3_a1vB
+                 }
+                 }}]
+Main.$WNode
+  = \ (conrep_a1vA [Occ=Once1] :: Tree)
+      (conrep1_a1vB [Occ=Once1] :: Tree) ->
+      case conrep_a1vA of conrep2_a1vA [Occ=Once1] { __DEFAULT ->
+      case conrep1_a1vB of conrep3_a1vB [Occ=Once1] { __DEFAULT ->
+      Main.Node conrep2_a1vA conrep3_a1vB
+      }
+      }
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+Main.$trModule4 :: ghc-prim:GHC.Prim.Addr#
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 20 0}]
+Main.$trModule4 = "main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+Main.$trModule3 :: ghc-prim:GHC.Types.TrName
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$trModule3 = ghc-prim:GHC.Types.TrNameS Main.$trModule4
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+Main.$trModule2 :: ghc-prim:GHC.Prim.Addr#
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 20 0}]
+Main.$trModule2 = "Main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+Main.$trModule1 :: ghc-prim:GHC.Types.TrName
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$trModule1 = ghc-prim:GHC.Types.TrNameS Main.$trModule2
+
+-- RHS size: {terms: 3, types: 0, coercions: 0, joins: 0/0}
+Main.$trModule :: ghc-prim:GHC.Types.Module
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$trModule
+  = ghc-prim:GHC.Types.Module Main.$trModule3 Main.$trModule1
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+Main.$tcTree2 :: ghc-prim:GHC.Prim.Addr#
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 20 0}]
+Main.$tcTree2 = "Tree"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+Main.$tcTree1 :: ghc-prim:GHC.Types.TrName
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$tcTree1 = ghc-prim:GHC.Types.TrNameS Main.$tcTree2
+
+-- RHS size: {terms: 7, types: 0, coercions: 0, joins: 0/0}
+Main.$tcTree :: ghc-prim:GHC.Types.TyCon
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$tcTree
+  = ghc-prim:GHC.Types.TyCon
+      9208051040442588375#Word64
+      2694919957537544827#Word64
+      Main.$trModule
+      Main.$tcTree1
+      0#
+      ghc-prim:GHC.Types.krep$*
+
+-- RHS size: {terms: 3, types: 1, coercions: 0, joins: 0/0}
+Main.$tc'Nil1 [InlPrag=[~]] :: ghc-prim:GHC.Types.KindRep
+[GblId, Unf=OtherCon []]
+Main.$tc'Nil1
+  = ghc-prim:GHC.Types.KindRepTyConApp
+      Main.$tcTree (ghc-prim:GHC.Types.[] @ghc-prim:GHC.Types.KindRep)
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+Main.$tc'Nil3 :: ghc-prim:GHC.Prim.Addr#
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 20 0}]
+Main.$tc'Nil3 = "'Nil"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+Main.$tc'Nil2 :: ghc-prim:GHC.Types.TrName
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$tc'Nil2 = ghc-prim:GHC.Types.TrNameS Main.$tc'Nil3
+
+-- RHS size: {terms: 7, types: 0, coercions: 0, joins: 0/0}
+Main.$tc'Nil :: ghc-prim:GHC.Types.TyCon
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$tc'Nil
+  = ghc-prim:GHC.Types.TyCon
+      15703065417820164806#Word64
+      7212711407268931041#Word64
+      Main.$trModule
+      Main.$tc'Nil2
+      0#
+      Main.$tc'Nil1
+
+-- RHS size: {terms: 3, types: 0, coercions: 0, joins: 0/0}
+$krep_r3jy :: ghc-prim:GHC.Types.KindRep
+[GblId, Unf=OtherCon []]
+$krep_r3jy
+  = ghc-prim:GHC.Types.KindRepFun Main.$tc'Nil1 Main.$tc'Nil1
+
+-- RHS size: {terms: 3, types: 0, coercions: 0, joins: 0/0}
+Main.$tc'Node1 [InlPrag=[~]] :: ghc-prim:GHC.Types.KindRep
+[GblId, Unf=OtherCon []]
+Main.$tc'Node1
+  = ghc-prim:GHC.Types.KindRepFun Main.$tc'Nil1 $krep_r3jy
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+Main.$tc'Node3 :: ghc-prim:GHC.Prim.Addr#
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 30 0}]
+Main.$tc'Node3 = "'Node"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+Main.$tc'Node2 :: ghc-prim:GHC.Types.TrName
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$tc'Node2 = ghc-prim:GHC.Types.TrNameS Main.$tc'Node3
+
+-- RHS size: {terms: 7, types: 0, coercions: 0, joins: 0/0}
+Main.$tc'Node :: ghc-prim:GHC.Types.TyCon
+[GblId,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 10 10}]
+Main.$tc'Node
+  = ghc-prim:GHC.Types.TyCon
+      11019788924731710585#Word64
+      649625707236464705#Word64
+      Main.$trModule
+      Main.$tc'Node2
+      0#
+      Main.$tc'Node1
+
+-- RHS size: {terms: 3, types: 0, coercions: 0, joins: 0/0}
+lvl_r3jz :: Tree
+[GblId, Unf=OtherCon []]
+lvl_r3jz = Main.Node Main.Nil Main.Nil
+
+Rec {
+-- RHS size: {terms: 28, types: 5, coercions: 0, joins: 0/0}
+$s$wmake'_r3jA
+  :: ghc-prim:GHC.Prim.Int# -> ghc-prim:GHC.Prim.Int# -> Tree
+[GblId, Arity=2, Str=<A><1L>, Unf=OtherCon []]
+$s$wmake'_r3jA
+  = \ (sc_s3j9 :: ghc-prim:GHC.Prim.Int#)
+      (ww_s3gA :: ghc-prim:GHC.Prim.Int#) ->
+      case ww_s3gA of ds_X1 {
+        __DEFAULT ->
+          case $s$wmake'_r3jA
+                 (ghc-prim:GHC.Prim.-# sc_s3j9 1#) (ghc-prim:GHC.Prim.-# ds_X1 1#)
+          of conrep_a1vA
+          { __DEFAULT ->
+          case $s$wmake'_r3jA
+                 (ghc-prim:GHC.Prim.+# sc_s3j9 1#) (ghc-prim:GHC.Prim.-# ds_X1 1#)
+          of conrep1_a1vB
+          { __DEFAULT ->
+          Main.Node conrep_a1vA conrep1_a1vB
+          }
+          };
+        0# -> lvl_r3jz
+      }
+end Rec }
+
+-- RHS size: {terms: 7, types: 3, coercions: 0, joins: 0/0}
+make_rpc :: Int -> Tree
+[GblId, Arity=1, Str=<1P(1L)>, Unf=OtherCon []]
+make_rpc
+  = \ (d_a1vb :: Int) ->
+      case d_a1vb of { ghc-prim:GHC.Types.I# ww_s3gA ->
+      $s$wmake'_r3jA ww_s3gA ww_s3gA
+      }
+
+Rec {
+-- RHS size: {terms: 17, types: 6, coercions: 0, joins: 0/0}
+$wtailCheck_r3jB
+  :: Tree -> ghc-prim:GHC.Prim.Int# -> ghc-prim:GHC.Prim.Int#
+[GblId[StrictWorker([!])], Arity=2, Str=<1L><L>, Unf=OtherCon []]
+$wtailCheck_r3jB
+  = \ (ds_s3gI :: Tree) (ww_s3gL :: ghc-prim:GHC.Prim.Int#) ->
+      case ds_s3gI of {
+        Nil -> ww_s3gL;
+        Node l_a1v8 r_a1v9 ->
+          case $wtailCheck_r3jB r_a1v9 (ghc-prim:GHC.Prim.+# ww_s3gL 1#)
+          of ww1_s3hB
+          { __DEFAULT ->
+          $wtailCheck_r3jB l_a1v8 ww1_s3hB
+          }
+      }
+end Rec }
+
+Rec {
+-- RHS size: {terms: 23, types: 5, coercions: 0, joins: 0/0}
+$s$wsumT_r3jC
+  :: ghc-prim:GHC.Prim.Int#
+     -> ghc-prim:GHC.Prim.Int#
+     -> ghc-prim:GHC.Prim.Int#
+     -> ghc-prim:GHC.Prim.Int#
+[GblId, Arity=3, Str=<L><1L><L>, Unf=OtherCon []]
+$s$wsumT_r3jC
+  = \ (sc_s3iS :: ghc-prim:GHC.Prim.Int#)
+      (ww_s3gU :: ghc-prim:GHC.Prim.Int#)
+      (ww1_s3gY :: ghc-prim:GHC.Prim.Int#) ->
+      case ww_s3gU of ds_X1 {
+        __DEFAULT ->
+          case $wtailCheck_r3jB ($s$wmake'_r3jA sc_s3iS sc_s3iS) 0#
+          of ww2_s3hB
+          { __DEFAULT ->
+          $s$wsumT_r3jC
+            sc_s3iS
+            (ghc-prim:GHC.Prim.-# ds_X1 1#)
+            (ghc-prim:GHC.Prim.+# ww1_s3gY ww2_s3hB)
+          };
+        0# -> ww1_s3gY
+      }
+end Rec }
+
+Rec {
+-- RHS size: {terms: 53, types: 21, coercions: 0, joins: 0/2}
+$s$wdepth_r3jD
+  :: ghc-prim:GHC.Prim.Int#
+     -> ghc-prim:GHC.Prim.Int# -> [(Int, Int, Int)]
+[GblId, Arity=2, Str=<L><L>, Unf=OtherCon []]
+$s$wdepth_r3jD
+  = \ (sc_s3iN :: ghc-prim:GHC.Prim.Int#)
+      (ww_s3h7 :: ghc-prim:GHC.Prim.Int#) ->
+      case ghc-prim:GHC.Prim.<=# sc_s3iN ww_s3h7 of {
+        __DEFAULT -> ghc-prim:GHC.Types.[] @(Int, Int, Int);
+        1# ->
+          let {
+            i#_s38P :: ghc-prim:GHC.Prim.Int#
+            [LclId]
+            i#_s38P
+              = ghc-prim:GHC.Prim.+#
+                  (ghc-prim:GHC.Prim.-# ww_s3h7 sc_s3iN) 4# } in
+          let {
+            n_s38R :: Int
+            [LclId]
+            n_s38R
+              = case ghc-prim:GHC.Prim.>=# i#_s38P 0# of {
+                  __DEFAULT -> ghc-internal:GHC.Internal.Real.overflowError @Int;
+                  1# ->
+                    ghc-prim:GHC.Types.I#
+                      (ghc-prim:GHC.Prim.andI#
+                         (ghc-prim:GHC.Prim.uncheckedIShiftL# 1# i#_s38P)
+                         (ghc-prim:GHC.Prim.negateInt# (ghc-prim:GHC.Prim.<# i#_s38P 64#)))
+                } } in
+          ghc-prim:GHC.Types.:
+            @(Int, Int, Int)
+            (n_s38R, ghc-prim:GHC.Types.I# sc_s3iN,
+             case n_s38R of { ghc-prim:GHC.Types.I# ww1_s3gU ->
+             case $s$wsumT_r3jC sc_s3iN ww1_s3gU 0# of ww2_s3hD { __DEFAULT ->
+             ghc-prim:GHC.Types.I# ww2_s3hD
+             }
+             })
+            ($s$wdepth_r3jD (ghc-prim:GHC.Prim.+# sc_s3iN 2#) ww_s3h7)
+      }
+end Rec }
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+lvl1_r3jE :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+lvl1_r3jE = "%s of depth %d\t check: %d\n"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl2_r3jF :: [Char]
+[GblId]
+lvl2_r3jF = ghc-prim:GHC.CString.unpackCString# lvl1_r3jE
+
+-- RHS size: {terms: 10, types: 9, coercions: 0, joins: 0/0}
+lvl3_r3jG :: [Char] -> FormatParse
+[GblId, Arity=1, Str=<1L>, Cpr=1(1, ,), Unf=OtherCon []]
+lvl3_r3jG
+  = \ (ds2_a386 :: [Char]) ->
+      case ds2_a386 of {
+        [] -> errorShortFormat @FormatParse;
+        : c1_a389 cs_a38a ->
+          Text.Printf.FormatParse
+            (ghc-prim:GHC.Types.[] @Char) c1_a389 cs_a38a
+      }
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+lvl4_r3jH :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+lvl4_r3jH = "\t trees"#
+
+Rec {
+-- RHS size: {terms: 42, types: 134, coercions: 0, joins: 0/0}
+go1_r3jI
+  :: [(Int, Int, Int)]
+     -> ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+     -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld,
+           [(Int, Int, Int)] #)
+[GblId, Arity=2, Str=<1L><L>, Cpr=1, Unf=OtherCon []]
+go1_r3jI
+  = \ (ds_a2M1 :: [(Int, Int, Int)])
+      (eta2_a2M2 [OS=OneShot]
+         :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld) ->
+      case ds_a2M1 of {
+        [] -> (# eta2_a2M2, ghc-prim:GHC.Types.[] @(Int, Int, Int) #);
+        : y_a2M8 ys_a2M9 ->
+          case ghc-prim:GHC.Prim.spark#
+                 @(Control.Parallel.Strategies.Lift (Int, Int, Int))
+                 @ghc-prim:GHC.Prim.RealWorld
+                 (ghc-prim:GHC.Magic.runRW#
+                    @ghc-prim:GHC.Types.LiftedRep
+                    @(Control.Parallel.Strategies.Lift (Int, Int, Int))
+                    (\ (s_a2M7
+                          :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld) ->
+                       case y_a2M8 of { (x4_a2MF, x5_a2MG, x6_a2MH) ->
+                       case ghc-prim:GHC.Prim.seq#
+                              @Int @ghc-prim:GHC.Prim.RealWorld x6_a2MH s_a2M7
+                       of
+                       { (# _ [Occ=Dead], ipv7_a2MT #) ->
+                       ghc-prim:GHC.Magic.lazy
+                         @(Control.Parallel.Strategies.Lift (Int, Int, Int))
+                         (Control.Parallel.Strategies.Lift
+                            @(Int, Int, Int) (x4_a2MF, x5_a2MG, ipv7_a2MT))
+                       }
+                       }))
+                 eta2_a2M2
+          of
+          { (# ipv_a2Mg, ipv1_a2Mh #) ->
+          case go1_r3jI ys_a2M9 ipv_a2Mg of { (# ipv2_a2Mk, ipv3_a2Ml #) ->
+          (# ipv2_a2Mk,
+             ghc-prim:GHC.Types.:
+               @(Int, Int, Int)
+               (case ipv1_a2Mh of { Control.Parallel.Strategies.Lift x4_a2Mo ->
+                x4_a2Mo
+                })
+               ipv3_a2Ml #)
+          }
+          }
+      }
+end Rec }
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl5_r3jJ :: Int
+[GblId, Unf=OtherCon []]
+lvl5_r3jJ = ghc-prim:GHC.Types.I# 6#
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+lvl6_r3jK :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+lvl6_r3jK = "%s of depth %d\t check: %d\n"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl7_r3jL :: [Char]
+[GblId]
+lvl7_r3jL = ghc-prim:GHC.CString.unpackCString# lvl6_r3jK
+
+-- RHS size: {terms: 10, types: 9, coercions: 0, joins: 0/0}
+lvl8_r3jM :: [Char] -> FormatParse
+[GblId, Arity=1, Str=<1L>, Unf=OtherCon []]
+lvl8_r3jM
+  = \ (ds2_a386 :: [Char]) ->
+      case ds2_a386 of {
+        [] -> errorShortFormat @FormatParse;
+        : c1_a389 cs_a38a ->
+          Text.Printf.FormatParse
+            (ghc-prim:GHC.Types.[] @Char) c1_a389 cs_a38a
+      }
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+x_r3jN :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+x_r3jN = "long lived tree"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+x1_r3jO :: [Char]
+[GblId]
+x1_r3jO = ghc-prim:GHC.CString.unpackCString# x_r3jN
+
+-- RHS size: {terms: 14, types: 16, coercions: 0, joins: 0/0}
+lvl9_r3jP :: FieldFormat -> ShowS
+[GblId, Arity=1, Str=<1P(ML,ML,L,A,A,A,1P(1L))>, Unf=OtherCon []]
+lvl9_r3jP
+  = \ (ufmt_a3a9 :: FieldFormat) ->
+      case ufmt_a3a9 of
+      { FieldFormat ww_a3ab ww1_a3ag ww2_a3ah ww3_a3ai ww4_a3aj ww5_a3ak
+                    ww6_a3al ->
+      case ww6_a3al of { ghc-prim:GHC.Types.C# ww7_a3ap ->
+      Text.Printf.$wformatString
+        @Char
+        Text.Printf.$fIsCharChar
+        x1_r3jO
+        ww_a3ab
+        ww1_a3ag
+        ww2_a3ah
+        ww7_a3ap
+      }
+      }
+
+-- RHS size: {terms: 3, types: 2, coercions: 0, joins: 0/0}
+lvl10_r3jQ :: (ModifierParser, FieldFormatter)
+[GblId, Unf=OtherCon []]
+lvl10_r3jQ = (lvl8_r3jM, lvl9_r3jP)
+
+-- RHS size: {terms: 3, types: 2, coercions: 0, joins: 0/0}
+lvl11_r3jR :: [Text.Printf.UPrintf]
+[GblId, Unf=OtherCon []]
+lvl11_r3jR
+  = ghc-prim:GHC.Types.:
+      @Text.Printf.UPrintf
+      lvl10_r3jQ
+      (ghc-prim:GHC.Types.[] @Text.Printf.UPrintf)
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl12_r3jS :: [Char]
+[GblId]
+lvl12_r3jS = ghc-prim:GHC.CString.unpackCString# lvl4_r3jH
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+lvl13_r3jT :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+lvl13_r3jT = "%s of depth %d\t check: %d\n"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl14_r3jU :: [Char]
+[GblId]
+lvl14_r3jU = ghc-prim:GHC.CString.unpackCString# lvl13_r3jT
+
+-- RHS size: {terms: 10, types: 9, coercions: 0, joins: 0/0}
+lvl15_r3jV :: [Char] -> FormatParse
+[GblId, Arity=1, Str=<1L>, Unf=OtherCon []]
+lvl15_r3jV
+  = \ (ds2_a386 :: [Char]) ->
+      case ds2_a386 of {
+        [] -> errorShortFormat @FormatParse;
+        : c1_a389 cs_a38a ->
+          Text.Printf.FormatParse
+            (ghc-prim:GHC.Types.[] @Char) c1_a389 cs_a38a
+      }
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+x2_r3jW :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+x2_r3jW = "stretch tree"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+x3_r3jX :: [Char]
+[GblId]
+x3_r3jX = ghc-prim:GHC.CString.unpackCString# x2_r3jW
+
+-- RHS size: {terms: 14, types: 16, coercions: 0, joins: 0/0}
+lvl16_r3jY :: FieldFormat -> ShowS
+[GblId, Arity=1, Str=<1P(ML,ML,L,A,A,A,1P(1L))>, Unf=OtherCon []]
+lvl16_r3jY
+  = \ (ufmt_a3a9 :: FieldFormat) ->
+      case ufmt_a3a9 of
+      { FieldFormat ww_a3ab ww1_a3ag ww2_a3ah ww3_a3ai ww4_a3aj ww5_a3ak
+                    ww6_a3al ->
+      case ww6_a3al of { ghc-prim:GHC.Types.C# ww7_a3ap ->
+      Text.Printf.$wformatString
+        @Char
+        Text.Printf.$fIsCharChar
+        x3_r3jX
+        ww_a3ab
+        ww1_a3ag
+        ww2_a3ah
+        ww7_a3ap
+      }
+      }
+
+-- RHS size: {terms: 3, types: 2, coercions: 0, joins: 0/0}
+lvl17_r3jZ :: (ModifierParser, FieldFormatter)
+[GblId, Unf=OtherCon []]
+lvl17_r3jZ = (lvl15_r3jV, lvl16_r3jY)
+
+-- RHS size: {terms: 3, types: 2, coercions: 0, joins: 0/0}
+lvl18_r3k0 :: [Text.Printf.UPrintf]
+[GblId, Unf=OtherCon []]
+lvl18_r3k0
+  = ghc-prim:GHC.Types.:
+      @Text.Printf.UPrintf
+      lvl17_r3jZ
+      (ghc-prim:GHC.Types.[] @Text.Printf.UPrintf)
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+lvl19_r3k1 :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+lvl19_r3k1 = "head"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl20_r3k2 :: [Char]
+[GblId]
+lvl20_r3k2 = ghc-prim:GHC.CString.unpackCString# lvl19_r3k1
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+lvl21_r3k3 :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+lvl21_r3k3 = "main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl22_r3k4 :: [Char]
+[GblId]
+lvl22_r3k4 = ghc-prim:GHC.CString.unpackCString# lvl21_r3k3
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+lvl23_r3k5 :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+lvl23_r3k5 = "Main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl24_r3k6 :: [Char]
+[GblId]
+lvl24_r3k6 = ghc-prim:GHC.CString.unpackCString# lvl23_r3k5
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+lvl25_r3k7 :: ghc-prim:GHC.Prim.Addr#
+[GblId, Unf=OtherCon []]
+lvl25_r3k7
+  = "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-6.hs"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl26_r3k8 :: [Char]
+[GblId]
+lvl26_r3k8 = ghc-prim:GHC.CString.unpackCString# lvl25_r3k7
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl27_r3k9 :: Int
+[GblId, Unf=OtherCon []]
+lvl27_r3k9 = ghc-prim:GHC.Types.I# 28#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl28_r3ka :: Int
+[GblId, Unf=OtherCon []]
+lvl28_r3ka = ghc-prim:GHC.Types.I# 31#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl29_r3kb :: Int
+[GblId, Unf=OtherCon []]
+lvl29_r3kb = ghc-prim:GHC.Types.I# 28#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+lvl30_r3kc :: Int
+[GblId, Unf=OtherCon []]
+lvl30_r3kc = ghc-prim:GHC.Types.I# 35#
+
+-- RHS size: {terms: 8, types: 0, coercions: 0, joins: 0/0}
+lvl31_r3kd :: ghc-internal:GHC.Internal.Stack.Types.SrcLoc
+[GblId, Unf=OtherCon []]
+lvl31_r3kd
+  = ghc-internal:GHC.Internal.Stack.Types.SrcLoc
+      lvl22_r3k4
+      lvl24_r3k6
+      lvl26_r3k8
+      lvl27_r3k9
+      lvl28_r3ka
+      lvl29_r3kb
+      lvl30_r3kc
+
+-- RHS size: {terms: 4, types: 0, coercions: 0, joins: 0/0}
+lvl32_r3ke :: ghc-internal:GHC.Internal.Stack.Types.CallStack
+[GblId, Unf=OtherCon []]
+lvl32_r3ke
+  = ghc-internal:GHC.Internal.Stack.Types.PushCallStack
+      lvl20_r3k2
+      lvl31_r3kd
+      ghc-internal:GHC.Internal.Stack.Types.EmptyCallStack
+
+-- RHS size: {terms: 267, types: 297, coercions: 25, joins: 2/8}
+Main.main1
+  :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+     -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld, () #)
+[GblId, Arity=1, Str=<L>, Unf=OtherCon []]
+Main.main1
+  = \ (s_a22E
+         :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld) ->
+      case ghc-internal:GHC.Internal.Foreign.Marshal.Alloc.$wallocaBytesAligned
+             @ghc-internal:GHC.Internal.Foreign.C.Types.CInt
+             @[String]
+             4#
+             4#
+             (ghc-internal:GHC.Internal.System.Environment.getArgs2
+              `cast` (<ghc-internal:GHC.Internal.Ptr.Ptr
+                         ghc-internal:GHC.Internal.Foreign.C.Types.CInt>_R
+                      %<Many>_N ->_R Sym (ghc-prim:GHC.Types.N:IO[0] <[String]>_R)
+                      :: (ghc-internal:GHC.Internal.Ptr.Ptr
+                            ghc-internal:GHC.Internal.Foreign.C.Types.CInt
+                          -> ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+                          -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld,
+                                [String] #))
+                         ~R# (ghc-internal:GHC.Internal.Ptr.Ptr
+                                ghc-internal:GHC.Internal.Foreign.C.Types.CInt
+                              -> IO [String])))
+             s_a22E
+      of
+      { (# ipv_a22G, ipv1_a22H #) ->
+      case ghc-internal:GHC.Internal.Read.$w$sreadNumber2
+             (ghc-internal:GHC.Internal.Read.$fReadInt2
+              `cast` (<ghc-internal:GHC.Internal.Text.Read.Lex.Lexeme>_R
+                      %<Many>_N ->_R <ghc-internal:GHC.Internal.Text.ParserCombinators.ReadPrec.Prec>_R
+                                     %<Many>_N ->_R Sym (ghc-internal:GHC.Internal.Text.ParserCombinators.ReadP.N:ReadP[0]
+                                                             <Int>_R)
+                                     ; Sym (ghc-internal:GHC.Internal.Text.ParserCombinators.ReadPrec.N:ReadPrec[0]
+                                                <Int>_R)
+                      :: (ghc-internal:GHC.Internal.Text.Read.Lex.Lexeme
+                          -> ghc-internal:GHC.Internal.Text.ParserCombinators.ReadPrec.Prec
+                          -> forall b.
+                             (Int -> ghc-internal:GHC.Internal.Text.ParserCombinators.ReadP.P b)
+                             -> ghc-internal:GHC.Internal.Text.ParserCombinators.ReadP.P b)
+                         ~R# (ghc-internal:GHC.Internal.Text.Read.Lex.Lexeme
+                              -> ghc-internal:GHC.Internal.Text.ParserCombinators.ReadPrec.ReadPrec
+                                   Int)))
+             ghc-internal:GHC.Internal.Text.ParserCombinators.ReadPrec.minPrec
+             @Int
+             (ghc-internal:GHC.Internal.Text.ParserCombinators.ReadP.$fApplicativeP_$cpure
+                @Int)
+      of
+      { (# ww_a2DN #) ->
+      case ghc-internal:GHC.Internal.System.IO.readIO8
+             @Int
+             (ghc-internal:GHC.Internal.Text.ParserCombinators.ReadP.run
+                @Int
+                (ghc-internal:GHC.Internal.Text.ParserCombinators.ReadP.Look
+                   @Int ww_a2DN)
+                (case ipv1_a22H of {
+                   [] ->
+                     ghc-internal:GHC.Internal.List.head1
+                       @String
+                       (lvl32_r3ke
+                        `cast` (Sym (ghc-prim:GHC.Classes.N:IP[0]
+                                         <"callStack">_N
+                                         <ghc-internal:GHC.Internal.Stack.Types.CallStack>_N)
+                                :: ghc-internal:GHC.Internal.Stack.Types.CallStack
+                                   ~R# (?callStack::ghc-internal:GHC.Internal.Stack.Types.CallStack)));
+                   : x4_a2FH ds_a2FI -> x4_a2FH
+                 }))
+      of {
+        [] ->
+          case ghc-internal:GHC.Internal.IO.Exception.ioError1
+                 @Int ghc-internal:GHC.Internal.System.IO.readIO5 ipv_a22G
+          of {};
+        : x4_a2yN ds_a2yO ->
+          case ds_a2yO of {
+            [] ->
+              let {
+                maxN_s38T :: Int
+                [LclId]
+                maxN_s38T
+                  = case x4_a2yN of wild3_a2HK { ghc-prim:GHC.Types.I# y1_a2HL ->
+                    case ghc-prim:GHC.Prim.<=# 6# y1_a2HL of {
+                      __DEFAULT -> lvl5_r3jJ;
+                      1# -> wild3_a2HK
+                    }
+                    } } in
+              case ghc-internal:GHC.Internal.IO.Handle.Text.hPutStr2
+                     ghc-internal:GHC.Internal.IO.Handle.FD.stdout
+                     (Text.Printf.uprintfs
+                        lvl14_r3jU
+                        (let {
+                           stretchN_s38V :: Int
+                           [LclId]
+                           stretchN_s38V
+                             = case maxN_s38T of { ghc-prim:GHC.Types.I# x5_a1Pg ->
+                               ghc-prim:GHC.Types.I# (ghc-prim:GHC.Prim.+# x5_a1Pg 1#)
+                               } } in
+                         ghc-internal:GHC.Internal.List.reverse1
+                           @Text.Printf.UPrintf
+                           (ghc-prim:GHC.Types.:
+                              @Text.Printf.UPrintf
+                              (Text.Printf.$wparseIntFormat @Int,
+                               let {
+                                 x5_a3fc :: Int
+                                 [LclId]
+                                 x5_a3fc
+                                   = case stretchN_s38V of { ghc-prim:GHC.Types.I# ww1_s3gA ->
+                                     case $wtailCheck_r3jB ($s$wmake'_r3jA ww1_s3gA ww1_s3gA) 0#
+                                     of ww2_s3hB
+                                     { __DEFAULT ->
+                                     ghc-prim:GHC.Types.I# ww2_s3hB
+                                     }
+                                     } } in
+                               \ (ufmt_a3fd :: FieldFormat) ->
+                                 case ufmt_a3fd of
+                                 { FieldFormat ww1_a3ff ww2_a3fg ww3_a3fh ww4_a3fi ww5_a3fj ww6_a3fk
+                                               ww7_a3fl ->
+                                 case ww7_a3fl of { ghc-prim:GHC.Types.C# ww8_a3fo ->
+                                 Text.Printf.$w$sformatInt
+                                   x5_a3fc
+                                   ww1_a3ff
+                                   ww2_a3fg
+                                   ww3_a3fh
+                                   ww4_a3fi
+                                   ww5_a3fj
+                                   ww6_a3fk
+                                   ww8_a3fo
+                                 }
+                                 })
+                              (ghc-prim:GHC.Types.:
+                                 @Text.Printf.UPrintf
+                                 (Text.Printf.$wparseIntFormat @Int,
+                                  Text.Printf.$fPrintfArgInt_$sformatInt stretchN_s38V)
+                                 lvl18_r3k0))
+                           (ghc-prim:GHC.Types.[] @Text.Printf.UPrintf))
+                        (ghc-prim:GHC.Types.[] @Char))
+                     ghc-prim:GHC.Types.False
+                     ipv_a22G
+              of
+              { (# ipv2_a2HU, ipv3_a2HV #) ->
+              case make_rpc maxN_s38T of long_a1ap { __DEFAULT ->
+              ghc-prim:GHC.Magic.runRW#
+                @(ghc-prim:GHC.Types.TupleRep
+                    [ghc-prim:GHC.Types.ZeroBitRep, ghc-prim:GHC.Types.LiftedRep])
+                @(# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld, () #)
+                (\ (s1_a2LP
+                      :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld) ->
+                   case maxN_s38T of { ghc-prim:GHC.Types.I# ww1_s3h7 ->
+                   case go1_r3jI ($s$wdepth_r3jD 4# ww1_s3h7) s1_a2LP of
+                   { (# ipv4_a2LR, ipv5_a2LS #) ->
+                   join {
+                     $w$j_s3ht [InlPrag=[2], Dmd=LC(S,!P(L,L!A))]
+                       :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+                          -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld, () #)
+                     [LclId[JoinId(1)(Nothing)], Arity=1, Str=<L>]
+                     $w$j_s3ht (ipv6_s3hq [OS=OneShot]
+                                  :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld)
+                       = ghc-internal:GHC.Internal.IO.Handle.Text.hPutStr2
+                           ghc-internal:GHC.Internal.IO.Handle.FD.stdout
+                           (Text.Printf.uprintfs
+                              lvl7_r3jL
+                              (let {
+                                 lvl33_s3iu :: Integer
+                                 [LclId, Unf=OtherCon []]
+                                 lvl33_s3iu = GHC.Num.Integer.IS ww1_s3h7 } in
+                               ghc-internal:GHC.Internal.List.reverse1
+                                 @Text.Printf.UPrintf
+                                 (ghc-prim:GHC.Types.:
+                                    @Text.Printf.UPrintf
+                                    (Text.Printf.$wparseIntFormat @Int,
+                                     let {
+                                       x5_a3fc :: Int
+                                       [LclId]
+                                       x5_a3fc
+                                         = case $wtailCheck_r3jB long_a1ap 0# of ww2_s3hB
+                                           { __DEFAULT ->
+                                           ghc-prim:GHC.Types.I# ww2_s3hB
+                                           } } in
+                                     \ (ufmt_a3fd :: FieldFormat) ->
+                                       case ufmt_a3fd of
+                                       { FieldFormat ww2_a3ff ww3_a3fg ww4_a3fh ww5_a3fi ww6_a3fj
+                                                     ww7_a3fk ww8_a3fl ->
+                                       case ww8_a3fl of { ghc-prim:GHC.Types.C# ww9_a3fo ->
+                                       Text.Printf.$w$sformatInt
+                                         x5_a3fc
+                                         ww2_a3ff
+                                         ww3_a3fg
+                                         ww4_a3fh
+                                         ww5_a3fi
+                                         ww6_a3fj
+                                         ww7_a3fk
+                                         ww9_a3fo
+                                       }
+                                       })
+                                    (ghc-prim:GHC.Types.:
+                                       @Text.Printf.UPrintf
+                                       (Text.Printf.$wparseIntFormat @Int,
+                                        \ (ufmt_a3fd :: FieldFormat) ->
+                                          case ufmt_a3fd of
+                                          { FieldFormat ww2_a3ff ww3_a3fg ww4_a3fh ww5_a3fi ww6_a3fj
+                                                        ww7_a3fk ww8_a3fl ->
+                                          case ww8_a3fl of { ghc-prim:GHC.Types.C# ww9_a3fo ->
+                                          Text.Printf.$wformatIntegral
+                                            (case ww7_a3fk of wild6_a3fy {
+                                               [] -> Text.Printf.$fPrintfArgInt27;
+                                               : ipv7_a3fB ipv8_a3fC ->
+                                                 case lookup
+                                                        @String
+                                                        @Integer
+                                                        ghc-prim:GHC.Classes.$fEqList_$s$fEqList1
+                                                        wild6_a3fy
+                                                        Text.Printf.intModifierMap
+                                                 of wild7_a3fE {
+                                                   Nothing -> Text.Printf.$fPrintfArgInt1;
+                                                   Just m0_a3fF -> wild7_a3fE
+                                                 }
+                                             })
+                                            lvl33_s3iu
+                                            ww2_a3ff
+                                            ww3_a3fg
+                                            ww4_a3fh
+                                            ww5_a3fi
+                                            ww6_a3fj
+                                            ww7_a3fk
+                                            ww9_a3fo
+                                          }
+                                          })
+                                       lvl11_r3jR))
+                                 (ghc-prim:GHC.Types.[] @Text.Printf.UPrintf))
+                              (ghc-prim:GHC.Types.[] @Char))
+                           ghc-prim:GHC.Types.False
+                           ipv6_s3hq } in
+                   joinrec {
+                     go2_s3gu [Occ=LoopBreaker, Dmd=SC(S,C(1,L))]
+                       :: [(Int, Int, Int)]
+                          -> ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+                          -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld, () #)
+                     [LclId[JoinId(2)(Just [!])], Arity=2, Str=<1L><L>, Unf=OtherCon []]
+                     go2_s3gu (ds4_a3gn :: [(Int, Int, Int)])
+                              (eta_B0 [OS=OneShot]
+                                 :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld)
+                       = case ds4_a3gn of {
+                           [] -> jump $w$j_s3ht eta_B0;
+                           : y_a3gq ys_a3gr ->
+                             case y_a3gq of { (m_a1lr, d_a1ls, i_a1lt) ->
+                             case ghc-internal:GHC.Internal.IO.Handle.Text.hPutStr2
+                                    ghc-internal:GHC.Internal.IO.Handle.FD.stdout
+                                    (Text.Printf.uprintfs
+                                       lvl2_r3jF
+                                       (ghc-internal:GHC.Internal.List.reverse1
+                                          @Text.Printf.UPrintf
+                                          (ghc-prim:GHC.Types.:
+                                             @Text.Printf.UPrintf
+                                             (Text.Printf.$wparseIntFormat @Int,
+                                              Text.Printf.$fPrintfArgInt_$sformatInt i_a1lt)
+                                             (ghc-prim:GHC.Types.:
+                                                @Text.Printf.UPrintf
+                                                (Text.Printf.$wparseIntFormat @Int,
+                                                 Text.Printf.$fPrintfArgInt_$sformatInt d_a1ls)
+                                                (ghc-prim:GHC.Types.:
+                                                   @Text.Printf.UPrintf
+                                                   (lvl3_r3jG,
+                                                    let {
+                                                      x5_a3a8 :: [Char]
+                                                      [LclId]
+                                                      x5_a3a8
+                                                        = case m_a1lr of
+                                                          { ghc-prim:GHC.Types.I# n_a2Is ->
+                                                          ++
+                                                            @Char
+                                                            (ghc-internal:GHC.Internal.Show.itos
+                                                               n_a2Is (ghc-prim:GHC.Types.[] @Char))
+                                                            lvl12_r3jS
+                                                          } } in
+                                                    \ (ufmt_a3a9 :: FieldFormat) ->
+                                                      case ufmt_a3a9 of
+                                                      { FieldFormat ww2_a3ab ww3_a3ag ww4_a3ah
+                                                                    ww5_a3ai ww6_a3aj ww7_a3ak
+                                                                    ww8_a3al ->
+                                                      case ww8_a3al of
+                                                      { ghc-prim:GHC.Types.C# ww9_a3ap ->
+                                                      Text.Printf.$wformatString
+                                                        @Char
+                                                        Text.Printf.$fIsCharChar
+                                                        x5_a3a8
+                                                        ww2_a3ab
+                                                        ww3_a3ag
+                                                        ww4_a3ah
+                                                        ww9_a3ap
+                                                      }
+                                                      })
+                                                   (ghc-prim:GHC.Types.[] @Text.Printf.UPrintf))))
+                                          (ghc-prim:GHC.Types.[] @Text.Printf.UPrintf))
+                                       (ghc-prim:GHC.Types.[] @Char))
+                                    ghc-prim:GHC.Types.False
+                                    eta_B0
+                             of
+                             { (# ipv6_X1H, ipv7_X1I #) ->
+                             jump go2_s3gu ys_a3gr ipv6_X1H
+                             }
+                             }
+                         }; } in
+                   jump go2_s3gu
+                     (ghc-prim:GHC.Magic.lazy @[(Int, Int, Int)] ipv5_a2LS) ipv2_a2HU
+                   }
+                   })
+              }
+              };
+            : ipv2_a2yS ipv3_a2yT ->
+              case ghc-internal:GHC.Internal.IO.Exception.ioError1
+                     @Int ghc-internal:GHC.Internal.System.IO.readIO2 ipv_a22G
+              of {}
+          }
+      }
+      }
+      }
+
+-- RHS size: {terms: 1, types: 0, coercions: 3, joins: 0/0}
+main :: IO ()
+[GblId,
+ Arity=1,
+ Str=<L>,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=ALWAYS_IF(arity=0,unsat_ok=True,boring_ok=True)}]
+main
+  = Main.main1
+    `cast` (Sym (ghc-prim:GHC.Types.N:IO[0] <()>_R)
+            :: (ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+                -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld, () #))
+               ~R# IO ())
+
+-- RHS size: {terms: 2, types: 1, coercions: 3, joins: 0/0}
+Main.main2
+  :: ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+     -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld, () #)
+[GblId,
+ Arity=1,
+ Str=<L>,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=IF_ARGS [] 20 60}]
+Main.main2
+  = ghc-internal:GHC.Internal.TopHandler.runMainIO1
+      @()
+      (Main.main1
+       `cast` (Sym (ghc-prim:GHC.Types.N:IO[0] <()>_R)
+               :: (ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+                   -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld, () #))
+                  ~R# IO ()))
+
+-- RHS size: {terms: 1, types: 0, coercions: 3, joins: 0/0}
+:Main.main :: IO ()
+[GblId,
+ Arity=1,
+ Str=<L>,
+ Unf=Unf{Src=<vanilla>, TopLvl=True,
+         Value=True, ConLike=True, WorkFree=True, Expandable=True,
+         Guidance=ALWAYS_IF(arity=0,unsat_ok=True,boring_ok=True)}]
+:Main.main
+  = Main.main2
+    `cast` (Sym (ghc-prim:GHC.Types.N:IO[0] <()>_R)
+            :: (ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld
+                -> (# ghc-prim:GHC.Prim.State# ghc-prim:GHC.Prim.RealWorld, () #))
+               ~R# IO ())
+
+

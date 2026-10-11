@@ -1,0 +1,11 @@
+prepared fannkuchredux-rust-4
+prepared fannkuchredux-gcc-5-gcc
+prepared fannkuchredux-gcc-5-llvm
+prepared fannkuchredux-rust-5
+prepared fannkuchredux-go-3
+excluded fannkuchredux-chapel-2 Command '['/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-chapel-2', '7']' returned non-zero exit status 1.
+excluded fannkuchredux-julia-2 output differs for N=7: b'233\nPfannkuchen(7) = 16\n'; 
+prepared fannkuchredux-rust-2
+excluded fannkuchredux-julia-3 file=no', '--history-file=no', '-O3', '--', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-3.jl', '7']' returned non-zero exit status 1.
+prepared fannkuchredux-gcc-2-gcc
+prepared fannkuchredux-gcc-2-llvm

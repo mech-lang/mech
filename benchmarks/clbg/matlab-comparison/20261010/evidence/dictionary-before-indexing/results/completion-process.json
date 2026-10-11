@@ -1,0 +1,14 @@
+{
+  "pid": 45272,
+  "command": [
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/finish.py",
+    "--site",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site",
+    "--array-audit-dir",
+    "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-png/iversonian-sources",
+    "--node",
+    "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node"
+  ],
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/results/completion.log"
+}

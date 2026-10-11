@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "previous_sha256": "58a155d66574d7deb7972d1725f241216266b19504f3833d6b2e4b9d84cc49ee",
+  "current_sha256": "73fbca13a7196acf8b34a745ff9cd13a2fc73846e8cbb304e7be37926a6d6b58",
+  "preserved_endpoint_programs": 456,
+  "preserved_source_files": 434,
+  "preserved_timing_samples": 1444,
+  "new_languages": [
+    "zig",
+    "odin",
+    "roc",
+    "elm"
+  ],
+  "new_endpoint_programs": 53
+}

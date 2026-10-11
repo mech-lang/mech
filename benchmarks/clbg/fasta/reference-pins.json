@@ -1,0 +1,20 @@
+{
+  "small": {
+    "n": 1000,
+    "path": "upstream/fasta-output1000.txt",
+    "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/fasta-output.txt",
+    "bytes": 10245,
+    "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73"
+  },
+  "full": {
+    "fasta_n": 25000000,
+    "bytes": 254166745,
+    "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+    "three_letters": 125000000,
+    "generation_command": [
+      "benchmarks/clbg/knucleotide/.build/fasta",
+      "25000000"
+    ],
+    "small_input_matches_official": true
+  }
+}

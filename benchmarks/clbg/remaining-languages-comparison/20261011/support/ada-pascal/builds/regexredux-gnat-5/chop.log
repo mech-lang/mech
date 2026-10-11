@@ -1,0 +1,12 @@
+splitting /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/ada/regexredux-gnat-5.adb into:
+   dna.ads
+   u.ads
+   regexredux.adb
+   preprocessing.ads
+   dna-matching.ads
+   dna-replacing.ads
+   preprocessing.adb
+   dna-matching.adb
+   dna-replacing.adb
+   block_input.ads
+   block_input.adb

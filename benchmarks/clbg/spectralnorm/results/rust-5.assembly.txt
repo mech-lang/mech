@@ -1,0 +1,360 @@
+Hot matrix traversal and division routines extracted from llvm-objdump --demangle --disassemble --no-show-raw-insn.
+
+0000000100001614 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>>:
+100001614:     	sub	sp, sp, #0x160
+100001618:     	stp	x28, x27, [sp, #0x100]
+10000161c:     	stp	x26, x25, [sp, #0x110]
+100001620:     	stp	x24, x23, [sp, #0x120]
+100001624:     	stp	x22, x21, [sp, #0x130]
+100001628:     	stp	x20, x19, [sp, #0x140]
+10000162c:     	stp	x29, x30, [sp, #0x150]
+100001630:     	add	x29, sp, #0x150
+100001634:     	str	x0, [sp, #0x50]
+100001638:     	str	x3, [sp, #0x60]
+10000163c:     	lsr	x19, x0, #1
+100001640:     	cmp	x19, x3
+100001644:     	b.hs	0x1000017a0 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x18c>
+100001648:     	ldp	x9, x8, [x4, #0x8]
+10000164c:     	add	x10, x8, x9
+100001650:     	subs	x10, x10, x8
+100001654:     	csel	x10, xzr, x10, lo
+100001658:     	cmp	x9, x10
+10000165c:     	csel	x9, x9, x10, lo
+100001660:     	str	x9, [sp, #0x10]
+100001664:     	cbz	x9, 0x100001858 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x244>
+100001668:     	ldr	x0, [x4]
+10000166c:     	ldr	x9, [x5, #0x8]
+100001670:     	cbz	x9, 0x1000018ac <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x298>
+100001674:     	mov	x12, #0x0               ; =0
+100001678:     	ldr	x21, [x5]
+10000167c:     	add	x22, x21, x9, lsl #4
+100001680:     	lsl	x9, x8, #1
+100001684:     	add	x10, x9, #0x3
+100001688:     	add	x9, x9, #0x2
+10000168c:     	mul	x23, x10, x9
+100001690:     	lsl	x10, x8, #3
+100001694:     	mov	w11, #0x1               ; =1
+100001698:     	bfi	x11, x8, #1, #63
+10000169c:     	mul	x24, x9, x11
+1000016a0:     	mul	x9, x8, x11
+1000016a4:     	mov	w11, #0x6               ; =6
+1000016a8:     	bfi	x11, x8, #3, #61
+1000016ac:     	add	x13, x10, #0xe
+1000016b0:     	add	x10, x10, #0xa
+1000016b4:     	lsl	x27, x9, #1
+1000016b8:     	str	x0, [sp, #0x8]
+1000016bc:     	stp	x11, x12, [sp, #0x30]
+1000016c0:     	mov	x20, #0x0               ; =0
+1000016c4:     	stp	xzr, xzr, [x29, #-0x80]
+1000016c8:     	stp	x10, x27, [sp, #0x20]
+1000016cc:     	mov	x8, x11
+1000016d0:     	stp	x24, x23, [sp, #0x40]
+1000016d4:     	mov	x9, x10
+1000016d8:     	str	x13, [sp, #0x18]
+1000016dc:     	mov	x10, x13
+1000016e0:     	stp	xzr, xzr, [x29, #-0x70]
+1000016e4:     	mov	x28, x10
+1000016e8:     	mov	x26, x9
+1000016ec:     	mov	x19, x8
+1000016f0:     	add	x25, x21, x20, lsl #3
+1000016f4:     	add	x8, x20, x27, lsr #1
+1000016f8:     	add	x8, x8, #0x1
+1000016fc:     	ucvtf	d2, x8
+100001700:     	ldp	d0, d1, [x25]
+100001704:     	add	x8, x20, x24, lsr #1
+100001708:     	add	x9, x8, #0x2
+10000170c:     	ucvtf	d3, x9
+100001710:     	add	x8, x8, #0x1
+100001714:     	ucvtf	d4, x8
+100001718:     	add	x20, x20, #0x2
+10000171c:     	add	x8, x20, x23, lsr #1
+100001720:     	ucvtf	d5, x8
+100001724:     	sub	x0, x29, #0x80
+100001728:     	sub	x1, x29, #0x70
+10000172c:     	bl	0x10000219c <spectralnorm_rust_5::div_and_add>
+100001730:     	add	x10, x28, #0x8
+100001734:     	add	x23, x23, x28
+100001738:     	add	x9, x26, #0x8
+10000173c:     	add	x24, x24, x26
+100001740:     	add	x8, x19, #0x8
+100001744:     	add	x27, x27, x19
+100001748:     	add	x11, x25, #0x10
+10000174c:     	cmp	x11, x22
+100001750:     	b.ne	0x1000016e4 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0xd0>
+100001754:     	ldp	q0, q1, [x29, #-0x80]
+100001758:     	faddp.2d	v0, v0, v1
+10000175c:     	ldr	x0, [sp, #0x8]
+100001760:     	ldp	x8, x24, [sp, #0x38]
+100001764:     	str	q0, [x0, x8, lsl #4]
+100001768:     	add	x12, x8, #0x1
+10000176c:     	ldr	x23, [sp, #0x48]
+100001770:     	ldp	x9, x10, [sp, #0x18]
+100001774:     	add	x23, x23, x9
+100001778:     	add	x13, x9, #0x8
+10000177c:     	add	x24, x24, x10
+100001780:     	add	x10, x10, #0x8
+100001784:     	ldp	x27, x11, [sp, #0x28]
+100001788:     	add	x27, x27, x11
+10000178c:     	add	x11, x11, #0x8
+100001790:     	ldr	x9, [sp, #0x10]
+100001794:     	cmp	x12, x9
+100001798:     	b.ne	0x1000016bc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0xa8>
+10000179c:     	b	0x100001858 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x244>
+1000017a0:     	tbz	w1, #0x0, 0x100001878 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x264>
+1000017a4:     	mov	x20, x5
+1000017a8:     	mov	x21, x4
+1000017ac:     	mov	x22, x2
+1000017b0:     	bl	0x100006ab8 <rayon_core::current_num_threads>
+1000017b4:     	mov	x4, x21
+1000017b8:     	mov	x5, x20
+1000017bc:     	lsr	x8, x22, #1
+1000017c0:     	cmp	x8, x0
+1000017c4:     	csel	x8, x8, x0, hi
+1000017c8:     	str	x8, [sp, #0x58]
+1000017cc:     	stur	x19, [x29, #-0x70]
+1000017d0:     	ldr	x8, [x21, #0x8]
+1000017d4:     	subs	x8, x8, x19
+1000017d8:     	b.lo	0x100001894 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x280>
+1000017dc:     	ldr	x9, [x4]
+1000017e0:     	add	x10, x9, x19, lsl #4
+1000017e4:     	ldr	x11, [x4, #0x10]
+1000017e8:     	add	x12, x11, x19
+1000017ec:     	add	x13, sp, #0x50
+1000017f0:     	sub	x14, x29, #0x70
+1000017f4:     	stp	x13, x14, [sp, #0x68]
+1000017f8:     	add	x13, sp, #0x58
+1000017fc:     	stp	x13, x10, [sp, #0x78]
+100001800:     	stp	x8, x12, [sp, #0x88]
+100001804:     	stp	x5, x14, [sp, #0x98]
+100001808:     	stp	x13, x9, [sp, #0xa8]
+10000180c:     	stp	x19, x11, [sp, #0xb8]
+100001810:     	str	x5, [sp, #0xc8]
+100001814:     	adrp	x0, 0x100060000 <dyld_stub_binder+0x100060000>
+100001818:     	add	x0, x0, #0xc80
+10000181c:     	ldr	x8, [x0]
+100001820:     	blr	x8
+100001824:     	ldr	x1, [x0]
+100001828:     	cbnz	x1, 0x10000184c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x238>
+10000182c:     	mov	x19, x0
+100001830:     	bl	0x1000057ec <rayon_core::registry::global_registry>
+100001834:     	ldr	x8, [x0]
+100001838:     	ldr	x1, [x19]
+10000183c:     	cbz	x1, 0x1000018d4 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x2c0>
+100001840:     	ldr	x9, [x1, #0x110]
+100001844:     	cmp	x9, x8
+100001848:     	b.ne	0x1000018e4 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x2d0>
+10000184c:     	add	x0, sp, #0x68
+100001850:     	mov	w2, #0x0                ; =0
+100001854:     	bl	0x100001b5c <rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}>
+100001858:     	ldp	x29, x30, [sp, #0x150]
+10000185c:     	ldp	x20, x19, [sp, #0x140]
+100001860:     	ldp	x22, x21, [sp, #0x130]
+100001864:     	ldp	x24, x23, [sp, #0x120]
+100001868:     	ldp	x26, x25, [sp, #0x110]
+10000186c:     	ldp	x28, x27, [sp, #0x100]
+100001870:     	add	sp, sp, #0x160
+100001874:     	ret
+100001878:     	cbz	x2, 0x100001648 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x34>
+10000187c:     	lsr	x8, x2, #1
+100001880:     	str	x8, [sp, #0x58]
+100001884:     	stur	x19, [x29, #-0x70]
+100001888:     	ldr	x8, [x4, #0x8]
+10000188c:     	subs	x8, x8, x19
+100001890:     	b.hs	0x1000017dc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x1c8>
+100001894:     	adrp	x0, 0x100049000 <GCC_except_table586+0x20>
+100001898:     	add	x0, x0, #0x908
+10000189c:     	adrp	x2, 0x10005c000 <dyld_stub_binder+0x10005c000>
+1000018a0:     	add	x2, x2, #0x150
+1000018a4:     	mov	w1, #0x13               ; =19
+1000018a8:     	bl	0x1000469ec <core::panicking::panic_fmt>
+1000018ac:     	ldr	x8, [sp, #0x10]
+1000018b0:     	lsl	x1, x8, #4
+1000018b4:     	ldp	x29, x30, [sp, #0x150]
+1000018b8:     	ldp	x20, x19, [sp, #0x140]
+1000018bc:     	ldp	x22, x21, [sp, #0x130]
+1000018c0:     	ldp	x24, x23, [sp, #0x120]
+1000018c4:     	ldp	x26, x25, [sp, #0x110]
+1000018c8:     	ldp	x28, x27, [sp, #0x100]
+1000018cc:     	add	sp, sp, #0x160
+1000018d0:     	b	0x100046c1c <dyld_stub_binder+0x100046c1c>
+1000018d4:     	add	x0, x8, #0x80
+1000018d8:     	add	x1, sp, #0x68
+1000018dc:     	bl	0x100040eb0 <<rayon_core::registry::Registry>::in_worker_cold::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>>
+1000018e0:     	b	0x100001858 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x244>
+1000018e4:     	add	x0, x8, #0x80
+1000018e8:     	add	x2, sp, #0x68
+1000018ec:     	bl	0x1000410b8 <<rayon_core::registry::Registry>::in_worker_cross::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>>
+1000018f0:     	b	0x100001858 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::mult_at_av::{closure#0}>::{closure#0}>>+0x244>
+
+
+00000001000018f4 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>>:
+1000018f4:     	sub	sp, sp, #0x120
+1000018f8:     	stp	x28, x27, [sp, #0xc0]
+1000018fc:     	stp	x26, x25, [sp, #0xd0]
+100001900:     	stp	x24, x23, [sp, #0xe0]
+100001904:     	stp	x22, x21, [sp, #0xf0]
+100001908:     	stp	x20, x19, [sp, #0x100]
+10000190c:     	stp	x29, x30, [sp, #0x110]
+100001910:     	add	x29, sp, #0x110
+100001914:     	str	x0, [sp, #0x10]
+100001918:     	str	x3, [sp, #0x20]
+10000191c:     	lsr	x19, x0, #1
+100001920:     	cmp	x19, x3
+100001924:     	b.hs	0x100001a04 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x110>
+100001928:     	ldp	x8, x20, [x4, #0x8]
+10000192c:     	add	x9, x20, x8
+100001930:     	subs	x9, x9, x20
+100001934:     	csel	x9, xzr, x9, lo
+100001938:     	cmp	x8, x9
+10000193c:     	csel	x8, x8, x9, lo
+100001940:     	str	x8, [sp, #0x8]
+100001944:     	cbz	x8, 0x100001abc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x1c8>
+100001948:     	ldr	x21, [x4]
+10000194c:     	ldr	x8, [x5, #0x8]
+100001950:     	cbz	x8, 0x100001b10 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x21c>
+100001954:     	mov	x25, #0x0               ; =0
+100001958:     	ldr	x22, [x5]
+10000195c:     	add	x23, x22, x8, lsl #4
+100001960:     	lsl	x24, x20, #1
+100001964:     	add	x8, x25, x20
+100001968:     	lsl	x9, x8, #1
+10000196c:     	mov	w26, #0x1               ; =1
+100001970:     	stp	xzr, xzr, [x29, #-0x80]
+100001974:     	bfi	x26, x8, #1, #63
+100001978:     	stp	xzr, xzr, [x29, #-0x70]
+10000197c:     	add	x27, x9, #0x2
+100001980:     	mov	x8, x24
+100001984:     	mov	x28, x22
+100001988:     	add	x9, x8, #0x1
+10000198c:     	mul	x10, x9, x8
+100001990:     	add	x10, x26, x10, lsr #1
+100001994:     	ucvtf	d2, x10
+100001998:     	add	x19, x8, #0x2
+10000199c:     	mul	x9, x19, x9
+1000019a0:     	lsr	x9, x9, #1
+1000019a4:     	add	x10, x9, x26
+1000019a8:     	ucvtf	d3, x10
+1000019ac:     	add	x9, x9, x27
+1000019b0:     	ucvtf	d4, x9
+1000019b4:     	ldp	d0, d1, [x28], #0x10
+1000019b8:     	add	x8, x8, #0x3
+1000019bc:     	mul	x8, x8, x19
+1000019c0:     	add	x8, x27, x8, lsr #1
+1000019c4:     	ucvtf	d5, x8
+1000019c8:     	sub	x0, x29, #0x80
+1000019cc:     	sub	x1, x29, #0x70
+1000019d0:     	bl	0x10000219c <spectralnorm_rust_5::div_and_add>
+1000019d4:     	mov	x8, x19
+1000019d8:     	cmp	x28, x23
+1000019dc:     	b.ne	0x100001988 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x94>
+1000019e0:     	ldp	q0, q1, [x29, #-0x80]
+1000019e4:     	faddp.2d	v0, v0, v1
+1000019e8:     	str	q0, [x21, x25, lsl #4]
+1000019ec:     	add	x25, x25, #0x1
+1000019f0:     	add	x24, x24, #0x2
+1000019f4:     	ldr	x8, [sp, #0x8]
+1000019f8:     	cmp	x25, x8
+1000019fc:     	b.ne	0x100001964 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x70>
+100001a00:     	b	0x100001abc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x1c8>
+100001a04:     	tbz	w1, #0x0, 0x100001adc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x1e8>
+100001a08:     	mov	x20, x5
+100001a0c:     	mov	x21, x4
+100001a10:     	mov	x22, x2
+100001a14:     	bl	0x100006ab8 <rayon_core::current_num_threads>
+100001a18:     	mov	x4, x21
+100001a1c:     	mov	x5, x20
+100001a20:     	lsr	x8, x22, #1
+100001a24:     	cmp	x8, x0
+100001a28:     	csel	x8, x8, x0, hi
+100001a2c:     	str	x8, [sp, #0x18]
+100001a30:     	stur	x19, [x29, #-0x70]
+100001a34:     	ldr	x8, [x21, #0x8]
+100001a38:     	subs	x8, x8, x19
+100001a3c:     	b.lo	0x100001af8 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x204>
+100001a40:     	ldr	x9, [x4]
+100001a44:     	add	x10, x9, x19, lsl #4
+100001a48:     	ldr	x11, [x4, #0x10]
+100001a4c:     	add	x12, x11, x19
+100001a50:     	add	x13, sp, #0x10
+100001a54:     	sub	x14, x29, #0x70
+100001a58:     	stp	x13, x14, [sp, #0x28]
+100001a5c:     	add	x13, sp, #0x18
+100001a60:     	stp	x13, x10, [sp, #0x38]
+100001a64:     	stp	x8, x12, [sp, #0x48]
+100001a68:     	stp	x5, x14, [sp, #0x58]
+100001a6c:     	stp	x13, x9, [sp, #0x68]
+100001a70:     	stp	x19, x11, [sp, #0x78]
+100001a74:     	str	x5, [sp, #0x88]
+100001a78:     	adrp	x0, 0x100060000 <dyld_stub_binder+0x100060000>
+100001a7c:     	add	x0, x0, #0xc80
+100001a80:     	ldr	x8, [x0]
+100001a84:     	blr	x8
+100001a88:     	ldr	x1, [x0]
+100001a8c:     	cbnz	x1, 0x100001ab0 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x1bc>
+100001a90:     	mov	x19, x0
+100001a94:     	bl	0x1000057ec <rayon_core::registry::global_registry>
+100001a98:     	ldr	x8, [x0]
+100001a9c:     	ldr	x1, [x19]
+100001aa0:     	cbz	x1, 0x100001b3c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x248>
+100001aa4:     	ldr	x9, [x1, #0x110]
+100001aa8:     	cmp	x9, x8
+100001aac:     	b.ne	0x100001b4c <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x258>
+100001ab0:     	add	x0, sp, #0x28
+100001ab4:     	mov	w2, #0x0                ; =0
+100001ab8:     	bl	0x100001e60 <rayon_core::join::join_context::<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}>
+100001abc:     	ldp	x29, x30, [sp, #0x110]
+100001ac0:     	ldp	x20, x19, [sp, #0x100]
+100001ac4:     	ldp	x22, x21, [sp, #0xf0]
+100001ac8:     	ldp	x24, x23, [sp, #0xe0]
+100001acc:     	ldp	x26, x25, [sp, #0xd0]
+100001ad0:     	ldp	x28, x27, [sp, #0xc0]
+100001ad4:     	add	sp, sp, #0x120
+100001ad8:     	ret
+100001adc:     	cbz	x2, 0x100001928 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x34>
+100001ae0:     	lsr	x8, x2, #1
+100001ae4:     	str	x8, [sp, #0x18]
+100001ae8:     	stur	x19, [x29, #-0x70]
+100001aec:     	ldr	x8, [x4, #0x8]
+100001af0:     	subs	x8, x8, x19
+100001af4:     	b.hs	0x100001a40 <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x14c>
+100001af8:     	adrp	x0, 0x100049000 <GCC_except_table586+0x20>
+100001afc:     	add	x0, x0, #0x908
+100001b00:     	adrp	x2, 0x10005c000 <dyld_stub_binder+0x10005c000>
+100001b04:     	add	x2, x2, #0x150
+100001b08:     	mov	w1, #0x13               ; =19
+100001b0c:     	bl	0x1000469ec <core::panicking::panic_fmt>
+100001b10:     	ldr	x8, [sp, #0x8]
+100001b14:     	lsl	x1, x8, #4
+100001b18:     	mov	x0, x21
+100001b1c:     	ldp	x29, x30, [sp, #0x110]
+100001b20:     	ldp	x20, x19, [sp, #0x100]
+100001b24:     	ldp	x22, x21, [sp, #0xf0]
+100001b28:     	ldp	x24, x23, [sp, #0xe0]
+100001b2c:     	ldp	x26, x25, [sp, #0xd0]
+100001b30:     	ldp	x28, x27, [sp, #0xc0]
+100001b34:     	add	sp, sp, #0x120
+100001b38:     	b	0x100046c1c <dyld_stub_binder+0x100046c1c>
+100001b3c:     	add	x0, x8, #0x80
+100001b40:     	add	x1, sp, #0x28
+100001b44:     	bl	0x100040fb4 <<rayon_core::registry::Registry>::in_worker_cold::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>>
+100001b48:     	b	0x100001abc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x1c8>
+100001b4c:     	add	x0, x8, #0x80
+100001b50:     	add	x2, sp, #0x28
+100001b54:     	bl	0x100041190 <<rayon_core::registry::Registry>::in_worker_cross::<rayon_core::join::join_context<rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>::{closure#0}, rayon::iter::plumbing::bridge_producer_consumer::helper<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>::{closure#1}, (), ()>::{closure#0}, ((), ())>>
+100001b58:     	b	0x100001abc <rayon::iter::plumbing::bridge_producer_consumer::helper::<rayon::iter::enumerate::EnumerateProducer<rayon::slice::IterMutProducer<spectralnorm_rust_5::F64x2>>, rayon::iter::for_each::ForEachConsumer<spectralnorm_rust_5::mult<spectralnorm_rust_5::a>::{closure#0}>>+0x1c8>
+
+
+000000010000219c <spectralnorm_rust_5::div_and_add>:
+10000219c:     	mov.d	v0[1], v1[0]
+1000021a0:     	mov.d	v2[1], v3[0]
+1000021a4:     	fdiv.2d	v1, v0, v2
+1000021a8:     	ldr	q2, [x0]
+1000021ac:     	fadd.2d	v1, v1, v2
+1000021b0:     	str	q1, [x0]
+1000021b4:     	mov.d	v4[1], v5[0]
+1000021b8:     	fdiv.2d	v0, v0, v4
+1000021bc:     	ldr	q1, [x1]
+1000021c0:     	fadd.2d	v0, v0, v1
+1000021c4:     	str	q0, [x1]
+1000021c8:     	ret
+

@@ -1,0 +1,147 @@
+Revision history for Perl extension Math::GMP.
+
+2.20  2020-02-09 Shlomif
+    - Try to fix tests when using libgmp version 6.2.0
+        - https://rt.cpan.org/Public/Bug/Display.html?id=131718
+        - Thanks to GREGOA and HVDS and Debian.
+        - The tests should still pass on earlier libgmps.
+
+2.19  2018-04-08 Shlomif
+    - Fix int() on large unsigned integers.
+        - https://github.com/turnstep/Math-GMP/issues/2
+        - Thanks to @trizen .
+
+2.18  2018-04-07 Shlomif
+    - Depend on Alien::GMP to automatically install GMP when missing
+        - See https://rt.cpan.org/Ticket/Display.html?id=125018
+        - See https://github.com/turnstep/Math-GMP/pull/1
+
+2.17  2018-04-05 Shlomif
+    - Correct the link to the GitHub repository.
+        - See https://rt.cpan.org/Ticket/Display.html?id=125018
+
+2.16  2017-12-18 Shlomif
+    - Fix behaviour under "use feature 'bitwise'"
+        - See https://rt.cpan.org/Public/Bug/Display.html?id=123907
+        - Thanks to Sisphus for the report and perlxs for some insights.
+
+2.15  2017-06-25 Shlomif
+    - Bump required perl version to 5.10.x.
+        - There were test failures with 5.8.x and even 5.10.x is old enough.
+        - http://www.cpantesters.org/cpan/report/256184b2-58bf-11e7-a074-e1beba07c9dd
+
+2.14  2017-02-01 Shlomif
+    - Hopefully fix the GPG signature.
+        - https://rt.cpan.org/Ticket/Display.html?id=120062
+        - Thanks to Pavel Mateja for the report.
+
+2.13  2016-11-18 Shlomif
+    - Fix the tests on older libgmps.
+        - See https://rt.cpan.org/Ticket/Display.html?id=118816
+        - Thanks to Hugo van der Sanden for the patches.
+    - Refactoring of the test suite.
+
+2.12  2016-11-09 Shlomif
+    - Add support for testing methods that return lists.
+    - Add broot, brootrem, bsqrtrem, is_perfect_power, is_perfect_square
+        - Thanks to Hugo van der Sanden for the patches
+        - https://rt.cpan.org/Ticket/Display.html?id=118677
+
+2.11  2015-08-16 Shlomif
+    - Got the distribution to have full POD coverage and check all functions
+    for usage.
+        - t/check-funcs-ret-value--rt92593.t
+        - https://rt.cpan.org/Public/Bug/Display.html?id=92593
+        - CPAN Day!
+
+2.10  2015-08-12 Shlomif
+    - Throw an exception on invalid input to Math::GMP->new;
+        - https://rt.cpan.org/Ticket/Display.html?id=27521
+        - Thanks to SISYPHUS for the report.
+    - Put RELEASE_TESTING tests under xt instead of t.
+        - https://rt.cpan.org/Ticket/Display.html?id=106365
+        - Thanks to ilmari for the report and suggested fix.
+    - Document and test some functions that were improperly documented or
+    not tested.
+        - t/check-funcs-ret-value--rt92593.t
+        - https://rt.cpan.org/Public/Bug/Display.html?id=92593
+        - Still aiming for full POD Coverage.
+
+2.09  2015-07-29 Shlomif
+    - Add the binary-left-shift / << operator.
+    - Add the binary-right-shift / >> operator.
+    - Convert the build system to Dist-Zilla to ease future maintenance.
+    - Add a call to Devel::CheckLib for finding the "gmp.h" header.
+
+2.08  2015-07-28 Shlomif
+    - Add a link to the version control repository at various places.
+    - Get rid of indirect object notation in the code and the examples.
+        - It’s a sign of Ancient Perl.
+    - Overload bool to avoid fallback to intify (Hugo)
+        - Fixes RT #101443
+            - https://rt.cpan.org/Ticket/Display.html?id=101443
+        - Modified patch applied by Shlomif.
+    - Add tests from DANAJ for large numbers in some functions.
+        - RT #92641
+            - https://rt.cpan.org/Ticket/Display.html?id=92641
+
+2.07  2014-01-26 Hugo
+    - Go direct to XS for more speed
+    - add lcm/blcm, bsqrt, bmodinv
+
+2.06  2009-09-17 Greg
+    - Make Makefile.PL more forgiving of gmp library locations. (CPAN bug #46323)
+    - Update link to libgmp.org in INSTALL file (CPAN bug #46324)
+
+2.05  2008-10-06 Greg
+    - New maintainer: Greg Sabino Mullane
+    - Allow tests to work on 64-bit platforms. Patch from Flo.
+      (CPAN bugs #5960, #30327, #27641, #12751, #15459)
+    - Add support for probab_prime function. Patch by shlomif@iglu.org.il.
+      (CPAN bug #6184)
+    - Get smarter about detecting lack of GMP libraries.
+      (CPAN bug #18709)
+    - Add META.yml and some more tests.
+
+2.04  2004-09-28 cturner
+    - added patch from Nicholas Oxhøj for constructing
+      with different bases (nicholas@oxhoej.dk) (CPAN bug #4472)
+
+2.03  2002-02-16 Tels
+    - added internal functions gmp_copy, gmp_tstbit, gmp_sqrt
+    - moved test.pl to t/gmppmt, made it use Test and use strict
+    - moved GMP.pm to lib/Math/GMP.pm
+    - documented some of the public methods
+    - fixed README
+    - added INSTALL file
+
+2.02  2002-02-15 Tels
+    - added internal functions gmp_fac, gmp_fib, and_two, or_two, xor_two
+    - added band, bior, bxor, bfac
+    - added overload for &, ^ and |
+    - tests for new functions
+
+2.00  2002-02-08 cturner
+    - remove gmp inside of package, performance improvements, some new ops
+
+1.07  2001-04-22 cturner
+
+1.06  2001-04-10 cturner
+
+1.05  2001-02-23 cturner
+
+1.04  2001-02-13 cturner
+
+1.03  2001-01-25 cturner
+
+1.02  2001-01-20 cturner
+
+1.01  2000-03-21 cturner
+
+1.00  2000-02-25 cturner
+
+0.9   1999-09-19 cturner
+
+0.01  1999-09-17 cturner
+    - original version; created by h2xs 1.19
+

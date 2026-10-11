@@ -1,0 +1,600 @@
+{
+  "commit": "27ae402a948ec85c02125a64363e29585ed21e41",
+  "normalization": "One assignment or sequential executable statement per line; nested/chained assignments expanded; structural separators and existing continuation wrapping retained. See LOC-NORMALIZATION.md.",
+  "status": "Manual source audits with hash and line-count verification; array-language programs not executed locally.",
+  "rows": [
+    {
+      "benchmark": "nbody",
+      "language": "mech",
+      "file": "nbody-mech-current.mec",
+      "sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "physical_loc": 32,
+      "normalized_loc": 32,
+      "expansions": [],
+      "current_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec"
+    },
+    {
+      "benchmark": "nbody",
+      "language": "growler.k",
+      "file": "nbody.growler.k",
+      "sha256": "dde8bfa6794a2d8c42baa5ab734eddd8ed5a5bc2eb4bf606d2cffae0891415d8",
+      "physical_loc": 19,
+      "normalized_loc": 43,
+      "expansions": [
+        {
+          "line": 3,
+          "extra_lines": 2,
+          "original": "solarmass:4*/2#3.14159265358979323;daysperyear:365.24;dt:0.01",
+          "units": [
+            "solarmass:4*/2#3.14159265358979323",
+            "daysperyear:365.24",
+            "dt:0.01"
+          ]
+        },
+        {
+          "line": 13,
+          "extra_lines": 1,
+          "original": "(I;J):&~|\\=n:#m",
+          "units": [
+            "n:#m",
+            "(I;J):&~|\\=n"
+          ]
+        },
+        {
+          "line": 14,
+          "extra_lines": 1,
+          "original": "P0:,/I+/:0 5 10;P1:,/J+/:0 5 10",
+          "units": [
+            "P0:,/I+/:0 5 10",
+            "P1:,/J+/:0 5 10"
+          ]
+        },
+        {
+          "line": 15,
+          "extra_lines": 6,
+          "original": "D0:!10;D1:10+D0;D2:20+D0;Ni:10!!30;V0:!5;V1:5+V0;V2:10+V0",
+          "units": [
+            "D0:!10",
+            "D1:10+D0",
+            "D2:20+D0",
+            "Ni:10!!30",
+            "V0:!5",
+            "V1:5+V0",
+            "V2:10+V0"
+          ]
+        },
+        {
+          "line": 17,
+          "extra_lines": 1,
+          "original": "ks:{(&I=x),30+&J=x}'!n;(F0;F1;F2;F3):+,/ks+/:0 10 20",
+          "units": [
+            "ks:{(&I=x),30+&J=x}'!n",
+            "(F0;F1;F2;F3):+,/ks+/:0 10 20"
+          ]
+        },
+        {
+          "line": 18,
+          "extra_lines": 7,
+          "original": "adv:{[z]d:(p P0)-p P1;dd:d*d;N:(dd D0)+(dd D1)+dd D2;fv:(a,a:d%(N*%N)Ni)*Mf;v+:(fv F0)+(fv F1)+(fv F2)+fv F3;p+:v}",
+          "units": [
+            "adv:{[z]",
+            "  d:(p P0)-p P1",
+            "  dd:d*d",
+            "  N:(dd D0)+(dd D1)+dd D2",
+            "  a:d%(N*%N)Ni",
+            "  fv:(a,a)*Mf",
+            "  v+:(fv F0)+(fv F1)+(fv F2)+fv F3",
+            "  p+:v}"
+          ]
+        },
+        {
+          "line": 20,
+          "extra_lines": 3,
+          "original": "report:{d:(p P0)-p P1;dd:d*d;vv:v*v",
+          "units": [
+            "report:{",
+            "  d:(p P0)-p P1",
+            "  dd:d*d",
+            "  vv:v*v"
+          ]
+        },
+        {
+          "line": 22,
+          "extra_lines": 1,
+          "original": "        r:$_0.5+1e9*E;`0:\"-0.\"/\"-.\"\\(-9_r),\".\",-9#r}",
+          "units": [
+            "  r:$_0.5+1e9*E",
+            "  `0:\"-0.\"/\"-.\"\\(-9_r),\".\",-9#r}"
+          ]
+        },
+        {
+          "line": 25,
+          "extra_lines": 2,
+          "original": "report 0;(. `argv 2)adv/0;report 0",
+          "units": [
+            "report 0",
+            "(. `argv 2)adv/0",
+            "report 0"
+          ]
+        }
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/nbody/nbody.growler.k"
+    },
+    {
+      "benchmark": "nbody",
+      "language": "goal",
+      "file": "nbody.goal",
+      "sha256": "010e42ed1a8d6c4f684b8f118d29bc273ac3e9388bf610230b2045f252374036",
+      "physical_loc": 20,
+      "normalized_loc": 45,
+      "expansions": [
+        {
+          "line": 3,
+          "extra_lines": 2,
+          "original": "solarmass:4*/2#3.14159265358979323; daysperyear:365.24; dt:0.01",
+          "units": [
+            "solarmass:4*/2#3.14159265358979323",
+            "daysperyear:365.24",
+            "dt:0.01"
+          ]
+        },
+        {
+          "line": 12,
+          "extra_lines": 1,
+          "original": "cmb:{(&|i:!x;,/(1_i)_`i)}",
+          "units": [
+            "  i:!x",
+            "cmb:{(&|i;,/(1_i)_`i)}"
+          ]
+        },
+        {
+          "line": 13,
+          "extra_lines": 2,
+          "original": "(I;J):ij:cmb n:#m",
+          "units": [
+            "n:#m",
+            "ij:cmb n",
+            "(I;J):ij"
+          ]
+        },
+        {
+          "line": 14,
+          "extra_lines": 1,
+          "original": "P0:,/I+´0 5 10; P1:,/J+´0 5 10",
+          "units": [
+            "P0:,/I+´0 5 10",
+            "P1:,/J+´0 5 10"
+          ]
+        },
+        {
+          "line": 15,
+          "extra_lines": 6,
+          "original": "D0:!10;D1:10+D0; D2:20+D0; Ni:10!!30; V0:!5; V1:5+V0; V2:10+V0",
+          "units": [
+            "D0:!10",
+            "D1:10+D0",
+            "D2:20+D0",
+            "Ni:10!!30",
+            "V0:!5",
+            "V1:5+V0",
+            "V2:10+V0"
+          ]
+        },
+        {
+          "line": 17,
+          "extra_lines": 1,
+          "original": "ks:{(&I=x),30+&J=x}'!n; (F0;F1;F2;F3):+,/ks+´0 10 20",
+          "units": [
+            "ks:{(&I=x),30+&J=x}'!n",
+            "(F0;F1;F2;F3):+,/ks+´0 10 20"
+          ]
+        },
+        {
+          "line": 18,
+          "extra_lines": 3,
+          "original": "adv:{[z]d:(p P0)-p P1; dd:d*d; N:(dd D0)+(dd D1)+dd D2",
+          "units": [
+            "adv:{[z]",
+            "  d:(p P0)-p P1",
+            "  dd:d*d",
+            "  N:(dd D0)+(dd D1)+dd D2"
+          ]
+        },
+        {
+          "line": 19,
+          "extra_lines": 3,
+          "original": "        fv:(a,a:d%(N*sqrt N)Ni)*Mf; p+:v+:(fv F0)+(fv F1)+(fv F2)+fv F3}",
+          "units": [
+            "  a:d%(N*sqrt N)Ni",
+            "  fv:(a,a)*Mf",
+            "  v+:(fv F0)+(fv F1)+(fv F2)+fv F3",
+            "  p+:v}"
+          ]
+        },
+        {
+          "line": 20,
+          "extra_lines": 2,
+          "original": "report:{E:(1%dt*dt*dt*dt)*(0.5*+/m*+/3$v*v)-+/(*/m ij)%sqrt+/d*d:-/(3$p)@`´ij",
+          "units": [
+            "report:{",
+            "  d:-/(3$p)@`´ij",
+            "  E:(1%dt*dt*dt*dt)*(0.5*+/m*+/3$v*v)-+/(*/m ij)%sqrt+/d*d"
+          ]
+        },
+        {
+          "line": 21,
+          "extra_lines": 1,
+          "original": "        say{\"-0.\"/\"-.\"\\\".\"/(0,-9+&x)_x:$\"i\"$round 1e9*x}E}",
+          "units": [
+            "    x:$\"i\"$round 1e9*x",
+            "  say{\"-0.\"/\"-.\"\\\".\"/(0,-9+&x)_x}E}"
+          ]
+        },
+        {
+          "line": 24,
+          "extra_lines": 3,
+          "original": "report 1; ?[n:\"i\"$ARGS 1;n;1e6]adv/1; report 1",
+          "units": [
+            "report 1",
+            "n:\"i\"$ARGS 1",
+            "?[n;n;1e6]adv/1",
+            "report 1"
+          ]
+        }
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/nbody/nbody.goal"
+    },
+    {
+      "benchmark": "nbody",
+      "language": "bqn",
+      "file": "nbody.bqn",
+      "sha256": "e3b62031dda631428991460bf15529bf6f66b4b5fdd370f3932f0514e4c7a50c",
+      "physical_loc": 63,
+      "normalized_loc": 63,
+      "expansions": [],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/nbody/nbody.bqn"
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "mech",
+      "file": "spectralnorm-mech-current.mec",
+      "sha256": "0cb8c17dbebfcdf80e27d225c131342b7b145bbc16d85fa4287fea93c8f0d59f",
+      "physical_loc": 9,
+      "normalized_loc": 9,
+      "expansions": [],
+      "current_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/spectralnorm/spectralnorm-integer.mec"
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "growler.k",
+      "file": "spectralnorm.growler.k",
+      "sha256": "024de5de397b0783b21444cd45b11602acae0aadf0907286c2ef8da09010ca09",
+      "physical_loc": 7,
+      "normalized_loc": 11,
+      "expansions": [
+        {
+          "line": 2,
+          "extra_lines": 1,
+          "original": "i:!n:. `argv 2",
+          "units": [
+            "i assignment",
+            "nested n assignment"
+          ]
+        },
+        {
+          "line": 3,
+          "extra_lines": 1,
+          "original": " A: {1%1+x+0.5*s*1+s:x+i}'i",
+          "units": [
+            "A assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 4,
+          "extra_lines": 1,
+          "original": "TA: {1%1+i+0.5*s*1+s:x+i}'i",
+          "units": [
+            "TA assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 6,
+          "extra_lines": 1,
+          "original": "u:B v:19 B/n#1.0",
+          "units": [
+            "u assignment",
+            "nested v assignment"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 5 [0.0;A] and [0.0;TA] use argument delimiters.",
+        "A and TA are matrix-value bindings of applied lambdas, not named function declarations."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/spectralnorm/spectralnorm.growler.k"
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "goal",
+      "file": "spectralnorm.goal",
+      "sha256": "7f5b6c6ac4c94ecfa9d9f415f8abdd67bbd3892a9f6e8992a64ba3c825ea68c5",
+      "physical_loc": 7,
+      "normalized_loc": 13,
+      "expansions": [
+        {
+          "line": 2,
+          "extra_lines": 1,
+          "original": "i:!n:\"i\"$(ARGS 1)or 1000",
+          "units": [
+            "i assignment",
+            "nested n assignment"
+          ]
+        },
+        {
+          "line": 3,
+          "extra_lines": 2,
+          "original": "R:16; A:{1%1+x+0.5*s*1+s:x+i}'i",
+          "units": [
+            "R assignment",
+            "A assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 4,
+          "extra_lines": 1,
+          "original": "G:{x_y#i}'[-1_b;1_b:?(R*!uc n%R),n]",
+          "units": [
+            "G assignment",
+            "nested b assignment"
+          ]
+        },
+        {
+          "line": 7,
+          "extra_lines": 2,
+          "original": "B:mt mv@; u:B v:B 9(B B@)/n#1.0",
+          "units": [
+            "B assignment",
+            "u assignment",
+            "nested v assignment"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 4 bracket semicolon separates arguments to the each call.",
+        "Lines 6 and 8 math.mmu brackets delimit function arguments."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/spectralnorm/spectralnorm.goal"
+    },
+    {
+      "benchmark": "spectralnorm",
+      "language": "bqn",
+      "file": "spectralnorm.bqn",
+      "sha256": "f4de9792cb13aee9fcb911be9cdf65fd9a65c9727607c0f12b6fdbc9bf9c30a1",
+      "physical_loc": 8,
+      "normalized_loc": 12,
+      "expansions": [
+        {
+          "line": 1,
+          "extra_lines": 3,
+          "original": "i1h←0.5×i1←1+i←↕n←•ParseFloat⊑•args",
+          "units": [
+            "i1h assignment",
+            "nested i1 assignment",
+            "nested i assignment",
+            "nested n assignment"
+          ]
+        },
+        {
+          "line": 3,
+          "extra_lines": 1,
+          "original": "a ← ⍉b ⋄ a‿b<˘¨↩",
+          "units": [
+            "a assignment",
+            "a/b modifying assignment after statement diamond"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 3 a‿b modification is one destructuring modification statement, not two packed assignments."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/spectralnorm/spectralnorm.bqn"
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "file": "knucleotide-mech-current.mec",
+      "sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "physical_loc": 17,
+      "normalized_loc": 17,
+      "expansions": [],
+      "current_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec"
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "growler.k",
+      "file": "knucleotide.growler.k",
+      "sha256": "6cbab2064c6bedb3b9d29ae4372ff0f666e414ccc948f382e0f4d0ef0025d010",
+      "physical_loc": 10,
+      "normalized_loc": 25,
+      "expansions": [
+        {
+          "line": 3,
+          "extra_lines": 5,
+          "original": "x:1:\"/dev/stdin\";h:(&x=\">\")2;s:1+h+(x@h+!200)?\"\\n\";N:#x;K:262144;P:\"ggtattttaatttatagt\"",
+          "units": [
+            "x assignment",
+            "h assignment",
+            "s assignment",
+            "N assignment",
+            "K assignment",
+            "P assignment"
+          ]
+        },
+        {
+          "line": 4,
+          "extra_lines": 6,
+          "original": "f:{[S;o]b:x@o+!K&N-o;b:b@&b>\"\\n\";d:(S 0),b;L:#S 0;p:(-1_4*c)+1_c:\"acgt\"?d",
+          "units": [
+            "f function binding/header",
+            "b assignment",
+            "b reassignment",
+            "d assignment",
+            "L assignment",
+            "p assignment",
+            "nested c assignment"
+          ]
+        },
+        {
+          "line": 5,
+          "extra_lines": 1,
+          "original": " g:&p=10;g:g@&g<$[N>o+K;0|(#d)-17;#d]",
+          "units": [
+            "g assignment",
+            "g reassignment"
+          ]
+        },
+        {
+          "line": 7,
+          "extra_lines": 2,
+          "original": "Z:f/[(();16#0;16#0;0;0);s+K*!-_-(N-s)%K];c2:Z 1;n:Z 3",
+          "units": [
+            "Z assignment",
+            "c2 assignment",
+            "n assignment"
+          ]
+        },
+        {
+          "line": 8,
+          "extra_lines": 1,
+          "original": "fm:{[k;c;n]{x,\" \",(-3_r),\".\",-3#r:$_0.5+1e5*y}'[k;c%n]@>c}",
+          "units": [
+            "fm function binding",
+            "formatter-local nested r assignment"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 4 [S;o] delimits function parameters.",
+        "Line 5 $[condition;then;else] is a conditional form.",
+        "Line 6 tuple semicolons delimit returned elements; [d;x;y] and [g;2+!16] delimit parameters/arguments.",
+        "Line 7 initial state (();16#0;16#0;0;0) is a tuple and its outer square brackets delimit scan arguments.",
+        "Line 8 [k;c;n] and [k;c%n] delimit parameters/arguments.",
+        "Lines 9 and 10 fm brackets delimit arguments.",
+        "Line 12 semicolon in the tuple separates output columns."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/knucleotide/knucleotide.growler.k"
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "goal",
+      "file": "knucleotide.goal",
+      "sha256": "e78af7a43425684e6e9957241f44721ec8d34e0d917308868e0326117bdafdb0",
+      "physical_loc": 8,
+      "normalized_loc": 16,
+      "expansions": [
+        {
+          "line": 1,
+          "extra_lines": 1,
+          "original": "d:+/1_=(x?\">TH\")_x:-read\"/dev/stdin\"",
+          "units": [
+            "d assignment",
+            "nested x assignment"
+          ]
+        },
+        {
+          "line": 2,
+          "extra_lines": 2,
+          "original": "dk:&db!¿dc:%db:\"b\"$d",
+          "units": [
+            "dk assignment",
+            "nested dc assignment",
+            "nested db assignment"
+          ]
+        },
+        {
+          "line": 3,
+          "extra_lines": 3,
+          "original": "f:{e:{>(&x!¿c)!=c:?[p.x~1;x;%x]}p:4/x^dc",
+          "units": [
+            "f function binding/header",
+            "e assignment to applied lambda result",
+            "lambda-local c assignment",
+            "nested p assignment"
+          ]
+        },
+        {
+          "line": 4,
+          "extra_lines": 1,
+          "original": " k:!e; v:\"i\"$round 1e5*(.e)%#p",
+          "units": [
+            "k assignment",
+            "v assignment"
+          ]
+        },
+        {
+          "line": 5,
+          "extra_lines": 1,
+          "original": " \"\\n\"/{\"$x \"+\".\"/(0,-3+&y)_y:$y}'[+/\"\"\\uc\"b\"$dk@´4\\k;v]}",
+          "units": [
+            "formatter expression",
+            "lambda-local nested y assignment"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 3 ?[condition;then;else] is a conditional form.",
+        "Line 5 bracket semicolon separates arguments to each.",
+        "Line 8 (f;f;g) and (1;2;s) construct tuples."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/knucleotide/knucleotide.goal"
+    },
+    {
+      "benchmark": "knucleotide",
+      "language": "bqn",
+      "file": "knucleotide.bqn",
+      "sha256": "a0d4d974545aa3c87798b27c99668ea270514158d5e66e61c5456d8582d9628b",
+      "physical_loc": 46,
+      "normalized_loc": 51,
+      "expansions": [
+        {
+          "line": 17,
+          "extra_lines": 2,
+          "original": "vsi ← {p‿c: ⟨n←≠p, s←z⊐n↓c ⋄ ≠s⟩}¨ <˘ 2↕2↓vs",
+          "units": [
+            "vsi assignment",
+            "lambda-local n assignment",
+            "lambda-local s assignment"
+          ]
+        },
+        {
+          "line": 25,
+          "extra_lines": 1,
+          "original": "  tn←≠tail ← inp↓˜cn×𝕨",
+          "units": [
+            "tn assignment",
+            "nested tail assignment"
+          ]
+        },
+        {
+          "line": 54,
+          "extra_lines": 2,
+          "original": "J0 ← {a‿b: a↩⌊0.5+1e5×a ⋄ ∾⟨b,\" \",•Repr ⌊a÷1e3,\".\",\"000\"«˜•Repr 1e3|a⟩}",
+          "units": [
+            "J0 function binding/header",
+            "a modifying assignment",
+            "return expression after statement diamond"
+          ]
+        }
+      ],
+      "structural_notes": [
+        "Line 1 semicolon separates alternative function cases, not sequential statements.",
+        "Line 17 both comma and diamond are list-element delimiters inside ⟨⟩; the third element ≠s is not a separate sequential statement.",
+        "Function case/destructuring headers do not create extra assignment statements."
+      ],
+      "upstream": "https://github.com/effbiae/bench/blob/27ae402a948ec85c02125a64363e29585ed21e41/s/knucleotide/knucleotide.bqn"
+    }
+  ]
+}

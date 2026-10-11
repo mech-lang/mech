@@ -1,0 +1,4 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/revcomp-toit-lines.toit:33:15: warning: Class 'Buffer' is deprecated. Use 'io.Buffer' instead
+  sequence := Buffer
+              ^~~~~~
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/revcomp-toit-lines: replacing existing signature

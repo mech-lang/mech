@@ -1,0 +1,255 @@
+[
+  {
+    "id": "compact-before",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-current-before",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before.o",
+      "--fp-contract",
+      "--algebraic-powers"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before"
+    ],
+    "object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+    "binary_sha256": "a582dcae88618170a7c3b52a6e653c3598d948ac4de909a382b74e6a25fe9339",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-before",
+      "{n}"
+    ]
+  },
+  {
+    "id": "pairwise-before",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-current-before",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before"
+    ],
+    "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+    "binary_sha256": "d2120116edfc33d4a791bd751bff6db100661ef7836051419563da006d646a24",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before",
+      "{n}"
+    ]
+  },
+  {
+    "id": "rust-3",
+    "language": "rust",
+    "loc": 196,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference",
+      "{n}"
+    ],
+    "binary_sha256": "f22eda84ff2640cc3830589c20739917f8282474af30b5184e8202cfe1941d6b"
+  },
+  {
+    "id": "chapel-3",
+    "language": "chapel",
+    "loc": 79,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+      "--n={n}"
+    ],
+    "binary_sha256": "a57be549397679c1cf1ef9c4702a3e3de3863899ee11b328bc06d8e996772f7d"
+  },
+  {
+    "id": "nbody-gpp-6-llvm-native",
+    "language": "cpp",
+    "loc": 202,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-gpp-6-llvm-native",
+      "{n}"
+    ],
+    "binary_sha256": "0c211e6499d12227c8d424673c1e8d123ae0eb301f9368addd6a2de7c192297b"
+  },
+  {
+    "id": "compact-columns",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short-columns.mec",
+    "source_sha256": "940665aea2076ca6783e0aef8af61a44d5afbe3320284ba22cd824deff7f84fb",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-columns",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short-columns.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns.o",
+      "--fp-contract",
+      "--algebraic-powers"
+    ],
+    "driver_sha256": "faa1924b3f02f4d0770e5c0252684ff578108b16785a13843424d582d172188f",
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns"
+    ],
+    "object_sha256": "406b4244f3005a5c397ec329e44a1c7f4a60fe39831effeb4a5250791fbb8d1e",
+    "binary_sha256": "b1d9b56a8947ec925ed9e00111e22028c56650e830d84f4a1b8def4f0e31a08b",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns",
+      "{n}"
+    ],
+    "state_control": "compact-before",
+    "preserves_bits": false,
+    "state_orientation": "columns"
+  },
+  {
+    "id": "compact-columns-tails",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short-columns.mec",
+    "source_sha256": "940665aea2076ca6783e0aef8af61a44d5afbe3320284ba22cd824deff7f84fb",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-columns",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short-columns.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns-tails.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns-tails.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails"
+    ],
+    "driver_sha256": "faa1924b3f02f4d0770e5c0252684ff578108b16785a13843424d582d172188f",
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns-tails.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns-tails.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns-tails"
+    ],
+    "object_sha256": "af42f4d27770dd5a57e52c458244b1edf12a59ad288acf3fd735e37d5cd6050e",
+    "binary_sha256": "58c76482d9315d838b6c0ff3599b64df9239271d54e571fcb3c8f6de042ea76e",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-columns-tails",
+      "{n}"
+    ],
+    "state_control": "compact-before",
+    "preserves_bits": false,
+    "state_orientation": "columns"
+  },
+  {
+    "id": "pairwise-columns",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise-columns.mec",
+    "source_sha256": "6b635c91392e6b24667d58854e692c28dc4a76365f8600cb1ea3ff296e06409c",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-columns",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise-columns.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns.o",
+      "--fp-contract",
+      "--algebraic-powers"
+    ],
+    "driver_sha256": "faa1924b3f02f4d0770e5c0252684ff578108b16785a13843424d582d172188f",
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns"
+    ],
+    "object_sha256": "482d25ad0cabee7392dcc5a93c9a79642b11ae20c85da10769f99d774bccf115",
+    "binary_sha256": "6be7be5eb294183e2e2ef14900633ff50513e48efc4c51a927341394524d2b8b",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns",
+      "{n}"
+    ],
+    "state_control": "pairwise-before",
+    "preserves_bits": false,
+    "state_orientation": "columns"
+  },
+  {
+    "id": "pairwise-columns-tails",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise-columns.mec",
+    "source_sha256": "6b635c91392e6b24667d58854e692c28dc4a76365f8600cb1ea3ff296e06409c",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-columns",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise-columns.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns-tails.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns-tails.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails"
+    ],
+    "driver_sha256": "faa1924b3f02f4d0770e5c0252684ff578108b16785a13843424d582d172188f",
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns-tails.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns-tails.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns-tails"
+    ],
+    "object_sha256": "2c1fd445bb1397d6d40063a60c6d5b14532ad39922f465b6da23b55e5e56af25",
+    "binary_sha256": "ed19a2e858bfbff2a3783af0805db3fe0d141c415eddc7391dac622077ec7813",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-columns-tails",
+      "{n}"
+    ],
+    "state_control": "pairwise-before",
+    "preserves_bits": false,
+    "state_orientation": "columns"
+  }
+]

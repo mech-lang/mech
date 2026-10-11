@@ -1,0 +1,29 @@
+{
+  "created_at": "2026-10-10T18:12:43.919027+00:00",
+  "reason": "Before any full nucleotide measurements, replace fallback API overhead with ordinary dictionary indexing and exactly represented double keys. All hash-table counter updates remain in MATLAB source.",
+  "preserved_samples": 69,
+  "completed_benchmarks": [
+    "spectralnorm",
+    "mandelbrot",
+    "regexredux",
+    "revcomp",
+    "fasta",
+    "nbody",
+    "pidigits"
+  ],
+  "old_measurement_pid": 36717,
+  "old_completion_pid": 45272,
+  "files": {
+    "sources/knucleotide_compact.m": "77830cd398c5f3875da72fdbb60884503d2e9dfd99958316a85d8a5f05fb1c59",
+    "sources/knucleotide_optimized.m": "8df7084bbaff245cb8512ffc4231171df1165ac4751fb1aa55d47113a096bf30",
+    "results/builds.json": "83914b9556c873996087830c88c6cbc3052aa1a05da6ec12022d76cb8c1e4a62",
+    "results/small-checks.json": "a3a08196649abb326346ef3a172cfe3e3f3527ab7ba78d1b7bb0d45af3f47490",
+    "source-audit.json": "e9ca8da0e5c262cdb362905b92293771d08007d5494e771c7d36edbfb35b1145",
+    "evidence/syntax-check.json": "93e691d053a20d2dfa4ed810a97d1257d2f63adefcc9a041a47e0eaaf7cc9fbc",
+    "results/timings.json": "816be09fb5860cc38566c361f2514ce32338433aa9948772c77c5fce40d98102",
+    "results/measurement-process.json": "d1449c97746b298e1f1c4fbba3e8004e27cf927e4b01a7334920908778d97376",
+    "results/completion-process.json": "7dc7f5460d4288c26e3c6d7695138005fcbaf1fb55af13fa4ea31a07cdc53308",
+    "results/completion.json": "e9f294967447f21a4b4d75d22f29713bd23a7392785f500b25ae38d869bfb4bf",
+    "audit.py": "c16f81d86cd0f6da8f0e6868fa6ff9688f85666653811b058a4c6cb761ac558c"
+  }
+}

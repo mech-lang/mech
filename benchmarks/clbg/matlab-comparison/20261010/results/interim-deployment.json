@@ -1,0 +1,23 @@
+{
+  "source": {
+    "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+    "checkout_path": "/Users/cim310/.codex/visualizations/2026/10/08/01a11c4b-7bf0-75b0-a854-cf4f0e614617/benchmark-explorer-site",
+    "commit_sha": "40691f07a0646f9718dd67a87bb9931123df47f0",
+    "archive": "/tmp/mech-benchmark-explorer-matlab-interim.tar.gz"
+  },
+  "deployment": {
+    "id": "appgdep_6aca72ebbd288191ad60000d01e868a1",
+    "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+    "title": "Mech Benchmark Explorer",
+    "version_id": "appgprj_6ac8f49664688191961eac14d8a9465b~appgver_9b7fd92c25608191b9e291e685995bf9",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://mech-benchmark-explorer.refreshthen.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": null,
+    "provider_deployment_id": "site---6ac8f49664688191961eac14d8a9465b",
+    "failure_message": null,
+    "env_set_revision": 0,
+    "updated_at": "2026-10-10T17:16:36.786249+00:00"
+  }
+}

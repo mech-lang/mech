@@ -1,0 +1,1 @@
+{"name":"FFI::CheckLib","version":"0.31","pathname":"P/PL/PLICEASE/FFI-CheckLib-0.31.tar.gz","target":"FFI::CheckLib","dist":"FFI-CheckLib-0.31","provides":{"FFI::CheckLib":{"file":"lib/FFI/CheckLib.pm","version":"0.31"}}}

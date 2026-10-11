@@ -1,0 +1,1 @@
+warning: QTHREADS: Reduced numThreadsPerLocale=8 to 4 to prevent oversubscription of the system.

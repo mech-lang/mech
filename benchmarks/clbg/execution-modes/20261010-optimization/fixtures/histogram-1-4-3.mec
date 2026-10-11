@@ -1,0 +1,3 @@
+s := bytes/encode("BBB", "AB", "exact")
+h := map/histogram(sequence/packed-windows(s, 1, 4))
+io/write(number/format(map/get(h, sequence/pack(bytes/encode("BBB", "AB", "exact"), 1)), 0))

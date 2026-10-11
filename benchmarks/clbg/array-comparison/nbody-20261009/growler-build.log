@@ -1,0 +1,25 @@
+/Library/Developer/CommandLineTools/usr/bin/make MAKEFLAGS=-j8 a N=k R=k O='-O3 -march=native' L='-lm -ldl' #for calling k from dynamic libs, add: L='... -Wl,-E'
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/0.o -c 0.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/1.o -c 1.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/2.o -c 2.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/3.o -c 3.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/4.o -c 4.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/a.o -c a.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/b.o -c b.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/c.o -c c.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/e.o -c e.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/f.o -c f.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/h.o -c h.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/i.o -c i.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/j.o -c j.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/k.o -c k.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/m.o -c m.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/o.o -c o.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/p.o -c p.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/r.o -c r.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/s.o -c s.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/v.o -c v.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/w.o -c w.c
+mkdir -p o/k;cc @opts -O3 -march=native  -o o/k/x.o -c x.c
+cc -O3 -march=native -o o/k/bin o/k/0.o o/k/1.o o/k/2.o o/k/3.o o/k/4.o o/k/a.o o/k/b.o o/k/c.o o/k/e.o o/k/f.o o/k/h.o o/k/i.o o/k/j.o o/k/k.o o/k/m.o o/k/o.o o/k/p.o o/k/r.o o/k/s.o o/k/v.o o/k/w.o o/k/x.o @lopts -lm -ldl # ; -R .comment o/k/bin -R '.note*'
+cp o/k/bin k

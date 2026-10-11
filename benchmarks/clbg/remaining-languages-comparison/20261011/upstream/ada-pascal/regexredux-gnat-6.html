@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>regex-redux Ada 2012 GNAT&nbsp;#6 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>regex-redux Ada 2012 GNAT&nbsp;#6 program</h1>
+    <aside>
+      <p><a href="../description/regexredux.html#regexredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--</span>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- contributed by Francois Fabien (juillet 2012)</span>
+<span class="slc">--</span>
+<span class="slc">-- regex-dna benchmark using PCRE</span>
+<span class="slc">-- with concurrent processing (multi-core).</span>
+<span class="slc">--</span>
+<span class="slc">-- compile with:</span>
+<span class="slc">--   gnatmake -O3 -gnatn -gnatp Regexredux.adb</span>
+<span class="slc">--</span>
+<span class="kwa">pragma</span> <span class="kwc">Restrictions</span> <span class="opt">(</span>No_Abort_Statements<span class="opt">);</span>
+<span class="kwa">pragma</span> <span class="kwc">Restrictions</span> <span class="opt">(</span>Max_Select_Alternatives <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+<span class="kwa">pragma</span> <span class="kwc">Restrictions</span> <span class="opt">(</span>Max_Asynchronous_Select_Nesting <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+<span class="kwa">pragma</span> <span class="kwc">Suppress</span> <span class="opt">(</span>All_Checks<span class="opt">);</span>
+
+<span class="kwa">with</span> Text_IO<span class="opt">;</span>           <span class="kwa">use</span> Text_IO<span class="opt">;</span>
+<span class="kwa">with</span> Block_Input<span class="opt">;</span>       <span class="kwa">use</span> Block_Input<span class="opt">;</span>
+<span class="kwa">with</span> Pcre<span class="opt">;</span>              <span class="kwa">use</span> Pcre<span class="opt">;</span>
+<span class="kwa">with</span> DNA<span class="opt">;</span>               <span class="kwa">use</span> DNA<span class="opt">;</span>
+<span class="kwa">with</span> System<span class="opt">.</span>Task_Info<span class="opt">;</span>  <span class="kwa">use</span> System<span class="opt">.</span>Task_Info<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Strings<span class="opt">.</span>Fixed<span class="opt">;</span> <span class="kwa">use</span> Ada<span class="opt">.</span>Strings<span class="opt">.</span>Fixed<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Strings<span class="opt">.</span>Maps<span class="opt">;</span>  <span class="kwa">use</span> Ada<span class="opt">.</span>Strings<span class="opt">;</span>
+
+<span class="kwa">procedure</span> Regexredux <span class="kwa">is</span>
+
+   <span class="kwa">package</span> Int_IO <span class="kwa">is new</span> <span class="kwc">Integer_IO</span> <span class="opt">(</span><span class="kwb">Integer</span><span class="opt">);</span>
+
+   Max_Size  <span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">51_000_000</span><span class="opt">;</span> <span class="slc">-- max input size</span>
+   Input_Str <span class="opt">:</span> String_Access <span class="opt">:=</span> <span class="kwa">new</span> <span class="kwb">String</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Max_Size<span class="opt">);</span>
+
+   DNA_Code <span class="opt">:</span> String_Access<span class="opt">;</span>
+
+   Initial_Length<span class="opt">,</span> Code_Length<span class="opt">,</span> Seq_Length <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+
+   <span class="kwa">type</span> Count_Nbrs <span class="kwa">is range</span> <span class="num">0</span> <span class="opt">..</span> <span class="num">2</span> <span class="opt">**</span> <span class="num">15</span> <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+   <span class="kwa">for</span> Count_Nbrs<span class="kwd">&#39;Size</span> <span class="kwa">use</span> <span class="num">16</span><span class="opt">;</span>
+
+   <span class="kwa">type</span> Counts_Arrays <span class="kwa">is array</span> <span class="opt">(</span>Variant_Index<span class="opt">)</span> <span class="kwa">of</span> Count_Nbrs<span class="opt">;</span>
+   Counts <span class="opt">:</span> Counts_Arrays<span class="opt">;</span>
+
+   Core_Nbr <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Positive</span> <span class="opt">:=</span> Number_Of_Processors<span class="opt">;</span>
+
+   <span class="slc">-- remove headers and ends of line from input file.</span>
+   <span class="kwa">procedure</span> Strip_Input
+     <span class="opt">(</span>Source<span class="opt">,</span> Dest <span class="opt">:</span> <span class="kwa">in</span> String_Access<span class="opt">;</span>
+      Last_Src     <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Natural</span><span class="opt">;</span>
+      Last_Dest    <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">)</span>
+   <span class="kwa">is</span>
+
+      EOL        <span class="opt">:</span> <span class="kwa">constant</span> Maps<span class="opt">.</span>Character_Set <span class="opt">:=</span> Maps<span class="opt">.</span><span class="kwc">To_Set</span> <span class="opt">(</span>ASCII<span class="opt">.</span>LF<span class="opt">);</span>
+      End_Of_Cmt <span class="opt">:</span> <span class="kwb">Natural</span><span class="opt">;</span>
+      Test_Char  <span class="opt">:</span> <span class="kwb">Character</span><span class="opt">;</span>
+      Next<span class="opt">,</span> Pos  <span class="opt">:</span> <span class="kwb">Positive</span>                    <span class="opt">:=</span> <span class="num">1</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">while</span> Next <span class="opt">&lt;=</span> Last_Src <span class="kwa">loop</span>
+         Test_Char <span class="opt">:=</span> Source<span class="opt">.</span><span class="kwa">all</span> <span class="opt">(</span>Next<span class="opt">);</span>
+         <span class="kwa">case</span> Test_Char <span class="kwa">is</span>
+            <span class="kwa">when</span> ASCII<span class="opt">.</span>LF <span class="opt">=&gt;</span>
+               Next <span class="opt">:=</span> Next <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+            <span class="kwa">when</span> <span class="sng">&#39;&gt;&#39;</span> <span class="opt">=&gt;</span>
+               End_Of_Cmt <span class="opt">:=</span> <span class="kwc">Index</span> <span class="opt">(</span>Source<span class="opt">.</span><span class="kwa">all</span> <span class="opt">(</span>Next <span class="opt">..</span> Next <span class="opt">+</span> <span class="num">100</span><span class="opt">),</span> EOL<span class="opt">);</span>
+               Next       <span class="opt">:=</span> End_Of_Cmt <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+            <span class="kwa">when others</span> <span class="opt">=&gt;</span>
+               Dest<span class="opt">.</span><span class="kwa">all</span> <span class="opt">(</span>Pos<span class="opt">) :=</span> Test_Char<span class="opt">;</span>
+               Pos            <span class="opt">:=</span> Pos <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+               Next           <span class="opt">:=</span> Next <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwa">end case</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+      Last_Dest <span class="opt">:=</span> Pos <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+   <span class="kwa">end</span> Strip_Input<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Count_Variant</span> <span class="opt">(</span>Var <span class="opt">:</span> <span class="kwa">in</span> Variant_Index<span class="opt">;</span> Count <span class="opt">:</span> <span class="kwa">out</span> Count_Nbrs<span class="opt">)</span> <span class="kwa">is</span>
+      Regexp       <span class="opt">:</span> Pcre_Type<span class="opt">;</span>
+      Regexp_Extra <span class="opt">:</span> Pcre_Extra_type<span class="opt">;</span>
+      Retcode      <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Position     <span class="opt">:</span> <span class="kwb">Natural</span>    <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      L_Count      <span class="opt">:</span> Count_Nbrs <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      m0<span class="opt">,</span> m1       <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      Compile
+        <span class="opt">(</span>Pattern       <span class="opt">=&gt;</span> <span class="kwc">Variant_Labels</span> <span class="opt">(</span>Var<span class="opt">).</span><span class="kwa">all</span><span class="opt">,</span>
+         Options       <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">,</span>
+         Matcher       <span class="opt">=&gt;</span> Regexp<span class="opt">,</span>
+         Matcher_Extra <span class="opt">=&gt;</span> Regexp_Extra<span class="opt">);</span>
+
+      <span class="kwa">loop</span>
+         Match
+           <span class="opt">(</span>Regexp<span class="opt">,</span>
+            Regexp_Extra<span class="opt">,</span>
+            DNA_Code<span class="opt">.</span><span class="kwa">all</span> <span class="opt">(</span><span class="num">1</span><span class="opt">)</span><span class="kwd">&#39;Address</span><span class="opt">,</span>
+            Code_Length<span class="opt">,</span>
+            Position<span class="opt">,</span>
+            <span class="num">0</span><span class="opt">,</span>
+            m0<span class="opt">,</span>
+            m1<span class="opt">,</span>
+            Retcode<span class="opt">);</span>
+         <span class="kwa">exit when</span> Retcode <span class="opt">&lt;</span> <span class="num">0</span><span class="opt">;</span>
+         L_Count  <span class="opt">:=</span> L_Count <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+         Position <span class="opt">:=</span> m1<span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwc">Free</span> <span class="opt">(</span>Regexp<span class="opt">);</span>
+      <span class="kwc">Free</span> <span class="opt">(</span>Regexp_Extra<span class="opt">);</span>
+      Count <span class="opt">:=</span> L_Count<span class="opt">;</span>
+
+   <span class="kwa">end</span> Count_Variant<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Replace_Variants
+     <span class="opt">(</span>Source    <span class="opt">:</span> <span class="kwa">in</span> String_Access<span class="opt">;</span>
+      Last_Src  <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Natural</span><span class="opt">;</span>
+      Last_Dest <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">)</span>
+   <span class="kwa">is</span>
+
+      Dest_Size    <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="kwb">Integer</span> <span class="opt">(</span><span class="kwb">Float</span> <span class="opt">(</span>Last_Src<span class="opt">) *</span> <span class="num">1.35</span><span class="opt">);</span>
+      Dest         <span class="opt">:</span> String_Access    <span class="opt">:=</span> <span class="kwa">new</span> <span class="kwb">String</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Dest_Size<span class="opt">);</span>
+      Regexp       <span class="opt">:</span> Pcre_Type<span class="opt">;</span>
+      Regexp_Extra <span class="opt">:</span> Pcre_Extra_type<span class="opt">;</span>
+      Retcode      <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Position     <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Char_To_Copy <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Start<span class="opt">,</span> Stop  <span class="opt">:</span> <span class="kwb">Integer</span>          <span class="opt">:=</span> <span class="num">1</span><span class="opt">;</span>
+      m0<span class="opt">,</span> m1       <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      IUB          <span class="opt">:</span> Mut<span class="opt">;</span>
+   <span class="kwa">begin</span>
+
+      Compile
+        <span class="opt">(</span>Pattern       <span class="opt">=&gt;</span> <span class="sng">&quot;[BDHKMNRSVWY]&quot;</span><span class="opt">,</span>
+         Options       <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">,</span>
+         Matcher       <span class="opt">=&gt;</span> Regexp<span class="opt">,</span>
+         Matcher_Extra <span class="opt">=&gt;</span> Regexp_Extra<span class="opt">);</span>
+
+      Position <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      <span class="kwa">loop</span>
+         Match
+           <span class="opt">(</span>Regexp<span class="opt">,</span>
+            Regexp_Extra<span class="opt">,</span>
+            Source<span class="opt">.</span><span class="kwa">all</span> <span class="opt">(</span><span class="num">1</span><span class="opt">)</span><span class="kwd">&#39;Address</span><span class="opt">,</span>
+            Last_Src<span class="opt">,</span>
+            Position<span class="opt">,</span>
+            <span class="num">0</span><span class="opt">,</span>
+            m0<span class="opt">,</span>
+            m1<span class="opt">,</span>
+            Retcode<span class="opt">);</span>
+         <span class="kwa">exit when</span> Retcode <span class="opt">&lt;</span> <span class="num">0</span><span class="opt">;</span>
+         Char_To_Copy         <span class="opt">:=</span> m0 <span class="opt">-</span> Position<span class="opt">;</span>
+         Stop                 <span class="opt">:=</span> Start <span class="opt">+</span> Char_To_Copy <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwc">Dest</span> <span class="opt">(</span>Start <span class="opt">..</span> Stop<span class="opt">) :=</span> <span class="kwc">Source</span> <span class="opt">(</span>Position <span class="opt">+</span> <span class="num">1</span> <span class="opt">..</span> m0<span class="opt">);</span>
+         <span class="slc">-- insert IUB into destination string</span>
+         IUB                          <span class="opt">:=</span> <span class="kwc">to_Mut</span> <span class="opt">(</span>Source<span class="opt">.</span><span class="kwa">all</span> <span class="opt">(</span>m1<span class="opt">));</span>
+         Start                        <span class="opt">:=</span> Stop <span class="opt">+</span> <span class="kwc">Iub_Table</span> <span class="opt">(</span>IUB<span class="opt">).</span>Len <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwc">Dest</span> <span class="opt">(</span>Stop <span class="opt">+</span> <span class="num">1</span> <span class="opt">..</span> Start <span class="opt">-</span> <span class="num">1</span><span class="opt">) :=</span> <span class="kwc">Iub_Table</span> <span class="opt">(</span>IUB<span class="opt">).</span>Alt<span class="opt">.</span><span class="kwa">all</span><span class="opt">;</span>
+         Position                     <span class="opt">:=</span> m1<span class="opt">;</span>
+
+      <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="slc">-- copy remaining part of the source</span>
+      Char_To_Copy         <span class="opt">:=</span> Last_Src <span class="opt">-</span> Position<span class="opt">;</span>
+      Stop                 <span class="opt">:=</span> Start <span class="opt">+</span> Char_To_Copy <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+      <span class="kwc">Dest</span> <span class="opt">(</span>Start <span class="opt">..</span> Stop<span class="opt">) :=</span> <span class="kwc">Source</span> <span class="opt">(</span>Position <span class="opt">+</span> <span class="num">1</span> <span class="opt">..</span> Last_Src<span class="opt">);</span>
+      <span class="kwc">Free</span> <span class="opt">(</span>Regexp<span class="opt">);</span>
+      <span class="kwc">Free</span> <span class="opt">(</span>Regexp_Extra<span class="opt">);</span>
+      <span class="kwc">Free</span> <span class="opt">(</span>Dest<span class="opt">);</span>
+
+      Last_Dest <span class="opt">:=</span> Stop<span class="opt">;</span>
+   <span class="kwa">end</span> Replace_Variants<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Parallel_Job</span> <span class="opt">(</span>Cores <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Positive</span><span class="opt">)</span> <span class="kwa">is</span>
+
+      <span class="slc">-- synchronize the variant countings and replacing.</span>
+      <span class="kwa">protected</span> Dispatcher <span class="kwa">is</span>
+         <span class="kwa">entry</span> <span class="kwc">Give</span> <span class="opt">(</span>Variant <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">);</span>
+         <span class="kwa">entry</span> <span class="kwc">Take</span> <span class="opt">(</span>Variant <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Natural</span><span class="opt">;</span> Count <span class="opt">:</span> <span class="kwa">in</span> Count_Nbrs<span class="opt">);</span>
+         <span class="kwa">entry</span> Endrep<span class="opt">;</span>
+         <span class="kwa">entry</span> <span class="kwc">Report</span> <span class="opt">(</span>Result <span class="opt">:</span> <span class="kwa">out</span> Counts_Arrays<span class="opt">);</span>
+      <span class="kwa">private</span>
+         Done               <span class="opt">:</span> <span class="kwb">Boolean</span> <span class="opt">:=</span> <span class="kwd">False</span><span class="opt">;</span>
+         Counted<span class="opt">,</span> Replaced  <span class="opt">:</span> <span class="kwb">Boolean</span> <span class="opt">:=</span> <span class="kwd">False</span><span class="opt">;</span>
+         Cur_Job<span class="opt">,</span> Jobs_Done <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+         Var_Counts         <span class="opt">:</span> Counts_Arrays<span class="opt">;</span>
+      <span class="kwa">end</span> Dispatcher<span class="opt">;</span>
+
+      <span class="kwa">protected body</span> Dispatcher <span class="kwa">is</span>
+         <span class="slc">-- assign a job to a worker</span>
+         <span class="kwa">entry</span> <span class="kwc">Give</span> <span class="opt">(</span>Variant <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">)</span> <span class="kwa">when</span> <span class="kwd">True</span> <span class="kwa">is</span>
+         <span class="kwa">begin</span>
+            <span class="kwa">if</span> Cur_Job <span class="opt">=</span> Var_Size <span class="kwa">then</span>
+               <span class="slc">-- when all jobs are given send termination signal to workers</span>
+               Variant <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+            <span class="kwa">else</span>
+               Cur_Job <span class="opt">:=</span> Cur_Job <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+               Variant <span class="opt">:=</span> Cur_Job<span class="opt">;</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+         <span class="kwa">end</span> Give<span class="opt">;</span>
+         <span class="slc">-- retrieve the result from a worker task</span>
+         <span class="kwa">entry</span> <span class="kwc">Take</span> <span class="opt">(</span>Variant <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Natural</span><span class="opt">;</span> Count <span class="opt">:</span> <span class="kwa">in</span> Count_Nbrs<span class="opt">)</span> <span class="kwa">when</span> <span class="kwd">True</span> <span class="kwa">is</span>
+         <span class="kwa">begin</span>
+            <span class="kwc">Var_Counts</span> <span class="opt">(</span><span class="kwc">Variant_Index</span> <span class="opt">(</span>Variant<span class="opt">))  :=</span> Count<span class="opt">;</span>
+            Jobs_Done                             <span class="opt">:=</span> Jobs_Done <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+            <span class="kwa">if</span> Jobs_Done <span class="opt">=</span> Var_Size <span class="kwa">then</span> <span class="slc">-- can transfer the result</span>
+               Counted <span class="opt">:=</span> <span class="kwd">True</span><span class="opt">;</span>
+               Done    <span class="opt">:=</span> Replaced<span class="opt">;</span><span class="slc">-- shortcut for Counted and Replaced</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+         <span class="kwa">end</span> Take<span class="opt">;</span>
+         <span class="slc">-- signalling end of replacement</span>
+         <span class="kwa">entry</span> Endrep <span class="kwa">when</span> <span class="kwd">True</span> <span class="kwa">is</span>
+         <span class="kwa">begin</span>
+            Replaced <span class="opt">:=</span> <span class="kwd">True</span><span class="opt">;</span>
+            Done     <span class="opt">:=</span> Counted<span class="opt">;</span> <span class="slc">-- shortcut for Counted and Replaced</span>
+         <span class="kwa">end</span> Endrep<span class="opt">;</span>
+         <span class="slc">-- when all jobs are completed, give way to the main</span>
+         <span class="kwa">entry</span> <span class="kwc">Report</span> <span class="opt">(</span>Result <span class="opt">:</span> <span class="kwa">out</span> Counts_Arrays<span class="opt">)</span> <span class="kwa">when</span> Done <span class="kwa">is</span>
+         <span class="kwa">begin</span>
+            Result <span class="opt">:=</span> Var_Counts<span class="opt">;</span>
+         <span class="kwa">end</span> Report<span class="opt">;</span>
+
+      <span class="kwa">end</span> Dispatcher<span class="opt">;</span>
+
+      <span class="slc">-- Each Worker compute a single variant count in parallel</span>
+      <span class="kwa">task type</span> Workers<span class="opt">;</span>
+
+      <span class="kwa">task body</span> Workers <span class="kwa">is</span>
+         Var     <span class="opt">:</span> <span class="kwb">Natural</span><span class="opt">;</span>
+         L_Count <span class="opt">:</span> Count_Nbrs<span class="opt">;</span>
+      <span class="kwa">begin</span>
+         Busy <span class="opt">:</span> <span class="kwa">loop</span>
+            Dispatcher<span class="opt">.</span><span class="kwc">Give</span> <span class="opt">(</span>Var<span class="opt">);</span>
+            <span class="kwa">exit</span> Busy <span class="kwa">when</span> Var <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span>
+            <span class="kwc">Count_Variant</span> <span class="opt">(</span><span class="kwc">Variant_Index</span> <span class="opt">(</span>Var<span class="opt">),</span> L_Count<span class="opt">);</span>
+            Dispatcher<span class="opt">.</span><span class="kwc">Take</span> <span class="opt">(</span>Var<span class="opt">,</span> L_Count<span class="opt">);</span>
+         <span class="kwa">end loop</span> Busy<span class="opt">;</span>
+      <span class="kwa">end</span> Workers<span class="opt">;</span>
+
+      Workshop <span class="opt">:</span> <span class="kwa">array</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Cores<span class="opt">)</span> <span class="kwa">of</span> Workers<span class="opt">;</span>
+
+      <span class="kwa">task</span> Replacer<span class="opt">;</span>
+
+      <span class="kwa">task body</span> Replacer <span class="kwa">is</span>
+      <span class="kwa">begin</span>
+         <span class="kwc">Replace_Variants</span> <span class="opt">(</span>DNA_Code<span class="opt">,</span> Code_Length<span class="opt">,</span> Seq_Length<span class="opt">);</span>
+         Dispatcher<span class="opt">.</span>Endrep<span class="opt">;</span>
+      <span class="kwa">end</span> Replacer<span class="opt">;</span>
+
+   <span class="kwa">begin</span>
+      <span class="slc">-- wait for the jobs to be completed</span>
+      Dispatcher<span class="opt">.</span><span class="kwc">Report</span> <span class="opt">(</span>Counts<span class="opt">);</span>
+      <span class="kwa">delay</span> <span class="num">0.01</span><span class="opt">;</span> <span class="slc">-- leave time for tasks termination.</span>
+   <span class="kwa">end</span> Parallel_Job<span class="opt">;</span>
+
+<span class="kwa">begin</span>
+   Open_Stdin<span class="opt">;</span>
+   <span class="kwc">Read</span> <span class="opt">(</span>Input_Str<span class="opt">.</span><span class="kwa">all</span><span class="opt">,</span> Initial_Length<span class="opt">);</span>
+   Close_Stdin<span class="opt">;</span>
+
+   DNA_Code <span class="opt">:=</span> <span class="kwa">new</span> <span class="kwb">String</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Initial_Length<span class="opt">);</span>
+
+   <span class="kwc">Strip_Input</span> <span class="opt">(</span>Input_Str<span class="opt">,</span> DNA_Code<span class="opt">,</span> Initial_Length<span class="opt">,</span> Code_Length<span class="opt">);</span>
+   <span class="kwc">Free</span> <span class="opt">(</span>Input_Str<span class="opt">);</span>
+
+   <span class="kwa">if</span> Core_Nbr <span class="opt">&gt;</span> <span class="num">1</span> <span class="kwa">then</span>
+      <span class="kwc">Parallel_Job</span> <span class="opt">(</span>Core_Nbr<span class="opt">);</span>
+   <span class="kwa">else</span>
+      <span class="kwa">for</span> V <span class="kwa">in</span> Variant_Index<span class="kwd">&#39;Range</span> <span class="kwa">loop</span>
+         <span class="kwc">Count_Variant</span> <span class="opt">(</span>V<span class="opt">,</span> <span class="kwc">Counts</span> <span class="opt">(</span>V<span class="opt">));</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwc">Replace_Variants</span> <span class="opt">(</span>DNA_Code<span class="opt">,</span> Code_Length<span class="opt">,</span> Seq_Length<span class="opt">);</span>
+   <span class="kwa">end if</span><span class="opt">;</span>
+
+   <span class="kwa">for</span> V <span class="kwa">in</span> Variant_Index<span class="kwd">&#39;Range</span> <span class="kwa">loop</span>
+      <span class="kwc">Put_Line</span> <span class="opt">(</span><span class="kwc">Variant_Labels</span> <span class="opt">(</span>V<span class="opt">).</span><span class="kwa">all</span> <span class="opt">&amp;</span> Count_Nbrs<span class="kwd">&#39;Image</span> <span class="opt">(</span><span class="kwc">Counts</span> <span class="opt">(</span>V<span class="opt">)));</span>
+   <span class="kwa">end loop</span><span class="opt">;</span>
+
+   New_Line<span class="opt">;</span>
+   Int_IO<span class="opt">.</span><span class="kwc">Put</span> <span class="opt">(</span>Initial_Length<span class="opt">,</span> Width <span class="opt">=&gt;</span> <span class="num">6</span><span class="opt">);</span>
+   New_Line<span class="opt">;</span>
+   Int_IO<span class="opt">.</span><span class="kwc">Put</span> <span class="opt">(</span>Code_Length<span class="opt">,</span> Width <span class="opt">=&gt;</span> <span class="num">6</span><span class="opt">);</span>
+   New_Line<span class="opt">;</span>
+   Int_IO<span class="opt">.</span><span class="kwc">Put</span> <span class="opt">(</span>Seq_Length<span class="opt">,</span> Width <span class="opt">=&gt;</span> <span class="num">6</span><span class="opt">);</span>
+   New_Line<span class="opt">;</span>
+
+   <span class="kwc">Free</span> <span class="opt">(</span>DNA_Code<span class="opt">);</span>
+<span class="kwa">end</span> Regexredux<span class="opt">;</span>
+<span class="slc">------------------------------------------------------------------------------</span>
+<span class="slc">-- Constants</span>
+<span class="slc">------------------------------------------------------------------------------</span>
+<span class="kwa">with</span> Unchecked_Conversion<span class="opt">;</span>
+<span class="kwa">with</span> Unchecked_Deallocation<span class="opt">;</span>
+
+<span class="kwa">package</span> DNA <span class="kwa">is</span>
+
+   <span class="kwa">type</span> String_Access <span class="kwa">is access all</span> <span class="kwb">String</span><span class="opt">;</span>
+   <span class="kwa">procedure</span> Free <span class="kwa">is new</span> <span class="kwc">Unchecked_Deallocation</span> <span class="opt">(</span><span class="kwb">String</span><span class="opt">,</span> String_Access<span class="opt">);</span>
+
+
+   Var_Size <span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">9</span><span class="opt">;</span>
+   <span class="kwa">type</span> Variant_Index <span class="kwa">is range</span> <span class="num">1</span> <span class="opt">..</span> Var_Size<span class="opt">;</span>
+   <span class="kwa">for</span> Variant_Index<span class="kwd">&#39;Size</span> <span class="kwa">use</span> <span class="num">8</span><span class="opt">;</span>
+
+   Variant_Labels <span class="opt">:</span> <span class="kwa">constant array</span> <span class="opt">(</span>Variant_Index<span class="opt">)</span> <span class="kwa">of</span> String_Access <span class="opt">:=</span>
+     <span class="opt">(</span><span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;agggtaaa|tttaccct&quot;),</span>
+<span class="sng">      new String&#39;</span><span class="opt">(</span><span class="sng">&quot;[cgt]gggtaaa|tttaccc[acg]&quot;</span><span class="opt">),</span>
+      <span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;a[act]ggtaaa|tttacc[agt]t&quot;),</span>
+<span class="sng">      new String&#39;</span><span class="opt">(</span><span class="sng">&quot;ag[act]gtaaa|tttac[agt]ct&quot;</span><span class="opt">),</span>
+      <span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;agg[act]taaa|ttta[agt]cct&quot;),</span>
+<span class="sng">      new String&#39;</span><span class="opt">(</span><span class="sng">&quot;aggg[acg]aaa|ttt[cgt]ccct&quot;</span><span class="opt">),</span>
+      <span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;agggt[cgt]aa|tt[acg]accct&quot;),</span>
+<span class="sng">      new String&#39;</span><span class="opt">(</span><span class="sng">&quot;agggta[cgt]a|t[acg]taccct&quot;</span><span class="opt">),</span>
+      <span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;agggtaa[cgt]|[acg]ttaccct&quot;));</span>
+<span class="sng"></span>
+<span class="sng">   type Mut is (&#39;</span>B<span class="sng">&#39;,&#39;</span>D<span class="sng">&#39;,&#39;</span>H<span class="sng">&#39;,&#39;</span>K<span class="sng">&#39;,&#39;</span>M<span class="sng">&#39;,&#39;</span>N<span class="sng">&#39;,&#39;</span>R<span class="sng">&#39;,&#39;</span>S<span class="sng">&#39;,&#39;</span>V<span class="sng">&#39;,&#39;</span>W<span class="sng">&#39;,&#39;</span>Y<span class="sng">&#39;);</span>
+<span class="sng">   for Mut&#39;Size use Character&#39;Size;</span>
+<span class="sng"></span>
+<span class="sng">   for Mut use -- map to character values</span>
+<span class="sng">     (&#39;</span>B<span class="sng">&#39; =&gt; 66,</span>
+<span class="sng">      &#39;</span>D<span class="sng">&#39; =&gt; 68,</span>
+<span class="sng">      &#39;</span>H<span class="sng">&#39; =&gt; 72,</span>
+<span class="sng">      &#39;</span>K<span class="sng">&#39; =&gt; 75,</span>
+<span class="sng">      &#39;</span>M<span class="sng">&#39; =&gt; 77,</span>
+<span class="sng">      &#39;</span>N<span class="sng">&#39; =&gt; 78,</span>
+<span class="sng">      &#39;</span>R<span class="sng">&#39; =&gt; 82,</span>
+<span class="sng">      &#39;</span>S<span class="sng">&#39; =&gt; 83,</span>
+<span class="sng">      &#39;</span>V<span class="sng">&#39; =&gt; 86,</span>
+<span class="sng">      &#39;</span>W<span class="sng">&#39; =&gt; 87,</span>
+<span class="sng">      &#39;</span>Y<span class="sng">&#39; =&gt; 89);</span>
+<span class="sng"></span>
+<span class="sng">   function to_Mut is new Unchecked_Conversion (</span>
+<span class="sng">      Source =&gt; Character,</span>
+<span class="sng">      Target =&gt; Mut);</span>
+<span class="sng"></span>
+<span class="sng">   type Iub_Rec is record</span>
+<span class="sng">      Alt : String_Access;</span>
+<span class="sng">      Len : Positive;</span>
+<span class="sng">   end record;</span>
+<span class="sng"></span>
+<span class="sng">   Iub_Table : constant array (Mut) of Iub_Rec :=</span>
+<span class="sng">     ((new String&#39;</span><span class="opt">(</span><span class="sng">&quot;(c|g|t)&quot;</span><span class="opt">),</span> <span class="num">7</span><span class="opt">),</span>
+      <span class="opt">(</span><span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;(a|g|t)&quot;), 7),</span>
+<span class="sng">      (new String&#39;</span><span class="opt">(</span><span class="sng">&quot;(a|c|t)&quot;</span><span class="opt">),</span> <span class="num">7</span><span class="opt">),</span>
+      <span class="opt">(</span><span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;(g|t)&quot;), 5),</span>
+<span class="sng">      (new String&#39;</span><span class="opt">(</span><span class="sng">&quot;(a|c)&quot;</span><span class="opt">),</span> <span class="num">5</span><span class="opt">),</span>
+      <span class="opt">(</span><span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;(a|c|g|t)&quot;), 9),</span>
+<span class="sng">      (new String&#39;</span><span class="opt">(</span><span class="sng">&quot;(a|g)&quot;</span><span class="opt">),</span> <span class="num">5</span><span class="opt">),</span>
+      <span class="opt">(</span><span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;(c|g)&quot;), 5),</span>
+<span class="sng">      (new String&#39;</span><span class="opt">(</span><span class="sng">&quot;(a|c|g)&quot;</span><span class="opt">),</span> <span class="num">7</span><span class="opt">),</span>
+      <span class="opt">(</span><span class="kwa">new</span> <span class="kwb">String</span><span class="sng">&#39;(&quot;(a|t)&quot;), 5),</span>
+<span class="sng">      (new String&#39;</span><span class="opt">(</span><span class="sng">&quot;(c|t)&quot;</span><span class="opt">),</span> <span class="num">5</span><span class="opt">));</span>
+<span class="kwa">end</span> DNA<span class="opt">;</span>
+<span class="slc">-----------------------------------------------------------------------</span>
+<span class="slc">--  interface to library PCRE : regular expression</span>
+<span class="slc">-----------------------------------------------------------------------</span>
+<span class="kwa">with</span> System<span class="opt">;</span> <span class="kwa">use</span> System<span class="opt">;</span>
+
+<span class="kwa">package</span> Pcre <span class="kwa">is</span>
+
+   Pcre_Error <span class="opt">:</span> <span class="kwa">exception</span><span class="opt">;</span>
+
+   <span class="kwa">type</span> Pcre_Type <span class="kwa">is private</span><span class="opt">;</span>
+   <span class="kwa">type</span> Pcre_Extra_type <span class="kwa">is private</span><span class="opt">;</span>
+
+   Null_Pcre       <span class="opt">:</span> <span class="kwa">constant</span> Pcre_Type<span class="opt">;</span>
+   Null_Pcre_Extra <span class="opt">:</span> <span class="kwa">constant</span> Pcre_Extra_type<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Compile
+     <span class="opt">(</span>Pattern       <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">String</span><span class="opt">;</span>
+      Options       <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Matcher       <span class="opt">:</span> <span class="kwa">out</span> Pcre_Type<span class="opt">;</span>
+      Matcher_Extra <span class="opt">:</span> <span class="kwa">out</span> Pcre_Extra_type<span class="opt">);</span>
+
+   <span class="kwa">procedure</span> Match
+     <span class="opt">(</span>Matcher             <span class="opt">:</span> <span class="kwa">in</span> Pcre_Type<span class="opt">;</span>
+      Matcher_Extra       <span class="opt">:</span> <span class="kwa">in</span> Pcre_Extra_type<span class="opt">;</span>
+      Subject             <span class="opt">:</span> System<span class="opt">.</span>Address<span class="opt">;</span>
+      <span class="slc">-- Address of the first element of a string;</span>
+      Length<span class="opt">,</span> Startoffset <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Options             <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Match_0<span class="opt">,</span> Match_1    <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Result              <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Integer</span><span class="opt">);</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Free</span> <span class="opt">(</span>M <span class="opt">:</span> Pcre_Type<span class="opt">);</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Free</span> <span class="opt">(</span>M <span class="opt">:</span> Pcre_Extra_type<span class="opt">);</span>
+
+<span class="kwa">private</span>
+
+   <span class="kwa">type</span> Pcre_Type <span class="kwa">is new</span> System<span class="opt">.</span>Address<span class="opt">;</span>
+   <span class="kwa">type</span> Pcre_Extra_type <span class="kwa">is new</span> System<span class="opt">.</span>Address<span class="opt">;</span>
+
+   Null_Pcre       <span class="opt">:</span> <span class="kwa">constant</span> Pcre_Type       <span class="opt">:=</span> <span class="kwc">Pcre_Type</span> <span class="opt">(</span>Null_Address<span class="opt">);</span>
+   Null_Pcre_Extra <span class="opt">:</span> <span class="kwa">constant</span> Pcre_Extra_type <span class="opt">:=</span>
+      <span class="kwc">Pcre_Extra_type</span> <span class="opt">(</span>Null_Address<span class="opt">);</span>
+
+<span class="kwa">end</span> Pcre<span class="opt">;</span>
+<span class="slc">------------------------------------------------------------------------------</span>
+<span class="kwa">with</span> Interfaces<span class="opt">.</span>C<span class="opt">.</span>Strings<span class="opt">;</span>     <span class="kwa">use</span> Interfaces<span class="opt">.</span>C<span class="opt">.</span>Strings<span class="opt">;</span>
+<span class="kwa">with</span> Interfaces<span class="opt">.</span>C<span class="opt">;</span>             <span class="kwa">use</span> Interfaces<span class="opt">.</span>C<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Unchecked_Conversion<span class="opt">;</span>
+
+<span class="kwa">package body</span> Pcre <span class="kwa">is</span>
+
+   <span class="kwa">pragma</span> <span class="kwc">Linker_Options</span> <span class="opt">(</span><span class="sng">&quot;-lpcre&quot;</span><span class="opt">);</span>
+
+   <span class="kwa">use</span> Interfaces<span class="opt">;</span>
+
+   <span class="kwa">function</span> To_chars_ptr <span class="kwa">is new</span> Ada<span class="opt">.</span><span class="kwc">Unchecked_Conversion</span> <span class="opt">(</span>
+      Address<span class="opt">,</span>
+      chars_ptr<span class="opt">);</span>
+
+   <span class="kwa">function</span> Pcre_Compile
+     <span class="opt">(</span>pattern   <span class="opt">:</span> chars_ptr<span class="opt">;</span>
+      options   <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      errptr    <span class="opt">:</span> <span class="kwa">access</span> chars_ptr<span class="opt">;</span>
+      erroffset <span class="opt">:</span> <span class="kwa">access</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      tableptr  <span class="opt">:</span> chars_ptr<span class="opt">)</span>
+      <span class="kwa">return</span>      Pcre_Type<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>C<span class="opt">,</span> Pcre_Compile<span class="opt">,</span> <span class="sng">&quot;pcre_compile&quot;</span><span class="opt">);</span>
+
+   <span class="kwa">function</span> Pcre_Study
+     <span class="opt">(</span>code    <span class="opt">:</span> Pcre_Type<span class="opt">;</span>
+      options <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      errptr  <span class="opt">:</span> <span class="kwa">access</span> chars_ptr<span class="opt">)</span>
+      <span class="kwa">return</span>    Pcre_Extra_type<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>C<span class="opt">,</span> Pcre_Study<span class="opt">,</span> <span class="sng">&quot;pcre_study&quot;</span><span class="opt">);</span>
+
+   <span class="kwa">function</span> Pcre_Exec
+     <span class="opt">(</span>code        <span class="opt">:</span> Pcre_Type<span class="opt">;</span>
+      extra       <span class="opt">:</span> Pcre_Extra_type<span class="opt">;</span>
+      subject     <span class="opt">:</span> chars_ptr<span class="opt">;</span>
+      length      <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      startoffset <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      options     <span class="opt">:</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      ovector     <span class="opt">:</span> System<span class="opt">.</span>Address<span class="opt">;</span>
+      ovecsize    <span class="opt">:</span> C<span class="opt">.</span>int<span class="opt">)</span>
+      <span class="kwa">return</span>        <span class="kwb">Integer</span><span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>C<span class="opt">,</span> Pcre_Exec<span class="opt">,</span> <span class="sng">&quot;pcre_exec&quot;</span><span class="opt">);</span>
+
+   <span class="kwa">procedure</span> Compile
+     <span class="opt">(</span>Pattern       <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">String</span><span class="opt">;</span>
+      Options       <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Matcher       <span class="opt">:</span> <span class="kwa">out</span> Pcre_Type<span class="opt">;</span>
+      Matcher_Extra <span class="opt">:</span> <span class="kwa">out</span> Pcre_Extra_type<span class="opt">)</span>
+   <span class="kwa">is</span>
+      Regexp       <span class="opt">:</span> Pcre_Type<span class="opt">;</span>
+      Regexp_Extra <span class="opt">:</span> Pcre_Extra_type<span class="opt">;</span>
+      Error_Ptr    <span class="opt">:</span> <span class="kwa">aliased</span> chars_ptr<span class="opt">;</span>
+      Error_Offset <span class="opt">:</span> <span class="kwa">aliased</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Pat          <span class="opt">:</span> chars_ptr <span class="opt">:=</span> <span class="kwc">New_String</span> <span class="opt">(</span>Pattern<span class="opt">);</span>
+   <span class="kwa">begin</span>
+      Regexp <span class="opt">:=</span>
+         Pcre_Compile
+           <span class="opt">(</span>Pat<span class="opt">,</span>
+            Options<span class="opt">,</span>
+            Error_Ptr<span class="kwd">&#39;Access</span><span class="opt">,</span>
+            Error_Offset<span class="kwd">&#39;Access</span><span class="opt">,</span>
+            Null_Ptr<span class="opt">);</span>
+      <span class="kwc">Free</span> <span class="opt">(</span>Pat<span class="opt">);</span>
+
+      <span class="kwa">if</span> Regexp <span class="opt">=</span> Null_Pcre <span class="kwa">then</span>
+         <span class="kwa">raise</span> Pcre_Error<span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+      Matcher      <span class="opt">:=</span> Regexp<span class="opt">;</span>
+      Regexp_Extra <span class="opt">:=</span> <span class="kwc">Pcre_Study</span> <span class="opt">(</span>Regexp<span class="opt">,</span> <span class="num">0</span><span class="opt">,</span> Error_Ptr<span class="kwd">&#39;Access</span><span class="opt">);</span>
+      <span class="kwa">if</span> Regexp_Extra <span class="opt">=</span> Null_Pcre_Extra <span class="kwa">then</span>
+         <span class="kwa">raise</span> Pcre_Error<span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+      Matcher_Extra <span class="opt">:=</span> Regexp_Extra<span class="opt">;</span>
+   <span class="kwa">end</span> Compile<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Match
+     <span class="opt">(</span>Matcher             <span class="opt">:</span> <span class="kwa">in</span> Pcre_Type<span class="opt">;</span>
+      Matcher_Extra       <span class="opt">:</span> <span class="kwa">in</span> Pcre_Extra_type<span class="opt">;</span>
+      Subject             <span class="opt">:</span> System<span class="opt">.</span>Address<span class="opt">;</span>
+      <span class="slc">-- Address of the first element of a string;</span>
+      Length<span class="opt">,</span> Startoffset <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Options             <span class="opt">:</span> <span class="kwa">in</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Match_0<span class="opt">,</span> Match_1    <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Integer</span><span class="opt">;</span>
+      Result              <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Integer</span><span class="opt">)</span>
+   <span class="kwa">is</span>
+      Vecsize <span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">3</span><span class="opt">;</span> <span class="slc">-- top-level matching</span>
+
+      m <span class="opt">:</span> <span class="kwa">array</span> <span class="opt">(</span><span class="num">0</span> <span class="opt">..</span> Vecsize <span class="opt">-</span> <span class="num">1</span><span class="opt">)</span> <span class="kwa">of</span> C<span class="opt">.</span>int<span class="opt">;</span>
+      <span class="kwa">pragma</span> <span class="kwc">Convention</span> <span class="opt">(</span>C<span class="opt">,</span> m<span class="opt">);</span>
+      <span class="kwa">pragma</span> <span class="kwc">Volatile</span> <span class="opt">(</span>m<span class="opt">);</span> <span class="slc">-- used by the C library</span>
+
+      Start  <span class="opt">:</span> <span class="kwa">constant</span> chars_ptr <span class="opt">:=</span>
+         <span class="kwc">To_chars_ptr</span> <span class="opt">(</span>Subject<span class="opt">);</span>
+   <span class="kwa">begin</span>
+
+      Result  <span class="opt">:=</span>
+         Pcre_Exec
+           <span class="opt">(</span>Matcher<span class="opt">,</span>
+            Matcher_Extra<span class="opt">,</span>
+            Start<span class="opt">,</span>
+            Length<span class="opt">,</span>
+            Startoffset<span class="opt">,</span>
+            Options<span class="opt">,</span>
+            <span class="kwc">m</span> <span class="opt">(</span><span class="num">0</span><span class="opt">)</span><span class="kwd">&#39;Address</span><span class="opt">,</span>
+            C<span class="opt">.</span><span class="kwc">int</span> <span class="opt">(</span>Vecsize<span class="opt">));</span>
+      Match_0 <span class="opt">:=</span> <span class="kwb">Integer</span> <span class="opt">(</span><span class="kwc">m</span> <span class="opt">(</span><span class="num">0</span><span class="opt">));</span>
+      Match_1 <span class="opt">:=</span> <span class="kwb">Integer</span> <span class="opt">(</span><span class="kwc">m</span> <span class="opt">(</span><span class="num">1</span><span class="opt">));</span>
+
+   <span class="kwa">end</span> Match<span class="opt">;</span>
+
+   <span class="kwa">type</span> Access_Free <span class="kwa">is access procedure</span> <span class="opt">(</span>Item <span class="opt">:</span> System<span class="opt">.</span>Address<span class="opt">);</span>
+   Pcre_Free <span class="opt">:</span> Access_Free<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>C<span class="opt">,</span> Pcre_Free<span class="opt">,</span> <span class="sng">&quot;pcre_free&quot;</span><span class="opt">);</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Free</span> <span class="opt">(</span>M <span class="opt">:</span> Pcre_Type<span class="opt">)</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      <span class="kwc">Pcre_Free</span> <span class="opt">(</span>System<span class="opt">.</span><span class="kwc">Address</span> <span class="opt">(</span>M<span class="opt">));</span>
+   <span class="kwa">end</span> Free<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Free</span> <span class="opt">(</span>M <span class="opt">:</span> Pcre_Extra_type<span class="opt">)</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      <span class="kwc">Pcre_Free</span> <span class="opt">(</span>System<span class="opt">.</span><span class="kwc">Address</span> <span class="opt">(</span>M<span class="opt">));</span>
+   <span class="kwa">end</span> Free<span class="opt">;</span>
+
+<span class="kwa">end</span> Pcre<span class="opt">;</span>
+<span class="slc">-------------------------------------------------------------------------------</span>
+<span class="kwa">package</span> Block_Input <span class="kwa">is</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Read</span> <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwa">in out</span> <span class="kwb">String</span><span class="opt">;</span> Last <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">);</span>
+
+   <span class="kwa">procedure</span> Open_Stdin<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Close_Stdin<span class="opt">;</span>
+
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span> <span class="opt">(</span>Read<span class="opt">);</span>
+
+<span class="kwa">end</span> Block_Input<span class="opt">;</span>
+<span class="slc">------------------------------------------------------------------------------</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Streams<span class="opt">.</span>Stream_IO<span class="opt">;</span>
+<span class="kwa">with</span> Unchecked_Conversion<span class="opt">;</span>
+
+<span class="kwa">package body</span> Block_Input <span class="kwa">is</span>
+
+   <span class="kwa">use</span> Ada<span class="opt">.</span>Streams<span class="opt">;</span>
+
+   Stdin <span class="opt">:</span> Stream_IO<span class="opt">.</span>File_Type<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Read</span> <span class="opt">(</span>Item <span class="opt">:</span> <span class="kwa">in out</span> <span class="kwb">String</span><span class="opt">;</span> Last <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">)</span> <span class="kwa">is</span>
+
+      Block_Size <span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">16</span> <span class="opt">*</span> <span class="num">1024</span><span class="opt">;</span>
+
+      <span class="kwa">subtype</span> Index <span class="kwa">is</span> Stream_Element_Offset <span class="kwa">range</span>
+         <span class="kwc">Stream_Element_Offset</span> <span class="opt">(</span><span class="num">1</span><span class="opt">) ..</span> <span class="kwc">Stream_Element_Offset</span> <span class="opt">(</span>Block_Size<span class="opt">);</span>
+      <span class="kwa">subtype</span> XString <span class="kwa">is</span> <span class="kwb">String</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Block_Size<span class="opt">);</span>
+      <span class="kwa">subtype</span> XBytes <span class="kwa">is</span> <span class="kwc">Stream_Element_Array</span> <span class="opt">(</span>Index<span class="opt">);</span>
+      <span class="kwa">function</span> To_String <span class="kwa">is new</span> <span class="kwc">Unchecked_Conversion</span> <span class="opt">(</span>
+         Source <span class="opt">=&gt;</span> XBytes<span class="opt">,</span>
+         Target <span class="opt">=&gt;</span> XString<span class="opt">);</span>
+
+      One_Block <span class="opt">:</span> XBytes<span class="opt">;</span>
+      Str_Block <span class="opt">:</span> XString<span class="opt">;</span>
+      Final     <span class="opt">:</span> Stream_Element_Offset<span class="opt">;</span>
+      Start     <span class="opt">:</span> <span class="kwb">Natural</span> <span class="opt">:=</span> Item<span class="kwd">&#39;First</span><span class="opt">;</span>
+      Stop      <span class="opt">:</span> <span class="kwb">Natural</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">while not</span> Stream_IO<span class="opt">.</span><span class="kwc">End_Of_File</span> <span class="opt">(</span>Stdin<span class="opt">)</span> <span class="kwa">loop</span>
+         Stream_IO<span class="opt">.</span><span class="kwc">Read</span> <span class="opt">(</span>Stdin<span class="opt">,</span> One_Block<span class="opt">,</span> Final<span class="opt">);</span>
+         Str_Block            <span class="opt">:=</span> <span class="kwc">To_String</span> <span class="opt">(</span>One_Block<span class="opt">);</span>
+         Stop                 <span class="opt">:=</span> Start <span class="opt">+</span> <span class="kwb">Natural</span> <span class="opt">(</span>Final<span class="opt">) -</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwc">Item</span> <span class="opt">(</span>Start <span class="opt">..</span> Stop<span class="opt">) :=</span> <span class="kwc">Str_Block</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> <span class="kwb">Natural</span> <span class="opt">(</span>Final<span class="opt">));</span>
+         Start                <span class="opt">:=</span> Stop <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+      Last <span class="opt">:=</span> Stop<span class="opt">;</span>
+   <span class="kwa">end</span> Read<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Open_Stdin <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      Stream_IO<span class="opt">.</span>Open
+        <span class="opt">(</span>File <span class="opt">=&gt;</span> Stdin<span class="opt">,</span>
+         Mode <span class="opt">=&gt;</span> Stream_IO<span class="opt">.</span>In_File<span class="opt">,</span>
+         Name <span class="opt">=&gt;</span> <span class="sng">&quot;/dev/stdin&quot;</span><span class="opt">);</span>
+   <span class="kwa">end</span> Open_Stdin<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Close_Stdin <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      Stream_IO<span class="opt">.</span><span class="kwc">Close</span> <span class="opt">(</span>Stdin<span class="opt">);</span>
+   <span class="kwa">end</span> Close_Stdin<span class="opt">;</span>
+
+<span class="kwa">end</span> Block_Input<span class="opt">;</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+GNATMAKE 13.3.0
+
+
+ Fri, 10 Jan 2025 18:52:23 GMT
+
+MAKE:
+gnatchop -r -w regexredux.gnat-6.gnat
+splitting regexredux.gnat-6.gnat into:
+   regexredux.adb
+   dna.ads
+   pcre.ads
+   pcre.adb
+   block_input.ads
+   block_input.adb
+gnatmake -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 -f regexredux.adb -o regexredux.gnat-6.gnat_run 
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 regexredux.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 block_input.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 dna.ads
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 pcre.adb
+x86_64-linux-gnu-gnatbind-13 -x regexredux.ali
+x86_64-linux-gnu-gnatlink-13 regexredux.ali -O3 -fomit-frame-pointer -march=ivybridge -o regexredux.gnat-6.gnat_run
+
+4.05s to complete and log all make actions
+
+COMMAND LINE:
+ ./regexredux.gnat-6.gnat_run 0 &lt; regexredux-input5000000.txt
+
+UNEXPECTED OUTPUT 
+
+13c13
+&lt; 66800214
+---
+&gt; 27388361
+
+PROGRAM OUTPUT:
+agggtaaa|tttaccct 356
+[cgt]gggtaaa|tttaccc[acg] 1250
+a[act]ggtaaa|tttacc[agt]t 4252
+ag[act]gtaaa|tttac[agt]ct 2894
+agg[act]taaa|ttta[agt]cct 5435
+aggg[acg]aaa|ttt[cgt]ccct 1537
+agggt[cgt]aa|tt[acg]accct 1431
+agggta[cgt]a|t[acg]taccct 1608
+agggtaa[cgt]|[acg]ttaccct 2178
+
+50833411
+50000000
+66800214
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

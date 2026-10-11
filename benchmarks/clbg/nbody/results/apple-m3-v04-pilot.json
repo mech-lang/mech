@@ -1,0 +1,1712 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T01:05:28.972242+00:00",
+  "git_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+  "tracked_dirty": [],
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu": "Apple M3"
+  },
+  "toolchain_versions": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "go": "go version go1.27.1 darwin/arm64",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "julia": "julia version 1.13.1",
+    "java": "openjdk version \"27\" 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)"
+  },
+  "protocol": {
+    "steps": 1000000,
+    "samples": 5,
+    "seed": 20261006,
+    "timed_region": "fresh process launch through exit; includes runtime initialization/JIT/source compilation and energy output; excludes ahead-of-time builds",
+    "source_metric": "comments removed, whitespace runs collapsed, UTF-8, gzip level 1 with mtime=0; locally specified metric, not guaranteed byte-identical to CLBG gz",
+    "source_scope": "full programs; Mech includes its custom Rust CLI/energy/iteration adapter",
+    "process_environment": {
+      "JULIA_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "1",
+      "GOMAXPROCS": "1"
+    },
+    "sample_order": [
+      [
+        "nbody-chapel-2",
+        "nbody-chapel-4",
+        "nbody-graalvmaot-3",
+        "nbody-julia-3",
+        "nbody-go-1",
+        "nbody-go-3",
+        "mech-resident-sqrt-v04",
+        "nbody-graalvmaot-1",
+        "nbody-graalvmaot-8",
+        "nbody-rust-6",
+        "nbody-graalvmaot-2",
+        "nbody-go-2",
+        "nbody-julia-5",
+        "nbody-rust-3",
+        "mech-resident-power-v04",
+        "nbody-chapel-3",
+        "nbody-rust-1",
+        "nbody-rust-4",
+        "nbody-graalvmaot-5",
+        "nbody-go-8",
+        "nbody-graalvmaot-4",
+        "nbody-julia-2",
+        "nbody-rust-2",
+        "nbody-julia-4"
+      ],
+      [
+        "nbody-go-8",
+        "nbody-go-3",
+        "nbody-graalvmaot-3",
+        "nbody-chapel-2",
+        "nbody-graalvmaot-1",
+        "nbody-graalvmaot-2",
+        "nbody-graalvmaot-4",
+        "nbody-julia-4",
+        "nbody-graalvmaot-5",
+        "nbody-rust-1",
+        "mech-resident-sqrt-v04",
+        "nbody-julia-3",
+        "nbody-julia-2",
+        "nbody-rust-2",
+        "nbody-graalvmaot-8",
+        "nbody-go-1",
+        "nbody-julia-5",
+        "nbody-rust-3",
+        "nbody-chapel-3",
+        "nbody-go-2",
+        "nbody-chapel-4",
+        "mech-resident-power-v04",
+        "nbody-rust-4",
+        "nbody-rust-6"
+      ],
+      [
+        "mech-resident-power-v04",
+        "nbody-rust-1",
+        "nbody-graalvmaot-8",
+        "nbody-go-2",
+        "nbody-rust-2",
+        "nbody-rust-3",
+        "nbody-rust-6",
+        "nbody-go-3",
+        "nbody-chapel-2",
+        "nbody-graalvmaot-1",
+        "nbody-graalvmaot-5",
+        "nbody-graalvmaot-4",
+        "nbody-graalvmaot-3",
+        "nbody-graalvmaot-2",
+        "mech-resident-sqrt-v04",
+        "nbody-julia-3",
+        "nbody-chapel-4",
+        "nbody-julia-4",
+        "nbody-go-1",
+        "nbody-chapel-3",
+        "nbody-julia-2",
+        "nbody-julia-5",
+        "nbody-rust-4",
+        "nbody-go-8"
+      ],
+      [
+        "nbody-graalvmaot-4",
+        "nbody-go-1",
+        "nbody-graalvmaot-2",
+        "nbody-chapel-4",
+        "nbody-rust-3",
+        "nbody-graalvmaot-5",
+        "nbody-rust-4",
+        "nbody-rust-2",
+        "mech-resident-power-v04",
+        "nbody-graalvmaot-3",
+        "nbody-go-8",
+        "nbody-go-3",
+        "nbody-rust-1",
+        "mech-resident-sqrt-v04",
+        "nbody-chapel-2",
+        "nbody-julia-3",
+        "nbody-go-2",
+        "nbody-julia-5",
+        "nbody-julia-2",
+        "nbody-chapel-3",
+        "nbody-graalvmaot-1",
+        "nbody-rust-6",
+        "nbody-julia-4",
+        "nbody-graalvmaot-8"
+      ],
+      [
+        "nbody-rust-6",
+        "nbody-graalvmaot-1",
+        "nbody-go-3",
+        "nbody-julia-3",
+        "nbody-graalvmaot-5",
+        "nbody-graalvmaot-4",
+        "nbody-graalvmaot-3",
+        "nbody-chapel-3",
+        "nbody-rust-1",
+        "nbody-go-1",
+        "nbody-go-8",
+        "nbody-rust-3",
+        "nbody-julia-4",
+        "nbody-graalvmaot-2",
+        "mech-resident-sqrt-v04",
+        "nbody-rust-2",
+        "nbody-julia-2",
+        "nbody-chapel-2",
+        "nbody-rust-4",
+        "nbody-chapel-4",
+        "nbody-go-2",
+        "nbody-julia-5",
+        "mech-resident-power-v04",
+        "nbody-graalvmaot-8"
+      ]
+    ],
+    "expected_energy": [
+      -0.169075164,
+      -0.169086185
+    ],
+    "status": "pilot"
+  },
+  "programs": [
+    {
+      "id": "nbody-rust-3",
+      "language": "rust",
+      "variant": 3,
+      "path": "upstream/nbody-rust-3.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-rust-3.html",
+      "sha256": "34c935a74f929712bf8864697763c7d37806eb97ffdbad5e987346f5e761c994",
+      "published_secs": 3.46,
+      "published_gz": 1774,
+      "upstream_execution": "rust",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:03:10 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1  nbody.rs -o nbody.rust-3.rust_run\n\n10.62 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.rust-3.rust_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "rust",
+      "source": {
+        "paths": [
+          "upstream/nbody-rust-3.rs"
+        ],
+        "sha256": {
+          "upstream/nbody-rust-3.rs": "34c935a74f929712bf8864697763c7d37806eb97ffdbad5e987346f5e761c994"
+        },
+        "physical_lines": 239,
+        "nonblank_noncomment_lines": 196,
+        "normalized_bytes": 4449,
+        "gzip1_bytes": 1748
+      },
+      "compile_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-3"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-3",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.055528584,
+        0.054825333,
+        0.052918416,
+        0.053903167,
+        0.051848375
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.053903167,
+      "min_seconds": 0.051848375,
+      "max_seconds": 0.055528584
+    },
+    {
+      "id": "nbody-chapel-3",
+      "language": "chapel",
+      "variant": 3,
+      "path": "upstream/nbody-chapel-3.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-chapel-3.html",
+      "sha256": "fb698d60d235ca97553a22a1c36156cc9ab9bfec6b4948017219de06b5bd070f",
+      "published_secs": 3.61,
+      "published_gz": 983,
+      "upstream_execution": "chapel",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 18:03:37 GMT\n\nMAKE:\nmv nbody.chapel-3.chapel nbody.chapel-3.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast nbody.chapel-3.chpl -o nbody.chapel-3.chapel_run\nrm nbody.chapel-3.chpl\n\n19.99 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.chapel-3.chapel_run --n=50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "chapel",
+      "source": {
+        "paths": [
+          "upstream/nbody-chapel-3.chpl"
+        ],
+        "sha256": {
+          "upstream/nbody-chapel-3.chpl": "fb698d60d235ca97553a22a1c36156cc9ab9bfec6b4948017219de06b5bd070f"
+        },
+        "physical_lines": 131,
+        "nonblank_noncomment_lines": 79,
+        "normalized_bytes": 2194,
+        "gzip1_bytes": 972
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-chapel-3",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-chapel-3",
+        "--n=1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.108486792,
+        0.106831167,
+        0.108278333,
+        0.107895583,
+        0.095892708
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.107895583,
+      "min_seconds": 0.095892708,
+      "max_seconds": 0.108486792
+    },
+    {
+      "id": "nbody-rust-2",
+      "language": "rust",
+      "variant": 2,
+      "path": "upstream/nbody-rust-2.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-rust-2.html",
+      "sha256": "3c438befc88266e8c6a062b89672919c3f12e98333c52a6a8907dc8296a1a951",
+      "published_secs": 3.65,
+      "published_gz": 1809,
+      "upstream_execution": "rust",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:09:08 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1  nbody.rs -o nbody.rust-2.rust_run\nwarning: unnecessary parentheses around `for` iterator expression\n   --> nbody.rs:189:14\n    |\n189 |     for _ in (0..n) {\n    |              ^    ^\n    |\n    = note: `#[warn(unused_parens)]` on by default\nhelp: remove these parentheses\n    |\n189 -     for _ in (0..n) {\n189 +     for _ in 0..n {\n    |\n\nwarning: variable does not need to be mutable\n   --> nbody.rs:150:12\n    |\n150 | fn advance(mut bodies: &mut [Planet; N_BODIES], dt: f64,\n    |            ----^^^^^^\n    |            |\n    |            help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nwarning: 2 warnings emitted\n\n\n10.49 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.rust-2.rust_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "rust",
+      "source": {
+        "paths": [
+          "upstream/nbody-rust-2.rs"
+        ],
+        "sha256": {
+          "upstream/nbody-rust-2.rs": "3c438befc88266e8c6a062b89672919c3f12e98333c52a6a8907dc8296a1a951"
+        },
+        "physical_lines": 204,
+        "nonblank_noncomment_lines": 157,
+        "normalized_bytes": 4291,
+        "gzip1_bytes": 1777
+      },
+      "compile_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-2.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-2"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-2",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.05598575,
+        0.055608209,
+        0.051932334,
+        0.050394,
+        0.052264458
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.052264458,
+      "min_seconds": 0.050394,
+      "max_seconds": 0.05598575
+    },
+    {
+      "id": "nbody-julia-5",
+      "language": "julia",
+      "variant": 5,
+      "path": "upstream/nbody-julia-5.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-julia-5.html",
+      "sha256": "2def3e7e9910b46cd522b81041e04bbcede2481f69684b683bea605bef598a54",
+      "published_secs": 3.8,
+      "published_gz": 1129,
+      "upstream_execution": "julia",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 08:41:56 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.14 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- nbody.julia-5.julia 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "julia",
+      "source": {
+        "paths": [
+          "upstream/nbody-julia-5.jl"
+        ],
+        "sha256": {
+          "upstream/nbody-julia-5.jl": "2def3e7e9910b46cd522b81041e04bbcede2481f69684b683bea605bef598a54"
+        },
+        "physical_lines": 157,
+        "nonblank_noncomment_lines": 90,
+        "normalized_bytes": 2406,
+        "gzip1_bytes": 1106
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-julia-5.jl",
+        "1000000"
+      ],
+      "environment_overrides": {
+        "JULIA_LLVM_ARGS": "-unroll-threshold=500"
+      },
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.429527459,
+        0.44273075,
+        0.448099167,
+        0.441939542,
+        0.44111225
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.441939542,
+      "min_seconds": 0.429527459,
+      "max_seconds": 0.448099167
+    },
+    {
+      "id": "nbody-rust-6",
+      "language": "rust",
+      "variant": 6,
+      "path": "upstream/nbody-rust-6.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-rust-6.html",
+      "sha256": "db959717a6274945296bb8ca2c719b7c410d49f8c78ca8a726bcbda36de7800b",
+      "published_secs": 4.37,
+      "published_gz": 1796,
+      "upstream_execution": "rust",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:04:14 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1  nbody.rs -o nbody.rust-6.rust_run\n\n10.86 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.rust-6.rust_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "rust",
+      "source": {
+        "paths": [
+          "upstream/nbody-rust-6.rs"
+        ],
+        "sha256": {
+          "upstream/nbody-rust-6.rs": "db959717a6274945296bb8ca2c719b7c410d49f8c78ca8a726bcbda36de7800b"
+        },
+        "physical_lines": 232,
+        "nonblank_noncomment_lines": 201,
+        "normalized_bytes": 4564,
+        "gzip1_bytes": 1779
+      },
+      "compile_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-6.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-6"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-6",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.064243584,
+        0.0718595,
+        0.069323625,
+        0.064314958,
+        0.065438042
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.065438042,
+      "min_seconds": 0.064243584,
+      "max_seconds": 0.0718595
+    },
+    {
+      "id": "nbody-chapel-4",
+      "language": "chapel",
+      "variant": 4,
+      "path": "upstream/nbody-chapel-4.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-chapel-4.html",
+      "sha256": "bf20204ca254c5b11214229de3115b03bbc52a24a3d76dbb38df7f09c80734d2",
+      "published_secs": 4.69,
+      "published_gz": 1027,
+      "upstream_execution": "chapel",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 18:00:27 GMT\n\nMAKE:\nmv nbody.chapel-4.chapel nbody.chapel-4.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast nbody.chapel-4.chpl -o nbody.chapel-4.chapel_run\nrm nbody.chapel-4.chpl\n\n20.37 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.chapel-4.chapel_run --n=50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "chapel",
+      "source": {
+        "paths": [
+          "upstream/nbody-chapel-4.chpl"
+        ],
+        "sha256": {
+          "upstream/nbody-chapel-4.chpl": "bf20204ca254c5b11214229de3115b03bbc52a24a3d76dbb38df7f09c80734d2"
+        },
+        "physical_lines": 140,
+        "nonblank_noncomment_lines": 89,
+        "normalized_bytes": 2351,
+        "gzip1_bytes": 1016
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-chapel-4.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-chapel-4",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-chapel-4",
+        "--n=1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.110940125,
+        0.111286792,
+        0.106417042,
+        0.100661875,
+        0.10740425
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.10740425,
+      "min_seconds": 0.100661875,
+      "max_seconds": 0.111286792
+    },
+    {
+      "id": "nbody-rust-4",
+      "language": "rust",
+      "variant": 4,
+      "path": "upstream/nbody-rust-4.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-rust-4.html",
+      "sha256": "805cde7695e23006731f882478d3b88bf9ab87e3b122f4debb8368aa9c2a7224",
+      "published_secs": 5.13,
+      "published_gz": 1810,
+      "upstream_execution": "rust",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:06:51 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1  nbody.rs -o nbody.rust-4.rust_run\n\n10.50 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.rust-4.rust_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "rust",
+      "source": {
+        "paths": [
+          "upstream/nbody-rust-4.rs"
+        ],
+        "sha256": {
+          "upstream/nbody-rust-4.rs": "805cde7695e23006731f882478d3b88bf9ab87e3b122f4debb8368aa9c2a7224"
+        },
+        "physical_lines": 221,
+        "nonblank_noncomment_lines": 190,
+        "normalized_bytes": 4593,
+        "gzip1_bytes": 1792
+      },
+      "compile_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-4.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-4"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-4",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.099944542,
+        0.100448209,
+        0.099648,
+        0.093162084,
+        0.100905375
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.099944542,
+      "min_seconds": 0.093162084,
+      "max_seconds": 0.100905375
+    },
+    {
+      "id": "nbody-rust-1",
+      "language": "rust",
+      "variant": 1,
+      "path": "upstream/nbody-rust-1.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-rust-1.html",
+      "sha256": "ba284c090d7fb2ba19a12582be5c70c58e830db0d28ba1d5a0ac80d9b96e0f20",
+      "published_secs": 5.52,
+      "published_gz": 1483,
+      "upstream_execution": "rust",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:10:14 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1  nbody.rs -o nbody.rust_run\nwarning: unnecessary parentheses around `for` iterator expression\n  --> nbody.rs:69:14\n   |\n69 |     for _ in (0..steps) {\n   |              ^        ^\n   |\n   = note: `#[warn(unused_parens)]` on by default\nhelp: remove these parentheses\n   |\n69 -     for _ in (0..steps) {\n69 +     for _ in 0..steps {\n   |\n\nwarning: 1 warning emitted\n\nrm nbody.rs\n\n10.84 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.rust_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "rust",
+      "source": {
+        "paths": [
+          "upstream/nbody-rust-1.rs"
+        ],
+        "sha256": {
+          "upstream/nbody-rust-1.rs": "ba284c090d7fb2ba19a12582be5c70c58e830db0d28ba1d5a0ac80d9b96e0f20"
+        },
+        "physical_lines": 159,
+        "nonblank_noncomment_lines": 133,
+        "normalized_bytes": 3235,
+        "gzip1_bytes": 1463
+      },
+      "compile_command": [
+        "/Users/cim310/.cargo/bin/rustc",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "codegen-units=1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-1.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-1"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-rust-1",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.072954125,
+        0.065244708,
+        0.0739655,
+        0.071914916,
+        0.072569917
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.072569917,
+      "min_seconds": 0.065244708,
+      "max_seconds": 0.0739655
+    },
+    {
+      "id": "nbody-chapel-2",
+      "language": "chapel",
+      "variant": 2,
+      "path": "upstream/nbody-chapel-2.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-chapel-2.html",
+      "sha256": "87aa953e2962d53cb58e9f134e6c062f73ee6d574e8b8efa18f5d05529457f7d",
+      "published_secs": 5.74,
+      "published_gz": 977,
+      "upstream_execution": "chapel",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 18:01:56 GMT\n\nMAKE:\nmv nbody.chapel-2.chapel nbody.chapel-2.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast nbody.chapel-2.chpl -o nbody.chapel-2.chapel_run\nrm nbody.chapel-2.chpl\n\n20.52 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.chapel-2.chapel_run --n=50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "chapel",
+      "source": {
+        "paths": [
+          "upstream/nbody-chapel-2.chpl"
+        ],
+        "sha256": {
+          "upstream/nbody-chapel-2.chpl": "87aa953e2962d53cb58e9f134e6c062f73ee6d574e8b8efa18f5d05529457f7d"
+        },
+        "physical_lines": 138,
+        "nonblank_noncomment_lines": 81,
+        "normalized_bytes": 2124,
+        "gzip1_bytes": 967
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-chapel-2.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-chapel-2",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-chapel-2",
+        "--n=1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.133377292,
+        0.119573,
+        0.128563166,
+        0.130254375,
+        0.1284865
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.128563166,
+      "min_seconds": 0.119573,
+      "max_seconds": 0.133377292
+    },
+    {
+      "id": "nbody-graalvmaot-4",
+      "language": "java",
+      "variant": 4,
+      "path": "upstream/nbody-graalvmaot-4.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-graalvmaot-4.html",
+      "sha256": "6172dfc2c9b08f2396c176dd12174353a6463437ca53055328d73b8ddaa22084",
+      "published_secs": 6.02,
+      "published_gz": 1495,
+      "upstream_execution": "GraalVM native-image AOT",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 03:17:38 GMT\n\nMAKE:\nmv nbody.graalvmaot-4.graalvmaot nbody.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  nbody.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native nbody -o nbody.graalvmaot-4.graalvmaot_run\n\n145.73 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.graalvmaot-4.graalvmaot_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "OpenJDK JIT",
+      "source": {
+        "paths": [
+          "upstream/nbody-graalvmaot-4.java"
+        ],
+        "sha256": {
+          "upstream/nbody-graalvmaot-4.java": "6172dfc2c9b08f2396c176dd12174353a6463437ca53055328d73b8ddaa22084"
+        },
+        "physical_lines": 179,
+        "nonblank_noncomment_lines": 144,
+        "normalized_bytes": 3760,
+        "gzip1_bytes": 1485
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-4",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-4/nbody.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=1",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-4",
+        "nbody",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.139813875,
+        0.135519167,
+        0.138319375,
+        0.143960334,
+        0.136638958
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.138319375,
+      "min_seconds": 0.135519167,
+      "max_seconds": 0.143960334
+    },
+    {
+      "id": "nbody-go-3",
+      "language": "go",
+      "variant": 3,
+      "path": "upstream/nbody-go-3.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-go-3.html",
+      "sha256": "229a0db157a1482f54575ceb4f2d4feb2dfbbaaacffa57eabdd98427e771745d",
+      "published_secs": 6.39,
+      "published_gz": 1207,
+      "upstream_execution": "go",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 05:18:04 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o nbody.go-3.go_run nbody.go-3.go\n\n5.43s to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.go-3.go_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "go",
+      "source": {
+        "paths": [
+          "upstream/nbody-go-3.go"
+        ],
+        "sha256": {
+          "upstream/nbody-go-3.go": "229a0db157a1482f54575ceb4f2d4feb2dfbbaaacffa57eabdd98427e771745d"
+        },
+        "physical_lines": 161,
+        "nonblank_noncomment_lines": 135,
+        "normalized_bytes": 2864,
+        "gzip1_bytes": 1195
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-go-3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-go-3.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-go-3",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.070683542,
+        0.071436417,
+        0.070333375,
+        0.069080208,
+        0.064161917
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.070333375,
+      "min_seconds": 0.064161917,
+      "max_seconds": 0.071436417
+    },
+    {
+      "id": "nbody-graalvmaot-2",
+      "language": "java",
+      "variant": 2,
+      "path": "upstream/nbody-graalvmaot-2.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-graalvmaot-2.html",
+      "sha256": "fdfec955b7b652e476ef0a9a959d13016fdb9e363dae490bcfd77f00021e6787",
+      "published_secs": 6.77,
+      "published_gz": 1430,
+      "upstream_execution": "GraalVM native-image AOT",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 03:09:32 GMT\n\nMAKE:\nmv nbody.graalvmaot-2.graalvmaot nbody.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  nbody.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native nbody -o nbody.graalvmaot-2.graalvmaot_run\n\n144.22 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.graalvmaot-2.graalvmaot_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "OpenJDK JIT",
+      "source": {
+        "paths": [
+          "upstream/nbody-graalvmaot-2.java"
+        ],
+        "sha256": {
+          "upstream/nbody-graalvmaot-2.java": "fdfec955b7b652e476ef0a9a959d13016fdb9e363dae490bcfd77f00021e6787"
+        },
+        "physical_lines": 167,
+        "nonblank_noncomment_lines": 137,
+        "normalized_bytes": 3665,
+        "gzip1_bytes": 1419
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-2",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-2/nbody.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=1",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-2",
+        "nbody",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.1445055,
+        0.141685709,
+        0.14066775,
+        0.1522265,
+        0.152344542
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.1445055,
+      "min_seconds": 0.14066775,
+      "max_seconds": 0.152344542
+    },
+    {
+      "id": "nbody-graalvmaot-3",
+      "language": "java",
+      "variant": 3,
+      "path": "upstream/nbody-graalvmaot-3.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-graalvmaot-3.html",
+      "sha256": "4d35e5eef3b7ecd1f6abd2e1d6966ee1c47fcf4423d858ccaefab3bc41ed6037",
+      "published_secs": 6.77,
+      "published_gz": 1436,
+      "upstream_execution": "GraalVM native-image AOT",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 03:21:26 GMT\n\nMAKE:\nmv nbody.graalvmaot-3.graalvmaot nbody.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  nbody.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native nbody -o nbody.graalvmaot-3.graalvmaot_run\n\n143.42 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.graalvmaot-3.graalvmaot_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "OpenJDK JIT",
+      "source": {
+        "paths": [
+          "upstream/nbody-graalvmaot-3.java"
+        ],
+        "sha256": {
+          "upstream/nbody-graalvmaot-3.java": "4d35e5eef3b7ecd1f6abd2e1d6966ee1c47fcf4423d858ccaefab3bc41ed6037"
+        },
+        "physical_lines": 169,
+        "nonblank_noncomment_lines": 138,
+        "normalized_bytes": 3677,
+        "gzip1_bytes": 1426
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-3/nbody.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=1",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-3",
+        "nbody",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.14690675,
+        0.148480708,
+        0.13962325,
+        0.152360875,
+        0.141469666
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.14690675,
+      "min_seconds": 0.13962325,
+      "max_seconds": 0.152360875
+    },
+    {
+      "id": "nbody-go-1",
+      "language": "go",
+      "variant": 1,
+      "path": "upstream/nbody-go-1.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-go-1.html",
+      "sha256": "cbcb799e281d7566e26aed2756ec289ff874baa5fc91a1ce32a5c1e346737633",
+      "published_secs": 7.02,
+      "published_gz": 1316,
+      "upstream_execution": "go",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 03:50:39 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o nbody.go_run nbody.go\n\n5.36s to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.go_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "go",
+      "source": {
+        "paths": [
+          "upstream/nbody-go-1.go"
+        ],
+        "sha256": {
+          "upstream/nbody-go-1.go": "cbcb799e281d7566e26aed2756ec289ff874baa5fc91a1ce32a5c1e346737633"
+        },
+        "physical_lines": 151,
+        "nonblank_noncomment_lines": 127,
+        "normalized_bytes": 3018,
+        "gzip1_bytes": 1305
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-go-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-go-1.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-go-1",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.116116333,
+        0.110088375,
+        0.118822083,
+        0.109528541,
+        0.117148375
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.116116333,
+      "min_seconds": 0.109528541,
+      "max_seconds": 0.118822083
+    },
+    {
+      "id": "nbody-go-2",
+      "language": "go",
+      "variant": 2,
+      "path": "upstream/nbody-go-2.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-go-2.html",
+      "sha256": "650ca1b459d8cfe41fa3359a48f118abc07cd61abc42a0851152a1c904cf7aff",
+      "published_secs": 7.04,
+      "published_gz": 1222,
+      "upstream_execution": "go",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 03:46:46 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o nbody.go-2.go_run nbody.go-2.go\n\n5.35s to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.go-2.go_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "go",
+      "source": {
+        "paths": [
+          "upstream/nbody-go-2.go"
+        ],
+        "sha256": {
+          "upstream/nbody-go-2.go": "650ca1b459d8cfe41fa3359a48f118abc07cd61abc42a0851152a1c904cf7aff"
+        },
+        "physical_lines": 144,
+        "nonblank_noncomment_lines": 121,
+        "normalized_bytes": 2961,
+        "gzip1_bytes": 1210
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-go-2",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-go-2.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-go-2",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.069649166,
+        0.075757083,
+        0.070074916,
+        0.077108542,
+        0.076455458
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.075757083,
+      "min_seconds": 0.069649166,
+      "max_seconds": 0.077108542
+    },
+    {
+      "id": "nbody-julia-4",
+      "language": "julia",
+      "variant": 4,
+      "path": "upstream/nbody-julia-4.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-julia-4.html",
+      "sha256": "3e8bdf6a3f7abdcca07433c69ca08eb31e1a2a9375d6b0d1a2e0907c30d97dd3",
+      "published_secs": 7.19,
+      "published_gz": 1168,
+      "upstream_execution": "julia",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 08:51:06 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.15 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- nbody.julia-4.julia 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "julia",
+      "source": {
+        "paths": [
+          "upstream/nbody-julia-4.jl"
+        ],
+        "sha256": {
+          "upstream/nbody-julia-4.jl": "3e8bdf6a3f7abdcca07433c69ca08eb31e1a2a9375d6b0d1a2e0907c30d97dd3"
+        },
+        "physical_lines": 149,
+        "nonblank_noncomment_lines": 113,
+        "normalized_bytes": 2529,
+        "gzip1_bytes": 1150
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-julia-4.jl",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.473852834,
+        0.454273708,
+        0.470402291,
+        0.457188125,
+        0.468266125
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.468266125,
+      "min_seconds": 0.454273708,
+      "max_seconds": 0.473852834
+    },
+    {
+      "id": "nbody-graalvmaot-5",
+      "language": "java",
+      "variant": 5,
+      "path": "upstream/nbody-graalvmaot-5.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-graalvmaot-5.html",
+      "sha256": "16bf94e566183c4eec4b28ee7d807b7211cd375133905383ab0ddc66af5cfc4b",
+      "published_secs": 7.23,
+      "published_gz": 1435,
+      "upstream_execution": "GraalVM native-image AOT",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 03:13:32 GMT\n\nMAKE:\nmv nbody.graalvmaot-5.graalvmaot nbody.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  nbody.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native nbody -o nbody.graalvmaot-5.graalvmaot_run\n\n146.75 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.graalvmaot-5.graalvmaot_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "OpenJDK JIT",
+      "source": {
+        "paths": [
+          "upstream/nbody-graalvmaot-5.java"
+        ],
+        "sha256": {
+          "upstream/nbody-graalvmaot-5.java": "16bf94e566183c4eec4b28ee7d807b7211cd375133905383ab0ddc66af5cfc4b"
+        },
+        "physical_lines": 181,
+        "nonblank_noncomment_lines": 130,
+        "normalized_bytes": 4203,
+        "gzip1_bytes": 1424
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-5",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-5/nbody.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=1",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-5",
+        "nbody",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.164811333,
+        0.178254833,
+        0.164688167,
+        0.19124,
+        0.160553375
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.164811333,
+      "min_seconds": 0.160553375,
+      "max_seconds": 0.19124
+    },
+    {
+      "id": "nbody-graalvmaot-1",
+      "language": "java",
+      "variant": 1,
+      "path": "upstream/nbody-graalvmaot-1.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-graalvmaot-1.html",
+      "sha256": "172726ceae72fbc3e422c7da71c224abbe9e92dcbe2da6f2f5caee596a9ef1b7",
+      "published_secs": 7.26,
+      "published_gz": 1437,
+      "upstream_execution": "GraalVM native-image AOT",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 03:05:28 GMT\n\nMAKE:\nmv nbody.graalvmaot nbody.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  nbody.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native nbody -o nbody.graalvmaot_run\n\n148.73 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.graalvmaot_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "OpenJDK JIT",
+      "source": {
+        "paths": [
+          "upstream/nbody-graalvmaot-1.java"
+        ],
+        "sha256": {
+          "upstream/nbody-graalvmaot-1.java": "172726ceae72fbc3e422c7da71c224abbe9e92dcbe2da6f2f5caee596a9ef1b7"
+        },
+        "physical_lines": 174,
+        "nonblank_noncomment_lines": 140,
+        "normalized_bytes": 3873,
+        "gzip1_bytes": 1425
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-1/nbody.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=1",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-1",
+        "nbody",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.153879167,
+        0.147374959,
+        0.152824709,
+        0.152151667,
+        0.151865542
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.152151667,
+      "min_seconds": 0.147374959,
+      "max_seconds": 0.153879167
+    },
+    {
+      "id": "nbody-graalvmaot-8",
+      "language": "java",
+      "variant": 8,
+      "path": "upstream/nbody-graalvmaot-8.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-graalvmaot-8.html",
+      "sha256": "67a99e94ab2b6e0067942bf2b9f2e0274c4de7a9f28fb3fafc455178e2471a4d",
+      "published_secs": 7.3,
+      "published_gz": 1322,
+      "upstream_execution": "GraalVM native-image AOT",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 03:01:20 GMT\n\nMAKE:\nmv nbody.graalvmaot-8.graalvmaot nbody.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  nbody.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native nbody -o nbody.graalvmaot-8.graalvmaot_run\n\n145.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.graalvmaot-8.graalvmaot_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "OpenJDK JIT",
+      "source": {
+        "paths": [
+          "upstream/nbody-graalvmaot-8.java"
+        ],
+        "sha256": {
+          "upstream/nbody-graalvmaot-8.java": "67a99e94ab2b6e0067942bf2b9f2e0274c4de7a9f28fb3fafc455178e2471a4d"
+        },
+        "physical_lines": 150,
+        "nonblank_noncomment_lines": 127,
+        "normalized_bytes": 3235,
+        "gzip1_bytes": 1312
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-8/nbody.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=1",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-graalvmaot-8",
+        "nbody",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.160744125,
+        0.163494209,
+        0.1682475,
+        0.165339625,
+        0.170107416
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.165339625,
+      "min_seconds": 0.160744125,
+      "max_seconds": 0.170107416
+    },
+    {
+      "id": "nbody-julia-3",
+      "language": "julia",
+      "variant": 3,
+      "path": "upstream/nbody-julia-3.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-julia-3.html",
+      "sha256": "9c3fed09b3058fa99e719c0d0553992eb1928801ede7eb046da0f6101a9b967e",
+      "published_secs": 8.07,
+      "published_gz": 1548,
+      "upstream_execution": "julia",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 08:38:02 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.13 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- nbody.julia-3.julia 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "julia",
+      "source": {
+        "paths": [
+          "upstream/nbody-julia-3.jl"
+        ],
+        "sha256": {
+          "upstream/nbody-julia-3.jl": "9c3fed09b3058fa99e719c0d0553992eb1928801ede7eb046da0f6101a9b967e"
+        },
+        "physical_lines": 187,
+        "nonblank_noncomment_lines": 146,
+        "normalized_bytes": 4290,
+        "gzip1_bytes": 1536
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-julia-3.jl",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.439093167,
+        0.461156875,
+        0.462406584,
+        0.456578666,
+        0.440929542
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.456578666,
+      "min_seconds": 0.439093167,
+      "max_seconds": 0.462406584
+    },
+    {
+      "id": "nbody-go-8",
+      "language": "go",
+      "variant": 8,
+      "path": "upstream/nbody-go-8.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-go-8.html",
+      "sha256": "31b4bbb15ee17fcbce6e37a5c3c7ea3b94a369d335fd9bb69edfb361f866f80e",
+      "published_secs": 9.6,
+      "published_gz": 1224,
+      "upstream_execution": "go",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Sat, 11 Jan 2025 03:48:27 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o nbody.go-8.go_run nbody.go-8.go\n\n5.47s to complete and log all make actions\n\nCOMMAND LINE:\n ./nbody.go-8.go_run 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "go",
+      "source": {
+        "paths": [
+          "upstream/nbody-go-8.go"
+        ],
+        "sha256": {
+          "upstream/nbody-go-8.go": "31b4bbb15ee17fcbce6e37a5c3c7ea3b94a369d335fd9bb69edfb361f866f80e"
+        },
+        "physical_lines": 146,
+        "nonblank_noncomment_lines": 122,
+        "normalized_bytes": 2897,
+        "gzip1_bytes": 1213
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-go-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-go-8.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-go-8",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.068923625,
+        0.075798583,
+        0.076095583,
+        0.07034175,
+        0.075341167
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.075341167,
+      "min_seconds": 0.068923625,
+      "max_seconds": 0.076095583
+    },
+    {
+      "id": "nbody-julia-2",
+      "language": "julia",
+      "variant": 2,
+      "path": "upstream/nbody-julia-2.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-julia-2.html",
+      "sha256": "4ac8f9ab6ab0e2fa21a12ad8d836f7e18004f7e2d1cc55dd1b507570f6973777",
+      "published_secs": 28.68,
+      "published_gz": 1084,
+      "upstream_execution": "julia",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 08:43:07 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.11 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- nbody.julia-2.julia 50000000\n\nPROGRAM OUTPUT:\n-0.169075164\n-0.169059907",
+      "execution_mode": "julia",
+      "source": {
+        "paths": [
+          "upstream/nbody-julia-2.jl"
+        ],
+        "sha256": {
+          "upstream/nbody-julia-2.jl": "4ac8f9ab6ab0e2fa21a12ad8d836f7e18004f7e2d1cc55dd1b507570f6973777"
+        },
+        "physical_lines": 118,
+        "nonblank_noncomment_lines": 90,
+        "normalized_bytes": 2390,
+        "gzip1_bytes": 1073
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--math-mode=ieee",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-julia-2.jl",
+        "1000000"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        0.870737084,
+        0.879202875,
+        0.890176917,
+        0.891325041,
+        0.885401208
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 0.885401208,
+      "min_seconds": 0.870737084,
+      "max_seconds": 0.891325041
+    },
+    {
+      "id": "mech-resident-sqrt-v04",
+      "language": "mech",
+      "path": "nbody.mec",
+      "execution_mode": "v0.4 resident execution without recording",
+      "source": {
+        "paths": [
+          "nbody.mec",
+          "mech-driver/src/main.rs"
+        ],
+        "sha256": {
+          "nbody.mec": "b34d7705a0267d7f32e4bd818102a6a1f607e2559d9744865b4a79df0eca6ac1",
+          "mech-driver/src/main.rs": "9890b3a457cebd0bbde3f92609dd01dd1f40dbbde0a898559022efe606fe262e"
+        },
+        "physical_lines": 109,
+        "nonblank_noncomment_lines": 100,
+        "normalized_bytes": 3330,
+        "gzip1_bytes": 1641
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/Cargo.toml"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody",
+        "1000000",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        4.264401625,
+        4.249955792,
+        4.251691584,
+        4.248837292,
+        4.251610833
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 4.251610833,
+      "min_seconds": 4.248837292,
+      "max_seconds": 4.264401625,
+      "mech_source_only_supplement": {
+        "paths": [
+          "nbody.mec"
+        ],
+        "sha256": {
+          "nbody.mec": "b34d7705a0267d7f32e4bd818102a6a1f607e2559d9744865b4a79df0eca6ac1"
+        },
+        "physical_lines": 31,
+        "nonblank_noncomment_lines": 29,
+        "normalized_bytes": 1220,
+        "gzip1_bytes": 681
+      }
+    },
+    {
+      "id": "mech-resident-power-v04",
+      "language": "mech",
+      "path": "nbody-power.mec",
+      "execution_mode": "v0.4 resident execution without recording",
+      "source": {
+        "paths": [
+          "nbody-power.mec",
+          "mech-driver/src/main.rs"
+        ],
+        "sha256": {
+          "nbody-power.mec": "47f2b4df3c17b88badcdc7f12c226970d8f0ea81799d87d32a2ba208233df076",
+          "mech-driver/src/main.rs": "9890b3a457cebd0bbde3f92609dd01dd1f40dbbde0a898559022efe606fe262e"
+        },
+        "physical_lines": 109,
+        "nonblank_noncomment_lines": 100,
+        "normalized_bytes": 3316,
+        "gzip1_bytes": 1631
+      },
+      "compile_command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/Cargo.toml"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody",
+        "1000000",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-power.mec"
+      ],
+      "environment_overrides": {},
+      "correctness_1000_stdout": "-0.169075164\n-0.169087605\n",
+      "samples_seconds": [
+        4.152328167,
+        4.161316875,
+        4.182730417,
+        4.157455959,
+        4.155529125
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n",
+        "-0.169075164\n-0.169086185\n"
+      ],
+      "discarded_warmup_stdout": "-0.169075164\n-0.169086185\n",
+      "median_seconds": 4.157455959,
+      "min_seconds": 4.152328167,
+      "max_seconds": 4.182730417,
+      "mech_source_only_supplement": {
+        "paths": [
+          "nbody-power.mec"
+        ],
+        "sha256": {
+          "nbody-power.mec": "47f2b4df3c17b88badcdc7f12c226970d8f0ea81799d87d32a2ba208233df076"
+        },
+        "physical_lines": 31,
+        "nonblank_noncomment_lines": 29,
+        "normalized_bytes": 1206,
+        "gzip1_bytes": 675
+      }
+    }
+  ],
+  "excluded": [],
+  "endpoints": {
+    "time_baseline_seconds": 0.052264458,
+    "size_baseline_bytes": 967,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "chapel": {
+        "candidate_count": 3,
+        "fastest": "nbody-chapel-4",
+        "smallest": "nbody-chapel-2",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.1970025953349146,
+        "fastest_size_over_smallest": 1.0506721820062048,
+        "log2_tradeoff_distance": 0.2690492201893699,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0506721820062048,
+            "time_ratio": 2.055015092665842
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 2.4598583993734326
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 4,
+        "fastest": "nbody-go-3",
+        "smallest": "nbody-go-3",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.235780765253361,
+            "time_ratio": 1.3457209295081565
+          },
+          "smallest": {
+            "size_ratio": 1.235780765253361,
+            "time_ratio": 1.3457209295081565
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 6,
+        "fastest": "nbody-graalvmaot-4",
+        "smallest": "nbody-graalvmaot-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.1953468196339088,
+        "fastest_size_over_smallest": 1.131859756097561,
+        "log2_tradeoff_distance": 0.31337167182475706,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.5356773526370218,
+            "time_ratio": 2.646528449601448
+          },
+          "smallest": {
+            "size_ratio": 1.3567735263702172,
+            "time_ratio": 3.1635193653017506
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 4,
+        "fastest": "nbody-julia-5",
+        "smallest": "nbody-julia-2",
+        "same_entry": false,
+        "smallest_time_over_fastest": 2.0034441905630613,
+        "fastest_size_over_smallest": 1.0307548928238583,
+        "log2_tradeoff_distance": 1.0034344071473746,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.1437435367114788,
+            "time_ratio": 8.455833254790473
+          },
+          "smallest": {
+            "size_ratio": 1.109617373319545,
+            "time_ratio": 16.940790010679915
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 2,
+        "fastest": "mech-resident-power-v04",
+        "smallest": "mech-resident-power-v04",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.686659772492244,
+            "time_ratio": 79.54652393027781
+          },
+          "smallest": {
+            "size_ratio": 1.686659772492244,
+            "time_ratio": 79.54652393027781
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 5,
+        "fastest": "nbody-rust-2",
+        "smallest": "nbody-rust-1",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.3885137199739066,
+        "fastest_size_over_smallest": 1.2146274777853725,
+        "log2_tradeoff_distance": 0.5503903552242416,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.8376421923474664,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 1.5129265770423992,
+            "time_ratio": 1.3885137199739066
+          }
+        }
+      }
+    }
+  },
+  "legacy_harness_snapshot": {
+    "path": "legacy-harness-v1.tar.gz",
+    "sha256": "7eb570bb57ded1d557b36e42a766ff626cbbfa7b1d116a761336951fe8142c76",
+    "note": "Historical handwritten n-body energy adapters and their Cargo entry declarations. Current execution uses the generic runtime and all math is in Mech."
+  }
+}

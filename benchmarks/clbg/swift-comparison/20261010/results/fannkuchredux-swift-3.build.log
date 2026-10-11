@@ -1,0 +1,14 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fannkuchredux-swift-3.swift:60:13: warning: 'assign(from:count:)' is deprecated: renamed to 'update(from:count:)'
+         pp.assign(from: p, count: i+1)
+            ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fannkuchredux-swift-3.swift:60:13: note: use 'update(from:count:)' instead
+         pp.assign(from: p, count: i+1)
+            ^~~~~~
+            update
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fannkuchredux-swift-3.swift:93:13: warning: 'assign(from:count:)' is deprecated: renamed to 'update(from:count:)'
+         pp.assign(from: p, count: n)
+            ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fannkuchredux-swift-3.swift:93:13: note: use 'update(from:count:)' instead
+         pp.assign(from: p, count: n)
+            ^~~~~~
+            update

@@ -1,0 +1,58 @@
+[
+  {
+    "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident",
+    "old_median": 5.1848855,
+    "result": {
+      "seconds": 0.472506542,
+      "wall_seconds": 0.600845875,
+      "prepare_seconds": 0.114128375,
+      "kernel_seconds": 0.472506542,
+      "validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    }
+  },
+  {
+    "key": "nbody:compact-baseline:jit",
+    "old_median": 1.628762125,
+    "result": {
+      "seconds": 1.371576625,
+      "wall_seconds": 1.371576625,
+      "prepare_seconds": 0.262107792,
+      "kernel_seconds": 1.099259,
+      "validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    }
+  },
+  {
+    "key": "fasta:mech-fasta-final-expanded-v2:jit",
+    "old_median": 1.126172125,
+    "result": {
+      "seconds": 0.739850917,
+      "wall_seconds": 0.739850917,
+      "prepare_seconds": 0.186619167,
+      "kernel_seconds": 0.541648083,
+      "validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    }
+  }
+]

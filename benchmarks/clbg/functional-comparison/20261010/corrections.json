@@ -1,0 +1,1760 @@
+{
+  "status": "corrections-pinned",
+  "manifest_sha256": "ba950d544effc9d58459dd517db03b2c1f5ba3ee39f6f29856129bcfcb696380",
+  "programs": [
+    {
+      "id": "binarytrees-ghc-5-faithful",
+      "key": "binarytrees:binarytrees-ghc-5-faithful",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 5,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-5-faithful.hs",
+      "source_sha256": "1e6341d6251c4b21418fe1b798f319f6355683d7d3a58867bfd9ad052d339d3e",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ghc-5.hs",
+      "original_source_sha256": "653ef0712e8ef9cfc2dbf33b5e9207beae960416b862527cdc1822042df69351",
+      "page_sha256": "7b2967eb632cef2277e5e27b0f624de39d83c25c9ebc1e3952d8d686121392d3",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-5.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 05:12:20 GMT\n\nMAKE:\nmv binarytrees.ghc-5.ghc binarytrees.ghc-5.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts  binarytrees.ghc-5.hs -o binarytrees.ghc-5.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( binarytrees.ghc-5.hs, binarytrees.ghc-5.o )\nbinarytrees.ghc-5.hs:29:31: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n29 |     n <- getArgs >>= readIO . head\n   |                               ^^^^\n\n[2 of 2] Linking binarytrees.ghc-5.ghc_run\nrm binarytrees.ghc-5.hs\n\n16.76 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ghc-5.ghc_run +RTS -N4 -K128M -H -RTS 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 0.214,
+          "n": 7
+        },
+        {
+          "elapsed": 7.217,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 78,
+        "nonblank_noncomment_lines": 39,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Keep strict child fields and separately allocate every leaf using an opaque sentinel producer. Prevent constructor/traversal fusion with NOINLINE constructor annotations; disable CSE and full-laziness for this allocation benchmark only. All annotations/barriers count toward LOC."
+      ],
+      "upstream_id": "binarytrees-ghc-5",
+      "local_adaptation": true
+    },
+    {
+      "id": "binarytrees-ghc-3-faithful",
+      "key": "binarytrees:binarytrees-ghc-3-faithful",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 3,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-3-faithful.hs",
+      "source_sha256": "8d7c4d52edcd0dce558e01ab95572cced1d675bfd9abd78b3e57f9d8d2322cfa",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ghc-3.hs",
+      "original_source_sha256": "a56dedcf730958ad1e86dbbcb3bef152bfc4be4f6386bef0dac02a53ae0278de",
+      "page_sha256": "0fa784944c57e49e8e9871b119c4845f8e4d484477474ba88ffa597151106d28",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-3.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 05:10:14 GMT\n\nMAKE:\nmv binarytrees.ghc-3.ghc binarytrees.ghc-3.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts  binarytrees.ghc-3.hs -o binarytrees.ghc-3.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( binarytrees.ghc-3.hs, binarytrees.ghc-3.o )\nbinarytrees.ghc-3.hs:27:31: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n27 |     n <- getArgs >>= readIO . head\n   |                               ^^^^\n\n[2 of 2] Linking binarytrees.ghc-3.ghc_run\nrm binarytrees.ghc-3.hs\n\n17.51 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ghc-3.ghc_run +RTS -N4 -K128M -H -RTS 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 0.199,
+          "n": 7
+        },
+        {
+          "elapsed": 6.968,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 74,
+        "nonblank_noncomment_lines": 37,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Keep strict child fields and separately allocate every leaf using an opaque sentinel producer. Prevent constructor/traversal fusion with NOINLINE constructor annotations; disable CSE and full-laziness for this allocation benchmark only. All annotations/barriers count toward LOC."
+      ],
+      "upstream_id": "binarytrees-ghc-3",
+      "local_adaptation": true
+    },
+    {
+      "id": "binarytrees-ghc-7-faithful",
+      "key": "binarytrees:binarytrees-ghc-7-faithful",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 7,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-7-faithful.hs",
+      "source_sha256": "12da07031a477c5d9f2a0d435b47a40534c4644ea9d8123f7c7ad3f99b3be057",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ghc-7.hs",
+      "original_source_sha256": "e6be55ee853ceb405da659f157dc3922b48201c4dda03be039538355ab944754",
+      "page_sha256": "40f61a881baf557cb9da3eb81da503c11e669db9b40ce1efcfcb045b3e748a82",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-7.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 05:14:23 GMT\n\nMAKE:\nmv binarytrees.ghc-7.ghc binarytrees.ghc-7.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts  binarytrees.ghc-7.hs -o binarytrees.ghc-7.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( binarytrees.ghc-7.hs, binarytrees.ghc-7.o )\nbinarytrees.ghc-7.hs:28:31: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n28 |     n <- getArgs >>= readIO . head\n   |                               ^^^^\n\n[2 of 2] Linking binarytrees.ghc-7.ghc_run\nrm binarytrees.ghc-7.hs\n\n16.89 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ghc-7.ghc_run +RTS -N4 -K128M -H -RTS 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 0.247,
+          "n": 7
+        },
+        {
+          "elapsed": 2.662,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 126,
+        "nonblank_noncomment_lines": 79,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Keep strict child fields and separately allocate every leaf using an opaque sentinel producer. Prevent constructor/traversal fusion with NOINLINE constructor annotations; disable CSE and full-laziness for this allocation benchmark only. All annotations/barriers count toward LOC."
+      ],
+      "upstream_id": "binarytrees-ghc-7",
+      "local_adaptation": true
+    },
+    {
+      "id": "binarytrees-ghc-1-faithful",
+      "key": "binarytrees:binarytrees-ghc-1-faithful",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 1,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-1-faithful.hs",
+      "source_sha256": "980fe0e71100f472e8d1083fd16c46b383cbe59c808309a723f9de2b91e3d218",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ghc-1.hs",
+      "original_source_sha256": "ac4fb8cbb647821b1ffddfa312804f941ca08de57d3cdbcc92f890498cee64f5",
+      "page_sha256": "f179e8349380c8bdc4e4885bcd5956375871a1a611e5bcd954c485c324268a32",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-1.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 05:25:43 GMT\n\nMAKE:\nmv binarytrees.ghc binarytrees.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts  binarytrees.hs -o binarytrees.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( binarytrees.hs, binarytrees.o )\nbinarytrees.hs:26:31: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n26 |     n <- getArgs >>= readIO . head\n   |                               ^^^^\n\n[2 of 2] Linking binarytrees.ghc_run\nrm binarytrees.hs\n\n17.12 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ghc_run +RTS -N4 -K128M -H -RTS 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 0.18,
+          "n": 7
+        },
+        {
+          "elapsed": 12.579,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 73,
+        "nonblank_noncomment_lines": 36,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Keep strict child fields and separately allocate every leaf using an opaque sentinel producer. Prevent constructor/traversal fusion with NOINLINE constructor annotations; disable CSE and full-laziness for this allocation benchmark only. All annotations/barriers count toward LOC."
+      ],
+      "upstream_id": "binarytrees-ghc-1",
+      "local_adaptation": true
+    },
+    {
+      "id": "binarytrees-ghc-2-faithful",
+      "key": "binarytrees:binarytrees-ghc-2-faithful",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 2,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-2-faithful.hs",
+      "source_sha256": "2b6e73c30164d23962144ce67025d4683c86b1d3fe34d54ed676412616bfa3ad",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ghc-2.hs",
+      "original_source_sha256": "968cb493ea66bc8926c3ce841ce7dea4ae2644d667af793b26a9bd9a2ec1a511",
+      "page_sha256": "d97dae82ca4b3ce73780f1d4d1133fa8095bd1ce2594217a5e4d1b6438facbdf",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-2.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 05:20:41 GMT\n\nMAKE:\nmv binarytrees.ghc-2.ghc binarytrees.ghc-2.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts  binarytrees.ghc-2.hs -o binarytrees.ghc-2.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( binarytrees.ghc-2.hs, binarytrees.ghc-2.o )\nbinarytrees.ghc-2.hs:14:17: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n14 |     n <- read . head <$> getArgs\n   |                 ^^^^\n\n[2 of 2] Linking binarytrees.ghc-2.ghc_run\nrm binarytrees.ghc-2.hs\n\n16.86 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ghc-2.ghc_run +RTS -N4 -K128M -H -RTS 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 0.187,
+          "n": 7
+        },
+        {
+          "elapsed": 12.841,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 56,
+        "nonblank_noncomment_lines": 37,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Keep strict child fields and separately allocate every leaf using an opaque sentinel producer. Prevent constructor/traversal fusion with NOINLINE constructor annotations; disable CSE and full-laziness for this allocation benchmark only. All annotations/barriers count toward LOC.",
+        "Move the long-lived traversal after all temporary trees and force its complete strict construction before temporary work."
+      ],
+      "upstream_id": "binarytrees-ghc-2",
+      "local_adaptation": true
+    },
+    {
+      "id": "binarytrees-ghc-6-faithful",
+      "key": "binarytrees:binarytrees-ghc-6-faithful",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 6,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-6-faithful.hs",
+      "source_sha256": "106b89d1b2cd0886e283313b5d621d662733f08cb135ad18fe718f7381930cc2",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ghc-6.hs",
+      "original_source_sha256": "bfe331ea66beef1a6829f411774a711a4c4d9e61585f3e7113d2c7608c3269e2",
+      "page_sha256": "47511c731d7d75c96c78e305fd4f7601e55c540cd27ea204e79667fe8cd35f9e",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-6.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 05:32:40 GMT\n\nMAKE:\nmv binarytrees.ghc-6.ghc binarytrees.ghc-6.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -fno-cse -package ghc-compact binarytrees.ghc-6.hs -o binarytrees.ghc-6.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( binarytrees.ghc-6.hs, binarytrees.ghc-6.o )\nbinarytrees.ghc-6.hs:28:31: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n28 |     n <- getArgs >>= readIO . head\n   |                               ^^^^\n\n[2 of 2] Linking binarytrees.ghc-6.ghc_run\nrm binarytrees.ghc-6.hs\n\n17.23 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ghc-6.ghc_run +RTS -N4 -K128M -H -RTS 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 0.175,
+          "n": 7
+        },
+        {
+          "elapsed": 3.924,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 82,
+        "nonblank_noncomment_lines": 41,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Keep strict child fields and separately allocate every leaf using an opaque sentinel producer. Prevent constructor/traversal fusion with NOINLINE constructor annotations; disable CSE and full-laziness for this allocation benchmark only. All annotations/barriers count toward LOC."
+      ],
+      "upstream_id": "binarytrees-ghc-6",
+      "local_adaptation": true
+    },
+    {
+      "id": "binarytrees-ghc-4-faithful",
+      "key": "binarytrees:binarytrees-ghc-4-faithful",
+      "benchmark": "binarytrees",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 4,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ghc-4-faithful.hs",
+      "source_sha256": "ab8abb7fd39555fd6969eb2ced2ecd9715bf0713906a693d16a82fa4da689d16",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ghc-4.hs",
+      "original_source_sha256": "da067814c82f19b52dc5d752ee67b53c78fa89cff3ba8c175c29e4b985119437",
+      "page_sha256": "0357552c45867ae9b434fccc1c13bbcf92dd7fddfb0de16f8427af9dc5044c46",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ghc-4.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 05:28:47 GMT\n\nMAKE:\nmv binarytrees.ghc-4.ghc binarytrees.ghc-4.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -fno-cse -package ghc-compact binarytrees.ghc-4.hs -o binarytrees.ghc-4.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( binarytrees.ghc-4.hs, binarytrees.ghc-4.o )\nbinarytrees.ghc-4.hs:30:31: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n30 |     n <- getArgs >>= readIO . head\n   |                               ^^^^\n\n[2 of 2] Linking binarytrees.ghc-4.ghc_run\nrm binarytrees.ghc-4.hs\n\n17.49 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ghc-4.ghc_run +RTS -N4 -K128M -H -RTS 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 0.3,
+          "n": 7
+        },
+        {
+          "elapsed": 2.162,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 126,
+        "nonblank_noncomment_lines": 80,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Keep strict child fields and separately allocate every leaf using an opaque sentinel producer. Prevent constructor/traversal fusion with NOINLINE constructor annotations; disable CSE and full-laziness for this allocation benchmark only. All annotations/barriers count toward LOC."
+      ],
+      "upstream_id": "binarytrees-ghc-4",
+      "local_adaptation": true
+    },
+    {
+      "id": "fasta-ghc-2-faithful",
+      "key": "fasta:fasta-ghc-2-faithful",
+      "benchmark": "fasta",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 2,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ghc-2-faithful.hs",
+      "source_sha256": "6273c921810c7da24449df69520ea3494c136e1635e3c38e89fadba0d4d762f8",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/fasta-ghc-2.hs",
+      "original_source_sha256": "2dba497838990372f9abfdaf95b19c3994b2f49bbd79be359f97afd3929b55c6",
+      "page_sha256": "e9d4f19efc94b9517640a8ad0c88ca0e5caa5ba617aee3dea3081057d827decd",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ghc-2.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 07:13:57 GMT\n\nMAKE:\nmv fasta.ghc-2.ghc fasta.ghc-2.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XOverloadedStrings fasta.ghc-2.hs -o fasta.ghc-2.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( fasta.ghc-2.hs, fasta.ghc-2.o )\nfasta.ghc-2.hs:20:29: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Data.List, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n20 |     n <- getArgs >>= readIO.head\n   |                             ^^^^\n\n[2 of 2] Linking fasta.ghc-2.ghc_run\nrm fasta.ghc-2.hs\n\n17.98 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fasta.ghc-2.ghc_run +RTS -N4 -RTS 25000000\n\n(TRUNCATED) PROGRAM OUTPUT:\n>ONE Homo sapiens alu\nGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA\nTCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT\nAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG\nGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG\nCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT\nGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA\nGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA\nTTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG\nAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA\nGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT\nAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC\nAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG\nGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC\nCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG\nAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT\nTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA\nTGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT\nGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG\nTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT\nCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG\nCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG\nTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA\nCTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG\nAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG\nGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC\nTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA\nTACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA\nGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT\nGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC\nACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT\nTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC\nCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG\nCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG\nGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC\nCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT\nGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC\nGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA\nGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA\nGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA\nGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG\nAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT\nCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA\nGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA\nAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC\nGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT\nACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG\nGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC\nGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC\nGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG\nTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA\nAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG\nGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT\nCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC\nTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG\nACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC\nGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA\nACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA\nCAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA\nCTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA\nACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG\nCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG\nAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC\nCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG\nAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC\nCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG\nCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG\nCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG\nCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC\nACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA\nAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC\nTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC\nACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG\nCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG\nAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT\nAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA\nTCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC\nCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA\nTCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG\nCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT\nGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG\nGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG\nCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG\nGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG\nGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT\nAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT\nGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT\nCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG\nGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC\nTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT\nCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG\nATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG\nCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG\nAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA\nCAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG\nCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC\nACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC\nGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC\nGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG\nGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT\nTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG\nCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA\nGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG\nCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC\nGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG\nCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA\nCTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG\nCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA\nACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC\nCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT\nGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA\nAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG\nATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC\nTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA\nGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC\nGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG\nTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC\nAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA\nATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA\nGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC\nAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG\nTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC\nCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT\nGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC\nCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA\nGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT\nTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC\nATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC\nTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG\nGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG\nTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG\nGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC\nGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT\nACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC\nGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC\nGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC\nCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA\nATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG\nAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC\nTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT\nCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG\nTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG\nCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC\nGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT\nGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC\nCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC\nTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG\nCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG\nAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG\nAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG\nAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT\nGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA\nTCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC\nAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA\nAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG\nCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC\nTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG\nGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT\nCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG\nCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG\nGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA\nAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA\nGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC\nTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC\nCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA\nGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG\nCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG\nAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG\nACAGAGCGAGACTCCGTCTCAAAAAGGCCGG",
+      "published": [
+        {
+          "elapsed": 0.251,
+          "n": 250000
+        },
+        {
+          "elapsed": 6.724,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 94,
+        "nonblank_noncomment_lines": 80,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Use binary64 sampling and cumulative probabilities for the common cohort workload."
+      ],
+      "upstream_id": "fasta-ghc-2",
+      "local_adaptation": true
+    },
+    {
+      "id": "fasta-ghc-4-faithful",
+      "key": "fasta:fasta-ghc-4-faithful",
+      "benchmark": "fasta",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 4,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ghc-4-faithful.hs",
+      "source_sha256": "002e6bd290e0b75a04d3f4ec8cd4d8a746efe835d25a7439a4daa42a8cbf5efc",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/fasta-ghc-4.hs",
+      "original_source_sha256": "bdad7f0199a46e28e3efa594c77826789ae4ded6b1fe27adee8bed0910f91256",
+      "page_sha256": "50f8833ea52dc111c308293bd6337f6e48b628842806745ec9f436161db79b03",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ghc-4.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 07:17:39 GMT\n\nMAKE:\nmv fasta.ghc-4.ghc fasta.ghc-4.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XOverloadedStrings -XTupleSections fasta.ghc-4.hs -o fasta.ghc-4.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( fasta.ghc-4.hs, fasta.ghc-4.o )\nfasta.ghc-4.hs:198:17: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Data.List, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n    |\n198 |   n <- readIO . head =<< getArgs\n    |                 ^^^^\n\n[2 of 2] Linking fasta.ghc-4.ghc_run\nrm fasta.ghc-4.hs\n\n21.22 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fasta.ghc-4.ghc_run +RTS -N4 -RTS 25000000\n\n(TRUNCATED) PROGRAM OUTPUT:\n>ONE Homo sapiens alu\nGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA\nTCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT\nAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG\nGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG\nCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT\nGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA\nGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA\nTTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG\nAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA\nGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT\nAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC\nAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG\nGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC\nCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG\nAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT\nTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA\nTGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT\nGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG\nTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT\nCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG\nCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG\nTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA\nCTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG\nAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG\nGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC\nTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA\nTACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA\nGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT\nGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC\nACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT\nTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC\nCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG\nCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG\nGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC\nCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT\nGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC\nGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA\nGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA\nGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA\nGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG\nAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT\nCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA\nGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA\nAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC\nGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT\nACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG\nGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC\nGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC\nGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG\nTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA\nAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG\nGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT\nCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC\nTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG\nACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC\nGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA\nACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA\nCAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA\nCTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA\nACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG\nCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG\nAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC\nCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG\nAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC\nCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG\nCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG\nCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG\nCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC\nACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA\nAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC\nTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC\nACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG\nCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG\nAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT\nAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA\nTCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC\nCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA\nTCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG\nCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT\nGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG\nGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG\nCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG\nGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG\nGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT\nAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT\nGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT\nCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG\nGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC\nTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT\nCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG\nATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG\nCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG\nAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA\nCAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG\nCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC\nACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC\nGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC\nGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG\nGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT\nTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG\nCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA\nGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG\nCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC\nGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG\nCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA\nCTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG\nCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA\nACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC\nCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT\nGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA\nAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG\nATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC\nTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA\nGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC\nGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG\nTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC\nAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA\nATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA\nGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC\nAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG\nTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC\nCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT\nGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC\nCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA\nGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT\nTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC\nATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC\nTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG\nGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG\nTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG\nGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC\nGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT\nACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC\nGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC\nGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC\nCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA\nATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG\nAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC\nTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT\nCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG\nTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG\nCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC\nGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT\nGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC\nCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC\nTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG\nCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG\nAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG\nAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG\nAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT\nGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA\nTCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC\nAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA\nAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG\nCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC\nTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG\nGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT\nCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG\nCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG\nGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA\nAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA\nGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC\nTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC\nCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA\nGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG\nCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG\nAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG\nACAGAGCGAGACTCCGTCTCAAAAAGGCCGG",
+      "published": [
+        {
+          "elapsed": 0.195,
+          "n": 250000
+        },
+        {
+          "elapsed": 0.873,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 224,
+        "nonblank_noncomment_lines": 169,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Replace integer-scaled lookup thresholds with cumulative binary64 probabilities; divide every newly generated PRNG value by IM before the original search. Retain the original threading and all LCG steps."
+      ],
+      "upstream_id": "fasta-ghc-4",
+      "local_adaptation": true
+    },
+    {
+      "id": "fasta-ghc-6-faithful",
+      "key": "fasta:fasta-ghc-6-faithful",
+      "benchmark": "fasta",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 6,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ghc-6-faithful.hs",
+      "source_sha256": "e4a31555230ee7df58d755ab958680a51cc9c966aad0570b83e039e58b9d24bf",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/fasta-ghc-6.hs",
+      "original_source_sha256": "0ba6382f620a970881829da670c98a70dbf1f4e91705ac37b632810da571b8ce",
+      "page_sha256": "6816c8ac476560e3cb6173a717de47ccb0ac3f8b4307a88f35f25d5cfa44a53e",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ghc-6.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 07:23:49 GMT\n\nMAKE:\nmv fasta.ghc-6.ghc fasta.ghc-6.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XStrict fasta.ghc-6.hs -o fasta.ghc-6.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( fasta.ghc-6.hs, fasta.ghc-6.o )\nfasta.ghc-6.hs:112:17: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n    |\n112 |   n <- readIO . head =<< getArgs\n    |                 ^^^^\n\n[2 of 2] Linking fasta.ghc-6.ghc_run\nrm fasta.ghc-6.hs\n\n21.14 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fasta.ghc-6.ghc_run +RTS -N4 -RTS 25000000\n\n(TRUNCATED) PROGRAM OUTPUT:\n>ONE Homo sapiens alu\nGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA\nTCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT\nAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG\nGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG\nCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT\nGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA\nGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA\nTTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG\nAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA\nGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT\nAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC\nAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG\nGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC\nCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG\nAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT\nTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA\nTGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT\nGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG\nTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT\nCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG\nCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG\nTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA\nCTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG\nAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG\nGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC\nTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA\nTACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA\nGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT\nGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC\nACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT\nTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC\nCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG\nCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG\nGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC\nCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT\nGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC\nGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA\nGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA\nGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA\nGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG\nAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT\nCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA\nGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA\nAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC\nGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT\nACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG\nGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC\nGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC\nGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG\nTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA\nAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG\nGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT\nCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC\nTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG\nACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC\nGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA\nACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA\nCAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA\nCTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA\nACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG\nCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG\nAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC\nCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG\nAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC\nCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG\nCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG\nCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG\nCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC\nACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA\nAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC\nTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC\nACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG\nCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG\nAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT\nAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA\nTCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC\nCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA\nTCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG\nCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT\nGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG\nGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG\nCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG\nGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG\nGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT\nAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT\nGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT\nCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG\nGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC\nTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT\nCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG\nATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG\nCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG\nAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA\nCAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG\nCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC\nACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC\nGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC\nGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG\nGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT\nTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG\nCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA\nGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG\nCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC\nGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG\nCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA\nCTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG\nCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA\nACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC\nCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT\nGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA\nAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG\nATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC\nTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA\nGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC\nGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG\nTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC\nAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA\nATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA\nGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC\nAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG\nTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC\nCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT\nGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC\nCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA\nGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT\nTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC\nATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC\nTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG\nGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG\nTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG\nGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC\nGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT\nACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC\nGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC\nGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC\nCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA\nATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG\nAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC\nTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT\nCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG\nTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG\nCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC\nGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT\nGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC\nCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC\nTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG\nCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG\nAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG\nAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG\nAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT\nGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA\nTCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC\nAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA\nAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG\nCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC\nTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG\nGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT\nCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG\nCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG\nGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA\nAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA\nGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC\nTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC\nCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA\nGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG\nCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG\nAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG\nACAGAGCGAGACTCCGTCTCAAAAAGGCCGG",
+      "published": [
+        {
+          "elapsed": 0.201,
+          "n": 250000
+        },
+        {
+          "elapsed": 0.868,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 157,
+        "nonblank_noncomment_lines": 131,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Replace integer-scaled lookup thresholds with cumulative binary64 probabilities; explicitly divide each fresh PRNG value before comparison. Retain sequential RNG generation and ordered buffered output."
+      ],
+      "upstream_id": "fasta-ghc-6",
+      "local_adaptation": true
+    },
+    {
+      "id": "fasta-ghc-5-faithful",
+      "key": "fasta:fasta-ghc-5-faithful",
+      "benchmark": "fasta",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 5,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ghc-5-faithful.hs",
+      "source_sha256": "5959ec8ac108be7f890adea5f8b4f14eda62b6b33a33332577e4cd0ab98e870c",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/fasta-ghc-5.hs",
+      "original_source_sha256": "55cdaacdb242417f93f95ce9e7f88a47097a38d934662da9975961110b7c85b0",
+      "page_sha256": "ceda8a697493e351ea5c7f0cb73d83475b703526c7410aee8d86bb69d40c1fbb",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ghc-5.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 07:16:52 GMT\n\nMAKE:\nmv fasta.ghc-5.ghc fasta.ghc-5.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XOverloadedStrings -package ghc-compact fasta.ghc-5.hs -o fasta.ghc-5.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( fasta.ghc-5.hs, fasta.ghc-5.o )\nfasta.ghc-5.hs:176:7: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018tail\u2019\n    (imported from Data.List, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Replace it with 'drop' 1, or use pattern matching or 'GHC.Internal.Data.List.uncons' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n    |\n176 |     $ tail (zip rndBuffers outBuffers)\n    |       ^^^^\n\nfasta.ghc-5.hs:178:11: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Data.List, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n    |\n178 |   worker (head rndBuffers) (head outBuffers) bufferSize p0 p1 var ref\n    |           ^^^^\n\nfasta.ghc-5.hs:178:29: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Data.List, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n    |\n178 |   worker (head rndBuffers) (head outBuffers) bufferSize p0 p1 var ref\n    |                             ^^^^\n\nfasta.ghc-5.hs:187:17: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Data.List, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n    |\n187 |   n <- readIO . head =<< getArgs\n    |                 ^^^^\n\n[2 of 2] Linking fasta.ghc-5.ghc_run\nrm fasta.ghc-5.hs\n\n21.58 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fasta.ghc-5.ghc_run +RTS -N4 -RTS 25000000\n\n(TRUNCATED) PROGRAM OUTPUT:\n>ONE Homo sapiens alu\nGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA\nTCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT\nAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG\nGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG\nCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT\nGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA\nGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA\nTTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG\nAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA\nGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT\nAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC\nAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG\nGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC\nCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG\nAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT\nTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA\nTGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT\nGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG\nTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT\nCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG\nCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG\nTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA\nCTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG\nAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG\nGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC\nTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA\nTACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA\nGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT\nGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC\nACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT\nTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC\nCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG\nCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG\nGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC\nCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT\nGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC\nGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA\nGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA\nGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA\nGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG\nAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT\nCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA\nGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA\nAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC\nGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT\nACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG\nGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC\nGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC\nGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG\nTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA\nAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG\nGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT\nCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC\nTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG\nACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC\nGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA\nACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA\nCAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA\nCTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA\nACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG\nCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG\nAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC\nCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG\nAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC\nCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG\nCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG\nCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG\nCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC\nACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA\nAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC\nTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC\nACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG\nCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG\nAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT\nAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA\nTCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC\nCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA\nTCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG\nCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT\nGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG\nGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG\nCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG\nGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG\nGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT\nAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT\nGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT\nCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG\nGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC\nTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT\nCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG\nATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG\nCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG\nAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA\nCAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG\nCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC\nACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC\nGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC\nGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG\nGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT\nTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG\nCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA\nGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG\nCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC\nGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG\nCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA\nCTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG\nCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA\nACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC\nCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT\nGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA\nAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG\nATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC\nTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA\nGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC\nGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG\nTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC\nAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA\nATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA\nGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC\nAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG\nTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC\nCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT\nGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC\nCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA\nGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT\nTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC\nATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC\nTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG\nGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG\nTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG\nGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC\nGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT\nACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC\nGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC\nGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC\nCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA\nATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG\nAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC\nTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT\nCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG\nTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG\nCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC\nGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT\nGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC\nCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC\nTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG\nCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG\nAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG\nAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG\nAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT\nGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA\nTCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC\nAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA\nAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG\nCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC\nTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG\nGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT\nCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG\nCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG\nGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA\nAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA\nGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC\nTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC\nCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA\nGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG\nCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG\nAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG\nACAGAGCGAGACTCCGTCTCAAAAAGGCCGG",
+      "published": [
+        {
+          "elapsed": 0.207,
+          "n": 250000
+        },
+        {
+          "elapsed": 0.93,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 222,
+        "nonblank_noncomment_lines": 164,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Replace integer-scaled lookup thresholds with cumulative binary64 probabilities; divide every newly generated PRNG value by IM before the original search. Retain the original threading and all LCG steps."
+      ],
+      "upstream_id": "fasta-ghc-5",
+      "local_adaptation": true
+    },
+    {
+      "id": "knucleotide-ghc-3-faithful",
+      "key": "knucleotide:knucleotide-ghc-3-faithful",
+      "benchmark": "knucleotide",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 3,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ghc-3-faithful.hs",
+      "source_sha256": "43893b362c41f763a8ab71a1bb0442803ac35525edeeb2c1008c01451c224410",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/knucleotide-ghc-3.hs",
+      "original_source_sha256": "deb2e040af86bc7f34cb156f092b5f1a33a222875df6d9d8b942deadbf93bd34",
+      "page_sha256": "9b4b3697d3f706e13ce4c00be11191698fa7b8f99225f86c74972e73fde068ac",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ghc-3.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 07:27:34 GMT\n\nMAKE:\nmv knucleotide.ghc-3.ghc knucleotide.ghc-3.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -funbox-strict-fields -XBinaryLiterals -XDerivingStrategies -XGeneralizedNewtypeDeriving -XOverloadedStrings -XScopedTypeVariables -XTypeApplications -package hashable -package unordered-containers -package pvar -package ghc-compact knucleotide.ghc-3.hs -o knucleotide.ghc-3.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( knucleotide.ghc-3.hs, knucleotide.ghc-3.o )\nknucleotide.ghc-3.hs:40:7: warning: [GHC-68441] [-Wdeprecations]\n    In the use of \u2018getLine\u2019 (imported from Data.ByteString):\n    Deprecated: \"Deprecated since @bytestring-0.12@. Use 'Data.ByteString.Char8.getLine' instead. (Functions that rely on ASCII encodings belong in \"Data.ByteString.Char8\")\"\n   |\n40 |       l <- ByteString.getLine\n   |       ^^^^^^^^^^^^^^^^^^^^^^^\n\n[2 of 2] Linking knucleotide.ghc-3.ghc_run\nrm knucleotide.ghc-3.hs\n\n33.57 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.ghc-3.ghc_run +RTS -N4 -K2048M -RTS 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "published": [
+        {
+          "elapsed": 0.949,
+          "n": 250000
+        },
+        {
+          "elapsed": 35.141,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 286,
+        "nonblank_noncomment_lines": 227,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Use the standard bytestring Builder and printf APIs in place of the retired Text.Builder API. Derive internal one-/two-byte insertion hashes using the current Hashable instance, matching subsequent lookups. Every seven-width map update remains in Haskell.",
+        "Break equal-frequency ties by the decoded nucleotide key, as required."
+      ],
+      "upstream_id": "knucleotide-ghc-3",
+      "local_adaptation": true
+    },
+    {
+      "id": "knucleotide-ghc-1-faithful",
+      "key": "knucleotide:knucleotide-ghc-1-faithful",
+      "benchmark": "knucleotide",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 1,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ghc-1-faithful.hs",
+      "source_sha256": "01f1aabe366056cb3bdfd070ab0b012e666b717a3d6db86c651f6d40d1fc1ac3",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/knucleotide-ghc-1.hs",
+      "original_source_sha256": "99e02b1f8541ad3e83e52ccb8472d06007f68e8d890c23e3461a7e5e09d47193",
+      "page_sha256": "35e9f582934febc945a6d59c96313cfb06332a469a0bae4dbdd5701153254dc5",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ghc-1.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 08:12:08 GMT\n\nMAKE:\nmv knucleotide.ghc knucleotide.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -funbox-strict-fields -XScopedTypeVariables -package hashable -package unordered-containers -package  pvar -package ghc-compact knucleotide.hs -o knucleotide.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( knucleotide.hs, knucleotide.o )\n[2 of 2] Linking knucleotide.ghc_run\nrm knucleotide.hs\n\n20.05 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.ghc_run +RTS -N4 -K2048M -RTS 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "published": [
+        {
+          "elapsed": 1.437,
+          "n": 250000
+        },
+        {
+          "elapsed": 25.42,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 92,
+        "nonblank_noncomment_lines": 79,
+        "packed_statement_review": [
+          {
+            "line": 24,
+            "semicolons": 1,
+            "source": "let content = S.map toUpper $ S.filter ((/=) '\\n') s;"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Print zero for an absent requested key instead of failing at small input. All seven complete count maps are still built."
+      ],
+      "upstream_id": "knucleotide-ghc-1",
+      "local_adaptation": true
+    },
+    {
+      "id": "mandelbrot-ghc-3-faithful",
+      "key": "mandelbrot:mandelbrot-ghc-3-faithful",
+      "benchmark": "mandelbrot",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 3,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/mandelbrot-ghc-3-faithful.hs",
+      "source_sha256": "561d590a4ed9e91013b382ef0ed368de32b30961c5a03450de26501e1138dd91",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/mandelbrot-ghc-3.hs",
+      "original_source_sha256": "7ebbcd88698298e1e05aa772cdd21fc682fce19fa97adb6b6871dc4ab6dff624",
+      "page_sha256": "75de63b52122eea9319dbf9ee8d27f584c73a3dca879958f5c8f2653c262c717",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-ghc-3.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 08:20:22 GMT\n\nMAKE:\nmv mandelbrot.ghc-3.ghc mandelbrot.ghc-3.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XMagicHash -XUnboxedTuples mandelbrot.ghc-3.hs -o mandelbrot.ghc-3.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( mandelbrot.ghc-3.hs, mandelbrot.ghc-3.o )\n[2 of 2] Linking mandelbrot.ghc-3.ghc_run\nrm mandelbrot.ghc-3.hs\n\n18.21 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.ghc-3.ghc_run +RTS -N4 -RTS 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "published": [
+        {
+          "elapsed": 0.197,
+          "n": 1000
+        },
+        {
+          "elapsed": 1.39,
+          "n": 16000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 253,
+        "nonblank_noncomment_lines": 216,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Write all 64 bits of each eight-byte packed block using GHC writeWordArray#, rather than truncating the block through writeWord8Array#. Retain the published DoubleX2 SIMD recurrence."
+      ],
+      "upstream_id": "mandelbrot-ghc-3",
+      "local_adaptation": true
+    },
+    {
+      "id": "mandelbrot-ghc-2-faithful",
+      "key": "mandelbrot:mandelbrot-ghc-2-faithful",
+      "benchmark": "mandelbrot",
+      "language": "haskell",
+      "upstream_language": "ghc",
+      "variant": 2,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/mandelbrot-ghc-2-faithful.hs",
+      "source_sha256": "b5a5a57bf0efbc4c4f6a27efd576b3f6c08cb6984c890cbafaa49f8db45b57a7",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/mandelbrot-ghc-2.hs",
+      "original_source_sha256": "7b125b7bb63f4f00ccb152d533351f8d71d02b72fe1b5fc501bd9f6c05264346",
+      "page_sha256": "acc060fe7b7279bfede9b38d15867ca384ea391816e10c83516eb1e8f15a0f55",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-ghc-2.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nThe Glorious Glasgow Haskell\nCompilation System,\nversion 9.10.1\nLLVM version 19.1.1\n\n\n Sun, 23 Feb 2025 08:17:46 GMT\n\nMAKE:\nmv mandelbrot.ghc-2.ghc mandelbrot.ghc-2.hs\n~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts  mandelbrot.ghc-2.hs -o mandelbrot.ghc-2.ghc_run\nLoaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default\n[1 of 2] Compiling Main             ( mandelbrot.ghc-2.hs, mandelbrot.ghc-2.o )\nmandelbrot.ghc-2.hs:32:31: warning: [GHC-63394] [-Wx-partial]\n    In the use of \u2018head\u2019\n    (imported from Prelude, but defined in GHC.Internal.List):\n    \"This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use \"Data.List.NonEmpty\".\"\n   |\n32 |     w <- getArgs >>= readIO . head\n   |                               ^^^^\n\n[2 of 2] Linking mandelbrot.ghc-2.ghc_run\nrm mandelbrot.ghc-2.hs\n\n17.03 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./mandelbrot.ghc-2.ghc_run +RTS -N4 -RTS 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+      "published": [
+        {
+          "elapsed": 0.23,
+          "n": 1000
+        },
+        {
+          "elapsed": 6.636,
+          "n": 16000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 105,
+        "nonblank_noncomment_lines": 48,
+        "packed_statement_review": [],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Start the byte counter at zero so every output byte and its eight pixels are computed."
+      ],
+      "upstream_id": "mandelbrot-ghc-2",
+      "local_adaptation": true
+    },
+    {
+      "id": "binarytrees-ocaml-2-faithful",
+      "key": "binarytrees:binarytrees-ocaml-2-faithful",
+      "benchmark": "binarytrees",
+      "language": "ocaml",
+      "upstream_language": "ocaml",
+      "variant": 2,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ocaml-2-faithful.ml",
+      "source_sha256": "7203519c6d4ef21aff37b7685377028678599325693ae0603eb5ab0d24b357ef",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ocaml-2.ml",
+      "original_source_sha256": "f84b320c73f5219ae8dc70f2c654e41300bbe255d1027c38f9734dcecdbef86a",
+      "page_sha256": "f81d204c5f6a79d9b575a6b99b7f2a8c88df38fc406d54336da3a42571867b58",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ocaml-2.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nOCaml native-code\n5.4.0+dev0-2024-08-25\n\n\n Fri, 10 Jan 2025 00:04:43 GMT\n\nMAKE:\nmv binarytrees.ocaml-2.ocaml binarytrees.ocaml-2.ml\n~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge binarytrees.ocaml-2.ml -o binarytrees.ocaml-2.ocaml_run\nrm binarytrees.ocaml-2.ml\n\n1.45s to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ocaml-2.ocaml_run 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 3.546,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 69,
+        "nonblank_noncomment_lines": 50,
+        "packed_statement_review": [
+          {
+            "line": 33,
+            "semicolons": 1,
+            "source": "for i = 1 to niter do c := !c + check(make d) done;"
+          },
+          {
+            "line": 47,
+            "semicolons": 2,
+            "source": "| -1 -> Unix.close input; Unix.close output; (let v = f x in fun () -> v)"
+          },
+          {
+            "line": 49,
+            "semicolons": 1,
+            "source": "Unix.close input;"
+          },
+          {
+            "line": 51,
+            "semicolons": 1,
+            "source": "Marshal.to_channel output (try `Res(f x) with e -> `Exn e) [];"
+          },
+          {
+            "line": 52,
+            "semicolons": 1,
+            "source": "close_out output;"
+          },
+          {
+            "line": 55,
+            "semicolons": 1,
+            "source": "Unix.close output;"
+          },
+          {
+            "line": 59,
+            "semicolons": 1,
+            "source": "ignore (Unix.waitpid [] pid);"
+          },
+          {
+            "line": 60,
+            "semicolons": 1,
+            "source": "close_in input;"
+          },
+          {
+            "line": 66,
+            "semicolons": 1,
+            "source": "flush stdout;"
+          },
+          {
+            "line": 67,
+            "semicolons": 1,
+            "source": "loop_depths min_depth;"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Use standard Sys.opaque_identity to prevent the compiler from lifting a shared constant leaf. Every interior and depth-zero node allocates the same two child slots."
+      ],
+      "upstream_id": "binarytrees-ocaml-2",
+      "local_adaptation": true
+    },
+    {
+      "id": "binarytrees-ocaml-5-faithful",
+      "key": "binarytrees:binarytrees-ocaml-5-faithful",
+      "benchmark": "binarytrees",
+      "language": "ocaml",
+      "upstream_language": "ocaml",
+      "variant": 5,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/binarytrees-ocaml-5-faithful.ml",
+      "source_sha256": "44879d76861173902de2b75eb9f857ef537ff0804294c755db853ea10e507622",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/binarytrees-ocaml-5.ml",
+      "original_source_sha256": "cc42bd335d90aa6699c990f5b90d7aee96890ec8b29ef8d3b0e0d75896d20f7a",
+      "page_sha256": "30027ed9fc15654266f5f0b5c4c7cde8e9f3e71e17a336da2a48ace4fbf0392c",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-ocaml-5.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nOCaml native-code\n5.4.0+dev0-2024-08-25\n\n\n Fri, 10 Jan 2025 00:02:57 GMT\n\nMAKE:\nmv binarytrees.ocaml-5.ocaml binarytrees.ocaml-5.ml\n~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge binarytrees.ocaml-5.ml -o binarytrees.ocaml-5.ocaml_run\nrm binarytrees.ocaml-5.ml\n\n1.29s to complete and log all make actions\n\nCOMMAND LINE:\n ./binarytrees.ocaml-5.ocaml_run 21\n\nPROGRAM OUTPUT:\nstretch tree of depth 22\t check: 8388607\n2097152\t trees of depth 4\t check: 65011712\n524288\t trees of depth 6\t check: 66584576\n131072\t trees of depth 8\t check: 66977792\n32768\t trees of depth 10\t check: 67076096\n8192\t trees of depth 12\t check: 67100672\n2048\t trees of depth 14\t check: 67106816\n512\t trees of depth 16\t check: 67108352\n128\t trees of depth 18\t check: 67108736\n32\t trees of depth 20\t check: 67108832\nlong lived tree of depth 21\t check: 4194303",
+      "published": [
+        {
+          "elapsed": 7.781,
+          "n": 21
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 43,
+        "nonblank_noncomment_lines": 26,
+        "packed_statement_review": [
+          {
+            "line": 35,
+            "semicolons": 1,
+            "source": "for i = 1 to niter do c := !c + check(make d) done;"
+          },
+          {
+            "line": 36,
+            "semicolons": 1,
+            "source": "Printf.printf \"%i\\t trees of depth %i\\t check: %i\\n\" niter d !c;"
+          },
+          {
+            "line": 40,
+            "semicolons": 1,
+            "source": "flush stdout;"
+          },
+          {
+            "line": 41,
+            "semicolons": 1,
+            "source": "loop_depths min_depth;"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Use standard Sys.opaque_identity to prevent the compiler from lifting a shared constant leaf. Every interior and depth-zero node allocates the same two child slots."
+      ],
+      "upstream_id": "binarytrees-ocaml-5",
+      "local_adaptation": true
+    },
+    {
+      "id": "fannkuchredux-ocaml-3-faithful",
+      "key": "fannkuchredux:fannkuchredux-ocaml-3-faithful",
+      "benchmark": "fannkuchredux",
+      "language": "ocaml",
+      "upstream_language": "ocaml",
+      "variant": 3,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fannkuchredux-ocaml-3-faithful.ml",
+      "source_sha256": "472b0dc26eb5c625a605ca0fb2004ffc305cfefd3d2426b9192a3803e17ea682",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/fannkuchredux-ocaml-3.ml",
+      "original_source_sha256": "2a9118c6b920cbba36b0fda6311c61e773c3f0c75e580029ffcc68bb7c815460",
+      "page_sha256": "fc75b4269c690fe91557a3567eef45b59a0df188b210b79814886d2aa7effadf",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-ocaml-3.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nOCaml native-code\n5.4.0+dev0-2024-08-25\n\n\n Fri, 10 Jan 2025 00:27:32 GMT\n\nMAKE:\nmv fannkuchredux.ocaml-3.ocaml fannkuchredux.ocaml-3.ml\n~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge fannkuchredux.ocaml-3.ml -o fannkuchredux.ocaml-3.ocaml_run\nrm fannkuchredux.ocaml-3.ml\n\n1.50s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.ocaml-3.ocaml_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "published": [
+        {
+          "elapsed": 8.839,
+          "n": 12
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 118,
+        "nonblank_noncomment_lines": 104,
+        "packed_statement_review": [
+          {
+            "line": 14,
+            "semicolons": 1,
+            "source": "type t = { p: int array;"
+          },
+          {
+            "line": 15,
+            "semicolons": 1,
+            "source": "pp: int array;"
+          },
+          {
+            "line": 22,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 26,
+            "semicolons": 1,
+            "source": "let res = { p = Array.init n (fun i -> i);"
+          },
+          {
+            "line": 27,
+            "semicolons": 1,
+            "source": "pp = Array.make n 1;"
+          },
+          {
+            "line": 32,
+            "semicolons": 1,
+            "source": "res.c.(i) <- d;"
+          },
+          {
+            "line": 33,
+            "semicolons": 1,
+            "source": "idx := !idx mod facts.(i);"
+          },
+          {
+            "line": 34,
+            "semicolons": 1,
+            "source": "Array.blit res.p 0 res.pp 0 (i + 1);"
+          },
+          {
+            "line": 38,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 41,
+            "semicolons": 1,
+            "source": "let next { p = p; c = c } ="
+          },
+          {
+            "line": 43,
+            "semicolons": 1,
+            "source": "p.(1) <- p.(0);"
+          },
+          {
+            "line": 44,
+            "semicolons": 1,
+            "source": "p.(0) <- !f;"
+          },
+          {
+            "line": 46,
+            "semicolons": 1,
+            "source": "while let aug_c = c.(!i) + 1 in c.(!i) <- aug_c; aug_c > !i do"
+          },
+          {
+            "line": 47,
+            "semicolons": 1,
+            "source": "c.(!i) <- 0;"
+          },
+          {
+            "line": 48,
+            "semicolons": 1,
+            "source": "incr i;"
+          },
+          {
+            "line": 50,
+            "semicolons": 1,
+            "source": "p.(0) <- n;"
+          },
+          {
+            "line": 54,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 55,
+            "semicolons": 1,
+            "source": "p.(!i) <- !f;"
+          },
+          {
+            "line": 59,
+            "semicolons": 1,
+            "source": "let count { p = p; pp = pp } ="
+          },
+          {
+            "line": 64,
+            "semicolons": 1,
+            "source": "for i = 0 to red_len do pp.(i) <- p.(i) done;"
+          },
+          {
+            "line": 66,
+            "semicolons": 1,
+            "source": "incr res;"
+          },
+          {
+            "line": 70,
+            "semicolons": 1,
+            "source": "pp.(!lo) <- pp.(!hi);"
+          },
+          {
+            "line": 71,
+            "semicolons": 1,
+            "source": "pp.(!hi) <- t;"
+          },
+          {
+            "line": 72,
+            "semicolons": 1,
+            "source": "incr lo;"
+          },
+          {
+            "line": 74,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 77,
+            "semicolons": 1,
+            "source": "pp.(ff) <- ff;"
+          },
+          {
+            "line": 80,
+            "semicolons": 1,
+            "source": "end;"
+          },
+          {
+            "line": 86,
+            "semicolons": 1,
+            "source": "| [| p; s_n |] ->"
+          },
+          {
+            "line": 99,
+            "semicolons": 1,
+            "source": "c := !c + input_binary_int input;"
+          },
+          {
+            "line": 101,
+            "semicolons": 1,
+            "source": "w;"
+          },
+          {
+            "line": 103,
+            "semicolons": 3,
+            "source": "| [| _; n; lo; hi |] ->"
+          },
+          {
+            "line": 111,
+            "semicolons": 1,
+            "source": "c := !c + r * (1 - (i land 1) lsl 1);"
+          },
+          {
+            "line": 113,
+            "semicolons": 1,
+            "source": "m := r;"
+          },
+          {
+            "line": 115,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 116,
+            "semicolons": 1,
+            "source": "output_binary_int stdout !c;"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Count zero flips when the leading value is already in place. Stop advancing permutations after the final assigned rank, avoiding an out-of-bounds terminal rotation. The complete rank interval, checksum and maximum remain in OCaml."
+      ],
+      "upstream_id": "fannkuchredux-ocaml-3",
+      "local_adaptation": true
+    },
+    {
+      "id": "fannkuchredux-ocaml-4-faithful",
+      "key": "fannkuchredux:fannkuchredux-ocaml-4-faithful",
+      "benchmark": "fannkuchredux",
+      "language": "ocaml",
+      "upstream_language": "ocaml",
+      "variant": 4,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fannkuchredux-ocaml-4-faithful.ml",
+      "source_sha256": "939492655db542696b88812d97a487a03f14ff38b4878814165fad4f00b5a0f5",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/fannkuchredux-ocaml-4.ml",
+      "original_source_sha256": "e98bd1e30e96d2b5a4b002700ffecb14c49cfc74b8af76d2d49037c94212f9fc",
+      "page_sha256": "85b9bdd2ed93c51422e8f796f5307e551bff09767a3a1a93a5690b40aed2874a",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-ocaml-4.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nOCaml native-code\n5.4.0+dev0-2024-08-25\n\n\n Fri, 10 Jan 2025 00:05:39 GMT\n\nMAKE:\nmv fannkuchredux.ocaml-4.ocaml fannkuchredux.ocaml-4.ml\n~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge fannkuchredux.ocaml-4.ml -o fannkuchredux.ocaml-4.ocaml_run\nrm fannkuchredux.ocaml-4.ml\n\n1.53s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.ocaml-4.ocaml_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "published": [
+        {
+          "elapsed": 9.14,
+          "n": 12
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 120,
+        "nonblank_noncomment_lines": 106,
+        "packed_statement_review": [
+          {
+            "line": 14,
+            "semicolons": 1,
+            "source": "type t = { p: int array;"
+          },
+          {
+            "line": 15,
+            "semicolons": 1,
+            "source": "pp: int array;"
+          },
+          {
+            "line": 22,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 26,
+            "semicolons": 1,
+            "source": "let res = { p = Array.init n (fun i -> i);"
+          },
+          {
+            "line": 27,
+            "semicolons": 1,
+            "source": "pp = Array.make n 1;"
+          },
+          {
+            "line": 32,
+            "semicolons": 1,
+            "source": "res.c.(i) <- d;"
+          },
+          {
+            "line": 33,
+            "semicolons": 1,
+            "source": "idx := !idx mod facts.(i);"
+          },
+          {
+            "line": 34,
+            "semicolons": 1,
+            "source": "Array.blit res.p 0 res.pp 0 (i + 1);"
+          },
+          {
+            "line": 38,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 41,
+            "semicolons": 1,
+            "source": "let next { p = p; c = c } ="
+          },
+          {
+            "line": 43,
+            "semicolons": 1,
+            "source": "p.(1) <- p.(0);"
+          },
+          {
+            "line": 44,
+            "semicolons": 1,
+            "source": "p.(0) <- !f;"
+          },
+          {
+            "line": 46,
+            "semicolons": 1,
+            "source": "while let aug_c = c.(!i) + 1 in c.(!i) <- aug_c; aug_c > !i do"
+          },
+          {
+            "line": 47,
+            "semicolons": 1,
+            "source": "c.(!i) <- 0;"
+          },
+          {
+            "line": 48,
+            "semicolons": 1,
+            "source": "incr i;"
+          },
+          {
+            "line": 50,
+            "semicolons": 1,
+            "source": "p.(0) <- n;"
+          },
+          {
+            "line": 54,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 55,
+            "semicolons": 1,
+            "source": "p.(!i) <- !f;"
+          },
+          {
+            "line": 59,
+            "semicolons": 1,
+            "source": "let count { p = p; pp = pp } ="
+          },
+          {
+            "line": 64,
+            "semicolons": 1,
+            "source": "for i = 0 to red_len do pp.(i) <- p.(i) done;"
+          },
+          {
+            "line": 66,
+            "semicolons": 1,
+            "source": "incr res;"
+          },
+          {
+            "line": 70,
+            "semicolons": 1,
+            "source": "pp.(!lo) <- pp.(!hi);"
+          },
+          {
+            "line": 71,
+            "semicolons": 1,
+            "source": "pp.(!hi) <- t;"
+          },
+          {
+            "line": 72,
+            "semicolons": 1,
+            "source": "incr lo;"
+          },
+          {
+            "line": 74,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 77,
+            "semicolons": 1,
+            "source": "pp.(ff) <- ff;"
+          },
+          {
+            "line": 80,
+            "semicolons": 1,
+            "source": "end;"
+          },
+          {
+            "line": 101,
+            "semicolons": 1,
+            "source": "c := !c + r * (1 - (j land 1) lsl 1);"
+          },
+          {
+            "line": 103,
+            "semicolons": 1,
+            "source": "m := r;"
+          },
+          {
+            "line": 105,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 107,
+            "semicolons": 1,
+            "source": "output_binary_int output !c;"
+          },
+          {
+            "line": 108,
+            "semicolons": 1,
+            "source": "output_binary_int output !m;"
+          },
+          {
+            "line": 111,
+            "semicolons": 1,
+            "source": "Unix.close output;"
+          },
+          {
+            "line": 113,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 117,
+            "semicolons": 1,
+            "source": "c := !c + input_binary_int input;"
+          },
+          {
+            "line": 119,
+            "semicolons": 1,
+            "source": "w;"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Count zero flips when the leading value is already in place. Stop advancing permutations after the final assigned rank, avoiding an out-of-bounds terminal rotation. The complete rank interval, checksum and maximum remain in OCaml."
+      ],
+      "upstream_id": "fannkuchredux-ocaml-4",
+      "local_adaptation": true
+    },
+    {
+      "id": "fasta-ocaml-6-faithful",
+      "key": "fasta:fasta-ocaml-6-faithful",
+      "benchmark": "fasta",
+      "language": "ocaml",
+      "upstream_language": "ocaml",
+      "variant": 6,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/fasta-ocaml-6-faithful.ml",
+      "source_sha256": "c76ab55e6ea3891e2f5172d69534b01d8a774c8696b9faec4d49f28426ee3069",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/fasta-ocaml-6.ml",
+      "original_source_sha256": "c9fa16ca68bdecc7fc68e8935045195003c0e43098bc6de11fe429a22e9daccb",
+      "page_sha256": "2713a48db0a0cecbe5e14667f8b6d5925f509bc667f1f64956565bed66ee827e",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-ocaml-6.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nOCaml native-code\n5.4.0+dev0-2024-08-25\n\n\n Fri, 10 Jan 2025 00:30:43 GMT\n\nMAKE:\nmv fasta.ocaml-6.ocaml fasta.ocaml-6.ml\n~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge fasta.ocaml-6.ml -o fasta.ocaml-6.ocaml_run\nrm fasta.ocaml-6.ml\n\n1.43s to complete and log all make actions\n\nCOMMAND LINE:\n ./fasta.ocaml-6.ocaml_run 25000000\n\n(TRUNCATED) PROGRAM OUTPUT:\n>ONE Homo sapiens alu\nGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGA\nTCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACT\nAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAG\nGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCG\nCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGT\nGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCA\nGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAA\nTTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAG\nAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCA\nGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGT\nAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACC\nAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTG\nGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACC\nCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAG\nAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTT\nTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACA\nTGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCT\nGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGG\nTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGT\nCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGG\nCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCG\nTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTA\nCTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCG\nAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCG\nGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACC\nTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAA\nTACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGA\nGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACT\nGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTC\nACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGT\nTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGC\nCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCG\nCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTG\nGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCC\nCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCT\nGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGC\nGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGA\nGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGA\nGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGA\nGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTG\nAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAAT\nCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCA\nGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAA\nAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGC\nGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCT\nACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGG\nGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATC\nGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGC\nGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGG\nTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAA\nAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAG\nGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACT\nCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCC\nTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAG\nACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGC\nGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGA\nACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGA\nCAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCA\nCTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCA\nACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCG\nCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGG\nAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTC\nCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCG\nAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACC\nCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAG\nCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAG\nCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGG\nCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATC\nACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAA\nAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGC\nTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCC\nACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGG\nCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGG\nAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATT\nAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAA\nTCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGC\nCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAA\nTCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAG\nCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGT\nGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCG\nGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAG\nCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTG\nGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATG\nGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGT\nAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTT\nGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCT\nCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCG\nGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTC\nTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACT\nCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAG\nATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGG\nCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTG\nAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATA\nCAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGG\nCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGC\nACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCAC\nGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTC\nGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCG\nGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCT\nTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGG\nCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCA\nGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGG\nCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGC\nGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGG\nCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGA\nCTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGG\nCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAA\nACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCC\nCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGT\nGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAA\nAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGG\nATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTAC\nTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGA\nGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGC\nGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGG\nTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTC\nAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAA\nATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGA\nGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCC\nAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTG\nTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGAC\nCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGT\nGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAAC\nCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACA\nGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACT\nTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAAC\nATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCC\nTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAG\nGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCG\nTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAG\nGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCC\nGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCT\nACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCC\nGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCC\nGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCAC\nCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAA\nATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTG\nAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCAC\nTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCT\nCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAG\nTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAG\nCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATC\nGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCT\nGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATC\nCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCC\nTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGG\nCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGG\nAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCG\nAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGG\nAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGT\nGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAA\nTCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGC\nAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCA\nAAAAGGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGG\nCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTC\nTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCG\nGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGAT\nCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCG\nCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAG\nGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACA\nAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCA\nGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCAC\nTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAAGGCCGGGCGCGGTGGCTCACGC\nCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGA\nGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGG\nCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTG\nAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCG\nACAGAGCGAGACTCCGTCTCAAAAAGGCCGG",
+      "published": [
+        {
+          "elapsed": 3.369,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 121,
+        "nonblank_noncomment_lines": 95,
+        "packed_statement_review": [
+          {
+            "line": 27,
+            "semicolons": 1,
+            "source": "while p >= ps.(!i) do incr i done;"
+          },
+          {
+            "line": 31,
+            "semicolons": 1,
+            "source": "while p >= ps.(!i) do incr i done;"
+          },
+          {
+            "line": 34,
+            "semicolons": 1,
+            "source": "Bytes.set line j chars.(i);"
+          },
+          {
+            "line": 38,
+            "semicolons": 2,
+            "source": "print_char '>'; print_string id;"
+          },
+          {
+            "line": 39,
+            "semicolons": 2,
+            "source": "print_char ' '; print_string desc;"
+          },
+          {
+            "line": 40,
+            "semicolons": 1,
+            "source": "print_char '\\n';"
+          },
+          {
+            "line": 47,
+            "semicolons": 1,
+            "source": "chars.(i) <- c;"
+          },
+          {
+            "line": 48,
+            "semicolons": 1,
+            "source": "p := !p +. px;"
+          },
+          {
+            "line": 49,
+            "semicolons": 1,
+            "source": "ps.(i) <- !p;"
+          },
+          {
+            "line": 50,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 60,
+            "semicolons": 1,
+            "source": "last_n := rand_char !last_n ps line j chars;"
+          },
+          {
+            "line": 61,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 62,
+            "semicolons": 1,
+            "source": "pos := final_pos + 2;"
+          },
+          {
+            "line": 63,
+            "semicolons": 1,
+            "source": "Bytes.set line (final_pos + 1) '\\n';"
+          },
+          {
+            "line": 64,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 66,
+            "semicolons": 1,
+            "source": "last_n := rand_char !last_n ps line j chars;"
+          },
+          {
+            "line": 67,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 68,
+            "semicolons": 1,
+            "source": "Bytes.set line (nchars - 1) '\\n';"
+          },
+          {
+            "line": 69,
+            "semicolons": 1,
+            "source": "output_bytes stdout line;"
+          },
+          {
+            "line": 79,
+            "semicolons": 2,
+            "source": "if w <= len then (output stdout s i0 w; print_char '\\n'; i0 + w)"
+          },
+          {
+            "line": 80,
+            "semicolons": 1,
+            "source": "else (output stdout s i0 len; write s 0 l (w - len))"
+          },
+          {
+            "line": 83,
+            "semicolons": 1,
+            "source": "print_char '>';"
+          },
+          {
+            "line": 84,
+            "semicolons": 1,
+            "source": "print_string id;"
+          },
+          {
+            "line": 85,
+            "semicolons": 1,
+            "source": "print_char ' ';"
+          },
+          {
+            "line": 86,
+            "semicolons": 1,
+            "source": "print_string desc;"
+          },
+          {
+            "line": 87,
+            "semicolons": 1,
+            "source": "print_char '\\n';"
+          },
+          {
+            "line": 91,
+            "semicolons": 1,
+            "source": "i0 := write src !i0 l width;"
+          },
+          {
+            "line": 92,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 105,
+            "semicolons": 4,
+            "source": "let iub = [| ('a', 0.27);  ('c', 0.12);  ('g', 0.12);  ('t', 0.27);"
+          },
+          {
+            "line": 106,
+            "semicolons": 4,
+            "source": "('B', 0.02);  ('D', 0.02);  ('H', 0.02);  ('K', 0.02);"
+          },
+          {
+            "line": 107,
+            "semicolons": 4,
+            "source": "('M', 0.02);  ('N', 0.02);  ('R', 0.02);  ('S', 0.02);"
+          },
+          {
+            "line": 108,
+            "semicolons": 3,
+            "source": "('V', 0.02);  ('W', 0.02);  ('Y', 0.02);  |]"
+          },
+          {
+            "line": 110,
+            "semicolons": 2,
+            "source": "let homosapiens = [| ('a', 0.3029549426680);    ('c', 0.1979883004921);"
+          },
+          {
+            "line": 111,
+            "semicolons": 2,
+            "source": "('g', 0.1975473066391);    ('t', 0.3015094502008);  |]"
+          },
+          {
+            "line": 115,
+            "semicolons": 1,
+            "source": "make_repeat_fasta \"ONE\" \"Homo sapiens alu\" (Bytes.of_string alu) (n*2);"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Use explicit binary64 division per RNG value for the common cohort workload, retaining cumulative binary search."
+      ],
+      "upstream_id": "fasta-ocaml-6",
+      "local_adaptation": true
+    },
+    {
+      "id": "knucleotide-ocaml-1-faithful",
+      "key": "knucleotide:knucleotide-ocaml-1-faithful",
+      "benchmark": "knucleotide",
+      "language": "ocaml",
+      "upstream_language": "ocaml",
+      "variant": 1,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ocaml-1-faithful.ml",
+      "source_sha256": "ee70f98889ee566d947a39eadb4f6237f6404d570122963080deb3a6e76deacb",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/knucleotide-ocaml-1.ml",
+      "original_source_sha256": "5086cc2edd041bc6c7f683732eacdc592b260143ddc2b957f1ca6faa0185406a",
+      "page_sha256": "b6996b623acfa397775bdcd0e9135fc3624270011bc34b3dd2f31d8e28f44266",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ocaml-1.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nOCaml native-code\n5.4.0+dev0-2024-08-25\n\n\n Fri, 10 Jan 2025 00:40:57 GMT\n\nMAKE:\nmv knucleotide.ocaml knucleotide.ml\n~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge knucleotide.ml -o knucleotide.ocaml_run\nrm knucleotide.ml\n\n1.40s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.ocaml_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "published": [
+        {
+          "elapsed": 45.592,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 84,
+        "nonblank_noncomment_lines": 52,
+        "packed_statement_review": [
+          {
+            "line": 20,
+            "semicolons": 1,
+            "source": "for i = 0 to String.length s - 1 do h := !h * 5 + Char.code s.[i] done;"
+          },
+          {
+            "line": 33,
+            "semicolons": 1,
+            "source": "H.clear count;"
+          },
+          {
+            "line": 36,
+            "semicolons": 1,
+            "source": "String.unsafe_blit dna i key 0 k;"
+          },
+          {
+            "line": 39,
+            "semicolons": 1,
+            "source": "done;"
+          },
+          {
+            "line": 53,
+            "semicolons": 1,
+            "source": "List.iter (fun (k,f) -> Printf.printf \"%s %.3f\\n\" k f) frq;"
+          },
+          {
+            "line": 63,
+            "semicolons": 1,
+            "source": "while is_not_three(input_line stdin) do () done;"
+          },
+          {
+            "line": 69,
+            "semicolons": 1,
+            "source": "(Buffer.add_string buf (String.uppercase_ascii line); raise Exit)"
+          },
+          {
+            "line": 70,
+            "semicolons": 1,
+            "source": "done with _ -> ());"
+          },
+          {
+            "line": 74,
+            "semicolons": 1,
+            "source": "if line.[0] = '>' then raise End_of_file;"
+          },
+          {
+            "line": 76,
+            "semicolons": 1,
+            "source": "done with End_of_file -> ());"
+          },
+          {
+            "line": 82,
+            "semicolons": 2,
+            "source": "List.iter (fun i -> write_frequencies i dna_three) [1; 2];"
+          },
+          {
+            "line": 84,
+            "semicolons": 4,
+            "source": "[\"GGT\"; \"GGTA\"; \"GGTATT\"; \"GGTATTTTAATT\"; \"GGTATTTTAATTTATAGT\"]"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Grow each standard-library hash table from a small initial capacity (16), as the current benchmark description requires. All seven overlapping count maps are retained."
+      ],
+      "upstream_id": "knucleotide-ocaml-1",
+      "local_adaptation": true
+    },
+    {
+      "id": "knucleotide-ocaml-2-faithful",
+      "key": "knucleotide:knucleotide-ocaml-2-faithful",
+      "benchmark": "knucleotide",
+      "language": "ocaml",
+      "upstream_language": "ocaml",
+      "variant": 2,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ocaml-2-faithful.ml",
+      "source_sha256": "fe4f18881224133a36e9c9cac505d5a3809a5ec1aa33f5186d06def85c2b1a51",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/knucleotide-ocaml-2.ml",
+      "original_source_sha256": "9d5e17f9ba6b606eb1f30362c25fe2ee043d959b4b16135b4526313a9958d50f",
+      "page_sha256": "ff7e44504aaa070ebb25168b387a782a1300681eeae9b310f3c1ac351f61c4b9",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ocaml-2.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nOCaml native-code\n5.4.0+dev0-2024-08-25\n\n\n Fri, 10 Jan 2025 00:31:39 GMT\n\nMAKE:\nmv knucleotide.ocaml-2.ocaml knucleotide.ocaml-2.ml\n~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge knucleotide.ocaml-2.ml -o knucleotide.ocaml-2.ocaml_run\nrm knucleotide.ocaml-2.ml\n\n1.96s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.ocaml-2.ocaml_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "published": [
+        {
+          "elapsed": 27.228,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 110,
+        "nonblank_noncomment_lines": 87,
+        "packed_statement_review": [
+          {
+            "line": 28,
+            "semicolons": 1,
+            "source": "for i = n to n + k - 1 do h := !h * 5 + Char.code (Bytes.unsafe_get dna i) done;"
+          },
+          {
+            "line": 45,
+            "semicolons": 1,
+            "source": "count ();"
+          },
+          {
+            "line": 55,
+            "semicolons": 1,
+            "source": "assert (String.length seq = k);"
+          },
+          {
+            "line": 56,
+            "semicolons": 1,
+            "source": "count ();"
+          },
+          {
+            "line": 57,
+            "semicolons": 1,
+            "source": "String.blit seq 0 dna 0 k;"
+          },
+          {
+            "line": 64,
+            "semicolons": 1,
+            "source": "while is_not_three(input_line stdin) do () done;"
+          },
+          {
+            "line": 70,
+            "semicolons": 1,
+            "source": "(Buffer.add_string buf (String.uppercase_ascii line); raise Exit)"
+          },
+          {
+            "line": 71,
+            "semicolons": 1,
+            "source": "done with _ -> ());"
+          },
+          {
+            "line": 75,
+            "semicolons": 1,
+            "source": "if line.[0] = '>' then raise End_of_file;"
+          },
+          {
+            "line": 77,
+            "semicolons": 1,
+            "source": "done with End_of_file -> ());"
+          },
+          {
+            "line": 83,
+            "semicolons": 2,
+            "source": "| -1 -> Unix.close input; Unix.close output; (let v = f x in fun () -> v)"
+          },
+          {
+            "line": 85,
+            "semicolons": 1,
+            "source": "Unix.close input;"
+          },
+          {
+            "line": 87,
+            "semicolons": 1,
+            "source": "Marshal.to_channel output (try `Res(f x) with e -> `Exn e) [];"
+          },
+          {
+            "line": 88,
+            "semicolons": 1,
+            "source": "close_out output;"
+          },
+          {
+            "line": 91,
+            "semicolons": 1,
+            "source": "Unix.close output;"
+          },
+          {
+            "line": 94,
+            "semicolons": 1,
+            "source": "ignore (Unix.waitpid [] pid);"
+          },
+          {
+            "line": 95,
+            "semicolons": 1,
+            "source": "close_in input;"
+          },
+          {
+            "line": 105,
+            "semicolons": 2,
+            "source": "M.write_frequencies ()) [1; 2];"
+          },
+          {
+            "line": 110,
+            "semicolons": 4,
+            "source": "[\"GGT\"; \"GGTA\"; \"GGTATT\"; \"GGTATTTTAATT\"; \"GGTATTTTAATTTATAGT\"]"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Include the final valid overlapping window for every one of the seven width-specific hash maps.",
+        "Grow each standard-library hash table from a small initial capacity (16) instead of preallocating 262,144 slots."
+      ],
+      "upstream_id": "knucleotide-ocaml-2",
+      "local_adaptation": true
+    },
+    {
+      "id": "knucleotide-ocaml-3-faithful",
+      "key": "knucleotide:knucleotide-ocaml-3-faithful",
+      "benchmark": "knucleotide",
+      "language": "ocaml",
+      "upstream_language": "ocaml",
+      "variant": 3,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/knucleotide-ocaml-3-faithful.ml",
+      "source_sha256": "a5f07bb79caebfae884171c6ebe34d4f958f6bf6013c78b37d3c29cd512b9c4e",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/upstream/knucleotide-ocaml-3.ml",
+      "original_source_sha256": "c2ae52e98bcf0596832954cd866d0012eb9196359b12c9d8b946852dade7abef",
+      "page_sha256": "709711570f9b214bce45e4ac99068c0e9332a4ec198a874c299d3193c7949cdb",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-ocaml-3.html",
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nOCaml native-code\n5.4.0+dev0-2024-08-25\n\n\n Fri, 10 Jan 2025 00:37:25 GMT\n\nMAKE:\nmv knucleotide.ocaml-3.ocaml knucleotide.ocaml-3.ml\n~/.opam/5.1.1/bin/ocamlopt -noassert -unsafe -fPIC -nodynlink -inline 100 -O3 -I +unix unix.cmxa -ccopt -march=ivybridge knucleotide.ocaml-3.ml -o knucleotide.ocaml-3.ocaml_run\nrm knucleotide.ocaml-3.ml\n\n1.50s to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.ocaml-3.ocaml_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "published": [
+        {
+          "elapsed": 16.168,
+          "n": 25000000
+        }
+      ],
+      "source_metrics": {
+        "physical_lines": 235,
+        "nonblank_noncomment_lines": 191,
+        "packed_statement_review": [
+          {
+            "line": 12,
+            "semicolons": 1,
+            "source": "tab.(Char.code 'A') <- 0;"
+          },
+          {
+            "line": 13,
+            "semicolons": 1,
+            "source": "tab.(Char.code 'a') <- 0;"
+          },
+          {
+            "line": 14,
+            "semicolons": 1,
+            "source": "tab.(Char.code 'T') <- 1;"
+          },
+          {
+            "line": 15,
+            "semicolons": 1,
+            "source": "tab.(Char.code 't') <- 1;"
+          },
+          {
+            "line": 16,
+            "semicolons": 1,
+            "source": "tab.(Char.code 'C') <- 2;"
+          },
+          {
+            "line": 17,
+            "semicolons": 1,
+            "source": "tab.(Char.code 'c') <- 2;"
+          },
+          {
+            "line": 18,
+            "semicolons": 1,
+            "source": "tab.(Char.code 'g') <- 3;"
+          },
+          {
+            "line": 31,
+            "semicolons": 1,
+            "source": "while is_not_three(input_line stdin) do () done;"
+          },
+          {
+            "line": 38,
+            "semicolons": 1,
+            "source": "uppercase line;"
+          },
+          {
+            "line": 39,
+            "semicolons": 1,
+            "source": "Buffer.add_bytes buf line;"
+          },
+          {
+            "line": 42,
+            "semicolons": 1,
+            "source": "done with _ -> ());"
+          },
+          {
+            "line": 46,
+            "semicolons": 1,
+            "source": "if Bytes.get line 0 = '>' then raise End_of_file;"
+          },
+          {
+            "line": 47,
+            "semicolons": 1,
+            "source": "uppercase line;"
+          },
+          {
+            "line": 49,
+            "semicolons": 1,
+            "source": "done with End_of_file -> ());"
+          },
+          {
+            "line": 66,
+            "semicolons": 1,
+            "source": "mutable count : int;"
+          },
+          {
+            "line": 115,
+            "semicolons": 3,
+            "source": "let char = [| 'A'; 'T'; 'C'; 'G' |]"
+          },
+          {
+            "line": 119,
+            "semicolons": 1,
+            "source": "Bytes.set s pos char.(h land 3);"
+          },
+          {
+            "line": 125,
+            "semicolons": 1,
+            "source": "unpack h1 s k k;"
+          },
+          {
+            "line": 130,
+            "semicolons": 1,
+            "source": "unpack h1 s threshold15 threshold15;"
+          },
+          {
+            "line": 131,
+            "semicolons": 1,
+            "source": "unpack h2 s k (k- threshold15);"
+          },
+          {
+            "line": 161,
+            "semicolons": 1,
+            "source": "count15 k;"
+          },
+          {
+            "line": 171,
+            "semicolons": 1,
+            "source": "count16 k;"
+          },
+          {
+            "line": 181,
+            "semicolons": 1,
+            "source": "count15 k;"
+          },
+          {
+            "line": 185,
+            "semicolons": 1,
+            "source": "count16 k;"
+          },
+          {
+            "line": 202,
+            "semicolons": 2,
+            "source": "| -1 -> Unix.close input; Unix.close output; (let v = f x in fun () -> v)"
+          },
+          {
+            "line": 204,
+            "semicolons": 1,
+            "source": "Unix.close input;"
+          },
+          {
+            "line": 206,
+            "semicolons": 1,
+            "source": "Marshal.to_channel output (f x) [];"
+          },
+          {
+            "line": 207,
+            "semicolons": 1,
+            "source": "close_out output;"
+          },
+          {
+            "line": 210,
+            "semicolons": 1,
+            "source": "Unix.close output;"
+          },
+          {
+            "line": 213,
+            "semicolons": 1,
+            "source": "ignore (Unix.waitpid [] pid);"
+          },
+          {
+            "line": 214,
+            "semicolons": 1,
+            "source": "close_in input;"
+          },
+          {
+            "line": 229,
+            "semicolons": 1,
+            "source": ") [Size 1;"
+          },
+          {
+            "line": 230,
+            "semicolons": 1,
+            "source": "Size 2;"
+          },
+          {
+            "line": 231,
+            "semicolons": 1,
+            "source": "Dna \"GGT\";"
+          },
+          {
+            "line": 232,
+            "semicolons": 1,
+            "source": "Dna \"GGTA\";"
+          },
+          {
+            "line": 233,
+            "semicolons": 1,
+            "source": "Dna \"GGTATT\";"
+          },
+          {
+            "line": 234,
+            "semicolons": 1,
+            "source": "Dna \"GGTATTTTAATT\";"
+          }
+        ],
+        "lexer_unclassified_tokens": []
+      },
+      "adaptations": [
+        "Include the final valid overlapping window for every one of the seven width-specific hash maps.",
+        "Grow each standard-library hash table from a small initial capacity (16) instead of preallocating 262,144 slots."
+      ],
+      "upstream_id": "knucleotide-ocaml-3",
+      "local_adaptation": true
+    }
+  ]
+}

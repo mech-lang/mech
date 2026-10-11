@@ -1,0 +1,17 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/revcomp-sbcl-2-faithful.lisp" (written 10 OCT 2026 07:09:31 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/revcomp-sbcl-2-faithful.lisp
+; in: DEFUN MAIN
+;     (CHAR LINE 0)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a STRING, not a SIMPLE-ARRAY.
+; 
+; compilation unit finished
+;   printed 1 note
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/revcomp-sbcl-2-faithful/program.fasl
+; compilation finished in 0:00:00.004

@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "width": 1440,
+      "execution_variants": true,
+      "workloads": 10,
+      "seconds_and_mech_ratios": true,
+      "source_and_samples": true,
+      "groups_and_years": true,
+      "fixed_axes": true
+    },
+    {
+      "width": 390,
+      "execution_variants": true,
+      "workloads": 10,
+      "seconds_and_mech_ratios": true,
+      "source_and_samples": true,
+      "groups_and_years": true,
+      "fixed_axes": true
+    }
+  ],
+  "errors": []
+}

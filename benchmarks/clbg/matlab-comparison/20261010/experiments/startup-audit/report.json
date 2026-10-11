@@ -1,0 +1,333 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-10T20:27:21.524815+00:00",
+  "protocol": "Diagnostic only; no chart timings replaced. Three sequential fresh-process no-op launches per mode. One fresh session per mode calls each unchanged full-size benchmark three times, resetting all benchmark state each call. MATLAB tic/toc surrounds the complete benchmark function, including its output. First call includes first-use JIT; later calls are warm. No-op startup is reported separately, never subtracted to invent kernel timings. Default mode uses the same command and environment as the chart. The no-JVM mode adds only -nojvm and cannot serve pi digits. AC power, Low Power Mode off, compiler/power guards, complete output validation after timing.",
+  "power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/nbody_optimized.m": "dedbc68eb8c2522e3cfeb02e451821da2e34fa9a0c054822e3225cda9dc49044",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources/spectralnorm_optimized.m": "c8a384fd73173769e2f9f2a7d94cfac63aea8712fe58dfa2a7319c60f0dc1b7e",
+    "/Applications/MATLAB_R2026b.app/bin/matlab": "6410f261f4a31011ef767412a3541f94e1900cec158951a5e400a6cd776d710f",
+    "/Applications/MATLAB_R2026b.app/bin/maca64/MATLAB": "ed2d96026421bb1f5d0deed46b1cfefa6011e8f5e7eef678675abe64ae0df764",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/matlab-stdin.sh": "a517cc4d3838fc6a44c8075fa044701a2f87aa8d9169cd19d67718ae6effb084",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home/lib/server/libjvm.dylib": "c0c9cc842a9d33857be8262157d19ee9c1e15caf99a9bde784033b351b5dd117",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/toolchains/jdk-25.0.4.1+1-jre/Contents/Home/lib/modules": "384c6a1944553e693145640a486fd1c46382904b8512586f6a7926f27715a743",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/results/builds.json": "f12e20c7bd9247a6c3cda0a0802b96f9f09d1d9c7faee72d1f38d80a27517253",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/results/timings.json": "e82ab6aff97a93b49b8e74068f4a742150be1457e37976b1fffd02f6caf29aa8"
+  },
+  "no_op": [
+    {
+      "mode": "original",
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "fprintf('AUDIT NOOP\\n')"
+      ],
+      "process_seconds": 3.414033042,
+      "stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-original-1.stdout.txt",
+      "stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-original-1.stderr.txt",
+      "competing_compilers": [],
+      "power_changes": [],
+      "run": 1
+    },
+    {
+      "mode": "no_jvm",
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-nojvm",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "fprintf('AUDIT NOOP\\n')"
+      ],
+      "process_seconds": 2.30097675,
+      "stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-no_jvm-1.stdout.txt",
+      "stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-no_jvm-1.stderr.txt",
+      "competing_compilers": [],
+      "power_changes": [],
+      "run": 1
+    },
+    {
+      "mode": "original",
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "fprintf('AUDIT NOOP\\n')"
+      ],
+      "process_seconds": 2.338043125,
+      "stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-original-2.stdout.txt",
+      "stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-original-2.stderr.txt",
+      "competing_compilers": [],
+      "power_changes": [],
+      "run": 2
+    },
+    {
+      "mode": "no_jvm",
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-nojvm",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "fprintf('AUDIT NOOP\\n')"
+      ],
+      "process_seconds": 2.274557583,
+      "stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-no_jvm-2.stdout.txt",
+      "stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-no_jvm-2.stderr.txt",
+      "competing_compilers": [],
+      "power_changes": [],
+      "run": 2
+    },
+    {
+      "mode": "original",
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "fprintf('AUDIT NOOP\\n')"
+      ],
+      "process_seconds": 2.323491333,
+      "stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-original-3.stdout.txt",
+      "stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-original-3.stderr.txt",
+      "competing_compilers": [],
+      "power_changes": [],
+      "run": 3
+    },
+    {
+      "mode": "no_jvm",
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-nojvm",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "fprintf('AUDIT NOOP\\n')"
+      ],
+      "process_seconds": 2.251145625,
+      "stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-no_jvm-3.stdout.txt",
+      "stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/noop-no_jvm-3.stderr.txt",
+      "competing_compilers": [],
+      "power_changes": [],
+      "run": 3
+    }
+  ],
+  "sessions": [
+    {
+      "mode": "original",
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "run('/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/session_probe.m')"
+      ],
+      "process_seconds": 18.022377583,
+      "stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/session-original.stdout.txt",
+      "stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/session-original.stderr.txt",
+      "competing_compilers": [],
+      "power_changes": [],
+      "computation_threads": 8,
+      "jvm_enabled": true,
+      "calls": [
+        {
+          "benchmark": "nbody",
+          "run": 1,
+          "seconds": 4.768031375,
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true
+        },
+        {
+          "benchmark": "nbody",
+          "run": 2,
+          "seconds": 4.691041708333334,
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true
+        },
+        {
+          "benchmark": "nbody",
+          "run": 3,
+          "seconds": 4.691782666666667,
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true
+        },
+        {
+          "benchmark": "spectralnorm",
+          "run": 1,
+          "seconds": 0.711582,
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "benchmark": "spectralnorm",
+          "run": 2,
+          "seconds": 0.35103866666666667,
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "benchmark": "spectralnorm",
+          "run": 3,
+          "seconds": 0.35599479166666664,
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "first_call_seconds": {
+        "nbody": 4.768031375,
+        "spectralnorm": 0.711582
+      },
+      "warm_median_seconds": {
+        "nbody": 4.6914121875,
+        "spectralnorm": 0.35351672916666665
+      }
+    },
+    {
+      "mode": "no_jvm",
+      "command": [
+        "/Applications/MATLAB_R2026b.app/bin/matlab",
+        "-nojvm",
+        "-licmode",
+        "onlinelicensing",
+        "-nodisplay",
+        "-sd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/sources",
+        "-batch",
+        "run('/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/session_probe.m')"
+      ],
+      "process_seconds": 18.11429875,
+      "stdout": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/session-no_jvm.stdout.txt",
+      "stderr": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments/startup-audit/session-no_jvm.stderr.txt",
+      "competing_compilers": [],
+      "power_changes": [],
+      "computation_threads": 8,
+      "jvm_enabled": false,
+      "calls": [
+        {
+          "benchmark": "nbody",
+          "run": 1,
+          "seconds": 4.771530208333333,
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true
+        },
+        {
+          "benchmark": "nbody",
+          "run": 2,
+          "seconds": 4.714298375,
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true
+        },
+        {
+          "benchmark": "nbody",
+          "run": 3,
+          "seconds": 4.692498625,
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true
+        },
+        {
+          "benchmark": "spectralnorm",
+          "run": 1,
+          "seconds": 0.7089580416666666,
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "benchmark": "spectralnorm",
+          "run": 2,
+          "seconds": 0.35972170833333333,
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "benchmark": "spectralnorm",
+          "run": 3,
+          "seconds": 0.36358158333333335,
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "first_call_seconds": {
+        "nbody": 4.771530208333333,
+        "spectralnorm": 0.7089580416666666
+      },
+      "warm_median_seconds": {
+        "nbody": 4.7033985000000005,
+        "spectralnorm": 0.3616516458333333
+      }
+    }
+  ],
+  "chart_fresh_process_seconds": {
+    "nbody": 7.4072045,
+    "spectralnorm": 3.212994917
+  },
+  "chart_full_validation": {
+    "nbody": {
+      "bytes": 26,
+      "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+      "energies": [
+        -0.169075164,
+        -0.169059907
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "spectralnorm": {
+      "bytes": 12,
+      "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "reference_match": true
+    }
+  },
+  "no_op_median_seconds": {
+    "original": 2.338043125,
+    "no_jvm": 2.274557583
+  },
+  "harness_sha256": "85becb7769b74068238af393832caf35665daa889da9335f3ade42000bde9668",
+  "probe_sha256": "9a1400d3ab504958f4aa1f634b4acfbf41095329a643ac11dc5755e44dba1abc",
+  "discarded_probes": [
+    {
+      "reason": "Diagnostic script name contained a hyphen; MATLAB run evaluated it as an expression. No benchmark was executed. Corrected filename to session_probe.m.",
+      "stdout": "experiments/startup-audit/session-script-name-error.stdout.txt",
+      "stderr": "experiments/startup-audit/session-script-name-error.stderr.txt"
+    }
+  ],
+  "finished_at": "2026-10-10T20:29:01.698947+00:00"
+}

@@ -1,0 +1,64 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:26:25: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+        var lo = offsets[k]
+                 ~~~~~~~^~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:29:25: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            hi = offsets[k + 1] - 2
+                 ~~~~~~~^~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:30:36: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            while hi >= lo and data[hi] != 62:
+                               ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:34:20: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            if data[lo] == 10 or data[lo] == 13:
+               ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:34:38: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            if data[lo] == 10 or data[lo] == 13:
+                                 ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:36:22: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            elif data[hi] == 10 or data[hi] == 13:
+                 ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:36:40: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+            elif data[hi] == 10 or data[hi] == 13:
+                                   ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:39:39: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                var a = table[Int(data[lo])]
+                                  ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:39:30: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                var a = table[Int(data[lo])]
+                        ~~~~~^~~~~~~~~~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:40:21: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                data[lo] = table[Int(data[hi])]
+                ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:40:42: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                data[lo] = table[Int(data[hi])]
+                                     ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:40:33: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                data[lo] = table[Int(data[hi])]
+                           ~~~~~^~~~~~~~~~~~~~~
+<unknown>:0: note: '__getitem__' declared here
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:41:21: warning: positional `__getitem__` is deprecated, use `unsafe_offset=` instead
+                data[hi] = a
+                ~~~~^~~~
+<unknown>:0: note: '__getitem__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/stdlib/common.mojo:18:68: warning: '__add__' is deprecated, use 'unsafe_offset' instead
+        var got = external_call["read", Int](0, bytes.unsafe_ptr() + used, 65536)
+                                                ~~~~~~~~~~~~~~~~~~~^~~~~~
+<unknown>:0: note: '__add__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/sources/revcomp.mojo:2:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009/stdlib/common.mojo:29:35: warning: '__add__' is deprecated, use 'unsafe_offset' instead
+            1, bytes.unsafe_ptr() + written, len(bytes) - written)
+               ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+<unknown>:0: note: '__add__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-245dd97.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

@@ -1,0 +1,192 @@
+{
+  "programs": [
+    {
+      "id": "binarytrees:d-compact",
+      "benchmark": "binarytrees",
+      "variant": "compact",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/binarytrees/compact.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-compact",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/binarytrees/compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-compact"
+      ],
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/binarytrees/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/binarytrees/hanabi-1.d",
+      "source_sha256": "a327516df7e15cefe6d35432c0070bb4a58e16c8e51ba6f483397db39143c667",
+      "binary_sha256": "a2d84fd7f8cb3f937816e2c59c7d8ade104e9b9aea6661356a52b5fd65dae7bb",
+      "upstream_sha256": "9fab2a89047a9c5544562387520ae0c1418259d223b757710a48fb1cc0c62d34",
+      "adaptations": [
+        "Shortened idiomatic D port of upstream Node class; one statement per line. Removed upstream gcopt=minPoolSize:300 override to use default GC. Constructors allocate all leaf/interior class instances."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Creates, traverses and reclaims every equal-size leaf/interior node; stretch deallocated before retained long-lived tree; no arithmetic node-count substitution."
+      },
+      "small_validation": {
+        "returncode": 0,
+        "stdout": "stretch tree of depth 11\t check: 4095\n1024\t trees of depth 4\t check: 31744\n256\t trees of depth 6\t check: 32512\n64\t trees of depth 8\t check: 32704\n16\t trees of depth 10\t check: 32752\nlong lived tree of depth 10\t check: 2047\n",
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "allocator_policy": "default D GC"
+    },
+    {
+      "id": "binarytrees:d-fast",
+      "benchmark": "binarytrees",
+      "variant": "fast",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/binarytrees/fast.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-fast",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-fast",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/binarytrees/fast.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/binarytrees-fast"
+      ],
+      "source_url": "https://github.com/hanabi1224/Programming-Language-Benchmarks/blob/ad18b203dd1769724f4eea94fc3ac1e99f6593e0/bench/algorithm/binarytrees/1.d",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/binarytrees/hanabi-1.d",
+      "source_sha256": "349c91f26b3f90612dd513037d3a7d6c228340a17207e2d7298d68c50a92ae2b",
+      "binary_sha256": "0f2b50653a748cffac9eb38350cb28ffaa4f8082d37c947cb84a5b8a3832eb92",
+      "upstream_sha256": "9fab2a89047a9c5544562387520ae0c1418259d223b757710a48fb1cc0c62d34",
+      "adaptations": [
+        "Independent strict D implementation, not imported specialized benchmark function. Phobos Region!Mallocator standard-library memory pool replaces default GC. Every node calls pool.allocate(Node.sizeof), leaf/interior same size16 bytes. Capacity formula reserves storage; never substitutes for node construction/traversal. deallocateAll resets only after complete tree check. Seven TaskPool workers plus caller at most8. No custom allocator code; all traversal/allocation calls in D source."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Creates, traverses and reclaims every equal-size leaf/interior node; stretch deallocated before retained long-lived tree; no arithmetic node-count substitution."
+      },
+      "small_validation": {
+        "returncode": 0,
+        "stdout": "stretch tree of depth 11\t check: 4095\n1024\t trees of depth 4\t check: 31744\n256\t trees of depth 6\t check: 32512\n64\t trees of depth 8\t check: 32704\n16\t trees of depth 10\t check: 32752\nlong lived tree of depth 10\t check: 2047\n",
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "allocator_policy": "Phobos Region!Mallocator library pool; per-node equal-size logical allocations; entire tree live before bulk reclamation"
+    },
+    {
+      "id": "pidigits:d-compact",
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/compact.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/compact.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-compact"
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-gcc-1.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/pidigits/pidigits-gcc-1.c",
+      "source_sha256": "e2a99730b9893a03bb3d9962b3e1bc3ff432e1142ddd854b88def9eb26ff74c6",
+      "binary_sha256": "e7221e8330cac37a650eb3ac09880315b0daa1ad1a7d8890ef581bd87b781644",
+      "upstream_sha256": "f719dddd30aad201aa3ce385b80d48ef3befce29b22c3a12a5aa7e7d743f948e",
+      "adaptations": [
+        "New independent strict D port of canonical Benchmark Game C #1; replacing upstream D Hanabi n1/n2 spelling with explicit extract(3)/extract(4) operations so source audit meets current work rule.",
+        "Uses Phobos std.bigint BigInt; all numerical algorithm and output in D."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical sequential unbounded spigot. Performs both extract(3) and extract(4) using exact arbitrary-precision division, every required next-term step, complete output and partial-line padding."
+      },
+      "small_validation": {
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n",
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      }
+    },
+    {
+      "id": "pidigits:d-fast",
+      "benchmark": "pidigits",
+      "variant": "fast",
+      "language": "d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/fast.d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "{n}"
+      ],
+      "build_command": [
+        "/opt/homebrew/bin/ldc2",
+        "-O3",
+        "-release",
+        "-boundscheck=off",
+        "-mcpu=native",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/fast.d",
+        "-of=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+        "-L-L/opt/homebrew/opt/gmp/lib",
+        "-L-lgmp"
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-gcc-1.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/pidigits/pidigits-gcc-1.c",
+      "source_sha256": "adad16c89fa4163f68c2fc3242d9f73b100ef4a441a42468b8d987bc38549b4a",
+      "binary_sha256": "3a21ed99dc9c1d395c911fcdb10bcb6e56f6812165aeede9198ee1c746b53548",
+      "upstream_sha256": "f719dddd30aad201aa3ce385b80d48ef3befce29b22c3a12a5aa7e7d743f948e",
+      "adaptations": [
+        "New independent strict D port of canonical Benchmark Game C #1; replacing upstream D Hanabi n1/n2 spelling with explicit extract(3)/extract(4) operations so source audit meets current work rule.",
+        "Uses direct standard GMP arithmetic declarations with ABI structure verified against installed gmp.h. All digit generation/control flow is D; no C/Rust host benchmark kernel. Completes partial final line unlike original C #1."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical sequential unbounded spigot. Performs both extract(3) and extract(4) using exact arbitrary-precision division, every required next-term step, complete output and partial-line padding."
+      },
+      "small_validation": {
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n",
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      }
+    }
+  ],
+  "libraries": {
+    "/opt/homebrew/Cellar/gmp/6.3.0/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9",
+    "/opt/homebrew/Cellar/gmp/6.3.0/include/gmp.h": "ba08e6d76e0945a858d6e3384eb1fbc1b8100799052cf4ab5c10befe6ee99ebc",
+    "/opt/homebrew/Cellar/ldc/1.43.0/include/dlang/ldc/std/experimental/allocator/building_blocks/region.d": "7c5ca2ffd1a8389b202854680e5881c0cb77b8939d87d94d6ccaa9ad9fe94120",
+    "/opt/homebrew/Cellar/ldc/1.43.0/include/dlang/ldc/std/bigint.d": "85c8e74f02cb32c1c4cf1d7ec1f9965ad951ace12a5ad1b2acd486e55a9edb91"
+  },
+  "allocation_audit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/audit/trees-digits/allocation-audit.json",
+  "excluded_sources": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/binarytrees/binarytrees.d",
+      "reason": "Community fast program uses custom pooledmm allocator and dvector dependency, fixed9 result rows. Preserved for provenance/technique research but not chart admitted."
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/originals/pidigits/hanabi-1.d",
+      "reason": "Current source expresses equivalent n1/n2 stable-digit divisions; not admitted until explicit extract(3)/(4) work equivalence is proven. Our strict D candidates use canonical operations instead."
+    }
+  ],
+  "compiler_version": "LDC - the LLVM D compiler (1.43.0):\n  based on DMD v2.113.0 and LLVM 23.1.2\n  built with LDC - the LLVM D compiler (1.42.0)\n  Default target: arm64-apple-darwin25.2.0\n  Host CPU: apple-m3\n  https://dlang.org - https://wiki.dlang.org/LDC\n\n\n  Registered Targets:\n    aarch64     - AArch64 (little endian)\n    aarch64_32  - AArch64 (little endian ILP32)\n    aarch64_be  - AArch64 (big endian)\n    amdgcn      - legacy name for amdgpu\n    amdgpu      - AMDGPU gfx6+\n    arm         - ARM\n    arm64       - ARM64 (little endian)\n    arm64_32    - ARM64 (little endian ILP32)\n    armeb       - ARM (big endian)\n    avr         - Atmel AVR Microcontroller\n    bpf         - BPF (host endian)\n    bpfeb       - BPF (big endian)\n    bpfel       - BPF (little endian)\n    hexagon     - Hexagon\n    lanai       - Lanai\n    loongarch32 - 32-bit LoongArch\n    loongarch64 - 64-bit LoongArch\n    mips        - MIPS (32-bit big endian)\n    mips64      - MIPS (64-bit big endian)\n    mips64el    - MIPS (64-bit little endian)\n    mipsel      - MIPS (32-bit little endian)\n    msp430      - MSP430 [experimental]\n    nvptx       - NVIDIA PTX 32-bit\n    nvptx64     - NVIDIA PTX 64-bit\n    ppc32       - PowerPC 32\n    ppc32le     - PowerPC 32 LE\n    ppc64       - PowerPC 64\n    ppc64le     - PowerPC 64 LE\n    r600        - AMD GPUs HD2XXX-HD6XXX\n    riscv32     - 32-bit RISC-V\n    riscv32be   - 32-bit big endian RISC-V\n    riscv64     - 64-bit RISC-V\n    riscv64be   - 64-bit big endian RISC-V\n    sparc       - Sparc\n    sparcel     - Sparc LE\n    sparcv9     - Sparc V9\n    spirv       - SPIR-V Logical\n    spirv32     - SPIR-V 32-bit\n    spirv64     - SPIR-V 64-bit\n    systemz     - SystemZ\n    thumb       - Thumb\n    thumbeb     - Thumb (big endian)\n    ve          - VE\n    wasm32      - WebAssembly 32-bit\n    wasm64      - WebAssembly 64-bit\n    x86         - 32-bit X86: Pentium-Pro and above\n    x86-64      - 64-bit X86: EM64T and AMD64\n    xcore       - XCore\n"
+}

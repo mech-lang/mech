@@ -1,0 +1,42 @@
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+   Compiling mech-clbg-nbody v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver)
+    Finished `release` profile [optimized] target(s) in 31.65s
+     Running tests/fused.rs (benchmarks/clbg/nbody/mech-driver/target/release/deps/fused-aafb27c76f78a793)
+
+running 33 tests
+test exact_binary_division_rewrite_matches_resident_scalar_and_simd ... ok
+test generic_multiple_states_keep_old_and_next_values_distinct ... ok
+test generic_odd_state_length_keeps_simd_tail ... ok
+test generic_repeated_scatter_and_broadcast_keep_source_order ... ok
+test iros_f32_aot_and_jit_match_scalar_with_v04_remainder ... ok
+test named_constant_output_without_state_is_supported ... ok
+test column_gathers_and_repeated_updates_preserve_source_order ... ok
+test compact_inverse_power_algebraic_lowering_matches_resident ... ok
+test nbody_complete_state_matches_resident_factored ... ok
+test nbody_complete_state_matches_resident_power ... ok
+test constant_product_reassociation_matches_resident_and_simd ... ok
+test negative_fma_coefficients_match_resident_and_scheduled_simd ... ok
+test odd_width_matrix_preserves_repeated_scatter_order ... ok
+test opt_in_transformations_apply_to_unrelated_arithmetic ... ok
+test nbody_complete_state_matches_resident_sqrt ... ok
+test rectangular_transpose_keeps_live_state_and_output_order ... ok
+test reductions_keep_summand_order_in_each_lane ... ok
+test native_runner_defaults_to_the_final_expression ... ok
+test scheduling_regions_generalizes_to_unrelated_recurrences ... ok
+test column_oriented_nbody_matches_resident_execution ... ok
+test simd_preserves_signed_zero ... ok
+test square_reduction_fma_preserves_zero_and_output ... ok
+test square_seed_simplification_preserves_signed_zero ... ok
+test transposed_constant_matrix_can_initialize_state ... ok
+test unknown_output_is_rejected_before_native_execution ... ok
+test vector_double_transpose_preserves_live_values ... ok
+test mass_first_pairwise_nbody_matches_resident ... ok
+test alternative_schedules_preserve_states_and_observations ... ok
+test pairwise_nbody_matches_resident ... ok
+test scheduling_regions_preserves_nbody_and_perturbed_initial_states ... ok
+test compact_matrix_nbody_with_implicit_result_matches_resident ... ok
+test shared_scaled_products_match_complete_resident_state ... ok
+test nbody_fma_and_refined_reciprocal_match_resident_tolerance ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.46s
+

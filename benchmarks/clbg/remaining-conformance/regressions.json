@@ -1,0 +1,205 @@
+{
+  "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+  "checks": [
+    {
+      "benchmark": "mandelbrot",
+      "id": "mech-program-simd-loop-fma",
+      "source_sha256": "65e5624600be896862855e106711cddb51c79ee829da0c8f0841c13608a07fab",
+      "native_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+      "native_object_identical": true,
+      "machine_instructions_identical": true,
+      "instruction_note": null,
+      "small": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "mandelbrot",
+      "id": "mech-program-compact",
+      "source_sha256": "410d26d920276876d39d8cddd75fa1bc964fc81de39190cb5201f6709e26a764",
+      "native_object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+      "native_object_identical": true,
+      "machine_instructions_identical": true,
+      "instruction_note": null,
+      "small": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "knucleotide",
+      "id": "mech-compact-final-std1-simd0-p4",
+      "source_sha256": "801f22403045b5c81c418d84a4726b86b6510726cc74a1a7857c14066e324cd3",
+      "native_object_sha256": "6bbb29e24b736879f6ea0223e4111e0289e3ca139a2bf6f36ac89f512e1f1d4f",
+      "native_object_identical": false,
+      "machine_instructions_identical": true,
+      "instruction_note": "Only numeric helper symbol names differ: existing f64 suffix introduced by the earlier 32-bit array path. All emitted instructions are identical after normalizing those names.",
+      "small": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "spectralnorm",
+      "id": "mech-integer-simd1-u4-r4-p8-g8",
+      "source_sha256": "8eb7cd3e3a9e375344b8b1c1423732c02fb7a76c6f65a0cd88f0f5ed2d596958",
+      "native_object_sha256": "a70159b7e1635db6c49ec2306130cba161f86304b9e8cce930854ace3fb5ca8f",
+      "native_object_identical": true,
+      "machine_instructions_identical": true,
+      "instruction_note": null,
+      "small": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "revcomp",
+      "id": "mech-revcomp-optimized",
+      "source_sha256": "7e15f32e8920c19e7752002e1d0a2f0acbd5e33fcddf1a6ad7fbde9aa2fb3f57",
+      "native_object_sha256": "c1e649ece8e124ba23a6b1a3030217eacece9ee1042eb8726c40aee9aafc7cc4",
+      "native_object_identical": true,
+      "machine_instructions_identical": true,
+      "instruction_note": null,
+      "small": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "id": "mech-fannkuch-even",
+      "source_sha256": "10f5e0467d9fd681580984c07092c77a6b16f36f18595d6f3c10c0bf5b483f6a",
+      "native_object_sha256": "8430f419036230f41625215e0e956a3a347975aeaeabe1c68da97c2c33238288",
+      "native_object_identical": true,
+      "machine_instructions_identical": true,
+      "instruction_note": null,
+      "small": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "exact_reference_match": true,
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "exact_reference_match": true,
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "id": "mech-fannkuch-default",
+      "source_sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "native_object_sha256": "8a1d0c8f565a1e762f47c3629a75c8cbb29fe58563c29fceff57033ed88523ea",
+      "native_object_identical": true,
+      "machine_instructions_identical": true,
+      "instruction_note": null,
+      "small": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "exact_reference_match": true,
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "exact_reference_match": true,
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "id": "mech-fasta-final-expanded-v2",
+      "source_sha256": "519ef38bcba15f5efef28b1bcb14fd68788880a8ae7165a4c4824d659f4c161d",
+      "native_object_sha256": "42ad20d69b3b2f959bddfc9a7c9989187743169cc61591101a3eb2a43ea4e88c",
+      "native_object_identical": true,
+      "machine_instructions_identical": true,
+      "instruction_note": null,
+      "small": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "fasta",
+      "id": "mech-fasta-final-compact-v2",
+      "source_sha256": "a3d9cd69c6da8c4d558034b1d3592c3414e4d548f7bc668ea5a1421d7888c0b7",
+      "native_object_sha256": "1603c26c3ba0ddff79771102d8d9c0d2edb4f90d2d06e6392e77a59b8d135017",
+      "native_object_identical": true,
+      "machine_instructions_identical": true,
+      "instruction_note": null,
+      "small": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "binarytrees",
+      "id": "mech-binarytrees-parallel",
+      "source_sha256": "d64191b398fea60eaf678c6f345952c9af4e68c93f0efe708a37aa3ed4bf8b9f",
+      "native_object_sha256": "c20a6cdc8409a6eca9594cdc4fdc96140761f78ebcbdd9c99a478a26f6daa16f",
+      "native_object_identical": false,
+      "machine_instructions_identical": true,
+      "instruction_note": "Only numeric helper symbol names differ: existing f64 suffix introduced by the earlier 32-bit array path. All emitted instructions are identical after normalizing those names.",
+      "small": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "full": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      }
+    },
+    {
+      "benchmark": "nbody",
+      "unchanged_f64_compiler_files": 7,
+      "confirmed_full_workload_report": "nbody/experiments/20261009-local-simd/final-confirmation-50m.json"
+    }
+  ],
+  "passed": 11
+}

@@ -1,0 +1,11 @@
+driver-*
+before-compact-baseline
+before-pairwise-mass-tails
+compact-*
+!compact-*.json
+pairwise-*
+!pairwise-*.json
+*.o
+*.c
+*.disassembly.txt
+site-before.json

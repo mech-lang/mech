@@ -1,0 +1,48 @@
+--> Working on Math::GMP
+Fetching http://www.cpan.org/authors/id/S/SH/SHLOMIF/Math-GMP-2.25.tar.gz ... OK
+==> Found dependencies: Alien::GMP
+--> Working on Alien::GMP
+Fetching http://www.cpan.org/authors/id/P/PL/PLICEASE/Alien-GMP-1.16.tar.gz ... OK
+==> Found dependencies: Alien::Build, Alien::Build::MM
+--> Working on Alien::Build
+Fetching http://www.cpan.org/authors/id/P/PL/PLICEASE/Alien-Build-2.88.tar.gz ... OK
+==> Found dependencies: File::Which
+--> Working on File::Which
+Fetching http://www.cpan.org/authors/id/P/PL/PLICEASE/File-Which-1.27.tar.gz ... OK
+Configuring File-Which-1.27 ... OK
+Building File-Which-1.27 ... OK
+Successfully installed File-Which-1.27
+Configuring Alien-Build-2.88 ... OK
+==> Found dependencies: FFI::CheckLib, Capture::Tiny, Path::Tiny, File::chdir
+--> Working on FFI::CheckLib
+Fetching http://www.cpan.org/authors/id/P/PL/PLICEASE/FFI-CheckLib-0.31.tar.gz ... OK
+Configuring FFI-CheckLib-0.31 ... OK
+Building FFI-CheckLib-0.31 ... OK
+Successfully installed FFI-CheckLib-0.31
+--> Working on Capture::Tiny
+Fetching http://www.cpan.org/authors/id/D/DA/DAGOLDEN/Capture-Tiny-0.50.tar.gz ... OK
+Configuring Capture-Tiny-0.50 ... OK
+Building Capture-Tiny-0.50 ... OK
+Successfully installed Capture-Tiny-0.50
+--> Working on Path::Tiny
+Fetching http://www.cpan.org/authors/id/D/DA/DAGOLDEN/Path-Tiny-0.150.tar.gz ... OK
+Configuring Path-Tiny-0.150 ... OK
+Building Path-Tiny-0.150 ... OK
+Successfully installed Path-Tiny-0.150
+--> Working on File::chdir
+Fetching http://www.cpan.org/authors/id/D/DA/DAGOLDEN/File-chdir-0.1011.tar.gz ... OK
+Configuring File-chdir-0.1011 ... OK
+Building File-chdir-0.1011 ... OK
+Successfully installed File-chdir-0.1011
+Building Alien-Build-2.88 ... OK
+Successfully installed Alien-Build-2.88
+Configuring Alien-GMP-1.16 ... ! Configure failed for Alien-GMP-1.16. See /Users/cim310/.cpanm/work/1791536664.56875/build.log for details.
+! Installing the dependencies failed: Module 'Alien::GMP' is not installed
+! Bailing out the installation for Math-GMP-2.25.
+N/A
+--> Working on Math::BigInt::GMP
+Fetching http://www.cpan.org/authors/id/P/PJ/PJACKLAM/Math-BigInt-GMP-1.7003.tar.gz ... OK
+Configuring Math-BigInt-GMP-1.7003 ... OK
+Building Math-BigInt-GMP-1.7003 ... ! Installing Math::BigInt::GMP failed. See /Users/cim310/.cpanm/work/1791536664.56875/build.log for details. Retry with --force to force install it.
+FAIL
+6 distributions installed

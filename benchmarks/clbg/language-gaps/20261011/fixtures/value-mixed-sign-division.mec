@@ -1,0 +1,7 @@
+AsU64(x<bigint>) => <u64> := x
+a := bigint/new(7)
+b := bigint/new(3)
+negative := b - a - 3
+q := negative / b
+r := negative % b
+io/print("{} {} {}\n", control/select(q == 0 - bigint/new(2), 1, 0), control/select(r == 0 - bigint/new(1), 1, 0), AsU64(negative / (0 - b)))

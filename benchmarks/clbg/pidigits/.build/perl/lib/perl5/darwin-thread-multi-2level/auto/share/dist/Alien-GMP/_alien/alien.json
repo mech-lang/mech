@@ -1,0 +1,27 @@
+{
+   "alien_build_version" : "2.88",
+   "alt" : {
+      "gmp" : {
+         "cflags" : " ",
+         "libs" : "-lgmp "
+      },
+      "gmpxx" : {
+         "libs" : "-lgmpxx "
+      }
+   },
+   "cflags" : " ",
+   "cflags_static" : " ",
+   "install_type" : "system",
+   "legacy" : {
+      "finished_installing" : 1,
+      "install_type" : "system",
+      "name" : "gmp",
+      "original_prefix" : "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5/darwin-thread-multi-2level/auto/share/dist/Alien-GMP",
+      "version" : "6.3.0"
+   },
+   "libs" : "-lgmp ",
+   "libs_static" : "-lgmp ",
+   "perl_module_version" : "1.16",
+   "prefix" : "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/perl/lib/perl5/darwin-thread-multi-2level/auto/share/dist/Alien-GMP",
+   "version" : "6.3.0"
+}

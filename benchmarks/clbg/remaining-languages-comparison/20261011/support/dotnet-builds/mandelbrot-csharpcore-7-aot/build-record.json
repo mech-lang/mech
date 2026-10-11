@@ -1,0 +1,64 @@
+{
+  "id": "mandelbrot-csharpcore-7-aot",
+  "key": "mandelbrot:mandelbrot-csharpcore-7-aot",
+  "benchmark": "mandelbrot",
+  "language": "csharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/mandelbrot-csharpcore-7.cs",
+  "source_sha256": "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/mandelbrot-csharpcore-7.cs",
+  "original_source_sha256": "d22346944ed5d13c1dbb2d626f17f38c5ff075a23c97b31eca1bb129c6630679",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-csharpcore-7.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 08:11:28 GMT\n\nMAKE:\ncp mandelbrot.csharpcore-7.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj (in 878 ms).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:05.91\n\n7.76s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 16000\n\n(BINARY) PROGRAM OUTPUT NOT SHOWN",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 67,
+  "normalized_loc": 67,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/mandelbrot-csharpcore-7-aot/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-7-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/mandelbrot-csharpcore-7-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-7-aot/app",
+  "binary_sha256": "fd9510a87374e0e63cb6f8040acabdb9c17e5bf5bc049eda8d3cefefe92d2a28",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-7-aot/app",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/mandelbrot-csharpcore-7-aot/app": "fd9510a87374e0e63cb6f8040acabdb9c17e5bf5bc049eda8d3cefefe92d2a28"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 5011,
+    "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 3.226,
+  "timing_selection_reasons": [
+    "Lowest officially published elapsed time at the prescribed full workload; local timing still required."
+  ]
+}

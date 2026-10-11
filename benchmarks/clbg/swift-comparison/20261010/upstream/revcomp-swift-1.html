@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement Swift program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement Swift program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">// The Computer Language Benchmark Game</span>
+<span class="slc">// https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">//</span>
+<span class="slc">// implementation inspired by gcc #6</span>
+<span class="slc">// contributed by Ralph Ganszky</span>
+
+
+<span class="kwa">import</span> Foundation
+<span class="kwa">import</span> Dispatch
+
+<span class="slc">// BlockReader class does a bit more than necessary, but this</span>
+<span class="slc">// should not be that expensive.</span>
+
+<span class="kwa">final class</span> BlockReader <span class="opt">{</span>
+    
+    <span class="slc">// Constants</span>
+    <span class="kwa">private let</span> <span class="kwc">blockSize</span> <span class="opt">=</span> <span class="num">64</span><span class="opt">*</span><span class="num">1024</span>
+    <span class="kwa">private let</span> <span class="kwc">lineSize</span> <span class="opt">=</span> <span class="num">60</span>
+    <span class="kwa">private let</span> <span class="kwc">descMarker</span> <span class="opt">=</span> <span class="sng">&quot;&gt;&quot;</span><span class="opt">.</span>utf16<span class="opt">.</span>map<span class="opt">{</span><span class="kwb">Int8</span><span class="opt">(</span>$<span class="num">0</span><span class="opt">)}[</span><span class="num">0</span><span class="opt">]</span>
+    
+    <span class="slc">// Attributes</span>
+    <span class="kwa">private var</span> <span class="kwc">block</span><span class="opt">:</span> UnsafeMutablePointer<span class="opt">&lt;</span><span class="kwb">Int8</span><span class="opt">&gt;</span>
+    <span class="kwa">private var</span> <span class="kwc">bytesRead</span><span class="opt">:</span> <span class="kwb">Int</span>
+    <span class="kwa">private var</span> <span class="kwc">eof</span><span class="opt">:</span> <span class="kwb">Bool</span>
+    <span class="kwa">private var</span> <span class="kwc">fp</span><span class="opt">:</span> UnsafeMutablePointer<span class="opt">&lt;</span>FILE<span class="opt">&gt;!</span>
+    <span class="kwa">private var</span> <span class="kwc">readPos</span><span class="opt">:</span> <span class="kwb">Int</span>
+    
+    <span class="kwa">init</span><span class="opt">(</span><span class="kwc">fp</span><span class="opt">:</span> UnsafeMutablePointer<span class="opt">&lt;</span>FILE<span class="opt">&gt;!) {</span>
+        <span class="kwc">block</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span><span class="kwb">Int8</span><span class="opt">&gt;.</span><span class="kwd">allocate</span><span class="opt">(</span>capacity<span class="opt">:</span> <span class="kwc">blockSize</span><span class="opt">+</span><span class="num">1</span><span class="opt">)</span>
+        <span class="kwc">block</span><span class="opt">[</span><span class="kwc">blockSize</span><span class="opt">] =</span> <span class="num">0</span>
+        <span class="kwc">bytesRead</span> <span class="opt">=</span> <span class="num">0</span>
+        <span class="kwc">eof</span> <span class="opt">=</span> <span class="kwb">false</span>
+        <span class="kwb">self</span><span class="opt">.</span><span class="kwc">fp</span> <span class="opt">=</span> <span class="kwc">fp</span>
+        <span class="kwc">readPos</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="opt">}</span>
+    
+    <span class="kwa">deinit</span> <span class="opt">{</span>
+        <span class="kwc">block</span><span class="opt">.</span><span class="kwd">deallocate</span><span class="opt">()</span>
+    <span class="opt">}</span>
+    
+    <span class="kwa">private func</span> <span class="kwd">readBlock</span><span class="opt">() {</span>
+        <span class="kwc">bytesRead</span> <span class="opt">=</span> <span class="kwd">fread</span><span class="opt">(</span><span class="kwc">block</span><span class="opt">,</span> <span class="num">1</span><span class="opt">,</span> <span class="kwc">blockSize</span><span class="opt">,</span> <span class="kwc">fp</span><span class="opt">)</span>
+        <span class="kwc">block</span><span class="opt">[</span><span class="kwc">bytesRead</span><span class="opt">] =</span> <span class="num">0</span>
+        <span class="kwa">if</span> <span class="kwd">feof</span><span class="opt">(</span><span class="kwc">fp</span><span class="opt">) !=</span> <span class="num">0</span> <span class="opt">{</span>
+            <span class="kwc">eof</span> <span class="opt">=</span> <span class="kwb">true</span>
+        <span class="opt">}</span>
+        <span class="kwc">readPos</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="opt">}</span>
+    
+    <span class="kwa">func</span> <span class="kwd">read</span><span class="opt">() -&gt; ([</span><span class="kwb">Int8</span><span class="opt">], [</span><span class="kwb">Int8</span><span class="opt">]) {</span>
+        
+        <span class="slc">// Allocate byte array</span>
+        <span class="kwa">var</span> <span class="kwc">description</span> <span class="opt">= [</span><span class="kwb">Int8</span><span class="opt">]()</span>
+        <span class="kwa">var</span> <span class="kwc">seq</span> <span class="opt">= [</span><span class="kwb">Int8</span><span class="opt">]()</span>
+        
+        <span class="slc">// Read a block if we don&#39;t have one</span>
+        <span class="kwa">if</span> <span class="kwc">bytesRead</span> <span class="opt">==</span> <span class="num">0</span> <span class="opt">{</span>
+            <span class="kwd">readBlock</span><span class="opt">()</span>
+        <span class="opt">}</span>
+        
+        <span class="slc">// Read description</span>
+        <span class="kwa">if</span> <span class="kwc">block</span><span class="opt">[</span><span class="kwc">readPos</span><span class="opt">] ==</span> <span class="kwc">descMarker</span> <span class="opt">{</span>
+            <span class="slc">// search for &#39;\n&#39;</span>
+            <span class="kwa">var</span> <span class="kwc">descStart</span> <span class="opt">=</span> <span class="kwc">readPos</span>
+            <span class="kwa">while</span> <span class="kwc">block</span><span class="opt">[</span><span class="kwc">readPos</span><span class="opt">] !=</span> <span class="num">10</span> <span class="opt">{</span>
+                <span class="kwc">readPos</span> <span class="opt">+=</span> <span class="num">1</span>
+                <span class="kwa">if</span> <span class="kwc">readPos</span> <span class="opt">&gt;</span> <span class="kwc">bytesRead</span> <span class="opt">{</span>
+                    <span class="kwc">description</span><span class="opt">.</span><span class="kwd">append</span><span class="opt">(</span>
+			contentsOf<span class="opt">:</span> <span class="kwd">Array</span><span class="opt">(</span>
+			    <span class="kwd">UnsafeBufferPointer</span><span class="opt">(</span>
+				start<span class="opt">:</span> <span class="kwc">block</span><span class="opt">.</span><span class="kwd">advanced</span><span class="opt">(</span>by<span class="opt">:</span> <span class="kwc">descStart</span><span class="opt">),</span>
+				count<span class="opt">:</span> <span class="kwc">readPos</span><span class="opt">-</span><span class="kwc">descStart</span><span class="opt">)))</span>
+                    <span class="kwd">readBlock</span><span class="opt">()</span>
+                    <span class="kwc">descStart</span> <span class="opt">=</span> <span class="num">0</span>
+                    <span class="kwa">if</span> <span class="kwc">eof</span> <span class="opt">{</span>
+                        <span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;Error: EOF reached&quot;</span><span class="opt">)</span>
+                        <span class="kwd">exit</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span>
+                    <span class="opt">}</span>
+                <span class="opt">}</span>
+            <span class="opt">}</span>
+            <span class="kwc">readPos</span> <span class="opt">+=</span> <span class="num">1</span>
+            <span class="kwc">description</span><span class="opt">.</span><span class="kwd">append</span><span class="opt">(</span>
+		contentsOf<span class="opt">:</span> <span class="kwd">Array</span><span class="opt">(</span>
+		    <span class="kwd">UnsafeBufferPointer</span><span class="opt">(</span>
+			start<span class="opt">:</span> <span class="kwc">block</span><span class="opt">.</span><span class="kwd">advanced</span><span class="opt">(</span>by<span class="opt">:</span> <span class="kwc">descStart</span><span class="opt">),</span>
+			count<span class="opt">:</span> <span class="kwc">readPos</span><span class="opt">-</span><span class="kwc">descStart</span><span class="opt">)))</span>
+        <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+            <span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;Error: Could no find description!&quot;</span><span class="opt">)</span>
+            <span class="kwd">exit</span><span class="opt">(</span><span class="num">1</span><span class="opt">)</span>
+        <span class="opt">}</span>
+        
+        <span class="slc">// Read fasta lines</span>
+        <span class="kwa">var</span> <span class="kwc">seqStart</span> <span class="opt">=</span> <span class="kwc">readPos</span>
+        <span class="kwa">var</span> <span class="kwc">endReached</span> <span class="opt">=</span> <span class="kwb">false</span>
+        repeat <span class="opt">{</span>
+            <span class="kwa">if let</span> <span class="kwc">ppos</span> <span class="opt">=</span> <span class="kwd">memchr</span><span class="opt">(</span><span class="kwc">block</span><span class="opt">.</span><span class="kwd">advanced</span><span class="opt">(</span>by<span class="opt">:</span> <span class="kwc">seqStart</span><span class="opt">),</span>
+				 <span class="kwd">Int32</span><span class="opt">(</span><span class="kwc">descMarker</span><span class="opt">),</span> <span class="kwc">bytesRead</span><span class="opt">-</span><span class="kwc">seqStart</span><span class="opt">) {</span>
+                <span class="slc">// Append til pos and return</span>
+                <span class="kwa">let</span> <span class="kwc">pos</span> <span class="opt">=</span> <span class="kwc">block</span><span class="opt">.</span><span class="kwd">distance</span><span class="opt">(</span>
+			to<span class="opt">:</span> <span class="kwc">ppos</span><span class="opt">.</span><span class="kwd">assumingMemoryBound</span><span class="opt">(</span>to<span class="opt">:</span> <span class="kwb">Int8</span><span class="opt">.</span><span class="kwb">self</span><span class="opt">))</span>
+                <span class="kwc">seq</span><span class="opt">.</span><span class="kwd">append</span><span class="opt">(</span>
+		    contentsOf<span class="opt">:</span> <span class="kwd">Array</span><span class="opt">(</span>
+			<span class="kwd">UnsafeBufferPointer</span><span class="opt">(</span>
+			    start<span class="opt">:</span> <span class="kwc">block</span><span class="opt">.</span><span class="kwd">advanced</span><span class="opt">(</span>by<span class="opt">:</span> <span class="kwc">seqStart</span><span class="opt">),</span>
+			    count<span class="opt">:</span> <span class="kwc">pos</span><span class="opt">-</span><span class="kwc">seqStart</span><span class="opt">)))</span>
+                <span class="kwc">readPos</span> <span class="opt">=</span> <span class="kwc">pos</span>
+                <span class="kwc">endReached</span> <span class="opt">=</span> <span class="kwb">true</span>
+            <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+                <span class="slc">// Append block and read next block</span>
+                <span class="kwc">seq</span><span class="opt">.</span><span class="kwd">append</span><span class="opt">(</span>
+		    contentsOf<span class="opt">:</span> <span class="kwd">Array</span><span class="opt">(</span>
+			<span class="kwd">UnsafeBufferPointer</span><span class="opt">(</span>
+			    start<span class="opt">:</span> <span class="kwc">block</span><span class="opt">.</span><span class="kwd">advanced</span><span class="opt">(</span>by<span class="opt">:</span> <span class="kwc">seqStart</span><span class="opt">),</span>
+			    count<span class="opt">:</span> <span class="kwc">bytesRead</span><span class="opt">-</span><span class="kwc">seqStart</span><span class="opt">)))</span>
+                <span class="kwd">readBlock</span><span class="opt">()</span>
+                <span class="kwa">if</span> <span class="kwc">eof</span> <span class="opt">{</span>
+                    <span class="kwa">if</span> <span class="kwc">bytesRead</span> <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">{</span>
+                        <span class="kwc">seq</span><span class="opt">.</span><span class="kwd">append</span><span class="opt">(</span>
+			    contentsOf<span class="opt">:</span> <span class="kwd">Array</span><span class="opt">(</span>
+				<span class="kwd">UnsafeBufferPointer</span><span class="opt">(</span>
+				    start<span class="opt">:</span> <span class="kwc">block</span><span class="opt">,</span>
+				    count<span class="opt">:</span> <span class="kwc">bytesRead</span><span class="opt">)))</span>
+                    <span class="opt">}</span>
+                    <span class="kwa">break</span>
+                <span class="opt">}</span>
+                <span class="kwc">seqStart</span> <span class="opt">=</span> <span class="num">0</span>
+            <span class="opt">}</span>
+        <span class="opt">}</span> <span class="kwa">while</span> <span class="opt">!</span><span class="kwc">endReached</span>
+        
+        <span class="kwa">return</span> <span class="opt">(</span><span class="kwc">description</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">)</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="slc">// code  meaning   complement</span>
+<span class="slc">// A    A                   T</span>
+<span class="slc">// C    C                   G</span>
+<span class="slc">// G    G                   C</span>
+<span class="slc">// T/U  T                   A</span>
+<span class="slc">// M    A or C              K</span>
+<span class="slc">// R    A or G              Y</span>
+<span class="slc">// W    A or T              W</span>
+<span class="slc">// S    C or G              S</span>
+<span class="slc">// Y    C or T              R</span>
+<span class="slc">// K    G or T              M</span>
+<span class="slc">// V    A or C or G         B</span>
+<span class="slc">// H    A or C or T         D</span>
+<span class="slc">// D    A or G or T         H</span>
+<span class="slc">// B    C or G or T         V</span>
+<span class="slc">// N    G or A or T or C    N</span>
+
+<span class="slc">// Translation table</span>
+<span class="slc">//               ABCDEFGHIJKLMNOPQRSTUVWXYZ      abcdefghijklmnopqrstuvwxyz</span>
+<span class="kwa">let</span> <span class="kwc">translate</span> <span class="opt">= (</span><span class="sng">&quot;                                                                &quot;</span> <span class="opt">+</span>
+                 <span class="sng">&quot; TVGH  CD  M KN   YSAABW R       TVGH  CD  M KN   YSAABW R &quot;</span><span class="opt">).</span>utf16<span class="opt">.</span>map<span class="opt">{</span><span class="kwb">Int8</span><span class="opt">(</span>$<span class="num">0</span><span class="opt">)}</span>
+<span class="kwa">func</span> <span class="kwd">reverseComplement</span><span class="opt">(</span><span class="kwc">seq</span><span class="opt">:</span> inout <span class="opt">[</span><span class="kwb">Int8</span><span class="opt">]) {</span>
+    <span class="kwa">var</span> <span class="kwc">front</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="kwa">var</span> <span class="kwc">back</span> <span class="opt">=</span> <span class="kwc">seq</span><span class="opt">.</span>count <span class="opt">-</span> <span class="num">1</span>
+    <span class="slc">// Ignore &#39;\n&#39; at front and back</span>
+    <span class="kwa">while</span> <span class="kwc">seq</span><span class="opt">[</span><span class="kwc">front</span><span class="opt">] ==</span> <span class="num">10</span> <span class="opt">&amp;&amp;</span> <span class="kwc">front</span> <span class="opt">&lt;=</span> <span class="kwc">back</span> <span class="opt">{</span>
+        <span class="kwc">front</span> <span class="opt">+=</span> <span class="num">1</span>
+    <span class="opt">}</span>
+    <span class="kwa">while</span> <span class="kwc">seq</span><span class="opt">[</span><span class="kwc">back</span><span class="opt">] ==</span> <span class="num">10</span> <span class="opt">&amp;&amp;</span> <span class="kwc">front</span> <span class="opt">&lt;=</span> <span class="kwc">back</span> <span class="opt">{</span>
+        <span class="kwc">back</span> <span class="opt">-=</span> <span class="num">1</span>
+    <span class="opt">}</span>
+    <span class="kwa">while</span> <span class="kwc">front</span> <span class="opt">&lt;=</span> <span class="kwc">back</span> <span class="opt">{</span>
+        <span class="kwa">let</span> <span class="kwc">temp</span> <span class="opt">=</span> <span class="kwc">translate</span><span class="opt">[</span><span class="kwb">Int</span><span class="opt">(</span><span class="kwc">seq</span><span class="opt">[</span><span class="kwc">front</span><span class="opt">])]</span>
+        <span class="kwc">seq</span><span class="opt">[</span><span class="kwc">front</span><span class="opt">] =</span> <span class="kwc">translate</span><span class="opt">[</span><span class="kwb">Int</span><span class="opt">(</span><span class="kwc">seq</span><span class="opt">[</span><span class="kwc">back</span><span class="opt">])]</span>
+        <span class="kwc">seq</span><span class="opt">[</span><span class="kwc">back</span><span class="opt">] =</span> <span class="kwc">temp</span>
+        repeat <span class="opt">{</span> <span class="kwc">front</span> <span class="opt">+=</span> <span class="num">1</span> <span class="opt">}</span> <span class="kwa">while</span> <span class="kwc">seq</span><span class="opt">[</span><span class="kwc">front</span><span class="opt">] ==</span> <span class="num">10</span>
+        repeat <span class="opt">{</span> <span class="kwc">back</span> <span class="opt">-=</span> <span class="num">1</span> <span class="opt">}</span> <span class="kwa">while</span> <span class="kwc">seq</span><span class="opt">[</span><span class="kwc">back</span><span class="opt">] ==</span> <span class="num">10</span>
+<span class="opt">}</span>
+<span class="opt">}</span>
+
+<span class="kwa">let</span> <span class="kwc">lineWidth</span> <span class="opt">=</span> <span class="num">60</span>
+<span class="kwa">let</span> <span class="kwc">group</span> <span class="opt">=</span> <span class="kwd">DispatchGroup</span><span class="opt">()</span>
+<span class="kwa">let</span> <span class="kwc">rqueue</span> <span class="opt">=</span> <span class="kwd">DispatchQueue</span><span class="opt">(</span>label<span class="opt">:</span> <span class="sng">&quot;Reader&quot;</span><span class="opt">,</span> attributes<span class="opt">: [])</span>
+<span class="kwa">let</span> <span class="kwc">cqueue</span> <span class="opt">=</span> <span class="kwd">DispatchQueue</span><span class="opt">(</span>label<span class="opt">:</span> <span class="sng">&quot;Complement&quot;</span><span class="opt">,</span> attributes<span class="opt">: .</span>concurrent<span class="opt">)</span>
+<span class="kwa">let</span> <span class="kwc">wqueue</span> <span class="opt">=</span> <span class="kwd">DispatchQueue</span><span class="opt">(</span>label<span class="opt">:</span> <span class="sng">&quot;Writer&quot;</span><span class="opt">,</span> attributes<span class="opt">: [])</span>
+
+<span class="kwa">var</span> <span class="kwc">reader</span> <span class="opt">=</span> <span class="kwd">BlockReader</span><span class="opt">(</span><span class="kwc">fp</span><span class="opt">:</span> stdin<span class="opt">)</span>
+<span class="kwa">var</span> <span class="kwc">toWrite</span> <span class="opt">=</span> <span class="num">0</span>
+<span class="kwa">var</span> <span class="kwc">deferedWrite</span> <span class="opt">= [(</span><span class="kwb">Int</span><span class="opt">, [</span><span class="kwb">Int8</span><span class="opt">])]()</span>
+
+<span class="slc">// Read, build reverse complement and write every of the three blocks</span>
+<span class="kwc">group</span><span class="opt">.</span><span class="kwd">enter</span><span class="opt">()</span>
+<span class="kwa">for</span> i <span class="kwa">in</span> <span class="num">0</span><span class="opt">..&lt;</span><span class="num">3</span> <span class="opt">{</span>
+    <span class="kwc">rqueue</span><span class="opt">.</span>sync <span class="opt">{</span>
+        <span class="kwa">var</span> <span class="opt">(</span>desc<span class="opt">,</span> <span class="kwc">seq</span><span class="opt">) =</span> <span class="kwc">reader</span><span class="opt">.</span><span class="kwd">read</span><span class="opt">()</span>
+        <span class="kwc">cqueue</span><span class="opt">.</span>async <span class="opt">{</span>
+            <span class="kwd">reverseComplement</span><span class="opt">(</span><span class="kwc">seq</span><span class="opt">: &amp;</span><span class="kwc">seq</span><span class="opt">)</span>
+            <span class="kwc">wqueue</span><span class="opt">.</span>async <span class="opt">{</span>
+                <span class="kwa">if</span> i <span class="opt">==</span> <span class="kwc">toWrite</span> <span class="opt">{</span>
+                    <span class="kwd">fwrite</span><span class="opt">(</span>desc<span class="opt">,</span> desc<span class="opt">.</span>count<span class="opt">,</span> <span class="num">1</span><span class="opt">,</span> stdout<span class="opt">)</span>
+                    <span class="kwd">fwrite</span><span class="opt">(</span><span class="kwc">seq</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">.</span>count<span class="opt">,</span> <span class="num">1</span><span class="opt">,</span> stdout<span class="opt">)</span>
+                    <span class="kwc">toWrite</span> <span class="opt">+=</span> <span class="num">1</span>
+                    <span class="kwa">if</span> <span class="kwc">toWrite</span> <span class="opt">==</span> <span class="num">3</span> <span class="opt">{</span>
+                        <span class="kwc">group</span><span class="opt">.</span><span class="kwd">leave</span><span class="opt">()</span>
+                    <span class="opt">}</span>
+                    <span class="slc">// Check for deferred blocks</span>
+                    <span class="kwa">if</span> <span class="kwc">deferedWrite</span><span class="opt">.</span>count <span class="opt">&gt;</span> <span class="num">0</span> <span class="opt">{</span>
+                        <span class="kwa">while</span> <span class="kwc">deferedWrite</span><span class="opt">.</span>count <span class="opt">&gt;</span> <span class="num">0</span>  <span class="opt">{</span>
+                            <span class="kwa">for</span> <span class="opt">(</span>j<span class="opt">, (</span>k<span class="opt">,</span> <span class="kwc">seq</span><span class="opt">))</span> <span class="kwa">in</span> <span class="kwc">deferedWrite</span><span class="opt">.</span><span class="kwd">enumerated</span><span class="opt">() {</span>
+                                <span class="kwa">if</span> k <span class="opt">==</span> <span class="kwc">toWrite</span> <span class="opt">{</span>
+                                    <span class="kwd">fwrite</span><span class="opt">(</span><span class="kwc">seq</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">.</span>count<span class="opt">,</span> <span class="num">1</span><span class="opt">,</span> stdout<span class="opt">)</span>
+                                    <span class="kwc">deferedWrite</span><span class="opt">.</span><span class="kwd">remove</span><span class="opt">(</span>at<span class="opt">:</span> j<span class="opt">)</span>
+                                    <span class="kwc">toWrite</span> <span class="opt">+=</span> <span class="num">1</span>
+                                    <span class="kwa">if</span> <span class="kwc">toWrite</span> <span class="opt">==</span> <span class="num">3</span> <span class="opt">{</span>
+                                        <span class="kwc">group</span><span class="opt">.</span><span class="kwd">leave</span><span class="opt">()</span>
+                                    <span class="opt">}</span>
+                                    <span class="kwa">break</span>
+                                <span class="opt">}</span>
+                            <span class="opt">}</span>
+                        <span class="opt">}</span>
+                    <span class="opt">}</span>
+                <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+		    <span class="slc">// Append the two arrays into one,</span>
+		    <span class="slc">// maybe this should be done in the reader</span>
+		    <span class="slc">// like in gcc #6</span>
+                    <span class="kwc">deferedWrite</span><span class="opt">.</span><span class="kwd">append</span><span class="opt">((</span>i<span class="opt">,</span> desc <span class="opt">+</span> <span class="kwc">seq</span><span class="opt">))</span>
+                <span class="opt">}</span>
+            <span class="opt">}</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+<span class="opt">}</span>
+<span class="kwc">group</span><span class="opt">.</span><span class="kwd">wait</span><span class="opt">()</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Swift version 6.0.3
+(swift-6.0.3-RELEASE)
+Target: x86_64-unknown-linux-gnu
+
+
+ Sun, 23 Feb 2025 04:42:59 GMT
+
+MAKE:
+/opt/src/swift-6.0.3-RELEASE/usr/bin/swiftc revcomp.swift -Ounchecked -wmo  -o revcomp.swift_run
+revcomp.swift:190:37: warning: mutation of captured var 'seq' in concurrently-executing code; this is an error in the Swift 6 language mode
+188 |         var (desc, seq) = reader.read()
+189 |         cqueue.async {
+190 |             reverseComplement(seq: &amp;seq)
+    |                                     `- warning: mutation of captured var 'seq' in concurrently-executing code; this is an error in the Swift 6 language mode
+191 |             wqueue.async {
+192 |                 if i == toWrite {
+
+revcomp.swift:193:28: warning: reference to captured var 'desc' in concurrently-executing code; this is an error in the Swift 6 language mode
+191 |             wqueue.async {
+192 |                 if i == toWrite {
+193 |                     fwrite(desc, desc.count, 1, stdout)
+    |                            `- warning: reference to captured var 'desc' in concurrently-executing code; this is an error in the Swift 6 language mode
+194 |                     fwrite(seq, seq.count, 1, stdout)
+195 |                     toWrite += 1
+
+revcomp.swift:193:34: warning: reference to captured var 'desc' in concurrently-executing code; this is an error in the Swift 6 language mode
+191 |             wqueue.async {
+192 |                 if i == toWrite {
+193 |                     fwrite(desc, desc.count, 1, stdout)
+    |                                  `- warning: reference to captured var 'desc' in concurrently-executing code; this is an error in the Swift 6 language mode
+194 |                     fwrite(seq, seq.count, 1, stdout)
+195 |                     toWrite += 1
+
+revcomp.swift:194:28: warning: reference to captured var 'seq' in concurrently-executing code; this is an error in the Swift 6 language mode
+192 |                 if i == toWrite {
+193 |                     fwrite(desc, desc.count, 1, stdout)
+194 |                     fwrite(seq, seq.count, 1, stdout)
+    |                            `- warning: reference to captured var 'seq' in concurrently-executing code; this is an error in the Swift 6 language mode
+195 |                     toWrite += 1
+196 |                     if toWrite == 3 {
+
+revcomp.swift:194:33: warning: reference to captured var 'seq' in concurrently-executing code; this is an error in the Swift 6 language mode
+192 |                 if i == toWrite {
+193 |                     fwrite(desc, desc.count, 1, stdout)
+194 |                     fwrite(seq, seq.count, 1, stdout)
+    |                                 `- warning: reference to captured var 'seq' in concurrently-executing code; this is an error in the Swift 6 language mode
+195 |                     toWrite += 1
+196 |                     if toWrite == 3 {
+
+revcomp.swift:219:45: warning: reference to captured var 'desc' in concurrently-executing code; this is an error in the Swift 6 language mode
+217 | 		    // maybe this should be done in the reader
+218 | 		    // like in gcc #6
+219 |                     deferedWrite.append((i, desc + seq))
+    |                                             `- warning: reference to captured var 'desc' in concurrently-executing code; this is an error in the Swift 6 language mode
+220 |                 }
+221 |             }
+
+revcomp.swift:219:52: warning: reference to captured var 'seq' in concurrently-executing code; this is an error in the Swift 6 language mode
+217 | 		    // maybe this should be done in the reader
+218 | 		    // like in gcc #6
+219 |                     deferedWrite.append((i, desc + seq))
+    |                                                    `- warning: reference to captured var 'seq' in concurrently-executing code; this is an error in the Swift 6 language mode
+220 |                 }
+221 |             }
+
+14.28 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./revcomp.swift_run 0 &lt; revcomp-input100000001.txt
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

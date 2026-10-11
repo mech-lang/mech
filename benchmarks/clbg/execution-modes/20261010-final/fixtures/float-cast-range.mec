@@ -1,0 +1,2 @@
+n := stats/sum([number/to-f64(i) / 2.0 | i <- 0..=4])
+io/print("{}\n", control/select(n == 5.0, 1, 0))

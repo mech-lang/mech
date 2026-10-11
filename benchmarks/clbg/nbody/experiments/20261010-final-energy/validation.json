@@ -1,0 +1,169 @@
+{
+  "created_at": "2026-10-10T21:43:09.661177+00:00",
+  "status": "rejected-output-ordering",
+  "reason": "The original immutable energy expression binds pre-update velocity and distance values. Moving it after mutable assignments reads candidate velocity but retains the previously bound squared distances. All three execution paths agree; initial/final energy output is not faithful to the benchmark.",
+  "source_changes_admitted": false,
+  "timing_changes_admitted": false,
+  "checks": [
+    {
+      "variant": "compact",
+      "steps": 0,
+      "state_components": 30,
+      "state_bit_identical": true,
+      "output_matches": false,
+      "expected": [
+        "-0.169075164",
+        "-0.169075164"
+      ],
+      "proposed": [
+        "-0.169025882",
+        "-0.169025882"
+      ]
+    },
+    {
+      "variant": "compact",
+      "steps": 1,
+      "state_components": 30,
+      "state_bit_identical": true,
+      "output_matches": false,
+      "expected": [
+        "-0.169075164",
+        "-0.169074954"
+      ],
+      "proposed": [
+        "-0.169025882",
+        "-0.169026091"
+      ]
+    },
+    {
+      "variant": "compact",
+      "steps": 10,
+      "state_components": 30,
+      "state_bit_identical": true,
+      "output_matches": false,
+      "expected": [
+        "-0.169075164",
+        "-0.169073022"
+      ],
+      "proposed": [
+        "-0.169025882",
+        "-0.169028018"
+      ]
+    },
+    {
+      "variant": "compact",
+      "steps": 50000000,
+      "state_components": 30,
+      "state_bit_identical": true,
+      "output_matches": false,
+      "expected": [
+        "-0.169075164",
+        "-0.169059907"
+      ],
+      "proposed": [
+        "-0.169025882",
+        "-0.169041534"
+      ]
+    },
+    {
+      "variant": "optimized",
+      "steps": 0,
+      "state_components": 30,
+      "state_bit_identical": true,
+      "output_matches": false,
+      "expected": [
+        "-0.169075164",
+        "-0.169075164"
+      ],
+      "proposed": [
+        "-0.169025882",
+        "-0.169025882"
+      ]
+    },
+    {
+      "variant": "optimized",
+      "steps": 1,
+      "state_components": 30,
+      "state_bit_identical": true,
+      "output_matches": false,
+      "expected": [
+        "-0.169075164",
+        "-0.169074954"
+      ],
+      "proposed": [
+        "-0.169025882",
+        "-0.169026091"
+      ]
+    },
+    {
+      "variant": "optimized",
+      "steps": 10,
+      "state_components": 30,
+      "state_bit_identical": true,
+      "output_matches": false,
+      "expected": [
+        "-0.169075164",
+        "-0.169073022"
+      ],
+      "proposed": [
+        "-0.169025882",
+        "-0.169028018"
+      ]
+    },
+    {
+      "variant": "optimized",
+      "steps": 50000000,
+      "state_components": 30,
+      "state_bit_identical": true,
+      "output_matches": false,
+      "expected": [
+        "-0.169075164",
+        "-0.169059907"
+      ],
+      "proposed": [
+        "-0.169025882",
+        "-0.169041534"
+      ]
+    },
+    {
+      "variant": "compact",
+      "mode": "jit",
+      "steps": 0,
+      "proposed": [
+        "-0.169025882",
+        "-0.169025882"
+      ],
+      "output_matches": false
+    },
+    {
+      "variant": "optimized",
+      "mode": "jit",
+      "steps": 0,
+      "proposed": [
+        "-0.169025882",
+        "-0.169025882"
+      ],
+      "output_matches": false
+    },
+    {
+      "variant": "compact",
+      "mode": "resident",
+      "steps": 0,
+      "proposed": [
+        "-0.169025882",
+        "-0.169025882"
+      ],
+      "output_matches": false
+    },
+    {
+      "variant": "optimized",
+      "mode": "resident",
+      "steps": 0,
+      "proposed": [
+        "-0.169025882",
+        "-0.169025882"
+      ],
+      "output_matches": false
+    }
+  ]
+}

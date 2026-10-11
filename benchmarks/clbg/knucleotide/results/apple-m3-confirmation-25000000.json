@@ -1,0 +1,1530 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-07T16:24:15.273368+00:00",
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "logical_cpus": 8,
+    "cpu": "Apple M3"
+  },
+  "toolchain_versions": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "julia": "julia version 1.13.1",
+    "go": "go version go1.27.1 darwin/arm64",
+    "java": "openjdk version \"27\" 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+    "gcc": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "gpp": "g++-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "llvm": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg"
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-confirmation-25000000.compiler.tar.gz",
+    "sha256": "ace9a6989f98d4551f055760368cec87c6b1d9b4b296ee74fcb76b0770225e4c",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "benchmarks/clbg/knucleotide/README.md": "548eb8d3586bb629a4f06aa5eda9b87520556241515b3fa99a76c06238cc1565",
+      "benchmarks/clbg/knucleotide/combine.py": "3a3e29cd466ebe8207c4549203c24dc12ddecf65a01b481aa087856080735c83",
+      "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+      "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+      "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+      "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+      "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+      "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "365e881870573ebb9c23c32ff61b2ff2c5b51d6c45fe829adbc03c6f24f9d6b8",
+      "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+      "benchmarks/clbg/knucleotide/mech-driver/build.rs": "612f7692f7f5ecb42ce091a54501b69c0eb89a5cff79cb899581364d05d7b5ad",
+      "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "1cf071b083ae47d3c3043ec2c228e6e5174f9c9807b5061ea3e893c64927824c",
+      "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "e7254f187cd33ca403d8f24935853e97198d580bd5cb86810dbb88d444f40e53",
+      "benchmarks/clbg/knucleotide/plot.py": "361cd78bd6ec9133fa1e9a224c48d2de576e4764a9f71165626873769b26b0cd",
+      "benchmarks/clbg/knucleotide/run.py": "f722ba0da14ed7af71bc3b1c2c2eafa824d1a54ed929ff2f01c562c9d45f1ba8",
+      "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+      "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+      "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+      "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+      "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+      "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+      "benchmarks/clbg/knucleotide/verify.py": "a079ff9fdb3ef0d59b60fd5a7174433cec7df90b172e5f1939392b3d263c9db8",
+      "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+      "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+      "hosts/gpu/Cargo.toml": "7bb36adfe5c80098b0ee50c9a47e2c547431cab8d359c47ef42e7f4101310a82",
+      "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+      "hosts/gpu/src/sequence/compiler.rs": "8ae6cd79b90c7c7dfeaefb0f679a7cefe6112294fd567dfd8d3c4cb077066391",
+      "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+      "hosts/gpu/src/sequence/mod.rs": "59f50dec757a23ac15cf96cd671e44f8556e71e0ab70f7d9da16807976cadf68",
+      "hosts/gpu/src/sequence/runtime.rs": "3cea55835f027029fd322e8c41373723a6f97eb663a04332ef677564d5ae407e",
+      "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+    }
+  },
+  "protocol": {
+    "fasta_n": 25000000,
+    "three_letters": 125000000,
+    "total_hash_updates_per_program": 874999961,
+    "input": {
+      "fasta_n": 25000000,
+      "bytes": 254166745,
+      "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+      "three_letters": 125000000,
+      "generation_command": [
+        "benchmarks/clbg/knucleotide/.build/fasta",
+        "25000000"
+      ],
+      "small_input_matches_official": true
+    },
+    "samples": 11,
+    "seed": 20261008,
+    "sample_order": [
+      [
+        "mech-parallel-final-std1-simd0-p4",
+        "mech-compact-final-std1-simd0-p4",
+        "mech-parallel-final-std1-simd0-p1",
+        "knucleotide-rust-6-panicabort",
+        "mech-compact-final-std1-simd0-p1",
+        "knucleotide-rust-6",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "knucleotide-rust-7",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096"
+      ],
+      [
+        "knucleotide-rust-6-panicabort",
+        "knucleotide-rust-6",
+        "mech-compact-final-std1-simd0-p1",
+        "mech-compact-final-std1-simd0-p4",
+        "mech-parallel-final-std1-simd0-p4",
+        "knucleotide-rust-7",
+        "mech-parallel-final-std1-simd0-p1",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096"
+      ],
+      [
+        "mech-compact-final-std1-simd0-p4",
+        "mech-parallel-final-std1-simd0-p4",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "knucleotide-rust-7",
+        "mech-parallel-final-std1-simd0-p1",
+        "knucleotide-rust-6-panicabort",
+        "knucleotide-rust-6",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "mech-compact-final-std1-simd0-p1"
+      ],
+      [
+        "knucleotide-rust-6-panicabort",
+        "knucleotide-rust-7",
+        "knucleotide-rust-6",
+        "mech-parallel-final-std1-simd0-p1",
+        "mech-compact-final-std1-simd0-p4",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "mech-compact-final-std1-simd0-p1",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "mech-parallel-final-std1-simd0-p4"
+      ],
+      [
+        "knucleotide-rust-6",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "mech-parallel-final-std1-simd0-p1",
+        "knucleotide-rust-6-panicabort",
+        "mech-compact-final-std1-simd0-p4",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "mech-parallel-final-std1-simd0-p4",
+        "mech-compact-final-std1-simd0-p1",
+        "knucleotide-rust-7"
+      ],
+      [
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "knucleotide-rust-6",
+        "mech-compact-final-std1-simd0-p4",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "mech-parallel-final-std1-simd0-p4",
+        "knucleotide-rust-7",
+        "mech-parallel-final-std1-simd0-p1",
+        "knucleotide-rust-6-panicabort",
+        "mech-compact-final-std1-simd0-p1"
+      ],
+      [
+        "knucleotide-rust-6-panicabort",
+        "mech-parallel-final-std1-simd0-p4",
+        "mech-parallel-final-std1-simd0-p1",
+        "knucleotide-rust-7",
+        "knucleotide-rust-6",
+        "mech-compact-final-std1-simd0-p1",
+        "mech-compact-final-std1-simd0-p4",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096"
+      ],
+      [
+        "mech-parallel-final-std1-simd0-p1",
+        "knucleotide-rust-6-panicabort",
+        "mech-compact-final-std1-simd0-p1",
+        "mech-compact-final-std1-simd0-p4",
+        "mech-parallel-final-std1-simd0-p4",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "knucleotide-rust-7",
+        "knucleotide-rust-6",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096"
+      ],
+      [
+        "mech-parallel-final-std1-simd0-p4",
+        "mech-compact-final-std1-simd0-p1",
+        "knucleotide-rust-6-panicabort",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "mech-parallel-final-std1-simd0-p1",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "knucleotide-rust-7",
+        "knucleotide-rust-6",
+        "mech-compact-final-std1-simd0-p4"
+      ],
+      [
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "mech-parallel-final-std1-simd0-p1",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "knucleotide-rust-7",
+        "mech-compact-final-std1-simd0-p1",
+        "mech-parallel-final-std1-simd0-p4",
+        "knucleotide-rust-6-panicabort",
+        "knucleotide-rust-6",
+        "mech-compact-final-std1-simd0-p4"
+      ],
+      [
+        "mech-parallel-final-std1-simd0-p4",
+        "knucleotide-rust-6-panicabort",
+        "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+        "mech-parallel-final-std1-simd0-p1",
+        "knucleotide-rust-6",
+        "mech-compact-final-std1-simd0-p4",
+        "mech-compact-final-std1-simd0-p1",
+        "mech-compact-runtime-narrow-partition4-fused-batch4096",
+        "knucleotide-rust-7"
+      ]
+    ],
+    "requested_threads": 8,
+    "environment": {
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8",
+      "OMP_DYNAMIC": "FALSE",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "RAYON_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "1"
+    },
+    "timed_region": "Fresh process to exit including reading the same regular stdin file, encoding, every hash lookup/update, output and JIT initialization; AOT builds/input generation/validation excluded.",
+    "source_scope": "Mech .mec only; generic experimental collection compiler/runtime excluded. Competitors: complete unchanged upstream programs. New operations are not yet wired into the general v0.4 resident catalog.",
+    "source_metric": "Comment removal, whitespace collapse, UTF-8 gzip level1 mtime0; nonblank noncomment LOC also reported.",
+    "required_work": "All overlapping windows for k=1,2,3,4,6,12,18 counted using growing library hash maps; no periodicity shortcut or query-only counting.",
+    "correctness": "Every candidate must match unmodified Rust #7 full output byte-for-byte, checked against published full output. Official N=1000 failures are retained and flagged; strict endpoints additionally require passing the small reference."
+  },
+  "programs": [
+    {
+      "id": "knucleotide-rust-7",
+      "language": "rust",
+      "variant": 7,
+      "path": "upstream/knucleotide-rust-7.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-7.html",
+      "sha256": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+      "upstream_starred": false,
+      "published_secs": 2.57,
+      "published_gz": 1585,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 06:03:44 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/libfutures-b6d48ee8822a84bd.rlib --extern hashbrown=/opt/src/rust-libs/libhashbrown-997dd4ca7d2b21ff.rlib knucleotide.rs -o knucleotide.rust-7.rust_run\n\n13.43 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-7.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-7.rs"
+        ],
+        "sha256": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+        "physical_lines": 188,
+        "nonblank_noncomment_lines": 163,
+        "normalized_bytes": 4002,
+        "gzip1_bytes": 1548
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "futures=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfutures-f93f5cc220f40f47.rlib",
+        "--extern",
+        "tokio_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libtokio_threadpool-a8446ba36124ba6c.rlib",
+        "--extern",
+        "itertools=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libitertools-63f8e103f3fb88a7.rlib",
+        "--extern",
+        "num=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum-1ca8ecfc42f84971.rlib",
+        "--extern",
+        "hashbrown=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libhashbrown-d20f4ad24099052b.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-7"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-7"
+      ],
+      "worker_policy": "tokio ThreadPool::new()",
+      "samples_seconds": [
+        0.971030084,
+        0.951591541,
+        0.976987541,
+        1.012109792,
+        0.937000667,
+        0.943006708,
+        0.93152,
+        0.936009625,
+        1.021830125,
+        0.96654725,
+        1.020468333
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "b176b1d6b745dfada6f7192fdf9f0ed3cbced2b0ed8590978a0722a943fecb9c",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.96654725,
+      "min_seconds": 0.93152,
+      "max_seconds": 1.021830125
+    },
+    {
+      "id": "knucleotide-rust-6",
+      "language": "rust",
+      "variant": 6,
+      "path": "upstream/knucleotide-rust-6.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-6.html",
+      "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "upstream_starred": false,
+      "published_secs": 2.79,
+      "published_gz": 1697,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 05:37:26 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern num_traits=/opt/src/rust-libs/libnum_traits-51fca88a30a23b0b.rlib knucleotide.rs -o knucleotide.rust-6.rust_run\n\n14.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-6.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-6.rs"
+        ],
+        "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+        "physical_lines": 210,
+        "nonblank_noncomment_lines": 168,
+        "normalized_bytes": 3741,
+        "gzip1_bytes": 1656
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "fxhash=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfxhash-be129402f145c68a.rlib",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "num_traits=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_traits-cfbc20d38c0a2102.rlib",
+        "--extern",
+        "scoped_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libscoped_threadpool-526c83fe137b87d5.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6"
+      ],
+      "worker_policy": "scoped pool from num_cpus",
+      "samples_seconds": [
+        0.892326708,
+        1.068347667,
+        0.979559875,
+        0.85019425,
+        0.927586375,
+        1.002691625,
+        0.930056166,
+        0.9208085,
+        0.857470375,
+        0.965645375,
+        0.910658
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "d872e56255506f001df4505ab02d85b6ca6301a96c83b2d6e053866d4e0662dc",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.927586375,
+      "min_seconds": 0.85019425,
+      "max_seconds": 1.068347667
+    },
+    {
+      "id": "knucleotide-rust-6-panicabort",
+      "language": "rust",
+      "variant": 6,
+      "path": "upstream/knucleotide-rust-6.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-rust-6.html",
+      "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+      "upstream_starred": false,
+      "published_secs": 2.79,
+      "published_gz": 1697,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 05:37:26 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern num_traits=/opt/src/rust-libs/libnum_traits-51fca88a30a23b0b.rlib knucleotide.rs -o knucleotide.rust-6.rust_run\n\n14.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./knucleotide.rust-6.rust_run 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+      "panic_abort": true,
+      "source": {
+        "paths": [
+          "upstream/knucleotide-rust-6.rs"
+        ],
+        "sha256": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+        "physical_lines": 210,
+        "nonblank_noncomment_lines": 168,
+        "normalized_bytes": 3741,
+        "gzip1_bytes": 1656
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-Copt-level=3",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-Ldependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps",
+        "--extern",
+        "fxhash=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libfxhash-be129402f145c68a.rlib",
+        "--extern",
+        "num_cpus=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_cpus-f437def7a522faea.rlib",
+        "--extern",
+        "num_traits=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libnum_traits-cfbc20d38c0a2102.rlib",
+        "--extern",
+        "scoped_threadpool=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/rust-deps/release/deps/libscoped_threadpool-526c83fe137b87d5.rlib",
+        "-Cpanic=abort",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6-panicabort"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-rust-6-panicabort"
+      ],
+      "worker_policy": "scoped pool from num_cpus",
+      "samples_seconds": [
+        0.966381292,
+        0.989566083,
+        0.901311459,
+        0.877915542,
+        0.916623667,
+        0.915538709,
+        0.881787125,
+        0.896059583,
+        0.902592333,
+        0.984311792,
+        1.043968625
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "executable_sha256": "922e72bf007d8465d9b6e100110a981ca57b1042585bbf04456ce537b0b84a2c",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.915538709,
+      "min_seconds": 0.877915542,
+      "max_seconds": 1.043968625
+    },
+    {
+      "id": "mech-compact-runtime-narrow-partition4-fused-batch4096",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 4096,
+      "schedule": "dag",
+      "pack8": true,
+      "fuse_encode": true,
+      "narrow": true,
+      "partitions": 4,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "MECH_SEQUENCE_FUSE_ENCODE": "1",
+        "MECH_SEQUENCE_SIMD": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "67fa535ed89b1bfcad95af82a832b2fd7b6003e52d43c721a805e7820917348a",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-runtime-narrow-partition4-fused-batch4096"
+      ],
+      "worker_policy": "Rayon pool requests 8 compute workers; 4 disjoint partitions per histogram plus at most 7 waiting coordinator threads",
+      "samples_seconds": [
+        0.960261542,
+        0.798889083,
+        1.026344,
+        0.913521167,
+        0.960576375,
+        0.842262084,
+        0.948972,
+        0.9740335,
+        0.910745666,
+        1.005408208,
+        0.920275417
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "0"
+      },
+      "executable_sha256": "cd6d78ef21075a60ad1a9e6a5fb2de3622f8d66a8be860b2830b7c7befe0d084",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.948972,
+      "min_seconds": 0.798889083,
+      "max_seconds": 1.026344,
+      "build_provenance": {
+        "report": "apple-m3-runtime-25000000.json",
+        "compiler_snapshot": {
+          "path": "apple-m3-runtime-25000000.compiler.tar.gz",
+          "sha256": "60ad544da738cb0b6d74c0824ec69d8ba1522747d093573840e0d612e6eb9c2b",
+          "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+          "source_sha256": {
+            "benchmarks/clbg/knucleotide/README.md": "2b5b4fd8dae9b57f2101bb84e70827479e340b17b50b24c6c9f682165b772784",
+            "benchmarks/clbg/knucleotide/combine.py": "4d3120bf98744ba5afb6a3bddb808f2a2fb5e9507b4efca364d8c59583aade21",
+            "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+            "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+            "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+            "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+            "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "365e881870573ebb9c23c32ff61b2ff2c5b51d6c45fe829adbc03c6f24f9d6b8",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+            "benchmarks/clbg/knucleotide/mech-driver/build.rs": "1f52c0cfafe9da0daaf5ac72e007a0a5ea94119d20601ae5b85661d8306ae704",
+            "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "c4b4d9365c23a719da75acbe7a702c57b397b2b9448024f6600c1a41441d5061",
+            "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "b138931cd6c45d0ebd0f1c06f3b36c4794ea7906c71311c75b95044a49952c06",
+            "benchmarks/clbg/knucleotide/plot.py": "361cd78bd6ec9133fa1e9a224c48d2de576e4764a9f71165626873769b26b0cd",
+            "benchmarks/clbg/knucleotide/run.py": "03f14f8f35a63853c7037dab515849c52ccfce8b25c563082a060e69254b9552",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+            "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+            "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+            "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+            "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+            "benchmarks/clbg/knucleotide/verify.py": "572c66fbcff3a6863b163ce0bceeb684166bcf4452b7e2401e3b59c8763b96a7",
+            "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+            "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+            "hosts/gpu/Cargo.toml": "7bb36adfe5c80098b0ee50c9a47e2c547431cab8d359c47ef42e7f4101310a82",
+            "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+            "hosts/gpu/src/sequence/compiler.rs": "2d9ee62165ffdd77e32a0cb936eac80d8e900af320a02059bd48a9a92e0cb9d4",
+            "hosts/gpu/src/sequence/counts.rs": "0b88f2303e1c239a7d07684b7cb7fb24ebeabef1722752760c3d867e1be8cb83",
+            "hosts/gpu/src/sequence/mod.rs": "59f50dec757a23ac15cf96cd671e44f8556e71e0ab70f7d9da16807976cadf68",
+            "hosts/gpu/src/sequence/runtime.rs": "2b4f253d9e8bbe802ea8c0c534f45858b899eea1563b11a1b67566d1f7901889",
+            "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+          }
+        }
+      }
+    },
+    {
+      "id": "mech-parallel-runtime-narrow-partition4-fused-batch4096",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 4096,
+      "schedule": "dag",
+      "pack8": true,
+      "fuse_encode": true,
+      "narrow": true,
+      "partitions": 4,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "MECH_SEQUENCE_FUSE_ENCODE": "1",
+        "MECH_SEQUENCE_SIMD": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "67fa535ed89b1bfcad95af82a832b2fd7b6003e52d43c721a805e7820917348a",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-runtime-narrow-partition4-fused-batch4096"
+      ],
+      "worker_policy": "Rayon pool requests 8 compute workers; 4 disjoint partitions per histogram plus at most 7 waiting coordinator threads",
+      "samples_seconds": [
+        0.857300458,
+        0.909532667,
+        0.870025417,
+        0.876097042,
+        0.97874075,
+        1.063411458,
+        0.939343083,
+        0.924085084,
+        1.043924666,
+        0.945274666,
+        1.0194225
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "0"
+      },
+      "executable_sha256": "cd6d78ef21075a60ad1a9e6a5fb2de3622f8d66a8be860b2830b7c7befe0d084",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.939343083,
+      "min_seconds": 0.857300458,
+      "max_seconds": 1.063411458,
+      "build_provenance": {
+        "report": "apple-m3-runtime-25000000.json",
+        "compiler_snapshot": {
+          "path": "apple-m3-runtime-25000000.compiler.tar.gz",
+          "sha256": "60ad544da738cb0b6d74c0824ec69d8ba1522747d093573840e0d612e6eb9c2b",
+          "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+          "source_sha256": {
+            "benchmarks/clbg/knucleotide/README.md": "2b5b4fd8dae9b57f2101bb84e70827479e340b17b50b24c6c9f682165b772784",
+            "benchmarks/clbg/knucleotide/combine.py": "4d3120bf98744ba5afb6a3bddb808f2a2fb5e9507b4efca364d8c59583aade21",
+            "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+            "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+            "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+            "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+            "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "365e881870573ebb9c23c32ff61b2ff2c5b51d6c45fe829adbc03c6f24f9d6b8",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+            "benchmarks/clbg/knucleotide/mech-driver/build.rs": "1f52c0cfafe9da0daaf5ac72e007a0a5ea94119d20601ae5b85661d8306ae704",
+            "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "c4b4d9365c23a719da75acbe7a702c57b397b2b9448024f6600c1a41441d5061",
+            "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "b138931cd6c45d0ebd0f1c06f3b36c4794ea7906c71311c75b95044a49952c06",
+            "benchmarks/clbg/knucleotide/plot.py": "361cd78bd6ec9133fa1e9a224c48d2de576e4764a9f71165626873769b26b0cd",
+            "benchmarks/clbg/knucleotide/run.py": "03f14f8f35a63853c7037dab515849c52ccfce8b25c563082a060e69254b9552",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+            "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+            "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+            "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+            "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+            "benchmarks/clbg/knucleotide/verify.py": "572c66fbcff3a6863b163ce0bceeb684166bcf4452b7e2401e3b59c8763b96a7",
+            "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+            "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+            "hosts/gpu/Cargo.toml": "7bb36adfe5c80098b0ee50c9a47e2c547431cab8d359c47ef42e7f4101310a82",
+            "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+            "hosts/gpu/src/sequence/compiler.rs": "2d9ee62165ffdd77e32a0cb936eac80d8e900af320a02059bd48a9a92e0cb9d4",
+            "hosts/gpu/src/sequence/counts.rs": "0b88f2303e1c239a7d07684b7cb7fb24ebeabef1722752760c3d867e1be8cb83",
+            "hosts/gpu/src/sequence/mod.rs": "59f50dec757a23ac15cf96cd671e44f8556e71e0ab70f7d9da16807976cadf68",
+            "hosts/gpu/src/sequence/runtime.rs": "2b4f253d9e8bbe802ea8c0c534f45858b899eea1563b11a1b67566d1f7901889",
+            "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+          }
+        }
+      }
+    },
+    {
+      "id": "mech-compact-final-std1-simd0-p1",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 4096,
+      "schedule": "dag",
+      "pack8": true,
+      "fuse_encode": true,
+      "narrow": true,
+      "partitions": 1,
+      "simd": false,
+      "standard_map": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "MECH_SEQUENCE_FUSE_ENCODE": "1",
+        "MECH_SEQUENCE_SIMD": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "67fa535ed89b1bfcad95af82a832b2fd7b6003e52d43c721a805e7820917348a",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-final-std1-simd0-p1"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; DAG scheduling",
+      "samples_seconds": [
+        0.972707333,
+        0.998669167,
+        0.986715916,
+        0.958013708,
+        0.95595025,
+        0.997818625,
+        1.025329833,
+        1.163012375,
+        0.959177166,
+        0.927248375,
+        0.967176375
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "1",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "executable_sha256": "ed3c12a97b9879fb5a7ff24d5d48ba197c9a43cd523788232aa5cb0a6edbbb40",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.972707333,
+      "min_seconds": 0.927248375,
+      "max_seconds": 1.163012375,
+      "build_provenance": {
+        "report": "apple-m3-simd-map-25000000.json",
+        "compiler_snapshot": {
+          "path": "apple-m3-simd-map-25000000.compiler.tar.gz",
+          "sha256": "8684c53d23bb7fa50b5ee8b3da5ce81ef420007bb431f5290b7393f8673425e7",
+          "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+          "source_sha256": {
+            "benchmarks/clbg/knucleotide/README.md": "548eb8d3586bb629a4f06aa5eda9b87520556241515b3fa99a76c06238cc1565",
+            "benchmarks/clbg/knucleotide/combine.py": "278e5794e02b33137dd3f707d672bf72206ad1166c1b434e39a88ebc472f7d5a",
+            "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+            "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+            "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+            "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+            "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "365e881870573ebb9c23c32ff61b2ff2c5b51d6c45fe829adbc03c6f24f9d6b8",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+            "benchmarks/clbg/knucleotide/mech-driver/build.rs": "612f7692f7f5ecb42ce091a54501b69c0eb89a5cff79cb899581364d05d7b5ad",
+            "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "1cf071b083ae47d3c3043ec2c228e6e5174f9c9807b5061ea3e893c64927824c",
+            "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "e7254f187cd33ca403d8f24935853e97198d580bd5cb86810dbb88d444f40e53",
+            "benchmarks/clbg/knucleotide/plot.py": "361cd78bd6ec9133fa1e9a224c48d2de576e4764a9f71165626873769b26b0cd",
+            "benchmarks/clbg/knucleotide/run.py": "d5e212dfa48abba7ba6944d284e1a6876e193b59065177d7f98851c5514bfc68",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+            "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+            "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+            "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+            "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+            "benchmarks/clbg/knucleotide/verify.py": "a079ff9fdb3ef0d59b60fd5a7174433cec7df90b172e5f1939392b3d263c9db8",
+            "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+            "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+            "hosts/gpu/Cargo.toml": "7bb36adfe5c80098b0ee50c9a47e2c547431cab8d359c47ef42e7f4101310a82",
+            "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+            "hosts/gpu/src/sequence/compiler.rs": "8ae6cd79b90c7c7dfeaefb0f679a7cefe6112294fd567dfd8d3c4cb077066391",
+            "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+            "hosts/gpu/src/sequence/mod.rs": "59f50dec757a23ac15cf96cd671e44f8556e71e0ab70f7d9da16807976cadf68",
+            "hosts/gpu/src/sequence/runtime.rs": "3cea55835f027029fd322e8c41373723a6f97eb663a04332ef677564d5ae407e",
+            "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+          }
+        }
+      }
+    },
+    {
+      "id": "mech-compact-final-std1-simd0-p4",
+      "language": "mech",
+      "path": "knucleotide-compact.mec",
+      "batch": 4096,
+      "schedule": "dag",
+      "pack8": true,
+      "fuse_encode": true,
+      "narrow": true,
+      "partitions": 4,
+      "simd": false,
+      "standard_map": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "MECH_SEQUENCE_FUSE_ENCODE": "1",
+        "MECH_SEQUENCE_SIMD": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "67fa535ed89b1bfcad95af82a832b2fd7b6003e52d43c721a805e7820917348a",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide-compact.mec"
+        ],
+        "sha256": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+        "physical_lines": 8,
+        "nonblank_noncomment_lines": 8,
+        "normalized_bytes": 829,
+        "gzip1_bytes": 245
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-compact-final-std1-simd0-p4"
+      ],
+      "worker_policy": "Rayon pool requests 8 compute workers; 4 disjoint partitions per histogram plus at most 7 waiting coordinator threads",
+      "samples_seconds": [
+        0.880522375,
+        0.900495042,
+        0.909713958,
+        0.865459875,
+        0.942538667,
+        0.971427083,
+        0.826702375,
+        0.809875084,
+        1.032875667,
+        0.989732875,
+        0.9869605
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "executable_sha256": "ed3c12a97b9879fb5a7ff24d5d48ba197c9a43cd523788232aa5cb0a6edbbb40",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.909713958,
+      "min_seconds": 0.809875084,
+      "max_seconds": 1.032875667,
+      "build_provenance": {
+        "report": "apple-m3-simd-map-25000000.json",
+        "compiler_snapshot": {
+          "path": "apple-m3-simd-map-25000000.compiler.tar.gz",
+          "sha256": "8684c53d23bb7fa50b5ee8b3da5ce81ef420007bb431f5290b7393f8673425e7",
+          "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+          "source_sha256": {
+            "benchmarks/clbg/knucleotide/README.md": "548eb8d3586bb629a4f06aa5eda9b87520556241515b3fa99a76c06238cc1565",
+            "benchmarks/clbg/knucleotide/combine.py": "278e5794e02b33137dd3f707d672bf72206ad1166c1b434e39a88ebc472f7d5a",
+            "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+            "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+            "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+            "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+            "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "365e881870573ebb9c23c32ff61b2ff2c5b51d6c45fe829adbc03c6f24f9d6b8",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+            "benchmarks/clbg/knucleotide/mech-driver/build.rs": "612f7692f7f5ecb42ce091a54501b69c0eb89a5cff79cb899581364d05d7b5ad",
+            "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "1cf071b083ae47d3c3043ec2c228e6e5174f9c9807b5061ea3e893c64927824c",
+            "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "e7254f187cd33ca403d8f24935853e97198d580bd5cb86810dbb88d444f40e53",
+            "benchmarks/clbg/knucleotide/plot.py": "361cd78bd6ec9133fa1e9a224c48d2de576e4764a9f71165626873769b26b0cd",
+            "benchmarks/clbg/knucleotide/run.py": "d5e212dfa48abba7ba6944d284e1a6876e193b59065177d7f98851c5514bfc68",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+            "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+            "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+            "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+            "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+            "benchmarks/clbg/knucleotide/verify.py": "a079ff9fdb3ef0d59b60fd5a7174433cec7df90b172e5f1939392b3d263c9db8",
+            "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+            "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+            "hosts/gpu/Cargo.toml": "7bb36adfe5c80098b0ee50c9a47e2c547431cab8d359c47ef42e7f4101310a82",
+            "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+            "hosts/gpu/src/sequence/compiler.rs": "8ae6cd79b90c7c7dfeaefb0f679a7cefe6112294fd567dfd8d3c4cb077066391",
+            "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+            "hosts/gpu/src/sequence/mod.rs": "59f50dec757a23ac15cf96cd671e44f8556e71e0ab70f7d9da16807976cadf68",
+            "hosts/gpu/src/sequence/runtime.rs": "3cea55835f027029fd322e8c41373723a6f97eb663a04332ef677564d5ae407e",
+            "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+          }
+        }
+      }
+    },
+    {
+      "id": "mech-parallel-final-std1-simd0-p1",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 4096,
+      "schedule": "dag",
+      "pack8": true,
+      "fuse_encode": true,
+      "narrow": true,
+      "partitions": 1,
+      "simd": false,
+      "standard_map": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "MECH_SEQUENCE_FUSE_ENCODE": "1",
+        "MECH_SEQUENCE_SIMD": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "67fa535ed89b1bfcad95af82a832b2fd7b6003e52d43c721a805e7820917348a",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-final-std1-simd0-p1"
+      ],
+      "worker_policy": "independent histogram tasks, at most 7 live workers; DAG scheduling",
+      "samples_seconds": [
+        0.967365,
+        1.137890667,
+        0.928291708,
+        1.03002125,
+        0.950232583,
+        0.948221459,
+        1.135941375,
+        0.936344042,
+        0.994005042,
+        0.957187084,
+        1.105519667
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "1",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "executable_sha256": "ed3c12a97b9879fb5a7ff24d5d48ba197c9a43cd523788232aa5cb0a6edbbb40",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.967365,
+      "min_seconds": 0.928291708,
+      "max_seconds": 1.137890667,
+      "build_provenance": {
+        "report": "apple-m3-simd-map-25000000.json",
+        "compiler_snapshot": {
+          "path": "apple-m3-simd-map-25000000.compiler.tar.gz",
+          "sha256": "8684c53d23bb7fa50b5ee8b3da5ce81ef420007bb431f5290b7393f8673425e7",
+          "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+          "source_sha256": {
+            "benchmarks/clbg/knucleotide/README.md": "548eb8d3586bb629a4f06aa5eda9b87520556241515b3fa99a76c06238cc1565",
+            "benchmarks/clbg/knucleotide/combine.py": "278e5794e02b33137dd3f707d672bf72206ad1166c1b434e39a88ebc472f7d5a",
+            "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+            "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+            "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+            "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+            "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "365e881870573ebb9c23c32ff61b2ff2c5b51d6c45fe829adbc03c6f24f9d6b8",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+            "benchmarks/clbg/knucleotide/mech-driver/build.rs": "612f7692f7f5ecb42ce091a54501b69c0eb89a5cff79cb899581364d05d7b5ad",
+            "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "1cf071b083ae47d3c3043ec2c228e6e5174f9c9807b5061ea3e893c64927824c",
+            "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "e7254f187cd33ca403d8f24935853e97198d580bd5cb86810dbb88d444f40e53",
+            "benchmarks/clbg/knucleotide/plot.py": "361cd78bd6ec9133fa1e9a224c48d2de576e4764a9f71165626873769b26b0cd",
+            "benchmarks/clbg/knucleotide/run.py": "d5e212dfa48abba7ba6944d284e1a6876e193b59065177d7f98851c5514bfc68",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+            "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+            "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+            "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+            "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+            "benchmarks/clbg/knucleotide/verify.py": "a079ff9fdb3ef0d59b60fd5a7174433cec7df90b172e5f1939392b3d263c9db8",
+            "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+            "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+            "hosts/gpu/Cargo.toml": "7bb36adfe5c80098b0ee50c9a47e2c547431cab8d359c47ef42e7f4101310a82",
+            "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+            "hosts/gpu/src/sequence/compiler.rs": "8ae6cd79b90c7c7dfeaefb0f679a7cefe6112294fd567dfd8d3c4cb077066391",
+            "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+            "hosts/gpu/src/sequence/mod.rs": "59f50dec757a23ac15cf96cd671e44f8556e71e0ab70f7d9da16807976cadf68",
+            "hosts/gpu/src/sequence/runtime.rs": "3cea55835f027029fd322e8c41373723a6f97eb663a04332ef677564d5ae407e",
+            "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+          }
+        }
+      }
+    },
+    {
+      "id": "mech-parallel-final-std1-simd0-p4",
+      "language": "mech",
+      "path": "knucleotide.mec",
+      "batch": 4096,
+      "schedule": "dag",
+      "pack8": true,
+      "fuse_encode": true,
+      "narrow": true,
+      "partitions": 4,
+      "simd": false,
+      "standard_map": true,
+      "upstream_starred": false,
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/mech-driver/Cargo.toml"
+      ],
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "MECH_SEQUENCE_SOURCE": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide.mec",
+        "MECH_SEQUENCE_BATCH": "4096",
+        "MECH_SEQUENCE_SCHEDULE": "dag",
+        "MECH_SEQUENCE_PACK8": "1",
+        "MECH_SEQUENCE_FUSE_ENCODE": "1",
+        "MECH_SEQUENCE_SIMD": "0",
+        "RUSTFLAGS": "-D warnings -C target-cpu=native"
+      },
+      "native_object_sha256": "67fa535ed89b1bfcad95af82a832b2fd7b6003e52d43c721a805e7820917348a",
+      "execution_mode": "experimental v0.4 canonical-syntax typed collection backend, Cranelift AOT entry/window loops; Rust library runtime/hashbrown",
+      "source": {
+        "paths": [
+          "knucleotide.mec"
+        ],
+        "sha256": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+        "physical_lines": 15,
+        "nonblank_noncomment_lines": 15,
+        "normalized_bytes": 928,
+        "gzip1_bytes": 294
+      },
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/mech-parallel-final-std1-simd0-p4"
+      ],
+      "worker_policy": "Rayon pool requests 8 compute workers; 4 disjoint partitions per histogram plus at most 7 waiting coordinator threads",
+      "samples_seconds": [
+        0.94357125,
+        0.970918875,
+        0.926534917,
+        0.948639084,
+        0.904718834,
+        0.95858775,
+        1.019661375,
+        0.961102709,
+        0.949580208,
+        0.919266709,
+        0.958487041
+      ],
+      "correctness_1000": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "exact_reference_match": true
+      },
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "executable_sha256": "ed3c12a97b9879fb5a7ff24d5d48ba197c9a43cd523788232aa5cb0a6edbbb40",
+      "warmup_output": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7"
+      },
+      "warmup_stderr": "",
+      "median_seconds": 0.949580208,
+      "min_seconds": 0.904718834,
+      "max_seconds": 1.019661375,
+      "build_provenance": {
+        "report": "apple-m3-simd-map-25000000.json",
+        "compiler_snapshot": {
+          "path": "apple-m3-simd-map-25000000.compiler.tar.gz",
+          "sha256": "8684c53d23bb7fa50b5ee8b3da5ce81ef420007bb431f5290b7393f8673425e7",
+          "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+          "source_sha256": {
+            "benchmarks/clbg/knucleotide/README.md": "548eb8d3586bb629a4f06aa5eda9b87520556241515b3fa99a76c06238cc1565",
+            "benchmarks/clbg/knucleotide/combine.py": "278e5794e02b33137dd3f707d672bf72206ad1166c1b434e39a88ebc472f7d5a",
+            "benchmarks/clbg/knucleotide/fetch_sources.py": "efd35d8a6103e53cbafccad6c7f033cfa3a11a4e8d50e108f494c46882d13d8d",
+            "benchmarks/clbg/knucleotide/input-pins.json": "4b61516f514c530a63d28b304b5d57cf76dc3caf26f84d0de235a34d91324cfc",
+            "benchmarks/clbg/knucleotide/input25000000.json": "6bbddfd7cde3afe550d4277cc64b9947a47a4903ebcdbbca5080e79a2370c654",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-1000.txt": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+            "benchmarks/clbg/knucleotide/inputs/knucleotide-output-25000000.txt": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "benchmarks/clbg/knucleotide/knucleotide-compact.mec": "26839e0011f3da957080ede66a052f74b14d86b343eaa92cba93a519b5aafd45",
+            "benchmarks/clbg/knucleotide/knucleotide.mec": "1a1a2cd3c62f0cdd24f8cb023a8e752cf0f9df0327cc21216d4f76b8f868dccc",
+            "benchmarks/clbg/knucleotide/manifest.json": "6d29f21dff4507fb9e237ffb6f073e570ab6e961be4d2b48cc5f864b7049ead2",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.lock": "365e881870573ebb9c23c32ff61b2ff2c5b51d6c45fe829adbc03c6f24f9d6b8",
+            "benchmarks/clbg/knucleotide/mech-driver/Cargo.toml": "43ed6657cde937f0f11aa6d5defee1865d6e1fe67fbf9f0718e3b1941dd1a91c",
+            "benchmarks/clbg/knucleotide/mech-driver/build.rs": "612f7692f7f5ecb42ce091a54501b69c0eb89a5cff79cb899581364d05d7b5ad",
+            "benchmarks/clbg/knucleotide/mech-driver/src/main.rs": "1cf071b083ae47d3c3043ec2c228e6e5174f9c9807b5061ea3e893c64927824c",
+            "benchmarks/clbg/knucleotide/mech-driver/tests/admission.rs": "e7254f187cd33ca403d8f24935853e97198d580bd5cb86810dbb88d444f40e53",
+            "benchmarks/clbg/knucleotide/plot.py": "361cd78bd6ec9133fa1e9a224c48d2de576e4764a9f71165626873769b26b0cd",
+            "benchmarks/clbg/knucleotide/run.py": "d5e212dfa48abba7ba6944d284e1a6876e193b59065177d7f98851c5514bfc68",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.lock": "5fe2ce30d69937c5b78f63004741390e71b082b6a091085c1f9e2d71de51c9a8",
+            "benchmarks/clbg/knucleotide/rust-deps/Cargo.toml": "d49a979e7192187a5ba20a89899ef1e061fc14b5cbb2a2e0999ff1aafb19f01d",
+            "benchmarks/clbg/knucleotide/rust-deps/src/lib.rs": "83cf762efa475a63d00eec3ef686a6d9509ebfeeef1cf5361a0d28d39c808a05",
+            "benchmarks/clbg/knucleotide/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+            "benchmarks/clbg/knucleotide/upstream/fasta-gcc-1.c": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+            "benchmarks/clbg/knucleotide/upstream/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-3.chpl": "fe15e135dacee8d1e3b0c5e17f4851c34dc6374087a839a9dccc7514b998a044",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-chapel-4.chpl": "765bb6cfa06d7f2752773ee7e3edd8e8ce239b9ab57fe8d4811a76a2e879b0ce",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gcc-1.c": "25e2d15a0c436f814254ede1bc87342428f28636f6168634db88b63243a15105",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-3.go": "6e38e6fe180012d1022c69c4111bbfdaf1e3b731b8b0a5707c97aa4bf6da610f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-4.go": "f6f503aa70f0e02b3e6b624b7fdcdd06fc1ecfd10d99f337f83b986e348b805b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-6.go": "57145e60b8f7e4c4041a18f85f80d4e394f91968927e404d115d8eb0ed4b3e7b",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-7.go": "5a7460f0e3300efa7aa74b1a57a9129c4ab5f678b4dd4e14f159631bd9f1783c",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-go-8.go": "5c1ab2b94b91342d874e4a664abd5eed88a47b1ff95aa07578018f1adba6a844",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp": "f681de4594a73681f9674d40ff10192a40ac6a13a316996ae821861cb9d62531",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-2.cpp": "c94acf6723457fd9b23258bfd8890af9553dcbe7491640b17c6592dddb56b0ac",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp": "632c158cfd962b81962d7d654f404be05158ae78b9a205e6ab6ac74756c380bc",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-1.java": "3e46664f01b528f840cd8bea1ebf5a5767290091ecf14e52170e75452d9975ff",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-3.java": "dce06edb3b49fd54751c671889788a5e57b99b36d99d1f2d4e6b323885c9f1c2",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-4.java": "df9f2a165bb583a48c6a78556c6a0ff9cf01ce7eb3814563f36862628e393e78",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-5.java": "b938eb19202c0575c2fb0dea81c885ecffeda9c4a4d76b507bf2c87c4c8c1635",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-6.java": "3451fe0cc042fd4122deeb8bbe08d33e8d4a747e0763d3a39e12af688a81b85f",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-graalvmaot-8.java": "9c5a4d6de2d4949113935aadd76de3855940dfe702f427ef43341bbba304edd0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-1.jl": "3d63180251f491b4512e26b42569b170266a0a80797103311ee0a9d0a6fd1f84",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-6.jl": "01d7ad1232e03023a948b959a473e53424d13454e8fbc371a1a05346cf93e58d",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-julia-7.jl": "0be1e46da9e68bef8d52ef9f9afb3d535c328a828a6f29e614f61d92e1b63417",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-1.rs": "6e36ebd098878896465b1714284c51751976ab2d0a226c8af1b28c6f921d0f64",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-2.rs": "5f68ca049ae90432457d99d47387be9ccaec0a90be33e52449ebcedb8ae76b57",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-3.rs": "be0043e57adc433e11f521fcd33e6b12d1fa71adaadffceb0dac565e1f864e66",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-4.rs": "82d3213c4b4fc4c819b0d45ffe77449647a28f00ddfcf9859bc37d14b784ae22",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-5.rs": "1c31017fbc96416addbc403cbf837ae5323dc8268b65df2431a60cc4574f87f0",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-6.rs": "9ffb4a33d5ac9c624969fe41a9c0390306e0cea163d373c4dcbe33faa02a08c9",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-7.rs": "47548a02d18bbc68734b0ef2145e3bd89523f15fa779682031ddbd462dbf7851",
+            "benchmarks/clbg/knucleotide/upstream/knucleotide-rust-9.rs": "291b7c29a9314887cf67084faf00c7a926c6f82c901746917b5432727e9857e4",
+            "benchmarks/clbg/knucleotide/verify.py": "a079ff9fdb3ef0d59b60fd5a7174433cec7df90b172e5f1939392b3d263c9db8",
+            "benchmarks/clbg/nbody/.build/gcc-sdk-compat.h": "608e8b8ef86c195c8a8ede82acaabb2d320a142c6b43e0936b8864e95dcbd21d",
+            "benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+            "hosts/gpu/Cargo.toml": "7bb36adfe5c80098b0ee50c9a47e2c547431cab8d359c47ef42e7f4101310a82",
+            "hosts/gpu/src/lib.rs": "0af824edfa93ba340dd228906a7b4195f2ccff09a81f7c59aea7601a20c0f29a",
+            "hosts/gpu/src/sequence/compiler.rs": "8ae6cd79b90c7c7dfeaefb0f679a7cefe6112294fd567dfd8d3c4cb077066391",
+            "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+            "hosts/gpu/src/sequence/mod.rs": "59f50dec757a23ac15cf96cd671e44f8556e71e0ab70f7d9da16807976cadf68",
+            "hosts/gpu/src/sequence/runtime.rs": "3cea55835f027029fd322e8c41373723a6f97eb663a04332ef677564d5ae407e",
+            "scripts/unsafe-boundaries.allowlist": "2f83feccdce13cc7e348a8a64f1ae7ec65af789d2c4a988294a658eb2f6af26d"
+          }
+        }
+      }
+    }
+  ],
+  "excluded": [
+    {
+      "id": "knucleotide-gpp-3-llvm-fastmath",
+      "path": "upstream/knucleotide-gpp-3.cpp",
+      "reason": "Command '['/opt/homebrew/opt/llvm@22/bin/clang-22', '-O3', '-mcpu=native', '-fomit-frame-pointer', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-3-llvm-fastmath', '-lm', '-pthread', '-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-femulated-tls', '-nostdinc++', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward', '-include', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-Wno-nullability-completeness', '/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib', '-ffast-math', '-funroll-loops', '-flto']' returned non-zero exit status 1.",
+      "diagnostic": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:95:66: warning: variable length arrays in C++ are a Clang extension [-Wvla-cxx-extension]\n   95 |    std::future<__gnu_pbds::cc_hash_table<T,unsigned,T::hash>> ft[N];\n      |                                                                  ^\n/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:95:66: note: read of non-const variable 'N' is not allowed in a constant expression\n/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-3.cpp:93:13: note: declared here\n   93 |    unsigned N = sysconf (_SC_NPROCESSORS_ONLN);\n      |             ^\n1 warning generated.\nUndefined symbols for architecture arm64:\n  \"std::__once_call\", referenced from:\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n  \"std::__once_callable\", referenced from:\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_impl<std::thread::_Invoker<std::tuple<__gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>> (*)(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, unsigned int, unsigned int, unsigned int), std::reference_wrapper<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, unsigned int, unsigned int, unsigned int>>, __gnu_pbds::cc_hash_table<T, unsigned int, T::hash, std::equal_to<T>, __gnu_pbds::direct_mask_range_hashing<unsigned long>, __gnu_pbds::hash_standard_resize_policy<__gnu_pbds::hash_exponential_size_policy<unsigned long>, __gnu_pbds::hash_load_check_resize_trigger<false, unsigned long>, false, unsigned long>, false, std::allocator<char>>>::_M_run() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-e1a415.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-e1a415.o\n      ...\nld: symbol(s) not found for architecture arm64\nclang-22: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    },
+    {
+      "id": "knucleotide-gpp-1-llvm-fastmath",
+      "path": "upstream/knucleotide-gpp-1.cpp",
+      "reason": "Command '['/opt/homebrew/opt/llvm@22/bin/clang-22', '-O3', '-mcpu=native', '-fomit-frame-pointer', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream/knucleotide-gpp-1.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-gpp-1-llvm-fastmath', '-lm', '-pthread', '-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/upstream', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-femulated-tls', '-nostdinc++', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25', '-isystem', '/opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/backward', '-include', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-Wno-nullability-completeness', '/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current/libstdc++.6.dylib', '-ffast-math', '-funroll-loops', '-flto']' returned non-zero exit status 1.",
+      "diagnostic": "Undefined symbols for architecture arm64:\n  \"std::__once_call\", referenced from:\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n  \"std::__once_callable\", referenced from:\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::__future_base::_State_baseV2::_M_set_result(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>, bool) in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::__future_base::_State_baseV2::*)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*>(std::once_flag&, void (std::__future_base::_State_baseV2::*&&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*), std::__future_base::_State_baseV2*&&, std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*&&, bool*&&)::'lambda'()>(void (std::__future_base::_State_baseV2::*&)(std::function<std::unique_ptr<std::__future_base::_Result_base, std::__future_base::_Result_base::_Deleter> ()>*, bool*))::'lambda'()::__invoke() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::__future_base::_Async_state_commonV2::_M_complete_async() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-803387.o\n      std::once_flag::_Prepare_execution::_Prepare_execution<void std::call_once<void (std::thread::*)(), std::thread*>(std::once_flag&, void (std::thread::*&&)(), std::thread*&&)::'lambda'()>(void (std::thread::*&)())::'lambda'()::__invoke() in cc-803387.o\n      ...\nld: symbol(s) not found for architecture arm64\nclang-22: error: linker command failed with exit code 1 (use -v to see invocation)\n"
+    }
+  ],
+  "endpoints": {
+    "time_baseline_seconds": 0.909713958,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 6,
+        "fastest": "mech-compact-final-std1-simd0-p4",
+        "smallest": "mech-compact-final-std1-simd0-p4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 3,
+        "fastest": "knucleotide-rust-6-panicabort",
+        "smallest": "knucleotide-rust-7",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.0557142374195343,
+        "fastest_size_over_smallest": 1.069767441860465,
+        "log2_tradeoff_distance": 0.12483996244311742,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0064028378907208
+          },
+          "smallest": {
+            "size_ratio": 6.318367346938776,
+            "time_ratio": 1.0624738045406577
+          }
+        }
+      }
+    }
+  },
+  "nonheroic_endpoints": {
+    "time_baseline_seconds": 0.909713958,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 6,
+        "fastest": "mech-compact-final-std1-simd0-p4",
+        "smallest": "mech-compact-final-std1-simd0-p4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 3,
+        "fastest": "knucleotide-rust-6-panicabort",
+        "smallest": "knucleotide-rust-7",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.0557142374195343,
+        "fastest_size_over_smallest": 1.069767441860465,
+        "log2_tradeoff_distance": 0.12483996244311742,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0064028378907208
+          },
+          "smallest": {
+            "size_ratio": 6.318367346938776,
+            "time_ratio": 1.0624738045406577
+          }
+        }
+      }
+    }
+  },
+  "strict_endpoints": {
+    "time_baseline_seconds": 0.909713958,
+    "size_baseline_bytes": 245,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "mech": {
+        "candidate_count": 6,
+        "fastest": "mech-compact-final-std1-simd0-p4",
+        "smallest": "mech-compact-final-std1-simd0-p4",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 1.0
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 3,
+        "fastest": "knucleotide-rust-6-panicabort",
+        "smallest": "knucleotide-rust-7",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.0557142374195343,
+        "fastest_size_over_smallest": 1.069767441860465,
+        "log2_tradeoff_distance": 0.12483996244311742,
+        "points": {
+          "fastest": {
+            "size_ratio": 6.759183673469388,
+            "time_ratio": 1.0064028378907208
+          },
+          "smallest": {
+            "size_ratio": 6.318367346938776,
+            "time_ratio": 1.0624738045406577
+          }
+        }
+      }
+    }
+  }
+}

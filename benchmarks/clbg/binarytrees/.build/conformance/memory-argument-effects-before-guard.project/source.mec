@@ -1,0 +1,5 @@
+Argument(n<u64>) = (result<u64>) :=
+  printed := io/print("argument={}\n", n)
+  result := n.
+r := memory/allocate({value: Argument(7)})
+io/print("{}\n", 1)

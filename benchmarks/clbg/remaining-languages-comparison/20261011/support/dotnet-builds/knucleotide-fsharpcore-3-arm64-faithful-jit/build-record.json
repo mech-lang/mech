@@ -1,0 +1,65 @@
+{
+  "id": "knucleotide-fsharpcore-3-arm64-faithful-jit",
+  "key": "knucleotide:knucleotide-fsharpcore-3-arm64-faithful-jit",
+  "benchmark": "knucleotide",
+  "language": "fsharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharpcore-3-arm64-faithful.fs",
+  "source_sha256": "98c3114f52cf3335e7b22af0d5f3c6be2e2b0740fb6d44b806507272bdbd5f6c",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/knucleotide-fsharpcore-3.fs",
+  "original_source_sha256": "e4709f42f628df4ec3831a3a0854e66dc88fbb4965ca5441bfd2513086ffdece",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-fsharpcore-3.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 05:28:54 GMT\n\nMAKE:\ncp knucleotide.fsharpcore-3.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj (in 838 ms).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(32,37): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have compatible nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(34,8): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(32,37): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have compatible nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.fs(34,8): warning FS3261: Nullness warning: The types 'string' and 'string | null' do not have equivalent nullability. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.fsproj]\n    2 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.84\n\n12.67s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+  "adaptations": [
+    "Use complete collision-free two-bit keys through all 36 bits of the eighteen-base windows in the same growable dictionaries; every overlapping window still updates a map.",
+    "Retain exactly the selected FASTA record, normalize nucleotide case, include all overlapping windows, and use lexical frequency ties where applicable."
+  ],
+  "local_adaptation": true,
+  "physical_loc": 68,
+  "normalized_loc": 69,
+  "expansions": [
+    {
+      "line": 57,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharpcore-3-arm64-faithful-jit/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/knucleotide-fsharpcore-3-arm64-faithful-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit/app.dll",
+  "binary_sha256": "6ec3364230c1350f3dda4a29528afed846ce24cdad6278106fc5db1d17af5af2",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit/app.dll"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit/app.pdb": "045ab421794a62b66f736535c673873dfca307bf2759589949ea56c3bc2ac5ed",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit/FSharp.Core.dll": "3e3eddb10b03c42748d592835f22438b73d9cd1ffd6f6cb339c610b26b1dd4fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit/app.dll": "6ec3364230c1350f3dda4a29528afed846ce24cdad6278106fc5db1d17af5af2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-fsharpcore-3-arm64-faithful-jit/app.deps.json": "d6ed5ffb91f134eb8835ca7650a6c0227c70da663b9df2dbef6c036d226d818b"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

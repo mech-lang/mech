@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Lisp SBCL&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Lisp SBCL&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">;;   The Computer Language Benchmarks Game</span>
+<span class="slc">;;   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">;;   contributed by Vsevolod Dyomkin</span>
+<span class="slc">;;   modified by John Fingerhut</span>
+
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">slice-and-dice</span> <span class="opt">(</span><span class="kwa">gene</span> k ht<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">))</span>
+	   <span class="opt">(</span><span class="kwa">type</span> simple-base-string gene<span class="opt">)</span>
+	   <span class="opt">(</span><span class="kwa">type</span> fixnum k<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">clrhash</span> ht<span class="opt">)</span>
+<span class="slc">;  (setf ht (make-hash-table :size (expt 2 k)))</span>
+  <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(=</span> k <span class="num">1</span><span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">i</span> <span class="opt">(</span><span class="kwa">the</span> fixnum <span class="opt">(</span><span class="kwa">1</span><span class="opt">+ (</span><span class="kwa">-</span> <span class="opt">(</span><span class="kwa">length</span> gene<span class="opt">)</span> k<span class="opt">))))</span>
+        <span class="opt">(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">the</span> fixnum <span class="opt">(</span><span class="kwa">gethash</span> <span class="opt">(</span><span class="kwa">schar</span> gene i<span class="opt">)</span> ht <span class="num">0</span><span class="opt">))))</span>
+      <span class="opt">(</span><span class="kwa">loop</span> for i from <span class="num">0</span> to <span class="opt">(</span><span class="kwa">the</span> fixnum <span class="opt">(</span><span class="kwa">1</span><span class="opt">+ (</span><span class="kwa">-</span> <span class="opt">(</span><span class="kwa">length</span> gene<span class="opt">)</span> k<span class="opt">)))</span>
+         with gene-num <span class="opt">=</span> <span class="num">0</span> and mask <span class="opt">= (</span><span class="kwa">1-</span> <span class="opt">(</span><span class="kwa">expt</span> <span class="num">4</span> k<span class="opt">))</span> do
+           <span class="opt">(</span><span class="kwa">setf</span> gene-num <span class="opt">(</span><span class="kwa">logand</span> mask <span class="opt">(</span><span class="kwa">letter-to-num</span> gene i gene-num<span class="opt">)))</span>
+           <span class="opt">(</span><span class="kwa">unless</span> <span class="opt">(&lt;</span> i <span class="opt">(</span><span class="kwa">the</span> fixnum <span class="opt">(</span><span class="kwa">1-</span> k<span class="opt">)))</span>
+             <span class="opt">(</span><span class="kwa">incf</span> <span class="opt">(</span><span class="kwa">the</span> fixnum <span class="opt">(</span><span class="kwa">gethash</span> gene-num ht <span class="num">0</span><span class="opt">))))))</span>
+  ht<span class="opt">)</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">inline</span> letter-to-num<span class="opt">))</span>
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">letter-to-num</span> <span class="opt">(</span><span class="kwa">gene</span> i idx<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">))</span>
+           <span class="opt">(</span><span class="kwa">type</span> fixnum i<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">ecase</span> <span class="opt">(</span><span class="kwa">schar</span> gene i<span class="opt">)</span>
+    <span class="opt">(#</span><span class="esc">\A</span> <span class="opt">(</span><span class="kwa">ash</span> idx <span class="num">2</span><span class="opt">))</span>
+    <span class="opt">(#</span><span class="esc">\C</span> <span class="opt">(</span><span class="kwa">logxor</span> <span class="opt">(</span><span class="kwa">ash</span> idx <span class="num">2</span><span class="opt">)</span> <span class="num">1</span><span class="opt">))</span>
+    <span class="opt">(#</span><span class="esc">\G</span> <span class="opt">(</span><span class="kwa">logxor</span> <span class="opt">(</span><span class="kwa">ash</span> idx <span class="num">2</span><span class="opt">)</span> <span class="num">2</span><span class="opt">))</span>
+    <span class="opt">(#</span><span class="esc">\T</span> <span class="opt">(</span><span class="kwa">logxor</span> <span class="opt">(</span><span class="kwa">ash</span> idx <span class="num">2</span><span class="opt">)</span> <span class="num">3</span><span class="opt">))))</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">inline</span> gene-to-num<span class="opt">))</span>
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">gene-to-num</span> <span class="opt">(</span><span class="kwa">gene</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">gene-num</span> <span class="num">0</span><span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">i</span> <span class="opt">(</span><span class="kwa">length</span> gene<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">fixnum</span> i<span class="opt">))</span>
+      <span class="opt">(</span><span class="kwa">setf</span> gene-num <span class="opt">(</span><span class="kwa">letter-to-num</span> gene i gene-num<span class="opt">)))</span>
+    gene-num<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">declaim</span> <span class="opt">(</span><span class="kwa">inline</span> num-to-gene<span class="opt">))</span>
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">num-to-gene</span> <span class="opt">(</span><span class="kwa">num</span> k<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">))</span>
+           <span class="opt">(</span><span class="kwa">type</span> fixnum num<span class="opt">)</span>
+           <span class="opt">(</span><span class="kwa">type</span> fixnum k<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">gene</span> <span class="opt">(</span><span class="kwa">make-array</span> k <span class="kwc">:element</span>-type <span class="opt">&#39;</span>base-char<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">acgt</span> <span class="opt">#(#</span><span class="esc">\A</span> <span class="opt">#</span><span class="esc">\C</span> <span class="opt">#</span><span class="esc">\G</span> <span class="opt">#</span><span class="esc">\T</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">i</span> k<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">pos</span> <span class="opt">(*</span> i <span class="num">2</span><span class="opt">)))</span>
+        <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> fixnum pos<span class="opt">))</span>
+        <span class="opt">(</span><span class="kwa">setf</span> <span class="opt">(</span><span class="kwa">aref</span> gene <span class="opt">(</span><span class="kwa">-</span> k i <span class="num">1</span><span class="opt">))</span>
+              <span class="opt">(</span><span class="kwa">aref</span> acgt <span class="opt">(+ (</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">logbitp</span> pos num<span class="opt">)</span> <span class="num">1 0</span><span class="opt">)</span>
+                            <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">logbitp</span> <span class="opt">(</span><span class="kwa">1</span><span class="opt">+</span> pos<span class="opt">)</span> num<span class="opt">)</span> <span class="num">2 0</span><span class="opt">))))))</span>
+    gene<span class="opt">))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">discard-data-header</span> <span class="opt">(</span><span class="kwa">stream</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">loop</span> for line <span class="opt">= (</span><span class="kwa">read-line</span> stream nil nil<span class="opt">)</span>
+	while <span class="opt">(</span><span class="kwa">and</span> line <span class="opt">(</span><span class="kwa">string</span><span class="opt">/=</span> <span class="sng">&quot;&gt;THREE&quot;</span> line <span class="kwc">:end2</span> <span class="num">6</span><span class="opt">))))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">read-data</span> <span class="opt">(</span><span class="kwa">stream</span><span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">3</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">debug</span> <span class="num">0</span><span class="opt">)))</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">data</span> <span class="opt">(</span><span class="kwa">make-array</span> <span class="num">0</span> <span class="kwc">:element</span>-type <span class="opt">&#39;</span>base-char <span class="kwc">:adjustable</span> t <span class="kwc">:fill</span>-pointer <span class="num">0</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">do</span> <span class="opt">((</span><span class="kwa">line</span> <span class="opt">(</span><span class="kwa">read-line</span> stream nil <span class="opt">&#39;</span>eof<span class="opt">) (</span><span class="kwa">read-line</span> stream nil <span class="opt">&#39;</span>eof<span class="opt">)))</span>
+        <span class="opt">((</span><span class="kwa">or</span> <span class="opt">(</span><span class="kwa">eq</span> line <span class="opt">&#39;</span>eof<span class="opt">) (</span><span class="kwa">char</span><span class="opt">= (</span><span class="kwa">schar</span> line <span class="num">0</span><span class="opt">) #</span>\<span class="opt">&gt;)))</span>
+      <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(</span><span class="kwa">not</span> <span class="opt">(</span><span class="kwa">char</span><span class="opt">= (</span><span class="kwa">schar</span> line <span class="num">0</span><span class="opt">) #</span>\<span class="slc">;))</span>
+          <span class="opt">(</span><span class="kwa">dotimes</span> <span class="opt">(</span><span class="kwa">char-index</span> <span class="opt">(</span><span class="kwa">length</span> line<span class="opt">))</span>
+            <span class="opt">(</span><span class="kwa">vector-push-extend</span> <span class="opt">(</span><span class="kwa">char-upcase</span> <span class="opt">(</span><span class="kwa">the</span> base-char <span class="opt">(</span><span class="kwa">schar</span> line char-index<span class="opt">)))</span> data<span class="opt">))))</span>
+    <span class="opt">(</span><span class="kwa">coerce</span> data <span class="opt">&#39;</span>simple-base-string<span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">print-precentages</span> <span class="opt">(</span><span class="kwa">gene</span> k ht<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">type</span> simple-base-string gene<span class="opt">)</span>
+	   <span class="opt">(</span><span class="kwa">type</span> fixnum k<span class="opt">))</span>
+  <span class="opt">(</span><span class="kwa">let</span><span class="opt">* ((</span><span class="kwa">gene-table</span> <span class="opt">(</span><span class="kwa">slice-and-dice</span> gene k ht<span class="opt">))</span>
+	 sorted-frequencies
+	 <span class="opt">(</span><span class="kwa">sum</span> <span class="num">0</span><span class="opt">))</span>
+    <span class="opt">(</span><span class="kwa">maphash</span> <span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">(</span><span class="kwa">key</span> v<span class="opt">)</span>
+	       <span class="opt">(</span><span class="kwa">incf</span> sum v<span class="opt">)</span>
+	       <span class="opt">(</span><span class="kwa">push</span> <span class="opt">(</span><span class="kwa">cons</span> key v<span class="opt">)</span>
+                     sorted-frequencies<span class="opt">))</span>
+	     gene-table<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">setf</span> sorted-frequencies
+	  <span class="opt">(</span><span class="kwa">sort</span> sorted-frequencies
+		<span class="opt">(</span><span class="kwa">lambda</span> <span class="opt">(</span><span class="kwa">v1</span> v2<span class="opt">)</span>
+                  <span class="opt">(</span><span class="kwa">cond</span> <span class="opt">((&gt; (</span><span class="kwa">cdr</span> v1<span class="opt">) (</span><span class="kwa">cdr</span> v2<span class="opt">))</span> t<span class="opt">)</span>
+                        <span class="opt">((&lt; (</span><span class="kwa">cdr</span> v1<span class="opt">) (</span><span class="kwa">cdr</span> v2<span class="opt">))</span> nil<span class="opt">)</span>
+                        <span class="opt">(</span><span class="kwa">t</span> <span class="opt">(&lt; (</span><span class="kwa">car</span> v1<span class="opt">) (</span><span class="kwa">car</span> v2<span class="opt">)))))))</span>
+    <span class="opt">(</span><span class="kwa">dolist</span> <span class="opt">(</span><span class="kwa">entry</span> sorted-frequencies<span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;~a ~,3F~%&quot;</span>
+	      <span class="opt">(</span><span class="kwa">if</span> <span class="opt">(=</span> k <span class="num">1</span><span class="opt">) (</span><span class="kwa">car</span> entry<span class="opt">)</span>
+                  <span class="opt">(</span><span class="kwa">num-to-gene</span> <span class="opt">(</span><span class="kwa">car</span> entry<span class="opt">)</span> k<span class="opt">))</span>
+	      <span class="opt">(* (/ (</span><span class="kwa">cdr</span> entry<span class="opt">) (</span><span class="kwa">float</span> sum<span class="opt">))</span> <span class="num">100.0</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">terpri</span><span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">print-occurence</span> <span class="opt">(</span><span class="kwa">slice</span> gene k ht<span class="opt">)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">gene-table</span> <span class="opt">(</span><span class="kwa">slice-and-dice</span> gene k ht<span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">format</span> t <span class="sng">&quot;~A~C~A~%&quot;</span>
+            <span class="opt">(</span><span class="kwa">gethash</span> <span class="opt">(</span><span class="kwa">gene-to-num</span> slice<span class="opt">)</span> gene-table <span class="num">0</span><span class="opt">)</span>
+            <span class="opt">#</span><span class="esc">\T</span>ab
+            slice<span class="opt">)))</span>
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">main</span> <span class="opt">()</span>
+  <span class="opt">(</span><span class="kwa">declare</span> <span class="opt">(</span><span class="kwa">optimize</span> <span class="opt">(</span><span class="kwa">speed</span> <span class="num">0</span><span class="opt">) (</span><span class="kwa">safety</span> <span class="num">1</span><span class="opt">)))</span>
+  <span class="opt">(</span><span class="kwa">discard-data-header</span> <span class="opt">*</span>standard-input<span class="opt">*)</span>
+  <span class="opt">(</span><span class="kwa">let</span> <span class="opt">((</span><span class="kwa">gene</span> <span class="opt">(</span><span class="kwa">read-data</span> <span class="opt">*</span>standard-input<span class="opt">*))</span>
+        <span class="opt">(</span><span class="kwa">ht</span> <span class="opt">(</span><span class="kwa">make-hash-table</span> <span class="kwc">:rehash</span>-size <span class="num">5.0</span><span class="opt">)))</span>
+    <span class="opt">(</span><span class="kwa">print-precentages</span> gene <span class="num">1</span> ht<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">print-precentages</span> gene <span class="num">2</span> ht<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">print-occurence</span> <span class="sng">&quot;GGT&quot;</span> gene <span class="num">3</span> ht<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">print-occurence</span> <span class="sng">&quot;GGTA&quot;</span> gene <span class="num">4</span> ht<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">print-occurence</span> <span class="sng">&quot;GGTATT&quot;</span> gene <span class="num">6</span> ht<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">print-occurence</span> <span class="sng">&quot;GGTATTTTAATT&quot;</span> gene <span class="num">12</span> ht<span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">print-occurence</span> <span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span> gene <span class="num">18</span> ht<span class="opt">)))</span>
+
+
+<span class="opt">(</span><span class="kwa">defun</span> <span class="kwb">test</span> <span class="opt">()</span>
+  <span class="opt">(</span><span class="kwa">with-open-file</span> <span class="opt">(*</span>standard-input<span class="opt">*</span> <span class="sng">&quot;knucleotide-input.txt&quot;</span>
+				    <span class="kwc">:direction :input</span><span class="opt">)</span>
+    <span class="opt">(</span><span class="kwa">with-open-file</span> <span class="opt">(*</span>standard-output<span class="opt">*</span> <span class="sng">&quot;knucleotide-output.txt&quot;</span>
+				       <span class="kwc">:direction :output</span>
+				       <span class="kwc">:if</span>-does-not-exist <span class="kwc">:create</span>
+				       <span class="kwc">:if</span>-exists <span class="kwc">:supersede</span><span class="opt">)</span>
+      <span class="opt">(</span><span class="kwa">main</span><span class="opt">))))</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+SBCL 2.4.8
+
+
+ Mon, 13 Jan 2025 02:13:49 GMT
+
+MAKE:
+cp: 'knucleotide.sbcl-2.sbcl' and './knucleotide.sbcl-2.sbcl' are the same file
+SBCL built with: /opt/src/sbcl-2.4.8/bin/sbcl --userinit /dev/null --batch --eval '(load &quot;knucleotide.sbcl-2.sbcl_compile&quot;)'
+### START knucleotide.sbcl-2.sbcl_compile
+(handler-bind ((sb-ext:defconstant-uneql      (lambda (c) (abort c))))      (require :sb-concurrency)      (load (compile-file &quot;knucleotide.sbcl-2.sbcl&quot; ))) (save-lisp-and-die &quot;sbcl.core&quot; :purify t)
+### END knucleotide.sbcl-2.sbcl_compile
+
+; compiling file &quot;/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/knucleotide.sbcl-2.sbcl&quot; (written 26 APR 2018 12:48:18 PM):
+
+; file: /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/knucleotide.sbcl-2.sbcl
+; in: DEFUN SLICE-AND-DICE
+;     (EXPT 4 K)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 3) because:
+;       The result is a (VALUES (OR (INTEGER 1 1) (INTEGER 4)) &amp;OPTIONAL), not a (VALUES
+;                                                                                 FIXNUM
+;                                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 4) because:
+;       The second argument is a (OR (INTEGER 2 9223372036854775808)
+;                                    (INTEGER 0 0)), not a (UNSIGNED-BYTE 62).
+;       The result is a (VALUES (OR (INTEGER 1 1) (INTEGER 4)) &amp;OPTIONAL), not a (VALUES
+;                                                                                 (UNSIGNED-BYTE
+;                                                                                  64)
+;                                                                                 &amp;OPTIONAL).
+;       etc.
+
+;     (1- (EXPT 4 K))
+; 
+; note: forced to do GENERIC-- (cost 10)
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a (RATIONAL 0), not a FIXNUM.
+;       The result is a (VALUES (INTEGER -1) &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                      &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (RATIONAL 0), not a FIXNUM.
+;       The result is a (VALUES (INTEGER -1) &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                      &amp;OPTIONAL).
+;       etc.
+
+;     (LOGAND MASK (LETTER-TO-NUM GENE I GENE-NUM))
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (INTEGER -1), not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 3) because:
+;       The first argument is a (INTEGER -1), not a (UNSIGNED-BYTE 64).
+;       The second argument is a INTEGER, not a (UNSIGNED-BYTE 64).
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &amp;OPTIONAL).
+;       etc.
+
+;     (EXPT 4 K)
+; 
+; note: doing unsigned word to integer coercion (cost 20), for:
+;       the first result of inline ASH
+
+; in: DECLAIM (INLINE LETTER-TO-NUM)
+;     (DECLAIM (INLINE LETTER-TO-NUM))
+; ==&gt;
+;   (SB-C::%PROCLAIM '(INLINE LETTER-TO-NUM) (SB-C:SOURCE-LOCATION))
+; 
+; caught STYLE-WARNING:
+;   Proclaiming COMMON-LISP-USER::LETTER-TO-NUM to be INLINE, but 1 call to it was
+;   previously compiled. A declaration of NOTINLINE at the call site will eliminate
+;   this warning, as will proclaiming and defining the function before its first
+;   potential use.
+
+; in: DEFUN LETTER-TO-NUM
+;     (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+;     (LOGXOR (ASH IDX 2) 1)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+;     (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+;     (LOGXOR (ASH IDX 2) 2)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+;     (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+;     (LOGXOR (ASH IDX 2) 3)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+; in: DEFUN GENE-TO-NUM
+;     (LETTER-TO-NUM GENE I GENE-NUM)
+; --&gt; BLOCK ECASE LET COND IF 
+; ==&gt;
+;   (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+; --&gt; BLOCK ECASE LET COND IF IF LOGXOR 
+; ==&gt;
+;   (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+; --&gt; BLOCK ECASE LET COND IF IF 
+; ==&gt;
+;   (LOGXOR (ASH IDX 2) 1)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+; --&gt; BLOCK ECASE LET COND IF IF IF LOGXOR 
+; ==&gt;
+;   (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+; --&gt; BLOCK ECASE LET COND IF IF IF 
+; ==&gt;
+;   (LOGXOR (ASH IDX 2) 2)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+; --&gt; BLOCK ECASE LET COND IF IF IF IF LOGXOR 
+; ==&gt;
+;   (ASH IDX 2)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+; --&gt; BLOCK ECASE LET COND IF IF IF IF 
+; ==&gt;
+;   (LOGXOR (ASH IDX 2) 3)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+
+; in: DEFUN PRINT-OCCURENCE
+;     (GENE-TO-NUM SLICE)
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline ASH (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline ASH (cost 3) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 1) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &amp;OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &amp;OPTIONAL).
+;       etc.
+; 
+; compilation unit finished
+;   caught 1 STYLE-WARNING condition
+;   printed 25 notes
+
+
+; wrote /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/knucleotide.sbcl-2.fasl
+; compilation finished in 0:00:00.157
+### START knucleotide.sbcl-2.sbcl_run
+(main) (quit)
+### END knucleotide.sbcl-2.sbcl_run
+
+
+2.57s to complete and log all make actions
+
+COMMAND LINE:
+ /opt/src/sbcl-2.4.8/bin/sbcl  --noinform --core sbcl.core --userinit /dev/null --load knucleotide.sbcl-2.sbcl_run 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

@@ -1,0 +1,116 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/pidigits-sbcl-2.lisp" (written 10 OCT 2026 06:58:31 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/pidigits-sbcl-2.lisp
+; in: DEFUN MAKE-DIGIT-GENERATOR
+;     (* ZQ J)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -3) (INTEGER 0 0) (INTEGER 3))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES (OR (INTEGER * -3) (INTEGER 0 0) (INTEGER 3))
+;                               &OPTIONAL), not a (VALUES FIXNUM &OPTIONAL).
+;       etc.
+
+;     (+ (* ZQ J) ZR)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a (OR (INTEGER * -3) (INTEGER 0 0) (INTEGER 3)), not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 5) because:
+;       The first argument is a (OR (INTEGER * -3) (INTEGER 0 0) (INTEGER 3)), not a (UNSIGNED-BYTE
+;                                                                                     64).
+;       The second argument is a INTEGER, not a (UNSIGNED-BYTE 64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+;     (* AQ BQ)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       etc.
+
+;     (* AQ BR)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       etc.
+
+;     (* AR BT)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       etc.
+
+;     (+ (* AQ BR) (* AR BT))
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline (unsigned-byte 64) arithmetic (cost 5) because:
+;       The first argument is a INTEGER, not a (UNSIGNED-BYTE 64).
+;       The second argument is a INTEGER, not a (UNSIGNED-BYTE 64).
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES
+;                                                          (UNSIGNED-BYTE 64)
+;                                                          &OPTIONAL).
+;       etc.
+
+;     (* AT BT)
+; 
+; note: forced to do full call
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       unable to do inline fixnum arithmetic (cost 2) because:
+;       The first argument is a INTEGER, not a FIXNUM.
+;       The second argument is a INTEGER, not a FIXNUM.
+;       The result is a (VALUES INTEGER &OPTIONAL), not a (VALUES FIXNUM
+;                                                                 &OPTIONAL).
+;       etc.
+; 
+; compilation unit finished
+;   printed 7 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/pidigits-sbcl-2/program.fasl
+; compilation finished in 0:00:00.004

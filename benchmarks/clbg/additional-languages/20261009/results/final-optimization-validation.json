@@ -1,0 +1,92 @@
+[
+  {
+    "candidate": "nbody-mojo",
+    "benchmark": "nbody",
+    "full": false,
+    "seconds": 0.253785125,
+    "validation": {
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "candidate": "nbody-mojo",
+    "benchmark": "nbody",
+    "full": true,
+    "seconds": 1.756755041,
+    "validation": {
+      "bytes": 26,
+      "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+      "energies": [
+        -0.169075164,
+        -0.169059907
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "candidate": "fannkuchredux-optimized-mojo",
+    "benchmark": "fannkuchredux",
+    "full": false,
+    "seconds": 0.186850167,
+    "validation": {
+      "bytes": 24,
+      "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "candidate": "fannkuchredux-optimized-mojo",
+    "benchmark": "fannkuchredux",
+    "full": true,
+    "seconds": 7.399820917,
+    "validation": {
+      "bytes": 29,
+      "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "candidate": "fannkuchredux-optimized-futhark",
+    "benchmark": "fannkuchredux",
+    "full": false,
+    "seconds": 0.179118042,
+    "validation": {
+      "bytes": 24,
+      "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "candidate": "fannkuchredux-optimized-futhark",
+    "benchmark": "fannkuchredux",
+    "full": true,
+    "seconds": 5.34414225,
+    "validation": {
+      "bytes": 29,
+      "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  }
+]

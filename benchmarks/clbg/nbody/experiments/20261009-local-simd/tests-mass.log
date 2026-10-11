@@ -1,0 +1,28 @@
+   Compiling mech-clbg-nbody v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver)
+    Finished `release` profile [optimized] target(s) in 1.50s
+     Running tests/fused.rs (benchmarks/clbg/nbody/mech-driver/target/release/deps/fused-aafb27c76f78a793)
+
+running 20 tests
+test named_constant_output_without_state_is_supported ... ok
+test generic_odd_state_length_keeps_simd_tail ... ok
+test exact_binary_division_rewrite_matches_resident_scalar_and_simd ... ok
+test generic_multiple_states_keep_old_and_next_values_distinct ... ok
+test generic_repeated_scatter_and_broadcast_keep_source_order ... ok
+test negative_fma_coefficients_match_resident_and_scheduled_simd ... ok
+test odd_width_matrix_preserves_repeated_scatter_order ... ok
+test opt_in_transformations_apply_to_unrelated_arithmetic ... ok
+test compact_inverse_power_algebraic_lowering_matches_resident ... ok
+test iros_f32_aot_and_jit_match_scalar_with_v04_remainder ... ok
+test simd_preserves_signed_zero ... ok
+test nbody_complete_state_matches_resident_factored ... ok
+test unknown_output_is_rejected_before_native_execution ... ok
+test square_reduction_fma_preserves_zero_and_output ... ok
+test reductions_keep_summand_order_in_each_lane ... ok
+test nbody_complete_state_matches_resident_sqrt ... ok
+test nbody_complete_state_matches_resident_power ... ok
+test mass_first_pairwise_nbody_matches_resident ... ok
+test pairwise_nbody_matches_resident ... ok
+test nbody_fma_and_refined_reciprocal_match_resident_tolerance ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.53s
+

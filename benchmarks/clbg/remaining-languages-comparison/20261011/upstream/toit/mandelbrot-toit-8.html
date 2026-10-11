@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>mandelbrot Toit&nbsp;#8 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>mandelbrot Toit&nbsp;#8 program</h1>
+    <aside>
+      <p><a href="../description/mandelbrot.html#mandelbrot">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks game</span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">   transliterated from Greg Buchholz&#39;s C program by Isaac Gouy </span>
+<span class="com">*/</span>  
+
+
+<span class="kwa">import</span> host<span class="opt">.</span>pipe
+    
+    
+main args<span class="opt">:</span>
+
+  w <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> h <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> x <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> y <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> bit_num <span class="opt">:=</span> <span class="num">0</span>
+  byte_acc <span class="opt">::=</span> #<span class="opt">[</span><span class="num">0</span><span class="opt">]</span> 
+  i <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> iterations <span class="opt">:=</span> <span class="num">50</span>
+  limit <span class="opt">::=</span> <span class="num">2.0</span>
+  <span class="kwb">Zr</span> <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span> <span class="kwb">Zi</span> <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span> <span class="kwb">Cr</span> <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span> <span class="kwb">Ci</span> <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span> <span class="kwb">Tr</span> <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span> <span class="kwb">Ti</span> <span class="opt">:=</span> <span class="num">0.0</span>
+
+  w <span class="opt">=</span> args<span class="opt">.</span>size <span class="opt">==</span> <span class="num">1</span> ? <span class="kwb">int</span><span class="opt">.</span>parse args<span class="opt">[</span><span class="num">0</span><span class="opt">] :</span> <span class="num">200</span>
+  h <span class="opt">=</span> w
+
+  print <span class="sng">&quot;P4</span><span class="esc">\n</span><span class="sng">$w $h&quot;</span>
+  out <span class="opt">:=</span> pipe<span class="opt">.</span>stdout 
+  <span class="kwa">for</span> y <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> y <span class="opt">&lt;</span> h<span class="opt">; ++</span>y<span class="opt">:</span>   
+  
+    <span class="kwa">for</span>  x <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> x <span class="opt">&lt;</span> w<span class="opt">; ++</span>x<span class="opt">:</span>
+  
+      <span class="kwb">Zr</span> <span class="opt">=</span> <span class="num">0.0</span><span class="opt">;</span> <span class="kwb">Zi</span> <span class="opt">=</span> <span class="num">0.0</span> 
+      <span class="kwb">Cr</span> <span class="opt">= (</span><span class="num">2.0</span> <span class="opt">*</span> x <span class="opt">/</span> w <span class="opt">-</span> <span class="num">1.5</span><span class="opt">);</span> <span class="kwb">Ci</span> <span class="opt">= (</span><span class="num">2.0</span> <span class="opt">*</span> y <span class="opt">/</span> h <span class="opt">-</span> <span class="num">1.0</span><span class="opt">)</span>   
+ 
+      <span class="kwa">for</span>  i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> iterations<span class="opt">; ++</span>i<span class="opt">:</span>
+
+        <span class="kwb">Tr</span> <span class="opt">=</span> <span class="kwb">Zr</span><span class="opt">*</span><span class="kwb">Zr</span> <span class="opt">-</span> <span class="kwb">Zi</span><span class="opt">*</span><span class="kwb">Zi</span> <span class="opt">+</span> <span class="kwb">Cr</span>
+        <span class="kwb">Ti</span> <span class="opt">=</span> <span class="num">2</span><span class="opt">*</span><span class="kwb">Zr</span><span class="opt">*</span><span class="kwb">Zi</span> <span class="opt">+</span> <span class="kwb">Ci</span>          
+        <span class="kwb">Zr</span> <span class="opt">=</span> <span class="kwb">Tr</span><span class="opt">;</span> <span class="kwb">Zi</span> <span class="opt">=</span> <span class="kwb">Ti</span> 
+        <span class="kwa">if</span> <span class="kwb">Zr</span><span class="opt">*</span><span class="kwb">Zr</span><span class="opt">+</span><span class="kwb">Zi</span><span class="opt">*</span><span class="kwb">Zi</span> <span class="opt">&gt;</span> limit<span class="opt">*</span>limit<span class="opt">:</span>
+          <span class="kwa">break</span>
+
+
+      <span class="kwa">if</span> <span class="kwb">Zr</span><span class="opt">*</span><span class="kwb">Zr</span><span class="opt">+</span><span class="kwb">Zi</span><span class="opt">*</span><span class="kwb">Zi</span> <span class="opt">&gt;</span> limit<span class="opt">*</span>limit<span class="opt">:</span> 
+        byte_acc<span class="opt">[</span><span class="num">0</span><span class="opt">] = (</span>byte_acc<span class="opt">[</span><span class="num">0</span><span class="opt">] &lt;&lt;</span> <span class="num">1</span><span class="opt">) |</span> <span class="num">0x00</span>
+      <span class="kwa">else</span><span class="opt">:</span>
+        byte_acc<span class="opt">[</span><span class="num">0</span><span class="opt">] = (</span>byte_acc<span class="opt">[</span><span class="num">0</span><span class="opt">] &lt;&lt;</span> <span class="num">1</span><span class="opt">) |</span> <span class="num">0x01</span>
+                
+      bit_num <span class="opt">+=</span> <span class="num">1</span>   
+      
+      <span class="kwa">if</span> bit<span class="opt">-</span>num <span class="opt">==</span> <span class="num">8</span><span class="opt">:</span>
+      
+        out<span class="opt">.</span>write byte_acc        
+        byte_acc<span class="opt">[</span><span class="num">0</span><span class="opt">] =</span> <span class="num">0</span>
+        bit_num <span class="opt">=</span> <span class="num">0</span>      
+      
+      <span class="kwa">else</span><span class="opt">:</span>
+        <span class="kwa">if</span> x <span class="opt">==</span> w <span class="opt">-</span> <span class="num">1</span><span class="opt">:</span>      
+          byte_acc<span class="opt">[</span><span class="num">0</span><span class="opt">] =</span> byte_acc<span class="opt">[</span><span class="num">0</span><span class="opt">] &lt;&lt; (</span><span class="num">8</span> <span class="opt">-</span> w<span class="opt">%</span><span class="num">8</span><span class="opt">)</span>   
+          out<span class="opt">.</span>write byte_acc 
+          byte_acc<span class="opt">[</span><span class="num">0</span><span class="opt">] =</span> <span class="num">0</span>
+          bit_num <span class="opt">=</span> <span class="num">0</span>   
+          
+  out<span class="opt">.</span>close 
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+v2.0.0-alpha.174
+
+
+
+ Sat, 18 Jan 2025 10:14:08 GMT
+
+MAKE:
+cp -r Include/toit/.packages .
+cp -r Include/toit/package.lock .
+cp -r Include/toit/package.yaml .	
+/opt/src/toit/bin/toit.compile -O2 --strip -o mandelbrot.toit-8.toit_run mandelbrot.toit-8.toit 
+
+1.29s to complete and log all make actions
+
+COMMAND LINE:
+ ./mandelbrot.toit-8.toit_run 16000
+
+(BINARY) PROGRAM OUTPUT NOT SHOWN
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

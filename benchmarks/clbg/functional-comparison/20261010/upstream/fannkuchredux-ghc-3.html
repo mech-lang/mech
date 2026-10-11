@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fannkuch-redux Haskell GHC&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fannkuch-redux Haskell GHC&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/fannkuchredux.html#fannkuchredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">{-  The Computer Language Benchmarks Game</span>
+<span class="com">    https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com">    contributed by Louis Wasserman</span>
+<span class="com">    </span>
+<span class="com">    This should be compiled with:</span>
+<span class="com">    	-threaded -O2 -fexcess-precision -fasm</span>
+<span class="com">    and run with:</span>
+<span class="com">    	+RTS -N&lt;number of cores&gt; -RTS &lt;input&gt;</span>
+<span class="com">-}</span>
+
+<span class="kwb">import</span> Control<span class="opt">.</span>Concurrent
+<span class="kwb">import</span> Control<span class="opt">.</span>Monad
+<span class="kwb">import</span> System<span class="opt">.</span>Environment
+<span class="kwb">import</span> Foreign <span class="kwb">hiding</span> <span class="kwc">(</span>rotate<span class="kwc">)</span>
+<span class="kwb">import</span> Data<span class="opt">.</span>Monoid
+
+<span class="kwa">type</span> Perm <span class="opt">=</span> Ptr Word8
+
+<span class="kwa">data</span> F <span class="opt">=</span> F <span class="com">{-# UNPACK #-}</span> <span class="opt">!</span>Int <span class="com">{-# UNPACK #-}</span> <span class="opt">!</span>Int
+
+<span class="kwa">instance</span> Semigroup F <span class="kwb">where</span>
+	<span class="kwc">(</span>F s1 m1<span class="kwc">)</span> <span class="opt">&lt;&gt;</span> <span class="kwc">(</span>F s2 m2<span class="kwc">)</span> <span class="opt">=</span> F <span class="kwc">(</span>s1 <span class="opt">+</span> s2<span class="kwc">) (</span>max m1 m2<span class="kwc">)</span>
+<span class="kwa">instance</span> Monoid F <span class="kwb">where</span>
+	mempty <span class="opt">=</span> F <span class="num">0 0</span>
+
+incPtr <span class="opt">=</span> <span class="kwc">(</span><span class="opt">`advancePtr`</span> <span class="num">1</span><span class="kwc">)</span>
+decPtr <span class="opt">=</span> <span class="kwc">(</span><span class="opt">`advancePtr`</span> <span class="kwc">(</span><span class="opt">-</span><span class="num">1</span><span class="kwc">))</span>
+
+flop :: Int <span class="opt">-&gt;</span> Perm <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+flop k xs <span class="opt">=</span> flopp xs <span class="kwc">(</span>xs <span class="opt">`advancePtr`</span> k<span class="kwc">)</span>
+ <span class="kwb">where</span> flopp i j <span class="opt">=</span> when <span class="kwc">(</span>i <span class="opt">&lt;</span> j<span class="kwc">)</span> <span class="opt">$</span> swap i j <span class="opt">&gt;&gt;</span> flopp <span class="kwc">(</span>incPtr i<span class="kwc">) (</span>decPtr j<span class="kwc">)</span>
+       swap i j <span class="opt">=</span> <span class="kwd">do</span>
+	a <span class="opt">&lt;-</span> peek i
+	b <span class="opt">&lt;-</span> peek j
+	poke j a
+	poke i b
+
+flopS :: Perm <span class="opt">-&gt;</span> <span class="kwc">(</span>Int <span class="opt">-&gt;</span> IO a<span class="kwc">)</span> <span class="opt">-&gt;</span> IO a
+flopS <span class="opt">!</span>xs f <span class="opt">=</span> <span class="kwd">do</span>
+	<span class="kwd">let</span> go <span class="opt">!</span>acc <span class="opt">=</span> <span class="kwd">do</span>
+		k <span class="opt">&lt;-</span> peekElemOff xs <span class="num">0</span>
+		<span class="kwd">if</span> k <span class="opt">==</span> <span class="num">0</span> <span class="kwd">then</span> f acc <span class="kwd">else</span> flop <span class="kwc">(</span>fromIntegral k<span class="kwc">)</span> xs <span class="opt">&gt;&gt;</span> go <span class="kwc">(</span>acc<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+	go <span class="num">0</span>
+
+increment :: Ptr Word8 <span class="opt">-&gt;</span> Ptr Word8 <span class="opt">-&gt;</span> IO <span class="kwc">()</span>
+increment <span class="opt">!</span>p <span class="opt">!</span>ct <span class="opt">=</span> <span class="kwd">do</span>
+	first <span class="opt">&lt;-</span> peekElemOff p <span class="num">1</span>
+	pokeElemOff p <span class="num">1</span> <span class="opt">=&lt;&lt;</span> peekElemOff p <span class="num">0</span>
+	pokeElemOff p <span class="num">0</span> first
+	
+	<span class="kwd">let</span> go <span class="opt">!</span>i <span class="opt">!</span>first <span class="opt">=</span> <span class="kwd">do</span>
+		ci <span class="opt">&lt;-</span> peekElemOff ct i
+		<span class="kwd">if</span> fromIntegral ci <span class="opt">&lt;</span> i <span class="kwd">then</span> pokeElemOff ct i <span class="kwc">(</span>ci<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span> <span class="kwd">else do</span>
+			pokeElemOff ct i <span class="num">0</span>
+			<span class="kwd">let</span> <span class="opt">!</span>i&#39; <span class="opt">=</span> i <span class="opt">+</span> <span class="num">1</span>
+			moveArray p <span class="kwc">(</span>incPtr p<span class="kwc">)</span> i&#39;
+			pokeElemOff p i&#39; first
+			go i&#39; <span class="opt">=&lt;&lt;</span> peekElemOff p <span class="num">0</span>
+	go <span class="num">1</span> first  
+
+genPermutations :: Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Ptr Word8 <span class="opt">-&gt;</span> Ptr Word8 <span class="opt">-&gt;</span> IO F
+genPermutations <span class="opt">!</span>n <span class="opt">!</span>l <span class="opt">!</span>r <span class="opt">!</span>perm <span class="opt">!</span>count <span class="opt">=</span> allocaArray n <span class="opt">$</span> \ destF <span class="opt">-&gt;</span> <span class="kwd">do</span>
+	<span class="kwd">let</span> upd j <span class="opt">!</span>f run <span class="opt">=</span> <span class="kwd">do</span>
+		p0 <span class="opt">&lt;-</span> peekElemOff perm <span class="num">0</span>
+		<span class="kwd">if</span> p0 <span class="opt">==</span> <span class="num">0</span> <span class="kwd">then</span> increment perm count <span class="opt">&gt;&gt;</span> run f <span class="kwd">else do</span>
+			copyArray destF perm n
+			increment perm count
+			flopS destF <span class="opt">$</span> \ flops <span class="opt">-&gt;</span> 
+				run <span class="kwc">(</span>f <span class="opt">`mappend`</span> F <span class="kwc">(</span>checksum j flops<span class="kwc">)</span> flops<span class="kwc">)</span>
+	<span class="kwd">let</span> go j <span class="opt">!</span>f <span class="opt">=</span> <span class="kwd">if</span> j <span class="opt">&gt;=</span> r <span class="kwd">then</span> return f <span class="kwd">else</span> upd j f <span class="kwc">(</span>go <span class="kwc">(</span>j<span class="opt">+</span><span class="num">1</span><span class="kwc">))</span>
+	go l mempty
+ <span class="kwb">where</span> checksum i f <span class="opt">=</span> <span class="kwd">if</span> i <span class="opt">.&amp;.</span> <span class="num">1</span> <span class="opt">==</span> <span class="num">0</span> <span class="kwd">then</span> f <span class="kwd">else</span> <span class="opt">-</span>f
+
+facts :: <span class="kwc">[</span>Int<span class="kwc">]</span>
+facts <span class="opt">=</span> scanl <span class="kwc">(</span><span class="opt">*</span><span class="kwc">)</span> <span class="num">1</span> <span class="kwc">[</span><span class="num">1</span><span class="opt">..</span>12<span class="kwc">]</span>
+
+unrank :: Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> <span class="kwc">(</span>Ptr Word8 <span class="opt">-&gt;</span> Ptr Word8 <span class="opt">-&gt;</span> IO a<span class="kwc">)</span> <span class="opt">-&gt;</span> IO a
+unrank <span class="opt">!</span>idx <span class="opt">!</span>n f <span class="opt">=</span> allocaArray n <span class="opt">$</span> \ p <span class="opt">-&gt;</span> allocaArray n <span class="opt">$</span> \ count <span class="opt">-&gt;</span>
+  allocaArray n <span class="opt">$</span> \ pp <span class="opt">-&gt;</span> <span class="kwd">do</span>
+	mapM_ <span class="kwc">(</span>\ i <span class="opt">-&gt;</span> pokeElemOff p i <span class="kwc">(</span>fromIntegral i<span class="kwc">)) [</span><span class="num">0</span><span class="opt">..</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">]</span>
+	<span class="kwd">let</span> go i <span class="opt">!</span>idx <span class="opt">=</span> when <span class="kwc">(</span>i <span class="opt">&gt;=</span> <span class="num">0</span><span class="kwc">)</span> <span class="opt">$</span> <span class="kwd">do</span>
+		<span class="kwd">let</span> fi <span class="opt">=</span> facts <span class="opt">!!</span> i
+		<span class="kwd">let</span> <span class="kwc">(</span>q<span class="kwc">,</span> r<span class="kwc">)</span> <span class="opt">=</span> idx <span class="opt">`quotRem`</span> fi
+		pokeElemOff count i <span class="kwc">(</span>fromIntegral q<span class="kwc">)</span>
+		copyArray pp p <span class="kwc">(</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+		<span class="kwd">let</span> go&#39; j <span class="opt">=</span> when <span class="kwc">(</span>j <span class="opt">&lt;=</span> i<span class="kwc">)</span> <span class="opt">$</span> <span class="kwd">do</span>
+			<span class="kwd">let</span> jq <span class="opt">=</span> j <span class="opt">+</span> q
+			pokeElemOff p j <span class="opt">=&lt;&lt;</span> peekElemOff pp <span class="kwc">(</span><span class="kwd">if</span> jq <span class="opt">&lt;=</span> i <span class="kwd">then</span> jq <span class="kwd">else</span> jq <span class="opt">-</span> i <span class="opt">-</span> <span class="num">1</span><span class="kwc">)</span>
+			go&#39; <span class="kwc">(</span>j<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+		go&#39; <span class="num">0</span>
+		go <span class="kwc">(</span>i<span class="opt">-</span><span class="num">1</span><span class="kwc">)</span> r
+	go <span class="kwc">(</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">)</span> idx
+	f p count
+
+main <span class="opt">=</span> <span class="kwd">do</span>
+   n <span class="opt">&lt;-</span> fmap <span class="kwc">(</span>read<span class="opt">.</span>head<span class="kwc">)</span> getArgs
+   <span class="kwd">let</span> fact <span class="opt">=</span> product <span class="kwc">[</span><span class="num">1</span><span class="opt">..</span>n<span class="kwc">]</span>
+   <span class="kwd">let</span> bk <span class="opt">=</span> fact <span class="opt">`quot`</span> <span class="num">4</span>
+   vars <span class="opt">&lt;-</span> forM <span class="kwc">[</span><span class="num">0</span><span class="kwc">,</span>bk<span class="opt">..</span>fact<span class="opt">-</span><span class="num">1</span><span class="kwc">]</span> <span class="opt">$</span> \ ix <span class="opt">-&gt;</span> <span class="kwd">do</span>
+   	var <span class="opt">&lt;-</span> newEmptyMVar
+   	forkIO <span class="kwc">(</span>unrank ix n <span class="opt">$</span> \ p <span class="opt">-&gt;</span> genPermutations n ix <span class="kwc">(</span>min fact <span class="kwc">(</span>ix <span class="opt">+</span> bk<span class="kwc">))</span> p <span class="opt">&gt;=&gt;</span> putMVar var<span class="kwc">)</span>
+   	return var
+   F chksm mflops <span class="opt">&lt;-</span> liftM mconcat <span class="kwc">(</span>mapM takeMVar vars<span class="kwc">)</span>
+   putStrLn <span class="opt">$</span> <span class="kwc">(</span>show chksm<span class="kwc">)</span> <span class="opt">++</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">Pfannkuchen(&quot;</span> <span class="opt">++</span> <span class="kwc">(</span>show n<span class="kwc">)</span> <span class="opt">++</span> <span class="sng">&quot;) = &quot;</span> <span class="opt">++</span> <span class="kwc">(</span>show <span class="opt">$</span> mflops<span class="kwc">)</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 07:04:37 GMT
+
+MAKE:
+mv fannkuchredux.ghc-3.ghc fannkuchredux.ghc-3.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XScopedTypeVariables fannkuchredux.ghc-3.hs -o fannkuchredux.ghc-3.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( fannkuchredux.ghc-3.hs, fannkuchredux.ghc-3.o )
+fannkuchredux.ghc-3.hs:22:1: warning: [GHC-94817] [-Wtabs]
+    Tab character found here, and in 86 further locations.
+    Suggested fix: Please use spaces instead.
+   |
+22 |         (F s1 m1) &lt;&gt; (F s2 m2) = F (s1 + s2) (max m1 m2)
+   | ^^^^^^^^
+
+fannkuchredux.ghc-3.hs:96:20: warning: [GHC-63394] [-Wx-partial]
+    In the use of ‘head’
+    (imported from Prelude, but defined in GHC.Internal.List):
+    &quot;This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use &quot;Data.List.NonEmpty&quot;.&quot;
+   |
+96 |    n &lt;- fmap (read.head) getArgs
+   |                    ^^^^
+
+[2 of 2] Linking fannkuchredux.ghc-3.ghc_run
+rm fannkuchredux.ghc-3.hs
+
+17.60 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./fannkuchredux.ghc-3.ghc_run +RTS -N4 -RTS 12
+
+PROGRAM OUTPUT:
+3968050
+Pfannkuchen(12) = 65
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>n-body Ada 2012 GNAT&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>n-body Ada 2012 GNAT&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/nbody.html#nbody">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">-----------------------</span>
+<span class="slc">-- nbody.adb</span>
+<span class="slc">-----------------------</span>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Contributed by Brian Kolden</span>
+<span class="slc">-- Ada port of Mark C. Lewis&#39;s N-Body</span>
+<span class="slc">-- Built off of Pascal Obry&#39;s N-Body</span>
+
+<span class="kwa">with</span> Ada<span class="opt">.</span>Command_Line<span class="opt">;</span> <span class="kwa">use</span> Ada<span class="opt">.</span>Command_Line<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Text_IO<span class="opt">;</span>      <span class="kwa">use</span> Ada<span class="opt">.</span>Text_IO<span class="opt">;</span>
+<span class="kwa">with</span> Nbody_Pck<span class="opt">;</span>   <span class="kwa">use</span> Nbody_Pck<span class="opt">;</span>
+<span class="kwa">with</span> Root<span class="opt">;</span> <span class="kwa">use</span> Root<span class="opt">;</span>
+<span class="kwa">procedure</span> Nbody <span class="kwa">is</span>
+   <span class="kwa">pragma</span> <span class="kwc">Suppress</span><span class="opt">(</span>All_Checks<span class="opt">);</span>
+
+   N <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Positive</span> <span class="opt">:=</span> <span class="kwb">Integer</span><span class="kwd">&#39;Value</span> <span class="opt">(</span><span class="kwc">Argument</span> <span class="opt">(</span><span class="num">1</span><span class="opt">));</span>
+
+   <span class="kwa">package</span> RIO <span class="kwa">is new</span> Ada<span class="opt">.</span>Text_IO<span class="opt">.</span><span class="kwc">Float_Io</span> <span class="opt">(</span>S_Real<span class="opt">);</span>
+
+   <span class="kwa">procedure</span> Put
+     <span class="opt">(</span>Item <span class="opt">:</span> S_Real<span class="opt">;</span> Fore <span class="opt">:</span> Field <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span> Aft <span class="opt">:</span> Field <span class="opt">:=</span> <span class="num">9</span><span class="opt">;</span>
+      Exp  <span class="opt">:</span> Field <span class="opt">:=</span> <span class="num">0</span><span class="opt">)</span> <span class="kwa">renames</span> RIO<span class="opt">.</span>Put<span class="opt">;</span>
+
+<span class="kwa">begin</span>
+   <span class="kwc">Put</span> <span class="opt">(</span>Energy<span class="opt">);</span>
+   New_Line<span class="opt">;</span>
+
+   <span class="kwa">for</span> I <span class="kwa">in</span> <span class="num">1</span> <span class="opt">..</span> N <span class="kwa">loop</span>
+      <span class="kwc">Advance</span> <span class="opt">(</span><span class="num">0.01</span><span class="opt">);</span>
+   <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwc">Put</span> <span class="opt">(</span>Energy<span class="opt">);</span>
+   New_Line<span class="opt">;</span>
+
+<span class="kwa">end</span> Nbody<span class="opt">;</span>
+
+<span class="slc">-----------------------</span>
+<span class="slc">-- nbody_pck.ads</span>
+<span class="slc">-----------------------</span>
+<span class="kwa">with</span> Systems<span class="opt">;</span> <span class="kwa">use</span> Systems<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Text_IO<span class="opt">;</span>      <span class="kwa">use</span> Ada<span class="opt">.</span>Text_IO<span class="opt">;</span>
+<span class="kwa">with</span> Root<span class="opt">;</span> <span class="kwa">use</span> Root<span class="opt">;</span>
+<span class="kwa">package</span> Nbody_Pck <span class="kwa">is</span>
+   <span class="kwa">pragma</span> Elaborate_Body<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Suppress</span><span class="opt">(</span>All_Checks<span class="opt">);</span>
+   
+   <span class="kwa">type</span> R <span class="kwa">is record</span>
+      DX<span class="opt">,</span> DY<span class="opt">,</span> DZ<span class="opt">,</span> Filler<span class="opt">:</span> S_Real<span class="opt">;</span>
+   <span class="kwa">end record</span><span class="opt">;</span>
+   <span class="kwa">for</span> R<span class="kwd">&#39;Alignment</span> <span class="kwa">use</span> <span class="num">16</span><span class="opt">;</span>
+   <span class="kwa">type</span> R_Array_Type <span class="kwa">is array</span><span class="opt">(</span><span class="num">0</span><span class="opt">.</span><span class="num">.999</span><span class="opt">)</span> <span class="kwa">of</span> R<span class="opt">;</span>
+
+   <span class="kwa">type</span> Mag_Type <span class="kwa">is array</span> <span class="opt">(</span><span class="num">0</span><span class="opt">.</span><span class="num">.999</span><span class="opt">)</span> <span class="kwa">of</span> S_Real<span class="opt">;</span>
+   <span class="kwa">for</span> Mag_Type<span class="kwd">&#39;Alignment</span> <span class="kwa">use</span> <span class="num">16</span><span class="opt">;</span>
+
+   PX<span class="opt">,</span> PY<span class="opt">,</span> PZ<span class="opt">:</span> S_Real<span class="opt">;</span>
+   Bodies<span class="opt">:</span> <span class="kwa">array</span><span class="opt">(</span><span class="num">0</span><span class="opt">.</span><span class="num">.4</span><span class="opt">)</span> <span class="kwa">of</span> System<span class="opt">:=(</span>Sun<span class="opt">,</span> Jupiter<span class="opt">,</span> Saturn<span class="opt">,</span> Uranus<span class="opt">,</span> Neptune<span class="opt">);</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Advance</span><span class="opt">(</span>DT<span class="opt">:</span> S_Real<span class="opt">);</span>
+   <span class="kwa">function</span> Energy <span class="kwa">return</span> S_Real<span class="opt">;</span>
+
+<span class="kwa">end</span> Nbody_Pck<span class="opt">;</span>
+
+<span class="slc">-----------------------</span>
+<span class="slc">-- nbody_pck.adb</span>
+<span class="slc">-----------------------</span>
+<span class="kwa">package body</span> Nbody_Pck <span class="kwa">is</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Advance</span><span class="opt">(</span>DT<span class="opt">:</span> S_Real<span class="opt">)</span> <span class="kwa">is</span>
+      N<span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Integer</span> <span class="opt">:= (</span>Bodies<span class="kwd">&#39;Length</span><span class="opt">-</span><span class="num">1</span><span class="opt">)*</span>Bodies<span class="kwd">&#39;Length</span><span class="opt">/</span><span class="num">2</span><span class="opt">;</span>      
+      R_Array <span class="opt">:</span> R_Array_Type<span class="opt">;</span>      
+      Mag <span class="opt">:</span> Mag_Type<span class="opt">;</span>
+      K<span class="opt">:</span> <span class="kwb">Integer</span> <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">for</span> I <span class="kwa">in</span> Bodies<span class="kwd">&#39;First</span><span class="opt">..</span>Bodies<span class="kwd">&#39;Last</span><span class="opt">-</span><span class="num">1</span> <span class="kwa">loop</span>
+         <span class="kwa">for</span> J <span class="kwa">in</span> I<span class="opt">+</span><span class="num">1</span><span class="opt">..</span>Bodies<span class="kwd">&#39;Last</span> <span class="kwa">loop</span>
+            <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DX <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>X <span class="opt">-</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>X<span class="opt">;</span>
+            <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DY <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Y <span class="opt">-</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>Y<span class="opt">;</span>
+            <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DZ <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Z <span class="opt">-</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>Z<span class="opt">;</span>
+            
+            K <span class="opt">:=</span> K <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">declare</span> 
+         DX<span class="opt">,</span> DY<span class="opt">,</span> DZ<span class="opt">,</span> D_Squared<span class="opt">,</span> Distance<span class="opt">,</span> dmag<span class="opt">:</span> m128d<span class="opt">;</span>
+      <span class="kwa">begin</span>
+         K<span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+         <span class="kwa">while</span> K <span class="opt">&lt;</span> N <span class="kwa">loop</span>
+            <span class="kwc">DX</span><span class="opt">(</span><span class="num">0</span><span class="opt">):=</span> <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DX<span class="opt">;</span>
+            <span class="kwc">DY</span><span class="opt">(</span><span class="num">0</span><span class="opt">):=</span> <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DY<span class="opt">;</span>
+            <span class="kwc">DZ</span><span class="opt">(</span><span class="num">0</span><span class="opt">):=</span> <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DZ<span class="opt">;</span>
+            <span class="kwc">DX</span><span class="opt">(</span><span class="num">1</span><span class="opt">):=</span> <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">+</span><span class="num">1</span><span class="opt">).</span>DX<span class="opt">;</span>
+            <span class="kwc">DY</span><span class="opt">(</span><span class="num">1</span><span class="opt">):=</span> <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">+</span><span class="num">1</span><span class="opt">).</span>DY<span class="opt">;</span>
+            <span class="kwc">DZ</span><span class="opt">(</span><span class="num">1</span><span class="opt">):=</span> <span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">+</span><span class="num">1</span><span class="opt">).</span>DZ<span class="opt">;</span>
+
+            D_Squared<span class="opt">:=</span> <span class="kwc">ia32_Mul</span><span class="opt">(</span>DX<span class="opt">,</span> DX<span class="opt">) +</span> <span class="kwc">ia32_Mul</span><span class="opt">(</span>DY<span class="opt">,</span> DY<span class="opt">) +</span> <span class="kwc">ia32_Mul</span><span class="opt">(</span>DZ<span class="opt">,</span> DZ<span class="opt">);</span>
+
+            Distance<span class="opt">:=</span> <span class="kwc">ia32_CvtPS_PD</span><span class="opt">(</span><span class="kwc">ia32_RSqrt</span><span class="opt">(</span><span class="kwc">ia32_CvtPD_PS</span><span class="opt">(</span>D_Squared<span class="opt">)));</span>
+
+            <span class="kwa">for</span> J <span class="kwa">in</span> <span class="num">1</span><span class="opt">.</span><span class="num">.2</span> <span class="kwa">loop</span>
+               Distance<span class="opt">:=</span> Distance <span class="opt">* (</span><span class="num">1.5</span><span class="opt">,</span> <span class="num">1.5</span><span class="opt">) -</span>
+                  <span class="opt">(((</span><span class="num">0.5</span><span class="opt">,</span> <span class="num">0.5</span><span class="opt">) *</span> D_Squared<span class="opt">) *</span> Distance<span class="opt">) *</span>
+                  <span class="opt">(</span>Distance <span class="opt">*</span> Distance<span class="opt">);</span>
+            <span class="kwa">end loop</span><span class="opt">;</span>
+
+            dmag <span class="opt">:=</span> <span class="kwc">ia32_Div</span><span class="opt">((</span>DT<span class="opt">,</span> DT<span class="opt">),</span> D_Squared<span class="opt">) *</span> Distance<span class="opt">;</span>
+
+            <span class="kwc">Mag</span><span class="opt">(</span>K<span class="opt">):=</span> <span class="kwc">dmag</span><span class="opt">(</span><span class="num">0</span><span class="opt">);</span>
+            <span class="kwc">Mag</span><span class="opt">(</span>K<span class="opt">+</span><span class="num">1</span><span class="opt">):=</span> <span class="kwc">dmag</span><span class="opt">(</span><span class="num">1</span><span class="opt">);</span>
+
+            K<span class="opt">:=</span> K <span class="opt">+</span> <span class="num">2</span><span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>         
+      <span class="kwa">end</span><span class="opt">;</span>
+
+      K<span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      <span class="kwa">for</span> I <span class="kwa">in</span> Bodies<span class="kwd">&#39;First</span><span class="opt">..</span>Bodies<span class="kwd">&#39;Last</span><span class="opt">-</span><span class="num">1</span> <span class="kwa">loop</span>
+         <span class="kwa">for</span> J <span class="kwa">in</span> I<span class="opt">+</span><span class="num">1</span><span class="opt">..</span>Bodies<span class="kwd">&#39;Last</span> <span class="kwa">loop</span>
+            <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VX<span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VX <span class="opt">- (</span><span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DX <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>Mass <span class="opt">*</span> <span class="kwc">Mag</span><span class="opt">(</span>K<span class="opt">));</span>
+            <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VY<span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VY <span class="opt">- (</span><span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DY <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>Mass <span class="opt">*</span> <span class="kwc">Mag</span><span class="opt">(</span>K<span class="opt">));</span>
+            <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VZ<span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VZ <span class="opt">- (</span><span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DZ <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>Mass <span class="opt">*</span> <span class="kwc">Mag</span><span class="opt">(</span>K<span class="opt">));</span>
+
+            <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>VX <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>VX <span class="opt">+ (</span><span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DX <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Mass <span class="opt">*</span> <span class="kwc">Mag</span><span class="opt">(</span>K<span class="opt">));</span>
+            <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>VY <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>VY <span class="opt">+ (</span><span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DY <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Mass <span class="opt">*</span> <span class="kwc">Mag</span><span class="opt">(</span>K<span class="opt">));</span>
+            <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>VZ <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">).</span>VZ<span class="opt">+ (</span><span class="kwc">R_Array</span><span class="opt">(</span>K<span class="opt">).</span>DZ <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Mass <span class="opt">*</span> <span class="kwc">Mag</span><span class="opt">(</span>K<span class="opt">));</span>
+
+            K <span class="opt">:=</span> K <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+
+      <span class="kwa">for</span> I <span class="kwa">of</span> Bodies <span class="kwa">loop</span>
+
+         I<span class="opt">.</span>X <span class="opt">:=</span> I<span class="opt">.</span>X <span class="opt">+ (</span>DT <span class="opt">*</span> I<span class="opt">.</span>VX<span class="opt">);</span>
+         I<span class="opt">.</span>Y <span class="opt">:=</span> I<span class="opt">.</span>Y <span class="opt">+ (</span>DT <span class="opt">*</span> I<span class="opt">.</span>VY<span class="opt">);</span>
+         I<span class="opt">.</span>Z <span class="opt">:=</span> I<span class="opt">.</span>Z <span class="opt">+ (</span>DT <span class="opt">*</span> I<span class="opt">.</span>VZ<span class="opt">);</span>
+
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">end</span> Advance<span class="opt">;</span>
+
+   <span class="kwa">function</span> Energy <span class="kwa">return</span> S_Real <span class="kwa">is</span>
+      E<span class="opt">:</span> S_Real <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span>
+      DX<span class="opt">,</span> DY<span class="opt">,</span> DZ<span class="opt">,</span> Distance <span class="opt">:</span> S_Real<span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">for</span> I <span class="kwa">in</span> Bodies<span class="kwd">&#39;Range</span> <span class="kwa">loop</span>
+         E <span class="opt">:=</span> E <span class="opt">+ (</span><span class="num">0.5</span> <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Mass <span class="opt">*</span>
+                <span class="opt">(</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VX <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VX
+                    <span class="opt">+</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VY <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VY
+                    <span class="opt">+</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VZ <span class="opt">*</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>VZ <span class="opt">));</span>
+         <span class="kwa">for</span> J <span class="kwa">in</span> I<span class="opt">+</span><span class="num">1</span><span class="opt">..</span>Bodies<span class="kwd">&#39;Last</span> <span class="kwa">loop</span>
+            <span class="kwa">declare</span>
+               J_Body<span class="opt">:</span> <span class="kwa">constant</span> System <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>J<span class="opt">);</span>
+            <span class="kwa">begin</span>
+               DX <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>X <span class="opt">-</span> J_Body<span class="opt">.</span>X<span class="opt">;</span>
+               DY <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Y <span class="opt">-</span> J_Body<span class="opt">.</span>Y<span class="opt">;</span>
+               DZ <span class="opt">:=</span> <span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Z <span class="opt">-</span> J_Body<span class="opt">.</span>Z<span class="opt">;</span>
+
+               Distance <span class="opt">:=</span> <span class="kwc">Sqrt</span><span class="opt">(</span>DX<span class="opt">*</span>DX <span class="opt">+</span> DY<span class="opt">*</span>DY <span class="opt">+</span> DZ<span class="opt">*</span>DZ<span class="opt">);</span>
+               E <span class="opt">:=</span> E <span class="opt">- ((</span><span class="kwc">Bodies</span><span class="opt">(</span>I<span class="opt">).</span>Mass <span class="opt">*</span> J_Body<span class="opt">.</span>Mass<span class="opt">) /</span> Distance<span class="opt">);</span>
+            <span class="kwa">end</span><span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwa">return</span> E<span class="opt">;</span>
+   <span class="kwa">end</span> Energy<span class="opt">;</span>
+
+<span class="kwa">begin</span>
+   PX <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span>
+   PY <span class="opt">:=</span><span class="num">0.0</span><span class="opt">;</span> 
+   PZ <span class="opt">:=</span> <span class="num">0.0</span><span class="opt">;</span>
+
+   <span class="kwa">for</span> I <span class="kwa">of</span> Bodies <span class="kwa">loop</span>
+      PX <span class="opt">:=</span> PX <span class="opt">+ (</span>I<span class="opt">.</span>VX <span class="opt">*</span> I<span class="opt">.</span>Mass<span class="opt">);</span>
+      PY <span class="opt">:=</span> PY <span class="opt">+ (</span>I<span class="opt">.</span>VY <span class="opt">*</span> I<span class="opt">.</span>Mass<span class="opt">);</span>
+      PZ <span class="opt">:=</span> PZ <span class="opt">+ (</span>I<span class="opt">.</span>VZ <span class="opt">*</span> I<span class="opt">.</span>Mass<span class="opt">);</span>
+   <span class="kwa">end loop</span><span class="opt">;</span>
+   Systems<span class="opt">.</span><span class="kwc">Offset_Momentum</span><span class="opt">(</span><span class="kwc">Bodies</span><span class="opt">(</span><span class="num">0</span><span class="opt">),</span> PX<span class="opt">,</span> PY<span class="opt">,</span> PZ<span class="opt">);</span>
+   
+<span class="kwa">end</span> Nbody_Pck<span class="opt">;</span>
+
+<span class="slc">-----------------------</span>
+<span class="slc">-- systems.ads</span>
+<span class="slc">-----------------------</span>
+<span class="kwa">with</span> Root<span class="opt">;</span> <span class="kwa">use</span> Root<span class="opt">;</span>
+<span class="kwa">package</span> Systems <span class="kwa">is</span>
+   <span class="kwa">pragma</span> <span class="kwc">Suppress</span><span class="opt">(</span>All_Checks<span class="opt">);</span>
+   
+   <span class="kwa">type</span> System <span class="kwa">is record</span>
+      X<span class="opt">,</span> Y<span class="opt">,</span> Z<span class="opt">:</span> S_Real<span class="opt">:=</span><span class="num">0.0</span><span class="opt">;</span>
+      Filler<span class="opt">:</span> S_Real<span class="opt">;</span>
+      VX<span class="opt">,</span> VY<span class="opt">,</span> VZ<span class="opt">:</span> S_Real<span class="opt">;</span>
+      Mass<span class="opt">:</span> S_Real<span class="opt">;</span>
+   <span class="kwa">end record</span><span class="opt">;</span>
+
+   PI<span class="opt">:</span> <span class="kwa">constant</span> S_Real <span class="opt">:=</span> <span class="num">3.141592653589793</span><span class="opt">;</span>
+   SOLAR_MASS<span class="opt">:</span> <span class="kwa">constant</span> S_Real <span class="opt">:=</span> <span class="num">4.0</span> <span class="opt">*</span> PI <span class="opt">*</span> PI<span class="opt">;</span>
+   DAYS_PER_YEAR<span class="opt">:</span> <span class="kwa">constant</span> S_Real <span class="opt">:=</span> <span class="num">365.24</span><span class="opt">;</span>
+
+   Jupiter<span class="opt">:</span> System<span class="opt">:= (</span>
+      X <span class="opt">=&gt;</span> <span class="num">4.84143144246472090e+00</span><span class="opt">,</span>
+      Y <span class="opt">=&gt; -</span><span class="num">1.16032004402742839e+00</span><span class="opt">,</span>
+      Z <span class="opt">=&gt; -</span><span class="num">1.03622044471123109e-01</span><span class="opt">,</span>
+      VX <span class="opt">=&gt;</span> <span class="num">1.66007664274403694e-03</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      VY <span class="opt">=&gt;</span> <span class="num">7.69901118419740425e-03</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      VZ <span class="opt">=&gt; -</span><span class="num">6.90460016972063023e-05</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      Mass <span class="opt">=&gt;</span> <span class="num">9.54791938424326609e-04</span> <span class="opt">*</span> SOLAR_MASS<span class="opt">,</span>
+      <span class="kwa">Others</span> <span class="opt">=&gt;</span> <span class="num">0.0</span><span class="opt">);</span>
+   Saturn<span class="opt">:</span> System<span class="opt">:= (</span>
+      X <span class="opt">=&gt;</span> <span class="num">8.34336671824457987e+00</span><span class="opt">,</span>
+      Y <span class="opt">=&gt;</span> <span class="num">4.12479856412430479e+00</span><span class="opt">,</span>
+      Z <span class="opt">=&gt; -</span><span class="num">4.03523417114321381e-01</span><span class="opt">,</span>
+      VX <span class="opt">=&gt; -</span><span class="num">2.76742510726862411e-03</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      VY <span class="opt">=&gt;</span> <span class="num">4.99852801234917238e-03</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      VZ <span class="opt">=&gt;</span> <span class="num">2.30417297573763929e-05</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      Mass <span class="opt">=&gt;</span> <span class="num">2.85885980666130812e-04</span> <span class="opt">*</span> SOLAR_MASS<span class="opt">,</span>
+      <span class="kwa">Others</span> <span class="opt">=&gt;</span> <span class="num">0.0</span><span class="opt">);</span>
+   Uranus<span class="opt">:</span> System<span class="opt">:= (</span>
+      X <span class="opt">=&gt;</span> <span class="num">1.28943695621391310e+01</span><span class="opt">,</span>
+      Y <span class="opt">=&gt; -</span><span class="num">1.51111514016986312e+01</span><span class="opt">,</span>
+      Z <span class="opt">=&gt; -</span><span class="num">2.23307578892655734e-01</span><span class="opt">,</span>
+      VX <span class="opt">=&gt;</span> <span class="num">2.96460137564761618e-03</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      VY <span class="opt">=&gt;</span> <span class="num">2.37847173959480950e-03</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      VZ <span class="opt">=&gt; -</span><span class="num">2.96589568540237556e-05</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      Mass <span class="opt">=&gt;</span> <span class="num">4.36624404335156298e-05</span> <span class="opt">*</span> SOLAR_MASS<span class="opt">,</span>
+      <span class="kwa">Others</span> <span class="opt">=&gt;</span> <span class="num">0.0</span><span class="opt">);</span>
+   Neptune<span class="opt">:</span> System<span class="opt">:= (</span>
+      X <span class="opt">=&gt;</span> <span class="num">1.53796971148509165e+01</span><span class="opt">,</span>
+      Y <span class="opt">=&gt; -</span><span class="num">2.59193146099879641e+01</span><span class="opt">,</span>
+      Z <span class="opt">=&gt;</span> <span class="num">1.79258772950371181e-01</span><span class="opt">,</span>
+      VX <span class="opt">=&gt;</span> <span class="num">2.68067772490389322e-03</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      VY <span class="opt">=&gt;</span> <span class="num">1.62824170038242295e-03</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      VZ <span class="opt">=&gt; -</span><span class="num">9.51592254519715870e-05</span> <span class="opt">*</span> DAYS_PER_YEAR<span class="opt">,</span>
+      Mass <span class="opt">=&gt;</span> <span class="num">5.15138902046611451e-05</span> <span class="opt">*</span> SOLAR_MASS<span class="opt">,</span>
+      <span class="kwa">Others</span> <span class="opt">=&gt;</span> <span class="num">0.0</span><span class="opt">);</span>
+   Sun<span class="opt">:</span> System<span class="opt">:= (</span>
+      Mass <span class="opt">=&gt;</span> SOLAR_MASS<span class="opt">,</span>
+      <span class="kwa">Others</span> <span class="opt">=&gt;</span> <span class="num">0.0</span><span class="opt">);</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Offset_Momentum</span> <span class="opt">(</span>This<span class="opt">:</span> <span class="kwa">in out</span> System<span class="opt">;</span> PX<span class="opt">,</span>PY<span class="opt">,</span> PZ<span class="opt">:</span> S_Real<span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>Offset_Momentum<span class="opt">);</span>
+
+<span class="kwa">end</span> Systems<span class="opt">;</span>
+
+<span class="slc">-----------------------</span>
+<span class="slc">-- systems.adb</span>
+<span class="slc">-----------------------</span>
+<span class="kwa">package body</span> Systems <span class="kwa">is</span>
+
+   <span class="kwa">procedure</span> <span class="kwc">Offset_Momentum</span> <span class="opt">(</span>This<span class="opt">:</span> <span class="kwa">in out</span> System<span class="opt">;</span> PX<span class="opt">,</span>PY<span class="opt">,</span> PZ<span class="opt">:</span> S_Real<span class="opt">)</span> <span class="kwa">is</span>
+   <span class="kwa">begin</span>
+      This<span class="opt">.</span>VX <span class="opt">:= -</span>PX <span class="opt">/</span> SOLAR_MASS<span class="opt">;</span>
+      This<span class="opt">.</span>VY <span class="opt">:= -</span>PY <span class="opt">/</span> SOLAR_MASS<span class="opt">;</span>
+      This<span class="opt">.</span>VZ <span class="opt">:= -</span>PZ <span class="opt">/</span> SOLAR_MASS<span class="opt">;</span>
+   <span class="kwa">end</span> Offset_Momentum<span class="opt">;</span>
+
+<span class="kwa">end</span> Systems<span class="opt">;</span>   
+
+<span class="slc">-----------------------</span>
+<span class="slc">-- root.ads</span>
+<span class="slc">-----------------------</span>
+<span class="kwa">package</span> Root <span class="kwa">is</span>
+
+   <span class="kwa">pragma</span> Pure<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Suppress</span><span class="opt">(</span>All_Checks<span class="opt">);</span>
+
+   <span class="kwa">type</span> S_Real <span class="kwa">is new</span> <span class="kwb">Long_Float</span><span class="opt">;</span>
+
+   <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>S_Real<span class="kwd">&#39;Size</span> <span class="opt">=</span> <span class="num">64</span> <span class="kwa">and</span> S_Real<span class="kwd">&#39;digits</span> <span class="opt">&gt;</span> <span class="num">13</span><span class="opt">);</span>
+
+   <span class="kwa">type</span> m128d <span class="kwa">is array</span> <span class="opt">(</span><span class="num">0</span> <span class="opt">..</span> <span class="num">1</span><span class="opt">)</span> <span class="kwa">of</span> S_Real<span class="opt">;</span>
+   <span class="kwa">for</span> m128d<span class="kwd">&#39;Alignment</span> <span class="kwa">use</span> <span class="num">16</span><span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Machine_Attribute</span> <span class="opt">(</span>m128d<span class="opt">,</span> <span class="sng">&quot;vector_type&quot;</span><span class="opt">);</span>
+
+   <span class="kwa">type</span> m128s <span class="kwa">is array</span> <span class="opt">(</span><span class="num">0</span> <span class="opt">..</span> <span class="num">3</span><span class="opt">)</span> <span class="kwa">of</span> <span class="kwb">Float</span><span class="opt">;</span>
+   <span class="kwa">for</span> m128s<span class="kwd">&#39;Alignment</span> <span class="kwa">use</span> <span class="num">16</span><span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Machine_Attribute</span> <span class="opt">(</span>m128s<span class="opt">,</span> <span class="sng">&quot;vector_type&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span><span class="kwb">Float</span><span class="kwd">&#39;Digits</span> <span class="opt">&lt;</span> <span class="num">7</span> <span class="kwa">and</span> m128s<span class="kwd">&#39;size</span> <span class="opt">=</span> <span class="num">128</span><span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">ia32_Div</span> <span class="opt">(</span>X<span class="opt">,</span> Y <span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128d<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_Div<span class="opt">,</span> <span class="sng">&quot;__builtin_ia32_divpd&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_Div<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">ia32_Sqrt</span> <span class="opt">(</span>X <span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128d<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_Sqrt<span class="opt">,</span> <span class="sng">&quot;__builtin_ia32_sqrtpd&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_Sqrt<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">ia32_Mul</span> <span class="opt">(</span>X<span class="opt">,</span> Y <span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128d<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_Mul<span class="opt">,</span> <span class="sng">&quot;__builtin_ia32_mulpd&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_Mul<span class="opt">);</span>   
+
+   <span class="kwa">function</span> <span class="kwc">ia32_Add</span> <span class="opt">(</span>X<span class="opt">,</span> Y <span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128d<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_Add<span class="opt">,</span> <span class="sng">&quot;__builtin_ia32_addpd&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_Add<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">ia32_Sub</span> <span class="opt">(</span>X<span class="opt">,</span> Y <span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128d<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_Sub<span class="opt">,</span> <span class="sng">&quot;__builtin_ia32_subpd&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_Sub<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">Sqrt</span> <span class="opt">(</span>X <span class="opt">:</span> S_Real<span class="opt">)</span> <span class="kwa">return</span> S_Real<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>Sqrt<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="sng">&quot;*&quot;</span> <span class="opt">(</span>Left<span class="opt">,</span> Right<span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128d <span class="kwa">is</span><span class="opt">(</span>
+      <span class="kwc">ia32_Mul</span><span class="opt">(</span>Left<span class="opt">,</span> Right<span class="opt">));</span>
+   <span class="kwa">function</span> <span class="sng">&quot;+&quot;</span> <span class="opt">(</span>Left<span class="opt">,</span> Right<span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128d <span class="kwa">is</span><span class="opt">(</span>
+      <span class="kwc">ia32_Add</span><span class="opt">(</span>Left<span class="opt">,</span> Right<span class="opt">));</span>
+   <span class="kwa">function</span> <span class="sng">&quot;-&quot;</span> <span class="opt">(</span>Left<span class="opt">,</span> Right<span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128d <span class="kwa">is</span><span class="opt">(</span>
+      <span class="kwc">ia32_Sub</span><span class="opt">(</span>Left<span class="opt">,</span> Right<span class="opt">));</span>
+
+   <span class="kwa">function</span> <span class="kwc">ia32_RSqrt</span> <span class="opt">(</span>X <span class="opt">:</span> m128s<span class="opt">)</span> <span class="kwa">return</span> m128s<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_RSqrt<span class="opt">,</span> <span class="sng">&quot;__builtin_ia32_rsqrtps&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_RSqrt<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">ia32_CvtPD_PS</span><span class="opt">(</span>X<span class="opt">:</span> m128d<span class="opt">)</span> <span class="kwa">return</span> m128s<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_CvtPD_PS<span class="opt">,</span> <span class="sng">&quot;__builtin_ia32_cvtpd2ps&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_CvtPD_PS<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">ia32_CvtPS_PD</span><span class="opt">(</span>X<span class="opt">:</span> m128s<span class="opt">)</span> <span class="kwa">return</span> m128d<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_CvtPS_PD<span class="opt">,</span> <span class="sng">&quot;__builtin_ia32_cvtps2pd&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_CvtPS_PD<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="kwc">ia32_Set</span><span class="opt">(</span>X<span class="opt">:</span> S_Real<span class="opt">)</span> <span class="kwa">return</span> m128d<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Import</span> <span class="opt">(</span>Intrinsic<span class="opt">,</span> ia32_Set<span class="opt">,</span> <span class="sng">&quot;__builting_ia32_set1pd&quot;</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Inline</span><span class="opt">(</span>ia32_Set<span class="opt">);</span>
+
+   x <span class="opt">:</span> <span class="kwa">constant</span> m128d <span class="opt">:= (</span><span class="num">4.0</span><span class="opt">,</span> <span class="num">6.0</span><span class="opt">);</span>
+   y <span class="opt">:</span> <span class="kwa">constant</span> m128d <span class="opt">:= (</span><span class="num">2.0</span><span class="opt">,</span> <span class="num">2.0</span><span class="opt">);</span>
+
+<span class="kwa">end</span> Root<span class="opt">;</span>
+
+<span class="slc">-----------------------</span>
+<span class="slc">-- root.adb</span>
+<span class="slc">-----------------------</span>
+<span class="kwa">package body</span> root <span class="kwa">is</span>
+
+   <span class="kwa">function</span> <span class="kwc">Sqrt</span> <span class="opt">(</span>X <span class="opt">:</span> S_Real<span class="opt">)</span> <span class="kwa">return</span> S_Real <span class="kwa">is</span>
+   <span class="kwa">begin</span> 
+      <span class="kwa">return</span> <span class="kwc">ia32_Sqrt</span> <span class="opt">((</span>X<span class="opt">,</span> <span class="num">1.0</span><span class="opt">))(</span><span class="num">0</span><span class="opt">);</span>
+   <span class="kwa">end</span> Sqrt<span class="opt">;</span>
+
+<span class="kwa">end</span> root<span class="opt">;</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+GNATMAKE 13.3.0
+
+
+ Fri, 10 Jan 2025 04:33:01 GMT
+
+MAKE:
+gnatchop -r -w nbody.gnat-2.gnat
+splitting nbody.gnat-2.gnat into:
+   nbody.adb
+   nbody_pck.ads
+   nbody_pck.adb
+   systems.ads
+   systems.adb
+   root.ads
+   root.adb
+gnatmake -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 -f nbody.adb -o nbody.gnat-2.gnat_run 
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 nbody.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 nbody_pck.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 root.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 systems.adb
+x86_64-linux-gnu-gnatbind-13 -x nbody.ali
+x86_64-linux-gnu-gnatlink-13 nbody.ali -O3 -fomit-frame-pointer -march=ivybridge -o nbody.gnat-2.gnat_run
+
+3.59s to complete and log all make actions
+
+COMMAND LINE:
+ ./nbody.gnat-2.gnat_run 50000000
+
+PROGRAM OUTPUT:
+-0.169075164
+-0.169059907
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

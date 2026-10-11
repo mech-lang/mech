@@ -1,0 +1,9 @@
+     Locking 204 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+   Compiling mech-engine v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/engine)
+   Compiling knucleotide-compact v0.0.0 (/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mech-cranelift-boRUzt)
+   Compiling mech-stdlib v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/stdlib)
+   Compiling mech-compute v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/src/compute)
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 29.49s
+[Output] Cranelift AOT Mech application written to: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/knucleotide-mech-compact-final-std1-simd0-p4-unchanged

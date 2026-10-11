@@ -1,0 +1,64 @@
+{
+  "source_report": "apple-m3-final-5500.json",
+  "metric": "nonblank_noncomment_lines",
+  "time_baseline_seconds": 0.126122208,
+  "size_baseline": 13,
+  "languages": {
+    "c": {
+      "fastest": "spectralnorm-gcc-3-gcc-fastmath",
+      "smallest": "spectralnorm-gcc-8-llvm-fastmath",
+      "time_cost": 5.4149642702100484,
+      "size_cost": 1.35,
+      "log2_line_length": 2.475113737565787
+    },
+    "chapel": {
+      "fastest": "spectralnorm-chapel-2",
+      "smallest": "spectralnorm-chapel-2",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "cpp": {
+      "fastest": "spectralnorm-gpp-1-llvm-fastmath",
+      "smallest": "spectralnorm-gpp-1-llvm-fastmath",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "go": {
+      "fastest": "spectralnorm-go-2",
+      "smallest": "spectralnorm-go-8",
+      "time_cost": 14.717814323012847,
+      "size_cost": 2.727272727272727,
+      "log2_line_length": 4.1407236145682935
+    },
+    "java": {
+      "fastest": "spectralnorm-graalvmaot-3",
+      "smallest": "spectralnorm-graalvmaot-8",
+      "time_cost": 4.280857645496632,
+      "size_cost": 1.619047619047619,
+      "log2_line_length": 2.210070356574695
+    },
+    "julia": {
+      "fastest": "spectralnorm-julia-4",
+      "smallest": "spectralnorm-julia-4",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "mech": {
+      "fastest": "mech-optimized-simd1-u4-r4-p8",
+      "smallest": "mech-optimized-simd1-u4-r4-p8",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "rust": {
+      "fastest": "spectralnorm-rust-5",
+      "smallest": "spectralnorm-rust-4-panicabort",
+      "time_cost": 1.0306894477279611,
+      "size_cost": 1.5166666666666666,
+      "log2_line_length": 0.6024844207926241
+    }
+  }
+}

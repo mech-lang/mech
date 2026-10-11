@@ -1,0 +1,70 @@
+{
+  "status": "passed",
+  "rows": [
+    {
+      "source": "sources/binarytrees-compact.mojo",
+      "source_sha256": "681f6c7dd82c66798d0de8bac21a8dd5ca651b94f09fd4cd7b677a69c1a6bc7f",
+      "binary_sha256": "adfc35648c8ddb3a3aa7a20d1794f51e0e51e3d3547c75e888417f5280d27b6f",
+      "evidence": "results/binarytrees-compact-mojo-apr-machine.txt",
+      "evidence_sha256": "298fc8b67343bf2552526a9922820308b583c5ce4579fcb473e35b27cf164139",
+      "review": "Machine code allocates 16 bytes before the depth/leaf branch and recurses twice for interiors. Every temporary iteration calls build, check and apr_pool_clear; the worker backedge encloses all three. Stretch pool is destroyed before long-lived creation. No invariant tree is reused.",
+      "allocation_counter_cases": [
+        {
+          "depth": 6,
+          "output_match": true,
+          "allocations": 4398,
+          "bytes": 70368,
+          "non_16_byte_allocations": 0,
+          "clears": 80
+        },
+        {
+          "depth": 10,
+          "output_match": true,
+          "allocations": 135854,
+          "bytes": 2173664,
+          "non_16_byte_allocations": 0,
+          "clears": 1360
+        }
+      ],
+      "status": "admitted"
+    },
+    {
+      "source": "sources/binarytrees-optimized.mojo",
+      "source_sha256": "058edaa6361f952cd5715b4ea3c8c1fa644a65beb1811340f31d10fe8d0b9118",
+      "binary_sha256": "4971663ebd8ec56a5c956c52cc5b64958002ef240c6b411b9ba58990c210f17a",
+      "evidence": "results/binarytrees-optimized-mojo-apr-machine.txt",
+      "evidence_sha256": "f0eaaecd4083d49f6016fe4c6fba0bb4c75a6edf3d1ce1d83b35190a9f36a4da",
+      "review": "Machine code allocates 16 bytes before the depth/leaf branch and recurses twice for interiors. Every temporary iteration calls build, check and apr_pool_clear; the worker backedge encloses all three. Stretch pool is destroyed before long-lived creation. No invariant tree is reused.",
+      "allocation_counter_cases": [
+        {
+          "depth": 6,
+          "output_match": true,
+          "allocations": 4398,
+          "bytes": 70368,
+          "non_16_byte_allocations": 0,
+          "clears": 80
+        },
+        {
+          "depth": 10,
+          "output_match": true,
+          "allocations": 135854,
+          "bytes": 2173664,
+          "non_16_byte_allocations": 0,
+          "clears": 1360
+        }
+      ],
+      "status": "admitted"
+    }
+  ],
+  "test_only_instrumentation": {
+    "source": "probes/allocation-counter.c",
+    "source_sha256": "73aadc1af9d61415113d5fbcc44a67c9bd6358a551349be0f49df8ec6114f1db",
+    "binary_sha256": "64adad2121b96475d3502f4f0b844acda835007a7ffec19e32da936f224d7f22",
+    "excluded_from_timed_environment": true
+  },
+  "rejected_candidate": "snapshots/rejected-tree-loop/rejection.json",
+  "rejected_allocation_candidates": "snapshots/pre-allocation-audit/archive.json",
+  "rejected_result_excluded": true,
+  "futhark_binarytrees_admitted": false,
+  "allocation_policy_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html"
+}

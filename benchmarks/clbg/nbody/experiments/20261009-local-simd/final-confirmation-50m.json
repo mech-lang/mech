@@ -1,0 +1,739 @@
+{
+  "created_at": "2026-10-09T07:33:45.067413+00:00",
+  "steps": 50000000,
+  "samples": 7,
+  "status": "complete",
+  "required_power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "programs": [
+    {
+      "id": "compact-baseline",
+      "language": "mech",
+      "source": "nbody.mec",
+      "loc": 32,
+      "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/compact-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/compact-baseline.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/compact-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/compact-baseline.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/compact-baseline"
+      ],
+      "object_sha256": "205586eedbc4f888b6774bcf5613bcbf4e66774a9d1d67fa623edb70b10e1479",
+      "binary_sha256": "794e34d68b99342b4594f39922afa857cde8d00eda55aaa7121ab66ce176d8b2",
+      "backend": "Cranelift AOT",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/compact-baseline",
+        "{n}"
+      ],
+      "codegen": {
+        "disassembly_path": "compact-baseline.disassembly.txt",
+        "loop_start_hex": "0x1000034f4",
+        "loop_backedge_hex": "0x100003970",
+        "static_instructions": 288,
+        "stack_load_instructions": 81,
+        "stack_store_instructions": 26,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        1.121837458,
+        1.121990166,
+        1.1272435,
+        1.121187,
+        1.139387167,
+        1.121134541,
+        1.120591041
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.121837458,
+      "stdev_seconds": 0.006826726279928651
+    },
+    {
+      "id": "pairwise-baseline",
+      "language": "mech",
+      "source": "nbody-pairwise.mec",
+      "loc": 38,
+      "source_sha256": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-baseline.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-baseline.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-baseline"
+      ],
+      "object_sha256": "f65d82f2a5d9a3816bb1f910e866b53c2d962ad8c98c9a75a37e4c0640a33036",
+      "binary_sha256": "e4cb7f6310d879511f5b134d92bedb7912731f843da8bd149b38aa96f6b60b72",
+      "backend": "Cranelift AOT",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-baseline",
+        "{n}"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-baseline.disassembly.txt",
+        "loop_start_hex": "0x10000358c",
+        "loop_backedge_hex": "0x100003974",
+        "static_instructions": 251,
+        "stack_load_instructions": 58,
+        "stack_store_instructions": 22,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        1.110546125,
+        1.123398583,
+        1.133023791,
+        1.13388,
+        1.137002458,
+        1.140947791,
+        1.1402615
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.13388,
+      "stdev_seconds": 0.010868070424111762
+    },
+    {
+      "id": "pairwise-mass-baseline",
+      "language": "mech",
+      "source": "nbody-pairwise-mass.mec",
+      "loc": 37,
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise-mass.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-baseline.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-baseline.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-baseline.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-baseline"
+      ],
+      "object_sha256": "c3882df69f051580dce96e433c9ff9c69872e1da5ebc7d81eeb2266e8f0a54c1",
+      "binary_sha256": "57dee9db6b70d77e205630ddc67886fe8e289ed6159363dfc6c449bbaf4b1fc8",
+      "backend": "Cranelift AOT",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-baseline",
+        "{n}"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-mass-baseline.disassembly.txt",
+        "loop_start_hex": "0x1000034ec",
+        "loop_backedge_hex": "0x100003950",
+        "static_instructions": 282,
+        "stack_load_instructions": 70,
+        "stack_store_instructions": 27,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        1.077922041,
+        1.075227459,
+        1.077682458,
+        1.076273583,
+        1.075825792,
+        1.084154666,
+        1.081009708
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.077682458,
+      "stdev_seconds": 0.0032096837641026428
+    },
+    {
+      "id": "pairwise-mass-tails",
+      "language": "mech",
+      "source": "nbody-pairwise-mass.mec",
+      "loc": 37,
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise-mass.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-tails.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-tails.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-tails.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-tails.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-tails"
+      ],
+      "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+      "binary_sha256": "068abbacde58c70bf1f971a228d7da3542b0c86cfa11913ed4f05499701b7008",
+      "backend": "Cranelift AOT",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-mass-tails",
+        "{n}"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-mass-tails.disassembly.txt",
+        "loop_start_hex": "0x1000034f0",
+        "loop_backedge_hex": "0x100003954",
+        "static_instructions": 282,
+        "stack_load_instructions": 59,
+        "stack_store_instructions": 21,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        1.049067583,
+        1.05132425,
+        1.055246959,
+        1.053052375,
+        1.053443375,
+        1.061808708,
+        1.052206334
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.053052375,
+      "stdev_seconds": 0.004040526299676713
+    },
+    {
+      "id": "pairwise-reassociate-tails",
+      "language": "mech",
+      "source": "nbody-pairwise.mec",
+      "loc": 38,
+      "source_sha256": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-reassociate-tails.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-reassociate-tails.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--reassociate-constants",
+        "--pack-state-tails"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-reassociate-tails.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-reassociate-tails.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-reassociate-tails"
+      ],
+      "object_sha256": "1272d5f997f4027e986cebf25d999af4d7b9f99fcbea49d3e81d15eb65490b86",
+      "binary_sha256": "5aa1a4c99df8edca9858a02e1604a9ec07f8d5413771dda93cf4de61544e2322",
+      "backend": "Cranelift AOT",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/pairwise-reassociate-tails",
+        "{n}"
+      ],
+      "codegen": {
+        "disassembly_path": "pairwise-reassociate-tails.disassembly.txt",
+        "loop_start_hex": "0x1000034e8",
+        "loop_backedge_hex": "0x10000395c",
+        "static_instructions": 286,
+        "stack_load_instructions": 62,
+        "stack_store_instructions": 24,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        1.064306292,
+        1.162755959,
+        1.0653535,
+        1.057893375,
+        1.060001709,
+        1.063000667,
+        1.073517167
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.064306292,
+      "stdev_seconds": 0.0376479674486981
+    },
+    {
+      "id": "before-broadcast-compact-baseline",
+      "language": "mech",
+      "source": "nbody.mec",
+      "loc": 32,
+      "backend": "Cranelift AOT before broadcast fix",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/before-broadcast/compact-baseline",
+        "{n}"
+      ],
+      "binary_sha256": "97d4f6e9230aabcc3b9c6cabc15f46076183822423eb8dee4828cab44f1812ad",
+      "codegen": {
+        "disassembly_path": "compact-baseline.disassembly.txt",
+        "loop_start_hex": "0x100003488",
+        "loop_backedge_hex": "0x10000396c",
+        "static_instructions": 314,
+        "stack_load_instructions": 89,
+        "stack_store_instructions": 33,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        1.164858292,
+        1.167025084,
+        1.171370084,
+        1.180849291,
+        1.168187375,
+        1.162623875,
+        1.168643917
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.168187375,
+      "stdev_seconds": 0.005894555266570851
+    },
+    {
+      "id": "before-broadcast-pairwise-baseline",
+      "language": "mech",
+      "source": "nbody-pairwise.mec",
+      "loc": 38,
+      "backend": "Cranelift AOT before broadcast fix",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/before-broadcast/pairwise-baseline",
+        "{n}"
+      ],
+      "binary_sha256": "8bb1070c62231faaa127598d69884c9ffb65bded9de8d27f2f8bfcd58100b415",
+      "codegen": {
+        "disassembly_path": "pairwise-baseline.disassembly.txt",
+        "loop_start_hex": "0x10000358c",
+        "loop_backedge_hex": "0x100003974",
+        "static_instructions": 251,
+        "stack_load_instructions": 58,
+        "stack_store_instructions": 22,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        1.10974625,
+        1.121943542,
+        1.140699667,
+        1.134494625,
+        1.129854625,
+        1.138438334,
+        1.12837575
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.129854625,
+      "stdev_seconds": 0.010628045969025711
+    },
+    {
+      "id": "chapel-3",
+      "language": "chapel",
+      "loc": 79,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+        "--n={n}"
+      ],
+      "binary_sha256": "a57be549397679c1cf1ef9c4702a3e3de3863899ee11b328bc06d8e996772f7d",
+      "samples_seconds": [
+        0.936902958,
+        0.962578958,
+        0.95240625,
+        0.96115175,
+        0.958233916,
+        0.960899208,
+        0.9647205
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 0.960899208,
+      "stdev_seconds": 0.0095660340672192
+    },
+    {
+      "id": "rust-3",
+      "language": "rust",
+      "loc": 196,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference",
+        "{n}"
+      ],
+      "binary_sha256": "f22eda84ff2640cc3830589c20739917f8282474af30b5184e8202cfe1941d6b",
+      "samples_seconds": [
+        1.057709042,
+        1.0681455,
+        1.079624542,
+        1.087666958,
+        1.089046125,
+        1.088155917,
+        1.092021791
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.087666958,
+      "stdev_seconds": 0.01283492423896874
+    },
+    {
+      "id": "nbody-gpp-6-llvm-native",
+      "language": "cpp",
+      "loc": 202,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-gpp-6-llvm-native",
+        "{n}"
+      ],
+      "binary_sha256": "0c211e6499d12227c8d424673c1e8d123ae0eb301f9368addd6a2de7c192297b",
+      "samples_seconds": [
+        0.87807025,
+        0.891225125,
+        0.906731167,
+        0.898970666,
+        0.903767959,
+        0.908067375,
+        0.905690458
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 0.903767959,
+      "stdev_seconds": 0.010862438082038961
+    },
+    {
+      "id": "nbody-gcc-8-llvm-fastmath",
+      "language": "c",
+      "loc": 127,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-gcc-8-llvm-fastmath",
+        "{n}"
+      ],
+      "binary_sha256": "b47ef30fc18ac71c664efdbcabf4d5b3f7d7e1107699ab976ab0c2731e29c570",
+      "samples_seconds": [
+        1.52598575,
+        1.530111917,
+        1.537861667,
+        1.539573,
+        1.539445667,
+        1.541311917,
+        1.541104292
+      ],
+      "sample_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "median_seconds": 1.539445667,
+      "stdev_seconds": 0.00599560851537974
+    }
+  ],
+  "state_checks": [
+    {
+      "id": "pairwise-mass-tails",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-mass-tails",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-mass-tails",
+      "steps": 1000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-mass-tails",
+      "steps": 10000,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-reassociate-tails",
+      "steps": 0,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-reassociate-tails",
+      "steps": 1,
+      "bit_identical": true,
+      "max_scaled_error": 0.0
+    },
+    {
+      "id": "pairwise-reassociate-tails",
+      "steps": 1000,
+      "bit_identical": false,
+      "max_scaled_error": 2.9643805966987853e-15
+    },
+    {
+      "id": "pairwise-reassociate-tails",
+      "steps": 10000,
+      "bit_identical": false,
+      "max_scaled_error": 1.3919976282750213e-12
+    }
+  ],
+  "expected_energy": [
+    -0.169075164,
+    -0.169059907
+  ],
+  "discarded_samples": [],
+  "sample_order": [
+    [
+      "pairwise-reassociate-tails",
+      "before-broadcast-pairwise-baseline",
+      "before-broadcast-compact-baseline",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-baseline",
+      "compact-baseline",
+      "rust-3",
+      "pairwise-mass-baseline",
+      "chapel-3",
+      "pairwise-mass-tails",
+      "nbody-gcc-8-llvm-fastmath"
+    ],
+    [
+      "before-broadcast-pairwise-baseline",
+      "compact-baseline",
+      "pairwise-baseline",
+      "nbody-gcc-8-llvm-fastmath",
+      "pairwise-mass-tails",
+      "rust-3",
+      "pairwise-mass-baseline",
+      "before-broadcast-compact-baseline",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-reassociate-tails",
+      "chapel-3"
+    ],
+    [
+      "compact-baseline",
+      "pairwise-reassociate-tails",
+      "before-broadcast-compact-baseline",
+      "pairwise-mass-baseline",
+      "pairwise-baseline",
+      "nbody-gcc-8-llvm-fastmath",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-mass-tails",
+      "before-broadcast-pairwise-baseline",
+      "chapel-3",
+      "rust-3"
+    ],
+    [
+      "before-broadcast-pairwise-baseline",
+      "pairwise-reassociate-tails",
+      "pairwise-mass-baseline",
+      "compact-baseline",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-mass-tails",
+      "pairwise-baseline",
+      "nbody-gcc-8-llvm-fastmath",
+      "before-broadcast-compact-baseline",
+      "chapel-3",
+      "rust-3"
+    ],
+    [
+      "pairwise-baseline",
+      "pairwise-mass-baseline",
+      "nbody-gcc-8-llvm-fastmath",
+      "nbody-gpp-6-llvm-native",
+      "compact-baseline",
+      "pairwise-mass-tails",
+      "pairwise-reassociate-tails",
+      "before-broadcast-pairwise-baseline",
+      "before-broadcast-compact-baseline",
+      "rust-3",
+      "chapel-3"
+    ],
+    [
+      "pairwise-mass-baseline",
+      "chapel-3",
+      "rust-3",
+      "pairwise-baseline",
+      "before-broadcast-compact-baseline",
+      "pairwise-reassociate-tails",
+      "pairwise-mass-tails",
+      "nbody-gcc-8-llvm-fastmath",
+      "compact-baseline",
+      "nbody-gpp-6-llvm-native",
+      "before-broadcast-pairwise-baseline"
+    ],
+    [
+      "pairwise-reassociate-tails",
+      "compact-baseline",
+      "pairwise-mass-tails",
+      "before-broadcast-pairwise-baseline",
+      "chapel-3",
+      "nbody-gpp-6-llvm-native",
+      "pairwise-mass-baseline",
+      "pairwise-baseline",
+      "before-broadcast-compact-baseline",
+      "rust-3",
+      "nbody-gcc-8-llvm-fastmath"
+    ]
+  ],
+  "compiler_snapshot": {
+    "path": "final-confirmation-50m.compiler.tar.gz",
+    "sha256": "b8568f6c05b569baa9c8e33f3439ac8d0794b205f35ba4e4c33cdb36fa193dbd",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "note": "Exact compiler inputs plus all modified/untracked Rust, Cargo and C runtime files relative to the base commit, and this probe. Competitor sources and binaries stay pinned separately.",
+    "file_count": 59
+  },
+  "compiler_sha256": {
+    "hosts/gpu/Cargo.toml": "f32eb6407560d49e60e71c47ad1eba2de0228664b2ce412e347bcbd2bd1d6935",
+    "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+    "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+    "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+    "hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+    "hosts/gpu/src/fused_f64/map_runner.c": "1a6e8e14c1cb7d64061a29a0bffc5a7f4067bda87c2762eb0ab77ba3a23286c5",
+    "hosts/gpu/src/fused_f64/map_runner.rs": "cc05cc7b7db2828b8c5ad824d702de9d553e122892217b512107b4db37535417",
+    "hosts/gpu/src/fused_f64/mod.rs": "571d436d101d5b1a826d92f36d483a43f70e9ad72151d09203f869e05575c4d2",
+    "hosts/gpu/src/fused_f64/native.rs": "a01b6921f1a301ef37c26a0ff8c7fb53892c6510c1837b1bb2c3b6467d1f2b51",
+    "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+    "hosts/gpu/src/fused_f64/runner.rs": "38ea99c3e6e3550be13d4548f44e1beab3fab0877df177b29d0f8d57800f807e"
+  },
+  "driver_sha256": "59c2f373b285aab6a9832a9a0918920c18a24ef212ec875c5b3c88088bff3fe6",
+  "probe_sha256": "0af5d09229e679180f9aa4a66cdc06a4da9c4d34dcc3244427df997ddbb7cf77",
+  "protocol": "Fresh sequential processes; one discarded full-workload warmup; seeded shuffle; AC/LPM and competing compiler checks at boundaries. LOC only. AOT builds and validation excluded from time."
+}

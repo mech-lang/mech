@@ -1,0 +1,12 @@
+Failed to initialize Crashpad.  Crash reporting will not be available.  Cause: while locating crashpad handler: unable to locate crashpad handler executable
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/revcomp-compact.mojo:1:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/common.mojo:22:68: warning: '__add__' is deprecated, use 'unsafe_offset' instead
+        var got = external_call["read", Int](0, bytes.unsafe_ptr() + used, 65536)
+                                                ~~~~~~~~~~~~~~~~~~~^~~~~~
+<unknown>:0: note: '__add__' declared here
+Imported from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/revcomp-compact.mojo:1:
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/stdlib/common.mojo:33:35: warning: '__add__' is deprecated, use 'unsafe_offset' instead
+            1, bytes.unsafe_ptr() + written, len(bytes) - written)
+               ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+<unknown>:0: note: '__add__' declared here
+ld: warning: object file (/private/var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T/mojo_archive-a281646.a) was built for newer 'macOS' version (26.0) than being linked (14.4)

@@ -1,0 +1,828 @@
+            int64_t bytes_9858 = (int64_t) 16 * sizze_9702;
+            
+            if (mem_9856_cached_sizze_10306 < bytes_9855) {
+                err = lexical_realloc(ctx, &mem_9856, &mem_9856_cached_sizze_10306, bytes_9855);
+                if (err != FUTHARK_SUCCESS)
+                    goto cleanup;
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:80-89
+            for (int64_t i_10018 = 0; i_10018 < sizze_9702; i_10018++) {
+                int64_t x_10019 = (int64_t) 0 + i_10018 * (int64_t) 1;
+                
+                ((int64_t *) mem_9856)[i_10018] = x_10019;
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:20:20-29
+            
+            int64_t map_arg0_9709;
+            
+            if (loop_nonempty_9697) {
+                int64_t x_9748 = sizze_9702;
+                
+                map_arg0_9709 = x_9748;
+            } else {
+                map_arg0_9709 = (int64_t) 0;
+            }
+            if (memblock_alloc(ctx, &mem_9859, bytes_9858, "mem_9859")) {
+                err = 1;
+                goto cleanup;
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-21:28
+            
+            int64_t lifted_lambda_res_9711;
+            int64_t sum_9713 = (int64_t) 0;
+            
+            for (int64_t i_9712 = 0; i_9712 < distance_9694; i_9712++) {
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                for (int64_t i_9818 = 0; i_9818 < sizze_9702; i_9818++) {
+                    int64_t eta_p_9716 = ((int64_t *) mem_9856)[i_9818];
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:31-33
+                    
+                    int64_t zp_lhs_9717 = mul64((int64_t) 2, eta_p_9716);
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:33-35
+                    
+                    int64_t zl_lhs_9718 = add64((int64_t) 1, zp_lhs_9717);
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:27-77
+                    
+                    bool cond_9719 = slt64(zl_lhs_9718, map_arg0_9709);
+                    
+                    if (cond_9719) {
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:58-60
+                        
+                        int64_t tmp_9749 = add64((int64_t) 2, zp_lhs_9717);
+                        
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                        ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2] = zl_lhs_9718;
+                        ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2 + (int64_t) 1] = tmp_9749;
+                    } else {
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                        for (int64_t nest_i_10022 = 0; nest_i_10022 < (int64_t) 2; nest_i_10022++) {
+                            ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2 + nest_i_10022] = (int64_t) -1;
+                        }
+                    }
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:16-28
+                
+                int64_t zp_rhs_9726;
+                
+                if (futrts_check_8187(ctx, &zp_rhs_9726, mem_9859, sizze_9702, (int64_t) 0) != 0) {
+                    err = 1;
+                    goto cleanup;
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:15-28
+                
+                int64_t loopres_9727 = add64(sum_9713, zp_rhs_9726);
+                int64_t sum_tmp_10020 = loopres_9727;
+                
+                sum_9713 = sum_tmp_10020;
+            }
+            lifted_lambda_res_9711 = sum_9713;
+            // save map-out results
+            // Load accum params
+            eta_p_9552 = local_acc_10013;
+            // Load next params
+            eta_p_9553 = lifted_lambda_res_9711;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_9554 = add64(eta_p_9552, eta_p_9553);
+            
+            local_acc_10013 = defunc_0_op_res_9554;
+        }
+        
+        int64_t uni_i_10023 = 0;
+        
+        {
+            int64_t gtid_9760 = uni_i_10023;
+            
+            // Load accum params
+            eta_p_10009 = local_acc_10012;
+            // Load next params
+            eta_p_10010 = local_acc_10013;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_10011 = add64(eta_p_10009, eta_p_10010);
+            
+            local_acc_10012 = defunc_0_op_res_10011;
+        }
+        ((int64_t *) reduce_stage_1_tid_res_arr_mem_10007.mem)[flat_tid_9759] = local_acc_10012;
+    }
+    
+  cleanup:
+    {
+        free(mem_9856);
+        if (memblock_unref(ctx, &mem_9859, "mem_9859") != 0)
+            return 1;
+    }
+    if (event_10307 != NULL) {
+        event_10307->aft = get_wall_time();
+        lock_lock(&ctx->event_list_lock);
+        add_event(ctx, "futhark_mc_segred_stage_1_parloop_10305", "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-22:25", NULL, event_10307, (event_report_fn) mc_event_report);
+        lock_unlock(&ctx->event_list_lock);
+    }
+    return err;
+}
+int futhark_mc_segred_task_10302(void *args, int64_t iterations, int tid, struct scheduler_info info)
+{
+    int err = 0;
+    int subtask_id = tid;
+    struct futhark_mc_task_10301 *futhark_mc_task_10301 = (struct futhark_mc_task_10301 *) args;
+    struct futhark_context *ctx = futhark_mc_task_10301->ctx;
+    struct mc_event *event_10309 = mc_event_new(ctx);
+    
+    if (event_10309 != NULL)
+        event_10309->bef = get_wall_time();
+    
+                err = 1;
+                goto cleanup;
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-21:28
+            
+            int64_t lifted_lambda_res_9711;
+            int64_t sum_9713 = (int64_t) 0;
+            
+            for (int64_t i_9712 = 0; i_9712 < distance_9694; i_9712++) {
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                for (int64_t i_9818 = 0; i_9818 < sizze_9702; i_9818++) {
+                    int64_t eta_p_9716 = ((int64_t *) mem_9856)[i_9818];
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:31-33
+                    
+                    int64_t zp_lhs_9717 = mul64((int64_t) 2, eta_p_9716);
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:33-35
+                    
+                    int64_t zl_lhs_9718 = add64((int64_t) 1, zp_lhs_9717);
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:27-77
+                    
+                    bool cond_9719 = slt64(zl_lhs_9718, map_arg0_9709);
+                    
+                    if (cond_9719) {
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:58-60
+                        
+                        int64_t tmp_9749 = add64((int64_t) 2, zp_lhs_9717);
+                        
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                        ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2] = zl_lhs_9718;
+                        ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2 + (int64_t) 1] = tmp_9749;
+                    } else {
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                        for (int64_t nest_i_10022 = 0; nest_i_10022 < (int64_t) 2; nest_i_10022++) {
+                            ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2 + nest_i_10022] = (int64_t) -1;
+                        }
+                    }
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:16-28
+                
+                int64_t zp_rhs_9726;
+                
+                if (futrts_check_8187(ctx, &zp_rhs_9726, mem_9859, sizze_9702, (int64_t) 0) != 0) {
+                    err = 1;
+                    goto cleanup;
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:15-28
+                
+                int64_t loopres_9727 = add64(sum_9713, zp_rhs_9726);
+                int64_t sum_tmp_10020 = loopres_9727;
+                
+                sum_9713 = sum_tmp_10020;
+            }
+            lifted_lambda_res_9711 = sum_9713;
+            // save map-out results
+            // Load accum params
+            eta_p_9552 = local_acc_10013;
+            // Load next params
+            eta_p_9553 = lifted_lambda_res_9711;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_9554 = add64(eta_p_9552, eta_p_9553);
+            
+            local_acc_10013 = defunc_0_op_res_9554;
+        }
+        
+        int64_t uni_i_10023 = 0;
+        
+        {
+            int64_t gtid_9760 = uni_i_10023;
+            
+            // Load accum params
+            eta_p_10009 = local_acc_10012;
+            // Load next params
+            eta_p_10010 = local_acc_10013;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_10011 = add64(eta_p_10009, eta_p_10010);
+            
+            local_acc_10012 = defunc_0_op_res_10011;
+        }
+        ((int64_t *) reduce_stage_1_tid_res_arr_mem_10007.mem)[flat_tid_9759] = local_acc_10012;
+    }
+    
+  cleanup:
+    {
+        free(mem_9856);
+        if (memblock_unref(ctx, &mem_9859, "mem_9859") != 0)
+            return 1;
+    }
+    if (event_10307 != NULL) {
+        event_10307->aft = get_wall_time();
+        lock_lock(&ctx->event_list_lock);
+        add_event(ctx, "futhark_mc_segred_stage_1_parloop_10305", "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-22:25", NULL, event_10307, (event_report_fn) mc_event_report);
+        lock_unlock(&ctx->event_list_lock);
+    }
+    return err;
+}
+int futhark_mc_segred_task_10302(void *args, int64_t iterations, int tid, struct scheduler_info info)
+{
+    int err = 0;
+    int subtask_id = tid;
+    struct futhark_mc_task_10301 *futhark_mc_task_10301 = (struct futhark_mc_task_10301 *) args;
+    struct futhark_context *ctx = futhark_mc_task_10301->ctx;
+    struct mc_event *event_10309 = mc_event_new(ctx);
+    
+    if (event_10309 != NULL)
+        event_10309->bef = get_wall_time();
+    
+    int64_t d_9522 = futhark_mc_task_10301->free_d_9522;
+    int64_t iterations_9525 = futhark_mc_task_10301->free_iterations_9525;
+    int64_t flat_tid_9759 = futhark_mc_task_10301->free_flat_tid_9759;
+    int64_t flat_tid_9765 = futhark_mc_task_10301->free_flat_tid_9765;
+    int64_t defunc_0_reduce_res_9752 = *futhark_mc_task_10301->retval_defunc_0_reduce_res_9752;
+    int64_t reduce_stage_1_tid_res_arr_mem_10007_cached_sizze_10303 = 0;
+    unsigned char *reduce_stage_1_tid_res_arr_mem_10007 = NULL;
+    int32_t nsubtasks_10006;
+    
+    nsubtasks_10006 = info.nsubtasks;
+    if (reduce_stage_1_tid_res_arr_mem_10007_cached_sizze_10303 < (int64_t) 8 * nsubtasks_10006) {
+        err = lexical_realloc(ctx, &reduce_stage_1_tid_res_arr_mem_10007, &reduce_stage_1_tid_res_arr_mem_10007_cached_sizze_10303, (int64_t) 8 * nsubtasks_10006);
+        if (err != FUTHARK_SUCCESS)
+            goto cleanup;
+    }
+    
+    struct futhark_mc_segred_stage_1_parloop_struct_10304 futhark_mc_segred_stage_1_parloop_struct_10304_;
+    
+    futhark_mc_segred_stage_1_parloop_struct_10304_.ctx = ctx;
+    futhark_mc_segred_stage_1_parloop_struct_10304_.free_d_9522 = d_9522;
+    futhark_mc_segred_stage_1_parloop_struct_10304_.free_iterations_9525 = iterations_9525;
+    futhark_mc_segred_stage_1_parloop_struct_10304_.free_reduce_stage_1_tid_res_arr_mem_10007 = reduce_stage_1_tid_res_arr_mem_10007;
+    
+    struct scheduler_parloop futhark_mc_segred_stage_1_parloop_10305_task;
+    
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-21:28
+            
+            int64_t lifted_lambda_res_9711;
+            int64_t sum_9713 = (int64_t) 0;
+            
+            for (int64_t i_9712 = 0; i_9712 < distance_9694; i_9712++) {
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                for (int64_t i_9818 = 0; i_9818 < sizze_9702; i_9818++) {
+                    int64_t eta_p_9716 = ((int64_t *) mem_9856)[i_9818];
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:31-33
+                    
+                    int64_t zp_lhs_9717 = mul64((int64_t) 2, eta_p_9716);
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:33-35
+                    
+                    int64_t zl_lhs_9718 = add64((int64_t) 1, zp_lhs_9717);
+                    
+                    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:27-77
+                    
+                    bool cond_9719 = slt64(zl_lhs_9718, map_arg0_9709);
+                    
+                    if (cond_9719) {
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:58-60
+                        
+                        int64_t tmp_9749 = add64((int64_t) 2, zp_lhs_9717);
+                        
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                        ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2] = zl_lhs_9718;
+                        ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2 + (int64_t) 1] = tmp_9749;
+                    } else {
+                        // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                        for (int64_t nest_i_10022 = 0; nest_i_10022 < (int64_t) 2; nest_i_10022++) {
+                            ((int64_t *) mem_9859.mem)[i_9818 * (int64_t) 2 + nest_i_10022] = (int64_t) -1;
+                        }
+                    }
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:16-28
+                
+                int64_t zp_rhs_9726;
+                
+                if (futrts_check_8187(ctx, &zp_rhs_9726, mem_9859, sizze_9702, (int64_t) 0) != 0) {
+                    err = 1;
+                    goto cleanup;
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:15-28
+                
+                int64_t loopres_9727 = add64(sum_9713, zp_rhs_9726);
+                int64_t sum_tmp_10020 = loopres_9727;
+                
+                sum_9713 = sum_tmp_10020;
+            }
+            lifted_lambda_res_9711 = sum_9713;
+            // save map-out results
+            // Load accum params
+            eta_p_9552 = local_acc_10013;
+            // Load next params
+            eta_p_9553 = lifted_lambda_res_9711;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_9554 = add64(eta_p_9552, eta_p_9553);
+            
+            local_acc_10013 = defunc_0_op_res_9554;
+        }
+        
+        int64_t uni_i_10023 = 0;
+        
+        {
+            int64_t gtid_9760 = uni_i_10023;
+            
+            // Load accum params
+            eta_p_10009 = local_acc_10012;
+            // Load next params
+            eta_p_10010 = local_acc_10013;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_10011 = add64(eta_p_10009, eta_p_10010);
+            
+            local_acc_10012 = defunc_0_op_res_10011;
+        }
+        ((int64_t *) reduce_stage_1_tid_res_arr_mem_10007.mem)[flat_tid_9759] = local_acc_10012;
+    }
+    
+  cleanup:
+    {
+        free(mem_9856);
+        if (memblock_unref(ctx, &mem_9859, "mem_9859") != 0)
+            return 1;
+    }
+    if (event_10307 != NULL) {
+        event_10307->aft = get_wall_time();
+        lock_lock(&ctx->event_list_lock);
+        add_event(ctx, "futhark_mc_segred_stage_1_parloop_10305", "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-22:25", NULL, event_10307, (event_report_fn) mc_event_report);
+        lock_unlock(&ctx->event_list_lock);
+    }
+    return err;
+}
+int futhark_mc_segred_task_10302(void *args, int64_t iterations, int tid, struct scheduler_info info)
+{
+    int err = 0;
+    int subtask_id = tid;
+    struct futhark_mc_task_10301 *futhark_mc_task_10301 = (struct futhark_mc_task_10301 *) args;
+    struct futhark_context *ctx = futhark_mc_task_10301->ctx;
+    struct mc_event *event_10309 = mc_event_new(ctx);
+    
+    if (event_10309 != NULL)
+        event_10309->bef = get_wall_time();
+    
+    int64_t d_9522 = futhark_mc_task_10301->free_d_9522;
+    int64_t iterations_9525 = futhark_mc_task_10301->free_iterations_9525;
+    int64_t flat_tid_9759 = futhark_mc_task_10301->free_flat_tid_9759;
+    int64_t flat_tid_9765 = futhark_mc_task_10301->free_flat_tid_9765;
+    int64_t defunc_0_reduce_res_9752 = *futhark_mc_task_10301->retval_defunc_0_reduce_res_9752;
+    int64_t reduce_stage_1_tid_res_arr_mem_10007_cached_sizze_10303 = 0;
+    unsigned char *reduce_stage_1_tid_res_arr_mem_10007 = NULL;
+    int32_t nsubtasks_10006;
+    
+    nsubtasks_10006 = info.nsubtasks;
+    if (reduce_stage_1_tid_res_arr_mem_10007_cached_sizze_10303 < (int64_t) 8 * nsubtasks_10006) {
+        err = lexical_realloc(ctx, &reduce_stage_1_tid_res_arr_mem_10007, &reduce_stage_1_tid_res_arr_mem_10007_cached_sizze_10303, (int64_t) 8 * nsubtasks_10006);
+        if (err != FUTHARK_SUCCESS)
+            goto cleanup;
+    }
+    
+    struct futhark_mc_segred_stage_1_parloop_struct_10304 futhark_mc_segred_stage_1_parloop_struct_10304_;
+    
+    futhark_mc_segred_stage_1_parloop_struct_10304_.ctx = ctx;
+    futhark_mc_segred_stage_1_parloop_struct_10304_.free_d_9522 = d_9522;
+    futhark_mc_segred_stage_1_parloop_struct_10304_.free_iterations_9525 = iterations_9525;
+    futhark_mc_segred_stage_1_parloop_struct_10304_.free_reduce_stage_1_tid_res_arr_mem_10007 = reduce_stage_1_tid_res_arr_mem_10007;
+    
+    struct scheduler_parloop futhark_mc_segred_stage_1_parloop_10305_task;
+    
+    futhark_mc_segred_stage_1_parloop_10305_task.name = "futhark_mc_segred_stage_1_parloop_10305";
+    futhark_mc_segred_stage_1_parloop_10305_task.fn = futhark_mc_segred_stage_1_parloop_10305;
+            int64_t bytes_9853 = (int64_t) 16 * sizze_9782;
+            
+            if (mem_9848_cached_sizze_10314 < bytes_9847) {
+                err = lexical_realloc(ctx, &mem_9848, &mem_9848_cached_sizze_10314, bytes_9847);
+                if (err != FUTHARK_SUCCESS)
+                    goto cleanup;
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:80-89
+            for (int64_t i_10040 = 0; i_10040 < sizze_9782; i_10040++) {
+                int64_t x_10041 = (int64_t) 0 + i_10040 * (int64_t) 1;
+                
+                ((int64_t *) mem_9848)[i_10040] = x_10041;
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:20:20-29
+            
+            int64_t map_arg0_9789;
+            
+            if (loop_nonempty_9777) {
+                int64_t x_9790 = sizze_9782;
+                
+                map_arg0_9789 = x_9790;
+            } else {
+                map_arg0_9789 = (int64_t) 0;
+            }
+            if (memblock_alloc(ctx, &mem_9854, bytes_9853, "mem_9854")) {
+                err = 1;
+                goto cleanup;
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-21:28
+            
+            int64_t lifted_lambda_res_9791;
+            int64_t sum_9793 = (int64_t) 0;
+            
+            for (int64_t i_9792 = 0; i_9792 < distance_9774; i_9792++) {
+                int64_t flat_tid_9796 = (int64_t) 0;
+                
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                
+                struct futhark_mc_task_10315 futhark_mc_task_10315_;
+                
+                futhark_mc_task_10315_.ctx = ctx;
+                futhark_mc_task_10315_.free_sizze_9782 = sizze_9782;
+                futhark_mc_task_10315_.free_map_arg0_9789 = map_arg0_9789;
+                futhark_mc_task_10315_.free_mem_9848 = mem_9848;
+                futhark_mc_task_10315_.free_mem_9854 = mem_9854.mem;
+                
+                struct scheduler_segop futhark_mc_task_10315_task;
+                
+                futhark_mc_task_10315_task.args = &futhark_mc_task_10315_;
+                futhark_mc_task_10315_task.top_level_fn = futhark_mc_segmap_task_10316;
+                futhark_mc_task_10315_task.name = "futhark_mc_segmap_task_10316";
+                futhark_mc_task_10315_task.iterations = sizze_9782;
+                futhark_mc_task_10315_task.task_time = &ctx->program->futhark_mc_segmap_task_10316_total_time;
+                futhark_mc_task_10315_task.task_iter = &ctx->program->futhark_mc_segmap_task_10316_total_iter;
+                futhark_mc_task_10315_task.sched = STATIC;
+                futhark_mc_task_10315_task.nested_fn = NULL;
+                
+                int futhark_mc_segmap_task_10316_err = scheduler_prepare_task(&ctx->scheduler, &futhark_mc_task_10315_task);
+                
+                if (futhark_mc_segmap_task_10316_err != 0) {
+                    err = futhark_mc_segmap_task_10316_err;
+                    goto cleanup;
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:16-28
+                
+                int64_t zp_rhs_9807;
+                
+                if (futrts_check_8187(ctx, &zp_rhs_9807, mem_9854, sizze_9782, (int64_t) 0) != 0) {
+                    err = 1;
+                    goto cleanup;
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:15-28
+                
+                int64_t loopres_9808 = add64(sum_9793, zp_rhs_9807);
+                int64_t sum_tmp_10042 = loopres_9808;
+                
+                sum_9793 = sum_tmp_10042;
+            }
+            lifted_lambda_res_9791 = sum_9793;
+            // save map-out results
+            // Load accum params
+            eta_p_9809 = local_acc_10035;
+            // Load next params
+            eta_p_9810 = lifted_lambda_res_9791;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_9811 = add64(eta_p_9809, eta_p_9810);
+            
+            local_acc_10035 = defunc_0_op_res_9811;
+        }
+        
+        int64_t uni_i_10054 = 0;
+        
+        {
+            int64_t gtid_9766 = uni_i_10054;
+            
+            // Load accum params
+            eta_p_10031 = local_acc_10034;
+            // Load next params
+            eta_p_10032 = local_acc_10035;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_10033 = add64(eta_p_10031, eta_p_10032);
+            
+            local_acc_10034 = defunc_0_op_res_10033;
+        }
+        ((int64_t *) reduce_stage_1_tid_res_arr_mem_10029.mem)[flat_tid_9765] = local_acc_10034;
+    }
+    
+  cleanup:
+    {
+        free(mem_9848);
+        if (memblock_unref(ctx, &mem_9854, "mem_9854") != 0)
+            return 1;
+    }
+    if (event_10322 != NULL) {
+        event_10322->aft = get_wall_time();
+        lock_lock(&ctx->event_list_lock);
+        add_event(ctx, "futhark_mc_segred_stage_1_parloop_10313", "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-22:25", NULL, event_10322, (event_report_fn) mc_event_report);
+        lock_unlock(&ctx->event_list_lock);
+    }
+    return err;
+}
+int futhark_mc_segred_nested_task_10310(void *args, int64_t iterations, int tid, struct scheduler_info info)
+{
+    int err = 0;
+    int subtask_id = tid;
+    struct futhark_mc_task_10301 *futhark_mc_task_10301 = (struct futhark_mc_task_10301 *) args;
+    struct futhark_context *ctx = futhark_mc_task_10301->ctx;
+    struct mc_event *event_10324 = mc_event_new(ctx);
+    
+    if (event_10324 != NULL)
+        event_10324->bef = get_wall_time();
+    
+    int64_t d_9522 = futhark_mc_task_10301->free_d_9522;
+    int64_t iterations_9525 = futhark_mc_task_10301->free_iterations_9525;
+                err = 1;
+                goto cleanup;
+            }
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-21:28
+            
+            int64_t lifted_lambda_res_9791;
+            int64_t sum_9793 = (int64_t) 0;
+            
+            for (int64_t i_9792 = 0; i_9792 < distance_9774; i_9792++) {
+                int64_t flat_tid_9796 = (int64_t) 0;
+                
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+                
+                struct futhark_mc_task_10315 futhark_mc_task_10315_;
+                
+                futhark_mc_task_10315_.ctx = ctx;
+                futhark_mc_task_10315_.free_sizze_9782 = sizze_9782;
+                futhark_mc_task_10315_.free_map_arg0_9789 = map_arg0_9789;
+                futhark_mc_task_10315_.free_mem_9848 = mem_9848;
+                futhark_mc_task_10315_.free_mem_9854 = mem_9854.mem;
+                
+                struct scheduler_segop futhark_mc_task_10315_task;
+                
+                futhark_mc_task_10315_task.args = &futhark_mc_task_10315_;
+                futhark_mc_task_10315_task.top_level_fn = futhark_mc_segmap_task_10316;
+                futhark_mc_task_10315_task.name = "futhark_mc_segmap_task_10316";
+                futhark_mc_task_10315_task.iterations = sizze_9782;
+                futhark_mc_task_10315_task.task_time = &ctx->program->futhark_mc_segmap_task_10316_total_time;
+                futhark_mc_task_10315_task.task_iter = &ctx->program->futhark_mc_segmap_task_10316_total_iter;
+                futhark_mc_task_10315_task.sched = STATIC;
+                futhark_mc_task_10315_task.nested_fn = NULL;
+                
+                int futhark_mc_segmap_task_10316_err = scheduler_prepare_task(&ctx->scheduler, &futhark_mc_task_10315_task);
+                
+                if (futhark_mc_segmap_task_10316_err != 0) {
+                    err = futhark_mc_segmap_task_10316_err;
+                    goto cleanup;
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:16-28
+                
+                int64_t zp_rhs_9807;
+                
+                if (futrts_check_8187(ctx, &zp_rhs_9807, mem_9854, sizze_9782, (int64_t) 0) != 0) {
+                    err = 1;
+                    goto cleanup;
+                }
+                // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:21:15-28
+                
+                int64_t loopres_9808 = add64(sum_9793, zp_rhs_9807);
+                int64_t sum_tmp_10042 = loopres_9808;
+                
+                sum_9793 = sum_tmp_10042;
+            }
+            lifted_lambda_res_9791 = sum_9793;
+            // save map-out results
+            // Load accum params
+            eta_p_9809 = local_acc_10035;
+            // Load next params
+            eta_p_9810 = lifted_lambda_res_9791;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_9811 = add64(eta_p_9809, eta_p_9810);
+            
+            local_acc_10035 = defunc_0_op_res_9811;
+        }
+        
+        int64_t uni_i_10054 = 0;
+        
+        {
+            int64_t gtid_9766 = uni_i_10054;
+            
+            // Load accum params
+            eta_p_10031 = local_acc_10034;
+            // Load next params
+            eta_p_10032 = local_acc_10035;
+            // SegRed body
+            // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:22:22-25
+            
+            int64_t defunc_0_op_res_10033 = add64(eta_p_10031, eta_p_10032);
+            
+            local_acc_10034 = defunc_0_op_res_10033;
+        }
+        ((int64_t *) reduce_stage_1_tid_res_arr_mem_10029.mem)[flat_tid_9765] = local_acc_10034;
+    }
+    
+  cleanup:
+    {
+        free(mem_9848);
+        if (memblock_unref(ctx, &mem_9854, "mem_9854") != 0)
+            return 1;
+    }
+    if (event_10322 != NULL) {
+        event_10322->aft = get_wall_time();
+        lock_lock(&ctx->event_list_lock);
+        add_event(ctx, "futhark_mc_segred_stage_1_parloop_10313", "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:19:7-22:25", NULL, event_10322, (event_report_fn) mc_event_report);
+        lock_unlock(&ctx->event_list_lock);
+    }
+    return err;
+}
+int futhark_mc_segred_nested_task_10310(void *args, int64_t iterations, int tid, struct scheduler_info info)
+{
+    int err = 0;
+    int subtask_id = tid;
+    struct futhark_mc_task_10301 *futhark_mc_task_10301 = (struct futhark_mc_task_10301 *) args;
+    struct futhark_context *ctx = futhark_mc_task_10301->ctx;
+    struct mc_event *event_10324 = mc_event_new(ctx);
+    
+    if (event_10324 != NULL)
+        event_10324->bef = get_wall_time();
+    
+    int64_t d_9522 = futhark_mc_task_10301->free_d_9522;
+    int64_t iterations_9525 = futhark_mc_task_10301->free_iterations_9525;
+    int64_t flat_tid_9759 = futhark_mc_task_10301->free_flat_tid_9759;
+    int64_t flat_tid_9765 = futhark_mc_task_10301->free_flat_tid_9765;
+    int64_t defunc_0_reduce_res_9752 = *futhark_mc_task_10301->retval_defunc_0_reduce_res_9752;
+    int64_t reduce_stage_1_tid_res_arr_mem_10029_cached_sizze_10311 = 0;
+    unsigned char *reduce_stage_1_tid_res_arr_mem_10029 = NULL;
+    int32_t nsubtasks_10028;
+    
+    nsubtasks_10028 = info.nsubtasks;
+    if (reduce_stage_1_tid_res_arr_mem_10029_cached_sizze_10311 < (int64_t) 8 * nsubtasks_10028) {
+        err = lexical_realloc(ctx, &reduce_stage_1_tid_res_arr_mem_10029, &reduce_stage_1_tid_res_arr_mem_10029_cached_sizze_10311, (int64_t) 8 * nsubtasks_10028);
+        if (err != FUTHARK_SUCCESS)
+            goto cleanup;
+    }
+    
+    struct futhark_mc_segred_stage_1_parloop_struct_10312 futhark_mc_segred_stage_1_parloop_struct_10312_;
+    
+    futhark_mc_segred_stage_1_parloop_struct_10312_.ctx = ctx;
+    futhark_mc_segred_stage_1_parloop_struct_10312_.free_d_9522 = d_9522;
+    futhark_mc_segred_stage_1_parloop_struct_10312_.free_iterations_9525 = iterations_9525;
+    futhark_mc_segred_stage_1_parloop_struct_10312_.free_reduce_stage_1_tid_res_arr_mem_10029 = reduce_stage_1_tid_res_arr_mem_10029;
+    
+    struct scheduler_parloop futhark_mc_segred_stage_1_parloop_10313_task;
+    
+    futhark_mc_segred_stage_1_parloop_10313_task.name = "futhark_mc_segred_stage_1_parloop_10313";
+    futhark_mc_segred_stage_1_parloop_10313_task.fn = futhark_mc_segred_stage_1_parloop_10313;
+    int64_t bytes_9821 = (int64_t) 8 * sizze_9596;
+    
+    if (mem_9822_cached_sizze_10222 < bytes_9821) {
+        err = lexical_realloc(ctx, &mem_9822, &mem_9822_cached_sizze_10222, bytes_9821);
+        if (err != FUTHARK_SUCCESS)
+            goto cleanup;
+    }
+    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:80-89
+    for (int64_t i_9892 = 0; i_9892 < sizze_9596; i_9892++) {
+        int64_t x_9893 = (int64_t) 0 + i_9892 * (int64_t) 1;
+        
+        ((int64_t *) mem_9822)[i_9892] = x_9893;
+    }
+    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:12:17-36
+    
+    int64_t map_arg0_9602 = sizze_9596;
+    int64_t bytes_9827 = (int64_t) 16 * sizze_9596;
+    
+    if (memblock_alloc(ctx, &mem_9828, bytes_9827, "mem_9828")) {
+        err = 1;
+        goto cleanup;
+    }
+    
+    int64_t flat_tid_9755 = (int64_t) 0;
+    
+    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:7:16-90
+    
+    struct futhark_mc_task_10228 futhark_mc_task_10228_;
+    
+    futhark_mc_task_10228_.ctx = ctx;
+    futhark_mc_task_10228_.free_sizze_9596 = sizze_9596;
+    futhark_mc_task_10228_.free_map_arg0_9602 = map_arg0_9602;
+    futhark_mc_task_10228_.free_mem_9822 = mem_9822;
+    futhark_mc_task_10228_.free_mem_9828 = mem_9828.mem;
+    
+    struct scheduler_segop futhark_mc_task_10228_task;
+    
+    futhark_mc_task_10228_task.args = &futhark_mc_task_10228_;
+    futhark_mc_task_10228_task.top_level_fn = futhark_mc_segmap_task_10229;
+    futhark_mc_task_10228_task.name = "futhark_mc_segmap_task_10229";
+    futhark_mc_task_10228_task.iterations = sizze_9596;
+    futhark_mc_task_10228_task.task_time = &ctx->program->futhark_mc_segmap_task_10229_total_time;
+    futhark_mc_task_10228_task.task_iter = &ctx->program->futhark_mc_segmap_task_10229_total_iter;
+    futhark_mc_task_10228_task.sched = STATIC;
+    futhark_mc_task_10228_task.nested_fn = NULL;
+    
+    int futhark_mc_segmap_task_10229_err = scheduler_prepare_task(&ctx->scheduler, &futhark_mc_task_10228_task);
+    
+    if (futhark_mc_segmap_task_10229_err != 0) {
+        err = futhark_mc_segmap_task_10229_err;
+        goto cleanup;
+    }
+    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:13:50-66
+    
+    int64_t zpzp_rhs_9488;
+    
+    if (futrts_decimal_6798(ctx, &ext_mem_9829, &zpzp_rhs_9488, build_arg0_9484) != 0) {
+        err = 1;
+        goto cleanup;
+    }
+    if (mem_9830_cached_sizze_10223 < (int64_t) 22) {
+        err = lexical_realloc(ctx, &mem_9830, &mem_9830_cached_sizze_10223, (int64_t) 22);
+        if (err != FUTHARK_SUCCESS)
+            goto cleanup;
+    }
+    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:13:22-67
+    
+    struct memblock mainzistatic_array_9905 = (struct memblock) {NULL, (unsigned char *) mainzistatic_array_realtype_10235, 0, "main.static_array_9905"};
+    int64_t iterations_9915 = (int64_t) 22;
+    struct futhark_mc_task_10236 futhark_mc_task_10236_;
+    
+    futhark_mc_task_10236_.ctx = ctx;
+    futhark_mc_task_10236_.free_mem_9830 = mem_9830;
+    futhark_mc_task_10236_.free_mainzistatic_array_9905 = mainzistatic_array_9905.mem;
+    
+    struct scheduler_segop futhark_mc_task_10236_task;
+    
+    futhark_mc_task_10236_task.args = &futhark_mc_task_10236_;
+    futhark_mc_task_10236_task.top_level_fn = futhark_mc_copy_9914_task_10237;
+    futhark_mc_task_10236_task.name = "futhark_mc_copy_9914_task_10237";
+    futhark_mc_task_10236_task.iterations = iterations_9915;
+    futhark_mc_task_10236_task.task_time = &ctx->program->futhark_mc_copy_9914_task_10237_total_time;
+    futhark_mc_task_10236_task.task_iter = &ctx->program->futhark_mc_copy_9914_task_10237_total_iter;
+    futhark_mc_task_10236_task.sched = STATIC;
+    futhark_mc_task_10236_task.nested_fn = NULL;
+    
+    int futhark_mc_copy_9914_task_10237_err = scheduler_prepare_task(&ctx->scheduler, &futhark_mc_task_10236_task);
+    
+    if (futhark_mc_copy_9914_task_10237_err != 0) {
+        err = futhark_mc_copy_9914_task_10237_err;
+        goto cleanup;
+    }
+    if (mem_9831_cached_sizze_10224 < (int64_t) 9) {
+        err = lexical_realloc(ctx, &mem_9831, &mem_9831_cached_sizze_10224, (int64_t) 9);
+        if (err != FUTHARK_SUCCESS)
+            goto cleanup;
+    }
+    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:13:47-83
+    
+    struct memblock mainzistatic_array_9916 = (struct memblock) {NULL, (unsigned char *) mainzistatic_array_realtype_10243, 0, "main.static_array_9916"};
+    int64_t iterations_9926 = (int64_t) 9;
+    struct futhark_mc_task_10244 futhark_mc_task_10244_;
+    
+    futhark_mc_task_10244_.ctx = ctx;
+    futhark_mc_task_10244_.free_mem_9831 = mem_9831;
+    futhark_mc_task_10244_.free_mainzistatic_array_9916 = mainzistatic_array_9916.mem;
+    
+    struct scheduler_segop futhark_mc_task_10244_task;
+    
+    futhark_mc_task_10244_task.args = &futhark_mc_task_10244_;
+    futhark_mc_task_10244_task.top_level_fn = futhark_mc_copy_9925_task_10245;
+    futhark_mc_task_10244_task.name = "futhark_mc_copy_9925_task_10245";
+    futhark_mc_task_10244_task.iterations = iterations_9926;
+    futhark_mc_task_10244_task.task_time = &ctx->program->futhark_mc_copy_9925_task_10245_total_time;
+    futhark_mc_task_10244_task.task_iter = &ctx->program->futhark_mc_copy_9925_task_10245_total_iter;
+    futhark_mc_task_10244_task.sched = STATIC;
+    futhark_mc_task_10244_task.nested_fn = NULL;
+    
+    int futhark_mc_copy_9925_task_10245_err = scheduler_prepare_task(&ctx->scheduler, &futhark_mc_task_10244_task);
+    
+    if (futhark_mc_copy_9925_task_10245_err != 0) {
+        err = futhark_mc_copy_9925_task_10245_err;
+        goto cleanup;
+    }
+    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:13:47-83
+    
+    int64_t conc_tmp_9494 = (int64_t) 31 + zpzp_rhs_9488;
+    
+    // /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees.fut:13:96-111
+    
+    int64_t decimal_arg0_9496;
+    
+    if (futrts_check_8187(ctx, &decimal_arg0_9496, mem_9828, sizze_9596, (int64_t) 0) != 0) {
+        err = 1;
+        goto cleanup;
+    }
+    if (memblock_unref(ctx, &mem_9828, "mem_9828") != 0)
+        return 1;

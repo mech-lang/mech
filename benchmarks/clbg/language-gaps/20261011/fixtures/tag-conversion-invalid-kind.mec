@@ -1,0 +1,2 @@
+value<u64> := true
+io/print("{}\n", value)

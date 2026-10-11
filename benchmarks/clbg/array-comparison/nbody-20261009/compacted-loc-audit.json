@@ -1,0 +1,29 @@
+{
+  "normalization": "One assignment or sequential statement per line. Structural tuple/array delimiters retained; matrix data uses one coordinate row per line.",
+  "rows": [
+    {
+      "language": "bqn",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-compact.bqn",
+      "sha256": "93dca70492c1923f6790d488200e65a84cbdfc72da4e5fdcca5a2bc65e89ba75",
+      "physical_loc": 26,
+      "normalized_loc": 26,
+      "expansions": []
+    },
+    {
+      "language": "bqn",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.bqn",
+      "sha256": "1f13dbbee9e775f6574c465944fa2bb14c41dcdbe9640c36daa7ca1701ea36b1",
+      "physical_loc": 39,
+      "normalized_loc": 39,
+      "expansions": []
+    },
+    {
+      "language": "k",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.k",
+      "sha256": "2959dfe06e689010eda151dbd6aca7b3299b5fe12d0caabb263311830cd94fc1",
+      "physical_loc": 36,
+      "normalized_loc": 36,
+      "expansions": []
+    }
+  ]
+}

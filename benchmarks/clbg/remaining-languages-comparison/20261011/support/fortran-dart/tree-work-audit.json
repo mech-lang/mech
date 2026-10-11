@@ -1,0 +1,63 @@
+{
+  "status": "passed",
+  "tests": [
+    {
+      "id": "binarytrees-fortran-1",
+      "source_sha256": "81353138ea303131391aa5d4b06c08c8cfb4a83a813bd189bbd6e00fc07671db",
+      "binary_sha256": "7f309a649ebf1136398ce25fc76ebac68f511b84c35f3acc49be9a54bec368dd",
+      "depth": 10,
+      "expected_nodes": 135854,
+      "actual_constructor_calls": 135854,
+      "equal_leaf_and_interior_bytes": 16,
+      "test_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-fortran-1-count.f90",
+      "compiler_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-fortran-1-disassembly.txt",
+      "compiler_evidence_sha256": "e2ba164eeca2581bdfffc16db69bc201f6720a605c2d4a433ba2729a11a37bc9",
+      "long_root_lifetime": "Original main constructs long-lived tree before temporary loops and checks/destroys it only after those loops; actual native make retains 16-byte allocations for leaf and interior nodes."
+    },
+    {
+      "id": "binarytrees-fortran-2",
+      "source_sha256": "cbbc9d52f745ba2e051d0de6e6160ba6ebeaaab0947301e97bdd22cae7cdfb00",
+      "binary_sha256": "f8f4a88062e9f06aae6cb340184189d33a9327ea14526be775f92547a7e3c670",
+      "depth": 10,
+      "expected_nodes": 135854,
+      "actual_constructor_calls": 135854,
+      "equal_leaf_and_interior_bytes": 16,
+      "test_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-fortran-2-count.f90",
+      "compiler_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-fortran-2-disassembly.txt",
+      "compiler_evidence_sha256": "e2ba958e372e3532bff41ffa5609b458dab2d71e713e61fd0baff692bcce7a0a",
+      "long_root_lifetime": "Original main constructs long-lived tree before temporary loops and checks/destroys it only after those loops; actual native make retains 16-byte allocations for leaf and interior nodes."
+    },
+    {
+      "id": "binarytrees-dart-6",
+      "source_sha256": "0c9b5938f7b4dd8f71427524b6d5b037546dd7041740eadb5813bc7e4e3f5064",
+      "binary_sha256": "ca27a2ecc669bc7fc6da7934cd360c7e4b58dc1fb7c9aad123a4675de18d23f1",
+      "depth": 10,
+      "expected_nodes": 135854,
+      "actual_constructor_calls": 135854,
+      "identity_and_full_tree_checks_passed": true,
+      "equal_leaf_and_interior_class": "TreeNode",
+      "test_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-dart-6-count.dart",
+      "compiler_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-dart-6-aot-cfg.log",
+      "compiler_evidence_sha256": "41194263c91cfc47911d43bf4bc9b25d8c92bab0a021a554ef3b82c8aa6e8e88",
+      "jit_compiler_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-dart-6-jit-cfg.log",
+      "jit_compiler_evidence_sha256": "76687a0351e7d75f38c37534e27b167f0e3665562f336eb1fa37fb21c3ac64fd",
+      "long_root_lifetime": "Actual main checks the same longRoot after all temporary-tree iterations; Dart 7 callback captures it until all isolate replies finish. Optimized AOT and JIT CFG retain AllocateObject in both leaf and interior branches and two recursive child calls."
+    },
+    {
+      "id": "binarytrees-dart-7",
+      "source_sha256": "5f180fcca7e612eed5fb4db99aa6fed75887c8cbef0fb04bcff989581e7513c5",
+      "binary_sha256": "b5bdea62305ec18a95b0edbc17185f858ff69b43e11df7d04852f225e1e7ba4e",
+      "depth": 10,
+      "expected_nodes": 135854,
+      "actual_constructor_calls": 135854,
+      "identity_and_full_tree_checks_passed": true,
+      "equal_leaf_and_interior_class": "TreeNode",
+      "test_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-dart-7-count.dart",
+      "compiler_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-dart-7-aot-cfg.log",
+      "compiler_evidence_sha256": "4d4121012ddf1c34b25d9bb449f024bcb23d7f0a33fd1cce1867e34096bf506f",
+      "jit_compiler_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/fortran-dart/binarytrees-dart-7-jit-cfg.log",
+      "jit_compiler_evidence_sha256": "fc2b5dd20dc4d8750a3c19899e968ab82cfafb452811c645433b486b6e65b90d",
+      "long_root_lifetime": "Actual main checks the same longRoot after all temporary-tree iterations; Dart 7 callback captures it until all isolate replies finish. Optimized AOT and JIT CFG retain AllocateObject in both leaf and interior branches and two recursive child calls."
+    }
+  ]
+}

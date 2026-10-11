@@ -1,0 +1,28 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/spectralnorm-sbcl-9.lisp" (written 10 OCT 2026 06:58:32 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/spectralnorm-sbcl-9.lisp
+; in: DEFUN EVAL-A
+;     (DEFUN EVAL-A (I J)
+;       (DECLARE (TYPE INT31 I J))
+;       (/ 1.0d0 (+ (ASH (* # #) -1) I 1)))
+; --> SB-IMPL::%DEFUN SB-IMPL::%DEFUN SB-INT:NAMED-LAMBDA 
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA EVAL-A
+;         (I J)
+;       (DECLARE (SB-C::TOP-LEVEL-FORM))
+;       (DECLARE (TYPE INT31 I J))
+;       (BLOCK EVAL-A (/ 1.0d0 (+ (ASH # -1) I 1))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; in: DEFUN MAIN
+;     (FORMAT T "~11,9F~%" (SQRT (THE (DOUBLE-FLOAT 0.0d0) (/ VBV VV))))
+; 
+; note: doing float to pointer coercion (cost 13)
+; 
+; compilation unit finished
+;   printed 2 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/spectralnorm-sbcl-9/program.fasl
+; compilation finished in 0:00:00.006

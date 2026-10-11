@@ -1,0 +1,984 @@
+{
+  "created_at": "2026-10-09T09:35:48.169896+00:00",
+  "programs": [
+    {
+      "id": "regexredux-gcc-5",
+      "language": "c",
+      "variant": 5,
+      "path": "upstream/regexredux-gcc-5.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-gcc-5.html",
+      "sha256": "297865dbe9b65218f5fbcc5324d63b015109a1c40d57a505a692644f19f4c1d4",
+      "upstream_starred": false,
+      "published_secs": 0.81,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 05:29:00 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp regexredux.gcc-5.c -o regexredux.gcc-5.gcc_run -lpcre2-8\nrm regexredux.gcc-5.c\n\n2.47s to complete and log all make actions\n\nCOMMAND LINE:\n ./regexredux.gcc-5.gcc_run 0 < regexredux-input5000000.txt\n\nPROGRAM OUTPUT:\nagggtaaa|tttaccct 356\n[cgt]gggtaaa|tttaccc[acg] 1250\na[act]ggtaaa|tttacc[agt]t 4252\nag[act]gtaaa|tttac[agt]ct 2894\nagg[act]taaa|ttta[agt]cct 5435\naggg[acg]aaa|ttt[cgt]ccct 1537\nagggt[cgt]aa|tt[acg]accct 1431\nagggta[cgt]a|t[acg]taccct 1608\nagggtaa[cgt]|[acg]ttaccct 2178\n\n50833411\n50000000\n27388361",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-gcc-5"
+      ],
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-I/opt/homebrew/include",
+        "-L/opt/homebrew/lib",
+        "-fopenmp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/upstream/regexredux-gcc-5.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-gcc-5",
+        "-lpcre2-8"
+      ],
+      "source": {
+        "sha256": "297865dbe9b65218f5fbcc5324d63b015109a1c40d57a505a692644f19f4c1d4",
+        "physical_lines": 218,
+        "nonblank_noncomment_lines": 120
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.49053075,
+        0.502856791,
+        0.498568458,
+        0.505998167,
+        0.494529458,
+        0.492152792,
+        0.501011917
+      ],
+      "executable_sha256": "0baf2a3c5331c1291abadeb3255fbb6d04474b09e46221facd45421df7deaf42",
+      "median_seconds": 0.498568458,
+      "stdev_seconds": 0.005758478015424549,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-gpp-2",
+      "language": "cpp",
+      "variant": 2,
+      "path": "upstream/regexredux-gpp-2.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-gpp-2.html",
+      "sha256": "5981c1ef43ec151f52a84fa2652ec4119382ed6c7cf8d8e8cab248545cd16183",
+      "upstream_starred": false,
+      "published_secs": null,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 19:03:01 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -fopenmp -I/usr/include/re2 regexredux.gpp-2.c++ -o regexredux.gpp-2.c++.o &&  \\\n        /usr/bin/g++ regexredux.gpp-2.c++.o -o regexredux.gpp-2.gpp_run /usr/lib/x86_64-linux-gnu/libre2.a -fopenmp \n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): warning: relocation against `_ZN4absl7debian516raw_log_internal21internal_log_functionB5cxx11E' in read-only section `.text'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::RE2::Init(absl::debian5::string_view, re2::RE2::Options const&)::{lambda()#1}>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::RE2::Init(absl::debian5::string_view, re2::RE2::Options const&)::{lambda()#1}&&) [clone .constprop.0]':\n(.text+0x103): undefined reference to `absl::debian5::base_internal::SpinLockWait(std::atomic<unsigned int>*, int, absl::debian5::base_internal::SpinLockWaitTransition const*, absl::debian5::base_internal::SchedulingMode)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::RE2::CapturingGroupNames[abi:cxx11]() const::{lambda(re2::RE2 const*)#1}, re2::RE2 const*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::RE2::CapturingGroupNames[abi:cxx11]() const::{lambda(re2::RE2 const*)#1}&&, re2::RE2 const*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x1b3): undefined reference to `absl::debian5::base_internal::SpinLockWait(std::atomic<unsigned int>*, int, absl::debian5::base_internal::SpinLockWaitTransition const*, absl::debian5::base_internal::SchedulingMode)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::RE2::NamedCapturingGroups[abi:cxx11]() const::{lambda(re2::RE2 const*)#1}, re2::RE2 const*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::RE2::NamedCapturingGroups[abi:cxx11]() const::{lambda(re2::RE2 const*)#1}&&, re2::RE2 const*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x263): undefined reference to `absl::debian5::base_internal::SpinLockWait(std::atomic<unsigned int>*, int, absl::debian5::base_internal::SpinLockWaitTransition const*, absl::debian5::base_internal::SchedulingMode)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `re2::RE2::CheckRewriteString(absl::debian5::string_view, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*) const':\n(.text+0x1d62): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x1d9c): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `bool re2::re2_internal::Parse<float>(char const*, unsigned long, float*)':\n(.text+0x20b1): undefined reference to `absl::debian5::ascii_internal::kPropertyBits'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `bool re2::re2_internal::Parse<double>(char const*, unsigned long, double*)':\n(.text+0x2311): undefined reference to `absl::debian5::ascii_internal::kPropertyBits'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `bool re2::re2_internal::Parse<long>(char const*, unsigned long, long*, int)':\n(.text+0x256c): undefined reference to `absl::debian5::ascii_internal::kPropertyBits'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `bool re2::re2_internal::Parse<unsigned long>(char const*, unsigned long, unsigned long*, int)':\n(.text+0x27cc): undefined reference to `absl::debian5::ascii_internal::kPropertyBits'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `bool re2::re2_internal::Parse<short>(char const*, unsigned long, short*, int)':\n(.text+0x29cc): undefined reference to `absl::debian5::ascii_internal::kPropertyBits'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o):(.text+0x2c3c): more undefined references to `absl::debian5::ascii_internal::kPropertyBits' follow\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::RE2::ReverseProg() const::{lambda(re2::RE2 const*)#1}, re2::RE2 const*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::RE2::ReverseProg() const::{lambda(re2::RE2 const*)#1}&&, re2::RE2 const*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x3fc3): undefined reference to `absl::debian5::base_internal::SpinLockWait(std::atomic<unsigned int>*, int, absl::debian5::base_internal::SpinLockWaitTransition const*, absl::debian5::base_internal::SchedulingMode)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::RE2::Init(absl::debian5::string_view, re2::RE2::Options const&)::{lambda()#1}>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::RE2::Init(absl::debian5::string_view, re2::RE2::Options const&)::{lambda()#1}&&) [clone .constprop.0]':\n(.text+0xe6): undefined reference to `AbslInternalSpinLockWake_debian5'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::RE2::CapturingGroupNames[abi:cxx11]() const::{lambda(re2::RE2 const*)#1}, re2::RE2 const*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::RE2::CapturingGroupNames[abi:cxx11]() const::{lambda(re2::RE2 const*)#1}&&, re2::RE2 const*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x19d): undefined reference to `AbslInternalSpinLockWake_debian5'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::RE2::NamedCapturingGroups[abi:cxx11]() const::{lambda(re2::RE2 const*)#1}, re2::RE2 const*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::RE2::NamedCapturingGroups[abi:cxx11]() const::{lambda(re2::RE2 const*)#1}&&, re2::RE2 const*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x24d): undefined reference to `AbslInternalSpinLockWake_debian5'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(re2.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::RE2::ReverseProg() const::{lambda(re2::RE2 const*)#1}, re2::RE2 const*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::RE2::ReverseProg() const::{lambda(re2::RE2 const*)#1}&&, re2::RE2 const*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x3fad): undefined reference to `AbslInternalSpinLockWake_debian5'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Regexp::Incref()::{lambda()#1}>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Regexp::Incref()::{lambda()#1}&&) [clone .constprop.0]':\n(.text+0x18): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x8b): undefined reference to `absl::debian5::base_internal::SpinLockWait(std::atomic<unsigned int>*, int, absl::debian5::base_internal::SpinLockWaitTransition const*, absl::debian5::base_internal::SchedulingMode)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `re2::Regexp::Ref()':\n(.text+0x50c6): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text+0x50cd): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x5173): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x5190): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text+0x523b): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x529b): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `re2::Regexp::Decref()':\n(.text+0x5398): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text+0x539f): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x5456): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x54fc): undefined reference to `absl::debian5::container_internal::EraseMetaOnly(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::ctrl_t*, unsigned long)'\n/usr/bin/ld: (.text+0x557f): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text+0x56c5): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x5725): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x5744): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x5806): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x5859): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `re2::Regexp::Incref()':\n(.text+0x5ebc): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text+0x5ec3): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x5f7c): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x5fa6): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text+0x603c): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x6177): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x61d7): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x6227): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x627a): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Regexp::Incref()::{lambda()#1}>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Regexp::Incref()::{lambda()#1}&&) [clone .constprop.0]':\n(.text+0x6e): undefined reference to `AbslInternalSpinLockWake_debian5'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<re2::Regexp*, int>, absl::debian5::container_internal::HashEq<re2::Regexp*, void>::Hash, absl::debian5::container_internal::HashEq<re2::Regexp*, void>::Eq, std::allocator<std::pair<re2::Regexp* const, int> > >::hash_slot_fn(void*, void*)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re26RegexpEiEENS1_6HashEqIS6_vE4HashENS9_2EqESaISt4pairIKS6_iEEE12hash_slot_fnEPvSH_[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re26RegexpEiEENS1_6HashEqIS6_vE4HashENS9_2EqESaISt4pairIKS6_iEEE12hash_slot_fnEPvSH_]+0xa): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `re2::Regexp::Ref() [clone .cold]':\n(.text.unlikely+0x4d0): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `re2::Regexp::Decref() [clone .cold]':\n(.text.unlikely+0x51a): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `re2::Regexp::Incref() [clone .cold]':\n(.text.unlikely+0x634): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<re2::Regexp*, int>, absl::debian5::container_internal::HashEq<re2::Regexp*, void>::Hash, absl::debian5::container_internal::HashEq<re2::Regexp*, void>::Eq, std::allocator<std::pair<re2::Regexp* const, int> > >::resize(unsigned long)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re26RegexpEiEENS1_6HashEqIS6_vE4HashENS9_2EqESaISt4pairIKS6_iEEE6resizeEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re26RegexpEiEENS1_6HashEqIS6_vE4HashENS9_2EqESaISt4pairIKS6_iEEE6resizeEm]+0x4b): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(regexp.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<re2::Regexp*, int>, absl::debian5::container_internal::HashEq<re2::Regexp*, void>::Hash, absl::debian5::container_internal::HashEq<re2::Regexp*, void>::Eq, std::allocator<std::pair<re2::Regexp* const, int> > >::prepare_insert(unsigned long)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re26RegexpEiEENS1_6HashEqIS6_vE4HashENS9_2EqESaISt4pairIKS6_iEEE14prepare_insertEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re26RegexpEiEENS1_6HashEqIS6_vE4HashENS9_2EqESaISt4pairIKS6_iEEE14prepare_insertEm]+0x187): undefined reference to `absl::debian5::container_internal::DropDeletesWithoutResize(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, void*)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `absl::debian5::container_internal::AssertSameContainer(absl::debian5::container_internal::ctrl_t const*, absl::debian5::container_internal::ctrl_t const*, void const* const&, void const* const&, unsigned char const*, unsigned char const*) [clone .part.0]':\n(.text+0x4e0): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `re2::Compiler::BeginRange()':\n(.text+0x1728): undefined reference to `absl::debian5::container_internal::ClearBackingArray(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, bool)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `re2::Compiler::IsCachedRuneByteSuffix(int)':\n(.text+0x18ff): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x196f): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `re2::Compiler::Compiler()':\n(.text+0x39be): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `re2::Compiler::CachedRuneByteSuffix(unsigned char, unsigned char, bool, int)':\n(.text+0x40bc): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x414a): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x423a): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x432d): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x438d): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `re2::Compiler::PostVisit(re2::Regexp*, re2::Frag, re2::Frag, re2::Frag*, int)':\n(.text+0x54a3): undefined reference to `absl::debian5::container_internal::ClearBackingArray(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, bool)'\n/usr/bin/ld: (.text+0x57fd): undefined reference to `absl::debian5::container_internal::ClearBackingArray(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, bool)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<unsigned long, int>, absl::debian5::hash_internal::Hash<unsigned long>, std::equal_to<unsigned long>, std::allocator<std::pair<unsigned long const, int> > >::hash_slot_fn(void*, void*)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyImiEENS0_13hash_internal4HashImEESt8equal_toImESaISt4pairIKmiEEE12hash_slot_fnEPvSF_[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyImiEENS0_13hash_internal4HashImEESt8equal_toImESaISt4pairIKmiEEE12hash_slot_fnEPvSF_]+0x11): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<unsigned long, int>, absl::debian5::hash_internal::Hash<unsigned long>, std::equal_to<unsigned long>, std::allocator<std::pair<unsigned long const, int> > >::resize(unsigned long)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyImiEENS0_13hash_internal4HashImEESt8equal_toImESaISt4pairIKmiEEE6resizeEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyImiEENS0_13hash_internal4HashImEESt8equal_toImESaISt4pairIKmiEEE6resizeEm]+0x4a): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(compile.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<unsigned long, int>, absl::debian5::hash_internal::Hash<unsigned long>, std::equal_to<unsigned long>, std::allocator<std::pair<unsigned long const, int> > >::prepare_insert(unsigned long)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyImiEENS0_13hash_internal4HashImEESt8equal_toImESaISt4pairIKmiEEE14prepare_insertEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyImiEENS0_13hash_internal4HashImEESt8equal_toImESaISt4pairIKmiEEE14prepare_insertEm]+0x187): undefined reference to `absl::debian5::container_internal::DropDeletesWithoutResize(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, void*)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::DumpWorkq[abi:cxx11](re2::DFA::Workq*)':\n(.text+0x49b): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<char const*>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x4d3): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x4ea): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::DumpState[abi:cxx11](re2::DFA::State*)':\n(.text+0x632): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<absl::debian5::str_format_internal::VoidPtr>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x677): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0x71a): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<char const*>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x741): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x758): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0x830): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<unsigned int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x844): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::ClearCache()':\n(.text+0xbae): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0xc5b): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0xc72): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0xe2d): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::~DFA()':\n(.text+0xf49): undefined reference to `absl::debian5::Mutex::~Mutex()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::RWLocker::LockForWriting()':\n(.text+0xfb0): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text+0xfb8): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::RWLocker::~RWLocker()':\n(.text+0xfe5): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text+0xff1): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::ResetCache(re2::DFA::RWLocker*)':\n(.text+0x1097): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text+0x10a0): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::DFA(re2::Prog*, re2::Prog::MatchKind, long)':\n(.text+0x2092): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#3}, re2::Prog*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#3}&&, re2::Prog*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x23b9): undefined reference to `absl::debian5::base_internal::SpinLockWait(std::atomic<unsigned int>*, int, absl::debian5::base_internal::SpinLockWaitTransition const*, absl::debian5::base_internal::SchedulingMode)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#2}, re2::Prog*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#2}&&, re2::Prog*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x241c): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x267c): undefined reference to `absl::debian5::base_internal::SpinLockWait(std::atomic<unsigned int>*, int, absl::debian5::base_internal::SpinLockWaitTransition const*, absl::debian5::base_internal::SchedulingMode)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#1}, re2::Prog*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#1}&&, re2::Prog*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x270c): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x297c): undefined reference to `absl::debian5::base_internal::SpinLockWait(std::atomic<unsigned int>*, int, absl::debian5::base_internal::SpinLockWaitTransition const*, absl::debian5::base_internal::SchedulingMode)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::CachedState(int*, int, unsigned int)':\n(.text+0x2ac5): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x2b22): undefined reference to `absl::debian5::hash_internal::MixingHashState::LowLevelHashImpl(unsigned char const*, unsigned long)'\n/usr/bin/ld: (.text+0x2d20): undefined reference to `absl::debian5::hash_internal::MixingHashState::LowLevelHashImpl(unsigned char const*, unsigned long)'\n/usr/bin/ld: (.text+0x2f05): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x2f8e): undefined reference to `absl::debian5::hash_internal::MixingHashState::CombineLargeContiguousImpl64(unsigned long, unsigned char const*, unsigned long)'\n/usr/bin/ld: (.text+0x30f2): undefined reference to `absl::debian5::hash_internal::MixingHashState::CombineLargeContiguousImpl64(unsigned long, unsigned char const*, unsigned long)'\n/usr/bin/ld: (.text+0x313a): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::RunStateOnByteUnlocked(re2::DFA::State*, int)':\n(.text+0x4350): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text+0x4369): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::AnalyzeSearchHelper(re2::DFA::SearchParams*, re2::DFA::StartInfo*, unsigned int)':\n(.text+0x43e1): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text+0x4445): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::AnalyzeSearch(re2::DFA::SearchParams*)':\n(.text+0x4994): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text+0x499c): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::Search(absl::debian5::string_view, absl::debian5::string_view, bool, bool, bool, bool*, char const**, re2::SparseSetT<void>*)':\n(.text+0x4e09): undefined reference to `absl::debian5::Mutex::ReaderLock()'\n/usr/bin/ld: (.text+0x4f2d): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text+0x4f61): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::BuildAllStates(std::function<void (int const*, bool)> const&)':\n(.text+0x5006): undefined reference to `absl::debian5::Mutex::ReaderLock()'\n/usr/bin/ld: (.text+0x50ac): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x5140): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x5413): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x54d6): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x5544): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x55af): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text+0x55cc): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text+0x56c3): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text+0x56d1): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text+0x5b43): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x5cad): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x5d5c): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::PossibleMatchRange(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, int)':\n(.text+0x5ffa): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x602a): undefined reference to `absl::debian5::Mutex::ReaderLock()'\n/usr/bin/ld: (.text+0x60fa): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text+0x610f): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x61eb): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x626d): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x6309): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text+0x631e): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text+0x6361): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text+0x64bd): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x6544): undefined reference to `absl::debian5::container_internal::kEmptyGroup'\n/usr/bin/ld: (.text+0x65c8): undefined reference to `absl::debian5::container_internal::ClearBackingArray(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, bool)'\n/usr/bin/ld: (.text+0x65ee): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text+0x688d): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x68ed): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x693d): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x6990): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: (.text+0x69e3): undefined reference to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o):(.text+0x6a36): more undefined references to `absl::debian5::raw_log_internal::internal_log_function[abi:cxx11]' follow\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::Prog::SearchDFA(absl::debian5::string_view, absl::debian5::string_view, re2::Prog::Anchor, re2::Prog::MatchKind, absl::debian5::string_view*, bool*, re2::SparseSetT<void>*)':\n(.text+0x6e71): undefined reference to `absl::debian5::Mutex::ReaderLock()'\n/usr/bin/ld: (.text+0x6f9c): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text+0x7051): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::StateSaver::Restore()':\n(.text+0x718b): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text+0x71ad): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::ClearCache()':\n(.text+0xd96): undefined reference to `absl::debian5::container_internal::ClearBackingArray(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, bool)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::~DFA()':\n(.text+0xf6c): undefined reference to `absl::debian5::Mutex::~Mutex()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::RWLocker::RWLocker(absl::debian5::Mutex*)':\n(.text+0xf82): undefined reference to `absl::debian5::Mutex::ReaderLock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#3}, re2::Prog*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#3}&&, re2::Prog*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x23a3): undefined reference to `AbslInternalSpinLockWake_debian5'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#2}, re2::Prog*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#2}&&, re2::Prog*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x2657): undefined reference to `AbslInternalSpinLockWake_debian5'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#1}, re2::Prog*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#1}&&, re2::Prog*&&) [clone .constprop.0] [clone .isra.0]':\n(.text+0x2957): undefined reference to `AbslInternalSpinLockWake_debian5'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<re2::DFA::State*, int>, absl::debian5::container_internal::HashEq<re2::DFA::State*, void>::Hash, absl::debian5::container_internal::HashEq<re2::DFA::State*, void>::Eq, std::allocator<std::pair<re2::DFA::State* const, int> > >::hash_slot_fn(void*, void*)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re23DFA5StateEiEENS1_6HashEqIS7_vE4HashENSA_2EqESaISt4pairIKS7_iEEE12hash_slot_fnEPvSI_[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re23DFA5StateEiEENS1_6HashEqIS7_vE4HashENSA_2EqESaISt4pairIKS7_iEEE12hash_slot_fnEPvSI_]+0xa): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashSetPolicy<re2::DFA::State*>, re2::DFA::StateHash, re2::DFA::StateEqual, std::allocator<re2::DFA::State*> >::hash_slot_fn(void*, void*)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE12hash_slot_fnEPvSD_[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE12hash_slot_fnEPvSD_]+0x8): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE12hash_slot_fnEPvSD_[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE12hash_slot_fnEPvSD_]+0x51): undefined reference to `absl::debian5::hash_internal::MixingHashState::LowLevelHashImpl(unsigned char const*, unsigned long)'\n/usr/bin/ld: (.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE12hash_slot_fnEPvSD_[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE12hash_slot_fnEPvSD_]+0xea): undefined reference to `absl::debian5::hash_internal::MixingHashState::CombineLargeContiguousImpl64(unsigned long, unsigned char const*, unsigned long)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::DFA(re2::Prog*, re2::Prog::MatchKind, long) [clone .cold]':\n(.text.unlikely+0x2b9): undefined reference to `absl::debian5::Mutex::~Mutex()'\n/usr/bin/ld: (.text.unlikely+0x2d8): undefined reference to `absl::debian5::Mutex::~Mutex()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#2}, re2::Prog*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#2}&&, re2::Prog*&&) [clone .constprop.0] [clone .isra.0] [clone .cold]':\n(.text.unlikely+0x34f): undefined reference to `absl::debian5::Mutex::~Mutex()'\n/usr/bin/ld: (.text.unlikely+0x36e): undefined reference to `absl::debian5::Mutex::~Mutex()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `void absl::debian5::base_internal::CallOnceImpl<re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#1}, re2::Prog*>(std::atomic<unsigned int>*, absl::debian5::base_internal::SchedulingMode, re2::Prog::GetDFA(re2::Prog::MatchKind)::{lambda(re2::Prog*)#1}&&, re2::Prog*&&) [clone .constprop.0] [clone .isra.0] [clone .cold]':\n(.text.unlikely+0x3dd): undefined reference to `absl::debian5::Mutex::~Mutex()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o):(.text.unlikely+0x3fc): more undefined references to `absl::debian5::Mutex::~Mutex()' follow\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::RunStateOnByteUnlocked(re2::DFA::State*, int) [clone .cold]':\n(.text.unlikely+0x646): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::AnalyzeSearchHelper(re2::DFA::SearchParams*, re2::DFA::StartInfo*, unsigned int) [clone .cold]':\n(.text.unlikely+0x656): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::BuildAllStates(std::function<void (int const*, bool)> const&) [clone .cold]':\n(.text.unlikely+0x996): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::PossibleMatchRange(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, int) [clone .cold]':\n(.text.unlikely+0x9e0): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `re2::DFA::StateSaver::Restore() [clone .cold]':\n(.text.unlikely+0xb31): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<re2::DFA::State*, int>, absl::debian5::container_internal::HashEq<re2::DFA::State*, void>::Hash, absl::debian5::container_internal::HashEq<re2::DFA::State*, void>::Eq, std::allocator<std::pair<re2::DFA::State* const, int> > >::resize(unsigned long)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re23DFA5StateEiEENS1_6HashEqIS7_vE4HashENSA_2EqESaISt4pairIKS7_iEEE6resizeEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re23DFA5StateEiEENS1_6HashEqIS7_vE4HashENSA_2EqESaISt4pairIKS7_iEEE6resizeEm]+0x4b): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashMapPolicy<re2::DFA::State*, int>, absl::debian5::container_internal::HashEq<re2::DFA::State*, void>::Hash, absl::debian5::container_internal::HashEq<re2::DFA::State*, void>::Eq, std::allocator<std::pair<re2::DFA::State* const, int> > >::prepare_insert(unsigned long)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re23DFA5StateEiEENS1_6HashEqIS7_vE4HashENSA_2EqESaISt4pairIKS7_iEEE14prepare_insertEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashMapPolicyIPN3re23DFA5StateEiEENS1_6HashEqIS7_vE4HashENSA_2EqESaISt4pairIKS7_iEEE14prepare_insertEm]+0x187): undefined reference to `absl::debian5::container_internal::DropDeletesWithoutResize(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, void*)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashSetPolicy<re2::DFA::State*>, re2::DFA::StateHash, re2::DFA::StateEqual, std::allocator<re2::DFA::State*> >::resize(unsigned long)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm]+0x4d): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm]+0xce): undefined reference to `absl::debian5::hash_internal::MixingHashState::LowLevelHashImpl(unsigned char const*, unsigned long)'\n/usr/bin/ld: (.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm]+0xe8): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: (.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm]+0x23a): undefined reference to `absl::debian5::hash_internal::MixingHashState::CombineLargeContiguousImpl64(unsigned long, unsigned char const*, unsigned long)'\n/usr/bin/ld: (.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE6resizeEm]+0x257): undefined reference to `absl::debian5::hash_internal::MixingHashState::kSeed'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `absl::debian5::container_internal::raw_hash_set<absl::debian5::container_internal::FlatHashSetPolicy<re2::DFA::State*>, re2::DFA::StateHash, re2::DFA::StateEqual, std::allocator<re2::DFA::State*> >::prepare_insert(unsigned long)':\n(.text._ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE14prepare_insertEm[_ZN4absl7debian518container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPN3re23DFA5StateEEENS5_9StateHashENS5_10StateEqualESaIS7_EE14prepare_insertEm]+0x187): undefined reference to `absl::debian5::container_internal::DropDeletesWithoutResize(absl::debian5::container_internal::CommonFields&, absl::debian5::container_internal::PolicyFunctions const&, void*)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `bool re2::DFA::InlinedSearchLoop<false, false, false>(re2::DFA::SearchParams*)':\n(.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0x111): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0x135): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0x31a): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0x33a): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0x4a4): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0x4ac): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0x65f): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0x680): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0xaf0): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0xba1): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb0EEEbPNS0_12SearchParamsE]+0xbef): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `bool re2::DFA::InlinedSearchLoop<false, false, true>(re2::DFA::SearchParams*)':\n(.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0x220): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0x244): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0x429): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0x449): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0x59c): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0x5a4): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0x668): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0x685): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0xc3b): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0xc5f): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb0ELb1EEEbPNS0_12SearchParamsE]+0xc83): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `bool re2::DFA::InlinedSearchLoop<false, true, false>(re2::DFA::SearchParams*)':\n(.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0xda): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0xfe): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0x2ea): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0x30a): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0x464): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0x46c): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0x618): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0x635): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0x91f): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0x9a8): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb0EEEbPNS0_12SearchParamsE]+0xaa3): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `bool re2::DFA::InlinedSearchLoop<false, true, true>(re2::DFA::SearchParams*)':\n(.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0xd7): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0xfb): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0x2e7): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0x307): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0x464): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0x46c): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0x618): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0x635): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0x91f): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0x9a8): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb0ELb1ELb1EEEbPNS0_12SearchParamsE]+0xaa3): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `bool re2::DFA::InlinedSearchLoop<true, false, false>(re2::DFA::SearchParams*)':\n(.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0x12a): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0x14e): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0x312): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0x332): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0x57c): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0x584): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0x6e3): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0x6fc): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0xca8): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0xcce): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb0EEEbPNS0_12SearchParamsE]+0xcf5): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `bool re2::DFA::InlinedSearchLoop<true, false, true>(re2::DFA::SearchParams*)':\n(.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0x230): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0x254): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0x418): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0x438): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0x5ec): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0x5f4): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0x6c8): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0x6e1): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0xc7e): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0xca7): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb0ELb1EEEbPNS0_12SearchParamsE]+0xce0): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `bool re2::DFA::InlinedSearchLoop<true, true, false>(re2::DFA::SearchParams*)':\n(.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0xe7): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x10b): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x2da): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x2fa): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x534): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x53c): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x658): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x671): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x84e): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x89b): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb0EEEbPNS0_12SearchParamsE]+0x93c): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(dfa.o): in function `bool re2::DFA::InlinedSearchLoop<true, true, true>(re2::DFA::SearchParams*)':\n(.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0xe6): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x10a): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x2d9): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x2f9): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x534): undefined reference to `absl::debian5::Mutex::ReaderUnlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x53c): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x658): undefined reference to `absl::debian5::Mutex::Lock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x671): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x84e): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x89b): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: (.text._ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE[_ZN3re23DFA17InlinedSearchLoopILb1ELb1ELb1EEEbPNS0_12SearchParamsE]+0x93c): undefined reference to `absl::debian5::Mutex::Unlock()'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(nfa.o): in function `re2::NFA::FormatCapture[abi:cxx11](char const**)':\n(.text+0x1e7): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<long>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x234): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0x2aa): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<long>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x2f0): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(parse.o): in function `re2::Regexp::ParseState::ParsePerlFlags(absl::debian5::string_view*)':\n(.text+0x2f96): undefined reference to `absl::debian5::string_view::find(char, unsigned long) const'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(parse.o): in function `re2::ParseUnicodeGroup(absl::debian5::string_view*, re2::Regexp::ParseFlags, re2::CharClassBuilder*, re2::RegexpStatus*)':\n(.text+0x47e3): undefined reference to `absl::debian5::string_view::find(char, unsigned long) const'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(parse.o): in function `re2::ParseEscape(absl::debian5::string_view*, int*, re2::RegexpStatus*, int)':\n(.text+0x4e15): undefined reference to `absl::debian5::ascii_internal::kPropertyBits'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(prog.o): in function `re2::Prog::Inst::Dump[abi:cxx11]()':\n(.text+0xa5e): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0xa9e): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xaaf): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<unsigned int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xacd): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0xaf3): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<char const*>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xb10): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<unsigned char>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xb4b): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xb6a): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0xb9d): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xbb6): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0xbe5): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xbfe): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0xc2c): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xc47): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0xc81): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xc92): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<unsigned int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xcb0): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(prog.o): in function `re2::FlattenedProgToString(re2::Prog*, int)':\n(.text+0xd59): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xd6d): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xd81): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0xe3f): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xe55): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xe70): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(prog.o): in function `re2::ProgToString(re2::Prog*, re2::SparseSetT<void>*)':\n(.text+0x102c): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x107b): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x1088): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(prog.o): in function `re2::Prog::DumpByteMap[abi:cxx11]()':\n(.text+0x136a): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x1434): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(tostring.o): in function `re2::AppendCCChar(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, int)':\n(.text+0x1ff): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x234): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0x29b): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x2d0): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: /usr/lib/x86_64-linux-gnu/libre2.a(tostring.o): in function `re2::ToStringWalker::PostVisit(re2::Regexp*, int, int, int*, int)':\n(.text+0x4e4): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x532): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0x99b): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x9b9): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0xf2c): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0xf62): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: (.text+0x1094): undefined reference to `bool absl::debian5::str_format_internal::FormatArgImpl::Dispatch<int>(absl::debian5::str_format_internal::FormatArgImpl::Data, absl::debian5::str_format_internal::FormatConversionSpecImpl, void*)'\n/usr/bin/ld: (.text+0x10db): undefined reference to `absl::debian5::str_format_internal::FormatPack[abi:cxx11](absl::debian5::str_format_internal::UntypedFormatSpecImpl, absl::debian5::Span<absl::debian5::str_format_internal::FormatArgImpl const>)'\n/usr/bin/ld: warning: creating DT_TEXTREL in a PIE\ncollect2: error: ld returned 1 exit status\nmake: [/home/dunham/all-benchmarksgame/2000-benchmarksgame/nanobench/makefiles/u64q.programs.Makefile:54: regexredux.gpp-2.gpp_run] Error 1 (ignored)\nrm regexredux.gpp-2.c++\n\n4.35s to complete and log all make actions\n\nCOMMAND LINE:\n ./regexredux.gpp-2.gpp_run 0 < regexredux-input5000000.txt\n\nEMPTY \n\n\nPROGRAM OUTPUT:",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-gpp-2"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang++",
+        "-O3",
+        "-march=native",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-I/opt/homebrew/include",
+        "-L/opt/homebrew/lib",
+        "-std=c++17",
+        "-fopenmp",
+        "-I/opt/homebrew/opt/libomp/include",
+        "-L/opt/homebrew/opt/libomp/lib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/upstream/regexredux-gpp-2.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-gpp-2",
+        "-I/opt/homebrew/include/re2",
+        "-lre2"
+      ],
+      "source": {
+        "sha256": "5981c1ef43ec151f52a84fa2652ec4119382ed6c7cf8d8e8cab248545cd16183",
+        "physical_lines": 87,
+        "nonblank_noncomment_lines": 63
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.341734958,
+        1.345930042,
+        1.341305875,
+        1.33481975,
+        1.337608792,
+        1.333044208,
+        1.343370417
+      ],
+      "executable_sha256": "242502d697e173fef4d0a2f67c9f326d066d08fdf59420179263833b56b990f2",
+      "median_seconds": 1.341305875,
+      "stdev_seconds": 0.004681413166669313,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-rust-6",
+      "language": "rust",
+      "variant": 6,
+      "path": "upstream/regexredux-rust-6.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-rust-6.html",
+      "sha256": "4d8ff75c291364e32b3f9f9e979c4209f39d746099a3f29e06c1c291a46d4c28",
+      "upstream_starred": false,
+      "published_secs": 1.21,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:17:02 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern libc=/opt/src/rust-libs/liblibc-f6fe57662dfc7b71.rlib regexredux.rs -o regexredux.rust-6.rust_run\n\n13.12 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./regexredux.rust-6.rust_run 0 < regexredux-input5000000.txt\n\nPROGRAM OUTPUT:\nagggtaaa|tttaccct 356\n[cgt]gggtaaa|tttaccc[acg] 1250\na[act]ggtaaa|tttacc[agt]t 4252\nag[act]gtaaa|tttac[agt]ct 2894\nagg[act]taaa|ttta[agt]cct 5435\naggg[acg]aaa|ttt[cgt]ccct 1537\nagggt[cgt]aa|tt[acg]accct 1431\nagggta[cgt]a|t[acg]taccct 1608\nagggtaa[cgt]|[acg]ttaccct 2178\n\n50833411\n50000000\n27388361",
+      "dependency_lock_sha256": "477a3771ac9123b27358a34814cbec2b88b72ad27ea1354aa68ceda4421e6e85",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-rust-6"
+      ],
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-rust-6.cargo/Cargo.toml"
+      ],
+      "source": {
+        "sha256": "4d8ff75c291364e32b3f9f9e979c4209f39d746099a3f29e06c1c291a46d4c28",
+        "physical_lines": 93,
+        "nonblank_noncomment_lines": 77
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.466309333,
+        0.47246825,
+        0.46943175,
+        0.470544875,
+        0.468377958,
+        0.471387666,
+        0.469501042
+      ],
+      "executable_sha256": "3e3f796baac3e38da7309cdec9ff936976c1680d1e3b7f5957a4063e983dca46",
+      "median_seconds": 0.469501042,
+      "stdev_seconds": 0.0020239858053233035,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-chapel-3",
+      "language": "chapel",
+      "variant": 3,
+      "path": "upstream/regexredux-chapel-3.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-chapel-3.html",
+      "sha256": "ff4a599bfc8344765cf892873177c2172c0a4a8bbd3d1cc1d1a47d588774b439",
+      "upstream_starred": false,
+      "published_secs": 3.17,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 18:07:35 GMT\n\nMAKE:\nmv regexredux.chapel-3.chapel regexredux.chapel-3.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast regexredux.chapel-3.chpl -o regexredux.chapel-3.chapel_run\nrm regexredux.chapel-3.chpl\n\n21.36 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./regexredux.chapel-3.chapel_run --n=0 < regexredux-input5000000.txt\n\nPROGRAM OUTPUT:\nagggtaaa|tttaccct 356\n[cgt]gggtaaa|tttaccc[acg] 1250\na[act]ggtaaa|tttacc[agt]t 4252\nag[act]gtaaa|tttac[agt]ct 2894\nagg[act]taaa|ttta[agt]cct 5435\naggg[acg]aaa|ttt[cgt]ccct 1537\nagggt[cgt]aa|tt[acg]accct 1431\nagggta[cgt]a|t[acg]taccct 1608\nagggtaa[cgt]|[acg]ttaccct 2178\n\n50833411\n50000000\n27388361",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-chapel-3"
+      ],
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/upstream/regexredux-chapel-3.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/regexredux-chapel-3",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "source": {
+        "sha256": "ff4a599bfc8344765cf892873177c2172c0a4a8bbd3d1cc1d1a47d588774b439",
+        "physical_lines": 60,
+        "nonblank_noncomment_lines": 38
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.363099,
+        1.353840791,
+        1.35799775,
+        1.38545025,
+        1.364303375,
+        1.34181075,
+        1.352097
+      ],
+      "executable_sha256": "239a9e6677358a1d4b0b8bcd30db3cb72c3495f7753d5e7c9aec222c6ad47711",
+      "median_seconds": 1.35799775,
+      "stdev_seconds": 0.013606424425101193,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "regexredux-julia-4",
+      "language": "julia",
+      "variant": 4,
+      "path": "upstream/regexredux-julia-4.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/regexredux-julia-4.html",
+      "sha256": "64deb592ca09160f41f111f8cb9bd17d365c5e6301344bb90df1542200dd7f56",
+      "upstream_starred": true,
+      "published_secs": 2.0,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 09:22:44 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.15 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- regexredux.julia-4.julia 0 < regexredux-input5000000.txt\n\nPROGRAM OUTPUT:\nagggtaaa|tttaccct 356\n[cgt]gggtaaa|tttaccc[acg] 1250\na[act]ggtaaa|tttacc[agt]t 4252\nag[act]gtaaa|tttac[agt]ct 2894\nagg[act]taaa|ttta[agt]cct 5435\naggg[acg]aaa|ttt[cgt]ccct 1537\nagggt[cgt]aa|tt[acg]accct 1431\nagggta[cgt]a|t[acg]taccct 1608\nagggtaa[cgt]|[acg]ttaccct 2178\n\n50833411\n50000000\n27388361",
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--threads=8,0",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/upstream/regexredux-julia-4.jl"
+      ],
+      "compile_command": null,
+      "source": {
+        "sha256": "64deb592ca09160f41f111f8cb9bd17d365c5e6301344bb90df1542200dd7f56",
+        "physical_lines": 90,
+        "nonblank_noncomment_lines": 53
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.745055125,
+        1.85456775,
+        1.742250625,
+        1.832772,
+        1.727635833,
+        1.909895625,
+        1.9697635
+      ],
+      "median_seconds": 1.832772,
+      "stdev_seconds": 0.09292464294187437,
+      "benchmark": "regexredux"
+    },
+    {
+      "id": "mech-regex-final-sequential-signed",
+      "path": "regexredux.mec",
+      "language": "mech",
+      "runtime_environment": {},
+      "object_sha256": "2e5a7cad20128410422c160d364d45d4ccd492999b0eccc76ffe68ba7e5d4f7c",
+      "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/mech-regex-final-sequential-signed"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+        "--backend",
+        "cranelift",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/mech-regex-final-sequential-signed"
+      ],
+      "source": {
+        "sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+        "physical_lines": 24,
+        "nonblank_noncomment_lines": 24
+      },
+      "samples_seconds": [
+        0.551850125,
+        0.557895625,
+        0.561221584,
+        0.553002708,
+        0.560807541,
+        0.558916792,
+        0.559793209
+      ],
+      "executable_sha256": "b987cf932caf3d03144e85192af02bd1736ee1c02fea29a769fbaa2d477ec134",
+      "benchmark": "regexredux",
+      "median_seconds": 0.558916792,
+      "stdev_seconds": 0.003746554690144757
+    },
+    {
+      "id": "mech-regex-final-async-signed",
+      "path": "regexredux.mec",
+      "language": "mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1"
+      },
+      "object_sha256": "2e5a7cad20128410422c160d364d45d4ccd492999b0eccc76ffe68ba7e5d4f7c",
+      "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/mech-regex-final-async-signed"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+        "--backend",
+        "cranelift",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/mech-regex-final-async-signed"
+      ],
+      "source": {
+        "sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+        "physical_lines": 24,
+        "nonblank_noncomment_lines": 24
+      },
+      "samples_seconds": [
+        0.50435825,
+        0.490777416,
+        0.493949792,
+        0.508566667,
+        0.501700958,
+        0.492490208,
+        0.49963425
+      ],
+      "executable_sha256": "b987cf932caf3d03144e85192af02bd1736ee1c02fea29a769fbaa2d477ec134",
+      "benchmark": "regexredux",
+      "median_seconds": 0.49963425,
+      "stdev_seconds": 0.006621822032492221
+    },
+    {
+      "id": "mech-regex-final-reuse-signed",
+      "path": "regexredux.mec",
+      "language": "mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "object_sha256": "2e5a7cad20128410422c160d364d45d4ccd492999b0eccc76ffe68ba7e5d4f7c",
+      "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/mech-regex-final-reuse-signed"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+        "--backend",
+        "cranelift",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/mech-regex-final-reuse-signed"
+      ],
+      "source": {
+        "sha256": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+        "physical_lines": 24,
+        "nonblank_noncomment_lines": 24
+      },
+      "samples_seconds": [
+        0.493827292,
+        0.490315166,
+        0.494020125,
+        0.487790792,
+        0.489154292,
+        0.484753625,
+        0.497127958
+      ],
+      "executable_sha256": "b987cf932caf3d03144e85192af02bd1736ee1c02fea29a769fbaa2d477ec134",
+      "benchmark": "regexredux",
+      "median_seconds": 0.490315166,
+      "stdev_seconds": 0.004239859275699938
+    },
+    {
+      "id": "pidigits-gcc-1",
+      "language": "c",
+      "variant": 1,
+      "path": "upstream/pidigits-gcc-1.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-gcc-1.html",
+      "sha256": "f719dddd30aad201aa3ce385b80d48ef3befce29b22c3a12a5aa7e7d743f948e",
+      "upstream_starred": false,
+      "published_secs": 0.75,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 05:25:36 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge  pidigits.c -o pidigits.gcc_run -lgmp\nrm pidigits.c\n\n2.30s to complete and log all make actions\n\nCOMMAND LINE:\n ./pidigits.gcc_run 10000\n\n(TRUNCATED) PROGRAM OUTPUT:\n3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9821480865\t:110\n1328230664\t:120\n7093844609\t:130\n5505822317\t:140\n2535940812\t:150\n8481117450\t:160\n2841027019\t:170\n3852110555\t:180\n9644622948\t:190\n9549303819\t:200\n6442881097\t:210\n5665933446\t:220\n1284756482\t:230\n3378678316\t:240\n5271201909\t:250\n1456485669\t:260\n2346034861\t:270\n0454326648\t:280\n2133936072\t:290\n6024914127\t:300\n3724587006\t:310\n6063155881\t:320\n7488152092\t:330\n0962829254\t:340\n0917153643\t:350\n6789259036\t:360\n0011330530\t:370\n5488204665\t:380\n2138414695\t:390\n1941511609\t:400\n4330572703\t:410\n6575959195\t:420\n3092186117\t:430\n3819326117\t:440\n9310511854\t:450\n8074462379\t:460\n9627495673\t:470\n5188575272\t:480\n4891227938\t:490\n1830119491\t:500\n2983367336\t:510\n2440656643\t:520\n0860213949\t:530\n4639522473\t:540\n7190702179\t:550\n8609437027\t:560\n7053921717\t:570\n6293176752\t:580\n3846748184\t:590\n6766940513\t:600\n2000568127\t:610\n1452635608\t:620\n2778577134\t:630\n2757789609\t:640\n1736371787\t:650\n2146844090\t:660\n1224953430\t:670\n1465495853\t:680\n7105079227\t:690\n9689258923\t:700\n5420199561\t:710\n1212902196\t:720\n0864034418\t:730\n1598136297\t:740\n7477130996\t:750\n0518707211\t:760\n3499999983\t:770\n7297804995\t:780\n1059731732\t:790\n8160963185\t:800\n9502445945\t:810\n5346908302\t:820\n6425223082\t:830\n5334468503\t:840\n5261931188\t:850\n1710100031\t:860\n3783875288\t:870\n6587533208\t:880\n3814206171\t:890\n7766914730\t:900\n3598253490\t:910\n4287554687\t:920\n3115956286\t:930\n3882353787\t:940\n5937519577\t:950\n8185778053\t:960\n2171226806\t:970\n6130019278\t:980\n7661119590\t:990\n9216420198\t:1000\n9380952572\t:1010\n0106548586\t:1020\n3278865936\t:1030\n1533818279\t:1040\n6823030195\t:1050\n2035301852\t:1060\n9689957736\t:1070\n2259941389\t:1080\n1249721775\t:1090\n2834791315\t:1100\n1557485724\t:1110\n2454150695\t:1120\n9508295331\t:1130\n1686172785\t:1140\n5889075098\t:1150\n3817546374\t:1160\n6493931925\t:1170\n5060400927\t:1180\n7016711390\t:1190\n0984882401\t:1200\n2858361603\t:1210\n5637076601\t:1220\n0471018194\t:1230\n2955596198\t:1240\n9467678374\t:1250\n4944825537\t:1260\n9774726847\t:1270\n1040475346\t:1280\n4620804668\t:1290\n4259069491\t:1300\n2933136770\t:1310\n2898915210\t:1320\n4752162056\t:1330\n9660240580\t:1340\n3815019351\t:1350\n1253382430\t:1360\n0355876402\t:1370\n4749647326\t:1380\n3914199272\t:1390\n6042699227\t:1400\n9678235478\t:1410\n1636009341\t:1420\n7216412199\t:1430\n2458631503\t:1440\n0286182974\t:1450\n5557067498\t:1460\n3850549458\t:1470\n8586926995\t:1480\n6909272107\t:1490\n9750930295\t:1500\n5321165344\t:1510\n9872027559\t:1520\n6023648066\t:1530\n5499119881\t:1540\n8347977535\t:1550\n6636980742\t:1560\n6542527862\t:1570\n5518184175\t:1580\n7467289097\t:1590\n7772793800\t:1600\n0816470600\t:1610\n1614524919\t:1620\n2173217214\t:1630\n7723501414\t:1640\n4197356854\t:1650\n8161361157\t:1660\n3525521334\t:1670\n7574184946\t:1680\n8438523323\t:1690\n9073941433\t:1700\n3454776241\t:1710\n6862518983\t:1720\n5694855620\t:1730\n9921922218\t:1740\n4272550254\t:1750\n2568876717\t:1760\n9049460165\t:1770\n3466804988\t:1780\n6272327917\t:1790\n8608578438\t:1800\n3827967976\t:1810\n6814541009\t:1820\n5388378636\t:1830\n0950680064\t:1840\n2251252051\t:1850\n1739298489\t:1860\n6084128488\t:1870\n6269456042\t:1880\n4196528502\t:1890\n2210661186\t:1900\n3067442786\t:1910\n2203919494\t:1920\n5047123713\t:1930\n7869609563\t:1940\n6437191728\t:1950\n7467764657\t:1960\n5739624138\t:1970\n9086583264\t:1980\n5995813390\t:1990\n4780275900\t:2000\n9946576407\t:2010\n8951269468\t:2020\n3983525957\t:2030\n0982582262\t:2040\n0522489407\t:2050\n7267194782\t:2060\n6848260147\t:2070\n6990902640\t:2080\n1363944374\t:2090\n5530506820\t:2100\n3496252451\t:2110\n7493996514\t:2120\n3142980919\t:2130\n0659250937\t:2140\n2216964615\t:2150\n1570985838\t:2160\n7410597885\t:2170\n9597729754\t:2180\n9893016175\t:2190\n3928468138\t:2200\n2686838689\t:2210\n4277415599\t:2220\n1855925245\t:2230\n9539594310\t:2240\n4997252468\t:2250\n0845987273\t:2260\n6446958486\t:2270\n5383673622\t:2280\n2626099124\t:2290\n6080512438\t:2300\n8439045124\t:2310\n4136549762\t:2320\n7807977156\t:2330\n9143599770\t:2340\n0129616089\t:2350\n4416948685\t:2360\n5584840635\t:2370\n3422072225\t:2380\n8284886481\t:2390\n5845602850\t:2400\n6016842739\t:2410\n4522674676\t:2420\n7889525213\t:2430\n8522549954\t:2440\n6667278239\t:2450\n8645659611\t:2460\n6354886230\t:2470\n5774564980\t:2480\n3559363456\t:2490\n8174324112\t:2500\n5150760694\t:2510\n7945109659\t:2520\n6094025228\t:2530\n8797108931\t:2540\n4566913686\t:2550\n7228748940\t:2560\n5601015033\t:2570\n0861792868\t:2580\n0920874760\t:2590\n9178249385\t:2600\n8900971490\t:2610\n9675985261\t:2620\n3655497818\t:2630\n9312978482\t:2640\n1682998948\t:2650\n7226588048\t:2660\n5756401427\t:2670\n0477555132\t:2680\n3796414515\t:2690\n2374623436\t:2700\n4542858444\t:2710\n7952658678\t:2720\n2105114135\t:2730\n4735739523\t:2740\n1134271661\t:2750\n0213596953\t:2760\n6231442952\t:2770\n4849371871\t:2780\n1014576540\t:2790\n3590279934\t:2800\n4037420073\t:2810\n1057853906\t:2820\n2198387447\t:2830\n8084784896\t:2840\n8332144571\t:2850\n3868751943\t:2860\n5064302184\t:2870\n5319104848\t:2880\n1005370614\t:2890\n6806749192\t:2900\n7819119793\t:2910\n9952061419\t:2920\n6634287544\t:2930\n4064374512\t:2940\n3718192179\t:2950\n9983910159\t:2960\n1956181467\t:2970\n5142691239\t:2980\n7489409071\t:2990\n8649423196\t:3000\n1567945208\t:3010\n0951465502\t:3020\n2523160388\t:3030\n1930142093\t:3040\n7621378559\t:3050\n5663893778\t:3060\n7083039069\t:3070\n7920773467\t:3080\n2218256259\t:3090\n9661501421\t:3100\n5030680384\t:3110\n4773454920\t:3120\n2605414665\t:3130\n9252014974\t:3140\n4285073251\t:3150\n8666002132\t:3160\n4340881907\t:3170\n1048633173\t:3180\n4649651453\t:3190\n9057962685\t:3200\n6100550810\t:3210\n6658796998\t:3220\n1635747363\t:3230\n8405257145\t:3240\n9102897064\t:3250\n1401109712\t:3260\n0628043903\t:3270\n9759515677\t:3280\n1577004203\t:3290\n3786993600\t:3300\n7230558763\t:3310\n1763594218\t:3320\n7312514712\t:3330\n0532928191\t:3340\n8261861258\t:3350\n6732157919\t:3360\n8414848829\t:3370\n1644706095\t:3380\n7527069572\t:3390\n2091756711\t:3400\n6722910981\t:3410\n6909152801\t:3420\n7350671274\t:3430\n8583222871\t:3440\n8352093539\t:3450\n6572512108\t:3460\n3579151369\t:3470\n8820914442\t:3480\n1006751033\t:3490\n4671103141\t:3500\n2671113699\t:3510\n0865851639\t:3520\n8315019701\t:3530\n6515116851\t:3540\n7143765761\t:3550\n8351556508\t:3560\n8490998985\t:3570\n9982387345\t:3580\n5283316355\t:3590\n0764791853\t:3600\n5893226185\t:3610\n4896321329\t:3620\n3308985706\t:3630\n4204675259\t:3640\n0709154814\t:3650\n1654985946\t:3660\n1637180270\t:3670\n9819943099\t:3680\n2448895757\t:3690\n1282890592\t:3700\n3233260972\t:3710\n9971208443\t:3720\n3573265489\t:3730\n3823911932\t:3740\n5974636673\t:3750\n0583604142\t:3760\n8138830320\t:3770\n3824903758\t:3780\n9852437441\t:3790\n7029132765\t:3800\n6180937734\t:3810\n4403070746\t:3820\n9211201913\t:3830\n0203303801\t:3840\n9762110110\t:3850\n0449293215\t:3860\n1608424448\t:3870\n5963766983\t:3880\n8952286847\t:3890\n8312355265\t:3900\n8213144957\t:3910\n6857262433\t:3920\n4418930396\t:3930\n8642624341\t:3940\n0773226978\t:3950\n0280731891\t:3960\n5441101044\t:3970\n6823252716\t:3980\n2010526522\t:3990\n7211166039\t:4000\n6665573092\t:4010\n5471105578\t:4020\n5376346682\t:4030\n0653109896\t:4040\n5269186205\t:4050\n6476931257\t:4060\n0586356620\t:4070\n1855810072\t:4080\n9360659876\t:4090\n4861179104\t:4100\n5334885034\t:4110\n6113657686\t:4120\n7532494416\t:4130\n6803962657\t:4140\n9787718556\t:4150\n0845529654\t:4160\n1266540853\t:4170\n0614344431\t:4180\n8586769751\t:4190\n4566140680\t:4200\n0700237877\t:4210\n6591344017\t:4220\n1274947042\t:4230\n0562230538\t:4240\n9945613140\t:4250\n7112700040\t:4260\n7854733269\t:4270\n9390814546\t:4280\n6464588079\t:4290\n7270826683\t:4300\n0634328587\t:4310\n8569830523\t:4320\n5808933065\t:4330\n7574067954\t:4340\n5716377525\t:4350\n4202114955\t:4360\n7615814002\t:4370\n5012622859\t:4380\n4130216471\t:4390\n5509792592\t:4400\n3099079654\t:4410\n7376125517\t:4420\n6567513575\t:4430\n1782966645\t:4440\n4779174501\t:4450\n1299614890\t:4460\n3046399471\t:4470\n3296210734\t:4480\n0437518957\t:4490\n3596145890\t:4500\n1938971311\t:4510\n1790429782\t:4520\n8564750320\t:4530\n3198691514\t:4540\n0287080859\t:4550\n9048010941\t:4560\n2147221317\t:4570\n9476477726\t:4580\n2241425485\t:4590\n4540332157\t:4600\n1853061422\t:4610\n8813758504\t:4620\n3063321751\t:4630\n8297986622\t:4640\n3717215916\t:4650\n0771669254\t:4660\n7487389866\t:4670\n5494945011\t:4680\n4654062843\t:4690\n3663937900\t:4700\n3976926567\t:4710\n2146385306\t:4720\n7360965712\t:4730\n0918076383\t:4740\n2716641627\t:4750\n4888800786\t:4760\n9256029022\t:4770\n8472104031\t:4780\n7211860820\t:4790\n4190004229\t:4800\n6617119637\t:4810\n7921337575\t:4820\n1149595015\t:4830\n6604963186\t:4840\n2947265473\t:4850\n6425230817\t:4860\n7036751590\t:4870\n6735023507\t:4880\n2835405670\t:4890\n4038674351\t:4900\n3622224771\t:4910\n5891504953\t:4920\n0984448933\t:4930\n3096340878\t:4940\n0769325993\t:4950\n9780541934\t:4960\n1447377441\t:4970\n8426312986\t:4980\n0809988868\t:4990\n7413260472\t:5000\n1569516239\t:5010\n6586457302\t:5020\n1631598193\t:5030\n1951673538\t:5040\n1297416772\t:5050\n9478672422\t:5060\n9246543668\t:5070\n0098067692\t:5080\n8238280689\t:5090\n9640048243\t:5100\n5403701416\t:5110\n3149658979\t:5120\n4092432378\t:5130\n9690706977\t:5140\n9422362508\t:5150\n2216889573\t:5160\n8379862300\t:5170\n1593776471\t:5180\n6512289357\t:5190\n8601588161\t:5200\n7557829735\t:5210\n2334460428\t:5220\n1512627203\t:5230\n7343146531\t:5240\n9777741603\t:5250\n1990665541\t:5260\n8763979293\t:5270\n3441952154\t:5280\n1341899485\t:5290\n4447345673\t:5300\n8316249934\t:5310\n1913181480\t:5320\n9277771038\t:5330\n6387734317\t:5340\n7207545654\t:5350\n5322077709\t:5360\n2120190516\t:5370\n6096280490\t:5380\n9263601975\t:5390\n9882816133\t:5400\n2316663652\t:5410\n8619326686\t:5420\n3360627356\t:5430\n7630354477\t:5440\n6280350450\t:5450\n7772355471\t:5460\n0585954870\t:5470\n2790814356\t:5480\n2401451718\t:5490\n0624643626\t:5500\n7945612753\t:5510\n1813407833\t:5520\n0336254232\t:5530\n7839449753\t:5540\n8243720583\t:5550\n5311477119\t:5560\n9260638133\t:5570\n4677687969\t:5580\n5970309833\t:5590\n9130771098\t:5600\n7040859133\t:5610\n7464144282\t:5620\n2772634659\t:5630\n4704745878\t:5640\n4778720192\t:5650\n7715280731\t:5660\n7679077071\t:5670\n5721344473\t:5680\n0605700733\t:5690\n4924369311\t:5700\n3835049316\t:5710\n3128404251\t:5720\n2192565179\t:5730\n8069411352\t:5740\n8013147013\t:5750\n0478164378\t:5760\n8518529092\t:5770\n8545201165\t:5780\n8393419656\t:5790\n2134914341\t:5800\n5956258658\t:5810\n6557055269\t:5820\n0496520985\t:5830\n8033850722\t:5840\n4264829397\t:5850\n2858478316\t:5860\n3057777560\t:5870\n6888764462\t:5880\n4824685792\t:5890\n6039535277\t:5900\n3480304802\t:5910\n9005876075\t:5920\n8251047470\t:5930\n9164396136\t:5940\n2676044925\t:5950\n6274204208\t:5960\n3208566119\t:5970\n0625454337\t:5980\n2131535958\t:5990\n4506877246\t:6000\n0290161876\t:6010\n6795240616\t:6020\n3425225771\t:6030\n9542916299\t:6040\n1930645537\t:6050\n7991403734\t:6060\n0432875262\t:6070\n8889639958\t:6080\n7947572917\t:",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-gcc-1",
+        "{n}"
+      ],
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-I/opt/homebrew/include",
+        "-L/opt/homebrew/lib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-gcc-1.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-gcc-1",
+        "-lgmp"
+      ],
+      "source": {
+        "sha256": "f719dddd30aad201aa3ce385b80d48ef3befce29b22c3a12a5aa7e7d743f948e",
+        "physical_lines": 65,
+        "nonblank_noncomment_lines": 45
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.304574708,
+        0.304033208,
+        0.301831708,
+        0.301322667,
+        0.303446875,
+        0.303439833,
+        0.305263042
+      ],
+      "executable_sha256": "0525f569df7990e9f0ce176a2ac4b2ab2c7a2598dfd21350dc7ea866e3333ed7",
+      "median_seconds": 0.303446875,
+      "stdev_seconds": 0.0014159013361176797,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-gpp-4",
+      "language": "cpp",
+      "variant": 4,
+      "path": "upstream/pidigits-gpp-4.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-gpp-4.html",
+      "sha256": "e9ea172b053a24a2fc804a0232af6b242b1fbfedc143500a66355446bb251d98",
+      "upstream_starred": false,
+      "published_secs": 0.72,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 04:42:25 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++14 -g pidigits.gpp-4.c++ -o pidigits.gpp-4.c++.o &&  \\\n        /usr/bin/g++ pidigits.gpp-4.c++.o -o pidigits.gpp-4.gpp_run -lgmp -lgmpxx \nrm pidigits.gpp-4.c++\n\n3.45s to complete and log all make actions\n\nCOMMAND LINE:\n ./pidigits.gpp-4.gpp_run 10000\n\n(TRUNCATED) PROGRAM OUTPUT:\n3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9821480865\t:110\n1328230664\t:120\n7093844609\t:130\n5505822317\t:140\n2535940812\t:150\n8481117450\t:160\n2841027019\t:170\n3852110555\t:180\n9644622948\t:190\n9549303819\t:200\n6442881097\t:210\n5665933446\t:220\n1284756482\t:230\n3378678316\t:240\n5271201909\t:250\n1456485669\t:260\n2346034861\t:270\n0454326648\t:280\n2133936072\t:290\n6024914127\t:300\n3724587006\t:310\n6063155881\t:320\n7488152092\t:330\n0962829254\t:340\n0917153643\t:350\n6789259036\t:360\n0011330530\t:370\n5488204665\t:380\n2138414695\t:390\n1941511609\t:400\n4330572703\t:410\n6575959195\t:420\n3092186117\t:430\n3819326117\t:440\n9310511854\t:450\n8074462379\t:460\n9627495673\t:470\n5188575272\t:480\n4891227938\t:490\n1830119491\t:500\n2983367336\t:510\n2440656643\t:520\n0860213949\t:530\n4639522473\t:540\n7190702179\t:550\n8609437027\t:560\n7053921717\t:570\n6293176752\t:580\n3846748184\t:590\n6766940513\t:600\n2000568127\t:610\n1452635608\t:620\n2778577134\t:630\n2757789609\t:640\n1736371787\t:650\n2146844090\t:660\n1224953430\t:670\n1465495853\t:680\n7105079227\t:690\n9689258923\t:700\n5420199561\t:710\n1212902196\t:720\n0864034418\t:730\n1598136297\t:740\n7477130996\t:750\n0518707211\t:760\n3499999983\t:770\n7297804995\t:780\n1059731732\t:790\n8160963185\t:800\n9502445945\t:810\n5346908302\t:820\n6425223082\t:830\n5334468503\t:840\n5261931188\t:850\n1710100031\t:860\n3783875288\t:870\n6587533208\t:880\n3814206171\t:890\n7766914730\t:900\n3598253490\t:910\n4287554687\t:920\n3115956286\t:930\n3882353787\t:940\n5937519577\t:950\n8185778053\t:960\n2171226806\t:970\n6130019278\t:980\n7661119590\t:990\n9216420198\t:1000\n9380952572\t:1010\n0106548586\t:1020\n3278865936\t:1030\n1533818279\t:1040\n6823030195\t:1050\n2035301852\t:1060\n9689957736\t:1070\n2259941389\t:1080\n1249721775\t:1090\n2834791315\t:1100\n1557485724\t:1110\n2454150695\t:1120\n9508295331\t:1130\n1686172785\t:1140\n5889075098\t:1150\n3817546374\t:1160\n6493931925\t:1170\n5060400927\t:1180\n7016711390\t:1190\n0984882401\t:1200\n2858361603\t:1210\n5637076601\t:1220\n0471018194\t:1230\n2955596198\t:1240\n9467678374\t:1250\n4944825537\t:1260\n9774726847\t:1270\n1040475346\t:1280\n4620804668\t:1290\n4259069491\t:1300\n2933136770\t:1310\n2898915210\t:1320\n4752162056\t:1330\n9660240580\t:1340\n3815019351\t:1350\n1253382430\t:1360\n0355876402\t:1370\n4749647326\t:1380\n3914199272\t:1390\n6042699227\t:1400\n9678235478\t:1410\n1636009341\t:1420\n7216412199\t:1430\n2458631503\t:1440\n0286182974\t:1450\n5557067498\t:1460\n3850549458\t:1470\n8586926995\t:1480\n6909272107\t:1490\n9750930295\t:1500\n5321165344\t:1510\n9872027559\t:1520\n6023648066\t:1530\n5499119881\t:1540\n8347977535\t:1550\n6636980742\t:1560\n6542527862\t:1570\n5518184175\t:1580\n7467289097\t:1590\n7772793800\t:1600\n0816470600\t:1610\n1614524919\t:1620\n2173217214\t:1630\n7723501414\t:1640\n4197356854\t:1650\n8161361157\t:1660\n3525521334\t:1670\n7574184946\t:1680\n8438523323\t:1690\n9073941433\t:1700\n3454776241\t:1710\n6862518983\t:1720\n5694855620\t:1730\n9921922218\t:1740\n4272550254\t:1750\n2568876717\t:1760\n9049460165\t:1770\n3466804988\t:1780\n6272327917\t:1790\n8608578438\t:1800\n3827967976\t:1810\n6814541009\t:1820\n5388378636\t:1830\n0950680064\t:1840\n2251252051\t:1850\n1739298489\t:1860\n6084128488\t:1870\n6269456042\t:1880\n4196528502\t:1890\n2210661186\t:1900\n3067442786\t:1910\n2203919494\t:1920\n5047123713\t:1930\n7869609563\t:1940\n6437191728\t:1950\n7467764657\t:1960\n5739624138\t:1970\n9086583264\t:1980\n5995813390\t:1990\n4780275900\t:2000\n9946576407\t:2010\n8951269468\t:2020\n3983525957\t:2030\n0982582262\t:2040\n0522489407\t:2050\n7267194782\t:2060\n6848260147\t:2070\n6990902640\t:2080\n1363944374\t:2090\n5530506820\t:2100\n3496252451\t:2110\n7493996514\t:2120\n3142980919\t:2130\n0659250937\t:2140\n2216964615\t:2150\n1570985838\t:2160\n7410597885\t:2170\n9597729754\t:2180\n9893016175\t:2190\n3928468138\t:2200\n2686838689\t:2210\n4277415599\t:2220\n1855925245\t:2230\n9539594310\t:2240\n4997252468\t:2250\n0845987273\t:2260\n6446958486\t:2270\n5383673622\t:2280\n2626099124\t:2290\n6080512438\t:2300\n8439045124\t:2310\n4136549762\t:2320\n7807977156\t:2330\n9143599770\t:2340\n0129616089\t:2350\n4416948685\t:2360\n5584840635\t:2370\n3422072225\t:2380\n8284886481\t:2390\n5845602850\t:2400\n6016842739\t:2410\n4522674676\t:2420\n7889525213\t:2430\n8522549954\t:2440\n6667278239\t:2450\n8645659611\t:2460\n6354886230\t:2470\n5774564980\t:2480\n3559363456\t:2490\n8174324112\t:2500\n5150760694\t:2510\n7945109659\t:2520\n6094025228\t:2530\n8797108931\t:2540\n4566913686\t:2550\n7228748940\t:2560\n5601015033\t:2570\n0861792868\t:2580\n0920874760\t:2590\n9178249385\t:2600\n8900971490\t:2610\n9675985261\t:2620\n3655497818\t:2630\n9312978482\t:2640\n1682998948\t:2650\n7226588048\t:2660\n5756401427\t:2670\n0477555132\t:2680\n3796414515\t:2690\n2374623436\t:2700\n4542858444\t:2710\n7952658678\t:2720\n2105114135\t:2730\n4735739523\t:2740\n1134271661\t:2750\n0213596953\t:2760\n6231442952\t:2770\n4849371871\t:2780\n1014576540\t:2790\n3590279934\t:2800\n4037420073\t:2810\n1057853906\t:2820\n2198387447\t:2830\n8084784896\t:2840\n8332144571\t:2850\n3868751943\t:2860\n5064302184\t:2870\n5319104848\t:2880\n1005370614\t:2890\n6806749192\t:2900\n7819119793\t:2910\n9952061419\t:2920\n6634287544\t:2930\n4064374512\t:2940\n3718192179\t:2950\n9983910159\t:2960\n1956181467\t:2970\n5142691239\t:2980\n7489409071\t:2990\n8649423196\t:3000\n1567945208\t:3010\n0951465502\t:3020\n2523160388\t:3030\n1930142093\t:3040\n7621378559\t:3050\n5663893778\t:3060\n7083039069\t:3070\n7920773467\t:3080\n2218256259\t:3090\n9661501421\t:3100\n5030680384\t:3110\n4773454920\t:3120\n2605414665\t:3130\n9252014974\t:3140\n4285073251\t:3150\n8666002132\t:3160\n4340881907\t:3170\n1048633173\t:3180\n4649651453\t:3190\n9057962685\t:3200\n6100550810\t:3210\n6658796998\t:3220\n1635747363\t:3230\n8405257145\t:3240\n9102897064\t:3250\n1401109712\t:3260\n0628043903\t:3270\n9759515677\t:3280\n1577004203\t:3290\n3786993600\t:3300\n7230558763\t:3310\n1763594218\t:3320\n7312514712\t:3330\n0532928191\t:3340\n8261861258\t:3350\n6732157919\t:3360\n8414848829\t:3370\n1644706095\t:3380\n7527069572\t:3390\n2091756711\t:3400\n6722910981\t:3410\n6909152801\t:3420\n7350671274\t:3430\n8583222871\t:3440\n8352093539\t:3450\n6572512108\t:3460\n3579151369\t:3470\n8820914442\t:3480\n1006751033\t:3490\n4671103141\t:3500\n2671113699\t:3510\n0865851639\t:3520\n8315019701\t:3530\n6515116851\t:3540\n7143765761\t:3550\n8351556508\t:3560\n8490998985\t:3570\n9982387345\t:3580\n5283316355\t:3590\n0764791853\t:3600\n5893226185\t:3610\n4896321329\t:3620\n3308985706\t:3630\n4204675259\t:3640\n0709154814\t:3650\n1654985946\t:3660\n1637180270\t:3670\n9819943099\t:3680\n2448895757\t:3690\n1282890592\t:3700\n3233260972\t:3710\n9971208443\t:3720\n3573265489\t:3730\n3823911932\t:3740\n5974636673\t:3750\n0583604142\t:3760\n8138830320\t:3770\n3824903758\t:3780\n9852437441\t:3790\n7029132765\t:3800\n6180937734\t:3810\n4403070746\t:3820\n9211201913\t:3830\n0203303801\t:3840\n9762110110\t:3850\n0449293215\t:3860\n1608424448\t:3870\n5963766983\t:3880\n8952286847\t:3890\n8312355265\t:3900\n8213144957\t:3910\n6857262433\t:3920\n4418930396\t:3930\n8642624341\t:3940\n0773226978\t:3950\n0280731891\t:3960\n5441101044\t:3970\n6823252716\t:3980\n2010526522\t:3990\n7211166039\t:4000\n6665573092\t:4010\n5471105578\t:4020\n5376346682\t:4030\n0653109896\t:4040\n5269186205\t:4050\n6476931257\t:4060\n0586356620\t:4070\n1855810072\t:4080\n9360659876\t:4090\n4861179104\t:4100\n5334885034\t:4110\n6113657686\t:4120\n7532494416\t:4130\n6803962657\t:4140\n9787718556\t:4150\n0845529654\t:4160\n1266540853\t:4170\n0614344431\t:4180\n8586769751\t:4190\n4566140680\t:4200\n0700237877\t:4210\n6591344017\t:4220\n1274947042\t:4230\n0562230538\t:4240\n9945613140\t:4250\n7112700040\t:4260\n7854733269\t:4270\n9390814546\t:4280\n6464588079\t:4290\n7270826683\t:4300\n0634328587\t:4310\n8569830523\t:4320\n5808933065\t:4330\n7574067954\t:4340\n5716377525\t:4350\n4202114955\t:4360\n7615814002\t:4370\n5012622859\t:4380\n4130216471\t:4390\n5509792592\t:4400\n3099079654\t:4410\n7376125517\t:4420\n6567513575\t:4430\n1782966645\t:4440\n4779174501\t:4450\n1299614890\t:4460\n3046399471\t:4470\n3296210734\t:4480\n0437518957\t:4490\n3596145890\t:4500\n1938971311\t:4510\n1790429782\t:4520\n8564750320\t:4530\n3198691514\t:4540\n0287080859\t:4550\n9048010941\t:4560\n2147221317\t:4570\n9476477726\t:4580\n2241425485\t:4590\n4540332157\t:4600\n1853061422\t:4610\n8813758504\t:4620\n3063321751\t:4630\n8297986622\t:4640\n3717215916\t:4650\n0771669254\t:4660\n7487389866\t:4670\n5494945011\t:4680\n4654062843\t:4690\n3663937900\t:4700\n3976926567\t:4710\n2146385306\t:4720\n7360965712\t:4730\n0918076383\t:4740\n2716641627\t:4750\n4888800786\t:4760\n9256029022\t:4770\n8472104031\t:4780\n7211860820\t:4790\n4190004229\t:4800\n6617119637\t:4810\n7921337575\t:4820\n1149595015\t:4830\n6604963186\t:4840\n2947265473\t:4850\n6425230817\t:4860\n7036751590\t:4870\n6735023507\t:4880\n2835405670\t:4890\n4038674351\t:4900\n3622224771\t:4910\n5891504953\t:4920\n0984448933\t:4930\n3096340878\t:4940\n0769325993\t:4950\n9780541934\t:4960\n1447377441\t:4970\n8426312986\t:4980\n0809988868\t:4990\n7413260472\t:5000\n1569516239\t:5010\n6586457302\t:5020\n1631598193\t:5030\n1951673538\t:5040\n1297416772\t:5050\n9478672422\t:5060\n9246543668\t:5070\n0098067692\t:5080\n8238280689\t:5090\n9640048243\t:5100\n5403701416\t:5110\n3149658979\t:5120\n4092432378\t:5130\n9690706977\t:5140\n9422362508\t:5150\n2216889573\t:5160\n8379862300\t:5170\n1593776471\t:5180\n6512289357\t:5190\n8601588161\t:5200\n7557829735\t:5210\n2334460428\t:5220\n1512627203\t:5230\n7343146531\t:5240\n9777741603\t:5250\n1990665541\t:5260\n8763979293\t:5270\n3441952154\t:5280\n1341899485\t:5290\n4447345673\t:5300\n8316249934\t:5310\n1913181480\t:5320\n9277771038\t:5330\n6387734317\t:5340\n7207545654\t:5350\n5322077709\t:5360\n2120190516\t:5370\n6096280490\t:5380\n9263601975\t:5390\n9882816133\t:5400\n2316663652\t:5410\n8619326686\t:5420\n3360627356\t:5430\n7630354477\t:5440\n6280350450\t:5450\n7772355471\t:5460\n0585954870\t:5470\n2790814356\t:5480\n2401451718\t:5490\n0624643626\t:5500\n7945612753\t:5510\n1813407833\t:5520\n0336254232\t:5530\n7839449753\t:5540\n8243720583\t:5550\n5311477119\t:5560\n9260638133\t:5570\n4677687969\t:5580\n5970309833\t:5590\n9130771098\t:5600\n7040859133\t:5610\n7464144282\t:5620\n2772634659\t:5630\n4704745878\t:5640\n4778720192\t:5650\n7715280731\t:5660\n7679077071\t:5670\n5721344473\t:5680\n0605700733\t:5690\n4924369311\t:5700\n3835049316\t:5710\n3128404251\t:5720\n2192565179\t:5730\n8069411352\t:5740\n8013147013\t:5750\n0478164378\t:5760\n8518529092\t:5770\n8545201165\t:5780\n8393419656\t:5790\n2134914341\t:5800\n5956258658\t:5810\n6557055269\t:5820\n0496520985\t:5830\n8033850722\t:5840\n4264829397\t:5850\n2858478316\t:5860\n3057777560\t:5870\n6888764462\t:5880\n4824685792\t:5890\n6039535277\t:5900\n3480304802\t:5910\n9005876075\t:5920\n8251047470\t:5930\n9164396136\t:5940\n2676044925\t:5950\n6274204208\t:5960\n3208566119\t:5970\n0625454337\t:5980\n2131535958\t:5990\n4506877246\t:6000\n0290161876\t:6010\n6795240616\t:6020\n3425225771\t:6030\n9542916299\t:6040\n1930645537\t:6050\n7991403734\t:6060\n0432875262\t:6070\n8889639958\t:6080\n7947572917\t:",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-gpp-4",
+        "{n}"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang++",
+        "-O3",
+        "-march=native",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-I/opt/homebrew/include",
+        "-L/opt/homebrew/lib",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-gpp-4.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-gpp-4",
+        "-lgmp"
+      ],
+      "source": {
+        "sha256": "e9ea172b053a24a2fc804a0232af6b242b1fbfedc143500a66355446bb251d98",
+        "physical_lines": 68,
+        "nonblank_noncomment_lines": 50
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.491148584,
+        0.493803292,
+        0.48737125,
+        0.495469666,
+        0.492714417,
+        0.495203417,
+        0.491413125
+      ],
+      "executable_sha256": "9081e19de47eb6cffc4562988031de6169d44551f895baca9c264a10886314da",
+      "median_seconds": 0.492714417,
+      "stdev_seconds": 0.002803670214135358,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-rust-3",
+      "language": "rust",
+      "variant": 3,
+      "path": "upstream/pidigits-rust-3.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-rust-3.html",
+      "sha256": "1668f9258a1b81868a3d4b0d6a6e282af8f2b182d1d2281bf0bc85dfe4729a53",
+      "upstream_starred": true,
+      "published_secs": 0.75,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 04:13:16 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs --extern futures=/opt/src/rust-libs/librug-5b4f2ac6ba3695a2.rlib pidigits.rs -o pidigits.rust-3.rust_run\nwarning: use of deprecated function `std::mem::uninitialized`: use `mem::MaybeUninit` instead\n  --> pidigits.rs:12:15\n   |\n12 | use std::mem::uninitialized;\n   |               ^^^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated function `std::mem::uninitialized`: use `mem::MaybeUninit` instead\n   --> pidigits.rs:108:27\n    |\n108 |             let mut mpz = uninitialized();\n    |                           ^^^^^^^^^^^^^\n\nwarning: the type `mpz_struct` does not permit being left uninitialized\n   --> pidigits.rs:108:27\n    |\n108 |             let mut mpz = uninitialized();\n    |                           ^^^^^^^^^^^^^^^\n    |                           |\n    |                           this code causes undefined behavior when executed\n    |                           help: use `MaybeUninit<T>` instead, and only call `assume_init` after initialization is done\n    |\nnote: integers must be initialized (in this struct field)\n   --> pidigits.rs:180:5\n    |\n180 |     _mp_alloc: c_int,\n    |     ^^^^^^^^^^^^^^^^\n    = note: `#[warn(invalid_value)]` on by default\n\nwarning: 3 warnings emitted\n\n\n10.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./pidigits.rust-3.rust_run 10000\n\n(TRUNCATED) PROGRAM OUTPUT:\n3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9821480865\t:110\n1328230664\t:120\n7093844609\t:130\n5505822317\t:140\n2535940812\t:150\n8481117450\t:160\n2841027019\t:170\n3852110555\t:180\n9644622948\t:190\n9549303819\t:200\n6442881097\t:210\n5665933446\t:220\n1284756482\t:230\n3378678316\t:240\n5271201909\t:250\n1456485669\t:260\n2346034861\t:270\n0454326648\t:280\n2133936072\t:290\n6024914127\t:300\n3724587006\t:310\n6063155881\t:320\n7488152092\t:330\n0962829254\t:340\n0917153643\t:350\n6789259036\t:360\n0011330530\t:370\n5488204665\t:380\n2138414695\t:390\n1941511609\t:400\n4330572703\t:410\n6575959195\t:420\n3092186117\t:430\n3819326117\t:440\n9310511854\t:450\n8074462379\t:460\n9627495673\t:470\n5188575272\t:480\n4891227938\t:490\n1830119491\t:500\n2983367336\t:510\n2440656643\t:520\n0860213949\t:530\n4639522473\t:540\n7190702179\t:550\n8609437027\t:560\n7053921717\t:570\n6293176752\t:580\n3846748184\t:590\n6766940513\t:600\n2000568127\t:610\n1452635608\t:620\n2778577134\t:630\n2757789609\t:640\n1736371787\t:650\n2146844090\t:660\n1224953430\t:670\n1465495853\t:680\n7105079227\t:690\n9689258923\t:700\n5420199561\t:710\n1212902196\t:720\n0864034418\t:730\n1598136297\t:740\n7477130996\t:750\n0518707211\t:760\n3499999983\t:770\n7297804995\t:780\n1059731732\t:790\n8160963185\t:800\n9502445945\t:810\n5346908302\t:820\n6425223082\t:830\n5334468503\t:840\n5261931188\t:850\n1710100031\t:860\n3783875288\t:870\n6587533208\t:880\n3814206171\t:890\n7766914730\t:900\n3598253490\t:910\n4287554687\t:920\n3115956286\t:930\n3882353787\t:940\n5937519577\t:950\n8185778053\t:960\n2171226806\t:970\n6130019278\t:980\n7661119590\t:990\n9216420198\t:1000\n9380952572\t:1010\n0106548586\t:1020\n3278865936\t:1030\n1533818279\t:1040\n6823030195\t:1050\n2035301852\t:1060\n9689957736\t:1070\n2259941389\t:1080\n1249721775\t:1090\n2834791315\t:1100\n1557485724\t:1110\n2454150695\t:1120\n9508295331\t:1130\n1686172785\t:1140\n5889075098\t:1150\n3817546374\t:1160\n6493931925\t:1170\n5060400927\t:1180\n7016711390\t:1190\n0984882401\t:1200\n2858361603\t:1210\n5637076601\t:1220\n0471018194\t:1230\n2955596198\t:1240\n9467678374\t:1250\n4944825537\t:1260\n9774726847\t:1270\n1040475346\t:1280\n4620804668\t:1290\n4259069491\t:1300\n2933136770\t:1310\n2898915210\t:1320\n4752162056\t:1330\n9660240580\t:1340\n3815019351\t:1350\n1253382430\t:1360\n0355876402\t:1370\n4749647326\t:1380\n3914199272\t:1390\n6042699227\t:1400\n9678235478\t:1410\n1636009341\t:1420\n7216412199\t:1430\n2458631503\t:1440\n0286182974\t:1450\n5557067498\t:1460\n3850549458\t:1470\n8586926995\t:1480\n6909272107\t:1490\n9750930295\t:1500\n5321165344\t:1510\n9872027559\t:1520\n6023648066\t:1530\n5499119881\t:1540\n8347977535\t:1550\n6636980742\t:1560\n6542527862\t:1570\n5518184175\t:1580\n7467289097\t:1590\n7772793800\t:1600\n0816470600\t:1610\n1614524919\t:1620\n2173217214\t:1630\n7723501414\t:1640\n4197356854\t:1650\n8161361157\t:1660\n3525521334\t:1670\n7574184946\t:1680\n8438523323\t:1690\n9073941433\t:1700\n3454776241\t:1710\n6862518983\t:1720\n5694855620\t:1730\n9921922218\t:1740\n4272550254\t:1750\n2568876717\t:1760\n9049460165\t:1770\n3466804988\t:1780\n6272327917\t:1790\n8608578438\t:1800\n3827967976\t:1810\n6814541009\t:1820\n5388378636\t:1830\n0950680064\t:1840\n2251252051\t:1850\n1739298489\t:1860\n6084128488\t:1870\n6269456042\t:1880\n4196528502\t:1890\n2210661186\t:1900\n3067442786\t:1910\n2203919494\t:1920\n5047123713\t:1930\n7869609563\t:1940\n6437191728\t:1950\n7467764657\t:1960\n5739624138\t:1970\n9086583264\t:1980\n5995813390\t:1990\n4780275900\t:2000\n9946576407\t:2010\n8951269468\t:2020\n3983525957\t:2030\n0982582262\t:2040\n0522489407\t:2050\n7267194782\t:2060\n6848260147\t:2070\n6990902640\t:2080\n1363944374\t:2090\n5530506820\t:2100\n3496252451\t:2110\n7493996514\t:2120\n3142980919\t:2130\n0659250937\t:2140\n2216964615\t:2150\n1570985838\t:2160\n7410597885\t:2170\n9597729754\t:2180\n9893016175\t:2190\n3928468138\t:2200\n2686838689\t:2210\n4277415599\t:2220\n1855925245\t:2230\n9539594310\t:2240\n4997252468\t:2250\n0845987273\t:2260\n6446958486\t:2270\n5383673622\t:2280\n2626099124\t:2290\n6080512438\t:2300\n8439045124\t:2310\n4136549762\t:2320\n7807977156\t:2330\n9143599770\t:2340\n0129616089\t:2350\n4416948685\t:2360\n5584840635\t:2370\n3422072225\t:2380\n8284886481\t:2390\n5845602850\t:2400\n6016842739\t:2410\n4522674676\t:2420\n7889525213\t:2430\n8522549954\t:2440\n6667278239\t:2450\n8645659611\t:2460\n6354886230\t:2470\n5774564980\t:2480\n3559363456\t:2490\n8174324112\t:2500\n5150760694\t:2510\n7945109659\t:2520\n6094025228\t:2530\n8797108931\t:2540\n4566913686\t:2550\n7228748940\t:2560\n5601015033\t:2570\n0861792868\t:2580\n0920874760\t:2590\n9178249385\t:2600\n8900971490\t:2610\n9675985261\t:2620\n3655497818\t:2630\n9312978482\t:2640\n1682998948\t:2650\n7226588048\t:2660\n5756401427\t:2670\n0477555132\t:2680\n3796414515\t:2690\n2374623436\t:2700\n4542858444\t:2710\n7952658678\t:2720\n2105114135\t:2730\n4735739523\t:2740\n1134271661\t:2750\n0213596953\t:2760\n6231442952\t:2770\n4849371871\t:2780\n1014576540\t:2790\n3590279934\t:2800\n4037420073\t:2810\n1057853906\t:2820\n2198387447\t:2830\n8084784896\t:2840\n8332144571\t:2850\n3868751943\t:2860\n5064302184\t:2870\n5319104848\t:2880\n1005370614\t:2890\n6806749192\t:2900\n7819119793\t:2910\n9952061419\t:2920\n6634287544\t:2930\n4064374512\t:2940\n3718192179\t:2950\n9983910159\t:2960\n1956181467\t:2970\n5142691239\t:2980\n7489409071\t:2990\n8649423196\t:3000\n1567945208\t:3010\n0951465502\t:3020\n2523160388\t:3030\n1930142093\t:3040\n7621378559\t:3050\n5663893778\t:3060\n7083039069\t:3070\n7920773467\t:3080\n2218256259\t:3090\n9661501421\t:3100\n5030680384\t:3110\n4773454920\t:3120\n2605414665\t:3130\n9252014974\t:3140\n4285073251\t:3150\n8666002132\t:3160\n4340881907\t:3170\n1048633173\t:3180\n4649651453\t:3190\n9057962685\t:3200\n6100550810\t:3210\n6658796998\t:3220\n1635747363\t:3230\n8405257145\t:3240\n9102897064\t:3250\n1401109712\t:3260\n0628043903\t:3270\n9759515677\t:3280\n1577004203\t:3290\n3786993600\t:3300\n7230558763\t:3310\n1763594218\t:3320\n7312514712\t:3330\n0532928191\t:3340\n8261861258\t:3350\n6732157919\t:3360\n8414848829\t:3370\n1644706095\t:3380\n7527069572\t:3390\n2091756711\t:3400\n6722910981\t:3410\n6909152801\t:3420\n7350671274\t:3430\n8583222871\t:3440\n8352093539\t:3450\n6572512108\t:3460\n3579151369\t:3470\n8820914442\t:3480\n1006751033\t:3490\n4671103141\t:3500\n2671113699\t:3510\n0865851639\t:3520\n8315019701\t:3530\n6515116851\t:3540\n7143765761\t:3550\n8351556508\t:3560\n8490998985\t:3570\n9982387345\t:3580\n5283316355\t:3590\n0764791853\t:3600\n5893226185\t:3610\n4896321329\t:3620\n3308985706\t:3630\n4204675259\t:3640\n0709154814\t:3650\n1654985946\t:3660\n1637180270\t:3670\n9819943099\t:3680\n2448895757\t:3690\n1282890592\t:3700\n3233260972\t:3710\n9971208443\t:3720\n3573265489\t:3730\n3823911932\t:3740\n5974636673\t:3750\n0583604142\t:3760\n8138830320\t:3770\n3824903758\t:3780\n9852437441\t:3790\n7029132765\t:3800\n6180937734\t:3810\n4403070746\t:3820\n9211201913\t:3830\n0203303801\t:3840\n9762110110\t:3850\n0449293215\t:3860\n1608424448\t:3870\n5963766983\t:3880\n8952286847\t:3890\n8312355265\t:3900\n8213144957\t:3910\n6857262433\t:3920\n4418930396\t:3930\n8642624341\t:3940\n0773226978\t:3950\n0280731891\t:3960\n5441101044\t:3970\n6823252716\t:3980\n2010526522\t:3990\n7211166039\t:4000\n6665573092\t:4010\n5471105578\t:4020\n5376346682\t:4030\n0653109896\t:4040\n5269186205\t:4050\n6476931257\t:4060\n0586356620\t:4070\n1855810072\t:4080\n9360659876\t:4090\n4861179104\t:4100\n5334885034\t:4110\n6113657686\t:4120\n7532494416\t:4130\n6803962657\t:4140\n9787718556\t:4150\n0845529654\t:4160\n1266540853\t:4170\n0614344431\t:4180\n8586769751\t:4190\n4566140680\t:4200\n0700237877\t:4210\n6591344017\t:4220\n1274947042\t:4230\n0562230538\t:4240\n9945613140\t:4250\n7112700040\t:4260\n7854733269\t:4270\n9390814546\t:4280\n6464588079\t:4290\n7270826683\t:4300\n0634328587\t:4310\n8569830523\t:4320\n5808933065\t:4330\n7574067954\t:4340\n5716377525\t:4350\n4202114955\t:4360\n7615814002\t:4370\n5012622859\t:4380\n4130216471\t:4390\n5509792592\t:4400\n3099079654\t:4410\n7376125517\t:4420\n6567513575\t:4430\n1782966645\t:4440\n4779174501\t:4450\n1299614890\t:4460\n3046399471\t:4470\n3296210734\t:4480\n0437518957\t:4490\n3596145890\t:4500\n1938971311\t:4510\n1790429782\t:4520\n8564750320\t:4530\n3198691514\t:4540\n0287080859\t:4550\n9048010941\t:4560\n2147221317\t:4570\n9476477726\t:4580\n2241425485\t:4590\n4540332157\t:4600\n1853061422\t:4610\n8813758504\t:4620\n3063321751\t:4630\n8297986622\t:4640\n3717215916\t:4650\n0771669254\t:4660\n7487389866\t:4670\n5494945011\t:4680\n4654062843\t:4690\n3663937900\t:4700\n3976926567\t:4710\n2146385306\t:4720\n7360965712\t:4730\n0918076383\t:4740\n2716641627\t:4750\n4888800786\t:4760\n9256029022\t:4770\n8472104031\t:4780\n7211860820\t:4790\n4190004229\t:4800\n6617119637\t:4810\n7921337575\t:4820\n1149595015\t:4830\n6604963186\t:4840\n2947265473\t:4850\n6425230817\t:4860\n7036751590\t:4870\n6735023507\t:4880\n2835405670\t:4890\n4038674351\t:4900\n3622224771\t:4910\n5891504953\t:4920\n0984448933\t:4930\n3096340878\t:4940\n0769325993\t:4950\n9780541934\t:4960\n1447377441\t:4970\n8426312986\t:4980\n0809988868\t:4990\n7413260472\t:5000\n1569516239\t:5010\n6586457302\t:5020\n1631598193\t:5030\n1951673538\t:5040\n1297416772\t:5050\n9478672422\t:5060\n9246543668\t:5070\n0098067692\t:5080\n8238280689\t:5090\n9640048243\t:5100\n5403701416\t:5110\n3149658979\t:5120\n4092432378\t:5130\n9690706977\t:5140\n9422362508\t:5150\n2216889573\t:5160\n8379862300\t:5170\n1593776471\t:5180\n6512289357\t:5190\n8601588161\t:5200\n7557829735\t:5210\n2334460428\t:5220\n1512627203\t:5230\n7343146531\t:5240\n9777741603\t:5250\n1990665541\t:5260\n8763979293\t:5270\n3441952154\t:5280\n1341899485\t:5290\n4447345673\t:5300\n8316249934\t:5310\n1913181480\t:5320\n9277771038\t:5330\n6387734317\t:5340\n7207545654\t:5350\n5322077709\t:5360\n2120190516\t:5370\n6096280490\t:5380\n9263601975\t:5390\n9882816133\t:5400\n2316663652\t:5410\n8619326686\t:5420\n3360627356\t:5430\n7630354477\t:5440\n6280350450\t:5450\n7772355471\t:5460\n0585954870\t:5470\n2790814356\t:5480\n2401451718\t:5490\n0624643626\t:5500\n7945612753\t:5510\n1813407833\t:5520\n0336254232\t:5530\n7839449753\t:5540\n8243720583\t:5550\n5311477119\t:5560\n9260638133\t:5570\n4677687969\t:5580\n5970309833\t:5590\n9130771098\t:5600\n7040859133\t:5610\n7464144282\t:5620\n2772634659\t:5630\n4704745878\t:5640\n4778720192\t:5650\n7715280731\t:5660\n7679077071\t:5670\n5721344473\t:5680\n0605700733\t:5690\n4924369311\t:5700\n3835049316\t:5710\n3128404251\t:5720\n2192565179\t:5730\n8069411352\t:5740\n8013147013\t:5750\n0478164378\t:5760\n8518529092\t:5770\n8545201165\t:5780\n8393419656\t:5790\n2134914341\t:5800\n5956258658\t:5810\n6557055269\t:5820\n0496520985\t:5830\n8033850722\t:5840\n4264829397\t:5850\n2858478316\t:5860\n3057777560\t:5870\n6888764462\t:5880\n4824685792\t:5890\n6039535277\t:5900\n3480304802\t:5910\n9005876075\t:5920\n8251047470\t:5930\n9164396136\t:5940\n2676044925\t:5950\n6274204208\t:5960\n3208566119\t:5970\n0625454337\t:5980\n2131535958\t:5990\n4506877246\t:6000\n0290161876\t:6010\n6795240616\t:6020\n3425225771\t:6030\n9542916299\t:6040\n1930645537\t:6050\n7991403734\t:6060\n0432875262\t:6070\n8889639958\t:6080\n7947572917\t:",
+      "dependency_lock_sha256": "6ec0478e321733d0f6a11a04ec5d4e2b9b16716762a72165ba3eea431ff3efd2",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-rust-3",
+        "{n}"
+      ],
+      "compile_command": [
+        "cargo",
+        "build",
+        "--release",
+        "--manifest-path",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-rust-3.cargo/Cargo.toml"
+      ],
+      "source": {
+        "sha256": "1668f9258a1b81868a3d4b0d6a6e282af8f2b182d1d2281bf0bc85dfe4729a53",
+        "physical_lines": 199,
+        "nonblank_noncomment_lines": 175
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.303086375,
+        0.305272,
+        0.304009625,
+        0.303097792,
+        0.302219166,
+        0.301316208,
+        0.301270542
+      ],
+      "executable_sha256": "783d481dcf6336178a2cd6cd893e6e566081ee1d08dd06806b7cf11c689beade",
+      "median_seconds": 0.303086375,
+      "stdev_seconds": 0.0014467469265515172,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-chapel-2",
+      "language": "chapel",
+      "variant": 2,
+      "path": "upstream/pidigits-chapel-2.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-chapel-2.html",
+      "sha256": "2e4772c1be21857bea5d5ed52db6fed9191101becff27292007aedf0a9c19b95",
+      "upstream_starred": false,
+      "published_secs": 0.79,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 18:04:53 GMT\n\nMAKE:\nmv pidigits.chapel-2.chapel pidigits.chapel-2.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast pidigits.chapel-2.chpl -o pidigits.chapel-2.chapel_run\nrm pidigits.chapel-2.chpl\n\n19.59 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./pidigits.chapel-2.chapel_run --n=10000\n\n(TRUNCATED) PROGRAM OUTPUT:\n3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9821480865\t:110\n1328230664\t:120\n7093844609\t:130\n5505822317\t:140\n2535940812\t:150\n8481117450\t:160\n2841027019\t:170\n3852110555\t:180\n9644622948\t:190\n9549303819\t:200\n6442881097\t:210\n5665933446\t:220\n1284756482\t:230\n3378678316\t:240\n5271201909\t:250\n1456485669\t:260\n2346034861\t:270\n0454326648\t:280\n2133936072\t:290\n6024914127\t:300\n3724587006\t:310\n6063155881\t:320\n7488152092\t:330\n0962829254\t:340\n0917153643\t:350\n6789259036\t:360\n0011330530\t:370\n5488204665\t:380\n2138414695\t:390\n1941511609\t:400\n4330572703\t:410\n6575959195\t:420\n3092186117\t:430\n3819326117\t:440\n9310511854\t:450\n8074462379\t:460\n9627495673\t:470\n5188575272\t:480\n4891227938\t:490\n1830119491\t:500\n2983367336\t:510\n2440656643\t:520\n0860213949\t:530\n4639522473\t:540\n7190702179\t:550\n8609437027\t:560\n7053921717\t:570\n6293176752\t:580\n3846748184\t:590\n6766940513\t:600\n2000568127\t:610\n1452635608\t:620\n2778577134\t:630\n2757789609\t:640\n1736371787\t:650\n2146844090\t:660\n1224953430\t:670\n1465495853\t:680\n7105079227\t:690\n9689258923\t:700\n5420199561\t:710\n1212902196\t:720\n0864034418\t:730\n1598136297\t:740\n7477130996\t:750\n0518707211\t:760\n3499999983\t:770\n7297804995\t:780\n1059731732\t:790\n8160963185\t:800\n9502445945\t:810\n5346908302\t:820\n6425223082\t:830\n5334468503\t:840\n5261931188\t:850\n1710100031\t:860\n3783875288\t:870\n6587533208\t:880\n3814206171\t:890\n7766914730\t:900\n3598253490\t:910\n4287554687\t:920\n3115956286\t:930\n3882353787\t:940\n5937519577\t:950\n8185778053\t:960\n2171226806\t:970\n6130019278\t:980\n7661119590\t:990\n9216420198\t:1000\n9380952572\t:1010\n0106548586\t:1020\n3278865936\t:1030\n1533818279\t:1040\n6823030195\t:1050\n2035301852\t:1060\n9689957736\t:1070\n2259941389\t:1080\n1249721775\t:1090\n2834791315\t:1100\n1557485724\t:1110\n2454150695\t:1120\n9508295331\t:1130\n1686172785\t:1140\n5889075098\t:1150\n3817546374\t:1160\n6493931925\t:1170\n5060400927\t:1180\n7016711390\t:1190\n0984882401\t:1200\n2858361603\t:1210\n5637076601\t:1220\n0471018194\t:1230\n2955596198\t:1240\n9467678374\t:1250\n4944825537\t:1260\n9774726847\t:1270\n1040475346\t:1280\n4620804668\t:1290\n4259069491\t:1300\n2933136770\t:1310\n2898915210\t:1320\n4752162056\t:1330\n9660240580\t:1340\n3815019351\t:1350\n1253382430\t:1360\n0355876402\t:1370\n4749647326\t:1380\n3914199272\t:1390\n6042699227\t:1400\n9678235478\t:1410\n1636009341\t:1420\n7216412199\t:1430\n2458631503\t:1440\n0286182974\t:1450\n5557067498\t:1460\n3850549458\t:1470\n8586926995\t:1480\n6909272107\t:1490\n9750930295\t:1500\n5321165344\t:1510\n9872027559\t:1520\n6023648066\t:1530\n5499119881\t:1540\n8347977535\t:1550\n6636980742\t:1560\n6542527862\t:1570\n5518184175\t:1580\n7467289097\t:1590\n7772793800\t:1600\n0816470600\t:1610\n1614524919\t:1620\n2173217214\t:1630\n7723501414\t:1640\n4197356854\t:1650\n8161361157\t:1660\n3525521334\t:1670\n7574184946\t:1680\n8438523323\t:1690\n9073941433\t:1700\n3454776241\t:1710\n6862518983\t:1720\n5694855620\t:1730\n9921922218\t:1740\n4272550254\t:1750\n2568876717\t:1760\n9049460165\t:1770\n3466804988\t:1780\n6272327917\t:1790\n8608578438\t:1800\n3827967976\t:1810\n6814541009\t:1820\n5388378636\t:1830\n0950680064\t:1840\n2251252051\t:1850\n1739298489\t:1860\n6084128488\t:1870\n6269456042\t:1880\n4196528502\t:1890\n2210661186\t:1900\n3067442786\t:1910\n2203919494\t:1920\n5047123713\t:1930\n7869609563\t:1940\n6437191728\t:1950\n7467764657\t:1960\n5739624138\t:1970\n9086583264\t:1980\n5995813390\t:1990\n4780275900\t:2000\n9946576407\t:2010\n8951269468\t:2020\n3983525957\t:2030\n0982582262\t:2040\n0522489407\t:2050\n7267194782\t:2060\n6848260147\t:2070\n6990902640\t:2080\n1363944374\t:2090\n5530506820\t:2100\n3496252451\t:2110\n7493996514\t:2120\n3142980919\t:2130\n0659250937\t:2140\n2216964615\t:2150\n1570985838\t:2160\n7410597885\t:2170\n9597729754\t:2180\n9893016175\t:2190\n3928468138\t:2200\n2686838689\t:2210\n4277415599\t:2220\n1855925245\t:2230\n9539594310\t:2240\n4997252468\t:2250\n0845987273\t:2260\n6446958486\t:2270\n5383673622\t:2280\n2626099124\t:2290\n6080512438\t:2300\n8439045124\t:2310\n4136549762\t:2320\n7807977156\t:2330\n9143599770\t:2340\n0129616089\t:2350\n4416948685\t:2360\n5584840635\t:2370\n3422072225\t:2380\n8284886481\t:2390\n5845602850\t:2400\n6016842739\t:2410\n4522674676\t:2420\n7889525213\t:2430\n8522549954\t:2440\n6667278239\t:2450\n8645659611\t:2460\n6354886230\t:2470\n5774564980\t:2480\n3559363456\t:2490\n8174324112\t:2500\n5150760694\t:2510\n7945109659\t:2520\n6094025228\t:2530\n8797108931\t:2540\n4566913686\t:2550\n7228748940\t:2560\n5601015033\t:2570\n0861792868\t:2580\n0920874760\t:2590\n9178249385\t:2600\n8900971490\t:2610\n9675985261\t:2620\n3655497818\t:2630\n9312978482\t:2640\n1682998948\t:2650\n7226588048\t:2660\n5756401427\t:2670\n0477555132\t:2680\n3796414515\t:2690\n2374623436\t:2700\n4542858444\t:2710\n7952658678\t:2720\n2105114135\t:2730\n4735739523\t:2740\n1134271661\t:2750\n0213596953\t:2760\n6231442952\t:2770\n4849371871\t:2780\n1014576540\t:2790\n3590279934\t:2800\n4037420073\t:2810\n1057853906\t:2820\n2198387447\t:2830\n8084784896\t:2840\n8332144571\t:2850\n3868751943\t:2860\n5064302184\t:2870\n5319104848\t:2880\n1005370614\t:2890\n6806749192\t:2900\n7819119793\t:2910\n9952061419\t:2920\n6634287544\t:2930\n4064374512\t:2940\n3718192179\t:2950\n9983910159\t:2960\n1956181467\t:2970\n5142691239\t:2980\n7489409071\t:2990\n8649423196\t:3000\n1567945208\t:3010\n0951465502\t:3020\n2523160388\t:3030\n1930142093\t:3040\n7621378559\t:3050\n5663893778\t:3060\n7083039069\t:3070\n7920773467\t:3080\n2218256259\t:3090\n9661501421\t:3100\n5030680384\t:3110\n4773454920\t:3120\n2605414665\t:3130\n9252014974\t:3140\n4285073251\t:3150\n8666002132\t:3160\n4340881907\t:3170\n1048633173\t:3180\n4649651453\t:3190\n9057962685\t:3200\n6100550810\t:3210\n6658796998\t:3220\n1635747363\t:3230\n8405257145\t:3240\n9102897064\t:3250\n1401109712\t:3260\n0628043903\t:3270\n9759515677\t:3280\n1577004203\t:3290\n3786993600\t:3300\n7230558763\t:3310\n1763594218\t:3320\n7312514712\t:3330\n0532928191\t:3340\n8261861258\t:3350\n6732157919\t:3360\n8414848829\t:3370\n1644706095\t:3380\n7527069572\t:3390\n2091756711\t:3400\n6722910981\t:3410\n6909152801\t:3420\n7350671274\t:3430\n8583222871\t:3440\n8352093539\t:3450\n6572512108\t:3460\n3579151369\t:3470\n8820914442\t:3480\n1006751033\t:3490\n4671103141\t:3500\n2671113699\t:3510\n0865851639\t:3520\n8315019701\t:3530\n6515116851\t:3540\n7143765761\t:3550\n8351556508\t:3560\n8490998985\t:3570\n9982387345\t:3580\n5283316355\t:3590\n0764791853\t:3600\n5893226185\t:3610\n4896321329\t:3620\n3308985706\t:3630\n4204675259\t:3640\n0709154814\t:3650\n1654985946\t:3660\n1637180270\t:3670\n9819943099\t:3680\n2448895757\t:3690\n1282890592\t:3700\n3233260972\t:3710\n9971208443\t:3720\n3573265489\t:3730\n3823911932\t:3740\n5974636673\t:3750\n0583604142\t:3760\n8138830320\t:3770\n3824903758\t:3780\n9852437441\t:3790\n7029132765\t:3800\n6180937734\t:3810\n4403070746\t:3820\n9211201913\t:3830\n0203303801\t:3840\n9762110110\t:3850\n0449293215\t:3860\n1608424448\t:3870\n5963766983\t:3880\n8952286847\t:3890\n8312355265\t:3900\n8213144957\t:3910\n6857262433\t:3920\n4418930396\t:3930\n8642624341\t:3940\n0773226978\t:3950\n0280731891\t:3960\n5441101044\t:3970\n6823252716\t:3980\n2010526522\t:3990\n7211166039\t:4000\n6665573092\t:4010\n5471105578\t:4020\n5376346682\t:4030\n0653109896\t:4040\n5269186205\t:4050\n6476931257\t:4060\n0586356620\t:4070\n1855810072\t:4080\n9360659876\t:4090\n4861179104\t:4100\n5334885034\t:4110\n6113657686\t:4120\n7532494416\t:4130\n6803962657\t:4140\n9787718556\t:4150\n0845529654\t:4160\n1266540853\t:4170\n0614344431\t:4180\n8586769751\t:4190\n4566140680\t:4200\n0700237877\t:4210\n6591344017\t:4220\n1274947042\t:4230\n0562230538\t:4240\n9945613140\t:4250\n7112700040\t:4260\n7854733269\t:4270\n9390814546\t:4280\n6464588079\t:4290\n7270826683\t:4300\n0634328587\t:4310\n8569830523\t:4320\n5808933065\t:4330\n7574067954\t:4340\n5716377525\t:4350\n4202114955\t:4360\n7615814002\t:4370\n5012622859\t:4380\n4130216471\t:4390\n5509792592\t:4400\n3099079654\t:4410\n7376125517\t:4420\n6567513575\t:4430\n1782966645\t:4440\n4779174501\t:4450\n1299614890\t:4460\n3046399471\t:4470\n3296210734\t:4480\n0437518957\t:4490\n3596145890\t:4500\n1938971311\t:4510\n1790429782\t:4520\n8564750320\t:4530\n3198691514\t:4540\n0287080859\t:4550\n9048010941\t:4560\n2147221317\t:4570\n9476477726\t:4580\n2241425485\t:4590\n4540332157\t:4600\n1853061422\t:4610\n8813758504\t:4620\n3063321751\t:4630\n8297986622\t:4640\n3717215916\t:4650\n0771669254\t:4660\n7487389866\t:4670\n5494945011\t:4680\n4654062843\t:4690\n3663937900\t:4700\n3976926567\t:4710\n2146385306\t:4720\n7360965712\t:4730\n0918076383\t:4740\n2716641627\t:4750\n4888800786\t:4760\n9256029022\t:4770\n8472104031\t:4780\n7211860820\t:4790\n4190004229\t:4800\n6617119637\t:4810\n7921337575\t:4820\n1149595015\t:4830\n6604963186\t:4840\n2947265473\t:4850\n6425230817\t:4860\n7036751590\t:4870\n6735023507\t:4880\n2835405670\t:4890\n4038674351\t:4900\n3622224771\t:4910\n5891504953\t:4920\n0984448933\t:4930\n3096340878\t:4940\n0769325993\t:4950\n9780541934\t:4960\n1447377441\t:4970\n8426312986\t:4980\n0809988868\t:4990\n7413260472\t:5000\n1569516239\t:5010\n6586457302\t:5020\n1631598193\t:5030\n1951673538\t:5040\n1297416772\t:5050\n9478672422\t:5060\n9246543668\t:5070\n0098067692\t:5080\n8238280689\t:5090\n9640048243\t:5100\n5403701416\t:5110\n3149658979\t:5120\n4092432378\t:5130\n9690706977\t:5140\n9422362508\t:5150\n2216889573\t:5160\n8379862300\t:5170\n1593776471\t:5180\n6512289357\t:5190\n8601588161\t:5200\n7557829735\t:5210\n2334460428\t:5220\n1512627203\t:5230\n7343146531\t:5240\n9777741603\t:5250\n1990665541\t:5260\n8763979293\t:5270\n3441952154\t:5280\n1341899485\t:5290\n4447345673\t:5300\n8316249934\t:5310\n1913181480\t:5320\n9277771038\t:5330\n6387734317\t:5340\n7207545654\t:5350\n5322077709\t:5360\n2120190516\t:5370\n6096280490\t:5380\n9263601975\t:5390\n9882816133\t:5400\n2316663652\t:5410\n8619326686\t:5420\n3360627356\t:5430\n7630354477\t:5440\n6280350450\t:5450\n7772355471\t:5460\n0585954870\t:5470\n2790814356\t:5480\n2401451718\t:5490\n0624643626\t:5500\n7945612753\t:5510\n1813407833\t:5520\n0336254232\t:5530\n7839449753\t:5540\n8243720583\t:5550\n5311477119\t:5560\n9260638133\t:5570\n4677687969\t:5580\n5970309833\t:5590\n9130771098\t:5600\n7040859133\t:5610\n7464144282\t:5620\n2772634659\t:5630\n4704745878\t:5640\n4778720192\t:5650\n7715280731\t:5660\n7679077071\t:5670\n5721344473\t:5680\n0605700733\t:5690\n4924369311\t:5700\n3835049316\t:5710\n3128404251\t:5720\n2192565179\t:5730\n8069411352\t:5740\n8013147013\t:5750\n0478164378\t:5760\n8518529092\t:5770\n8545201165\t:5780\n8393419656\t:5790\n2134914341\t:5800\n5956258658\t:5810\n6557055269\t:5820\n0496520985\t:5830\n8033850722\t:5840\n4264829397\t:5850\n2858478316\t:5860\n3057777560\t:5870\n6888764462\t:5880\n4824685792\t:5890\n6039535277\t:5900\n3480304802\t:5910\n9005876075\t:5920\n8251047470\t:5930\n9164396136\t:5940\n2676044925\t:5950\n6274204208\t:5960\n3208566119\t:5970\n0625454337\t:5980\n2131535958\t:5990\n4506877246\t:6000\n0290161876\t:6010\n6795240616\t:6020\n3425225771\t:6030\n9542916299\t:6040\n1930645537\t:6050\n7991403734\t:6060\n0432875262\t:6070\n8889639958\t:6080\n7947572917\t:",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-chapel-2",
+        "--n={n}"
+      ],
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-chapel-2.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-chapel-2",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "source": {
+        "sha256": "2e4772c1be21857bea5d5ed52db6fed9191101becff27292007aedf0a9c19b95",
+        "physical_lines": 70,
+        "nonblank_noncomment_lines": 47
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.319703875,
+        0.318883959,
+        0.319595084,
+        0.31555875,
+        0.317443625,
+        0.321194584,
+        0.31771225
+      ],
+      "executable_sha256": "85a9127570c59654d5dab5946d82711a3016f937fa47ee08f7867006fd127e2d",
+      "median_seconds": 0.318883959,
+      "stdev_seconds": 0.0018436410273279782,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-julia-3",
+      "language": "julia",
+      "variant": 3,
+      "path": "upstream/pidigits-julia-3.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-julia-3.html",
+      "sha256": "d9552c519b2a965e9a092c3658460bf8c6e3402dbcd169a498bcff678014da04",
+      "upstream_starred": true,
+      "published_secs": 1.14,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 08:55:44 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.10 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- pidigits.julia-3.julia 10000\n\n(TRUNCATED) PROGRAM OUTPUT:\n3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9821480865\t:110\n1328230664\t:120\n7093844609\t:130\n5505822317\t:140\n2535940812\t:150\n8481117450\t:160\n2841027019\t:170\n3852110555\t:180\n9644622948\t:190\n9549303819\t:200\n6442881097\t:210\n5665933446\t:220\n1284756482\t:230\n3378678316\t:240\n5271201909\t:250\n1456485669\t:260\n2346034861\t:270\n0454326648\t:280\n2133936072\t:290\n6024914127\t:300\n3724587006\t:310\n6063155881\t:320\n7488152092\t:330\n0962829254\t:340\n0917153643\t:350\n6789259036\t:360\n0011330530\t:370\n5488204665\t:380\n2138414695\t:390\n1941511609\t:400\n4330572703\t:410\n6575959195\t:420\n3092186117\t:430\n3819326117\t:440\n9310511854\t:450\n8074462379\t:460\n9627495673\t:470\n5188575272\t:480\n4891227938\t:490\n1830119491\t:500\n2983367336\t:510\n2440656643\t:520\n0860213949\t:530\n4639522473\t:540\n7190702179\t:550\n8609437027\t:560\n7053921717\t:570\n6293176752\t:580\n3846748184\t:590\n6766940513\t:600\n2000568127\t:610\n1452635608\t:620\n2778577134\t:630\n2757789609\t:640\n1736371787\t:650\n2146844090\t:660\n1224953430\t:670\n1465495853\t:680\n7105079227\t:690\n9689258923\t:700\n5420199561\t:710\n1212902196\t:720\n0864034418\t:730\n1598136297\t:740\n7477130996\t:750\n0518707211\t:760\n3499999983\t:770\n7297804995\t:780\n1059731732\t:790\n8160963185\t:800\n9502445945\t:810\n5346908302\t:820\n6425223082\t:830\n5334468503\t:840\n5261931188\t:850\n1710100031\t:860\n3783875288\t:870\n6587533208\t:880\n3814206171\t:890\n7766914730\t:900\n3598253490\t:910\n4287554687\t:920\n3115956286\t:930\n3882353787\t:940\n5937519577\t:950\n8185778053\t:960\n2171226806\t:970\n6130019278\t:980\n7661119590\t:990\n9216420198\t:1000\n9380952572\t:1010\n0106548586\t:1020\n3278865936\t:1030\n1533818279\t:1040\n6823030195\t:1050\n2035301852\t:1060\n9689957736\t:1070\n2259941389\t:1080\n1249721775\t:1090\n2834791315\t:1100\n1557485724\t:1110\n2454150695\t:1120\n9508295331\t:1130\n1686172785\t:1140\n5889075098\t:1150\n3817546374\t:1160\n6493931925\t:1170\n5060400927\t:1180\n7016711390\t:1190\n0984882401\t:1200\n2858361603\t:1210\n5637076601\t:1220\n0471018194\t:1230\n2955596198\t:1240\n9467678374\t:1250\n4944825537\t:1260\n9774726847\t:1270\n1040475346\t:1280\n4620804668\t:1290\n4259069491\t:1300\n2933136770\t:1310\n2898915210\t:1320\n4752162056\t:1330\n9660240580\t:1340\n3815019351\t:1350\n1253382430\t:1360\n0355876402\t:1370\n4749647326\t:1380\n3914199272\t:1390\n6042699227\t:1400\n9678235478\t:1410\n1636009341\t:1420\n7216412199\t:1430\n2458631503\t:1440\n0286182974\t:1450\n5557067498\t:1460\n3850549458\t:1470\n8586926995\t:1480\n6909272107\t:1490\n9750930295\t:1500\n5321165344\t:1510\n9872027559\t:1520\n6023648066\t:1530\n5499119881\t:1540\n8347977535\t:1550\n6636980742\t:1560\n6542527862\t:1570\n5518184175\t:1580\n7467289097\t:1590\n7772793800\t:1600\n0816470600\t:1610\n1614524919\t:1620\n2173217214\t:1630\n7723501414\t:1640\n4197356854\t:1650\n8161361157\t:1660\n3525521334\t:1670\n7574184946\t:1680\n8438523323\t:1690\n9073941433\t:1700\n3454776241\t:1710\n6862518983\t:1720\n5694855620\t:1730\n9921922218\t:1740\n4272550254\t:1750\n2568876717\t:1760\n9049460165\t:1770\n3466804988\t:1780\n6272327917\t:1790\n8608578438\t:1800\n3827967976\t:1810\n6814541009\t:1820\n5388378636\t:1830\n0950680064\t:1840\n2251252051\t:1850\n1739298489\t:1860\n6084128488\t:1870\n6269456042\t:1880\n4196528502\t:1890\n2210661186\t:1900\n3067442786\t:1910\n2203919494\t:1920\n5047123713\t:1930\n7869609563\t:1940\n6437191728\t:1950\n7467764657\t:1960\n5739624138\t:1970\n9086583264\t:1980\n5995813390\t:1990\n4780275900\t:2000\n9946576407\t:2010\n8951269468\t:2020\n3983525957\t:2030\n0982582262\t:2040\n0522489407\t:2050\n7267194782\t:2060\n6848260147\t:2070\n6990902640\t:2080\n1363944374\t:2090\n5530506820\t:2100\n3496252451\t:2110\n7493996514\t:2120\n3142980919\t:2130\n0659250937\t:2140\n2216964615\t:2150\n1570985838\t:2160\n7410597885\t:2170\n9597729754\t:2180\n9893016175\t:2190\n3928468138\t:2200\n2686838689\t:2210\n4277415599\t:2220\n1855925245\t:2230\n9539594310\t:2240\n4997252468\t:2250\n0845987273\t:2260\n6446958486\t:2270\n5383673622\t:2280\n2626099124\t:2290\n6080512438\t:2300\n8439045124\t:2310\n4136549762\t:2320\n7807977156\t:2330\n9143599770\t:2340\n0129616089\t:2350\n4416948685\t:2360\n5584840635\t:2370\n3422072225\t:2380\n8284886481\t:2390\n5845602850\t:2400\n6016842739\t:2410\n4522674676\t:2420\n7889525213\t:2430\n8522549954\t:2440\n6667278239\t:2450\n8645659611\t:2460\n6354886230\t:2470\n5774564980\t:2480\n3559363456\t:2490\n8174324112\t:2500\n5150760694\t:2510\n7945109659\t:2520\n6094025228\t:2530\n8797108931\t:2540\n4566913686\t:2550\n7228748940\t:2560\n5601015033\t:2570\n0861792868\t:2580\n0920874760\t:2590\n9178249385\t:2600\n8900971490\t:2610\n9675985261\t:2620\n3655497818\t:2630\n9312978482\t:2640\n1682998948\t:2650\n7226588048\t:2660\n5756401427\t:2670\n0477555132\t:2680\n3796414515\t:2690\n2374623436\t:2700\n4542858444\t:2710\n7952658678\t:2720\n2105114135\t:2730\n4735739523\t:2740\n1134271661\t:2750\n0213596953\t:2760\n6231442952\t:2770\n4849371871\t:2780\n1014576540\t:2790\n3590279934\t:2800\n4037420073\t:2810\n1057853906\t:2820\n2198387447\t:2830\n8084784896\t:2840\n8332144571\t:2850\n3868751943\t:2860\n5064302184\t:2870\n5319104848\t:2880\n1005370614\t:2890\n6806749192\t:2900\n7819119793\t:2910\n9952061419\t:2920\n6634287544\t:2930\n4064374512\t:2940\n3718192179\t:2950\n9983910159\t:2960\n1956181467\t:2970\n5142691239\t:2980\n7489409071\t:2990\n8649423196\t:3000\n1567945208\t:3010\n0951465502\t:3020\n2523160388\t:3030\n1930142093\t:3040\n7621378559\t:3050\n5663893778\t:3060\n7083039069\t:3070\n7920773467\t:3080\n2218256259\t:3090\n9661501421\t:3100\n5030680384\t:3110\n4773454920\t:3120\n2605414665\t:3130\n9252014974\t:3140\n4285073251\t:3150\n8666002132\t:3160\n4340881907\t:3170\n1048633173\t:3180\n4649651453\t:3190\n9057962685\t:3200\n6100550810\t:3210\n6658796998\t:3220\n1635747363\t:3230\n8405257145\t:3240\n9102897064\t:3250\n1401109712\t:3260\n0628043903\t:3270\n9759515677\t:3280\n1577004203\t:3290\n3786993600\t:3300\n7230558763\t:3310\n1763594218\t:3320\n7312514712\t:3330\n0532928191\t:3340\n8261861258\t:3350\n6732157919\t:3360\n8414848829\t:3370\n1644706095\t:3380\n7527069572\t:3390\n2091756711\t:3400\n6722910981\t:3410\n6909152801\t:3420\n7350671274\t:3430\n8583222871\t:3440\n8352093539\t:3450\n6572512108\t:3460\n3579151369\t:3470\n8820914442\t:3480\n1006751033\t:3490\n4671103141\t:3500\n2671113699\t:3510\n0865851639\t:3520\n8315019701\t:3530\n6515116851\t:3540\n7143765761\t:3550\n8351556508\t:3560\n8490998985\t:3570\n9982387345\t:3580\n5283316355\t:3590\n0764791853\t:3600\n5893226185\t:3610\n4896321329\t:3620\n3308985706\t:3630\n4204675259\t:3640\n0709154814\t:3650\n1654985946\t:3660\n1637180270\t:3670\n9819943099\t:3680\n2448895757\t:3690\n1282890592\t:3700\n3233260972\t:3710\n9971208443\t:3720\n3573265489\t:3730\n3823911932\t:3740\n5974636673\t:3750\n0583604142\t:3760\n8138830320\t:3770\n3824903758\t:3780\n9852437441\t:3790\n7029132765\t:3800\n6180937734\t:3810\n4403070746\t:3820\n9211201913\t:3830\n0203303801\t:3840\n9762110110\t:3850\n0449293215\t:3860\n1608424448\t:3870\n5963766983\t:3880\n8952286847\t:3890\n8312355265\t:3900\n8213144957\t:3910\n6857262433\t:3920\n4418930396\t:3930\n8642624341\t:3940\n0773226978\t:3950\n0280731891\t:3960\n5441101044\t:3970\n6823252716\t:3980\n2010526522\t:3990\n7211166039\t:4000\n6665573092\t:4010\n5471105578\t:4020\n5376346682\t:4030\n0653109896\t:4040\n5269186205\t:4050\n6476931257\t:4060\n0586356620\t:4070\n1855810072\t:4080\n9360659876\t:4090\n4861179104\t:4100\n5334885034\t:4110\n6113657686\t:4120\n7532494416\t:4130\n6803962657\t:4140\n9787718556\t:4150\n0845529654\t:4160\n1266540853\t:4170\n0614344431\t:4180\n8586769751\t:4190\n4566140680\t:4200\n0700237877\t:4210\n6591344017\t:4220\n1274947042\t:4230\n0562230538\t:4240\n9945613140\t:4250\n7112700040\t:4260\n7854733269\t:4270\n9390814546\t:4280\n6464588079\t:4290\n7270826683\t:4300\n0634328587\t:4310\n8569830523\t:4320\n5808933065\t:4330\n7574067954\t:4340\n5716377525\t:4350\n4202114955\t:4360\n7615814002\t:4370\n5012622859\t:4380\n4130216471\t:4390\n5509792592\t:4400\n3099079654\t:4410\n7376125517\t:4420\n6567513575\t:4430\n1782966645\t:4440\n4779174501\t:4450\n1299614890\t:4460\n3046399471\t:4470\n3296210734\t:4480\n0437518957\t:4490\n3596145890\t:4500\n1938971311\t:4510\n1790429782\t:4520\n8564750320\t:4530\n3198691514\t:4540\n0287080859\t:4550\n9048010941\t:4560\n2147221317\t:4570\n9476477726\t:4580\n2241425485\t:4590\n4540332157\t:4600\n1853061422\t:4610\n8813758504\t:4620\n3063321751\t:4630\n8297986622\t:4640\n3717215916\t:4650\n0771669254\t:4660\n7487389866\t:4670\n5494945011\t:4680\n4654062843\t:4690\n3663937900\t:4700\n3976926567\t:4710\n2146385306\t:4720\n7360965712\t:4730\n0918076383\t:4740\n2716641627\t:4750\n4888800786\t:4760\n9256029022\t:4770\n8472104031\t:4780\n7211860820\t:4790\n4190004229\t:4800\n6617119637\t:4810\n7921337575\t:4820\n1149595015\t:4830\n6604963186\t:4840\n2947265473\t:4850\n6425230817\t:4860\n7036751590\t:4870\n6735023507\t:4880\n2835405670\t:4890\n4038674351\t:4900\n3622224771\t:4910\n5891504953\t:4920\n0984448933\t:4930\n3096340878\t:4940\n0769325993\t:4950\n9780541934\t:4960\n1447377441\t:4970\n8426312986\t:4980\n0809988868\t:4990\n7413260472\t:5000\n1569516239\t:5010\n6586457302\t:5020\n1631598193\t:5030\n1951673538\t:5040\n1297416772\t:5050\n9478672422\t:5060\n9246543668\t:5070\n0098067692\t:5080\n8238280689\t:5090\n9640048243\t:5100\n5403701416\t:5110\n3149658979\t:5120\n4092432378\t:5130\n9690706977\t:5140\n9422362508\t:5150\n2216889573\t:5160\n8379862300\t:5170\n1593776471\t:5180\n6512289357\t:5190\n8601588161\t:5200\n7557829735\t:5210\n2334460428\t:5220\n1512627203\t:5230\n7343146531\t:5240\n9777741603\t:5250\n1990665541\t:5260\n8763979293\t:5270\n3441952154\t:5280\n1341899485\t:5290\n4447345673\t:5300\n8316249934\t:5310\n1913181480\t:5320\n9277771038\t:5330\n6387734317\t:5340\n7207545654\t:5350\n5322077709\t:5360\n2120190516\t:5370\n6096280490\t:5380\n9263601975\t:5390\n9882816133\t:5400\n2316663652\t:5410\n8619326686\t:5420\n3360627356\t:5430\n7630354477\t:5440\n6280350450\t:5450\n7772355471\t:5460\n0585954870\t:5470\n2790814356\t:5480\n2401451718\t:5490\n0624643626\t:5500\n7945612753\t:5510\n1813407833\t:5520\n0336254232\t:5530\n7839449753\t:5540\n8243720583\t:5550\n5311477119\t:5560\n9260638133\t:5570\n4677687969\t:5580\n5970309833\t:5590\n9130771098\t:5600\n7040859133\t:5610\n7464144282\t:5620\n2772634659\t:5630\n4704745878\t:5640\n4778720192\t:5650\n7715280731\t:5660\n7679077071\t:5670\n5721344473\t:5680\n0605700733\t:5690\n4924369311\t:5700\n3835049316\t:5710\n3128404251\t:5720\n2192565179\t:5730\n8069411352\t:5740\n8013147013\t:5750\n0478164378\t:5760\n8518529092\t:5770\n8545201165\t:5780\n8393419656\t:5790\n2134914341\t:5800\n5956258658\t:5810\n6557055269\t:5820\n0496520985\t:5830\n8033850722\t:5840\n4264829397\t:5850\n2858478316\t:5860\n3057777560\t:5870\n6888764462\t:5880\n4824685792\t:5890\n6039535277\t:5900\n3480304802\t:5910\n9005876075\t:5920\n8251047470\t:5930\n9164396136\t:5940\n2676044925\t:5950\n6274204208\t:5960\n3208566119\t:5970\n0625454337\t:5980\n2131535958\t:5990\n4506877246\t:6000\n0290161876\t:6010\n6795240616\t:6020\n3425225771\t:6030\n9542916299\t:6040\n1930645537\t:6050\n7991403734\t:6060\n0432875262\t:6070\n8889639958\t:6080\n7947572917\t:",
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--threads=8,0",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-julia-3.jl",
+        "{n}"
+      ],
+      "compile_command": null,
+      "source": {
+        "sha256": "d9552c519b2a965e9a092c3658460bf8c6e3402dbcd169a498bcff678014da04",
+        "physical_lines": 70,
+        "nonblank_noncomment_lines": 58
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.399957042,
+        0.397526583,
+        0.399330292,
+        0.400046,
+        0.3998565,
+        0.402663833,
+        0.404838875
+      ],
+      "median_seconds": 0.399957042,
+      "stdev_seconds": 0.002399950324701152,
+      "benchmark": "pidigits"
+    },
+    {
+      "id": "pidigits-gpp-5",
+      "language": "cpp",
+      "variant": 5,
+      "path": "upstream/pidigits-gpp-5.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-gpp-5.html",
+      "sha256": "19f5486a8f52883e43f773b2ed13edc058ea3075c8c25d03f20e3d2923ace642",
+      "upstream_starred": true,
+      "published_secs": 0.73,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 04:40:31 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++14 pidigits.gpp-5.c++ -o pidigits.gpp-5.c++.o &&  \\\n        /usr/bin/g++ pidigits.gpp-5.c++.o -o pidigits.gpp-5.gpp_run -lgmp \nrm pidigits.gpp-5.c++\n\n3.34s to complete and log all make actions\n\nCOMMAND LINE:\n ./pidigits.gpp-5.gpp_run 10000\n\n(TRUNCATED) PROGRAM OUTPUT:\n3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9821480865\t:110\n1328230664\t:120\n7093844609\t:130\n5505822317\t:140\n2535940812\t:150\n8481117450\t:160\n2841027019\t:170\n3852110555\t:180\n9644622948\t:190\n9549303819\t:200\n6442881097\t:210\n5665933446\t:220\n1284756482\t:230\n3378678316\t:240\n5271201909\t:250\n1456485669\t:260\n2346034861\t:270\n0454326648\t:280\n2133936072\t:290\n6024914127\t:300\n3724587006\t:310\n6063155881\t:320\n7488152092\t:330\n0962829254\t:340\n0917153643\t:350\n6789259036\t:360\n0011330530\t:370\n5488204665\t:380\n2138414695\t:390\n1941511609\t:400\n4330572703\t:410\n6575959195\t:420\n3092186117\t:430\n3819326117\t:440\n9310511854\t:450\n8074462379\t:460\n9627495673\t:470\n5188575272\t:480\n4891227938\t:490\n1830119491\t:500\n2983367336\t:510\n2440656643\t:520\n0860213949\t:530\n4639522473\t:540\n7190702179\t:550\n8609437027\t:560\n7053921717\t:570\n6293176752\t:580\n3846748184\t:590\n6766940513\t:600\n2000568127\t:610\n1452635608\t:620\n2778577134\t:630\n2757789609\t:640\n1736371787\t:650\n2146844090\t:660\n1224953430\t:670\n1465495853\t:680\n7105079227\t:690\n9689258923\t:700\n5420199561\t:710\n1212902196\t:720\n0864034418\t:730\n1598136297\t:740\n7477130996\t:750\n0518707211\t:760\n3499999983\t:770\n7297804995\t:780\n1059731732\t:790\n8160963185\t:800\n9502445945\t:810\n5346908302\t:820\n6425223082\t:830\n5334468503\t:840\n5261931188\t:850\n1710100031\t:860\n3783875288\t:870\n6587533208\t:880\n3814206171\t:890\n7766914730\t:900\n3598253490\t:910\n4287554687\t:920\n3115956286\t:930\n3882353787\t:940\n5937519577\t:950\n8185778053\t:960\n2171226806\t:970\n6130019278\t:980\n7661119590\t:990\n9216420198\t:1000\n9380952572\t:1010\n0106548586\t:1020\n3278865936\t:1030\n1533818279\t:1040\n6823030195\t:1050\n2035301852\t:1060\n9689957736\t:1070\n2259941389\t:1080\n1249721775\t:1090\n2834791315\t:1100\n1557485724\t:1110\n2454150695\t:1120\n9508295331\t:1130\n1686172785\t:1140\n5889075098\t:1150\n3817546374\t:1160\n6493931925\t:1170\n5060400927\t:1180\n7016711390\t:1190\n0984882401\t:1200\n2858361603\t:1210\n5637076601\t:1220\n0471018194\t:1230\n2955596198\t:1240\n9467678374\t:1250\n4944825537\t:1260\n9774726847\t:1270\n1040475346\t:1280\n4620804668\t:1290\n4259069491\t:1300\n2933136770\t:1310\n2898915210\t:1320\n4752162056\t:1330\n9660240580\t:1340\n3815019351\t:1350\n1253382430\t:1360\n0355876402\t:1370\n4749647326\t:1380\n3914199272\t:1390\n6042699227\t:1400\n9678235478\t:1410\n1636009341\t:1420\n7216412199\t:1430\n2458631503\t:1440\n0286182974\t:1450\n5557067498\t:1460\n3850549458\t:1470\n8586926995\t:1480\n6909272107\t:1490\n9750930295\t:1500\n5321165344\t:1510\n9872027559\t:1520\n6023648066\t:1530\n5499119881\t:1540\n8347977535\t:1550\n6636980742\t:1560\n6542527862\t:1570\n5518184175\t:1580\n7467289097\t:1590\n7772793800\t:1600\n0816470600\t:1610\n1614524919\t:1620\n2173217214\t:1630\n7723501414\t:1640\n4197356854\t:1650\n8161361157\t:1660\n3525521334\t:1670\n7574184946\t:1680\n8438523323\t:1690\n9073941433\t:1700\n3454776241\t:1710\n6862518983\t:1720\n5694855620\t:1730\n9921922218\t:1740\n4272550254\t:1750\n2568876717\t:1760\n9049460165\t:1770\n3466804988\t:1780\n6272327917\t:1790\n8608578438\t:1800\n3827967976\t:1810\n6814541009\t:1820\n5388378636\t:1830\n0950680064\t:1840\n2251252051\t:1850\n1739298489\t:1860\n6084128488\t:1870\n6269456042\t:1880\n4196528502\t:1890\n2210661186\t:1900\n3067442786\t:1910\n2203919494\t:1920\n5047123713\t:1930\n7869609563\t:1940\n6437191728\t:1950\n7467764657\t:1960\n5739624138\t:1970\n9086583264\t:1980\n5995813390\t:1990\n4780275900\t:2000\n9946576407\t:2010\n8951269468\t:2020\n3983525957\t:2030\n0982582262\t:2040\n0522489407\t:2050\n7267194782\t:2060\n6848260147\t:2070\n6990902640\t:2080\n1363944374\t:2090\n5530506820\t:2100\n3496252451\t:2110\n7493996514\t:2120\n3142980919\t:2130\n0659250937\t:2140\n2216964615\t:2150\n1570985838\t:2160\n7410597885\t:2170\n9597729754\t:2180\n9893016175\t:2190\n3928468138\t:2200\n2686838689\t:2210\n4277415599\t:2220\n1855925245\t:2230\n9539594310\t:2240\n4997252468\t:2250\n0845987273\t:2260\n6446958486\t:2270\n5383673622\t:2280\n2626099124\t:2290\n6080512438\t:2300\n8439045124\t:2310\n4136549762\t:2320\n7807977156\t:2330\n9143599770\t:2340\n0129616089\t:2350\n4416948685\t:2360\n5584840635\t:2370\n3422072225\t:2380\n8284886481\t:2390\n5845602850\t:2400\n6016842739\t:2410\n4522674676\t:2420\n7889525213\t:2430\n8522549954\t:2440\n6667278239\t:2450\n8645659611\t:2460\n6354886230\t:2470\n5774564980\t:2480\n3559363456\t:2490\n8174324112\t:2500\n5150760694\t:2510\n7945109659\t:2520\n6094025228\t:2530\n8797108931\t:2540\n4566913686\t:2550\n7228748940\t:2560\n5601015033\t:2570\n0861792868\t:2580\n0920874760\t:2590\n9178249385\t:2600\n8900971490\t:2610\n9675985261\t:2620\n3655497818\t:2630\n9312978482\t:2640\n1682998948\t:2650\n7226588048\t:2660\n5756401427\t:2670\n0477555132\t:2680\n3796414515\t:2690\n2374623436\t:2700\n4542858444\t:2710\n7952658678\t:2720\n2105114135\t:2730\n4735739523\t:2740\n1134271661\t:2750\n0213596953\t:2760\n6231442952\t:2770\n4849371871\t:2780\n1014576540\t:2790\n3590279934\t:2800\n4037420073\t:2810\n1057853906\t:2820\n2198387447\t:2830\n8084784896\t:2840\n8332144571\t:2850\n3868751943\t:2860\n5064302184\t:2870\n5319104848\t:2880\n1005370614\t:2890\n6806749192\t:2900\n7819119793\t:2910\n9952061419\t:2920\n6634287544\t:2930\n4064374512\t:2940\n3718192179\t:2950\n9983910159\t:2960\n1956181467\t:2970\n5142691239\t:2980\n7489409071\t:2990\n8649423196\t:3000\n1567945208\t:3010\n0951465502\t:3020\n2523160388\t:3030\n1930142093\t:3040\n7621378559\t:3050\n5663893778\t:3060\n7083039069\t:3070\n7920773467\t:3080\n2218256259\t:3090\n9661501421\t:3100\n5030680384\t:3110\n4773454920\t:3120\n2605414665\t:3130\n9252014974\t:3140\n4285073251\t:3150\n8666002132\t:3160\n4340881907\t:3170\n1048633173\t:3180\n4649651453\t:3190\n9057962685\t:3200\n6100550810\t:3210\n6658796998\t:3220\n1635747363\t:3230\n8405257145\t:3240\n9102897064\t:3250\n1401109712\t:3260\n0628043903\t:3270\n9759515677\t:3280\n1577004203\t:3290\n3786993600\t:3300\n7230558763\t:3310\n1763594218\t:3320\n7312514712\t:3330\n0532928191\t:3340\n8261861258\t:3350\n6732157919\t:3360\n8414848829\t:3370\n1644706095\t:3380\n7527069572\t:3390\n2091756711\t:3400\n6722910981\t:3410\n6909152801\t:3420\n7350671274\t:3430\n8583222871\t:3440\n8352093539\t:3450\n6572512108\t:3460\n3579151369\t:3470\n8820914442\t:3480\n1006751033\t:3490\n4671103141\t:3500\n2671113699\t:3510\n0865851639\t:3520\n8315019701\t:3530\n6515116851\t:3540\n7143765761\t:3550\n8351556508\t:3560\n8490998985\t:3570\n9982387345\t:3580\n5283316355\t:3590\n0764791853\t:3600\n5893226185\t:3610\n4896321329\t:3620\n3308985706\t:3630\n4204675259\t:3640\n0709154814\t:3650\n1654985946\t:3660\n1637180270\t:3670\n9819943099\t:3680\n2448895757\t:3690\n1282890592\t:3700\n3233260972\t:3710\n9971208443\t:3720\n3573265489\t:3730\n3823911932\t:3740\n5974636673\t:3750\n0583604142\t:3760\n8138830320\t:3770\n3824903758\t:3780\n9852437441\t:3790\n7029132765\t:3800\n6180937734\t:3810\n4403070746\t:3820\n9211201913\t:3830\n0203303801\t:3840\n9762110110\t:3850\n0449293215\t:3860\n1608424448\t:3870\n5963766983\t:3880\n8952286847\t:3890\n8312355265\t:3900\n8213144957\t:3910\n6857262433\t:3920\n4418930396\t:3930\n8642624341\t:3940\n0773226978\t:3950\n0280731891\t:3960\n5441101044\t:3970\n6823252716\t:3980\n2010526522\t:3990\n7211166039\t:4000\n6665573092\t:4010\n5471105578\t:4020\n5376346682\t:4030\n0653109896\t:4040\n5269186205\t:4050\n6476931257\t:4060\n0586356620\t:4070\n1855810072\t:4080\n9360659876\t:4090\n4861179104\t:4100\n5334885034\t:4110\n6113657686\t:4120\n7532494416\t:4130\n6803962657\t:4140\n9787718556\t:4150\n0845529654\t:4160\n1266540853\t:4170\n0614344431\t:4180\n8586769751\t:4190\n4566140680\t:4200\n0700237877\t:4210\n6591344017\t:4220\n1274947042\t:4230\n0562230538\t:4240\n9945613140\t:4250\n7112700040\t:4260\n7854733269\t:4270\n9390814546\t:4280\n6464588079\t:4290\n7270826683\t:4300\n0634328587\t:4310\n8569830523\t:4320\n5808933065\t:4330\n7574067954\t:4340\n5716377525\t:4350\n4202114955\t:4360\n7615814002\t:4370\n5012622859\t:4380\n4130216471\t:4390\n5509792592\t:4400\n3099079654\t:4410\n7376125517\t:4420\n6567513575\t:4430\n1782966645\t:4440\n4779174501\t:4450\n1299614890\t:4460\n3046399471\t:4470\n3296210734\t:4480\n0437518957\t:4490\n3596145890\t:4500\n1938971311\t:4510\n1790429782\t:4520\n8564750320\t:4530\n3198691514\t:4540\n0287080859\t:4550\n9048010941\t:4560\n2147221317\t:4570\n9476477726\t:4580\n2241425485\t:4590\n4540332157\t:4600\n1853061422\t:4610\n8813758504\t:4620\n3063321751\t:4630\n8297986622\t:4640\n3717215916\t:4650\n0771669254\t:4660\n7487389866\t:4670\n5494945011\t:4680\n4654062843\t:4690\n3663937900\t:4700\n3976926567\t:4710\n2146385306\t:4720\n7360965712\t:4730\n0918076383\t:4740\n2716641627\t:4750\n4888800786\t:4760\n9256029022\t:4770\n8472104031\t:4780\n7211860820\t:4790\n4190004229\t:4800\n6617119637\t:4810\n7921337575\t:4820\n1149595015\t:4830\n6604963186\t:4840\n2947265473\t:4850\n6425230817\t:4860\n7036751590\t:4870\n6735023507\t:4880\n2835405670\t:4890\n4038674351\t:4900\n3622224771\t:4910\n5891504953\t:4920\n0984448933\t:4930\n3096340878\t:4940\n0769325993\t:4950\n9780541934\t:4960\n1447377441\t:4970\n8426312986\t:4980\n0809988868\t:4990\n7413260472\t:5000\n1569516239\t:5010\n6586457302\t:5020\n1631598193\t:5030\n1951673538\t:5040\n1297416772\t:5050\n9478672422\t:5060\n9246543668\t:5070\n0098067692\t:5080\n8238280689\t:5090\n9640048243\t:5100\n5403701416\t:5110\n3149658979\t:5120\n4092432378\t:5130\n9690706977\t:5140\n9422362508\t:5150\n2216889573\t:5160\n8379862300\t:5170\n1593776471\t:5180\n6512289357\t:5190\n8601588161\t:5200\n7557829735\t:5210\n2334460428\t:5220\n1512627203\t:5230\n7343146531\t:5240\n9777741603\t:5250\n1990665541\t:5260\n8763979293\t:5270\n3441952154\t:5280\n1341899485\t:5290\n4447345673\t:5300\n8316249934\t:5310\n1913181480\t:5320\n9277771038\t:5330\n6387734317\t:5340\n7207545654\t:5350\n5322077709\t:5360\n2120190516\t:5370\n6096280490\t:5380\n9263601975\t:5390\n9882816133\t:5400\n2316663652\t:5410\n8619326686\t:5420\n3360627356\t:5430\n7630354477\t:5440\n6280350450\t:5450\n7772355471\t:5460\n0585954870\t:5470\n2790814356\t:5480\n2401451718\t:5490\n0624643626\t:5500\n7945612753\t:5510\n1813407833\t:5520\n0336254232\t:5530\n7839449753\t:5540\n8243720583\t:5550\n5311477119\t:5560\n9260638133\t:5570\n4677687969\t:5580\n5970309833\t:5590\n9130771098\t:5600\n7040859133\t:5610\n7464144282\t:5620\n2772634659\t:5630\n4704745878\t:5640\n4778720192\t:5650\n7715280731\t:5660\n7679077071\t:5670\n5721344473\t:5680\n0605700733\t:5690\n4924369311\t:5700\n3835049316\t:5710\n3128404251\t:5720\n2192565179\t:5730\n8069411352\t:5740\n8013147013\t:5750\n0478164378\t:5760\n8518529092\t:5770\n8545201165\t:5780\n8393419656\t:5790\n2134914341\t:5800\n5956258658\t:5810\n6557055269\t:5820\n0496520985\t:5830\n8033850722\t:5840\n4264829397\t:5850\n2858478316\t:5860\n3057777560\t:5870\n6888764462\t:5880\n4824685792\t:5890\n6039535277\t:5900\n3480304802\t:5910\n9005876075\t:5920\n8251047470\t:5930\n9164396136\t:5940\n2676044925\t:5950\n6274204208\t:5960\n3208566119\t:5970\n0625454337\t:5980\n2131535958\t:5990\n4506877246\t:6000\n0290161876\t:6010\n6795240616\t:6020\n3425225771\t:6030\n9542916299\t:6040\n1930645537\t:6050\n7991403734\t:6060\n0432875262\t:6070\n8889639958\t:6080\n7947572917\t:",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-gpp-5",
+        "{n}"
+      ],
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang++",
+        "-O3",
+        "-march=native",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-I/opt/homebrew/include",
+        "-L/opt/homebrew/lib",
+        "-std=c++17",
+        "-Dulong=unsigned long",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/upstream/pidigits-gpp-5.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/pidigits-gpp-5",
+        "-lgmp"
+      ],
+      "source": {
+        "sha256": "19f5486a8f52883e43f773b2ed13edc058ea3075c8c25d03f20e3d2923ace642",
+        "physical_lines": 125,
+        "nonblank_noncomment_lines": 84
+      },
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.303598333,
+        0.306438083,
+        0.302808584,
+        0.30260225,
+        0.30424175,
+        0.303652167,
+        0.304251083
+      ],
+      "executable_sha256": "6fd8aa2d86fe674486df9da42685977e3cfb860e75398be890c01742e683a26d",
+      "benchmark": "pidigits",
+      "median_seconds": 0.303652167,
+      "stdev_seconds": 0.001271317186694691
+    },
+    {
+      "id": "mech-pi-final-compact-signed",
+      "path": "pidigits.mec",
+      "language": "mech",
+      "runtime_environment": {},
+      "object_sha256": "b39d1b2d10d77ee9b8249c851f39298202e6c5b5751d1417ea80b9e58dcd27b3",
+      "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/mech-pi-final-compact-signed",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+        "--backend",
+        "cranelift",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/mech-pi-final-compact-signed"
+      ],
+      "source": {
+        "sha256": "065d63d6a3099076a261bd5d6d57c6c882a088f101a4dfede9c6e1a454c6a4b5",
+        "physical_lines": 39,
+        "nonblank_noncomment_lines": 39
+      },
+      "samples_seconds": [
+        0.396551542,
+        0.399226083,
+        0.3978165,
+        0.396921084,
+        0.394734791,
+        0.396689875,
+        0.39662975
+      ],
+      "executable_sha256": "444645348ab9d157ac529b5b4ca86f3574ad22e4d248080f49b2c400eb80a166",
+      "benchmark": "pidigits",
+      "median_seconds": 0.396689875,
+      "stdev_seconds": 0.001364272339642581
+    },
+    {
+      "id": "mech-pi-final-gated-signed",
+      "path": "pidigits-gated.mec",
+      "language": "mech",
+      "runtime_environment": {},
+      "object_sha256": "e58a9978ad1d63aae84608858f22f6c82c6e6ca0a1c02dc6ec22a1d419d5306b",
+      "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/mech-pi-final-gated-signed",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-gated.mec",
+        "--backend",
+        "cranelift",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/mech-pi-final-gated-signed"
+      ],
+      "source": {
+        "sha256": "31c27c6497a16ebc6b11f7eb7820fc567744cb4ca15de548923f6dcd33731b7c",
+        "physical_lines": 41,
+        "nonblank_noncomment_lines": 41
+      },
+      "samples_seconds": [
+        0.306469916,
+        0.308110459,
+        0.310412917,
+        0.308310834,
+        0.3122035,
+        0.309045709,
+        0.307045583
+      ],
+      "executable_sha256": "e1141f898e1c56102add0ff943f8a8403701df6a43323d1f27219df7cf19b318",
+      "benchmark": "pidigits",
+      "median_seconds": 0.308310834,
+      "stdev_seconds": 0.00197769676086038
+    },
+    {
+      "id": "mech-pi-final-advance-signed",
+      "path": "pidigits-advance.mec",
+      "language": "mech",
+      "runtime_environment": {},
+      "object_sha256": "ec80845402fc6a9e9f25afa55d7e2505ef01b9a5af9f51d490691fdcc49c5fcf",
+      "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/mech-pi-final-advance-signed",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+        "--backend",
+        "cranelift",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/mech-pi-final-advance-signed"
+      ],
+      "source": {
+        "sha256": "b85d1022a3ef6d1b3a4847c51eb2ff9042e815cad67348fade5a8c10285cd67b",
+        "physical_lines": 42,
+        "nonblank_noncomment_lines": 42
+      },
+      "samples_seconds": [
+        0.303499709,
+        0.3043885,
+        0.306388041,
+        0.30490425,
+        0.303702791,
+        0.306086125,
+        0.302752083
+      ],
+      "executable_sha256": "580d6774e9ea696527e2c48d7bad929816bbbec5f64b85a5958e20c316830df1",
+      "benchmark": "pidigits",
+      "median_seconds": 0.3043885,
+      "stdev_seconds": 0.0013503500120021536
+    }
+  ],
+  "references": {
+    "regexredux": {
+      "path": "regexredux/results/apple-m3-ac-normal-20261009.json",
+      "sha256": "656d00e73b15a28a273718440aaaabee5d52c53c9ce4e842bd3f6bb52f09e603"
+    },
+    "pidigits": {
+      "path": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "sha256": "8cb4fe825e100a7d2db9bbb92f1526de024b1c0c0eb62fca86d5e2c5387e073e"
+    }
+  },
+  "protocol": {
+    "samples": 7,
+    "power": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "selection": "Final Mech policies and the fastest passing C/C++/Rust/Chapel/Julia variants from the preceding all-native source sweep, plus unchanged C++ pidigits #5 with the GNU native-width ulong alias supplied on Darwin.",
+    "workloads": {
+      "regexredux": "FASTA N=5000000",
+      "pidigits": "N=10000"
+    },
+    "timed_region": "Shuffled sequential fresh processes through exit; full output; startup/JIT included; builds, full warmup and byte comparison excluded",
+    "validation": "Complete reference byte equality on small input, full warmup and every sample",
+    "source_metric": "Nonblank noncomment physical LOC"
+  },
+  "compiler_snapshot": {
+    "path": "signed-division-confirmation.compiler.tar.gz",
+    "sha256": "555358b21c362b80c746d65cecbbc9fabbc785bf83f334702e9a3ece297f4395",
+    "files": {
+      "Cargo.lock": "47994973123fef845399a501844c9c6737ad400d78f11f8a7034661cd89fc416",
+      "Cargo.toml": "54e8bd61742bb076ed2c746a25cd9c9461cc2c7b804e6a2d97a9a8d8d107fdf8",
+      "benchmarks/clbg/native-features/Cargo.toml": "8ef559291dbfd8a2f639600fd824560ef799170fff109f28126d49dc1236174c",
+      "benchmarks/clbg/native-features/src/lib.rs": "cc8837141dc2d81403c146060f54459f91740a33bcbc56106a7dd6b5cb8335bf",
+      "benchmarks/clbg/pidigits/pidigits-advance.mec": "b85d1022a3ef6d1b3a4847c51eb2ff9042e815cad67348fade5a8c10285cd67b",
+      "benchmarks/clbg/pidigits/pidigits-gated.mec": "31c27c6497a16ebc6b11f7eb7820fc567744cb4ca15de548923f6dcd33731b7c",
+      "benchmarks/clbg/pidigits/pidigits.mec": "065d63d6a3099076a261bd5d6d57c6c882a088f101a4dfede9c6e1a454c6a4b5",
+      "benchmarks/clbg/regexredux/regexredux.mec": "5a358021a856e10d5e9248cde4c11e37ca38ac7d4e934818f1c51f4b8660e65b",
+      "benchmarks/clbg/remaining_conformance.py": "e3cbeb23665a409cbeba4b9070a1d7f28c44307c165668ca3a9884dba43adc65",
+      "benchmarks/clbg/run_remaining.py": "0000f5da3f591a2ee0e063259ceaa46c38729d3ce86fd5bc1eb451b0e408c45b",
+      "hosts/gpu/Cargo.toml": "e1401f0418f23fed0744f281bbfb7db3ce119a6d9a1b249dda80cc111d1e6905",
+      "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+      "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+      "hosts/gpu/src/batched/mod.rs": "f2ce0842ed10633b024a7846f48ed25faec21949b58fefb742499adcb07df23b",
+      "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+      "hosts/gpu/src/bin/mech-native-map.rs": "9740a73b51c1153b3fe1aa8acc09507cd0bde45cf5c1d8fa36eb17d0ad5cc8cc",
+      "hosts/gpu/src/control/application.rs.in": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3",
+      "hosts/gpu/src/control/bigint.rs": "344f349b7aae7042cc37c2e59b42b52c3c46f3b81a237e84c9eb9554fb1503f5",
+      "hosts/gpu/src/control/compiler.rs": "b0d992df5b4c67a6dd1cb2a12b82f7f90e9dc845c46f13ca81a9aceb18ff3286",
+      "hosts/gpu/src/control/mod.rs": "c5bd98a2742a4aa72bd0eb90f2be4c5b800e24f6f86c968745fa44eb1bd0e545",
+      "hosts/gpu/src/control/runtime.rs": "50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b",
+      "hosts/gpu/src/fused_f64/grid_runner.c": "c2e15ca08cf4cc6068b84a7906368045922bf74d6c903adc34c857c0e5c1866a",
+      "hosts/gpu/src/fused_f64/map_runner.c": "1a6e8e14c1cb7d64061a29a0bffc5a7f4067bda87c2762eb0ab77ba3a23286c5",
+      "hosts/gpu/src/fused_f64/map_runner.rs": "cc05cc7b7db2828b8c5ad824d702de9d553e122892217b512107b4db37535417",
+      "hosts/gpu/src/fused_f64/mod.rs": "571d436d101d5b1a826d92f36d483a43f70e9ad72151d09203f869e05575c4d2",
+      "hosts/gpu/src/fused_f64/native.rs": "a01b6921f1a301ef37c26a0ff8c7fb53892c6510c1837b1bb2c3b6467d1f2b51",
+      "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+      "hosts/gpu/src/fused_f64/runner.rs": "38ea99c3e6e3550be13d4548f44e1beab3fab0877df177b29d0f8d57800f807e",
+      "hosts/gpu/src/lib.rs": "de880a06a1ee6d2ba08d08dacacae566e2d00ebb024e09b7e2090164a84e13c1",
+      "hosts/gpu/src/native_build.rs": "402ebccb32b99cdc9e4f9397bdac10f540869f011045a1cd6808f49fe4275e86",
+      "hosts/gpu/src/sequence/application.rs.in": "13b054a745253c616289cc4e002279e25a389af8dd1bdc62a6b2af1f640831c4",
+      "hosts/gpu/src/sequence/bytes.rs": "ddf68d4222dcd6a5165b3c6dc0561816d96b2935681e8551755979e671f3174f",
+      "hosts/gpu/src/sequence/compiler.rs": "c086f8014e4d4f44529b9bd67a6d6683b22c99286248455213032d929c1ce289",
+      "hosts/gpu/src/sequence/counts.rs": "a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171",
+      "hosts/gpu/src/sequence/mod.rs": "b8bcdc879335271c3fec98da844d28257b97eeea2d07d0bf26eaf869be4090cf",
+      "hosts/gpu/src/sequence/numeric.rs": "fae77d575e66339c222998eeba4a9e2293132340145647a617ad9b34661c644d",
+      "hosts/gpu/src/sequence/runtime.rs": "7d90171a7aafafa558516331b1f5479694e412fcc89738fc7b7f9483f7dada20",
+      "scripts/unsafe-boundaries.allowlist": "6b711327cb176053b862749941701de2291d289b603409b09e0f49fdc4dd2065",
+      "src/cli/app/tests/mod.rs": "8ed9623c971678920f0f0d591dd92270ccbcca6c0432425251b8ab84b911800b",
+      "src/cli/commands/build.rs": "f1c616abe74e102fefd429edf72d8aa4fd07549ce58ee2eeb0d181ed38ab2056",
+      "src/engine/Cargo.toml": "53d1489619006a3d44b4a08cdf3da1188b31d9b9c9939c1ac24af0c8a43ed373",
+      "src/engine/src/lib.rs": "f2bd07c34820c1fd9a9ba0fdc4cbd7f9c7487ba53eaf5bf425284f0a1642ab8d",
+      "src/engine/src/native_sequence/control.rs": "1342e8bff9c549b5993a8ff96fac0be807d97c9dc6225bfcc107c93cc5e48766",
+      "src/engine/src/native_sequence/control/analysis.rs": "b7174596975338aa21748efdc348506e6812904907ba21131baf8f1c4f3c425d",
+      "src/engine/src/native_sequence/grid.rs": "937f5ae4fac23068149c03bf20f263475043b9f2f5b6ed3f5e0dee0f79a629ba",
+      "src/engine/src/native_sequence/mod.rs": "a03f1b5fb7077dbd69272d654d434252baf94682b3fb3c903c15839017d8b022",
+      "src/engine/src/numeric_optimizations.rs": "bc6b27fbf6a8673d4ee7c74d37a541275a681b4ca30b0b9a1fd9bbee0531e773",
+      "src/engine/src/resident/numeric/mod.rs": "2f64443746ae660b0be42a8253495c763cbed9296a13f5622c549fe94a998862",
+      "src/stdlib/Cargo.toml": "7e7fee937d6587e6170210f392d67e356b391b74c607257a02ccceb20988ce0e",
+      "src/stdlib/src/lib.rs": "6982882a6334509093eed3aef07430c88d28ab9aa4254243a38736d40e62476b",
+      "src/stdlib/src/native_sequence.rs": "e5dff3edf089f69e41bf4f1a363c72a0ca9553127fcf44a05c430ffadd2ec162",
+      "benchmarks/clbg/confirm_remaining.py": "7f1cec200a0f123163b770734164fe7203b9cc3a29c387f89b89f27a20d79039",
+      "benchmarks/clbg/remaining_regressions.py": "bc3b433c8be4cc751c485973e00071bd9cc89e014aa8d4aa5b11f699502c1be6"
+    },
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "compiler_sha256": "f9590f2aef8daa225eef601f7eee3e904591ae5de2ddc619c44048e865f4c6aa",
+    "note": "Exact changed and untracked compiler/runtime inputs relative to the base commit. This archive is a reproducibility artifact, not a source-size metric. Includes the exact confirmation and regression drivers."
+  },
+  "toolchains": {
+    "rust": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "gcc": "gcc-16 (Homebrew GCC 16.2.0) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "clang": "Homebrew clang version 22.1.8\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@22/22.1.8/bin\nConfiguration file: /opt/homebrew/Cellar/llvm@22/22.1.8/etc/clang/arm64-apple-darwin25.cfg",
+    "chapel": "chpl version 2.10.0\n  built with LLVM version 22.1.8\n  available LLVM targets: xcore, x86-64, x86, wasm64, wasm32, ve, systemz, spirv, spirv64, spirv32, sparcel, sparcv9, sparc, riscv64be, riscv32be, riscv64, riscv32, ppc64le, ppc64, ppc32le, ppc32, nvptx64, nvptx, msp430, mips64el, mips64, mipsel, mips, loongarch64, loongarch32, lanai, hexagon, bpfeb, bpfel, bpf, avr, thumbeb, thumb, armeb, arm, amdgcn, r600, aarch64_32, aarch64_be, aarch64, arm64_32, arm64\nCopyright 2020-2026 Hewlett Packard Enterprise Development LP\nCopyright 2004-2019 Cray Inc.\n(See LICENSE file for more details)",
+    "julia": "julia version 1.13.1",
+    "go": "go version go1.27.1 darwin/arm64",
+    "java": "openjdk 27 2026-09-15\nOpenJDK Runtime Environment Homebrew (build 27)\nOpenJDK 64-Bit Server VM Homebrew (build 27, mixed mode, sharing)",
+    "python": "Python 3.14.8",
+    "ruby": "ruby 4.0.7 (2026-09-15 revision 229531a6cf) +PRISM [arm64-darwin25]",
+    "perl": "v5.44.0",
+    "lua": "Lua 5.5.1  Copyright (C) 1994-2026 Lua.org, PUC-Rio",
+    "luajit": "LuaJIT 2.1.1788856981 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/",
+    "node": "v24.19.0",
+    "php": "PHP 8.5.11 (cli) (built: Sep 22 2026 13:32:06) (NTS)\nCopyright (c) The PHP Group\nBuilt by Homebrew\nZend Engine v4.5.11, Copyright (c) Zend Technologies\n    with Zend OPcache v8.5.11, Copyright (c), by Zend Technologies",
+    "libraries": "boost 1.92.0\ngmp 6.3.0\npcre 8.45\npcre2 10.49\nre2 2025-11-05_2"
+  },
+  "sample_order": [
+    [
+      "pidigits-gpp-5",
+      "mech-pi-final-gated-signed",
+      "regexredux-chapel-3",
+      "mech-pi-final-compact-signed",
+      "regexredux-gpp-2",
+      "pidigits-gcc-1",
+      "regexredux-rust-6",
+      "pidigits-gpp-4",
+      "mech-regex-final-async-signed",
+      "mech-regex-final-sequential-signed",
+      "regexredux-julia-4",
+      "mech-pi-final-advance-signed",
+      "regexredux-gcc-5",
+      "pidigits-julia-3",
+      "pidigits-rust-3",
+      "mech-regex-final-reuse-signed",
+      "pidigits-chapel-2"
+    ],
+    [
+      "pidigits-rust-3",
+      "pidigits-chapel-2",
+      "regexredux-gpp-2",
+      "pidigits-gpp-5",
+      "pidigits-julia-3",
+      "mech-regex-final-async-signed",
+      "mech-pi-final-advance-signed",
+      "pidigits-gcc-1",
+      "regexredux-julia-4",
+      "mech-pi-final-compact-signed",
+      "regexredux-chapel-3",
+      "regexredux-rust-6",
+      "mech-pi-final-gated-signed",
+      "mech-regex-final-reuse-signed",
+      "mech-regex-final-sequential-signed",
+      "pidigits-gpp-4",
+      "regexredux-gcc-5"
+    ],
+    [
+      "mech-pi-final-compact-signed",
+      "mech-regex-final-sequential-signed",
+      "mech-pi-final-advance-signed",
+      "mech-pi-final-gated-signed",
+      "regexredux-gpp-2",
+      "regexredux-chapel-3",
+      "regexredux-julia-4",
+      "pidigits-gpp-5",
+      "pidigits-gcc-1",
+      "pidigits-chapel-2",
+      "regexredux-rust-6",
+      "mech-regex-final-async-signed",
+      "mech-regex-final-reuse-signed",
+      "regexredux-gcc-5",
+      "pidigits-rust-3",
+      "pidigits-gpp-4",
+      "pidigits-julia-3"
+    ],
+    [
+      "pidigits-chapel-2",
+      "regexredux-julia-4",
+      "mech-pi-final-advance-signed",
+      "regexredux-rust-6",
+      "mech-regex-final-reuse-signed",
+      "mech-pi-final-gated-signed",
+      "regexredux-gcc-5",
+      "mech-regex-final-sequential-signed",
+      "regexredux-gpp-2",
+      "pidigits-julia-3",
+      "mech-regex-final-async-signed",
+      "mech-pi-final-compact-signed",
+      "pidigits-rust-3",
+      "regexredux-chapel-3",
+      "pidigits-gcc-1",
+      "pidigits-gpp-5",
+      "pidigits-gpp-4"
+    ],
+    [
+      "pidigits-rust-3",
+      "regexredux-gcc-5",
+      "mech-regex-final-sequential-signed",
+      "pidigits-gpp-5",
+      "pidigits-gpp-4",
+      "regexredux-gpp-2",
+      "pidigits-chapel-2",
+      "regexredux-chapel-3",
+      "regexredux-julia-4",
+      "mech-regex-final-reuse-signed",
+      "mech-pi-final-compact-signed",
+      "pidigits-gcc-1",
+      "pidigits-julia-3",
+      "mech-pi-final-gated-signed",
+      "mech-regex-final-async-signed",
+      "regexredux-rust-6",
+      "mech-pi-final-advance-signed"
+    ],
+    [
+      "regexredux-gpp-2",
+      "mech-regex-final-async-signed",
+      "mech-regex-final-reuse-signed",
+      "pidigits-julia-3",
+      "pidigits-gpp-5",
+      "mech-pi-final-gated-signed",
+      "mech-regex-final-sequential-signed",
+      "regexredux-chapel-3",
+      "mech-pi-final-advance-signed",
+      "pidigits-gcc-1",
+      "pidigits-chapel-2",
+      "regexredux-gcc-5",
+      "mech-pi-final-compact-signed",
+      "pidigits-rust-3",
+      "regexredux-julia-4",
+      "pidigits-gpp-4",
+      "regexredux-rust-6"
+    ],
+    [
+      "mech-pi-final-compact-signed",
+      "pidigits-gpp-4",
+      "pidigits-chapel-2",
+      "mech-regex-final-sequential-signed",
+      "mech-regex-final-reuse-signed",
+      "regexredux-julia-4",
+      "regexredux-gpp-2",
+      "mech-regex-final-async-signed",
+      "mech-pi-final-gated-signed",
+      "regexredux-rust-6",
+      "pidigits-julia-3",
+      "regexredux-gcc-5",
+      "pidigits-gcc-1",
+      "pidigits-gpp-5",
+      "pidigits-rust-3",
+      "regexredux-chapel-3",
+      "mech-pi-final-advance-signed"
+    ]
+  ],
+  "discarded_samples": []
+}

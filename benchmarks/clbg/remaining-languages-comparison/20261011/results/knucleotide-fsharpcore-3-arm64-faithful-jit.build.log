@@ -1,0 +1,9 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharpcore-3-arm64-faithful.fs(9,1): warning FS0221: The declarations in this file will be placed in an implicit module 'Knucleotide-fsharpcore-3-arm64-faithful' based on the file name 'knucleotide-fsharpcore-3-arm64-faithful.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file. [/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharpcore-3-arm64-faithful-jit/app.fsproj]
+
+Build succeeded.
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/knucleotide-fsharpcore-3-arm64-faithful.fs(9,1): warning FS0221: The declarations in this file will be placed in an implicit module 'Knucleotide-fsharpcore-3-arm64-faithful' based on the file name 'knucleotide-fsharpcore-3-arm64-faithful.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file. [/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-fsharpcore-3-arm64-faithful-jit/app.fsproj]
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.15

@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "started_at": "2026-10-10T18:09:54.400200+00:00",
+  "finished_at": "2026-10-10T18:10:02.593228+00:00",
+  "wall_seconds": 8.192821833014023,
+  "command": [
+    "/Applications/MATLAB_R2026b.app/bin/matlab",
+    "-licmode",
+    "onlinelicensing",
+    "-nodisplay",
+    "-sd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/matlab-comparison/20261010/experiments",
+    "-batch",
+    "dictionary_probe(10000,1009);dictionary_probe(1000000,100003)"
+  ],
+  "source_sha256": "dc1251616c8060ae7fe567b487b8d6c02bf7d86304c01683e1da7b75f9892e56",
+  "exit_code": 0,
+  "chart_sample": false,
+  "measurement_runner_paused": true,
+  "variants": {
+    "1": "growing dictionary with fallback lookup",
+    "2": "all supplied keys initialized to zero, then ordinary indexing",
+    "3": "growing dictionary with isKey and ordinary indexing"
+  },
+  "log": "results/dictionary-probe.log"
+}

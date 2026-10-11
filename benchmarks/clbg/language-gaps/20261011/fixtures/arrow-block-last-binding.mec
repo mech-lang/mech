@@ -1,0 +1,3 @@
+Square(x<u64>) => <u64> :=
+  scale := x * x
+io/print("{}\n", Square(9))

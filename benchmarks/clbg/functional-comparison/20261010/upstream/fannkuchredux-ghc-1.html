@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fannkuch-redux Haskell GHC program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fannkuch-redux Haskell GHC program</h1>
+    <aside>
+      <p><a href="../description/fannkuchredux.html#fannkuchredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">{-  The Computer Language Benchmarks Game</span>
+<span class="com">    https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com">    contributed by Miha Vučkovič</span>
+<span class="com">-}</span>
+
+<span class="kwb">import</span> System<span class="opt">.</span>Environment
+<span class="kwb">import</span> Control<span class="opt">.</span>Applicative
+
+flop <span class="kwc">(</span><span class="num">2</span>:x1:t<span class="kwc">)</span> <span class="opt">=</span> x1:<span class="num">2</span>:t
+flop <span class="kwc">(</span><span class="num">3</span>:x1:x2:t<span class="kwc">)</span> <span class="opt">=</span> x2:x1:<span class="num">3</span>:t
+flop <span class="kwc">(</span><span class="num">4</span>:x1:x2:x3:t<span class="kwc">)</span> <span class="opt">=</span> x3:x2:x1:<span class="num">4</span>:t
+flop <span class="kwc">(</span><span class="num">5</span>:x1:x2:x3:x4:t<span class="kwc">)</span> <span class="opt">=</span> x4:x3:x2:x1:<span class="num">5</span>:t
+flop <span class="kwc">(</span><span class="num">6</span>:x1:x2:x3:x4:x5:t<span class="kwc">)</span> <span class="opt">=</span> x5:x4:x3:x2:x1:<span class="num">6</span>:t
+flop <span class="kwc">(</span><span class="num">7</span>:x1:x2:x3:x4:x5:x6:t<span class="kwc">)</span> <span class="opt">=</span> x6:x5:x4:x3:x2:x1:<span class="num">7</span>:t
+
+flop lst<span class="opt">&#64;</span><span class="kwc">(</span>h:_<span class="kwc">)</span> <span class="opt">=</span> r <span class="kwb">where</span>
+	<span class="kwc">(</span>t<span class="kwc">,</span> r<span class="kwc">)</span> <span class="opt">=</span> flop&#39; h <span class="kwc">(</span>lst<span class="kwc">,</span> t<span class="kwc">)</span>
+	flop&#39; <span class="num">0</span> <span class="kwc">(</span>t<span class="kwc">,</span> r<span class="kwc">)</span> <span class="opt">=</span> <span class="kwc">(</span>t<span class="kwc">,</span> r<span class="kwc">)</span>
+	flop&#39; n <span class="kwc">((</span>h:t<span class="kwc">),</span> r<span class="kwc">)</span> <span class="opt">=</span> flop&#39; <span class="kwc">(</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">) (</span>t<span class="kwc">,</span> h:r<span class="kwc">)</span>
+
+flopS <span class="kwc">(</span><span class="num">1</span>:_<span class="kwc">)</span> <span class="opt">=</span> <span class="num">0</span>
+flopS lst <span class="opt">=</span> <span class="num">1</span> <span class="opt">+</span> flopS <span class="kwc">(</span>flop lst<span class="kwc">)</span>
+
+rotate n <span class="kwc">(</span>h:t<span class="kwc">)</span> <span class="opt">=</span> rotate&#39; <span class="kwc">(</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">)</span> t <span class="kwb">where</span>
+	rotate&#39; <span class="num">0</span> l <span class="opt">=</span> h:l
+	rotate&#39; n <span class="kwc">(</span>f:t<span class="kwc">)</span> <span class="opt">=</span> f:<span class="kwc">(</span>rotate&#39; <span class="kwc">(</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">)</span> t<span class="kwc">)</span>
+
+checksum i f
+   <span class="opt">|</span> mod i <span class="num">2</span> <span class="opt">==</span> <span class="num">0</span> <span class="opt">=</span> f
+   <span class="opt">|</span> True <span class="opt">= -</span>f
+
+pfold r <span class="kwc">[]</span> <span class="opt">=</span> r
+pfold <span class="kwc">(</span>ac<span class="kwc">,</span> af<span class="kwc">) ((</span>c<span class="kwc">,</span> f<span class="kwc">)</span>:t<span class="kwc">)</span>  <span class="opt">=</span> seq sc <span class="opt">$</span> seq sf <span class="opt">$</span> pfold <span class="kwc">(</span>sc<span class="kwc">,</span> sf<span class="kwc">)</span> t <span class="kwb">where</span> 
+	sc <span class="opt">=</span> ac<span class="opt">+</span>c
+	sf <span class="opt">=</span> max af f
+
+permut n <span class="opt">=</span> foldr perm <span class="kwc">[[</span><span class="num">1</span><span class="opt">..</span>n<span class="kwc">]] [</span><span class="num">2</span><span class="opt">..</span>n<span class="kwc">]</span> <span class="kwb">where</span>
+   perm x lst <span class="opt">=</span> concat <span class="kwc">[</span>take x <span class="opt">$</span> iterate <span class="kwc">(</span>rotate x<span class="kwc">)</span> l <span class="opt">|</span> l <span class="opt">&lt;-</span> lst<span class="kwc">]</span>
+
+main <span class="opt">=</span> <span class="kwd">do</span>
+   n <span class="opt">&lt;-</span> read<span class="opt">.</span>head <span class="opt">&lt;$&gt;</span> getArgs
+   <span class="kwd">let</span> <span class="kwc">(</span>chksm<span class="kwc">,</span> mflops<span class="kwc">)</span> <span class="opt">=</span> pfold <span class="kwc">(</span><span class="num">0</span><span class="kwc">,</span><span class="num">0</span><span class="kwc">)</span> <span class="opt">$</span> map <span class="kwc">(</span>\<span class="kwc">(</span>i<span class="kwc">,</span> p<span class="kwc">)</span> <span class="opt">-&gt;</span> <span class="kwd">let</span> flops <span class="opt">=</span> flopS p <span class="kwd">in</span> <span class="kwc">(</span>checksum i flops<span class="kwc">,</span> flops<span class="kwc">))</span> <span class="opt">$</span> zip <span class="kwc">[</span><span class="num">0</span><span class="opt">..</span><span class="kwc">] (</span>permut n<span class="kwc">)</span>
+   putStrLn <span class="opt">$</span> <span class="kwc">(</span>show chksm<span class="kwc">)</span> <span class="opt">++</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">Pfannkuchen(&quot;</span> <span class="opt">++</span> <span class="kwc">(</span>show n<span class="kwc">)</span> <span class="opt">++</span> <span class="sng">&quot;) = &quot;</span> <span class="opt">++</span> <span class="kwc">(</span>show <span class="opt">$</span> mflops<span class="kwc">)</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 05:36:36 GMT
+
+MAKE:
+mv fannkuchredux.ghc fannkuchredux.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XScopedTypeVariables fannkuchredux.hs -o fannkuchredux.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( fannkuchredux.hs, fannkuchredux.o )
+fannkuchredux.hs:17:1: warning: [GHC-94817] [-Wtabs]
+    Tab character found here, and in six further locations.
+    Suggested fix: Please use spaces instead.
+   |
+17 |         (t, r) = flop' h (lst, t)
+   | ^^^^^^^^
+
+fannkuchredux.hs:41:14: warning: [GHC-63394] [-Wx-partial]
+    In the use of ‘head’
+    (imported from Prelude, but defined in GHC.Internal.List):
+    &quot;This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use &quot;Data.List.NonEmpty&quot;.&quot;
+   |
+41 |    n &lt;- read.head &lt;$&gt; getArgs
+   |              ^^^^
+
+[2 of 2] Linking fannkuchredux.ghc_run
+rm fannkuchredux.hs
+
+17.60 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./fannkuchredux.ghc_run +RTS -N4 -RTS 12
+
+PROGRAM OUTPUT:
+3968050
+Pfannkuchen(12) = 65
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

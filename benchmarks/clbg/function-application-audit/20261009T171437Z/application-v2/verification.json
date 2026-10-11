@@ -1,0 +1,2394 @@
+{
+  "created_at": "2026-10-09T17:38:43.803394+00:00",
+  "build_report_sha256": "1a1584b5a5ebbf2b2b335d49332b2a935cdde78244f012c572a7669cf6322418",
+  "protocol": {
+    "full_workloads": true,
+    "timings": false,
+    "source_metric": "Physical LOC excluding blank/comment-only lines",
+    "comparison": "Complete stdout byte equality, except N-body energies within 1e-8"
+  },
+  "programs": [
+    {
+      "key": "nbody:compact-baseline",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 26,
+            "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+            "output": "-0.169075164\n-0.169075164\n"
+          },
+          "variants": {
+            "before": {
+              "bytes": 26,
+              "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+              "output": "-0.169075164\n-0.169075164\n"
+            },
+            "after": {
+              "bytes": 26,
+              "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+              "output": "-0.169075164\n-0.169075164\n"
+            }
+          }
+        },
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 26,
+            "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+            "output": "-0.169075164\n-0.169074954\n"
+          },
+          "variants": {
+            "before": {
+              "bytes": 26,
+              "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+              "output": "-0.169075164\n-0.169074954\n"
+            },
+            "after": {
+              "bytes": 26,
+              "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+              "output": "-0.169075164\n-0.169074954\n"
+            }
+          }
+        },
+        {
+          "n": 1000,
+          "input": "None",
+          "reference": {
+            "bytes": 26,
+            "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+            "output": "-0.169075164\n-0.169087605\n"
+          },
+          "variants": {
+            "before": {
+              "bytes": 26,
+              "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+              "output": "-0.169075164\n-0.169087605\n"
+            },
+            "after": {
+              "bytes": 26,
+              "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+              "output": "-0.169075164\n-0.169087605\n"
+            }
+          }
+        },
+        {
+          "n": 50000000,
+          "input": "None",
+          "reference": {
+            "bytes": 26,
+            "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+            "output": "-0.169075164\n-0.169059907\n"
+          },
+          "variants": {
+            "before": {
+              "bytes": 26,
+              "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+              "output": "-0.169075164\n-0.169059907\n"
+            },
+            "after": {
+              "bytes": 26,
+              "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+              "output": "-0.169075164\n-0.169059907\n"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "nbody:pairwise-mass-tails",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 26,
+            "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+            "output": "-0.169075164\n-0.169075164\n"
+          },
+          "variants": {
+            "before": {
+              "bytes": 26,
+              "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+              "output": "-0.169075164\n-0.169075164\n"
+            },
+            "after": {
+              "bytes": 26,
+              "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+              "output": "-0.169075164\n-0.169075164\n"
+            }
+          }
+        },
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 26,
+            "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+            "output": "-0.169075164\n-0.169074954\n"
+          },
+          "variants": {
+            "before": {
+              "bytes": 26,
+              "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+              "output": "-0.169075164\n-0.169074954\n"
+            },
+            "after": {
+              "bytes": 26,
+              "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+              "output": "-0.169075164\n-0.169074954\n"
+            }
+          }
+        },
+        {
+          "n": 1000,
+          "input": "None",
+          "reference": {
+            "bytes": 26,
+            "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+            "output": "-0.169075164\n-0.169087605\n"
+          },
+          "variants": {
+            "before": {
+              "bytes": 26,
+              "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+              "output": "-0.169075164\n-0.169087605\n"
+            },
+            "after": {
+              "bytes": 26,
+              "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+              "output": "-0.169075164\n-0.169087605\n"
+            }
+          }
+        },
+        {
+          "n": 50000000,
+          "input": "None",
+          "reference": {
+            "bytes": 26,
+            "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+            "output": "-0.169075164\n-0.169059907\n"
+          },
+          "variants": {
+            "before": {
+              "bytes": 26,
+              "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+              "output": "-0.169075164\n-0.169059907\n"
+            },
+            "after": {
+              "bytes": 26,
+              "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+              "output": "-0.169075164\n-0.169059907\n"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "mandelbrot:mech-program-compact",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "output": null,
+            "returncode": 2,
+            "stderr": ""
+          },
+          "expected_rejection": true,
+          "variants": {
+            "before": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "output": null,
+              "returncode": 2,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "output": null,
+              "returncode": 2,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 8,
+            "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 8,
+              "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 8,
+              "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 7,
+          "input": "None",
+          "reference": {
+            "bytes": 14,
+            "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 14,
+              "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 14,
+              "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 8,
+          "input": "None",
+          "reference": {
+            "bytes": 15,
+            "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 15,
+              "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 15,
+              "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 9,
+          "input": "None",
+          "reference": {
+            "bytes": 25,
+            "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 25,
+              "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 25,
+              "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 31,
+          "input": "None",
+          "reference": {
+            "bytes": 133,
+            "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 133,
+              "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 133,
+              "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 200,
+          "input": "None",
+          "reference": {
+            "bytes": 5011,
+            "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 5011,
+              "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 5011,
+              "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 16000,
+          "input": "None",
+          "reference": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 32000015,
+              "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 32000015,
+              "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "mandelbrot:mech-program-simd-loop-fma",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "output": null,
+            "returncode": 2,
+            "stderr": ""
+          },
+          "expected_rejection": true,
+          "variants": {
+            "before": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "output": null,
+              "returncode": 2,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "output": null,
+              "returncode": 2,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 8,
+            "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 8,
+              "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 8,
+              "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 7,
+          "input": "None",
+          "reference": {
+            "bytes": 14,
+            "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 14,
+              "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 14,
+              "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 8,
+          "input": "None",
+          "reference": {
+            "bytes": 15,
+            "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 15,
+              "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 15,
+              "sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 9,
+          "input": "None",
+          "reference": {
+            "bytes": 25,
+            "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 25,
+              "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 25,
+              "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 31,
+          "input": "None",
+          "reference": {
+            "bytes": 133,
+            "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 133,
+              "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 133,
+              "sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 200,
+          "input": "None",
+          "reference": {
+            "bytes": 5011,
+            "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 5011,
+              "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 5011,
+              "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 16000,
+          "input": "None",
+          "reference": {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 32000015,
+              "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 32000015,
+              "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "cases": [
+        {
+          "n": 1000,
+          "input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt",
+          "reference": {
+            "bytes": 242,
+            "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 242,
+              "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 242,
+              "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 25000000,
+          "input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-input25000000.txt",
+          "reference": {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 259,
+              "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 259,
+              "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "cases": [
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 12,
+            "sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+            "output": "1.000000000\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 12,
+              "sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+              "output": "1.000000000\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 12,
+              "sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+              "output": "1.000000000\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 3,
+          "input": "None",
+          "reference": {
+            "bytes": 12,
+            "sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+            "output": "1.233644501\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 12,
+              "sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+              "output": "1.233644501\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 12,
+              "sha256": "5fc9125d807dd627a9f3f0d9e2a45f183d08cbbc200ac5b2f81a2fde90bdff1a",
+              "output": "1.233644501\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 7,
+          "input": "None",
+          "reference": {
+            "bytes": 12,
+            "sha256": "b4e151e797c3627d7630290b0fedbd4a6f5baf398e9e620ac3074170939a6409",
+            "output": "1.268413432\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 12,
+              "sha256": "b4e151e797c3627d7630290b0fedbd4a6f5baf398e9e620ac3074170939a6409",
+              "output": "1.268413432\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 12,
+              "sha256": "b4e151e797c3627d7630290b0fedbd4a6f5baf398e9e620ac3074170939a6409",
+              "output": "1.268413432\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 100,
+          "input": "None",
+          "reference": {
+            "bytes": 12,
+            "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+            "output": "1.274219991\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 12,
+              "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+              "output": "1.274219991\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 12,
+              "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+              "output": "1.274219991\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 5500,
+          "input": "None",
+          "reference": {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "output": "1.274224153\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 12,
+              "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+              "output": "1.274224153\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 12,
+              "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+              "output": "1.274224153\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "revcomp:mech-revcomp-optimized",
+      "cases": [
+        {
+          "n": 1000,
+          "input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/inputs/knucleotide-input-1000.txt",
+          "reference": {
+            "bytes": 10245,
+            "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 10245,
+              "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 10245,
+              "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 25000000,
+          "input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/.build/knucleotide-input25000000.txt",
+          "reference": {
+            "bytes": 254166745,
+            "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 254166745,
+              "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 254166745,
+              "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "fannkuchredux:mech-fannkuch-default",
+      "cases": [
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 21,
+            "sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a",
+            "output": "0\nPfannkuchen(1) = 0\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 21,
+              "sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a",
+              "output": "0\nPfannkuchen(1) = 0\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 21,
+              "sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a",
+              "output": "0\nPfannkuchen(1) = 0\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 2,
+          "input": "None",
+          "reference": {
+            "bytes": 22,
+            "sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+            "output": "-1\nPfannkuchen(2) = 1\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 22,
+              "sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+              "output": "-1\nPfannkuchen(2) = 1\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 22,
+              "sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+              "output": "-1\nPfannkuchen(2) = 1\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 3,
+          "input": "None",
+          "reference": {
+            "bytes": 21,
+            "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+            "output": "2\nPfannkuchen(3) = 2\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 21,
+              "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+              "output": "2\nPfannkuchen(3) = 2\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 21,
+              "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+              "output": "2\nPfannkuchen(3) = 2\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 7,
+          "input": "None",
+          "reference": {
+            "bytes": 24,
+            "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+            "output": "228\nPfannkuchen(7) = 16\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 24,
+              "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+              "output": "228\nPfannkuchen(7) = 16\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 24,
+              "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+              "output": "228\nPfannkuchen(7) = 16\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 9,
+          "input": "None",
+          "reference": {
+            "bytes": 25,
+            "sha256": "8240a83dc671a1906b1f4ce51a46866362bec862c62128f4429ec1f3e7bf1bb8",
+            "output": "8629\nPfannkuchen(9) = 30\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 25,
+              "sha256": "8240a83dc671a1906b1f4ce51a46866362bec862c62128f4429ec1f3e7bf1bb8",
+              "output": "8629\nPfannkuchen(9) = 30\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 25,
+              "sha256": "8240a83dc671a1906b1f4ce51a46866362bec862c62128f4429ec1f3e7bf1bb8",
+              "output": "8629\nPfannkuchen(9) = 30\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 12,
+          "input": "None",
+          "reference": {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "output": "3968050\nPfannkuchen(12) = 65\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 29,
+              "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+              "output": "3968050\nPfannkuchen(12) = 65\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 29,
+              "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+              "output": "3968050\nPfannkuchen(12) = 65\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "fannkuchredux:mech-fannkuch-even",
+      "cases": [
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 21,
+            "sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a",
+            "output": "0\nPfannkuchen(1) = 0\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 21,
+              "sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a",
+              "output": "0\nPfannkuchen(1) = 0\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 21,
+              "sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a",
+              "output": "0\nPfannkuchen(1) = 0\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 2,
+          "input": "None",
+          "reference": {
+            "bytes": 22,
+            "sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+            "output": "-1\nPfannkuchen(2) = 1\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 22,
+              "sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+              "output": "-1\nPfannkuchen(2) = 1\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 22,
+              "sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+              "output": "-1\nPfannkuchen(2) = 1\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 3,
+          "input": "None",
+          "reference": {
+            "bytes": 21,
+            "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+            "output": "2\nPfannkuchen(3) = 2\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 21,
+              "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+              "output": "2\nPfannkuchen(3) = 2\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 21,
+              "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+              "output": "2\nPfannkuchen(3) = 2\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 7,
+          "input": "None",
+          "reference": {
+            "bytes": 24,
+            "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+            "output": "228\nPfannkuchen(7) = 16\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 24,
+              "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+              "output": "228\nPfannkuchen(7) = 16\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 24,
+              "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+              "output": "228\nPfannkuchen(7) = 16\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 9,
+          "input": "None",
+          "reference": {
+            "bytes": 25,
+            "sha256": "8240a83dc671a1906b1f4ce51a46866362bec862c62128f4429ec1f3e7bf1bb8",
+            "output": "8629\nPfannkuchen(9) = 30\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 25,
+              "sha256": "8240a83dc671a1906b1f4ce51a46866362bec862c62128f4429ec1f3e7bf1bb8",
+              "output": "8629\nPfannkuchen(9) = 30\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 25,
+              "sha256": "8240a83dc671a1906b1f4ce51a46866362bec862c62128f4429ec1f3e7bf1bb8",
+              "output": "8629\nPfannkuchen(9) = 30\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 12,
+          "input": "None",
+          "reference": {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "output": "3968050\nPfannkuchen(12) = 65\n",
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 29,
+              "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+              "output": "3968050\nPfannkuchen(12) = 65\n",
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 29,
+              "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+              "output": "3968050\nPfannkuchen(12) = 65\n",
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "fasta:mech-fasta-final-compact-v2",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 77,
+            "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 77,
+              "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 77,
+              "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 90,
+            "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 90,
+              "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 90,
+              "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 59,
+          "input": "None",
+          "reference": {
+            "bytes": 677,
+            "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 677,
+              "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 677,
+              "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 60,
+          "input": "None",
+          "reference": {
+            "bytes": 687,
+            "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 687,
+              "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 687,
+              "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 61,
+          "input": "None",
+          "reference": {
+            "bytes": 700,
+            "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 700,
+              "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 700,
+              "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 1000,
+          "input": "None",
+          "reference": {
+            "bytes": 10245,
+            "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 10245,
+              "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 10245,
+              "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 25000000,
+          "input": "None",
+          "reference": {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 254166745,
+              "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 254166745,
+              "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "fasta:mech-fasta-final-expanded-v2",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 77,
+            "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 77,
+              "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 77,
+              "sha256": "585adac6f7b1f9bbad88ad6c7256cf6fe5238b9dac6bb56cfc1eb303d4634db1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 90,
+            "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 90,
+              "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 90,
+              "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 59,
+          "input": "None",
+          "reference": {
+            "bytes": 677,
+            "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 677,
+              "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 677,
+              "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 60,
+          "input": "None",
+          "reference": {
+            "bytes": 687,
+            "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 687,
+              "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 687,
+              "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 61,
+          "input": "None",
+          "reference": {
+            "bytes": 700,
+            "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 700,
+              "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 700,
+              "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 1000,
+          "input": "None",
+          "reference": {
+            "bytes": 10245,
+            "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 10245,
+              "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 10245,
+              "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 25000000,
+          "input": "None",
+          "reference": {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 254166745,
+              "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 254166745,
+              "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "binarytrees:mech-binarytrees-parallel",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 143,
+            "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "paired-callback": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "current-before": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "saved-current": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 6,
+          "input": "None",
+          "reference": {
+            "bytes": 143,
+            "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "paired-callback": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "current-before": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "saved-current": {
+              "bytes": 143,
+              "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 10,
+          "input": "None",
+          "reference": {
+            "bytes": 223,
+            "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 223,
+              "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 223,
+              "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "paired-callback": {
+              "bytes": 223,
+              "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "current-before": {
+              "bytes": 223,
+              "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "saved-current": {
+              "bytes": 223,
+              "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 21,
+          "input": "None",
+          "reference": {
+            "bytes": 455,
+            "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 455,
+              "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 455,
+              "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "paired-callback": {
+              "bytes": 455,
+              "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "current-before": {
+              "bytes": 455,
+              "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "saved-current": {
+              "bytes": 455,
+              "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "regexredux:mech-regex-final-reuse-signed",
+      "cases": [
+        {
+          "n": 30,
+          "input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/inputs/regexredux-input-small.txt",
+          "reference": {
+            "bytes": 262,
+            "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 262,
+              "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 262,
+              "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 5000000,
+          "input": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/input5000000.txt",
+          "reference": {
+            "bytes": 298,
+            "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 298,
+              "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 298,
+              "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "pidigits:mech-pi-final-compact-signed",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 14,
+            "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 14,
+              "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 14,
+              "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 9,
+          "input": "None",
+          "reference": {
+            "bytes": 14,
+            "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 14,
+              "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 14,
+              "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 10,
+          "input": "None",
+          "reference": {
+            "bytes": 15,
+            "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 15,
+              "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 15,
+              "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 11,
+          "input": "None",
+          "reference": {
+            "bytes": 30,
+            "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 30,
+              "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 30,
+              "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 30,
+          "input": "None",
+          "reference": {
+            "bytes": 45,
+            "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 45,
+              "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 45,
+              "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 100,
+          "input": "None",
+          "reference": {
+            "bytes": 151,
+            "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 151,
+              "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 151,
+              "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 10000,
+          "input": "None",
+          "reference": {
+            "bytes": 16893,
+            "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 16893,
+              "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 16893,
+              "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "pidigits:mech-pi-final-advance-signed",
+      "cases": [
+        {
+          "n": 0,
+          "input": "None",
+          "reference": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 0,
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 1,
+          "input": "None",
+          "reference": {
+            "bytes": 14,
+            "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 14,
+              "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 14,
+              "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 9,
+          "input": "None",
+          "reference": {
+            "bytes": 14,
+            "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 14,
+              "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 14,
+              "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 10,
+          "input": "None",
+          "reference": {
+            "bytes": 15,
+            "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 15,
+              "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 15,
+              "sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 11,
+          "input": "None",
+          "reference": {
+            "bytes": 30,
+            "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 30,
+              "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 30,
+              "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 30,
+          "input": "None",
+          "reference": {
+            "bytes": 45,
+            "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 45,
+              "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 45,
+              "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 100,
+          "input": "None",
+          "reference": {
+            "bytes": 151,
+            "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 151,
+              "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 151,
+              "sha256": "c58ccf8f972ea587a5fc489e902b5b04f8d2512f969228136a604b8acfa66111",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        },
+        {
+          "n": 10000,
+          "input": "None",
+          "reference": {
+            "bytes": 16893,
+            "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+            "output": null,
+            "returncode": 0,
+            "stderr": ""
+          },
+          "expected_rejection": false,
+          "variants": {
+            "before": {
+              "bytes": 16893,
+              "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            },
+            "after": {
+              "bytes": 16893,
+              "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+              "output": null,
+              "returncode": 0,
+              "stderr": ""
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "generic_examples": {
+    "effects": {
+      "output": "touch:0\ntouch:1\ntouch:2\nresult:3\n",
+      "passed": true
+    },
+    "allocation": {
+      "output": "result:14\n",
+      "passed": true
+    }
+  },
+  "status": "passed"
+}

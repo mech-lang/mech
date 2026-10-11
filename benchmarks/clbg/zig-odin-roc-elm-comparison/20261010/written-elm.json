@@ -1,0 +1,179 @@
+{
+  "programs": [
+    {
+      "key": "nbody:nbody-elm-idiomatic",
+      "id": "nbody-elm-idiomatic",
+      "benchmark": "nbody",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Nbody.elm",
+      "source_sha256": "f6ecf33a79d13a26e0ff4ffb6228fad05502b5894c9b796a978d4c91696b34da",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ]
+    },
+    {
+      "key": "spectralnorm:spectralnorm-elm-idiomatic",
+      "id": "spectralnorm-elm-idiomatic",
+      "benchmark": "spectralnorm",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Spectralnorm.elm",
+      "source_sha256": "c152e996257715687fb8f956ce0d2b1eaf670854e7afc077b6b84b225b6fd768",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ]
+    },
+    {
+      "key": "binarytrees:binarytrees-elm-idiomatic",
+      "id": "binarytrees-elm-idiomatic",
+      "benchmark": "binarytrees",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Binarytrees.elm",
+      "source_sha256": "50f648aa6c28ae027cf18e6bd7aafcc1b8921727da0900f436ec5b8a6488b3f3",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ]
+    },
+    {
+      "key": "regexredux:regexredux-elm-idiomatic",
+      "id": "regexredux-elm-idiomatic",
+      "benchmark": "regexredux",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Regexredux.elm",
+      "source_sha256": "7dbc3044b2427dd2ff21b117ea5603e774ae08da6e21e57fe42dfbb49bfa79ce",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json",
+        "elm/regex"
+      ]
+    },
+    {
+      "key": "pidigits:pidigits-elm-idiomatic",
+      "id": "pidigits-elm-idiomatic",
+      "benchmark": "pidigits",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Pidigits.elm",
+      "source_sha256": "4eed47d879ab6987bdb0b522a3d1acf9a6214a580b4a2e827a7406e12610a96c",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json",
+        "dwayne/elm-integer",
+        "dwayne/elm-natural"
+      ]
+    },
+    {
+      "key": "knucleotide:knucleotide-elm-idiomatic",
+      "id": "knucleotide-elm-idiomatic",
+      "benchmark": "knucleotide",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Knucleotide.elm",
+      "source_sha256": "0af929e7144f7358c803e30d4922f0d8c71800425230753c20b462bfe1f3c492",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json",
+        "nikita-volkov/hashing-containers",
+        "nikita-volkov/typeclasses"
+      ]
+    },
+    {
+      "key": "fannkuchredux:fannkuchredux-elm-idiomatic",
+      "id": "fannkuchredux-elm-idiomatic",
+      "benchmark": "fannkuchredux",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Fannkuchredux.elm",
+      "source_sha256": "6a1f36b2ac6e9bffea518fedb4c73bf82e786181b38a0910b02da0007cb3a523",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ]
+    },
+    {
+      "key": "mandelbrot:mandelbrot-elm-streamed",
+      "id": "mandelbrot-elm-streamed",
+      "benchmark": "mandelbrot",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Mandelbrot.elm",
+      "source_sha256": "a8c084911c6ed67875e9938cfab49fe56b9d8cd095dfaf227469abfde07050f6",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ]
+    },
+    {
+      "key": "fasta:fasta-elm-streamed",
+      "id": "fasta-elm-streamed",
+      "benchmark": "fasta",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Fasta.elm",
+      "source_sha256": "23109dab7cdae1d776960de561bb798672467653cf353af8f49deb3260e595f9",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ]
+    },
+    {
+      "key": "revcomp:revcomp-elm-streamed",
+      "id": "revcomp-elm-streamed",
+      "benchmark": "revcomp",
+      "language": "elm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/elm/Revcomp.elm",
+      "source_sha256": "3bde86efcc079142eca7b9bf45133bcad3aa56518411bdf5f2e3785b287271a4",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored pure Elm workload, compiled with --optimize and executed by Node. Only generic port/process I/O is in the adapter. Every algorithm helper counts toward LOC."
+      ],
+      "libraries": [
+        "elm/core",
+        "elm/json"
+      ]
+    }
+  ]
+}

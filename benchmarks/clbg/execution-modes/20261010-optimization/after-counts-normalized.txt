@@ -1,0 +1,869 @@
+ldr	x8, [x0]
+sub	sp, sp, #0x70
+stp	x26, x25, [sp, #0x20]
+stp	x24, x23, [sp, #0x30]
+stp	x22, x21, [sp, #0x40]
+stp	x20, x19, [sp, #0x50]
+stp	x29, x30, [sp, #0x60]
+add	x29, sp, #0x60
+mov	x19, x1
+mov	x20, x0
+adr	x10,  <L0>
+ldrh	w11, [x9, x8, lsl #1]
+add	x10, x10, x11, lsl #2
+br	x10
+cbz	x2,  <L103>
+add	x21, x20, #0x8
+add	x22, x19, x2, lsl #3
+add	x23, x23, #0x6e0
+b	 <L6>
+and	x13, x13, x11
+ldr	d1, [x12, x13]
+cmeq.8b	v2, v1, v0
+fmov	x14, d2
+ands	x14, x14, #0x8080808080808080
+b.eq	 <L3>
+rbit	x15, x14
+clz	x15, x15
+add	x15, x13, x15, lsr #3
+and	x15, x15, x11
+sub	x15, x12, x15, lsl #4
+ldur	x16, [x15, #-0x10]
+cmp	x9, x16
+b.eq	 <L4>
+sub	x15, x14, #0x1
+ands	x14, x15, x14
+b.ne	 <L2>
+movi.2d	v2, #0xffffffffffffffff
+cmeq.8b	v1, v1, v2
+umaxv.8b	b1, v1
+fmov	w14, s1
+tbnz	w14, #0x0,  <L7>
+add	x10, x10, #0x8
+add	x13, x13, x10
+b	 <L1>
+mov	x9, #0x0                ; =0
+str	x15, [sp, #0x8]
+add	x10, x20, #0x8
+stp	x10, x8, [sp, #0x10]
+str	x9, [sp]
+mov	x0, sp
+bl	 <__RNvMs1d_NtCsd0jj78El3J_9hashbrown3mapINtB6_5EntryyyNtNtCseULylwdyJVZ_8foldhash4fast11RandomStateE9or_insertCsfBfIVmeLE1N_8mech_gpu>
+ldr	x8, [x0]
+add	x8, x8, #0x1
+str	x8, [x0]
+cmp	x19, x22
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldr	x9, [x19], #0x8
+ldr	x8, [x20, #0x28]
+ldr	x11, [x23]
+eor	x8, x8, x9
+mul	x12, x11, x8
+umulh	x8, x11, x8
+eor	x8, x8, x12
+lsr	x13, x8, #57
+ldp	x12, x11, [x20, #0x8]
+dup.8b	v0, w13
+mov	x13, x8
+b	 <L1>
+str	x21, [sp, #0x8]
+mov	x10, x8
+mov	x8, x9
+mov	w9, #0x1                ; =1
+b	 <L5>
+cbz	x2,  <L103>
+add	x21, x20, #0x8
+add	x22, x19, x2, lsl #3
+mov	x23, #0xa95             ; =2709
+movk	x23, #0x2722, lsl #16
+movk	x23, #0xc1b7, lsl #32
+movk	x23, #0x517c, lsl #48
+b	 <L13>
+and	x13, x13, x11
+ldr	d1, [x12, x13]
+cmeq.8b	v2, v1, v0
+fmov	x14, d2
+ands	x14, x14, #0x8080808080808080
+b.eq	 <L10>
+rbit	x15, x14
+clz	x15, x15
+add	x15, x13, x15, lsr #3
+and	x15, x15, x11
+sub	x15, x12, x15, lsl #4
+ldur	x16, [x15, #-0x10]
+cmp	x9, x16
+b.eq	 <L11>
+sub	x15, x14, #0x1
+ands	x14, x15, x14
+b.ne	 <L9>
+movi.2d	v2, #0xffffffffffffffff
+cmeq.8b	v1, v1, v2
+umaxv.8b	b1, v1
+fmov	w14, s1
+tbnz	w14, #0x0,  <L14>
+add	x10, x10, #0x8
+add	x13, x13, x10
+b	 <L8>
+mov	x9, #0x0                ; =0
+str	x15, [sp, #0x8]
+add	x10, x20, #0x8
+stp	x10, x8, [sp, #0x10]
+str	x9, [sp]
+mov	x0, sp
+bl	 <__RNvMs1d_NtCsd0jj78El3J_9hashbrown3mapINtB6_5EntryymINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE9or_insertCsfBfIVmeLE1N_8mech_gpu>
+ldr	w8, [x0]
+add	w8, w8, #0x1
+str	w8, [x0]
+cmp	x19, x22
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldr	x9, [x19], #0x8
+mul	x8, x9, x23
+lsr	x13, x8, #57
+ldp	x12, x11, [x20, #0x8]
+dup.8b	v0, w13
+mov	x13, x8
+b	 <L8>
+str	x21, [sp, #0x8]
+mov	x10, x8
+mov	x8, x9
+mov	w9, #0x1                ; =1
+b	 <L12>
+cbz	x2,  <L103>
+add	x21, x19, x2, lsl #3
+mov	x22, #0xa95             ; =2709
+movk	x22, #0x2722, lsl #16
+movk	x22, #0xc1b7, lsl #32
+movk	x22, #0x517c, lsl #48
+movi.2d	v3, #0xffffffffffffffff
+b	 <L22>
+and	x11, x11, x9
+ldr	d1, [x8, x11]
+cmeq.8b	v2, v1, v0
+fmov	x12, d2
+ands	x12, x12, #0x8080808080808080
+b.eq	 <L17>
+rbit	x13, x12
+clz	x13, x13
+add	x13, x11, x13, lsr #3
+and	x13, x13, x9
+sub	x13, x8, x13, lsl #4
+ldur	x14, [x13, #-0x10]
+cmp	x14, x23
+b.eq	 <L21>
+sub	x13, x12, #0x1
+ands	x12, x13, x12
+b.ne	 <L16>
+cmeq.8b	v1, v1, v3
+umaxv.8b	b1, v1
+fmov	w12, s1
+tbnz	w12, #0x0,  <L18>
+add	x10, x10, #0x8
+add	x11, x11, x10
+b	 <L15>
+ldr	x10, [x20, #0x18]
+cbz	x10,  <L23>
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbz	x12,  <L24>
+rbit	x11, x12
+clz	x11, x11
+add	x10, x10, x11, lsr #3
+and	x11, x10, x9
+ldrsb	w10, [x8, x11]
+tbz	w10, #0x1f,  <L26>
+sub	x12, x11, #0x8
+and	x9, x12, x9
+strb	w24, [x8, x11]
+add	x9, x8, x9
+strb	w24, [x9, #0x8]
+sub	x13, x8, x11, lsl #4
+and	x8, x10, #0x1
+stur	x23, [x13, #-0x10]
+stur	wzr, [x13, #-0x8]
+ldur	q0, [x20, #0x18]
+movi.2d	v1, #0xffffffffffffffff
+mov.d	v1[0], x8
+sub.2d	v0, v0, v1
+stur	q0, [x20, #0x18]
+ldur	w8, [x13, #-0x8]
+add	w8, w8, #0x1
+stur	w8, [x13, #-0x8]
+cmp	x19, x21
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldr	x23, [x19], #0x8
+mul	x25, x23, x22
+lsr	x24, x25, #57
+ldp	x8, x9, [x20, #0x8]
+dup.8b	v0, w24
+mov	x11, x25
+b	 <L15>
+add	x0, x20, #0x8
+add	x2, x20, #0x28
+mov	w1, #0x1                ; =1
+mov	w3, #0x1                ; =1
+bl	 <__RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTymEE14reserve_rehashNCINvNtB8_3map11make_hasherymINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE0ECsfBfIVmeLE1N_8mech_gpu>
+movi.2d	v3, #0xffffffffffffffff
+ldp	x8, x9, [x20, #0x8]
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbnz	x12,  <L19>
+mov	w11, #0x8               ; =8
+add	x10, x10, x11
+and	x10, x10, x9
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+add	x11, x11, #0x8
+cbnz	x12,  <L19>
+b	 <L25>
+ldr	d0, [x8]
+cmlt.8b	v0, v0, #0
+fmov	x10, d0
+rbit	x10, x10
+clz	x10, x10
+lsr	x11, x10, #3
+ldrb	w10, [x8, x11]
+b	 <L20>
+cbz	x2,  <L103>
+add	x21, x20, #0x8
+add	x22, x19, x2, lsl #3
+mov	x23, #0xa95             ; =2709
+movk	x23, #0x2722, lsl #16
+movk	x23, #0xc1b7, lsl #32
+movk	x23, #0x517c, lsl #48
+b	 <L32>
+and	x13, x13, x11
+ldr	d1, [x12, x13]
+cmeq.8b	v2, v1, v0
+fmov	x14, d2
+ands	x14, x14, #0x8080808080808080
+b.eq	 <L29>
+rbit	x15, x14
+clz	x15, x15
+add	x15, x13, x15, lsr #3
+and	x15, x15, x11
+sub	x15, x12, x15, lsl #3
+ldurh	w16, [x15, #-0x8]
+cmp	w16, w8
+b.eq	 <L30>
+sub	x15, x14, #0x1
+ands	x14, x15, x14
+b.ne	 <L28>
+movi.2d	v2, #0xffffffffffffffff
+cmeq.8b	v1, v1, v2
+umaxv.8b	b1, v1
+fmov	w14, s1
+tbnz	w14, #0x0,  <L33>
+add	x10, x10, #0x8
+add	x13, x13, x10
+b	 <L27>
+mov	x10, #0x0               ; =0
+stp	x15, x21, [sp, #0x8]
+str	x9, [sp, #0x18]
+str	x10, [sp]
+mov	x0, sp
+bl	 <__RNvMs1d_NtCsd0jj78El3J_9hashbrown3mapINtB6_5EntrytmINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE9or_insertCsfBfIVmeLE1N_8mech_gpu>
+ldr	w8, [x0]
+add	w8, w8, #0x1
+str	w8, [x0]
+cmp	x19, x22
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldrh	w8, [x19], #0x8
+mul	x9, x8, x23
+lsr	x13, x9, #57
+ldp	x12, x11, [x20, #0x8]
+dup.8b	v0, w13
+mov	x13, x9
+b	 <L27>
+stp	x21, x9, [sp, #0x8]
+mov	w10, #0x1               ; =1
+strh	w8, [sp, #0x18]
+b	 <L31>
+cbz	x2,  <L103>
+add	x21, x20, #0x8
+add	x22, x19, x2, lsl #3
+mov	x23, #0xa95             ; =2709
+movk	x23, #0x2722, lsl #16
+movk	x23, #0xc1b7, lsl #32
+movk	x23, #0x517c, lsl #48
+b	 <L39>
+and	x13, x13, x11
+ldr	d1, [x12, x13]
+cmeq.8b	v2, v1, v0
+fmov	x14, d2
+ands	x14, x14, #0x8080808080808080
+b.eq	 <L36>
+rbit	x15, x14
+clz	x15, x15
+add	x15, x13, x15, lsr #3
+and	x15, x15, x11
+sub	x15, x12, x15, lsl #3
+ldur	w16, [x15, #-0x8]
+cmp	w16, w8
+b.eq	 <L37>
+sub	x15, x14, #0x1
+ands	x14, x15, x14
+b.ne	 <L35>
+movi.2d	v2, #0xffffffffffffffff
+cmeq.8b	v1, v1, v2
+umaxv.8b	b1, v1
+fmov	w14, s1
+tbnz	w14, #0x0,  <L40>
+add	x13, x13, x9
+b	 <L34>
+mov	x9, #0x0                ; =0
+stp	x15, x21, [sp, #0x8]
+str	x10, [sp, #0x18]
+str	x9, [sp]
+mov	x0, sp
+bl	 <__RNvMs1d_NtCsd0jj78El3J_9hashbrown3mapINtB6_5EntrymmINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE9or_insertCsfBfIVmeLE1N_8mech_gpu>
+ldr	w8, [x0]
+add	w8, w8, #0x1
+str	w8, [x0]
+cmp	x19, x22
+b.eq	 <L103>
+mov	x9, #0x0                ; =0
+ldr	x8, [x19], #0x8
+mov	w10, w8
+mul	x10, x10, x23
+lsr	x13, x10, #57
+ldp	x12, x11, [x20, #0x8]
+dup.8b	v0, w13
+mov	x13, x10
+b	 <L34>
+stp	x21, x10, [sp, #0x8]
+mov	w9, #0x1                ; =1
+str	w8, [sp, #0x18]
+b	 <L38>
+cbz	x2,  <L103>
+add	x21, x19, x2, lsl #3
+mov	x22, #0xa95             ; =2709
+movk	x22, #0x2722, lsl #16
+movk	x22, #0xc1b7, lsl #32
+movk	x22, #0x517c, lsl #48
+movi.2d	v3, #0xffffffffffffffff
+b	 <L48>
+and	x11, x11, x9
+ldr	d1, [x8, x11]
+cmeq.8b	v2, v1, v0
+fmov	x12, d2
+ands	x12, x12, #0x8080808080808080
+b.eq	 <L43>
+rbit	x13, x12
+clz	x13, x13
+add	x13, x11, x13, lsr #3
+and	x13, x13, x9
+sub	x13, x8, x13, lsl #3
+ldurh	w14, [x13, #-0x8]
+cmp	w14, w23
+b.eq	 <L47>
+sub	x13, x12, #0x1
+ands	x12, x13, x12
+b.ne	 <L42>
+cmeq.8b	v1, v1, v3
+umaxv.8b	b1, v1
+fmov	w12, s1
+tbnz	w12, #0x0,  <L44>
+add	x10, x10, #0x8
+add	x11, x11, x10
+b	 <L41>
+ldr	x10, [x20, #0x18]
+cbz	x10,  <L49>
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbz	x12,  <L50>
+rbit	x11, x12
+clz	x11, x11
+add	x10, x10, x11, lsr #3
+and	x11, x10, x9
+ldrsb	w10, [x8, x11]
+tbz	w10, #0x1f,  <L52>
+sub	x12, x11, #0x8
+and	x9, x12, x9
+strb	w24, [x8, x11]
+add	x9, x8, x9
+strb	w24, [x9, #0x8]
+sub	x13, x8, x11, lsl #3
+and	x8, x10, #0x1
+sturh	w23, [x13, #-0x8]
+stur	wzr, [x13, #-0x4]
+ldur	q0, [x20, #0x18]
+movi.2d	v1, #0xffffffffffffffff
+mov.d	v1[0], x8
+sub.2d	v0, v0, v1
+stur	q0, [x20, #0x18]
+ldur	w8, [x13, #-0x4]
+add	w8, w8, #0x1
+stur	w8, [x13, #-0x4]
+cmp	x19, x21
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldrh	w23, [x19], #0x8
+mul	x25, x23, x22
+lsr	x24, x25, #57
+ldp	x8, x9, [x20, #0x8]
+dup.8b	v0, w24
+mov	x11, x25
+b	 <L41>
+add	x0, x20, #0x8
+add	x2, x20, #0x28
+mov	w1, #0x1                ; =1
+mov	w3, #0x1                ; =1
+bl	 <__RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTtmEE14reserve_rehashNCINvNtB8_3map11make_hashertmINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE0ECsfBfIVmeLE1N_8mech_gpu>
+movi.2d	v3, #0xffffffffffffffff
+ldp	x8, x9, [x20, #0x8]
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbnz	x12,  <L45>
+mov	w11, #0x8               ; =8
+add	x10, x10, x11
+and	x10, x10, x9
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+add	x11, x11, #0x8
+cbnz	x12,  <L45>
+b	 <L51>
+ldr	d0, [x8]
+cmlt.8b	v0, v0, #0
+fmov	x10, d0
+rbit	x10, x10
+clz	x10, x10
+lsr	x11, x10, #3
+ldrb	w10, [x8, x11]
+b	 <L46>
+cbz	x2,  <L103>
+add	x21, x20, #0x8
+add	x22, x19, x2, lsl #3
+mov	x23, #0xa95             ; =2709
+movk	x23, #0x2722, lsl #16
+movk	x23, #0xc1b7, lsl #32
+movk	x23, #0x517c, lsl #48
+b	 <L58>
+and	x13, x13, x11
+ldr	d1, [x12, x13]
+cmeq.8b	v2, v1, v0
+fmov	x14, d2
+ands	x14, x14, #0x8080808080808080
+b.eq	 <L55>
+rbit	x15, x14
+clz	x15, x15
+add	x15, x13, x15, lsr #3
+and	x15, x15, x11
+sub	x15, x12, x15, lsl #3
+ldurb	w16, [x15, #-0x8]
+cmp	w16, w8
+b.eq	 <L56>
+sub	x15, x14, #0x1
+ands	x14, x15, x14
+b.ne	 <L54>
+movi.2d	v2, #0xffffffffffffffff
+cmeq.8b	v1, v1, v2
+umaxv.8b	b1, v1
+fmov	w14, s1
+tbnz	w14, #0x0,  <L59>
+add	x10, x10, #0x8
+add	x13, x13, x10
+b	 <L53>
+mov	x10, #0x0               ; =0
+stp	x15, x21, [sp, #0x8]
+str	x9, [sp, #0x18]
+str	x10, [sp]
+mov	x0, sp
+bl	 <__RNvMs1d_NtCsd0jj78El3J_9hashbrown3mapINtB6_5EntryhmINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE9or_insertCsfBfIVmeLE1N_8mech_gpu>
+ldr	w8, [x0]
+add	w8, w8, #0x1
+str	w8, [x0]
+cmp	x19, x22
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldrb	w8, [x19], #0x8
+mul	x9, x8, x23
+lsr	x13, x9, #57
+ldp	x12, x11, [x20, #0x8]
+dup.8b	v0, w13
+mov	x13, x9
+b	 <L53>
+stp	x21, x9, [sp, #0x8]
+mov	w10, #0x1               ; =1
+strb	w8, [sp, #0x18]
+b	 <L57>
+cbz	x2,  <L103>
+add	x21, x20, #0x8
+add	x22, x19, x2, lsl #3
+mov	x23, #0xa95             ; =2709
+movk	x23, #0x2722, lsl #16
+movk	x23, #0xc1b7, lsl #32
+movk	x23, #0x517c, lsl #48
+b	 <L65>
+and	x13, x13, x11
+ldr	d1, [x12, x13]
+cmeq.8b	v2, v1, v0
+fmov	x14, d2
+ands	x14, x14, #0x8080808080808080
+b.eq	 <L62>
+rbit	x15, x14
+clz	x15, x15
+add	x15, x13, x15, lsr #3
+and	x15, x15, x11
+sub	x15, x12, x15, lsl #4
+ldur	x16, [x15, #-0x10]
+cmp	x9, x16
+b.eq	 <L63>
+sub	x15, x14, #0x1
+ands	x14, x15, x14
+b.ne	 <L61>
+movi.2d	v2, #0xffffffffffffffff
+cmeq.8b	v1, v1, v2
+umaxv.8b	b1, v1
+fmov	w14, s1
+tbnz	w14, #0x0,  <L66>
+add	x10, x10, #0x8
+add	x13, x13, x10
+b	 <L60>
+mov	x9, #0x0                ; =0
+str	x15, [sp, #0x8]
+add	x10, x20, #0x8
+stp	x10, x8, [sp, #0x10]
+str	x9, [sp]
+mov	x0, sp
+bl	 <__RNvMs1d_NtCsd0jj78El3J_9hashbrown3mapINtB6_5EntryyyINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE9or_insertCsfBfIVmeLE1N_8mech_gpu>
+ldr	x8, [x0]
+add	x8, x8, #0x1
+str	x8, [x0]
+cmp	x19, x22
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldr	x9, [x19], #0x8
+mul	x8, x9, x23
+lsr	x13, x8, #57
+ldp	x12, x11, [x20, #0x8]
+dup.8b	v0, w13
+mov	x13, x8
+b	 <L60>
+str	x21, [sp, #0x8]
+mov	x10, x8
+mov	x8, x9
+mov	w9, #0x1                ; =1
+b	 <L64>
+cbz	x2,  <L103>
+add	x21, x19, x2, lsl #3
+mov	x22, #0xa95             ; =2709
+movk	x22, #0x2722, lsl #16
+movk	x22, #0xc1b7, lsl #32
+movk	x22, #0x517c, lsl #48
+movi.2d	v3, #0xffffffffffffffff
+b	 <L74>
+and	x11, x11, x9
+ldr	d1, [x8, x11]
+cmeq.8b	v2, v1, v0
+fmov	x12, d2
+ands	x12, x12, #0x8080808080808080
+b.eq	 <L69>
+rbit	x13, x12
+clz	x13, x13
+add	x13, x11, x13, lsr #3
+and	x13, x13, x9
+sub	x13, x8, x13, lsl #3
+ldurb	w14, [x13, #-0x8]
+cmp	w14, w23
+b.eq	 <L73>
+sub	x13, x12, #0x1
+ands	x12, x13, x12
+b.ne	 <L68>
+cmeq.8b	v1, v1, v3
+umaxv.8b	b1, v1
+fmov	w12, s1
+tbnz	w12, #0x0,  <L70>
+add	x10, x10, #0x8
+add	x11, x11, x10
+b	 <L67>
+ldr	x10, [x20, #0x18]
+cbz	x10,  <L75>
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbz	x12,  <L76>
+rbit	x11, x12
+clz	x11, x11
+add	x10, x10, x11, lsr #3
+and	x11, x10, x9
+ldrsb	w10, [x8, x11]
+tbz	w10, #0x1f,  <L78>
+sub	x12, x11, #0x8
+and	x9, x12, x9
+strb	w24, [x8, x11]
+add	x9, x8, x9
+strb	w24, [x9, #0x8]
+sub	x13, x8, x11, lsl #3
+and	x8, x10, #0x1
+sturb	w23, [x13, #-0x8]
+stur	wzr, [x13, #-0x4]
+ldur	q0, [x20, #0x18]
+movi.2d	v1, #0xffffffffffffffff
+mov.d	v1[0], x8
+sub.2d	v0, v0, v1
+stur	q0, [x20, #0x18]
+ldur	w8, [x13, #-0x4]
+add	w8, w8, #0x1
+stur	w8, [x13, #-0x4]
+cmp	x19, x21
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldrb	w23, [x19], #0x8
+mul	x25, x23, x22
+lsr	x24, x25, #57
+ldp	x8, x9, [x20, #0x8]
+dup.8b	v0, w24
+mov	x11, x25
+b	 <L67>
+add	x0, x20, #0x8
+add	x2, x20, #0x28
+mov	w1, #0x1                ; =1
+mov	w3, #0x1                ; =1
+bl	 <__RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableThmEE14reserve_rehashNCINvNtB8_3map11make_hasherhmINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE0ECsfBfIVmeLE1N_8mech_gpu>
+movi.2d	v3, #0xffffffffffffffff
+ldp	x8, x9, [x20, #0x8]
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbnz	x12,  <L71>
+mov	w11, #0x8               ; =8
+add	x10, x10, x11
+and	x10, x10, x9
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+add	x11, x11, #0x8
+cbnz	x12,  <L71>
+b	 <L77>
+ldr	d0, [x8]
+cmlt.8b	v0, v0, #0
+fmov	x10, d0
+rbit	x10, x10
+clz	x10, x10
+lsr	x11, x10, #3
+ldrb	w10, [x8, x11]
+b	 <L72>
+cbz	x2,  <L103>
+add	x21, x19, x2, lsl #3
+mov	x22, #0xa95             ; =2709
+movk	x22, #0x2722, lsl #16
+movk	x22, #0xc1b7, lsl #32
+movk	x22, #0x517c, lsl #48
+movi.2d	v3, #0xffffffffffffffff
+b	 <L86>
+and	x11, x11, x9
+ldr	d1, [x8, x11]
+cmeq.8b	v2, v1, v0
+fmov	x12, d2
+ands	x12, x12, #0x8080808080808080
+b.eq	 <L81>
+rbit	x13, x12
+clz	x13, x13
+add	x13, x11, x13, lsr #3
+and	x13, x13, x9
+sub	x13, x8, x13, lsl #4
+ldur	x14, [x13, #-0x10]
+cmp	x14, x23
+b.eq	 <L85>
+sub	x13, x12, #0x1
+ands	x12, x13, x12
+b.ne	 <L80>
+cmeq.8b	v1, v1, v3
+umaxv.8b	b1, v1
+fmov	w12, s1
+tbnz	w12, #0x0,  <L82>
+add	x10, x10, #0x8
+add	x11, x11, x10
+b	 <L79>
+ldr	x10, [x20, #0x18]
+cbz	x10,  <L87>
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbz	x12,  <L88>
+rbit	x11, x12
+clz	x11, x11
+add	x10, x10, x11, lsr #3
+and	x11, x10, x9
+ldrsb	w10, [x8, x11]
+tbz	w10, #0x1f,  <L90>
+sub	x12, x11, #0x8
+and	x9, x12, x9
+strb	w24, [x8, x11]
+add	x9, x8, x9
+strb	w24, [x9, #0x8]
+sub	x13, x8, x11, lsl #4
+and	x8, x10, #0x1
+stp	x23, xzr, [x13, #-0x10]
+ldur	q0, [x20, #0x18]
+movi.2d	v1, #0xffffffffffffffff
+mov.d	v1[0], x8
+sub.2d	v0, v0, v1
+stur	q0, [x20, #0x18]
+ldur	x8, [x13, #-0x8]
+add	x8, x8, #0x1
+stur	x8, [x13, #-0x8]
+cmp	x19, x21
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldr	x23, [x19], #0x8
+mul	x25, x23, x22
+lsr	x24, x25, #57
+ldp	x8, x9, [x20, #0x8]
+dup.8b	v0, w24
+mov	x11, x25
+b	 <L79>
+add	x0, x20, #0x8
+add	x2, x20, #0x28
+mov	w1, #0x1                ; =1
+mov	w3, #0x1                ; =1
+bl	 <__RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTyyEE14reserve_rehashNCINvNtB8_3map11make_hasheryyINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE0ECsfBfIVmeLE1N_8mech_gpu>
+movi.2d	v3, #0xffffffffffffffff
+ldp	x8, x9, [x20, #0x8]
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbnz	x12,  <L83>
+mov	w11, #0x8               ; =8
+add	x10, x10, x11
+and	x10, x10, x9
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+add	x11, x11, #0x8
+cbnz	x12,  <L83>
+b	 <L89>
+ldr	d0, [x8]
+cmlt.8b	v0, v0, #0
+fmov	x10, d0
+rbit	x10, x10
+clz	x10, x10
+lsr	x11, x10, #3
+ldrb	w10, [x8, x11]
+b	 <L84>
+cbz	x2,  <L103>
+add	x21, x19, x2, lsl #3
+mov	x22, #0xa95             ; =2709
+movk	x22, #0x2722, lsl #16
+movk	x22, #0xc1b7, lsl #32
+movk	x22, #0x517c, lsl #48
+movi.2d	v3, #0xffffffffffffffff
+b	 <L98>
+and	x11, x11, x9
+ldr	d1, [x8, x11]
+cmeq.8b	v2, v1, v0
+fmov	x12, d2
+ands	x12, x12, #0x8080808080808080
+b.eq	 <L93>
+rbit	x13, x12
+clz	x13, x13
+add	x13, x11, x13, lsr #3
+and	x13, x13, x9
+sub	x13, x8, x13, lsl #3
+ldur	w14, [x13, #-0x8]
+cmp	w14, w23
+b.eq	 <L97>
+sub	x13, x12, #0x1
+ands	x12, x13, x12
+b.ne	 <L92>
+cmeq.8b	v1, v1, v3
+umaxv.8b	b1, v1
+fmov	w12, s1
+tbnz	w12, #0x0,  <L94>
+add	x10, x10, #0x8
+add	x11, x11, x10
+b	 <L91>
+ldr	x10, [x20, #0x18]
+cbz	x10,  <L99>
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbz	x12,  <L100>
+rbit	x11, x12
+clz	x11, x11
+add	x10, x10, x11, lsr #3
+and	x11, x10, x9
+ldrsb	w10, [x8, x11]
+tbz	w10, #0x1f,  <L102>
+sub	x12, x11, #0x8
+and	x9, x12, x9
+strb	w24, [x8, x11]
+add	x9, x8, x9
+strb	w24, [x9, #0x8]
+sub	x13, x8, x11, lsl #3
+and	x8, x10, #0x1
+stp	w23, wzr, [x13, #-0x8]
+ldur	q0, [x20, #0x18]
+movi.2d	v1, #0xffffffffffffffff
+mov.d	v1[0], x8
+sub.2d	v0, v0, v1
+stur	q0, [x20, #0x18]
+ldur	w8, [x13, #-0x4]
+add	w8, w8, #0x1
+stur	w8, [x13, #-0x4]
+cmp	x19, x21
+b.eq	 <L103>
+mov	x10, #0x0               ; =0
+ldr	x23, [x19], #0x8
+mov	w8, w23
+mul	x25, x8, x22
+lsr	x24, x25, #57
+ldp	x8, x9, [x20, #0x8]
+dup.8b	v0, w24
+mov	x11, x25
+b	 <L91>
+add	x0, x20, #0x8
+add	x2, x20, #0x28
+mov	w1, #0x1                ; =1
+mov	w3, #0x1                ; =1
+bl	 <__RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTmmEE14reserve_rehashNCINvNtB8_3map11make_hashermmINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCsinZPWOYcTxw_6fxhash8FxHasherEE0ECsfBfIVmeLE1N_8mech_gpu>
+movi.2d	v3, #0xffffffffffffffff
+ldp	x8, x9, [x20, #0x8]
+and	x10, x9, x25
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+cbnz	x12,  <L95>
+mov	w11, #0x8               ; =8
+add	x10, x10, x11
+and	x10, x10, x9
+ldr	d0, [x8, x10]
+cmlt.8b	v0, v0, #0
+fmov	x12, d0
+add	x11, x11, #0x8
+cbnz	x12,  <L95>
+b	 <L101>
+ldr	d0, [x8]
+cmlt.8b	v0, v0, #0
+fmov	x10, d0
+rbit	x10, x10
+clz	x10, x10
+lsr	x11, x10, #3
+ldrb	w10, [x8, x11]
+b	 <L96>
+ldp	x29, x30, [sp, #0x60]
+ldp	x20, x19, [sp, #0x50]
+ldp	x22, x21, [sp, #0x40]
+ldp	x24, x23, [sp, #0x30]
+ldp	x26, x25, [sp, #0x20]
+add	sp, sp, #0x70
+ret

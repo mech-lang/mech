@@ -1,0 +1,32 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:70:9: warning: variable 'iov' was never mutated; consider changing to 'let' constant
+    var iov = UnsafeMutablePointer<iovec>.allocate(capacity: 1)
+    ~~~ ^
+    let
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:80:9: warning: variable 'iov' was never mutated; consider changing to 'let' constant
+    var iov = UnsafeMutablePointer<iovec>.allocate(capacity: 1)
+    ~~~ ^
+    let
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:223:15: warning: 'color' mutated after capture by sendable closure
+        color += 1
+              ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:217:9: note: variable defined here
+    var color = 1 // red/black for software pipelining of loop
+        ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:220:28: note: variable captured by sendable closure
+        q.async(group: dg) { fillSeedBuffer(cnt: &cnt, buffer: seedBuffers[color % 2]) }
+                           ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:220:76: note: capturing use
+        q.async(group: dg) { fillSeedBuffer(cnt: &cnt, buffer: seedBuffers[color % 2]) }
+                                                                           ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:223:15: warning: 'color' mutated after capture by sendable closure
+        color += 1
+              ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:217:9: note: variable defined here
+    var color = 1 // red/black for software pipelining of loop
+        ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:221:28: note: variable captured by sendable closure
+        q.async(group: dg) { processSeedBuffer(seed: seedBuffers[(color + 1) % 2], out: outputBuffer, acid: acid) }
+                           ^
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2-faithful.swift:221:67: note: capturing use
+        q.async(group: dg) { processSeedBuffer(seed: seedBuffers[(color + 1) % 2], out: outputBuffer, acid: acid) }
+                                                                  ^

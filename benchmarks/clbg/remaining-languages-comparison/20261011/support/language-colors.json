@@ -1,0 +1,38 @@
+{
+  "source_url": "https://raw.githubusercontent.com/github-linguist/linguist/master/lib/linguist/languages.yml",
+  "sha256": "183243e30496ba53f5f8743b0e39c9f0e0bccc5a32639f7b541cc2285db0e043",
+  "languages": {
+    "csharp": {
+      "name": "C#",
+      "color": "#7355dd"
+    },
+    "fsharp": {
+      "name": "F#",
+      "color": "#b845fc"
+    },
+    "ada": {
+      "name": "Ada",
+      "color": "#02f88c"
+    },
+    "pascal": {
+      "name": "Pascal",
+      "color": "#E3F171"
+    },
+    "fortran": {
+      "name": "Fortran",
+      "color": "#4d41b1"
+    },
+    "dart": {
+      "name": "Dart",
+      "color": "#00B4AB"
+    },
+    "smalltalk": {
+      "name": "Smalltalk",
+      "color": "#596706"
+    },
+    "toit": {
+      "name": "Toit",
+      "color": "#c2c9fb"
+    }
+  }
+}

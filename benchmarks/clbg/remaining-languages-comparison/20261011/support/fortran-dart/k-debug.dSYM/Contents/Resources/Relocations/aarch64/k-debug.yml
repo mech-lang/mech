@@ -1,0 +1,18 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     'support/fortran-dart/k-debug'
+relocations:
+  - { offsetInCU: 0xC1, offset: 0xC1, size: 0x8, addend: 0x0, symName: ___counter_map_MOD___def_init_counter_map_Hash_map, symObjAddr: 0x2C58, symBinAddr: 0x100003A88, symSize: 0x0 }
+  - { offsetInCU: 0x135, offset: 0x135, size: 0x8, addend: 0x0, symName: ___counter_map_MOD___vtab_counter_map_Hash_map, symObjAddr: 0x2D10, symBinAddr: 0x100008000, symSize: 0x0 }
+  - { offsetInCU: 0x11F, offset: 0x11F, size: 0x8, addend: 0x0, symName: ___counter_map_MOD_slot, symObjAddr: 0x3C8, symBinAddr: 0x1000010A4, symSize: 0xDC }
+  - { offsetInCU: 0x16E, offset: 0x16E, size: 0x8, addend: 0x0, symName: ___counter_map_MOD_grow, symObjAddr: 0x5A4, symBinAddr: 0x100001280, symSize: 0x390 }
+  - { offsetInCU: 0x1E7, offset: 0x1E7, size: 0x8, addend: 0x0, symName: ___counter_map_MOD_increment, symObjAddr: 0x934, symBinAddr: 0x100001610, symSize: 0x16C }
+  - { offsetInCU: 0x234, offset: 0x234, size: 0x8, addend: 0x0, symName: ___counter_map_MOD_lookup, symObjAddr: 0x4A4, symBinAddr: 0x100001180, symSize: 0x100 }
+  - { offsetInCU: 0x2BD, offset: 0x2BD, size: 0x8, addend: 0x0, symName: ___counter_map_MOD___copy_counter_map_Hash_map, symObjAddr: 0x0, symBinAddr: 0x100000CDC, symSize: 0x120 }
+  - { offsetInCU: 0x302, offset: 0x302, size: 0x8, addend: 0x0, symName: ___counter_map_MOD___final_counter_map_Hash_map, symObjAddr: 0x120, symBinAddr: 0x100000DFC, symSize: 0x2A8 }
+  - { offsetInCU: 0x43F, offset: 0x43F, size: 0x8, addend: 0x0, symName: _MAIN__, symObjAddr: 0xF3C, symBinAddr: 0x100001C18, symSize: 0xAC8 }
+  - { offsetInCU: 0x650, offset: 0x650, size: 0x8, addend: 0x0, symName: _widths.2, symObjAddr: 0x2C20, symBinAddr: 0x100003A50, symSize: 0x0 }
+  - { offsetInCU: 0x667, offset: 0x667, size: 0x8, addend: 0x0, symName: _targets.1, symObjAddr: 0x2BA1, symBinAddr: 0x1000039D1, symSize: 0x0 }
+  - { offsetInCU: 0x68E, offset: 0x68E, size: 0x8, addend: 0x0, symName: _MAIN__._omp_fn.0, symObjAddr: 0xAA0, symBinAddr: 0x10000177C, symSize: 0x49C }
+  - { offsetInCU: 0x83D, offset: 0x83D, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x2CE0, symBinAddr: 0x1000026E0, symSize: 0x2C }
+...

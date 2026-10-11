@@ -1,0 +1,81 @@
+{
+   "abstract" : "Perl implementation of the which utility as an API",
+   "author" : [
+      "Per Einar Ellefsen <pereinar@cpan.org>",
+      "Adam Kennedy <adamk@cpan.org>",
+      "Graham Ollis <plicease@cpan.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 6.017, CPAN::Meta::Converter version 2.150010, CPAN::Meta::Converter version 2.150013",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "File-Which",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "File::Basename" : "0",
+            "File::Find" : "0",
+            "File::chdir" : "0",
+            "FindBin" : "0",
+            "Perl::Critic" : "0",
+            "Test2::Require::Module" : "0.000060",
+            "Test2::Tools::PerlCritic" : "0",
+            "Test2::V0" : "0.000060",
+            "Test::EOL" : "0",
+            "Test::Fixme" : "0.07",
+            "Test::More" : "0.47",
+            "Test::NoTabs" : "0",
+            "Test::Pod" : "0",
+            "Test::Pod::Coverage" : "0",
+            "Test::Pod::Spelling::CommonMistakes" : "0",
+            "Test::Spelling" : "0",
+            "Test::Strict" : "0",
+            "YAML" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "base" : "0",
+            "perl" : "5.006"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Env" : "0",
+            "Test::More" : "0.47"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/uperl/File-Which/issues"
+      },
+      "homepage" : "https://metacpan.org/pod/File::Which",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/uperl/File-Which.git",
+         "web" : "https://github.com/uperl/File-Which"
+      }
+   },
+   "version" : "1.27",
+   "x_generated_by_perl" : "v5.33.9",
+   "x_serialization_backend" : "JSON::PP version 4.16",
+   "x_spdx_expression" : "Artistic-1.0-Perl OR GPL-1.0-or-later",
+   "x_use_unsafe_inc" : 0
+}

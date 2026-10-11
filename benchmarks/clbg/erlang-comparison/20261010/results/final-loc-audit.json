@@ -1,0 +1,247 @@
+{
+  "status": "passed",
+  "rows": {
+    "fannkuchredux:fannkuchredux-erlang-1": {
+      "source_sha256": "7c5bde88454b01136675a9e337706264f30dc6d55d5b4ba906c947cc0b3b3ac5",
+      "initial_normalized_loc": 91,
+      "physical_loc": 90,
+      "normalized_loc": 91,
+      "expansions": [
+        {
+          "line": 104,
+          "extra": 1,
+          "source": "reset(N) -> put(N - 1, N), reset(N - 1).",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "nbody:nbody-erlang-3": {
+      "source_sha256": "9f66ffe55a1945b707621544345ed2840a1fcc7e84378668a595e58dea4046f0",
+      "initial_normalized_loc": 114,
+      "physical_loc": 114,
+      "normalized_loc": 114,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "pidigits:pidigits-erlang-2": {
+      "source_sha256": "015899cd3d1691016a43ee541f839b15b3040ebc2dbbea0a0b0e7bbe84804ea9",
+      "initial_normalized_loc": 33,
+      "physical_loc": 33,
+      "normalized_loc": 33,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "pidigits:pidigits-erlang-1": {
+      "source_sha256": "a23ca682b59899a40e71a8be1913a08f7b5d5b962ffb81148b938b8b8c135d81",
+      "initial_normalized_loc": 35,
+      "physical_loc": 34,
+      "normalized_loc": 35,
+      "expansions": [
+        {
+          "line": 50,
+          "extra": 1,
+          "source": "do_print(C, [H|T]) -> io:fwrite(\"~p\", [H]), do_print(C, T).",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "pidigits:pidigits-erlang-3": {
+      "source_sha256": "3310461c73c004633339c749b906365dce5b298f55064826d37f92ce2d4aaa6c",
+      "initial_normalized_loc": 43,
+      "physical_loc": 43,
+      "normalized_loc": 43,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "revcomp:revcomp-erlang-1": {
+      "source_sha256": "9cd7ce7fbbbe41ba0f48565ba35879d739980973b5a8c2c6b54fe61bb42b0c3b",
+      "initial_normalized_loc": 136,
+      "physical_loc": 136,
+      "normalized_loc": 136,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "revcomp:revcomp-erlang-4": {
+      "source_sha256": "4e74c9e502428fa2511c9ff2ee4117861d7755a23f0ac4e53f014ba4b53669dd",
+      "initial_normalized_loc": 114,
+      "physical_loc": 114,
+      "normalized_loc": 114,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "revcomp:revcomp-erlang-3": {
+      "source_sha256": "9429dffd13cb779a0d254a3ac32bc8376b735e230a00a3bf389a2c2ec556163d",
+      "initial_normalized_loc": 63,
+      "physical_loc": 63,
+      "normalized_loc": 63,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-erlang-1": {
+      "source_sha256": "2930fd184250bd8186915911de49091f3b6a8256272f7f36ffcc015b6526ff89",
+      "initial_normalized_loc": 35,
+      "physical_loc": 34,
+      "normalized_loc": 35,
+      "expansions": [
+        {
+          "line": 29,
+          "extra": 1,
+          "source": "   I = II-1.0, J = JJ-1.0,",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "spectralnorm:spectralnorm-erlang-2": {
+      "source_sha256": "e73d96678f5a437fad29318b04867608b4ec79a4996bd131614770bf65654c76",
+      "initial_normalized_loc": 35,
+      "physical_loc": 35,
+      "normalized_loc": 35,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "binarytrees:binarytrees-erlang-1-faithful": {
+      "source_sha256": "3ec54d1186802716832fd59b0f335ebbdeebbc9f67bb04d78040e080ff5bad68",
+      "initial_normalized_loc": 29,
+      "physical_loc": 29,
+      "normalized_loc": 29,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "binarytrees:binarytrees-erlang-2-faithful": {
+      "source_sha256": "4e7e3bbffcde7fd09a529e135c22bda8728d11573b60bba7fae78b9074c825c6",
+      "initial_normalized_loc": 33,
+      "physical_loc": 33,
+      "normalized_loc": 33,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "fasta:fasta-erlang-1-faithful": {
+      "source_sha256": "33f1054e093204f9f105fbfadc1ffdc9beb1e958c0b09b9e254218569e40aa2c",
+      "initial_normalized_loc": 65,
+      "physical_loc": 65,
+      "normalized_loc": 65,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "fasta:fasta-erlang-2-faithful": {
+      "source_sha256": "7209bbd711666fb1a24470c73bae4935448bbd0b695cd574bfa3590a81320259",
+      "initial_normalized_loc": 60,
+      "physical_loc": 60,
+      "normalized_loc": 60,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-erlang-1-faithful": {
+      "source_sha256": "e463b84fd0bfbc40246f0ecbbd968b0afd8e95302215946128920fd9c59efc39",
+      "initial_normalized_loc": 67,
+      "physical_loc": 67,
+      "normalized_loc": 67,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "knucleotide:knucleotide-erlang-3-faithful": {
+      "source_sha256": "8e4825a9b38a083802f382e0f14490c7e1f1b6971d6d7ec2bb329869375155e2",
+      "initial_normalized_loc": 67,
+      "physical_loc": 67,
+      "normalized_loc": 67,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-erlang-3-faithful": {
+      "source_sha256": "c2ea865ac19891551fd0b5acb53f0d837e0f28c108c38a3c3c388439d35e078f",
+      "initial_normalized_loc": 62,
+      "physical_loc": 61,
+      "normalized_loc": 62,
+      "expansions": [
+        {
+          "line": 94,
+          "extra": 1,
+          "source": "                port_command(Fd, Char), print_loop(Fd)",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-erlang-4-faithful": {
+      "source_sha256": "523734fe27613f50fc2f8408456d814ef5a28776cb1f17dcc992e5a5b2e6fb33",
+      "initial_normalized_loc": 68,
+      "physical_loc": 67,
+      "normalized_loc": 68,
+      "expansions": [
+        {
+          "line": 102,
+          "extra": 1,
+          "source": "                port_command(Fd, Char), print_loop(Fd)",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-erlang-1-faithful": {
+      "source_sha256": "3f63c723f3e377096f35b96eb6e289f58dc7397df4ac981ef07d1cf63aa48f43",
+      "initial_normalized_loc": 32,
+      "physical_loc": 32,
+      "normalized_loc": 32,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "mandelbrot:mandelbrot-erlang-2-faithful": {
+      "source_sha256": "bb2c57e38344c6c6ef93a7d11c544b7538050f18ba3c10f5d0b9da949b33a35b",
+      "initial_normalized_loc": 43,
+      "physical_loc": 43,
+      "normalized_loc": 43,
+      "expansions": [],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    },
+    "regexredux:regexredux-erlang-6-faithful": {
+      "source_sha256": "dc53ea64bda55c8b1472f7f16e322700bf31ef6b4bea1e581662639a02c09bac",
+      "initial_normalized_loc": 82,
+      "physical_loc": 80,
+      "normalized_loc": 82,
+      "expansions": [
+        {
+          "line": 28,
+          "extra": 1,
+          "source": "main() -> do(), halt().",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        },
+        {
+          "line": 76,
+          "extra": 1,
+          "source": "    receive {PID, Ret} -> Fin(Ret), results(R) end;",
+          "reason": "Multiple independent expressions on the same physical line in an Erlang clause or block; structural tuple/list/argument separators excluded."
+        }
+      ],
+      "metric": "statement-normalized",
+      "policy": "Nonblank/noncomment LOC plus packed independent expressions. Semantic module/export/compile/macro directives and all application helpers count; structural data, argument and guard separators do not. No compressed-size metric."
+    }
+  },
+  "timing_report_sha256": "b2e6486b3905609bf46d2ef4072dea8b5a91ef4ce3a8fae8a206b68e3decba2b",
+  "source_audit_sha256": "a0f72b769353ee95c471d9c602e18f08b77ac8ea2a4eaacb6dcdf69757125953",
+  "audit_script_sha256": "e30fa947637426dfad70b1ed382cf2e393a432ab344af072f45493567d7aaebe",
+  "loc_tool_sha256": "4397dec13918804bf0fe83b454e1a187ed7da6e85988547b741a28fff36daf5b",
+  "policy": "Nonblank/noncomment physical LOC including semantic directives and every application helper. Packed independent expressions in clause/block bodies count separately; tuple/list/argument/guard separators do not. Source bytes and timings are unchanged."
+}

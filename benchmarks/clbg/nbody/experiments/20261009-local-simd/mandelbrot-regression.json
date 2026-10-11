@@ -1,0 +1,45 @@
+[
+  {
+    "id": "mech-program-compact",
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "emit-cranelift",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/mech-program-compact-regression.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/mech-program-compact-regression.o",
+      "--source-program"
+    ],
+    "old_object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+    "new_object_sha256": "06c6d73b2b2919ef9c36210c2bd22797001893de20285ef902bfb36ff9e4f9a3",
+    "byte_identical": true
+  },
+  {
+    "id": "mech-program-simd",
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/mech-program-simd-regression.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/mech-program-simd-regression.o",
+      "--source-program"
+    ],
+    "old_object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+    "new_object_sha256": "64799101774d5bb8d39ff88814bbb92b87aa1c78953c9d2fed7bcb5bdb5f3e96",
+    "byte_identical": true
+  },
+  {
+    "id": "mech-program-simd-loop-fma",
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-mandelbrot-compiled",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/mech-program-simd-loop-fma-regression.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261009-local-simd/mech-program-simd-loop-fma-regression.o",
+      "--source-program",
+      "--fp-contract-loop"
+    ],
+    "old_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+    "new_object_sha256": "41ad4bedd5f8baf3093a0b2e65dfbf60e4638f0bb5d177d2f9f39c1a9e3f6843",
+    "byte_identical": true
+  }
+]

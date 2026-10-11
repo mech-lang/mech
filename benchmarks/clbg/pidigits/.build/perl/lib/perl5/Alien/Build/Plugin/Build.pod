@@ -1,0 +1,145 @@
+# PODNAME: Alien::Build::Plugin::Build
+# ABSTRACT: Build Alien::Build plugins
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Plugin::Build - Build Alien::Build plugins
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+For autoconf:
+
+ use alienfile;
+ plugin 'Build::Autoconf';
+
+for unixy (even on windows):
+
+ use alienfile;
+ plugin 'Build::MSYS';
+
+=head1 DESCRIPTION
+
+Build plugins provide tools for building your package once it has been
+downloaded and extracted.
+
+=over 4
+
+=item L<Alien::Build::Plugin::Build::Autoconf>
+
+For dealing with packages that are configured using autotools,
+or an autotools-like C<configure> script.
+
+=item L<Alien::Build::Plugin::Build::CMake>
+
+For dealing with packages that are configured and built using CMake.
+
+=item L<Alien::Build::Plugin::Build::Copy>
+
+For dealing with packages that do not require any build, and can just
+be copied into their final location.
+
+=item L<Alien::Build::Plugin::Build::MSYS>
+
+For dealing with packages that require MSYS on Windows in order to
+build.  This plugin is typically a no-op on other platforms.
+
+=item L<Alien::Build::Plugin::Build::Make>
+
+For dealing with packages that require Make to build.  Several
+flavors of Make are supported, including GNU Make and BSD Make.
+
+=item L<Alien::Build::Plugin::Build::SearchDep>
+
+Add other L<Alien>s as dependencies.
+
+=back
+
+=head1 SEE ALSO
+
+L<Alien::Build>, L<Alien::Build::Plugin>
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

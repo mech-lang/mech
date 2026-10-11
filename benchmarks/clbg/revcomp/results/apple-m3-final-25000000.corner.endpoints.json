@@ -1,0 +1,64 @@
+{
+  "source_report": "apple-m3-final-25000000.json",
+  "metric": "gzip1_bytes",
+  "time_baseline_seconds": 0.137713917,
+  "size_baseline": 301,
+  "languages": {
+    "c": {
+      "fastest": "revcomp-gcc-9-llvm",
+      "smallest": "revcomp-gcc-5-llvm",
+      "time_cost": 2.635833217931054,
+      "size_cost": 2.406003159557662,
+      "log2_line_length": 1.8866641613021353
+    },
+    "chapel": {
+      "fastest": "revcomp-chapel-9",
+      "smallest": "revcomp-chapel-5",
+      "time_cost": 6.244574754821385,
+      "size_cost": 2.3171641791044775,
+      "log2_line_length": 2.907433538154902
+    },
+    "cpp": {
+      "fastest": "revcomp-gpp-3-gcc",
+      "smallest": "revcomp-gpp-1-gcc",
+      "time_cost": 2.1649418334115564,
+      "size_cost": 1.4202127659574468,
+      "log2_line_length": 1.2238757518887449
+    },
+    "go": {
+      "fastest": "revcomp-go-6",
+      "smallest": "revcomp-go-3",
+      "time_cost": 1.7086299934037013,
+      "size_cost": 2.366171003717472,
+      "log2_line_length": 1.4632918289635362
+    },
+    "java": {
+      "fastest": "revcomp-graalvmaot-3",
+      "smallest": "revcomp-graalvmaot-4",
+      "time_cost": 2.0770451779235026,
+      "size_cost": 2.816013628620102,
+      "log2_line_length": 1.8283988114397178
+    },
+    "julia": {
+      "fastest": "revcomp-julia-9",
+      "smallest": "revcomp-julia-2",
+      "time_cost": 6.63116661893362,
+      "size_cost": 1.0881612090680102,
+      "log2_line_length": 2.7319832813895983
+    },
+    "mech": {
+      "fastest": "mech-revcomp-optimized",
+      "smallest": "mech-revcomp-optimized",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "rust": {
+      "fastest": "revcomp-rust-1-panic-abort",
+      "smallest": "revcomp-rust-3",
+      "time_cost": 1.1188668916562645,
+      "size_cost": 2.5362453531598512,
+      "log2_line_length": 1.35243649593074
+    }
+  }
+}

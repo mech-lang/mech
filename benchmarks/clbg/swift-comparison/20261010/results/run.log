@@ -1,0 +1,453 @@
+VALIDATE small spectralnorm-swift-8
+PASS small spectralnorm-swift-8 0.277569s
+VALIDATE full spectralnorm-swift-8
+PASS full spectralnorm-swift-8 0.789576s
+VALIDATE small spectralnorm-swift-3
+PASS small spectralnorm-swift-3 0.176503s
+VALIDATE full spectralnorm-swift-3
+PASS full spectralnorm-swift-3 0.147853s
+VALIDATE small mech-control-spectralnorm
+PASS small mech-control-spectralnorm 0.011108s
+VALIDATE full mech-control-spectralnorm
+PASS full mech-control-spectralnorm 0.087614s
+RUN 1 spectralnorm-swift-8
+SAMPLE 1 spectralnorm-swift-8 0.781815s
+RUN 1 mech-control-spectralnorm
+SAMPLE 1 mech-control-spectralnorm 0.087802s
+RUN 1 spectralnorm-swift-3
+SAMPLE 1 spectralnorm-swift-3 0.146558s
+RUN 2 spectralnorm-swift-8
+SAMPLE 2 spectralnorm-swift-8 0.786715s
+RUN 2 spectralnorm-swift-3
+SAMPLE 2 spectralnorm-swift-3 0.148230s
+RUN 2 mech-control-spectralnorm
+SAMPLE 2 mech-control-spectralnorm 0.086638s
+RUN 3 mech-control-spectralnorm
+SAMPLE 3 mech-control-spectralnorm 0.083900s
+RUN 3 spectralnorm-swift-8
+SAMPLE 3 spectralnorm-swift-8 0.784320s
+RUN 3 spectralnorm-swift-3
+SAMPLE 3 spectralnorm-swift-3 0.147925s
+VALIDATE small pidigits-swift-2
+PASS small pidigits-swift-2 0.187972s
+VALIDATE full pidigits-swift-2
+PASS full pidigits-swift-2 0.288150s
+VALIDATE small mech-control-pidigits
+PASS small mech-control-pidigits 0.017005s
+VALIDATE full mech-control-pidigits
+PASS full mech-control-pidigits 0.278705s
+RUN 1 pidigits-swift-2
+SAMPLE 1 pidigits-swift-2 0.286075s
+RUN 1 mech-control-pidigits
+SAMPLE 1 mech-control-pidigits 0.287265s
+RUN 2 mech-control-pidigits
+SAMPLE 2 mech-control-pidigits 0.284660s
+RUN 2 pidigits-swift-2
+SAMPLE 2 pidigits-swift-2 0.288020s
+RUN 3 mech-control-pidigits
+SAMPLE 3 mech-control-pidigits 0.287659s
+RUN 3 pidigits-swift-2
+SAMPLE 3 pidigits-swift-2 0.287800s
+VALIDATE small nbody-swift-9
+PASS small nbody-swift-9 0.184571s
+VALIDATE full nbody-swift-9
+PASS full nbody-swift-9 1.637653s
+VALIDATE small nbody-swift-6
+PASS small nbody-swift-6 0.185554s
+VALIDATE full nbody-swift-6
+PASS full nbody-swift-6 1.591999s
+VALIDATE small nbody-swift-4
+PASS small nbody-swift-4 0.188906s
+VALIDATE full nbody-swift-4
+PASS full nbody-swift-4 1.572086s
+VALIDATE small nbody-swift-7
+PASS small nbody-swift-7 0.150760s
+VALIDATE full nbody-swift-7
+PASS full nbody-swift-7 1.609539s
+VALIDATE small nbody-swift-1
+PASS small nbody-swift-1 0.180737s
+VALIDATE full nbody-swift-1
+PASS full nbody-swift-1 25.909823s
+VALIDATE small nbody-swift-5
+PASS small nbody-swift-5 0.178867s
+VALIDATE full nbody-swift-5
+PASS full nbody-swift-5 1.614566s
+VALIDATE small nbody-swift-8
+PASS small nbody-swift-8 0.179373s
+VALIDATE full nbody-swift-8
+PASS full nbody-swift-8 1.808650s
+VALIDATE small nbody-swift-3
+PASS small nbody-swift-3 0.181718s
+VALIDATE full nbody-swift-3
+PASS full nbody-swift-3 1.668655s
+VALIDATE small mech-control-nbody
+PASS small mech-control-nbody 0.014932s
+VALIDATE full mech-control-nbody
+PASS full mech-control-nbody 1.046359s
+RUN 1 nbody-swift-5
+SAMPLE 1 nbody-swift-5 1.615756s
+RUN 1 nbody-swift-6
+SAMPLE 1 nbody-swift-6 1.623265s
+RUN 1 nbody-swift-7
+SAMPLE 1 nbody-swift-7 1.631744s
+RUN 1 nbody-swift-4
+SAMPLE 1 nbody-swift-4 1.612102s
+RUN 1 nbody-swift-3
+SAMPLE 1 nbody-swift-3 1.665301s
+RUN 1 nbody-swift-9
+SAMPLE 1 nbody-swift-9 1.675883s
+RUN 1 mech-control-nbody
+SAMPLE 1 mech-control-nbody 1.049647s
+RUN 1 nbody-swift-8
+SAMPLE 1 nbody-swift-8 1.809175s
+RUN 1 nbody-swift-1
+SAMPLE 1 nbody-swift-1 26.010673s
+RUN 2 nbody-swift-5
+SAMPLE 2 nbody-swift-5 1.622843s
+RUN 2 nbody-swift-9
+SAMPLE 2 nbody-swift-9 1.703095s
+RUN 2 mech-control-nbody
+SAMPLE 2 mech-control-nbody 1.052751s
+RUN 2 nbody-swift-4
+SAMPLE 2 nbody-swift-4 1.621983s
+RUN 2 nbody-swift-3
+SAMPLE 2 nbody-swift-3 1.670287s
+RUN 2 nbody-swift-8
+SAMPLE 2 nbody-swift-8 1.812708s
+RUN 2 nbody-swift-1
+SAMPLE 2 nbody-swift-1 26.117411s
+RUN 2 nbody-swift-6
+SAMPLE 2 nbody-swift-6 1.622503s
+RUN 2 nbody-swift-7
+SAMPLE 2 nbody-swift-7 1.629639s
+RUN 3 nbody-swift-6
+SAMPLE 3 nbody-swift-6 1.620405s
+RUN 3 nbody-swift-5
+SAMPLE 3 nbody-swift-5 1.625565s
+RUN 3 nbody-swift-1
+SAMPLE 3 nbody-swift-1 26.113280s
+RUN 3 nbody-swift-3
+SAMPLE 3 nbody-swift-3 1.674329s
+RUN 3 mech-control-nbody
+SAMPLE 3 mech-control-nbody 1.051762s
+RUN 3 nbody-swift-9
+SAMPLE 3 nbody-swift-9 1.681222s
+RUN 3 nbody-swift-7
+SAMPLE 3 nbody-swift-7 1.630898s
+RUN 3 nbody-swift-4
+SAMPLE 3 nbody-swift-4 1.620821s
+RUN 3 nbody-swift-8
+SAMPLE 3 nbody-swift-8 1.810829s
+VALIDATE small mandelbrot-swift-8
+PASS small mandelbrot-swift-8 0.242796s
+VALIDATE full mandelbrot-swift-8
+PASS full mandelbrot-swift-8 10.800047s
+VALIDATE small mandelbrot-swift-7
+PASS small mandelbrot-swift-7 0.181538s
+VALIDATE full mandelbrot-swift-7
+PASS full mandelbrot-swift-7 0.436031s
+VALIDATE small mandelbrot-swift-3
+EXCLUDED mandelbrot-swift-3 ('mandelbrot', 5011, '2ee3f39b94d852c059375291020edb36843eb7a2b0675b2c2aca30b17ee8a51f', 5011, '97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5')
+VALIDATE small mandelbrot-swift-1
+PASS small mandelbrot-swift-1 0.176346s
+VALIDATE full mandelbrot-swift-1
+PASS full mandelbrot-swift-1 10.897560s
+VALIDATE small mandelbrot-swift-5
+PASS small mandelbrot-swift-5 0.179423s
+VALIDATE full mandelbrot-swift-5
+PASS full mandelbrot-swift-5 2.457360s
+VALIDATE small mandelbrot-swift-6
+PASS small mandelbrot-swift-6 0.184186s
+VALIDATE full mandelbrot-swift-6
+PASS full mandelbrot-swift-6 0.441932s
+VALIDATE small mech-control-mandelbrot
+PASS small mech-control-mandelbrot 0.009324s
+VALIDATE full mech-control-mandelbrot
+PASS full mech-control-mandelbrot 0.443252s
+RUN 1 mech-control-mandelbrot
+SAMPLE 1 mech-control-mandelbrot 0.442657s
+RUN 1 mandelbrot-swift-5
+SAMPLE 1 mandelbrot-swift-5 2.440639s
+RUN 1 mandelbrot-swift-7
+SAMPLE 1 mandelbrot-swift-7 0.433001s
+RUN 1 mandelbrot-swift-6
+SAMPLE 1 mandelbrot-swift-6 0.437411s
+RUN 1 mandelbrot-swift-8
+SAMPLE 1 mandelbrot-swift-8 10.824126s
+RUN 1 mandelbrot-swift-1
+SAMPLE 1 mandelbrot-swift-1 10.896589s
+RUN 2 mandelbrot-swift-7
+SAMPLE 2 mandelbrot-swift-7 0.436969s
+RUN 2 mandelbrot-swift-1
+SAMPLE 2 mandelbrot-swift-1 10.880869s
+RUN 2 mandelbrot-swift-5
+SAMPLE 2 mandelbrot-swift-5 2.445279s
+RUN 2 mandelbrot-swift-6
+SAMPLE 2 mandelbrot-swift-6 0.440673s
+RUN 2 mandelbrot-swift-8
+SAMPLE 2 mandelbrot-swift-8 10.817020s
+RUN 2 mech-control-mandelbrot
+SAMPLE 2 mech-control-mandelbrot 0.442955s
+RUN 3 mandelbrot-swift-8
+SAMPLE 3 mandelbrot-swift-8 10.804583s
+RUN 3 mandelbrot-swift-5
+SAMPLE 3 mandelbrot-swift-5 2.431969s
+RUN 3 mandelbrot-swift-6
+SAMPLE 3 mandelbrot-swift-6 0.436587s
+RUN 3 mandelbrot-swift-1
+SAMPLE 3 mandelbrot-swift-1 10.915088s
+RUN 3 mandelbrot-swift-7
+SAMPLE 3 mandelbrot-swift-7 0.432574s
+RUN 3 mech-control-mandelbrot
+SAMPLE 3 mech-control-mandelbrot 0.443787s
+VALIDATE small revcomp-swift-1
+PASS small revcomp-swift-1 0.231561s
+VALIDATE full revcomp-swift-1
+PASS full revcomp-swift-1 0.348839s
+VALIDATE small mech-control-revcomp
+PASS small mech-control-revcomp 0.010850s
+VALIDATE full mech-control-revcomp
+PASS full mech-control-revcomp 0.141440s
+RUN 1 revcomp-swift-1
+SAMPLE 1 revcomp-swift-1 0.149983s
+RUN 1 mech-control-revcomp
+SAMPLE 1 mech-control-revcomp 0.149116s
+RUN 2 mech-control-revcomp
+SAMPLE 2 mech-control-revcomp 0.145975s
+RUN 2 revcomp-swift-1
+SAMPLE 2 revcomp-swift-1 0.136404s
+RUN 3 revcomp-swift-1
+SAMPLE 3 revcomp-swift-1 0.139846s
+RUN 3 mech-control-revcomp
+SAMPLE 3 mech-control-revcomp 0.143993s
+VALIDATE small fasta-swift-1-faithful
+PASS small fasta-swift-1-faithful 0.175567s
+VALIDATE full fasta-swift-1-faithful
+PASS full fasta-swift-1-faithful 1.621894s
+VALIDATE small fasta-swift-3-faithful
+PASS small fasta-swift-3-faithful 0.182826s
+VALIDATE full fasta-swift-3-faithful
+PASS full fasta-swift-3-faithful 0.980606s
+VALIDATE small fasta-swift-2-faithful
+PASS small fasta-swift-2-faithful 0.178835s
+VALIDATE full fasta-swift-2-faithful
+PASS full fasta-swift-2-faithful 1.191311s
+VALIDATE small fasta-swift-8-faithful
+PASS small fasta-swift-8-faithful 0.177161s
+VALIDATE full fasta-swift-8-faithful
+PASS full fasta-swift-8-faithful 6.326661s
+VALIDATE small mech-control-fasta
+PASS small mech-control-fasta 0.008881s
+VALIDATE full mech-control-fasta
+PASS full mech-control-fasta 0.537054s
+RUN 1 fasta-swift-2-faithful
+SAMPLE 1 fasta-swift-2-faithful 1.196481s
+RUN 1 fasta-swift-1-faithful
+SAMPLE 1 fasta-swift-1-faithful 1.634499s
+RUN 1 mech-control-fasta
+SAMPLE 1 mech-control-fasta 0.546938s
+RUN 1 fasta-swift-8-faithful
+SAMPLE 1 fasta-swift-8-faithful 6.345915s
+RUN 1 fasta-swift-3-faithful
+SAMPLE 1 fasta-swift-3-faithful 0.973554s
+RUN 2 fasta-swift-3-faithful
+SAMPLE 2 fasta-swift-3-faithful 0.976153s
+RUN 2 fasta-swift-1-faithful
+SAMPLE 2 fasta-swift-1-faithful 1.643892s
+RUN 2 mech-control-fasta
+SAMPLE 2 mech-control-fasta 0.544531s
+RUN 2 fasta-swift-8-faithful
+SAMPLE 2 fasta-swift-8-faithful 6.357264s
+RUN 2 fasta-swift-2-faithful
+SAMPLE 2 fasta-swift-2-faithful 1.192364s
+RUN 3 fasta-swift-3-faithful
+SAMPLE 3 fasta-swift-3-faithful 0.971794s
+RUN 3 fasta-swift-8-faithful
+SAMPLE 3 fasta-swift-8-faithful 6.383575s
+RUN 3 fasta-swift-1-faithful
+SAMPLE 3 fasta-swift-1-faithful 1.630103s
+RUN 3 mech-control-fasta
+SAMPLE 3 mech-control-fasta 0.547721s
+RUN 3 fasta-swift-2-faithful
+SAMPLE 3 fasta-swift-2-faithful 1.187153s
+VALIDATE small binarytrees-swift-2-faithful
+PASS small binarytrees-swift-2-faithful 0.251822s
+VALIDATE full binarytrees-swift-2-faithful
+PASS full binarytrees-swift-2-faithful 6.130568s
+VALIDATE small binarytrees-swift-1-faithful
+PASS small binarytrees-swift-1-faithful 0.185249s
+VALIDATE full binarytrees-swift-1-faithful
+PASS full binarytrees-swift-1-faithful 6.631982s
+VALIDATE small binarytrees-swift-5-faithful
+PASS small binarytrees-swift-5-faithful 0.187361s
+VALIDATE full binarytrees-swift-5-faithful
+PASS full binarytrees-swift-5-faithful 6.041163s
+VALIDATE small binarytrees-swift-3-faithful
+PASS small binarytrees-swift-3-faithful 0.189783s
+VALIDATE full binarytrees-swift-3-faithful
+PASS full binarytrees-swift-3-faithful 5.908885s
+VALIDATE small binarytrees-swift-4-faithful
+PASS small binarytrees-swift-4-faithful 0.193779s
+VALIDATE full binarytrees-swift-4-faithful
+PASS full binarytrees-swift-4-faithful 6.247077s
+VALIDATE small mech-control-binarytrees
+PASS small mech-control-binarytrees 0.011732s
+VALIDATE full mech-control-binarytrees
+PASS full mech-control-binarytrees 0.387926s
+RUN 1 mech-control-binarytrees
+SAMPLE 1 mech-control-binarytrees 0.396194s
+RUN 1 binarytrees-swift-5-faithful
+SAMPLE 1 binarytrees-swift-5-faithful 6.068499s
+RUN 1 binarytrees-swift-4-faithful
+SAMPLE 1 binarytrees-swift-4-faithful 6.902673s
+RUN 1 binarytrees-swift-2-faithful
+SAMPLE 1 binarytrees-swift-2-faithful 5.529192s
+RUN 1 binarytrees-swift-1-faithful
+SAMPLE 1 binarytrees-swift-1-faithful 6.856630s
+RUN 1 binarytrees-swift-3-faithful
+SAMPLE 1 binarytrees-swift-3-faithful 5.222902s
+RUN 2 mech-control-binarytrees
+SAMPLE 2 mech-control-binarytrees 0.399269s
+RUN 2 binarytrees-swift-4-faithful
+SAMPLE 2 binarytrees-swift-4-faithful 6.955571s
+RUN 2 binarytrees-swift-5-faithful
+SAMPLE 2 binarytrees-swift-5-faithful 5.580088s
+RUN 2 binarytrees-swift-1-faithful
+SAMPLE 2 binarytrees-swift-1-faithful 6.831532s
+RUN 2 binarytrees-swift-2-faithful
+SAMPLE 2 binarytrees-swift-2-faithful 5.842067s
+RUN 2 binarytrees-swift-3-faithful
+SAMPLE 2 binarytrees-swift-3-faithful 5.820679s
+RUN 3 binarytrees-swift-4-faithful
+SAMPLE 3 binarytrees-swift-4-faithful 6.530613s
+RUN 3 binarytrees-swift-5-faithful
+SAMPLE 3 binarytrees-swift-5-faithful 6.119484s
+RUN 3 binarytrees-swift-2-faithful
+SAMPLE 3 binarytrees-swift-2-faithful 6.041794s
+RUN 3 binarytrees-swift-3-faithful
+SAMPLE 3 binarytrees-swift-3-faithful 5.821524s
+RUN 3 binarytrees-swift-1-faithful
+SAMPLE 3 binarytrees-swift-1-faithful 6.703696s
+RUN 3 mech-control-binarytrees
+SAMPLE 3 mech-control-binarytrees 0.396838s
+VALIDATE small knucleotide-swift-8
+PASS small knucleotide-swift-8 0.254742s
+VALIDATE full knucleotide-swift-8
+PASS full knucleotide-swift-8 54.499025s
+VALIDATE small knucleotide-swift-7
+PASS small knucleotide-swift-7 0.256774s
+VALIDATE full knucleotide-swift-7
+PASS full knucleotide-swift-7 66.652226s
+VALIDATE small knucleotide-swift-2
+PASS small knucleotide-swift-2 0.245399s
+VALIDATE full knucleotide-swift-2
+PASS full knucleotide-swift-2 3.690874s
+VALIDATE small knucleotide-swift-1-faithful
+PASS small knucleotide-swift-1-faithful 0.182892s
+VALIDATE full knucleotide-swift-1-faithful
+PASS full knucleotide-swift-1-faithful 4.983046s
+VALIDATE small mech-control-knucleotide
+PASS small mech-control-knucleotide 0.018364s
+VALIDATE full mech-control-knucleotide
+PASS full mech-control-knucleotide 0.510193s
+RUN 1 mech-control-knucleotide
+SAMPLE 1 mech-control-knucleotide 0.509835s
+RUN 1 knucleotide-swift-1-faithful
+SAMPLE 1 knucleotide-swift-1-faithful 5.160845s
+RUN 1 knucleotide-swift-2
+SAMPLE 1 knucleotide-swift-2 3.707404s
+RUN 1 knucleotide-swift-7
+SAMPLE 1 knucleotide-swift-7 67.341293s
+RUN 1 knucleotide-swift-8
+SAMPLE 1 knucleotide-swift-8 54.642327s
+RUN 2 knucleotide-swift-7
+SAMPLE 2 knucleotide-swift-7 67.680245s
+RUN 2 knucleotide-swift-8
+SAMPLE 2 knucleotide-swift-8 53.317954s
+RUN 2 knucleotide-swift-2
+SAMPLE 2 knucleotide-swift-2 3.724803s
+RUN 2 knucleotide-swift-1-faithful
+SAMPLE 2 knucleotide-swift-1-faithful 5.306113s
+RUN 2 mech-control-knucleotide
+SAMPLE 2 mech-control-knucleotide 0.546491s
+RUN 3 knucleotide-swift-1-faithful
+SAMPLE 3 knucleotide-swift-1-faithful 5.261335s
+RUN 3 knucleotide-swift-7
+SAMPLE 3 knucleotide-swift-7 66.653126s
+RUN 3 knucleotide-swift-2
+SAMPLE 3 knucleotide-swift-2 3.748819s
+RUN 3 knucleotide-swift-8
+SAMPLE 3 knucleotide-swift-8 54.812465s
+RUN 3 mech-control-knucleotide
+SAMPLE 3 mech-control-knucleotide 0.519830s
+VALIDATE small fannkuchredux-swift-3
+PASS small fannkuchredux-swift-3 0.258442s
+VALIDATE full fannkuchredux-swift-3
+PASS full fannkuchredux-swift-3 3.291422s
+VALIDATE small fannkuchredux-swift-8
+PASS small fannkuchredux-swift-8 0.184615s
+VALIDATE full fannkuchredux-swift-8
+PASS full fannkuchredux-swift-8 22.743175s
+VALIDATE small mech-control-fannkuchredux
+PASS small mech-control-fannkuchredux 0.008641s
+VALIDATE full mech-control-fannkuchredux
+PASS full mech-control-fannkuchredux 1.673939s
+RUN 1 mech-control-fannkuchredux
+SAMPLE 1 mech-control-fannkuchredux 1.705774s
+RUN 1 fannkuchredux-swift-3
+SAMPLE 1 fannkuchredux-swift-3 3.315373s
+RUN 1 fannkuchredux-swift-8
+SAMPLE 1 fannkuchredux-swift-8 22.839085s
+RUN 2 fannkuchredux-swift-8
+SAMPLE 2 fannkuchredux-swift-8 22.715449s
+RUN 2 mech-control-fannkuchredux
+SAMPLE 2 mech-control-fannkuchredux 1.710041s
+RUN 2 fannkuchredux-swift-3
+SAMPLE 2 fannkuchredux-swift-3 3.334541s
+RUN 3 mech-control-fannkuchredux
+SAMPLE 3 mech-control-fannkuchredux 1.698066s
+RUN 3 fannkuchredux-swift-3
+SAMPLE 3 fannkuchredux-swift-3 3.285009s
+RUN 3 fannkuchredux-swift-8
+SAMPLE 3 fannkuchredux-swift-8 22.834604s
+VALIDATE small regexredux-swift-2
+PASS small regexredux-swift-2 0.265691s
+VALIDATE full regexredux-swift-2
+PASS full regexredux-swift-2 19.904267s
+VALIDATE small regexredux-swift-1
+PASS small regexredux-swift-1 0.185485s
+VALIDATE full regexredux-swift-1
+PASS full regexredux-swift-1 26.665091s
+VALIDATE small regexredux-swift-4
+PASS small regexredux-swift-4 0.202338s
+VALIDATE full regexredux-swift-4
+PASS full regexredux-swift-4 7.090778s
+VALIDATE small mech-control-regexredux
+PASS small mech-control-regexredux 0.011428s
+VALIDATE full mech-control-regexredux
+PASS full mech-control-regexredux 0.488297s
+RUN 1 regexredux-swift-2
+SAMPLE 1 regexredux-swift-2 19.864431s
+RUN 1 regexredux-swift-1
+SAMPLE 1 regexredux-swift-1 26.721463s
+RUN 1 regexredux-swift-4
+SAMPLE 1 regexredux-swift-4 7.093230s
+RUN 1 mech-control-regexredux
+SAMPLE 1 mech-control-regexredux 0.488844s
+RUN 2 regexredux-swift-4
+SAMPLE 2 regexredux-swift-4 7.148069s
+RUN 2 mech-control-regexredux
+SAMPLE 2 mech-control-regexredux 0.495040s
+RUN 2 regexredux-swift-2
+SAMPLE 2 regexredux-swift-2 19.891803s
+RUN 2 regexredux-swift-1
+SAMPLE 2 regexredux-swift-1 26.298711s
+RUN 3 regexredux-swift-2
+SAMPLE 3 regexredux-swift-2 19.814123s
+RUN 3 mech-control-regexredux
+SAMPLE 3 mech-control-regexredux 0.492638s
+RUN 3 regexredux-swift-1
+SAMPLE 3 regexredux-swift-1 26.166945s
+RUN 3 regexredux-swift-4
+SAMPLE 3 regexredux-swift-4 7.048549s
+REPORT /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/results/timings.json complete

@@ -1,0 +1,4 @@
+x := 100
+result := (7 ? | x => x)
+io/print("{}\n", result)
+io/print("{}\n", x)

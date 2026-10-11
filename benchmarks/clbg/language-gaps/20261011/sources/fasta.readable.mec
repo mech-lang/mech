@@ -1,0 +1,21 @@
+Choose(r<f64>, p<[f64]>, alphabet<[u8]>) => <u64> := sequence/get(alphabet, 1 + stats/sum([1 | i <- 1..sequence/length(p), r >= sequence/get(p, i)]))
+Repeat(index<u64>) => <(u64,u64)> :=
+  bytes/from-text("GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA")
+  |> (number/mod(index + 1, sequence/length(_)), sequence/get(_, index + 1))
+Iub(seed<u64>) => <(u64,u64)> :=
+  number/mod(seed * 3877 + 29573, 139968)
+  |> (_, Choose(number/to-f64(_) / 139968.0,
+    sequence/cumulative-sum(sequence/f64-values((0.27, 0.12, 0.12, 0.27, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02))),
+    bytes/from-text("acgtBDHKMNRSVWY")))
+Human(seed<u64>) => <(u64,u64)> :=
+  number/mod(seed * 3877 + 29573, 139968)
+  |> (_, Choose(number/to-f64(_) / 139968.0,
+    sequence/cumulative-sum(sequence/f64-values((0.3029549426680, 0.1979883004921, 0.1975473066391, 0.3015094502008))),
+    bytes/from-text("acgt")))
+n := number/bounded(io/argument-u64(1), 0, 1844674407370955161)
+io/write(">ONE Homo sapiens alu\n")
+repeat := io/write-scan(n * 2, 0, Repeat, 60, "\n", 65536)
+io/write(">TWO IUB ambiguity codes\n")
+seed := io/write-scan(n * 3, 42, Iub, 60, "\n", 65536)
+io/write(">THREE Homo sapiens frequency\n")
+last := io/write-scan(n * 5, seed, Human, 60, "\n", 65536)

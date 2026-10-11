@@ -1,0 +1,22 @@
+    Updating crates.io index
+     Locking 204 packages to latest Rust 1.96.0-nightly compatible versions
+      Adding generic-array v0.14.7 (available: v0.14.9)
+      Adding gmp-mpfr-sys v1.6.8 (available: v1.7.1)
+      Adding rug v1.28.1 (available: v1.30.0)
+      Adding tinyvec v1.12.0 (available: v1.13.3)
+   Compiling mech-native-feature-tests v0.0.0 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/native-features)
+    Finished `release` profile [optimized] target(s) in 1.20s
+     Running unittests src/lib.rs (benchmarks/clbg/nbody/mech-driver/target/release/deps/mech_native_feature_tests-b6a416d6d3f46e3f)
+
+running 2 tests
+test tests::independent_regex_nodes_are_scheduled_before_scalar_consumers ... ok
+test tests::typed_arbitrary_precision_resources_and_mutation_are_inferred ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+   Doc-tests mech_native_feature_tests
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

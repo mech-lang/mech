@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "allocations": 34816,
+  "clear_reuse_rounds": 17,
+  "allocation_sizes_bytes": [
+    8,
+    248
+  ],
+  "allocation_contents_checked": true,
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/probes/pool-test",
+  "binary_sha256": "c35652b2a8567d8911056f1c936ff9866b41fff1e8f770e6d05225abca0b107d",
+  "source_sha256": "55358075f5ac24dfc3318f6286e3f32adc49b638230ca985b038a544e71aa51d",
+  "library_sha256": "40750de800d27df0ca79c00d7850e7f3d9ed83416947b82c14c8f1d1295714cf",
+  "external_library_pins": {
+    "/opt/homebrew/Cellar/apr/1.7.6/lib/libapr-1.0.dylib": "0a10f4741a4c2560a095b48f2dcc3f3f0451c71f6cc353c5435236e3711202fb"
+  }
+}

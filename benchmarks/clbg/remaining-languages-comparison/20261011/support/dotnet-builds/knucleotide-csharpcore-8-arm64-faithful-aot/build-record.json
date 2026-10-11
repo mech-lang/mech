@@ -1,0 +1,71 @@
+{
+  "id": "knucleotide-csharpcore-8-arm64-faithful-aot",
+  "key": "knucleotide:knucleotide-csharpcore-8-arm64-faithful-aot",
+  "benchmark": "knucleotide",
+  "language": "csharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/knucleotide-csharpcore-8-arm64-faithful.cs",
+  "source_sha256": "888ebde7cbfb1368a0eac86960477948f29853649d1c3f4016123cf4970ab5fe",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/knucleotide-csharpcore-8.cs",
+  "original_source_sha256": "30c2a9d979032b710c7203dc6dc077e10db716fddb0488850043c1839482e9c3",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-csharpcore-8.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 07:43:20 GMT\n\nMAKE:\ncp knucleotide.csharpcore-8.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj (in 805 ms).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(17,22): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(21,22): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(17,22): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/Program.cs(21,22): warning CS8600: Converting null literal or possible null value to non-nullable type. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/knucleotide/tmp/program.csproj]\n    2 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:06.04\n\n7.89s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 0 < knucleotide-input25000000.txt\n\nPROGRAM OUTPUT:\nA 30.295\nT 30.151\nC 19.800\nG 19.754\n\nAA 9.177\nTA 9.132\nAT 9.131\nTT 9.091\nCA 6.002\nAC 6.001\nAG 5.987\nGA 5.984\nCT 5.971\nTC 5.971\nGT 5.957\nTG 5.956\nCC 3.917\nGC 3.911\nCG 3.909\nGG 3.902\n\n1471758\tGGT\n446535\tGGTA\n47336\tGGTATT\n893\tGGTATTTTAATT\n893\tGGTATTTTAATTTATAGT",
+  "adaptations": [
+    "Retain exactly the selected FASTA record, normalize nucleotide case, include all overlapping windows, and use lexical frequency ties where applicable."
+  ],
+  "local_adaptation": true,
+  "physical_loc": 64,
+  "normalized_loc": 65,
+  "expansions": [
+    {
+      "line": 60,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/knucleotide-csharpcore-8-arm64-faithful-aot/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-8-arm64-faithful-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/knucleotide-csharpcore-8-arm64-faithful-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-8-arm64-faithful-aot/app",
+  "binary_sha256": "ac2af8c1c8657ce795d8657dda2ca46363238debf279c4c12a333eb30670d021",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-8-arm64-faithful-aot/app"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/knucleotide-csharpcore-8-arm64-faithful-aot/app": "ac2af8c1c8657ce795d8657dda2ca46363238debf279c4c12a333eb30670d021"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 242,
+    "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 87.505,
+  "timing_selection_reasons": [
+    "Fewest normalized source lines among accepted candidates."
+  ]
+}

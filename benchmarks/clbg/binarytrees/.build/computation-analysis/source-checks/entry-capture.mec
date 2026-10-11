@@ -1,0 +1,4 @@
+Hidden(n<u64>) = (result<u64>) :=
+  result := io/argument-u64(1).
+n := Hidden(0)
+io/print("{}\n", n)

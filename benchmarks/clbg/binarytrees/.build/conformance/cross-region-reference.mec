@@ -1,0 +1,8 @@
+Inner(r<ref>) = (result<u64>) :=
+  result := 1.
+Test(n<u64>) = (result<u64>) :=
+  a := heap/new-refs((heap/null(), heap/null()))
+  result := memory/with-ref-arena(1, 2, Inner, a).
+
+result := memory/with-ref-arena(3, 2, Test, 0)
+io/print("{}\n", result)

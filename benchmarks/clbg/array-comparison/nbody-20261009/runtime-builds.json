@@ -1,0 +1,36 @@
+{
+  "goal": {
+    "commit": "01a02a9f3b3b61a615d86c2c3ed3ba8e9fedd53b",
+    "command": [
+      "go",
+      "build",
+      "-tags",
+      "full",
+      "-o",
+      "goal-full",
+      "./cmd/goal"
+    ],
+    "version": "goal\tv1.8.1 +os +math +archive/zip +encoding/base64\ngo\tgo1.27.1\npath\tcodeberg.org/anaseto/goal/cmd/goal\nmod\tcodeberg.org/anaseto/goal\tv1.8.1\t\nbuild\t-buildmode=exe\nbuild\t-compiler=gc\nbuild\t-tags=full\nbuild\tDefaultGODEBUG=containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,httpcookiemaxnum=0,multipathtcp=0,randseednop=0,rsa1024min=0,tlsmlkem=0,tlssecpmlkem=0,tlssha1=1,tracebacklabels=0,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,x509rsacrt=0,x509sha256skid=0,x509sslcertoverrideplatform=0,x509usepolicies=0\nbuild\tCGO_ENABLED=1\nbuild\tCGO_CFLAGS=\nbuild\tCGO_CPPFLAGS=\nbuild\tCGO_CXXFLAGS=\nbuild\tCGO_LDFLAGS=\nbuild\tGOARCH=arm64\nbuild\tGOOS=darwin\nbuild\tGOARM64=v8.0\nbuild\tvcs=git\nbuild\tvcs.revision=01a02a9f3b3b61a615d86c2c3ed3ba8e9fedd53b\nbuild\tvcs.time=2026-10-02T10:20:32Z\nbuild\tvcs.modified=false\n"
+  },
+  "amber": {
+    "commit": "1a996571e6c16094ca3660fc1f9d68fa1291ad3c",
+    "command": [
+      "env",
+      "AMBER_NATIVE=1",
+      "./build.sh"
+    ],
+    "version": "amber 2.7.2\n"
+  },
+  "bqn": {
+    "commit": "c893d3e7828899a50150df03ad33c9052fa51d3c",
+    "command": [
+      "make",
+      "REPLXX=0",
+      "FFI=0",
+      "j=8",
+      "notui=1"
+    ],
+    "version": "CBQN on commit c893d3e7828899a50150df03ad33c9052fa51d3c\nbuilt with singeli AARCH64\n",
+    "submodules": " 156b47caf895f6706811c5c34bbbbaf192b8018b build/bytecodeSubmodule (heads/master)\n-03af065230941a8735b3dcfd2a9faeceb8e4d348 build/replxxSubmodule\n 5187ed3aa22a2257b63c04a5498ec756fa6263cb build/singeliSubmodule (5187ed3)\n"
+  }
+}

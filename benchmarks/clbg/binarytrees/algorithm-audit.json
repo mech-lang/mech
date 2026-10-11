@@ -1,0 +1,180 @@
+{
+  "specification": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html",
+  "programs": {
+    "binarytrees-gpp-7": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-rust-5": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-gpp-5": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-rust-2": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-rust-4": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-rust-3": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-gcc-2": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-gpp-9": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-gpp-6": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-gcc-3": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-chapel-5": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-rust-1": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-gpp-4": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-gpp-3": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-gpp-1": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-graalvmaot-7": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-graalvmaot-3": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-graalvmaot-6": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-graalvmaot-2": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-graalvmaot-4": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-chapel-4": {
+      "strict": true,
+      "allocation": "individual",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-julia-3": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-chapel-3": {
+      "strict": true,
+      "allocation": "individual",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-gcc-5": {
+      "strict": true,
+      "allocation": "individual",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-julia-2": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-go-2": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-julia-4": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-go-5": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-go-3": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-gcc-1": {
+      "strict": true,
+      "allocation": "individual",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-julia-5": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-gpp-2": {
+      "strict": true,
+      "allocation": "individual",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-go-6": {
+      "strict": true,
+      "allocation": "library-pool",
+      "reason": "Full recursive node construction and traversal; library allocator/pool as admitted by official description."
+    },
+    "binarytrees-go-1": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    },
+    "binarytrees-go-7": {
+      "strict": true,
+      "allocation": "default-gc",
+      "reason": "Full recursive node construction and traversal; ordinary individual node allocation or default garbage collection."
+    }
+  }
+}

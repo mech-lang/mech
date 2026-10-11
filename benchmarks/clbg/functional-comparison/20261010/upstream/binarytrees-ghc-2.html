@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>binary-trees Haskell GHC&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>binary-trees Haskell GHC&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/binarytrees.html#binarytrees">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--</span>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Contributed by Daniel Smith</span>
+<span class="slc">--</span>
+
+<span class="kwb">import</span> Data<span class="opt">.</span>Foldable <span class="kwc">(</span>for_<span class="kwc">)</span>
+<span class="kwb">import</span> Data<span class="opt">.</span>Monoid <span class="kwc">((</span><span class="opt">&lt;&gt;</span><span class="kwc">))</span>
+<span class="kwb">import</span> System<span class="opt">.</span>Environment <span class="kwc">(</span>getArgs<span class="kwc">)</span>
+
+main :: IO <span class="kwc">()</span>
+main <span class="opt">=</span> <span class="kwd">do</span>
+    n <span class="opt">&lt;-</span> read <span class="opt">.</span> head <span class="opt">&lt;$&gt;</span> getArgs
+
+    <span class="kwd">let</span> stretchN <span class="opt">=</span> n <span class="opt">+</span> <span class="num">1</span>
+        stretchT <span class="opt">=</span> make stretchN
+    putStrLn <span class="opt">.</span> makeOutput <span class="sng">&quot;stretch tree&quot;</span> stretchN <span class="opt">$</span> check stretchT
+    stretchT <span class="opt">`seq`</span> pure <span class="kwc">()</span>
+
+    <span class="kwd">let</span> longT <span class="opt">=</span> make n
+        longC <span class="opt">=</span> check longT
+    longC <span class="opt">`seq`</span> pure <span class="kwc">()</span>
+
+    for_ <span class="kwc">[</span><span class="num">4</span><span class="kwc">,</span> <span class="num">6</span> <span class="opt">..</span> n<span class="kwc">]</span> <span class="opt">$</span> \d <span class="opt">-&gt;</span> <span class="kwd">do</span>
+        <span class="kwd">let</span> c <span class="opt">=</span> <span class="num">16</span> <span class="opt">*</span> <span class="num">2</span> <span class="opt">^</span> <span class="kwc">(</span>n <span class="opt">-</span> d<span class="kwc">)</span>
+        putStrLn <span class="opt">.</span> makeOutput <span class="kwc">(</span>show c <span class="opt">&lt;&gt;</span> <span class="sng">&quot;</span><span class="esc">\t</span> <span class="sng">trees&quot;</span><span class="kwc">)</span> d <span class="opt">$</span> sumT c d
+
+    longT <span class="opt">`seq`</span> pure <span class="kwc">()</span>
+    putStrLn <span class="opt">$</span> makeOutput <span class="sng">&quot;long lived tree&quot;</span> n longC
+
+makeOutput :: String <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> String
+makeOutput p n c <span class="opt">=</span> p <span class="opt">&lt;&gt;</span> <span class="sng">&quot; of depth &quot;</span> <span class="opt">&lt;&gt;</span> show n <span class="opt">&lt;&gt;</span> <span class="sng">&quot;</span><span class="esc">\t</span> <span class="sng">check: &quot;</span> <span class="opt">&lt;&gt;</span> show c
+
+<span class="kwa">data</span> Tree <span class="opt">=</span> Nil <span class="opt">|</span> Node Tree Tree
+
+sumT :: Int <span class="opt">-&gt;</span> Int <span class="opt">-&gt;</span> Int
+sumT <span class="opt">=</span> go <span class="num">0</span>
+  <span class="kwb">where</span>
+    go s <span class="num">0</span> _ <span class="opt">=</span> s
+    go s c d <span class="opt">=</span> s&#39; <span class="opt">`seq`</span> t <span class="opt">`seq`</span> go s&#39; <span class="kwc">(</span>c <span class="opt">-</span> <span class="num">1</span><span class="kwc">)</span> d
+      <span class="kwb">where</span>
+        t <span class="opt">=</span> make d
+        s&#39; <span class="opt">=</span> s <span class="opt">+</span> check t
+
+check :: Tree <span class="opt">-&gt;</span> Int
+check Nil <span class="opt">=</span> <span class="num">0</span>
+check <span class="kwc">(</span>Node l r<span class="kwc">)</span> <span class="opt">=</span> <span class="num">1</span> <span class="opt">+</span> check l <span class="opt">+</span> check r
+
+make :: Int <span class="opt">-&gt;</span> Tree
+make <span class="num">0</span> <span class="opt">=</span> Node Nil Nil
+make n <span class="opt">=</span> Node <span class="kwc">(</span>make <span class="opt">$</span> n <span class="opt">-</span> <span class="num">1</span><span class="kwc">) (</span>make <span class="opt">$</span> n <span class="opt">-</span> <span class="num">1</span><span class="kwc">)</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 05:20:41 GMT
+
+MAKE:
+mv binarytrees.ghc-2.ghc binarytrees.ghc-2.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts  binarytrees.ghc-2.hs -o binarytrees.ghc-2.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( binarytrees.ghc-2.hs, binarytrees.ghc-2.o )
+binarytrees.ghc-2.hs:14:17: warning: [GHC-63394] [-Wx-partial]
+    In the use of ‘head’
+    (imported from Prelude, but defined in GHC.Internal.List):
+    &quot;This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use &quot;Data.List.NonEmpty&quot;.&quot;
+   |
+14 |     n &lt;- read . head &lt;$&gt; getArgs
+   |                 ^^^^
+
+[2 of 2] Linking binarytrees.ghc-2.ghc_run
+rm binarytrees.ghc-2.hs
+
+16.86 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./binarytrees.ghc-2.ghc_run +RTS -N4 -K128M -H -RTS 21
+
+PROGRAM OUTPUT:
+stretch tree of depth 22	 check: 8388607
+2097152	 trees of depth 4	 check: 65011712
+524288	 trees of depth 6	 check: 66584576
+131072	 trees of depth 8	 check: 66977792
+32768	 trees of depth 10	 check: 67076096
+8192	 trees of depth 12	 check: 67100672
+2048	 trees of depth 14	 check: 67106816
+512	 trees of depth 16	 check: 67108352
+128	 trees of depth 18	 check: 67108736
+32	 trees of depth 20	 check: 67108832
+long lived tree of depth 21	 check: 4194303
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

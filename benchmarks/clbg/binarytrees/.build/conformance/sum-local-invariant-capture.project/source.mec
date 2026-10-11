@@ -1,0 +1,3 @@
+bias := 7
+result := (stats/sum([i + bias | i <- 0..10]))
+io/print("{}\n", result)

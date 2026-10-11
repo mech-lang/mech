@@ -1,0 +1,41 @@
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 7.35s
+     Running unittests src/lib.rs (benchmarks/clbg/nbody/mech-driver/target/release/deps/mech_gpu-ef7ddad041539b16)
+
+running 33 tests
+test batched::axis_tests::declared_access_axis_disambiguates_square_matrix_selection ... ok
+test batched::axis_tests::gpu_matrix_solve_guard_rejects_zero_and_nonfinite_results ... ok
+test batched::axis_tests::rectangular_axis_and_rectangle_modes_preserve_selector_order ... ok
+test batched::axis_tests::rectangular_linear_selection_uses_cardinality_and_preserves_duplicates ... ok
+test batched::axis_tests::scalar_instruction_expansion_is_admitted_before_cartesian_emission ... ok
+test batched::axis_tests::static_float_selectors_use_source_truncation_semantics ... ok
+test batched::axis_tests::static_range_endpoints_preserve_declared_index_conversion ... ok
+test control::bigint::tests::floor_division_and_session_retirement ... ok
+test control::bigint::tests::signed_arithmetic_aliasing_and_reused_storage ... ok
+test execution_plan::tests::invalid_binding_sizes_and_aliases_are_rejected ... ok
+test execution_plan::tests::physical_input_outputs_alias_input_only_when_no_output_binding_exists ... ok
+test execution_plan::tests::physical_revision_tracks_the_complete_allocation_contract ... ok
+test execution_plan::tests::publication_storage_owns_a_double_buffer_without_a_shader_read ... ok
+test execution_plan::tests::serialized_execution_plan_rejects_unknown_versions ... ok
+test memory::tests::accounting_only_test_registration_exercises_exact_device_lifecycle ... ok
+test memory::tests::adapter_buffer_limit_is_a_structured_plan_rejection ... ok
+test memory::tests::exact_gpu_binding_bytes_are_planned_before_creation ... ok
+test memory::tests::readback_staging_reuses_the_submission_transfer_scope ... ok
+test memory::tests::state_write_accounting_follows_the_selected_double_buffer_group ... ok
+test sequence::runtime::regex_tests::dead_byte_buffers_reuse_storage_without_reclaiming_live_aliases ... ok
+test sequence::runtime::regex_tests::deferred_scalar_consumers_observe_the_same_value_once ... ok
+test sequence::runtime::regex_tests::invalid_patterns_are_reported_and_compilations_are_cached ... ok
+test sequence::runtime::regex_tests::nonoverlapping_bytes_empty_matches_and_literal_replacement ... ok
+test tests::empty_concatenation_wgsl_does_not_divide_by_zero ... ok
+test tests::horizontal_concatenation_has_cpu_wgsl_indexing_parity ... ok
+test tests::vertical_concatenation_has_cpu_wgsl_indexing_parity ... ok
+test batched::axis_tests::gpu_matrix_solve_rejects_singular_inputs_without_publishing ... ok
+test batched::axis_tests::directly_published_inputs_define_fixed_shape_batch_storage ... ok
+test batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable ... ok
+test batched::axis_tests::published_static_selector_remains_materialized ... ok
+test batched::axis_tests::range_produced_gpu_selectors_use_bounded_source_typed_semantics ... ok
+test batched::axis_tests::tuple_published_static_selectors_share_the_interface_publication_contract ... ok
+test batched::axis_tests::generated_selector_family_survives_bytecode_and_gpu_static_lowering ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.75s
+

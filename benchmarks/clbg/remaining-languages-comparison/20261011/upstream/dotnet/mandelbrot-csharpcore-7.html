@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>mandelbrot C#&nbsp;#7 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>mandelbrot C#&nbsp;#7 program</h1>
+    <aside>
+      <p><a href="../description/mandelbrot.html#mandelbrot">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+﻿<span class="slc">// The Computer Language Benchmarks Game</span>
+<span class="slc">// https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">//</span>
+<span class="slc">// direct transliteration of Greg Buchholz&#39;s C program</span>
+<span class="slc">// contributed by Isaac Gouy, fix by David Turnbull</span>
+<span class="slc">// dispatching to multiple cores, use SIMD operationn, early break</span>
+<span class="slc">// depending on previous depth by Patrick Stein,</span>
+<span class="slc">// direct transliteration of Swift #7 program by Arseniy Zlobintsev</span>
+
+<span class="kwa">using</span> System<span class="opt">.</span>Runtime<span class="opt">.</span>CompilerServices<span class="opt">;</span>
+<span class="kwa">using</span> System<span class="opt">.</span>Runtime<span class="opt">.</span>Intrinsics<span class="opt">;</span>
+
+<span class="kwa">const int</span> iterations <span class="opt">=</span> <span class="num">50</span><span class="opt">;</span>
+<span class="kwa">const double</span> depth <span class="opt">=</span> <span class="num">4.0</span><span class="opt">;</span>
+
+<span class="kwa">var</span> width <span class="opt">=</span> <span class="kwa">int</span><span class="opt">.</span><span class="kwd">Parse</span><span class="opt">(</span>args<span class="opt">[</span><span class="num">0</span><span class="opt">]);</span>
+<span class="kwa">var</span> height <span class="opt">=</span> width<span class="opt">;</span>
+<span class="kwa">var</span> startPoint <span class="opt">= (</span>x<span class="opt">: -</span><span class="num">1.5</span><span class="opt">,</span> i<span class="opt">: -</span><span class="num">1.0</span><span class="opt">);</span>
+<span class="kwa">var</span> endPoint <span class="opt">= (</span>x<span class="opt">:</span> <span class="num">0.5</span><span class="opt">,</span> i<span class="opt">:</span> <span class="num">1.0</span><span class="opt">);</span>
+
+<span class="kwa">var</span> lineCount <span class="opt">=</span> height<span class="opt">;</span>
+<span class="kwa">var</span> lineSize <span class="opt">= (</span>width <span class="opt">+</span> <span class="num">7</span><span class="opt">) /</span> <span class="num">8</span><span class="opt">;</span>
+<span class="kwa">var</span> pixelHeight <span class="opt">=</span> Math<span class="opt">.</span><span class="kwd">Abs</span><span class="opt">(</span>endPoint<span class="opt">.</span>x <span class="opt">-</span> startPoint<span class="opt">.</span>x<span class="opt">) /</span> height<span class="opt">;</span>
+<span class="kwa">var</span> pixelWidth <span class="opt">=</span> Math<span class="opt">.</span><span class="kwd">Abs</span><span class="opt">(</span>endPoint<span class="opt">.</span>i <span class="opt">-</span> startPoint<span class="opt">.</span>i<span class="opt">) /</span> width<span class="opt">;</span>
+<span class="kwa">var</span> pixelWidth8 <span class="opt">=</span> pixelWidth <span class="opt">*</span> <span class="num">8.0</span><span class="opt">;</span>
+
+<span class="kwa">var</span> outputSize <span class="opt">=</span> lineCount <span class="opt">*</span> lineSize<span class="opt">;</span>
+<span class="kwa">var</span> pixelBuffer <span class="opt">=</span> <span class="kwa">new byte</span><span class="opt">[</span>outputSize<span class="opt">];</span>
+<span class="kwa">var</span> Ci0 <span class="opt">=</span> startPoint<span class="opt">.</span>i<span class="opt">;</span>
+<span class="kwa">var</span> Cr0 <span class="opt">= (</span>Vector512<span class="opt">.</span><span class="kwd">Create</span><span class="opt">((</span><span class="kwa">double</span><span class="opt">)</span><span class="num">0</span><span class="opt">,</span> <span class="num">1</span><span class="opt">,</span> <span class="num">2</span><span class="opt">,</span> <span class="num">3</span><span class="opt">,</span> <span class="num">4</span><span class="opt">,</span> <span class="num">5</span><span class="opt">,</span> <span class="num">6</span><span class="opt">,</span> <span class="num">7</span><span class="opt">)</span>
+    <span class="opt">*</span> pixelWidth<span class="opt">)</span>
+    <span class="opt">+</span> Vector512<span class="opt">.</span><span class="kwd">Create</span><span class="opt">(</span>startPoint<span class="opt">.</span>x<span class="opt">);</span>
+
+<span class="kwa">var</span> Cr0Array <span class="opt">=</span> <span class="kwa">new</span> Vector512<span class="opt">&lt;</span><span class="kwa">double</span><span class="opt">&gt;[</span>lineSize<span class="opt">];</span>
+
+Parallel<span class="opt">.</span><span class="kwd">For</span><span class="opt">(</span><span class="num">0</span><span class="opt">,</span> lineSize<span class="opt">,</span> x <span class="opt">=&gt; {</span>
+    Cr0Array<span class="opt">[</span>x<span class="opt">] =</span> Cr0 <span class="opt">+</span> Vector512<span class="opt">.</span><span class="kwd">Create</span><span class="opt">(</span>x <span class="opt">*</span> pixelWidth8<span class="opt">);</span>
+<span class="opt">});</span>
+
+Parallel<span class="opt">.</span><span class="kwd">For</span><span class="opt">(</span><span class="num">0</span><span class="opt">,</span> lineCount<span class="opt">,</span> y <span class="opt">=&gt; {</span>
+    <span class="kwa">var</span> slice <span class="opt">=</span> pixelBuffer<span class="opt">.</span><span class="kwd">AsSpan</span><span class="opt">(</span>y <span class="opt">*</span> lineSize<span class="opt">,</span> lineSize<span class="opt">);</span>
+    <span class="kwa">var</span> Ci <span class="opt">=</span> Ci0 <span class="opt">+ (</span>y <span class="opt">*</span> pixelHeight<span class="opt">);</span>
+    <span class="kwa">var</span> pixel <span class="opt">= (</span><span class="kwa">byte</span><span class="opt">)</span><span class="num">0</span><span class="opt">;</span>
+
+    <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> x <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> x <span class="opt">&lt;</span> slice<span class="opt">.</span>Length<span class="opt">;</span> x<span class="opt">++) {</span>
+        <span class="kwd">Mandelbrot</span><span class="opt">(</span>Cr0Array<span class="opt">[</span>x<span class="opt">],</span> Ci<span class="opt">,</span> <span class="kwa">ref</span> pixel<span class="opt">);</span>
+        slice<span class="opt">[</span>x<span class="opt">] =</span> pixel<span class="opt">;</span>
+    <span class="opt">}</span>
+<span class="opt">});</span>
+
+Console<span class="opt">.</span><span class="kwd">WriteLine</span><span class="opt">($</span><span class="sng">&quot;P4</span><span class="esc">\n{</span><span class="sng">width}</span> <span class="ipl">{height}</span><span class="sng">&quot;</span><span class="opt">);</span>
+Console<span class="opt">.</span><span class="kwd">OpenStandardOutput</span><span class="opt">().</span><span class="kwd">Write</span><span class="opt">(</span>pixelBuffer<span class="opt">);</span>
+
+<span class="opt">[</span><span class="kwd">MethodImpl</span><span class="opt">(</span>MethodImplOptions<span class="opt">.</span>AggressiveInlining<span class="opt">)]</span>
+<span class="kwa">static void</span> <span class="kwd">Mandelbrot</span><span class="opt">(</span>Vector512<span class="opt">&lt;</span><span class="kwa">double</span><span class="opt">&gt;</span> Cr<span class="opt">,</span> <span class="kwa">double</span> Ci<span class="opt">,</span> <span class="kwa">ref byte</span> pixel<span class="opt">) {</span>
+    <span class="kwa">var</span> Zr <span class="opt">=</span> Vector512<span class="opt">&lt;</span><span class="kwa">double</span><span class="opt">&gt;.</span>Zero<span class="opt">;</span>
+    <span class="kwa">var</span> Zi <span class="opt">=</span> Vector512<span class="opt">&lt;</span><span class="kwa">double</span><span class="opt">&gt;.</span>Zero<span class="opt">;</span>
+    <span class="kwa">var</span> Tr <span class="opt">=</span> Vector512<span class="opt">&lt;</span><span class="kwa">double</span><span class="opt">&gt;.</span>Zero<span class="opt">;</span>
+    <span class="kwa">var</span> Ti <span class="opt">=</span> Vector512<span class="opt">&lt;</span><span class="kwa">double</span><span class="opt">&gt;.</span>Zero<span class="opt">;</span>
+    <span class="kwa">var</span> CiV <span class="opt">=</span> Vector512<span class="opt">.</span><span class="kwd">Create</span><span class="opt">(</span>Ci<span class="opt">);</span>
+
+    <span class="kwa">var</span> thresholds <span class="opt">=</span> Vector512<span class="opt">.</span><span class="kwd">Create</span><span class="opt">(</span>depth<span class="opt">);</span>
+    <span class="kwa">var</span> ramp <span class="opt">=</span> Vector512<span class="opt">.</span><span class="kwd">Create</span><span class="opt">(</span><span class="num">128</span><span class="opt">,</span> <span class="num">64</span><span class="opt">,</span> <span class="num">32</span><span class="opt">,</span> <span class="num">16</span><span class="opt">,</span> <span class="num">8</span><span class="opt">,</span> <span class="num">4</span><span class="opt">,</span> <span class="num">2</span><span class="opt">,</span> <span class="num">1</span><span class="opt">);</span>
+
+    <span class="kwa">if</span> <span class="opt">(</span>pixel <span class="kwa">is</span> <span class="num">0</span><span class="opt">) {</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> iterations <span class="opt">/</span> <span class="num">5</span><span class="opt">;</span> i<span class="opt">++) {</span>
+            <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> j <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> j <span class="opt">&lt;</span> <span class="num">5</span><span class="opt">;</span> j<span class="opt">++) {</span>
+                Zi <span class="opt">=</span> <span class="num">2.0</span> <span class="opt">*</span> Zr <span class="opt">*</span> Zi <span class="opt">+</span> CiV<span class="opt">;</span>
+                Zr <span class="opt">=</span> Tr <span class="opt">-</span> Ti <span class="opt">+</span> Cr<span class="opt">;</span>
+                Tr <span class="opt">=</span> Zr <span class="opt">*</span> Zr<span class="opt">;</span>
+                Ti <span class="opt">=</span> Zi <span class="opt">*</span> Zi<span class="opt">;</span>
+            <span class="opt">}</span>
+
+            <span class="kwa">var</span> result <span class="opt">=</span> Vector512<span class="opt">.</span><span class="kwd">LessThanAny</span><span class="opt">(</span>Tr <span class="opt">+</span> Ti<span class="opt">,</span> thresholds<span class="opt">);</span>
+            <span class="kwa">if</span> <span class="opt">(</span>result <span class="kwa">is false</span><span class="opt">)</span> <span class="kwa">return</span><span class="opt">;</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+    <span class="kwa">else</span> <span class="opt">{</span>
+        <span class="kwa">for</span> <span class="opt">(</span><span class="kwa">var</span> i <span class="opt">=</span> <span class="num">0</span><span class="opt">;</span> i <span class="opt">&lt;</span> iterations<span class="opt">;</span> i<span class="opt">++) {</span>
+            Zi <span class="opt">=</span> <span class="num">2.0</span> <span class="opt">*</span> Zr <span class="opt">*</span> Zi <span class="opt">+</span> CiV<span class="opt">;</span>
+            Zr <span class="opt">=</span> Tr <span class="opt">-</span> Ti <span class="opt">+</span> Cr<span class="opt">;</span>
+            Tr <span class="opt">=</span> Zr <span class="opt">*</span> Zr<span class="opt">;</span>
+            Ti <span class="opt">=</span> Zi <span class="opt">*</span> Zi<span class="opt">;</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+
+    <span class="kwa">var</span> cmpresult <span class="opt">=</span> Vector512<span class="opt">.</span><span class="kwd">LessThan</span><span class="opt">(</span>Tr <span class="opt">+</span> Ti<span class="opt">,</span> thresholds<span class="opt">);</span>
+    <span class="kwa">var</span> summask <span class="opt">=</span> ramp <span class="opt">&amp;</span> cmpresult<span class="opt">.</span><span class="kwd">AsInt64</span><span class="opt">();</span>
+
+    pixel <span class="opt">= (</span><span class="kwa">byte</span><span class="opt">)</span>Vector512<span class="opt">.</span><span class="kwd">Sum</span><span class="opt">(</span>summask<span class="opt">);</span>
+<span class="opt">}</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+.NET SDK 9.0.100
+Host Version: 9.0.0
+Commit: 9d5a6a9aa4
+
+&lt;OutputType&gt;Exe
+&lt;TargetFramework&gt;net9.0
+&lt;ImplicitUsings&gt;enable
+&lt;Nullable&gt;enable
+&lt;AllowUnsafeBlocks&gt;true
+&lt;ServerGarbageCollection&gt;true
+&lt;ConcurrentGarbageCollection&gt;true
+&lt;PublishAot&gt;false
+
+
+
+ Thu, 06 Feb 2025 08:11:28 GMT
+
+MAKE:
+cp mandelbrot.csharpcore-7.csharpcore Program.cs
+cp Include/csharpcore/program.csproj .
+/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release	
+  Determining projects to restore...
+  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/program.csproj (in 878 ms).
+  program -&gt; /home/dunham/all-benchmarksgame/benchmarksgame_i53330/mandelbrot/tmp/bin/Release/net9.0/linux-x64/program.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:05.91
+
+7.76s to complete and log all make actions
+
+COMMAND LINE:
+ ./bin/Release/net9.0/linux-x64/program 16000
+
+(BINARY) PROGRAM OUTPUT NOT SHOWN
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

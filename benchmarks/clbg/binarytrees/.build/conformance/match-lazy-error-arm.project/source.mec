@@ -1,0 +1,4 @@
+Again(n<u64>) = (result<u64>) :=
+  result := Again(n).
+result := (true ? | true => 17 | false => Again(0))
+io/print("{}\n", result)

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide MicroPython&nbsp;#8 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide MicroPython&nbsp;#8 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc"># The Computer Language Benchmarks Game</span>
+<span class="slc">#   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">#</span>
+<span class="slc">#   Naive transliteration from bearophile&#39;s program</span>
+<span class="slc">#   contributed by Isaac Gouy </span>
+
+<span class="kwa">from</span> sys <span class="kwa">import</span> stdin
+
+<span class="kwa">def</span> <span class="kwd">seq_lines</span><span class="opt">():</span>
+    <span class="kwa">for</span> line <span class="kwa">in</span> stdin<span class="opt">:</span>
+        <span class="kwa">if</span> line<span class="opt">.</span><span class="kwd">startswith</span><span class="opt">(</span><span class="sng">&quot;&gt;THREE&quot;</span><span class="opt">):</span>
+            <span class="kwa">break</span>
+    lines <span class="opt">= []</span>
+    <span class="kwa">for</span> line <span class="kwa">in</span> stdin<span class="opt">:</span>
+        <span class="kwa">if</span> line<span class="opt">.</span><span class="kwd">startswith</span><span class="opt">(</span><span class="sng">&quot;&gt;&quot;</span><span class="opt">):</span>
+            <span class="kwa">break</span>
+        lines<span class="opt">.</span><span class="kwd">append</span><span class="opt">(</span> line<span class="opt">[:-</span><span class="num">1</span><span class="opt">] )</span>       
+    <span class="kwa">return</span> lines
+    
+<span class="kwa">def</span> <span class="kwd">base_counts</span><span class="opt">(</span>bases<span class="opt">,</span> seq<span class="opt">):</span>  
+    counts <span class="opt">= {}</span>
+    size <span class="opt">=</span> <span class="kwb">len</span><span class="opt">(</span>seq<span class="opt">) +</span> <span class="num">1</span> <span class="opt">-</span> bases
+    <span class="kwa">for</span> i <span class="kwa">in</span> <span class="kwb">range</span><span class="opt">(</span>size<span class="opt">):</span>  
+        nucleo <span class="opt">=</span> seq<span class="opt">[</span>i<span class="opt">:</span> i <span class="opt">+</span> bases<span class="opt">]</span>  
+        <span class="kwa">if</span> nucleo <span class="kwa">in</span> counts<span class="opt">:</span>   
+            counts<span class="opt">[</span>nucleo<span class="opt">] +=</span> <span class="num">1</span>  
+        <span class="kwa">else</span><span class="opt">:</span>
+            counts<span class="opt">[</span>nucleo<span class="opt">] =</span> <span class="num">1</span>
+    <span class="kwa">return</span> counts               
+    
+<span class="kwa">def</span> <span class="kwd">sorted_freq</span><span class="opt">(</span>bases<span class="opt">,</span> seq<span class="opt">):</span>  
+    keysValues <span class="opt">=</span> <span class="kwd">base_counts</span><span class="opt">(</span>bases<span class="opt">,</span> seq<span class="opt">).</span><span class="kwd">items</span><span class="opt">()</span>
+    size <span class="opt">=</span> <span class="kwb">len</span><span class="opt">(</span>seq<span class="opt">) +</span> <span class="num">1</span> <span class="opt">-</span> bases    
+    sorted_ <span class="opt">=</span>  <span class="kwb">sorted</span><span class="opt">(</span>keysValues<span class="opt">,</span> reverse<span class="opt">=</span><span class="kwa">True</span><span class="opt">,</span> key<span class="opt">=</span><span class="kwa">lambda</span> kv<span class="opt">:</span> kv<span class="opt">[</span><span class="num">1</span><span class="opt">])</span>     
+    <span class="kwa">return</span> <span class="opt">[ (</span>kv<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> <span class="num">100.0</span> <span class="opt">*</span> kv<span class="opt">[</span><span class="num">1</span><span class="opt">] /</span> size<span class="opt">)</span> <span class="kwa">for</span> kv <span class="kwa">in</span> sorted_ <span class="opt">]</span>  
+      
+<span class="kwa">def</span> <span class="kwd">specific_count</span><span class="opt">(</span>code<span class="opt">,</span> seq<span class="opt">):</span>  
+    <span class="kwa">return</span> <span class="kwd">base_counts</span><span class="opt">(</span><span class="kwb">len</span><span class="opt">(</span>code<span class="opt">),</span> seq<span class="opt">).</span><span class="kwd">get</span><span class="opt">(</span>code<span class="opt">,</span><span class="num">0</span><span class="opt">)</span>   
+    
+<span class="kwa">def</span> <span class="kwd">main</span><span class="opt">():</span>
+    lines <span class="opt">=</span> <span class="kwd">seq_lines</span><span class="opt">()</span>
+    seq <span class="opt">=</span> <span class="sng">&quot;&quot;</span><span class="opt">.</span><span class="kwd">join</span><span class="opt">([</span>s<span class="opt">.</span><span class="kwd">upper</span><span class="opt">()</span> <span class="kwa">for</span> s <span class="kwa">in</span> lines<span class="opt">])</span>
+        
+    <span class="kwa">for</span> base <span class="kwa">in</span> <span class="num">1</span><span class="opt">,</span><span class="num">2</span><span class="opt">:</span>        
+        <span class="kwa">for</span> kv <span class="kwa">in</span> <span class="kwd">sorted_freq</span><span class="opt">(</span>base<span class="opt">,</span> seq<span class="opt">):</span>
+           <span class="kwa">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">%s</span> <span class="sng">%.3f&quot;</span> <span class="opt">% (</span>kv<span class="opt">[</span><span class="num">0</span><span class="opt">],</span> kv<span class="opt">[</span><span class="num">1</span><span class="opt">]))</span>
+        <span class="kwa">print</span><span class="opt">()</span>      
+      
+    <span class="kwa">for</span> code <span class="kwa">in</span> <span class="sng">&quot;GGT&quot;</span><span class="opt">,</span> <span class="sng">&quot;GGTA&quot;</span><span class="opt">,</span> <span class="sng">&quot;GGTATT&quot;</span><span class="opt">,</span> \
+            <span class="sng">&quot;GGTATTTTAATT&quot;</span><span class="opt">,</span> <span class="sng">&quot;GGTATTTTAATTTATAGT&quot;</span><span class="opt">:</span>     
+        <span class="kwa">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">%d</span><span class="sng"></span><span class="esc">\t</span><span class="sng"></span><span class="ipl">%s</span><span class="sng">&quot;</span> <span class="opt">% (</span><span class="kwd">specific_count</span><span class="opt">(</span>code<span class="opt">,</span> seq<span class="opt">),</span> code<span class="opt">))</span>       
+ 
+<span class="kwa">if</span> __name__ <span class="opt">==</span> <span class="sng">&#39;__main__&#39;</span><span class="opt">:</span>
+  <span class="kwd">main</span><span class="opt">()</span>  
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+MicroPython v1.24.0
+preview.44.ge9c898cb3
+
+
+ Sat, 25 Jan 2025 02:22:18 GMT
+
+COMMAND LINE:
+ /opt/src/micropython/micropython -X heapsize=1024M -X emit=native knucleotide.micropython-8.micropython 0 &lt; knucleotide-input250000.txt
+
+TIMED OUT after 3600s
+
+
+PROGRAM OUTPUT:
+A 30.298
+T 30.157
+C 19.793
+G 19.752
+
+AA 9.177
+TA 9.137
+AT 9.136
+TT 9.094
+AC 6.000
+CA 5.999
+GA 5.986
+AG 5.985
+TC 5.970
+CT 5.970
+GT 5.957
+TG 5.956
+CC 3.915
+CG 3.910
+GC 3.908
+GG 3.902
+
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

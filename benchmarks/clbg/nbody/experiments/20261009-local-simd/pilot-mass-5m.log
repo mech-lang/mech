@@ -1,0 +1,36 @@
+CODEGEN compact-baseline {"disassembly_path": "compact-baseline.disassembly.txt", "loop_start_hex": "0x100003488", "loop_backedge_hex": "0x10000396c", "static_instructions": 314, "stack_load_instructions": 89, "stack_store_instructions": 33, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-baseline {"disassembly_path": "pairwise-baseline.disassembly.txt", "loop_start_hex": "0x10000358c", "loop_backedge_hex": "0x100003974", "static_instructions": 251, "stack_load_instructions": 58, "stack_store_instructions": 22, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-mass-baseline {"disassembly_path": "pairwise-mass-baseline.disassembly.txt", "loop_start_hex": "0x100003448", "loop_backedge_hex": "0x100003948", "static_instructions": 321, "stack_load_instructions": 84, "stack_store_instructions": 36, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+CODEGEN pairwise-mass-tails {"disassembly_path": "pairwise-mass-tails.disassembly.txt", "loop_start_hex": "0x10000348c", "loop_backedge_hex": "0x10000394c", "static_instructions": 305, "stack_load_instructions": 68, "stack_store_instructions": 25, "fused_instructions": 65, "sqrt_instructions": 5, "divide_instructions": 5, "loop_calls": []}
+SAMPLE 1 chapel-3 0.121512208
+SAMPLE 1 rust-3 0.115174791
+SAMPLE 1 compact-baseline 0.123870584
+SAMPLE 1 pairwise-mass-baseline 0.121807875
+SAMPLE 1 pairwise-baseline 0.113997917
+SAMPLE 1 nbody-gcc-8-llvm-fastmath 0.155476042
+SAMPLE 1 nbody-gpp-6-llvm-native 0.098295583
+SAMPLE 1 pairwise-mass-tails 0.112800666
+SAMPLE 2 chapel-3 0.122906125
+SAMPLE 2 rust-3 0.116782167
+SAMPLE 2 pairwise-mass-baseline 0.120732709
+SAMPLE 2 pairwise-mass-tails 0.115119459
+SAMPLE 2 compact-baseline 0.123486833
+SAMPLE 2 pairwise-baseline 0.117903250
+SAMPLE 2 nbody-gpp-6-llvm-native 0.096413709
+SAMPLE 2 nbody-gcc-8-llvm-fastmath 0.155943875
+SAMPLE 3 compact-baseline 0.121718042
+SAMPLE 3 rust-3 0.114251666
+SAMPLE 3 pairwise-baseline 0.119584875
+SAMPLE 3 pairwise-mass-tails 0.115954083
+SAMPLE 3 nbody-gcc-8-llvm-fastmath 0.156869458
+SAMPLE 3 nbody-gpp-6-llvm-native 0.096811250
+SAMPLE 3 pairwise-mass-baseline 0.119668708
+SAMPLE 3 chapel-3 0.122326750
+RESULT nbody-gpp-6-llvm-native 0.096811250 202 LOC
+RESULT pairwise-mass-tails 0.115119459 37 LOC
+RESULT rust-3 0.115174791 196 LOC
+RESULT pairwise-baseline 0.117903250 38 LOC
+RESULT pairwise-mass-baseline 0.120732709 37 LOC
+RESULT chapel-3 0.122326750 79 LOC
+RESULT compact-baseline 0.123486833 32 LOC
+RESULT nbody-gcc-8-llvm-fastmath 0.155943875 127 LOC

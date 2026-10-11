@@ -1,0 +1,285 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "id": "knucleotide-dart-3",
+      "fixture": "upper36-bit-and-map-growth",
+      "input_sha256": "46047af5ee5724d336728f650af74d19de8b7c64500093b139e6c478b8d02e79",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "binary_sha256": "235c617c940bbc4936a52a3c0a5ff00cf64a5b38e09c742d3d3b522283b32c18",
+      "output_sha256": "db9d6681640e5982a806f02ed8627c344ad2055c958ee36ca26e4789c0ad6baa",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-8",
+      "fixture": "upper36-bit-and-map-growth",
+      "input_sha256": "46047af5ee5724d336728f650af74d19de8b7c64500093b139e6c478b8d02e79",
+      "source_sha256": "a47f30b9119633c5d567eb7c4d202870460333320df2a3cbae9206558218cc6a",
+      "binary_sha256": "c31b6361e7a7ce4191687ef80aa9aa25296949279e268042311b3d339eb18ad4",
+      "output_sha256": "db9d6681640e5982a806f02ed8627c344ad2055c958ee36ca26e4789c0ad6baa",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-1",
+      "fixture": "upper36-bit-and-map-growth",
+      "input_sha256": "46047af5ee5724d336728f650af74d19de8b7c64500093b139e6c478b8d02e79",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "binary_sha256": "5652323836ef2a5ed8d7b2fb94fdd549877485445b31923f294afe4a0bf3ce62",
+      "output_sha256": "db9d6681640e5982a806f02ed8627c344ad2055c958ee36ca26e4789c0ad6baa",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-fortran-compact",
+      "fixture": "upper36-bit-and-map-growth",
+      "input_sha256": "46047af5ee5724d336728f650af74d19de8b7c64500093b139e6c478b8d02e79",
+      "source_sha256": "b5f4054492eb30fad826de549e9e8f9a6c2cef187c732acb67a56b896027cf69",
+      "binary_sha256": "bb835339129925f3f1aacb2eaa4428f63d4aabe5e206391693f05ab465ffe194",
+      "output_sha256": "db9d6681640e5982a806f02ed8627c344ad2055c958ee36ca26e4789c0ad6baa",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-fortran-parallel",
+      "fixture": "upper36-bit-and-map-growth",
+      "input_sha256": "46047af5ee5724d336728f650af74d19de8b7c64500093b139e6c478b8d02e79",
+      "source_sha256": "3b3812a3b6b51d7854743fa11acc76e65a644dc6b16ae2943d9d0099f19a8282",
+      "binary_sha256": "f3c8f5ae6bcb74b6c4b3a7e9ef7f0d3cd3729294fea987ce0cdd443edcd1a597",
+      "output_sha256": "db9d6681640e5982a806f02ed8627c344ad2055c958ee36ca26e4789c0ad6baa",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-jit-1",
+      "fixture": "upper36-bit-and-map-growth",
+      "input_sha256": "46047af5ee5724d336728f650af74d19de8b7c64500093b139e6c478b8d02e79",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "binary_sha256": "4736896da18f71f86fbdbcec19d3ac0477255347e56940532734d9f1956335ff",
+      "output_sha256": "db9d6681640e5982a806f02ed8627c344ad2055c958ee36ca26e4789c0ad6baa",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-jit-3",
+      "fixture": "upper36-bit-and-map-growth",
+      "input_sha256": "46047af5ee5724d336728f650af74d19de8b7c64500093b139e6c478b8d02e79",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "binary_sha256": "8e893b8f10f8924fcc2529087d6e7e3171822b1b741d8a44f6afdeb586076ddc",
+      "output_sha256": "db9d6681640e5982a806f02ed8627c344ad2055c958ee36ca26e4789c0ad6baa",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-3",
+      "fixture": "lowercase-crlf-and-record-boundary",
+      "input_sha256": "a6003621527efdc9626aa9dbd20912d69230906aaaf4430baf2fadc41e01c6c6",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "binary_sha256": "235c617c940bbc4936a52a3c0a5ff00cf64a5b38e09c742d3d3b522283b32c18",
+      "output_sha256": "ce8c0bc47f7a461e82d45415a62a668a5587c33a0038f74d48aab72a80a72922",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-8",
+      "fixture": "lowercase-crlf-and-record-boundary",
+      "input_sha256": "a6003621527efdc9626aa9dbd20912d69230906aaaf4430baf2fadc41e01c6c6",
+      "source_sha256": "a47f30b9119633c5d567eb7c4d202870460333320df2a3cbae9206558218cc6a",
+      "binary_sha256": "c31b6361e7a7ce4191687ef80aa9aa25296949279e268042311b3d339eb18ad4",
+      "output_sha256": "ce8c0bc47f7a461e82d45415a62a668a5587c33a0038f74d48aab72a80a72922",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-1",
+      "fixture": "lowercase-crlf-and-record-boundary",
+      "input_sha256": "a6003621527efdc9626aa9dbd20912d69230906aaaf4430baf2fadc41e01c6c6",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "binary_sha256": "5652323836ef2a5ed8d7b2fb94fdd549877485445b31923f294afe4a0bf3ce62",
+      "output_sha256": "ce8c0bc47f7a461e82d45415a62a668a5587c33a0038f74d48aab72a80a72922",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-fortran-compact",
+      "fixture": "lowercase-crlf-and-record-boundary",
+      "input_sha256": "a6003621527efdc9626aa9dbd20912d69230906aaaf4430baf2fadc41e01c6c6",
+      "source_sha256": "b5f4054492eb30fad826de549e9e8f9a6c2cef187c732acb67a56b896027cf69",
+      "binary_sha256": "bb835339129925f3f1aacb2eaa4428f63d4aabe5e206391693f05ab465ffe194",
+      "output_sha256": "ce8c0bc47f7a461e82d45415a62a668a5587c33a0038f74d48aab72a80a72922",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-fortran-parallel",
+      "fixture": "lowercase-crlf-and-record-boundary",
+      "input_sha256": "a6003621527efdc9626aa9dbd20912d69230906aaaf4430baf2fadc41e01c6c6",
+      "source_sha256": "3b3812a3b6b51d7854743fa11acc76e65a644dc6b16ae2943d9d0099f19a8282",
+      "binary_sha256": "f3c8f5ae6bcb74b6c4b3a7e9ef7f0d3cd3729294fea987ce0cdd443edcd1a597",
+      "output_sha256": "ce8c0bc47f7a461e82d45415a62a668a5587c33a0038f74d48aab72a80a72922",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-jit-1",
+      "fixture": "lowercase-crlf-and-record-boundary",
+      "input_sha256": "a6003621527efdc9626aa9dbd20912d69230906aaaf4430baf2fadc41e01c6c6",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "binary_sha256": "4736896da18f71f86fbdbcec19d3ac0477255347e56940532734d9f1956335ff",
+      "output_sha256": "ce8c0bc47f7a461e82d45415a62a668a5587c33a0038f74d48aab72a80a72922",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-jit-3",
+      "fixture": "lowercase-crlf-and-record-boundary",
+      "input_sha256": "a6003621527efdc9626aa9dbd20912d69230906aaaf4430baf2fadc41e01c6c6",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "binary_sha256": "8e893b8f10f8924fcc2529087d6e7e3171822b1b741d8a44f6afdeb586076ddc",
+      "output_sha256": "ce8c0bc47f7a461e82d45415a62a668a5587c33a0038f74d48aab72a80a72922",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-3",
+      "fixture": "ties-and-absent-long-windows",
+      "input_sha256": "38e7b024ade93fc4c87861e311e66f49bafaea808f105bafbca4ad375c05fb37",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "binary_sha256": "235c617c940bbc4936a52a3c0a5ff00cf64a5b38e09c742d3d3b522283b32c18",
+      "output_sha256": "dc4c2c870c2d9d4b1fedba0a0b49256d66efe3c059fc111c7adaa2601d449e73",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-8",
+      "fixture": "ties-and-absent-long-windows",
+      "input_sha256": "38e7b024ade93fc4c87861e311e66f49bafaea808f105bafbca4ad375c05fb37",
+      "source_sha256": "a47f30b9119633c5d567eb7c4d202870460333320df2a3cbae9206558218cc6a",
+      "binary_sha256": "c31b6361e7a7ce4191687ef80aa9aa25296949279e268042311b3d339eb18ad4",
+      "output_sha256": "dc4c2c870c2d9d4b1fedba0a0b49256d66efe3c059fc111c7adaa2601d449e73",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-1",
+      "fixture": "ties-and-absent-long-windows",
+      "input_sha256": "38e7b024ade93fc4c87861e311e66f49bafaea808f105bafbca4ad375c05fb37",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "binary_sha256": "5652323836ef2a5ed8d7b2fb94fdd549877485445b31923f294afe4a0bf3ce62",
+      "output_sha256": "dc4c2c870c2d9d4b1fedba0a0b49256d66efe3c059fc111c7adaa2601d449e73",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-fortran-compact",
+      "fixture": "ties-and-absent-long-windows",
+      "input_sha256": "38e7b024ade93fc4c87861e311e66f49bafaea808f105bafbca4ad375c05fb37",
+      "source_sha256": "b5f4054492eb30fad826de549e9e8f9a6c2cef187c732acb67a56b896027cf69",
+      "binary_sha256": "bb835339129925f3f1aacb2eaa4428f63d4aabe5e206391693f05ab465ffe194",
+      "output_sha256": "dc4c2c870c2d9d4b1fedba0a0b49256d66efe3c059fc111c7adaa2601d449e73",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-fortran-parallel",
+      "fixture": "ties-and-absent-long-windows",
+      "input_sha256": "38e7b024ade93fc4c87861e311e66f49bafaea808f105bafbca4ad375c05fb37",
+      "source_sha256": "3b3812a3b6b51d7854743fa11acc76e65a644dc6b16ae2943d9d0099f19a8282",
+      "binary_sha256": "f3c8f5ae6bcb74b6c4b3a7e9ef7f0d3cd3729294fea987ce0cdd443edcd1a597",
+      "output_sha256": "dc4c2c870c2d9d4b1fedba0a0b49256d66efe3c059fc111c7adaa2601d449e73",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-jit-1",
+      "fixture": "ties-and-absent-long-windows",
+      "input_sha256": "38e7b024ade93fc4c87861e311e66f49bafaea808f105bafbca4ad375c05fb37",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "binary_sha256": "4736896da18f71f86fbdbcec19d3ac0477255347e56940532734d9f1956335ff",
+      "output_sha256": "dc4c2c870c2d9d4b1fedba0a0b49256d66efe3c059fc111c7adaa2601d449e73",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-jit-3",
+      "fixture": "ties-and-absent-long-windows",
+      "input_sha256": "38e7b024ade93fc4c87861e311e66f49bafaea808f105bafbca4ad375c05fb37",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "binary_sha256": "8e893b8f10f8924fcc2529087d6e7e3171822b1b741d8a44f6afdeb586076ddc",
+      "output_sha256": "dc4c2c870c2d9d4b1fedba0a0b49256d66efe3c059fc111c7adaa2601d449e73",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-3",
+      "fixture": "one-base-and-empty-maps",
+      "input_sha256": "c8d1ed5e5a93aa6e44f2ec161178b35b70704909ff2ea02b69057ce531eb7d23",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "binary_sha256": "235c617c940bbc4936a52a3c0a5ff00cf64a5b38e09c742d3d3b522283b32c18",
+      "output_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-8",
+      "fixture": "one-base-and-empty-maps",
+      "input_sha256": "c8d1ed5e5a93aa6e44f2ec161178b35b70704909ff2ea02b69057ce531eb7d23",
+      "source_sha256": "a47f30b9119633c5d567eb7c4d202870460333320df2a3cbae9206558218cc6a",
+      "binary_sha256": "c31b6361e7a7ce4191687ef80aa9aa25296949279e268042311b3d339eb18ad4",
+      "output_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-1",
+      "fixture": "one-base-and-empty-maps",
+      "input_sha256": "c8d1ed5e5a93aa6e44f2ec161178b35b70704909ff2ea02b69057ce531eb7d23",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "binary_sha256": "5652323836ef2a5ed8d7b2fb94fdd549877485445b31923f294afe4a0bf3ce62",
+      "output_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-fortran-compact",
+      "fixture": "one-base-and-empty-maps",
+      "input_sha256": "c8d1ed5e5a93aa6e44f2ec161178b35b70704909ff2ea02b69057ce531eb7d23",
+      "source_sha256": "b5f4054492eb30fad826de549e9e8f9a6c2cef187c732acb67a56b896027cf69",
+      "binary_sha256": "bb835339129925f3f1aacb2eaa4428f63d4aabe5e206391693f05ab465ffe194",
+      "output_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-fortran-parallel",
+      "fixture": "one-base-and-empty-maps",
+      "input_sha256": "c8d1ed5e5a93aa6e44f2ec161178b35b70704909ff2ea02b69057ce531eb7d23",
+      "source_sha256": "3b3812a3b6b51d7854743fa11acc76e65a644dc6b16ae2943d9d0099f19a8282",
+      "binary_sha256": "f3c8f5ae6bcb74b6c4b3a7e9ef7f0d3cd3729294fea987ce0cdd443edcd1a597",
+      "output_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-jit-1",
+      "fixture": "one-base-and-empty-maps",
+      "input_sha256": "c8d1ed5e5a93aa6e44f2ec161178b35b70704909ff2ea02b69057ce531eb7d23",
+      "source_sha256": "d710420443c72ceb7194c1c56c12f4d1832521576d43ef32e8f9be7b1761d221",
+      "binary_sha256": "4736896da18f71f86fbdbcec19d3ac0477255347e56940532734d9f1956335ff",
+      "output_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "reference_match": true,
+      "formal_sample": false
+    },
+    {
+      "id": "knucleotide-dart-jit-3",
+      "fixture": "one-base-and-empty-maps",
+      "input_sha256": "c8d1ed5e5a93aa6e44f2ec161178b35b70704909ff2ea02b69057ce531eb7d23",
+      "source_sha256": "fd39860f284bded2df51f859e4e82c045b13f94e07406e180d3900d3230d47b9",
+      "binary_sha256": "8e893b8f10f8924fcc2529087d6e7e3171822b1b741d8a44f6afdeb586076ddc",
+      "output_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "reference_match": true,
+      "formal_sample": false
+    }
+  ]
+}

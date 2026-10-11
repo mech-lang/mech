@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "width": 1440,
+      "languages": [
+        "lisp",
+        "racket"
+      ],
+      "complete_workloads": 10,
+      "source_and_sample_tables": "passed",
+      "groups_and_years": "passed"
+    },
+    {
+      "width": 390,
+      "languages": [
+        "lisp",
+        "racket"
+      ],
+      "complete_workloads": 10,
+      "source_and_sample_tables": "passed",
+      "groups_and_years": "passed"
+    }
+  ],
+  "errors": []
+}

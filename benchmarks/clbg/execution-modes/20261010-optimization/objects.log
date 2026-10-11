@@ -1,0 +1,15 @@
+IDENTICAL nbody:pairwise-mass-tails
+IDENTICAL nbody:compact-baseline
+IDENTICAL mandelbrot:mech-program-simd-loop-fma
+IDENTICAL mandelbrot:mech-program-compact
+IDENTICAL knucleotide:mech-compact-final-std1-simd0-p4
+IDENTICAL spectralnorm:mech-integer-simd1-u4-r4-p8-g8
+IDENTICAL revcomp:mech-revcomp-optimized
+IDENTICAL fannkuchredux:mech-fannkuch-even
+IDENTICAL fannkuchredux:mech-fannkuch-default
+IDENTICAL fasta:mech-fasta-final-expanded-v2
+IDENTICAL fasta:mech-fasta-final-compact-v2
+IDENTICAL binarytrees:mech-binarytrees-parallel
+IDENTICAL regexredux:mech-regex-final-reuse-signed
+IDENTICAL pidigits:mech-pi-final-advance-signed
+IDENTICAL pidigits:mech-pi-final-compact-signed

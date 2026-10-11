@@ -1,0 +1,920 @@
+{
+  "status": "passed",
+  "programs": {
+    "binarytrees:binarytrees-sbcl-1": {
+      "status": "passed",
+      "source_sha256": "6aab6defb79d1c856cb8fdfb98b9dc93f6144f1d4bf25faad0647c5282ee28ff",
+      "seconds": 0.017992458,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-sbcl-3": {
+      "status": "passed",
+      "source_sha256": "ed486cbdb2877c09ae5a6af46ef532397ff3d7bb43aec00a0e0f22887d3fb417",
+      "seconds": 0.024958834,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:fannkuchredux-sbcl-5": {
+      "status": "passed",
+      "source_sha256": "a724a98d3635891ad061de236d371b60ea26bd7bff7b3ccd920038d313c0182b",
+      "seconds": 0.032598,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:fannkuchredux-sbcl-2": {
+      "status": "passed",
+      "source_sha256": "0467e9a292dc53990596f1a3fd294e4d9d8f4f6588075c0dce057e52a57779ac",
+      "seconds": 0.022432041,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:fannkuchredux-sbcl-4": {
+      "status": "passed",
+      "source_sha256": "6d9804f2c091704d084973c20287ff54af27994ebda4fa073ec081ae8c91332b",
+      "seconds": 0.024483833,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:fannkuchredux-sbcl-3": {
+      "status": "passed",
+      "source_sha256": "a18e6227e5930d085e07eb0c49dbdf8bb6121efd769ae1dfb95c7bc1c6e13619",
+      "seconds": 0.025383375,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-sbcl-3": {
+      "status": "passed",
+      "source_sha256": "bbfcf436da8bbbb510515c36d260caa682b2a524ee2669718698495a3d8ce66c",
+      "seconds": 0.025652083,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-sbcl-6": {
+      "status": "passed",
+      "source_sha256": "264352638c44d528f01e431f2ce627d61b253c5e22a552ce4d3913c1471ff983",
+      "seconds": 0.025746917,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-sbcl-1": {
+      "status": "passed",
+      "source_sha256": "00a19eb81676bf6adb584815f5dc08f17630dd98287a086fa4178804512cc3d9",
+      "seconds": 0.024161333,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-sbcl-2": {
+      "status": "passed",
+      "source_sha256": "67a649a3274fad9e8e509c65b60ce06fa925b81bc466d8b0a253b9d64833d964",
+      "seconds": 0.023280416,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-6": {
+      "status": "passed",
+      "source_sha256": "c26d7f84873b91a6e48728451acf06fc004611005df61dfc00295ddac58e0a98",
+      "seconds": 0.0242685,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-2": {
+      "status": "passed",
+      "source_sha256": "833c978753c586f1ac7cecec6ed187cec12b13fff1f1f745366b0b3506750485",
+      "seconds": 0.023441209,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-3": {
+      "status": "failed",
+      "source_sha256": "c904a077fb2bb554c97176acfc4caf924dc0b4a15fd88c7c84dc9963265eb713",
+      "error": "('knucleotide', 242, '40293b7a0102838c7daec7445e8c7f6731f67c322080a217a35f0ddad1e72a46', 242, 'baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500')"
+    },
+    "knucleotide:knucleotide-sbcl-1": {
+      "status": "passed",
+      "source_sha256": "48d80b4e4eeab387e159685972fbf245d4d4e7c08a917b2a064cbe5d29bbd83d",
+      "seconds": 0.025264042,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-4": {
+      "status": "passed",
+      "source_sha256": "fb3bbab362a998629bb7228c5f8757a6f1bd31761a0baef10aceea4addf2e903",
+      "seconds": 0.027849666,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-5": {
+      "status": "passed",
+      "source_sha256": "223388d71d46d2ac788464a87bbe2e4cd48673cc83d181944f730c94866e8109",
+      "seconds": 0.026790292,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-sbcl-3": {
+      "status": "passed",
+      "source_sha256": "bad5f3258e201c983beacf4e15069b6a518f7bde08114be50b193b6f57a9f1df",
+      "seconds": 0.022091916,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-sbcl-1": {
+      "status": "failed",
+      "source_sha256": "1a40f9d8df7d0b5b633d500f4a3e9eabfe3353a0acef0fdeffb975145ea106c2",
+      "error": "Command '['/opt/homebrew/Cellar/sbcl/2.6.9/bin/sbcl', '--noinform', '--core', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/binaries/mandelbrot-sbcl-1.core', '--no-sysinit', '--no-userinit', '--non-interactive', '--eval', '(cl-user::main)', '--end-toplevel-options', '200']' returned non-zero exit status 1.; Unhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=2819 RUNNING\n                                          {8005282433}>:\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=3331 RUNNING\n                                          {8005282953}>:\n  The function VOPS::ESCAPES? is undefined.\n\n  The function VOPS::ESCAPES?                                           {80052821A3}>:\non VOPS::ESCAPES?                                           {80052821A3}>:\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=6915 RUNNING\n                                          {8005282BE3}>:\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=6915 RUNNING\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=6403 RUNNING\n                                          {80                                          {8005283103}>:\n  The function VOPS::ESCAPES? is undefined.\n\n05283103}>:\n  The function VOPS::ESCAPES? is undefined.\n\n05283103}>:\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=6659 RUNNING\n\n The function VOPS::ESCAPES? is undefined.\n\n05283103}>:\n\n\n  The function VOPS::ESCAPES? is undefined.\n\n5282E73}>:\n\n  The function VOPS::ESCAPES? is undefined.\n\n5282E73}>:\nnhandled UNDEFINED-FUNCTION in t\n\n  The function VOPS::ESCAPES? is undefined.\n\n\n\n  The function VOPS::ESCAPES? is undefined.\n\n5282E73}>:\nSSB-THREAD:THREAD tid=SB-THREAD:3331 tid=2819 RUNNING {8005282953}>\nRUNNING {80052821A3}>\n  The function VOPS::ESCAPES? is undefined.\n\n  The function VOPS::ESCAPES? is undefined.\n\nBacktrace for: #<tid=SB-THREAD:3331 tid=2819 RUNNING {8005282953}>\nRUNNING {80052821A3}>\n  The function VOPS::ESCAPES? is undefined.\n\nBacktrace for: #<SB-THREAD:THREAD tid=6659 RUNNING {8005282E73}>\n#<SB-THREAD:THREAD tid=7Backtrace for: #<SB-THREAD:THREAD tid=6659 RUNNING {8005282E73}>\n#<SB-THREAD:THREAD tid=7171 RUNNING {8005282433}>\nBacktrace for: #<SB-THREAD:THREAD tid=6659 RUNNING {8005282E73}>\n#<SB-THREAD:THREAD tid=7171 RUNNING {8005282433}>\nES? is undefin"
+    },
+    "mandelbrot:mandelbrot-sbcl-4": {
+      "status": "failed",
+      "source_sha256": "c0f686553bfda22343b3d3a734877b389e1ea753656bc823011efdee2667d454",
+      "error": "Command '['/opt/homebrew/Cellar/sbcl/2.6.9/bin/sbcl', '--noinform', '--core', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/binaries/mandelbrot-sbcl-4.core', '--no-sysinit', '--no-userinit', '--non-interactive', '--eval', '(cl-user::main)', '--end-toplevel-options', '200']' returned non-zero exit status 1.; Unhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=2307 RUNNING\n                                          {8005281F03}>:\n                                          {8005281F03}>:\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=6659 RUNNING\n                                          {8005282683}>:\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=2819 RUNNING\n  The function VOPS::ESCAPES? is undefined.                                          {8005282903}>:\n  The function VOPS::ESCAPES? is undefined.\n\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=6403 RUNNING\n                                          {8005282B83}>:\n  The function VOPS::ESCAPES? is undefined.\n\n05282B83}>:\nUnhandled UNDEFINE                                          {8005282183}>:\nUnhandled UNDEFINED-FUNCTION in t                                          {8005282183}>:\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=3331 RUNNING\n                                          {8005283083}>:\n                                          {8005283083}>:\nBacktrace for: #<SB-THREAD:THREAD tid=2819 RUNNING {8005282903}>\n                                          {80Backtrace for: #<SB-THREAD:THREAD tid=6403 \nBacktrace for: #<SB-THREAD:THREAD tid=6403 \nRUNNING {8005282B83}>\n for: #<SB-THREAD:THREAD tid=2819 RUNNING {8005282903}>\n  The function VOPS::ESCAPES                                          {8005282403}>:\n  The function VOPS::ESCAPES? is undefined.\n\n05282403}>:\nUnhandled UNDEFINED-FUNCTION in thread #<SB-THREAD:THREAD tid=3075 RUNNING\n                                                               {8005282E03}>:\n0: (\"undefined function\" 50 3 #C(-1.49d0 -1.5d0) #C(-0.96d0 -0.96d0: (\"undefined function\" 50 3 #C(-1.49d0 -1.5d0) #C(-0.96d0 -0.96d0))                       The function VOPS::ESCAPES? is undefined.\n\n\n0: (\"undefined function\" 50 3 #C(-1.49d0 -1.5d0) #C(-0.96d0 -0.96d0))                       The function VOPS::ESCAPES? is undefined.\n\nBacktrac"
+    },
+    "nbody:nbody-sbcl-2": {
+      "status": "passed",
+      "source_sha256": "c79ce9a77788c151db03e0ef80b2e9dbb48c5a408823603e02e526e7d57b5989",
+      "seconds": 0.024426416,
+      "validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "stderr": "",
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "nbody:nbody-sbcl-1": {
+      "status": "passed",
+      "source_sha256": "f325bbc1ee1ec67bc99fc30e90dbb7ae95a77ae0a8a85aa95d5186a90884e396",
+      "seconds": 0.025736084,
+      "validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "stderr": "",
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-sbcl-2": {
+      "status": "passed",
+      "source_sha256": "40e3f88f67246aac9415df0bf3209182ce8cc93950a64e9631d5f0a8ee00743a",
+      "seconds": 0.0229495,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-sbcl-4": {
+      "status": "passed",
+      "source_sha256": "3015268ad4dbc218c0826c0cf7ef142341c707ee699c30529c364437b4c4b0ea",
+      "seconds": 0.02427975,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-sbcl-3": {
+      "status": "passed",
+      "source_sha256": "22b9e22ead0e8ee89dab39a78d381c4a954e2c699b515d9a36649e832e513877",
+      "seconds": 0.023741291,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "regexredux:regexredux-sbcl-4": {
+      "status": "failed",
+      "source_sha256": "52163330fb3bbb8ff6b4361a3c7cd503dadfed592728dcffc6cf4000c51ba562",
+      "error": "Command '['/opt/homebrew/Cellar/sbcl/2.6.9/bin/sbcl', '--noinform', '--core', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/binaries/regexredux-sbcl-4.core', '--no-sysinit', '--no-userinit', '--non-interactive', '--eval', '(cl-user::main)', '--end-toplevel-options', '30']' returned non-zero exit status 1.; Heap exhausted during garbage collection: 0 bytes available, 16 requested.\n     | Immobile Objects |\n Gen layout symbol   code  Boxed   Cons    Raw   Code  SmMix  Mixed  LgRaw LgCode  LgMix Waste%       Alloc        Trig   Dirty GCs Mem-age\n  1      0      0      0      0   4933      0      0      1      0      0      0      0    0.1   322948304    10737418    4934   0  1.0000\n  2      0      0      0      3   7327      1      1      1      1      0      0      0    0.1   480135696     2000000       2   0  0.0000\n  3      0      0      0      0      0      0      0      0      0      0      0      0    0.0           0     2000000       0   0  0.0000\n  4      0      0      0      0      0      0      0      0      0      0      0      0    0.0           0     2000000       0   0  0.0000\n  5      0      0      0      0      0      0      0      0      0      0      0      0    0.0           0     2000000       0   0  0.0000\n  6      0      0      0    143     66    127    219     35      7     15      0      5    2.7    39348512     2000000       4   0  0.0000\n  7      0      0      0      0   3498      0      0      1      0      0      0      0    0.1   229188960     2000000    3499   0  0.0000\nTot      0      0      0    146  15824    128    220     38      8     15      0      5    0.2  1071621072 [99.8% of 1073741824 max]\nGC control variables:\n   *GC-INHIBIT* = true\n   *GC-PENDING* = true\n   *STOP-FOR-GC-PENDING* = false\nCollection trigger variables:\n   dynamic_space_size = 1073741824\n   bytes_allocated = 1071621072\n   auto_gc_trigger = 842327283\n   bytes_consed_between_gcs = 53687091\nfatal error encountered in SBCL pid 92660 pthread 0x1ff436c40:\nHeap exhausted, game over.\n\n   0:     0x109540c10 pc=0x800309b100 {0x800309b060+00a0} SB-KERNEL::COLLECT-GARBAGE\n   1:     0x109540b38 pc=0x800305b360 {0x800305ad70+05f0} (FLET \"WITHOUT-GCING-BODY-\" :IN SB-KERNEL::SUB-GC)\n   2:     0x109540a60 pc=0x800305b080 {0x800305ad70+0310} (FLET \"WITHOUT-INTERRUPTS-BODY-\" :IN SB-KE"
+    },
+    "revcomp:revcomp-sbcl-2": {
+      "status": "failed",
+      "source_sha256": "3c5fabb9c34377f3d02d7649fb353605b5f8b1174dec7d6903c4393055c79f69",
+      "error": "Command '['/opt/homebrew/Cellar/sbcl/2.6.9/bin/sbcl', '--noinform', '--core', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/binaries/revcomp-sbcl-2.core', '--no-sysinit', '--no-userinit', '--non-interactive', '--eval', '(cl-user::main)', '--end-toplevel-options', '1000']' returned non-zero exit status 1.; Unhandled TYPE-ERROR in thread #<SB-THREAD:THREAD tid=259 \"main thread\" RUNNING\n                                  {80052D0003}>:\n  The value\n    NIL\n  is not of type\n    STRING\n  when binding STRING\n\nBacktrace for: #<SB-THREAD:THREAD tid=259 \"main thread\" RUNNING {80052D0003}>\n0: (SB-IMPL::STRING-SOUT #<SB-IMPL::STRING-OUTPUT-STREAM {8005270AA3}> NIL 0 NIL) [external]\n1: (MAIN)\n2: (SB-INT:SIMPLE-EVAL-IN-LEXENV (MAIN) #<NULL-LEXENV>)\n3: (EVAL (MAIN))\n4: (SB-IMPL::PROCESS-EVAL/LOAD-OPTIONS ((:EVAL . \"(cl-user::main)\") (:QUIT)))\n5: (SB-IMPL::TOPLEVEL-INIT)\n6: ((FLET SB-UNIX::BODY :IN SB-IMPL::START-LISP))\n7: ((FLET \"WITHOUT-INTERRUPTS-BODY-3\" :IN SB-IMPL::START-LISP))\n8: (SB-IMPL::%START-LISP)\n\nunhandled condition in --disable-debugger mode, quitting\nUnhandled SB-INT:SIMPLE-FILE-ERROR in thread #<SB-THREAD:THREAD tid=259 \"main thread\" RUNNING\n                                                {80052D0003}>:\n  Couldn't remove \"/dev/stdout\" while closing #<SB-SYS:FD-STREAM for \"file /dev/stdout\" {8005270943}>:\n\n    Operation not permitted\n\nBacktrace for: #<SB-THREAD:THREAD tid=259 \"main thread\" RUNNING {80052D0003}>\n0: (SB-DEBUG::DEBUGGER-DISABLED-HOOK #<SB-INT:SIMPLE-FILE-ERROR \"~@<Couldn't remove ~S while closing ~S~:>\" {80052F91D3}> #<unused argument> :QUIT T)\n1: (SB-DEBUG::RUN-HOOK *INVOKE-DEBUGGER-HOOK* #<SB-INT:SIMPLE-FILE-ERROR \"~@<Couldn't remove ~S while closing ~S~:>\" {80052F91D3}>)\n2: (INVOKE-DEBUGGER #<SB-INT:SIMPLE-FILE-ERROR \"~@<Couldn't remove ~S while closing ~S~:>\" {80052F91D3}>)\n3: (ERROR SB-INT:SIMPLE-FILE-ERROR :PATHNAME \"/dev/stdout\" :MESSAGE \"Operation not permitted\" :FORMAT-CONTROL \"~@<Couldn't remove ~S while closing ~S~:>\" :FORMAT-ARGUMENTS (\"/dev/stdout\" #<SB-SYS:FD-STREAM for \"file /dev/stdout\" {8005270943}>))\n4: (SB-IMPL::FILE-PERROR \"/dev/stdout\" 1 \"~@<Couldn't remove ~S while closing ~S~:>\" \"/dev/stdout\" #<SB-SYS:FD-STREAM for \"file /dev/stdout\" {8005270943}>)\n5: ((:METHOD CLOSE (SB-KERNEL:ANSI-STREAM)) #<SB-SYS:FD-STREAM for \"file /dev/stdout\""
+    },
+    "revcomp:revcomp-sbcl-1": {
+      "status": "passed",
+      "source_sha256": "43dc2c019b4709330513a5336135557f79173eacaa724d1c0a9aad5c7e7cb4b9",
+      "seconds": 0.040872459,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-sbcl-3": {
+      "status": "passed",
+      "source_sha256": "1d4d16ce39b9ab8fb7adb36d8853e6813906de88c390230fc5c4c790cb8406a2",
+      "seconds": 0.021994709,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-sbcl-2": {
+      "status": "passed",
+      "source_sha256": "aa044f7d3cb0ebb27b2f8e08bcf61fa7560cfae67a1e49a6c92d4258fbcf187e",
+      "seconds": 0.021642375,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-sbcl-7": {
+      "status": "passed",
+      "source_sha256": "bac0cef1bfb50feb1100ad19f1765fcda0bd443d09d5cc4699d95d3e3f409d85",
+      "seconds": 0.024961458,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-sbcl-1": {
+      "status": "passed",
+      "source_sha256": "cea6b9890b0861b0e64a1326474c8f0a8921cb1b2945cae6e2e743ef1c28424c",
+      "seconds": 0.026065333,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-sbcl-6": {
+      "status": "passed",
+      "source_sha256": "3d089c014d63b14dfd629448f1a5c639627ed89e47b975fa23b921736269d4b3",
+      "seconds": 0.027389792,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-sbcl-9": {
+      "status": "passed",
+      "source_sha256": "03197fbee34a948b5d7ce62bfc8f40c4d033f80cf4ce7d7cc21abdf84b4daa7d",
+      "seconds": 0.027476125,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-racket-4": {
+      "status": "passed",
+      "source_sha256": "dd566b340524a9edf98ae5c922330e7a53f978301057af97fc91f80555dc498f",
+      "seconds": 0.131203209,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-racket-2": {
+      "status": "passed",
+      "source_sha256": "2ab605699eab6beb7390583535e51cbf949cbc2712e116e201beffb4c0a5bdc8",
+      "seconds": 0.055311083,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-racket-3": {
+      "status": "passed",
+      "source_sha256": "e19c38a94517f5bc083e16b498776a5d8e00fba0bd934994f84ca07f03c7ab7e",
+      "seconds": 0.055362041,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-racket-1": {
+      "status": "passed",
+      "source_sha256": "8864ea19314959e1fcd69a37595c2de82896012e9ba2a32ee1e22ee73ef9fdad",
+      "seconds": 0.055507958,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:fannkuchredux-racket-3": {
+      "status": "passed",
+      "source_sha256": "23ad2da12c3f4f7e09a23b267d8dfd794d5bec2496376283cd204b9e5c8de0d6",
+      "seconds": 0.061189875,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:fannkuchredux-racket-2": {
+      "status": "passed",
+      "source_sha256": "ae0c49790074720b7c1216ce9974577cabd92c24a76ca7de3738d8464a705c29",
+      "seconds": 0.055903125,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fannkuchredux:fannkuchredux-racket-1": {
+      "status": "passed",
+      "source_sha256": "6a5b9b738081325075bc7b2776c511fb85e454fe60caf2baac6b2bf9ab71743e",
+      "seconds": 0.053993041,
+      "validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-racket-3": {
+      "status": "passed",
+      "source_sha256": "6f8a5ee3b5eeea3a82b554de572572f0c026b83bcd541173bf38ae80f22a90e4",
+      "seconds": 0.057951083,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-racket-1": {
+      "status": "passed",
+      "source_sha256": "6f97e1b118d9caae9729363ded8b0df28a7357b78636879681b8716c7ba4f85c",
+      "seconds": 0.054240625,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-racket-4": {
+      "status": "passed",
+      "source_sha256": "f1a68649b2cb95d7127f262cb34fbaed06e69134bdb807010e997abfaf684d2c",
+      "seconds": 0.0928785,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-racket-1": {
+      "status": "passed",
+      "source_sha256": "0e58ba45adab9a781ca28bd41de1788de483924e2be94d5763c519b4e3120d7f",
+      "seconds": 0.057718917,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-racket-4": {
+      "status": "passed",
+      "source_sha256": "3a1d5203aca6d0a92543ad5b870d2406208cc40a7273df096a74533e4747a3c2",
+      "seconds": 0.059223167,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-racket-2": {
+      "status": "passed",
+      "source_sha256": "07f2b3c368a4dc5cc20c6627726e65059b83a1ecd590ea46f2ae3999c311b6d6",
+      "seconds": 0.056456542,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-racket-1": {
+      "status": "passed",
+      "source_sha256": "9c3da21396aadcbfb6f70af3d474e21d4badfff79d609508d9ca37991fa80a56",
+      "seconds": 0.060836833,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-racket-3": {
+      "status": "passed",
+      "source_sha256": "1de38bd5db65c238a9c385000eb1f6ed3b0dd42217d7b1e20febda3994c758be",
+      "seconds": 0.059286125,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "nbody:nbody-racket-2": {
+      "status": "passed",
+      "source_sha256": "fe4bd6a0873887fa4a43f610030952d25311c06c0fbc3279e482956b6d07619c",
+      "seconds": 0.05531675,
+      "validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "stderr": "",
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "nbody:nbody-racket-1": {
+      "status": "passed",
+      "source_sha256": "4f5165d32c1814b907546a44563bb4184db006b91d7205549a5f1d84541e4300",
+      "seconds": 0.056058916,
+      "validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "stderr": "",
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-racket-2": {
+      "status": "failed",
+      "source_sha256": "1ba833f807869fbcc4d1b5d93b8797be8df13ff7b2645179035208cc57a73fc6",
+      "error": "Command '['/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/support/racket/bin/racket', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/pidigits-racket-2.rkt', '30']' returned non-zero exit status 1.; ffi-lib: could not load foreign library\n  path: libgmp.dylib\n  system error: dlopen(libgmp.dylib, 0x0006): tried: 'libgmp.dylib' (no such file), '/System/Volumes/Preboot/Cryptexes/OSlibgmp.dylib' (no such file), '/usr/lib/libgmp.dylib' (no such file, not in dyld cache), 'libgmp.dylib' (no such file), '/usr/lib/libgmp.dylib' (no such file, not in dyld cache)\n  context...:\n   /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/support/racket/collects/ffi/unsafe/private/ffi-lib.rkt:18:0: get-ffi-lib*\n   body of \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/pidigits-racket-2.rkt\"\n"
+    },
+    "pidigits:pidigits-racket-1": {
+      "status": "passed",
+      "source_sha256": "834572babe37e41ab77a4819658792f370797f83eb75d5d6951cde3b6545bc65",
+      "seconds": 0.054360459,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "regexredux:regexredux-racket-2": {
+      "status": "passed",
+      "source_sha256": "f624eb20f16a013aa73856cf6de96101a7c57bf8a5562b81712d994b58067b45",
+      "seconds": 0.199954,
+      "validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "regexredux:regexredux-racket-1": {
+      "status": "passed",
+      "source_sha256": "90e8dfbcdcc5fb11bda8fd5b6bf69294e1e27e4737ebaa7082e509f80fd3e3eb",
+      "seconds": 0.083304667,
+      "validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "revcomp:revcomp-racket-1": {
+      "status": "passed",
+      "source_sha256": "936278bc2ff4f82535552324684f69a18c87042b667b32eee674be519759c2fc",
+      "seconds": 0.0556355,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "revcomp:revcomp-racket-2": {
+      "status": "passed",
+      "source_sha256": "0f0f792fb8faab2039e60fc17695fbd619f24551f0c807d538bb18f190d1c450",
+      "seconds": 0.054731958,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-racket-1": {
+      "status": "passed",
+      "source_sha256": "9b351b34151a1d21d2fdb9333729a054a1e4c610bde71f7ef24a51aa931b386f",
+      "seconds": 0.058488334,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-racket-3": {
+      "status": "failed",
+      "source_sha256": "e483e89214a2eafa532e069b99b561e06fe6aa271c095231c942b789241e22ee",
+      "error": "('spectralnorm', '1.274219470\\n', '1.274219991\\n')"
+    },
+    "spectralnorm:spectralnorm-racket-2": {
+      "status": "passed",
+      "source_sha256": "9b21393ac9beb39c9bb5f166ed228c46558c1246d554442c9bc0d6c38ebf14a9",
+      "seconds": 0.054487917,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "binarytrees:binarytrees-sbcl-1-faithful": {
+      "status": "passed",
+      "source_sha256": "60480c46d37e25dc1a950894e03fa59ce45ceca073bbb78da31602449c40eac6",
+      "seconds": 0.0237665,
+      "validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-sbcl-3-faithful": {
+      "status": "passed",
+      "source_sha256": "be3659c8bc55486a470f9d00534935071a448e8d512e0ca3b3e15f4a67247314",
+      "seconds": 0.01727475,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "fasta:fasta-sbcl-6-faithful": {
+      "status": "passed",
+      "source_sha256": "2a74888ca951c29cd02f7714ffaf98ff53bc9ddc8e9955930212e0d84d1dbfe4",
+      "seconds": 0.025292708,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-6-faithful": {
+      "status": "passed",
+      "source_sha256": "5f2ef010ebc0a95ad081cc16c07a27631cd94b58d001e667bd9b1eb06c3d4c89",
+      "seconds": 0.024986583,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-2-faithful": {
+      "status": "passed",
+      "source_sha256": "b55bf28bf6896984c6705d1aa730fce0a18d9ca343110fa5706c12bf2da6edb5",
+      "seconds": 0.023133125,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-3-faithful": {
+      "status": "passed",
+      "source_sha256": "0aecc2e09b0192ff51fa5652560aa7fe6175541ff7bd4f16d9c56dbea908a625",
+      "seconds": 0.023840875,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-1-faithful": {
+      "status": "passed",
+      "source_sha256": "2e68c31dbe576022f2d142dd15e0f6de8fffff24a549085feccb41f43cd7474a",
+      "seconds": 0.02276,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-sbcl-1-faithful": {
+      "status": "passed",
+      "source_sha256": "97333ffee562ba0fbf2c33289768dc4fb00c6cab1df9d125b23d829ebf185c89",
+      "seconds": 0.026509125,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "mandelbrot:mandelbrot-sbcl-4-faithful": {
+      "status": "passed",
+      "source_sha256": "6e7891c57662f31694d16c7d3f0e3330d198c0c2ae8fc1f3240f2f5cf29aa520",
+      "seconds": 0.023293209,
+      "validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-sbcl-4-faithful": {
+      "status": "passed",
+      "source_sha256": "d0cc55e2088169b5ab950e176d91309a23be7683056264b1f25db861491354f7",
+      "seconds": 0.024210166,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-sbcl-3-faithful": {
+      "status": "passed",
+      "source_sha256": "1e1d1a602c7c045047865d0535083aa98c261b8a3043b363be43c1dc7ed9c15d",
+      "seconds": 0.022218458,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "regexredux:regexredux-sbcl-4-faithful": {
+      "status": "passed",
+      "source_sha256": "c39ffa1bbefe6b1a1164762096a53937f1074fc8ef8b759d8ded8d9ae05f9fd6",
+      "seconds": 0.031307584,
+      "validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-racket-4-faithful": {
+      "status": "passed",
+      "source_sha256": "bfda47dd174092bcfd1ca60467bf6c5ccf824b9aa5f96a6af86ced8f662ad1c0",
+      "seconds": 0.093535542,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-racket-1-faithful": {
+      "status": "passed",
+      "source_sha256": "c7a12cba5471ec5e459169f8bcb8b0088e079d1a107de0fd031c284cc4bec1bb",
+      "seconds": 0.053661541,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "pidigits:pidigits-racket-2-faithful": {
+      "status": "passed",
+      "source_sha256": "327a318cecc4faf5d3c6d1a12e633b3c48359d8e39ec3b4798c987e89f61177a",
+      "seconds": 0.060652958,
+      "validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "spectralnorm:spectralnorm-racket-3-faithful": {
+      "status": "passed",
+      "source_sha256": "d85eb503824b5658d53b6fac2f4d274db58e8afdd0d9369ab39bc54d6523fd10",
+      "seconds": 0.090411125,
+      "validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-4-faithful": {
+      "status": "passed",
+      "source_sha256": "fb20804865b4e3127e24c966d3e1c0ccf3eba4c000403d563cd9018892795b96",
+      "seconds": 0.026095125,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "knucleotide:knucleotide-sbcl-5-faithful": {
+      "status": "passed",
+      "source_sha256": "cc6d14eb710b2a61071d34639a9ea14eadb637169a9ae2c30eb6f98b8c815085",
+      "seconds": 0.029167041,
+      "validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "revcomp:revcomp-sbcl-2-faithful": {
+      "status": "passed",
+      "source_sha256": "6f2b1f43b579af9de5a9815c1004741bcafc92a03a494f5869ee901509210f6a",
+      "seconds": 0.018947959,
+      "validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    }
+  },
+  "power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  }
+}

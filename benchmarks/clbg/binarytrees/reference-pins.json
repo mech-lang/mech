@@ -1,0 +1,15 @@
+{
+  "official_output_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/download/binarytrees-output.txt",
+  "small": {
+    "n": 10,
+    "bytes": 223,
+    "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+    "method": "Independent output oracle; N=10 byte-matches official output; N=21 also checked against pinned per-node C #5."
+  },
+  "full": {
+    "n": 21,
+    "bytes": 455,
+    "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+    "method": "Independent output oracle; N=10 byte-matches official output; N=21 also checked against pinned per-node C #5."
+  }
+}

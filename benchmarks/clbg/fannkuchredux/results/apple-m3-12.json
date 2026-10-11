@@ -1,0 +1,2908 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-08T00:25:27.083860+00:00",
+  "hardware": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu": "Apple M3",
+    "logical_cpus": 8
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-12.compiler.tar.gz",
+    "sha256": "89a42aedbf3dd3f212eb541bcb503587afd3485dffb87c72bf50e522b80e1696",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "source_sha256": {
+      "Cargo.lock": "3461224508c37a29f0ef79ea172672060b553b72b0ccf19d8307791292e8dad9",
+      "Cargo.toml": "b98e0c170b770803e732df39f37e2c4e5c4ce43c5a46d8650a5f3956c8bccaf4",
+      "benchmarks/clbg/fannkuchredux/.gitignore": "03824949a66ab6db1429bd078d10d1bc2d75706aa1b756c547f9a7ff541c77cb",
+      "benchmarks/clbg/fannkuchredux/README.md": "50dd1f4c7293f50e86acf4daabf63a2964026aff055ceb15f242e77b145e841b",
+      "benchmarks/clbg/fannkuchredux/audit.py": "55d62a933359c4a0b6376d83789437dbcc7680a6090dd465a3c35f221961c9f8",
+      "benchmarks/clbg/fannkuchredux/comparisons/fannkuchredux-rust6-neon.rs": "38063a69a01c45177d377a194ff3f3cd02ed8c9716baa8cc8c39ef078cab4a64",
+      "benchmarks/clbg/fannkuchredux/complete_preparation.py": "1cea75b4cf362fff86da1972e56146caf1f30b3da7726038d23113fd887075f0",
+      "benchmarks/clbg/fannkuchredux/extra_regressions.py": "de3e41326fd63a6fc45b39458e7a315020ba75b0e814b9611555674d192d6d40",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-cached.mec": "f62d757ae78b562a0de35b7b52c2a6a43c8724b0e844a1e378c647cc6724a30c",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-coarse.mec": "78e374c6a533626d435a3a693ba0eb3d8bb9f9d563b79344f7e26669978273c0",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-initial.mec": "ca58bf822e438707cb8abf8a724f746770e72b87f1c9ec53c0523ea4b0cd8777",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux-paired.mec": "4141ed3c7f30f3e0162642b3a1e0ab934a1a8deb0789c070d0a8a5dfbb93d098",
+      "benchmarks/clbg/fannkuchredux/fannkuchredux.mec": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+      "benchmarks/clbg/fannkuchredux/fetch_sources.py": "3f59b3b4a097d2744f6c7bf9e8159912b8f8dd14997fc366030085e06d8939a0",
+      "benchmarks/clbg/fannkuchredux/input-pins.json": "307e52404c43b36148990f2e8af06628b11d98de04e07bee3265b2848490b0f5",
+      "benchmarks/clbg/fannkuchredux/inputs/output7.txt": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+      "benchmarks/clbg/fannkuchredux/manifest.json": "d4824201d72c15d0a1a72a70ef2b55a92f3222625d31ccf5d75c255e02dfeceb",
+      "benchmarks/clbg/fannkuchredux/plot.py": "fd1530682de7ec447fda86553573fc79caf5ecc132705af6b74b46d700b58abe",
+      "benchmarks/clbg/fannkuchredux/prepare_comparisons.py": "a36166a9f8d14436c9b5309c95f7c0ea46140ac7c689665aa395b6d8209ba2c4",
+      "benchmarks/clbg/fannkuchredux/revcomp_regression.py": "059d6e8e6449d9e6a91a3892bd1dc319573f43c5fd0eb5c1e8ce039b110f5c62",
+      "benchmarks/clbg/fannkuchredux/run.py": "3810870e2f3ea7c62e86870b3dd907e5aa38b7c6027fc838b0c3c22cdd68dbe0",
+      "benchmarks/clbg/fannkuchredux/toolchains.json": "7e3d61b62eaa56fe2c3f9615664361b54d2f5dcb1a178172ff1c0b49d2318f94",
+      "benchmarks/clbg/fannkuchredux/upstream/LICENSE.txt": "f0a9586b1c73f72bec3e9c743d4ccb9f3035bfa6b98921f79dd74259670a4dea",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-chapel-2.chpl": "ad1e10362a1c2528e4c050f580de22ad5d09b393dcc3256610f66f7785178966",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-1.c": "d109b20a1ef2dcc601d3fc3dca2b7d06f423b72d3a0fa650afb4cef5fa8e9a18",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-2.c": "24eb08c58f59c9cc93565f130276c5985e9243b528a55b0fca370ca37448e19f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-3.c": "4c96f8a019b9b1e2425123a243405046f8d86e030f256796574fdf6bfd0e8c07",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-4.c": "cfe834d9e71fb9e00ab8bf57fe564d3dd255cafb5c8db78c7b636c8dfc0d70f9",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-5.c": "1c716c1a16aeac98da6fb7ac6c80429d0d54f6573dc8d6efca11fee3b39d3b05",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-6.c": "fafc8ae4e36084bc299fc3e12bd8eda63fd792523e3e6513404c285ced19531a",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-8.c": "65c8d4b7b5697e1ee1ccff75aec8fb66ae97811fbd96b02a0ef46941c49dea97",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-1.go": "5e47620ed3cd6460457728cd43025a72d9293d022ece3b59feb891ff3ae71306",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-2.go": "239df20fdbdde276110a5d5f18344d2b999bc9246583b3e63fdbcd3086a8556a",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-3.go": "5b88f512ae9878fdbc3aaa1d6f9be11d026606059ab014b8d80d467775da4ac3",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-8.go": "e746d5097b2ecde2df42387b1da17a0d8c4214d5ffdc396dd2498b11ba19c3e4",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-1.cpp": "407789d3a4d7629b571390933e018b3c1fc1154bc4b2fae9c1100e3eaf054225",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-2.cpp": "be606397193e58f80559467cb1596addcf5e03a5ad9a44d36de987007092b042",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-3.cpp": "fccf786c37f0ad3939f77727cacc2ce629aed85b6e0963eeab5ae8cb4c12d06f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-4.cpp": "4bb4c6c883d42ba98dd457aec4be912891404e01f52223bb9de67fbe61ea8526",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-5.cpp": "7c850c537cc609712f2081df5453322f97537218faf9e77f37fb70c3531882b7",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-6.cpp": "761c156df5d3347978f00a9e6da9a657bf78e4befe87a6ef2c79deac200f006f",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-7.cpp": "2b0c86ad3a28cb847ddb3bdd124c76156546973d600c74b7ab3de4ab7c65cdda",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-1.java": "dcff27bde49720bdc698c669dca93ddf3bfacc8e3f349422aefe9c51049600cc",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-2.java": "f55e671f4aab2ac2881f9ab9ada9a67bb08c72de74fef273fd999d8e47237296",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-3.java": "03438b4110e6e72a29aee4cada71ff0e7ab807b8648a59f5b3c7dceb89a6ee49",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-graalvmaot-8.java": "546f1d8bdb8d19eb739bc18d23bb2f6d8d1c302ec596445f2e363ab190de198b",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-1.jl": "98dbee45fe7940783aec1dcc18579f6cda293963d77dc522e55720cd218e0a01",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-2.jl": "b7f7248fb1aac401c04d5a7823fbcd8578069646d68610e9a56ce59447295571",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-3.jl": "38c08bc365cb86c00b55568bbaa7be204f1b8f9d76a959bfb359e6f8ec2554cb",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-2.rs": "9238cf9dd91b245c4b07de2a6985785c7683e40fcd510f8b817076e7c4ba3d1c",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-4.rs": "367a0a0187b3ee6744f9a455a170a5b7f0307046a4dd245d5f8678e89ccf2e33",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-5.rs": "7a8ab49b03083e544e9394409693c4ef276670d76a9b7bef61e1d6f5677d5a2d",
+      "benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-6.rs": "b0fac82457e18fea7bd8b64dddb8a0d5266d4f5d84201a3b3970973c96349a38",
+      "benchmarks/clbg/fannkuchredux/verify.py": "80a22a52ac8557e466c6cdd0b943f7a05fc84ff7f77688413a16b92fddf6eeab",
+      "benchmarks/clbg/fannkuchredux/verify_constants.py": "e0b11e67408ce93fee2e0303c70f4ba4e88472304c1cedaaa10e2cc10a6a7a6e",
+      "benchmarks/clbg/fannkuchredux/verify_extra.py": "5287afb200c3097edef2c2c62e64fa33c24d75f7d8ffcfe43c0b4b7c4985b4b2",
+      "benchmarks/clbg/process.py": "c64b449018915b066d1a6fada7c92afacd9d90e24c7d4a0505fa0e71b787de80",
+      "hosts/gpu/Cargo.toml": "f32eb6407560d49e60e71c47ad1eba2de0228664b2ce412e347bcbd2bd1d6935",
+      "hosts/gpu/src/control/application.rs.in": "d31f4f89d1c33f76d1a87c22a81a542bf8f7cb7419763628380f86e453bb6fb3",
+      "hosts/gpu/src/control/compiler.rs": "264b4b3996f63d161b2a498f219daf01397193398db436c220d5d4a0c3c7b6d9",
+      "hosts/gpu/src/control/mod.rs": "e3e80c86c4f3f51bd3ec6a37291e7e259bf81eeff7fb5b7582e375240c6e01c9",
+      "hosts/gpu/src/control/runtime.rs": "610aa781bdfbbe3b5c9ddb421f2ec878b78d8f59d3a8825ecb3bbe6fc769c554",
+      "hosts/gpu/src/lib.rs": "de880a06a1ee6d2ba08d08dacacae566e2d00ebb024e09b7e2090164a84e13c1",
+      "hosts/gpu/src/native_build.rs": "57aed9e3b31512d01e511384f660bdfcc824e77265306eb36ae525f9ebeeb9ac",
+      "scripts/unsafe-boundaries.allowlist": "1ac4d2b1e69625c48a09a91929d314a3923e22b3355ce18f3a2195de59d8481a",
+      "src/engine/src/native_sequence/control.rs": "21e5571a0cabd3082037d9c0ab145816ebe514ba9216f01567018d24cc12d428",
+      "src/engine/src/native_sequence/grid.rs": "937f5ae4fac23068149c03bf20f263475043b9f2f5b6ed3f5e0dee0f79a629ba",
+      "src/engine/src/native_sequence/mod.rs": "0ffe456b3a105f314321a3476805fbfe6c01de7d706a11548c60a5ae621709d9",
+      "src/stdlib/src/lib.rs": "6982882a6334509093eed3aef07430c88d28ab9aa4254243a38736d40e62476b",
+      "src/stdlib/src/native_sequence.rs": "4c0bebd57c1e2c219d15e729dc76f36f69f7944ccde796499b0c3481126e6380"
+    }
+  },
+  "protocol": {
+    "n": 12,
+    "samples": 3,
+    "requested_threads": 8,
+    "sample_order": [
+      [
+        "fannkuchredux-graalvmaot-8",
+        "fannkuchredux-julia-3",
+        "fannkuchredux-gcc-5-gcc",
+        "fannkuchredux-graalvmaot-1",
+        "fannkuchredux-gpp-5-llvm",
+        "fannkuchredux-gpp-1-gcc",
+        "fannkuchredux-rust-4-panic-abort",
+        "fannkuchredux-rust-2-panic-abort",
+        "mech-fannkuch-scalar",
+        "fannkuchredux-graalvmaot-3",
+        "fannkuchredux-graalvmaot-2",
+        "fannkuchredux-chapel-2",
+        "fannkuchredux-gcc-1-llvm",
+        "fannkuchredux-go-2",
+        "mech-fannkuch-cached",
+        "fannkuchredux-julia-1",
+        "fannkuchredux-rust-2",
+        "fannkuchredux-gcc-8-llvm",
+        "fannkuchredux-julia-2",
+        "fannkuchredux-gcc-8-gcc",
+        "fannkuchredux-gcc-3-llvm",
+        "fannkuchredux-rust-5-panic-abort",
+        "mech-fannkuch-coarse",
+        "fannkuchredux-go-8",
+        "fannkuchredux-gpp-3-llvm",
+        "mech-fannkuch-simd",
+        "fannkuchredux-gcc-3-gcc",
+        "fannkuchredux-rust-4",
+        "fannkuchredux-gcc-2-llvm",
+        "fannkuchredux-gcc-5-llvm",
+        "fannkuchredux-gcc-1-gcc",
+        "mech-fannkuch-paired",
+        "fannkuchredux-go-3",
+        "fannkuchredux-gpp-1-llvm",
+        "fannkuchredux-gpp-5-gcc",
+        "fannkuchredux-go-1",
+        "fannkuchredux-rust-5",
+        "fannkuchredux-gpp-3-gcc",
+        "fannkuchredux-gcc-2-gcc"
+      ],
+      [
+        "fannkuchredux-gpp-1-llvm",
+        "fannkuchredux-chapel-2",
+        "fannkuchredux-gcc-2-llvm",
+        "fannkuchredux-gcc-8-gcc",
+        "fannkuchredux-gcc-5-llvm",
+        "fannkuchredux-gpp-3-gcc",
+        "fannkuchredux-julia-3",
+        "fannkuchredux-go-2",
+        "fannkuchredux-rust-4",
+        "fannkuchredux-rust-5-panic-abort",
+        "fannkuchredux-rust-2",
+        "fannkuchredux-go-3",
+        "fannkuchredux-gcc-8-llvm",
+        "fannkuchredux-graalvmaot-3",
+        "mech-fannkuch-coarse",
+        "mech-fannkuch-simd",
+        "fannkuchredux-graalvmaot-1",
+        "fannkuchredux-rust-5",
+        "fannkuchredux-gcc-1-llvm",
+        "fannkuchredux-gcc-3-llvm",
+        "fannkuchredux-rust-2-panic-abort",
+        "fannkuchredux-gpp-1-gcc",
+        "fannkuchredux-gpp-5-gcc",
+        "fannkuchredux-gcc-2-gcc",
+        "fannkuchredux-gpp-3-llvm",
+        "fannkuchredux-gcc-1-gcc",
+        "fannkuchredux-graalvmaot-2",
+        "fannkuchredux-gcc-3-gcc",
+        "fannkuchredux-julia-2",
+        "fannkuchredux-julia-1",
+        "mech-fannkuch-paired",
+        "fannkuchredux-go-1",
+        "fannkuchredux-gpp-5-llvm",
+        "fannkuchredux-go-8",
+        "fannkuchredux-graalvmaot-8",
+        "mech-fannkuch-scalar",
+        "mech-fannkuch-cached",
+        "fannkuchredux-rust-4-panic-abort",
+        "fannkuchredux-gcc-5-gcc"
+      ],
+      [
+        "fannkuchredux-julia-1",
+        "fannkuchredux-gcc-3-llvm",
+        "fannkuchredux-gpp-5-llvm",
+        "fannkuchredux-chapel-2",
+        "mech-fannkuch-coarse",
+        "fannkuchredux-gpp-1-gcc",
+        "fannkuchredux-rust-2",
+        "fannkuchredux-gcc-8-gcc",
+        "fannkuchredux-graalvmaot-8",
+        "mech-fannkuch-cached",
+        "fannkuchredux-gpp-3-llvm",
+        "fannkuchredux-go-2",
+        "fannkuchredux-gcc-1-llvm",
+        "fannkuchredux-rust-5-panic-abort",
+        "mech-fannkuch-paired",
+        "fannkuchredux-go-3",
+        "fannkuchredux-gpp-5-gcc",
+        "fannkuchredux-gcc-5-llvm",
+        "mech-fannkuch-simd",
+        "fannkuchredux-gcc-2-llvm",
+        "fannkuchredux-graalvmaot-1",
+        "fannkuchredux-graalvmaot-3",
+        "fannkuchredux-julia-2",
+        "fannkuchredux-rust-5",
+        "fannkuchredux-gcc-3-gcc",
+        "fannkuchredux-rust-4",
+        "fannkuchredux-rust-4-panic-abort",
+        "mech-fannkuch-scalar",
+        "fannkuchredux-julia-3",
+        "fannkuchredux-gpp-1-llvm",
+        "fannkuchredux-gcc-5-gcc",
+        "fannkuchredux-gcc-1-gcc",
+        "fannkuchredux-gcc-8-llvm",
+        "fannkuchredux-go-1",
+        "fannkuchredux-rust-2-panic-abort",
+        "fannkuchredux-graalvmaot-2",
+        "fannkuchredux-go-8",
+        "fannkuchredux-gcc-2-gcc",
+        "fannkuchredux-gpp-3-gcc"
+      ]
+    ],
+    "environment": {
+      "RAYON_NUM_THREADS": "8",
+      "CHPL_RT_NUM_THREADS_PER_LOCALE": "8",
+      "GOMAXPROCS": "8",
+      "JULIA_NUM_THREADS": "8",
+      "OMP_NUM_THREADS": "8"
+    },
+    "selection_skip_regex": null,
+    "timing_wait": "Blocking waitpid with POSIX deadline; no timeout poll quantization.",
+    "timed_region": "Sequential fresh process to exit, complete output to regular file. Runtime/CLI and JIT startup included; building, tests and output comparison excluded.",
+    "required_work": "All 12! permutations in prescribed order, dependent prefix flips, signed checksum and maximum; no precomputed input answers.",
+    "source_scope": "Complete Mech permutation generation, factoradic initialization, flipping and checksum; generic compiler/runtime/library support excluded."
+  },
+  "programs": [
+    {
+      "id": "fannkuchredux-rust-4",
+      "language": "rust",
+      "variant": 4,
+      "path": "upstream/fannkuchredux-rust-4.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-rust-4.html",
+      "sha256": "367a0a0187b3ee6744f9a455a170a5b7f0307046a4dd245d5f8678e89ccf2e33",
+      "upstream_starred": false,
+      "published_secs": 6.94,
+      "published_gz": 1026,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:40:47 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs fannkuchredux.rs -o fannkuchredux.rust-4.rust_run\n\n11.71 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.rust-4.rust_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "executable_sha256": "2b67e675d6567db739a15b61a881656ee64251378903344472a6a2e203f2569a",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-rust-4.rs"
+        ],
+        "sha256": "367a0a0187b3ee6744f9a455a170a5b7f0307046a4dd245d5f8678e89ccf2e33",
+        "physical_lines": 145,
+        "nonblank_noncomment_lines": 95,
+        "normalized_bytes": 2388,
+        "gzip1_bytes": 1010
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/librayon-df4ef925755eec75.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-4.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-4"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-4"
+      ],
+      "worker_policy": "source Rayon/fixed thread policy",
+      "samples_seconds": [
+        3.948705667,
+        3.9092845,
+        3.868235584
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 3.9092845,
+      "min_seconds": 3.868235584,
+      "max_seconds": 3.948705667
+    },
+    {
+      "id": "fannkuchredux-rust-4-panic-abort",
+      "language": "rust",
+      "variant": 4,
+      "path": "upstream/fannkuchredux-rust-4.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-rust-4.html",
+      "sha256": "367a0a0187b3ee6744f9a455a170a5b7f0307046a4dd245d5f8678e89ccf2e33",
+      "upstream_starred": false,
+      "published_secs": 6.94,
+      "published_gz": 1026,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:40:47 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs fannkuchredux.rs -o fannkuchredux.rust-4.rust_run\n\n11.71 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.rust-4.rust_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "panic_abort": true,
+      "executable_sha256": "13e862b11f31a2e2771a1e6e7942f6b810d1204a789d4bcdab23ae8dd809cef1",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-rust-4.rs"
+        ],
+        "sha256": "367a0a0187b3ee6744f9a455a170a5b7f0307046a4dd245d5f8678e89ccf2e33",
+        "physical_lines": 145,
+        "nonblank_noncomment_lines": 95,
+        "normalized_bytes": 2388,
+        "gzip1_bytes": 1010
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/librayon-df4ef925755eec75.rlib",
+        "-Cpanic=abort",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-4.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-4-panic-abort"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-4-panic-abort"
+      ],
+      "worker_policy": "source Rayon/fixed thread policy",
+      "samples_seconds": [
+        3.92743875,
+        3.933644291,
+        3.9029475
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 3.92743875,
+      "min_seconds": 3.9029475,
+      "max_seconds": 3.933644291
+    },
+    {
+      "id": "fannkuchredux-gcc-5-gcc",
+      "language": "c",
+      "variant": 5,
+      "path": "upstream/fannkuchredux-gcc-5.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-5.html",
+      "sha256": "1c716c1a16aeac98da6fb7ac6c80429d0d54f6573dc8d6efca11fee3b39d3b05",
+      "upstream_starred": false,
+      "published_secs": 7.28,
+      "published_gz": 917,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 00:59:11 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp fannkuchredux.gcc-5.c -o fannkuchredux.gcc-5.gcc_run \nrm fannkuchredux.gcc-5.c\n\n2.17s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc-5.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "gcc",
+      "executable_sha256": "9292a670883f76a790afcfebe13c0bff307e7598bf9e2ef9c3b74e957728b907",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-5.c"
+        ],
+        "sha256": "1c716c1a16aeac98da6fb7ac6c80429d0d54f6573dc8d6efca11fee3b39d3b05",
+        "physical_lines": 173,
+        "nonblank_noncomment_lines": 86,
+        "normalized_bytes": 2933,
+        "gzip1_bytes": 900
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-5.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-5-gcc",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-fopenmp"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-5-gcc"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        4.920372166,
+        5.356162583,
+        5.051548292
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 5.051548292,
+      "min_seconds": 4.920372166,
+      "max_seconds": 5.356162583
+    },
+    {
+      "id": "fannkuchredux-gcc-5-llvm",
+      "language": "c",
+      "variant": 5,
+      "path": "upstream/fannkuchredux-gcc-5.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-5.html",
+      "sha256": "1c716c1a16aeac98da6fb7ac6c80429d0d54f6573dc8d6efca11fee3b39d3b05",
+      "upstream_starred": false,
+      "published_secs": 7.28,
+      "published_gz": 917,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 00:59:11 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -fopenmp fannkuchredux.gcc-5.c -o fannkuchredux.gcc-5.gcc_run \nrm fannkuchredux.gcc-5.c\n\n2.17s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc-5.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "llvm",
+      "executable_sha256": "c19dd8bba3b6439c04de789464ced4dd1bf4118964b57429b97454d403ff4869",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-5.c"
+        ],
+        "sha256": "1c716c1a16aeac98da6fb7ac6c80429d0d54f6573dc8d6efca11fee3b39d3b05",
+        "physical_lines": 173,
+        "nonblank_noncomment_lines": 86,
+        "normalized_bytes": 2933,
+        "gzip1_bytes": 900
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-5.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-5-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xpreprocessor",
+        "-fopenmp",
+        "-I/opt/homebrew/opt/libomp/include",
+        "-L/opt/homebrew/opt/libomp/lib",
+        "-lomp"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-5-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        5.344271,
+        5.362497083,
+        5.156498042
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 5.344271,
+      "min_seconds": 5.156498042,
+      "max_seconds": 5.362497083
+    },
+    {
+      "id": "fannkuchredux-rust-5",
+      "language": "rust",
+      "variant": 5,
+      "path": "upstream/fannkuchredux-rust-5.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-rust-5.html",
+      "sha256": "7a8ab49b03083e544e9394409693c4ef276670d76a9b7bef61e1d6f5677d5a2d",
+      "upstream_starred": false,
+      "published_secs": 7.41,
+      "published_gz": 1023,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:38:55 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs fannkuchredux.rs -o fannkuchredux.rust-5.rust_run\n\n11.79 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.rust-5.rust_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "executable_sha256": "f7d3f89ed697586682fe282e9498ee4919a0940819697280d2755157177d1499",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-rust-5.rs"
+        ],
+        "sha256": "7a8ab49b03083e544e9394409693c4ef276670d76a9b7bef61e1d6f5677d5a2d",
+        "physical_lines": 176,
+        "nonblank_noncomment_lines": 101,
+        "normalized_bytes": 2690,
+        "gzip1_bytes": 1004
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/librayon-df4ef925755eec75.rlib",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-5.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-5"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-5"
+      ],
+      "worker_policy": "source Rayon/fixed thread policy",
+      "samples_seconds": [
+        4.967222709,
+        4.915008917,
+        5.012944458
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 4.967222709,
+      "min_seconds": 4.915008917,
+      "max_seconds": 5.012944458
+    },
+    {
+      "id": "fannkuchredux-rust-5-panic-abort",
+      "language": "rust",
+      "variant": 5,
+      "path": "upstream/fannkuchredux-rust-5.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-rust-5.html",
+      "sha256": "7a8ab49b03083e544e9394409693c4ef276670d76a9b7bef61e1d6f5677d5a2d",
+      "upstream_starred": false,
+      "published_secs": 7.41,
+      "published_gz": 1023,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:38:55 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs fannkuchredux.rs -o fannkuchredux.rust-5.rust_run\n\n11.79 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.rust-5.rust_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "panic_abort": true,
+      "executable_sha256": "7d6d68d16acadc785027a48335a1324a1c3f66a2f129faa331e2187d7857d817",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-rust-5.rs"
+        ],
+        "sha256": "7a8ab49b03083e544e9394409693c4ef276670d76a9b7bef61e1d6f5677d5a2d",
+        "physical_lines": 176,
+        "nonblank_noncomment_lines": 101,
+        "normalized_bytes": 2690,
+        "gzip1_bytes": 1004
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "--extern",
+        "rayon=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps/librayon-df4ef925755eec75.rlib",
+        "-Cpanic=abort",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-5.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-5-panic-abort"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-5-panic-abort"
+      ],
+      "worker_policy": "source Rayon/fixed thread policy",
+      "samples_seconds": [
+        5.030193333,
+        4.98489,
+        4.923000583
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 4.98489,
+      "min_seconds": 4.923000583,
+      "max_seconds": 5.030193333
+    },
+    {
+      "id": "fannkuchredux-gpp-5-gcc",
+      "language": "cpp",
+      "variant": 5,
+      "path": "upstream/fannkuchredux-gpp-5.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gpp-5.html",
+      "sha256": "7c850c537cc609712f2081df5453322f97537218faf9e77f37fb70c3531882b7",
+      "upstream_starred": false,
+      "published_secs": 7.86,
+      "published_gz": 987,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:27:31 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++11 -fopenmp fannkuchredux.gpp-5.c++ -o fannkuchredux.gpp-5.c++.o &&  \\\n        /usr/bin/g++ fannkuchredux.gpp-5.c++.o -o fannkuchredux.gpp-5.gpp_run -fopenmp \nrm fannkuchredux.gpp-5.c++\n\n3.67s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gpp-5.gpp_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "gcc",
+      "executable_sha256": "e6e8ff51fbd62b17168748bf5aae84c2808ef48b7c3d4db38173e04688148966",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gpp-5.cpp"
+        ],
+        "sha256": "7c850c537cc609712f2081df5453322f97537218faf9e77f37fb70c3531882b7",
+        "physical_lines": 198,
+        "nonblank_noncomment_lines": 125,
+        "normalized_bytes": 2240,
+        "gzip1_bytes": 974
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-5.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-5-gcc",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h",
+        "-fopenmp"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-5-gcc"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        7.296650875,
+        7.101142917,
+        7.10987
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 7.10987,
+      "min_seconds": 7.101142917,
+      "max_seconds": 7.296650875
+    },
+    {
+      "id": "fannkuchredux-gpp-5-llvm",
+      "language": "cpp",
+      "variant": 5,
+      "path": "upstream/fannkuchredux-gpp-5.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gpp-5.html",
+      "sha256": "7c850c537cc609712f2081df5453322f97537218faf9e77f37fb70c3531882b7",
+      "upstream_starred": false,
+      "published_secs": 7.86,
+      "published_gz": 987,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:27:31 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++11 -fopenmp fannkuchredux.gpp-5.c++ -o fannkuchredux.gpp-5.c++.o &&  \\\n        /usr/bin/g++ fannkuchredux.gpp-5.c++.o -o fannkuchredux.gpp-5.gpp_run -fopenmp \nrm fannkuchredux.gpp-5.c++\n\n3.67s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gpp-5.gpp_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "llvm",
+      "executable_sha256": "2cf1cff2ed13983c2903cdb0a3ddbf06b0b9e116fa81365e8917f259ad34dad1",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gpp-5.cpp"
+        ],
+        "sha256": "7c850c537cc609712f2081df5453322f97537218faf9e77f37fb70c3531882b7",
+        "physical_lines": 198,
+        "nonblank_noncomment_lines": 125,
+        "normalized_bytes": 2240,
+        "gzip1_bytes": 974
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-5.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-5-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xpreprocessor",
+        "-fopenmp",
+        "-I/opt/homebrew/opt/libomp/include",
+        "-L/opt/homebrew/opt/libomp/lib",
+        "-lomp",
+        "-lc++"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-5-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        6.817016833,
+        6.759973208,
+        7.021619917
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 6.817016833,
+      "min_seconds": 6.759973208,
+      "max_seconds": 7.021619917
+    },
+    {
+      "id": "fannkuchredux-go-3",
+      "language": "go",
+      "variant": 3,
+      "path": "upstream/fannkuchredux-go-3.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-go-3.html",
+      "sha256": "5b88f512ae9878fdbc3aaa1d6f9be11d026606059ab014b8d80d467775da4ac3",
+      "upstream_starred": false,
+      "published_secs": 8.36,
+      "published_gz": 975,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Fri, 10 Jan 2025 21:48:24 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o fannkuchredux.go-3.go_run fannkuchredux.go-3.go\n\n5.31s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.go-3.go_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "executable_sha256": "c59887971c9178f73bd3801b7d81f8a58bbf149f60e8bc2fca8df662fb732158",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-go-3.go"
+        ],
+        "sha256": "5b88f512ae9878fdbc3aaa1d6f9be11d026606059ab014b8d80d467775da4ac3",
+        "physical_lines": 170,
+        "nonblank_noncomment_lines": 128,
+        "normalized_bytes": 2000,
+        "gzip1_bytes": 959
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-go-3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-3.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-go-3"
+      ],
+      "worker_policy": "source goroutines/GOMAXPROCS",
+      "samples_seconds": [
+        6.938859875,
+        6.918711417,
+        6.952389042
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 6.938859875,
+      "min_seconds": 6.918711417,
+      "max_seconds": 6.952389042
+    },
+    {
+      "id": "fannkuchredux-chapel-2",
+      "language": "chapel",
+      "variant": 2,
+      "path": "upstream/fannkuchredux-chapel-2.chpl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-chapel-2.html",
+      "sha256": "ad1e10362a1c2528e4c050f580de22ad5d09b393dcc3256610f66f7785178966",
+      "upstream_starred": false,
+      "published_secs": 8.46,
+      "published_gz": 737,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nchpl version  2.3.0\nbuilt with LLVM version 19.1.1\nCopyright 2020-2024\nHewlett Packard\nEnterprise Development LP\nCopyright 2004-2019 Cray Inc.\n\n\n Sun, 23 Feb 2025 17:48:41 GMT\n\nMAKE:\nmv fannkuchredux.chapel-2.chapel fannkuchredux.chapel-2.chpl\n/opt/src/chapel-2.3.0/bin/linux64-x86_64/chpl --fast fannkuchredux.chapel-2.chpl -o fannkuchredux.chapel-2.chapel_run\nrm fannkuchredux.chapel-2.chpl\n\n20.85 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.chapel-2.chapel_run --n=12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "executable_sha256": "946b10e43a4701edc7d40cdbfa40ec7d2b7d43787551d658c58296605446daf6",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-chapel-2.chpl"
+        ],
+        "sha256": "ad1e10362a1c2528e4c050f580de22ad5d09b393dcc3256610f66f7785178966",
+        "physical_lines": 120,
+        "nonblank_noncomment_lines": 91,
+        "normalized_bytes": 1528,
+        "gzip1_bytes": 726
+      },
+      "compile_command": [
+        "chpl",
+        "--fast",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-chapel-2.chpl",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-chapel-2",
+        "--ccflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "--ldflags=-isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-chapel-2",
+        "--n={n}"
+      ],
+      "worker_policy": "Chapel task runtime (runtime may cap workers; stderr warning recorded separately)",
+      "samples_seconds": [
+        7.388708958,
+        7.195213541,
+        7.232484209
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 7.232484209,
+      "min_seconds": 7.195213541,
+      "max_seconds": 7.388708958
+    },
+    {
+      "id": "fannkuchredux-julia-2",
+      "language": "julia",
+      "variant": 2,
+      "path": "upstream/fannkuchredux-julia-2.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-julia-2.html",
+      "sha256": "b7f7248fb1aac401c04d5a7823fbcd8578069646d68610e9a56ce59447295571",
+      "upstream_starred": true,
+      "published_secs": 8.6,
+      "published_gz": 1077,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 06:53:51 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.11 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- fannkuchredux.julia-2.julia 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-julia-2.jl"
+        ],
+        "sha256": "b7f7248fb1aac401c04d5a7823fbcd8578069646d68610e9a56ce59447295571",
+        "physical_lines": 175,
+        "nonblank_noncomment_lines": 129,
+        "normalized_bytes": 2536,
+        "gzip1_bytes": 1057
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--threads=8,0",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-2.jl"
+      ],
+      "worker_policy": "Julia source Threads policy",
+      "samples_seconds": [
+        4.711655375,
+        4.802295667,
+        4.925222875
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 4.802295667,
+      "min_seconds": 4.711655375,
+      "max_seconds": 4.925222875
+    },
+    {
+      "id": "fannkuchredux-rust-2",
+      "language": "rust",
+      "variant": 2,
+      "path": "upstream/fannkuchredux-rust-2.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-rust-2.html",
+      "sha256": "9238cf9dd91b245c4b07de2a6985785c7683e40fcd510f8b817076e7c4ba3d1c",
+      "upstream_starred": false,
+      "published_secs": 9.19,
+      "published_gz": 1198,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:42:33 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs fannkuchredux.rs -o fannkuchredux.rust-2.rust_run\n\n11.14 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.rust-2.rust_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "executable_sha256": "2eaa9c97544adc5d72ee9ef1df7fbea9eedea595568fd98f9445a3a553739da1",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-rust-2.rs"
+        ],
+        "sha256": "9238cf9dd91b245c4b07de2a6985785c7683e40fcd510f8b817076e7c4ba3d1c",
+        "physical_lines": 156,
+        "nonblank_noncomment_lines": 122,
+        "normalized_bytes": 2658,
+        "gzip1_bytes": 1179
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-2.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-2"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-2"
+      ],
+      "worker_policy": "source Rayon/fixed thread policy",
+      "samples_seconds": [
+        10.341007042,
+        10.110907958,
+        10.186379292
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 10.186379292,
+      "min_seconds": 10.110907958,
+      "max_seconds": 10.341007042
+    },
+    {
+      "id": "fannkuchredux-rust-2-panic-abort",
+      "language": "rust",
+      "variant": 2,
+      "path": "upstream/fannkuchredux-rust-2.rs",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-rust-2.html",
+      "sha256": "9238cf9dd91b245c4b07de2a6985785c7683e40fcd510f8b817076e7c4ba3d1c",
+      "upstream_starred": false,
+      "published_secs": 9.19,
+      "published_gz": 1198,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n1.84.1\n(e71f9a9a9\n2025-01-27)\nLLVM version: 19.1.5\n\n\n Wed, 19 Feb 2025 03:42:33 GMT\n\nMAKE:\n/opt/src/rust-1.84.1/bin/rustc -C opt-level=3 -C target-cpu=ivybridge -C codegen-units=1 -L /opt/src/rust-libs fannkuchredux.rs -o fannkuchredux.rust-2.rust_run\n\n11.14 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.rust-2.rust_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "panic_abort": true,
+      "executable_sha256": "6f79366d35017a02ee686a6e69848f5a3819148a05435797a9c517a702e19231",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-rust-2.rs"
+        ],
+        "sha256": "9238cf9dd91b245c4b07de2a6985785c7683e40fcd510f8b817076e7c4ba3d1c",
+        "physical_lines": 156,
+        "nonblank_noncomment_lines": 122,
+        "normalized_bytes": 2658,
+        "gzip1_bytes": 1179
+      },
+      "compile_command": [
+        "rustc",
+        "--edition=2021",
+        "-O",
+        "-Ctarget-cpu=native",
+        "-Ccodegen-units=1",
+        "-L",
+        "dependency=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/.build/rust-deps/release/deps",
+        "-Cpanic=abort",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-rust-2.rs",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-2-panic-abort"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-rust-2-panic-abort"
+      ],
+      "worker_policy": "source Rayon/fixed thread policy",
+      "samples_seconds": [
+        10.175651208,
+        10.278455458,
+        10.096238625
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 10.175651208,
+      "min_seconds": 10.096238625,
+      "max_seconds": 10.278455458
+    },
+    {
+      "id": "fannkuchredux-julia-3",
+      "language": "julia",
+      "variant": 3,
+      "path": "upstream/fannkuchredux-julia-3.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-julia-3.html",
+      "sha256": "38c08bc365cb86c00b55568bbaa7be204f1b8f9d76a959bfb359e6f8ec2554cb",
+      "upstream_starred": true,
+      "published_secs": 9.44,
+      "published_gz": 896,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 07:10:07 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.14 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- fannkuchredux.julia-3.julia 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-julia-3.jl"
+        ],
+        "sha256": "38c08bc365cb86c00b55568bbaa7be204f1b8f9d76a959bfb359e6f8ec2554cb",
+        "physical_lines": 142,
+        "nonblank_noncomment_lines": 90,
+        "normalized_bytes": 2051,
+        "gzip1_bytes": 881
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--threads=8,0",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-3.jl"
+      ],
+      "worker_policy": "Julia source Threads policy",
+      "samples_seconds": [
+        5.586156709,
+        5.553051958,
+        5.5077365
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 5.553051958,
+      "min_seconds": 5.5077365,
+      "max_seconds": 5.586156709
+    },
+    {
+      "id": "fannkuchredux-gcc-2-gcc",
+      "language": "c",
+      "variant": 2,
+      "path": "upstream/fannkuchredux-gcc-2.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-2.html",
+      "sha256": "24eb08c58f59c9cc93565f130276c5985e9243b528a55b0fca370ca37448e19f",
+      "upstream_starred": true,
+      "published_secs": 10.18,
+      "published_gz": 1563,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 01:24:45 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -pthread fannkuchredux.gcc-2.c -o fannkuchredux.gcc-2.gcc_run \nrm fannkuchredux.gcc-2.c\n\n2.51s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc-2.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "gcc",
+      "executable_sha256": "6a8c30c6a1b980fb194f74e4a87d38f08d8751562a1e8635abbac68198ece601",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-2.c"
+        ],
+        "sha256": "24eb08c58f59c9cc93565f130276c5985e9243b528a55b0fca370ca37448e19f",
+        "physical_lines": 173,
+        "nonblank_noncomment_lines": 150,
+        "normalized_bytes": 3667,
+        "gzip1_bytes": 1544
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-2.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-2-gcc",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-2-gcc"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        10.882680167,
+        11.108782208,
+        10.873946083
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 10.882680167,
+      "min_seconds": 10.873946083,
+      "max_seconds": 11.108782208
+    },
+    {
+      "id": "fannkuchredux-gcc-2-llvm",
+      "language": "c",
+      "variant": 2,
+      "path": "upstream/fannkuchredux-gcc-2.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-2.html",
+      "sha256": "24eb08c58f59c9cc93565f130276c5985e9243b528a55b0fca370ca37448e19f",
+      "upstream_starred": true,
+      "published_secs": 10.18,
+      "published_gz": 1563,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 01:24:45 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge -pthread fannkuchredux.gcc-2.c -o fannkuchredux.gcc-2.gcc_run \nrm fannkuchredux.gcc-2.c\n\n2.51s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc-2.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "llvm",
+      "executable_sha256": "e079b201a1283b562ed60ad0a2026aab2dd9992e2b848ccb968781c89dd73f54",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-2.c"
+        ],
+        "sha256": "24eb08c58f59c9cc93565f130276c5985e9243b528a55b0fca370ca37448e19f",
+        "physical_lines": 173,
+        "nonblank_noncomment_lines": 150,
+        "normalized_bytes": 3667,
+        "gzip1_bytes": 1544
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-2.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-2-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-2-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        10.35978225,
+        10.462233375,
+        10.456142084
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 10.456142084,
+      "min_seconds": 10.35978225,
+      "max_seconds": 10.462233375
+    },
+    {
+      "id": "fannkuchredux-gpp-1-gcc",
+      "language": "cpp",
+      "variant": 1,
+      "path": "upstream/fannkuchredux-gpp-1.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gpp-1.html",
+      "sha256": "407789d3a4d7629b571390933e018b3c1fc1154bc4b2fae9c1100e3eaf054225",
+      "upstream_starred": false,
+      "published_secs": 10.53,
+      "published_gz": 1065,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:40:13 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++11 -pthread fannkuchredux.c++ -o fannkuchredux.c++.o &&  \\\n        /usr/bin/g++ fannkuchredux.c++.o -o fannkuchredux.gpp_run -lpthread \nrm fannkuchredux.c++\n\n3.88s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gpp_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "gcc",
+      "executable_sha256": "8124a841aa83115a3ae89e9b795f678dd473804575bb6d31742abfea84a9ee0f",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gpp-1.cpp"
+        ],
+        "sha256": "407789d3a4d7629b571390933e018b3c1fc1154bc4b2fae9c1100e3eaf054225",
+        "physical_lines": 137,
+        "nonblank_noncomment_lines": 121,
+        "normalized_bytes": 2151,
+        "gzip1_bytes": 1052
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-1.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-1-gcc",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-1-gcc"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        5.712685042,
+        5.672397583,
+        5.857040125
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 5.712685042,
+      "min_seconds": 5.672397583,
+      "max_seconds": 5.857040125
+    },
+    {
+      "id": "fannkuchredux-gpp-1-llvm",
+      "language": "cpp",
+      "variant": 1,
+      "path": "upstream/fannkuchredux-gpp-1.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gpp-1.html",
+      "sha256": "407789d3a4d7629b571390933e018b3c1fc1154bc4b2fae9c1100e3eaf054225",
+      "upstream_starred": false,
+      "published_secs": 10.53,
+      "published_gz": 1065,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:40:13 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge  -std=c++11 -pthread fannkuchredux.c++ -o fannkuchredux.c++.o &&  \\\n        /usr/bin/g++ fannkuchredux.c++.o -o fannkuchredux.gpp_run -lpthread \nrm fannkuchredux.c++\n\n3.88s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gpp_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "llvm",
+      "executable_sha256": "7a5f7ad9dbb90c8a1c7a51f9fa5e668d6d3e2adb1087f4db615ce56bb9983bd3",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gpp-1.cpp"
+        ],
+        "sha256": "407789d3a4d7629b571390933e018b3c1fc1154bc4b2fae9c1100e3eaf054225",
+        "physical_lines": 137,
+        "nonblank_noncomment_lines": 121,
+        "normalized_bytes": 2151,
+        "gzip1_bytes": 1052
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-1.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-1-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-lc++"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-1-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        5.77751425,
+        5.753623792,
+        5.900974791
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 5.77751425,
+      "min_seconds": 5.753623792,
+      "max_seconds": 5.900974791
+    },
+    {
+      "id": "fannkuchredux-go-1",
+      "language": "go",
+      "variant": 1,
+      "path": "upstream/fannkuchredux-go-1.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-go-1.html",
+      "sha256": "5e47620ed3cd6460457728cd43025a72d9293d022ece3b59feb891ff3ae71306",
+      "upstream_starred": false,
+      "published_secs": 12.27,
+      "published_gz": 906,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Fri, 10 Jan 2025 22:03:14 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o fannkuchredux.go_run fannkuchredux.go\n\n5.41s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.go_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "executable_sha256": "f7f68e154fb3552cf3e0342e1848894a1764e97b52dab3b512c13bc9b10524b4",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-go-1.go"
+        ],
+        "sha256": "5e47620ed3cd6460457728cd43025a72d9293d022ece3b59feb891ff3ae71306",
+        "physical_lines": 159,
+        "nonblank_noncomment_lines": 125,
+        "normalized_bytes": 1917,
+        "gzip1_bytes": 895
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-go-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-1.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-go-1"
+      ],
+      "worker_policy": "source goroutines/GOMAXPROCS",
+      "samples_seconds": [
+        6.982895875,
+        6.9225485,
+        7.117605375
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 6.982895875,
+      "min_seconds": 6.9225485,
+      "max_seconds": 7.117605375
+    },
+    {
+      "id": "fannkuchredux-go-2",
+      "language": "go",
+      "variant": 2,
+      "path": "upstream/fannkuchredux-go-2.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-go-2.html",
+      "sha256": "239df20fdbdde276110a5d5f18344d2b999bc9246583b3e63fdbcd3086a8556a",
+      "upstream_starred": false,
+      "published_secs": 12.36,
+      "published_gz": 903,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Fri, 10 Jan 2025 21:28:27 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o fannkuchredux.go-2.go_run fannkuchredux.go-2.go\n\n5.43s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.go-2.go_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "executable_sha256": "a0771b9c7165b86fbdf154b619bc61b5efb39f4851e2d9441a254825ff502ecb",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-go-2.go"
+        ],
+        "sha256": "239df20fdbdde276110a5d5f18344d2b999bc9246583b3e63fdbcd3086a8556a",
+        "physical_lines": 162,
+        "nonblank_noncomment_lines": 127,
+        "normalized_bytes": 1923,
+        "gzip1_bytes": 892
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-go-2",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-2.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-go-2"
+      ],
+      "worker_policy": "source goroutines/GOMAXPROCS",
+      "samples_seconds": [
+        4.443581417,
+        4.687033334,
+        4.481758875
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 4.481758875,
+      "min_seconds": 4.443581417,
+      "max_seconds": 4.687033334
+    },
+    {
+      "id": "fannkuchredux-gcc-3-gcc",
+      "language": "c",
+      "variant": 3,
+      "path": "upstream/fannkuchredux-gcc-3.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-3.html",
+      "sha256": "4c96f8a019b9b1e2425123a243405046f8d86e030f256796574fdf6bfd0e8c07",
+      "upstream_starred": false,
+      "published_secs": 36.84,
+      "published_gz": 574,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 01:00:52 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge  fannkuchredux.gcc-3.c -o fannkuchredux.gcc-3.gcc_run \nrm fannkuchredux.gcc-3.c\n\n2.19s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc-3.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "gcc",
+      "executable_sha256": "722954f248e22f854a802e104a9a3da344b4ab00928535cff1d6d7152c1b70d7",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-3.c"
+        ],
+        "sha256": "4c96f8a019b9b1e2425123a243405046f8d86e030f256796574fdf6bfd0e8c07",
+        "physical_lines": 94,
+        "nonblank_noncomment_lines": 68,
+        "normalized_bytes": 1077,
+        "gzip1_bytes": 564
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-3.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-3-gcc",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-3-gcc"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        42.699231959,
+        42.70494025,
+        42.6587995
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 42.699231959,
+      "min_seconds": 42.6587995,
+      "max_seconds": 42.70494025
+    },
+    {
+      "id": "fannkuchredux-gcc-3-llvm",
+      "language": "c",
+      "variant": 3,
+      "path": "upstream/fannkuchredux-gcc-3.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-3.html",
+      "sha256": "4c96f8a019b9b1e2425123a243405046f8d86e030f256796574fdf6bfd0e8c07",
+      "upstream_starred": false,
+      "published_secs": 36.84,
+      "published_gz": 574,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 01:00:52 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge  fannkuchredux.gcc-3.c -o fannkuchredux.gcc-3.gcc_run \nrm fannkuchredux.gcc-3.c\n\n2.19s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc-3.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "llvm",
+      "executable_sha256": "d08dcfa845c397b0b6ac957e82b07d435e2af9f5783a556f4ef8509ba0b124d5",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-3.c"
+        ],
+        "sha256": "4c96f8a019b9b1e2425123a243405046f8d86e030f256796574fdf6bfd0e8c07",
+        "physical_lines": 94,
+        "nonblank_noncomment_lines": 68,
+        "normalized_bytes": 1077,
+        "gzip1_bytes": 564
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-3.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-3-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-3-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        41.484310375,
+        41.498364542,
+        41.49323675
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 41.49323675,
+      "min_seconds": 41.484310375,
+      "max_seconds": 41.498364542
+    },
+    {
+      "id": "fannkuchredux-gpp-3-gcc",
+      "language": "cpp",
+      "variant": 3,
+      "path": "upstream/fannkuchredux-gpp-3.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gpp-3.html",
+      "sha256": "fccf786c37f0ad3939f77727cacc2ce629aed85b6e0963eeab5ae8cb4c12d06f",
+      "upstream_starred": false,
+      "published_secs": 37.89,
+      "published_gz": 600,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:32:22 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge   fannkuchredux.gpp-3.c++ -o fannkuchredux.gpp-3.c++.o &&  \\\n        /usr/bin/g++ fannkuchredux.gpp-3.c++.o -o fannkuchredux.gpp-3.gpp_run  \nrm fannkuchredux.gpp-3.c++\n\n2.70s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gpp-3.gpp_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "gcc",
+      "executable_sha256": "093fbe53afdaa6cf523fc6d12f8bba14783ff63272ca9334cd63123cb297e0a2",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gpp-3.cpp"
+        ],
+        "sha256": "fccf786c37f0ad3939f77727cacc2ce629aed85b6e0963eeab5ae8cb4c12d06f",
+        "physical_lines": 74,
+        "nonblank_noncomment_lines": 59,
+        "normalized_bytes": 1078,
+        "gzip1_bytes": 587
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/g++-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-3.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-3-gcc",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-3-gcc"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        43.200180291,
+        43.176833292,
+        43.475979042
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 43.200180291,
+      "min_seconds": 43.176833292,
+      "max_seconds": 43.475979042
+    },
+    {
+      "id": "fannkuchredux-gpp-3-llvm",
+      "language": "cpp",
+      "variant": 3,
+      "path": "upstream/fannkuchredux-gpp-3.cpp",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gpp-3.html",
+      "sha256": "fccf786c37f0ad3939f77727cacc2ce629aed85b6e0963eeab5ae8cb4c12d06f",
+      "upstream_starred": false,
+      "published_secs": 37.89,
+      "published_gz": 600,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ng++ (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Fri, 10 Jan 2025 03:32:22 GMT\n\nMAKE:\n/usr/bin/g++ -c -pipe -O3 -fomit-frame-pointer -march=ivybridge   fannkuchredux.gpp-3.c++ -o fannkuchredux.gpp-3.c++.o &&  \\\n        /usr/bin/g++ fannkuchredux.gpp-3.c++.o -o fannkuchredux.gpp-3.gpp_run  \nrm fannkuchredux.gpp-3.c++\n\n2.70s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gpp-3.gpp_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "llvm",
+      "executable_sha256": "68a729840c15fc2610d1d971fc1e0a779d716441ea399dae53dda5b2ed5f8491",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gpp-3.cpp"
+        ],
+        "sha256": "fccf786c37f0ad3939f77727cacc2ce629aed85b6e0963eeab5ae8cb4c12d06f",
+        "physical_lines": 74,
+        "nonblank_noncomment_lines": 59,
+        "normalized_bytes": 1078,
+        "gzip1_bytes": 587
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=c++17",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-3.cpp",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-3-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-lc++"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-3-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        40.19875825,
+        40.207579084,
+        40.198721625
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 40.19875825,
+      "min_seconds": 40.198721625,
+      "max_seconds": 40.207579084
+    },
+    {
+      "id": "fannkuchredux-gcc-8-gcc",
+      "language": "c",
+      "variant": 8,
+      "path": "upstream/fannkuchredux-gcc-8.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-8.html",
+      "sha256": "65c8d4b7b5697e1ee1ccff75aec8fb66ae97811fbd96b02a0ef46941c49dea97",
+      "upstream_starred": false,
+      "published_secs": 39.34,
+      "published_gz": 483,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 01:16:33 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge  fannkuchredux.gcc-8.c -o fannkuchredux.gcc-8.gcc_run \nrm fannkuchredux.gcc-8.c\n\n2.20s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc-8.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "gcc",
+      "executable_sha256": "2aa7bc0874c1cccc6f8db0eac9f7ca9ca88fbb14ec145250a3bc1d04399f0d65",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-8.c"
+        ],
+        "sha256": "65c8d4b7b5697e1ee1ccff75aec8fb66ae97811fbd96b02a0ef46941c49dea97",
+        "physical_lines": 71,
+        "nonblank_noncomment_lines": 56,
+        "normalized_bytes": 991,
+        "gzip1_bytes": 469
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-8.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-8-gcc",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-8-gcc"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        51.743072208,
+        51.745544125,
+        51.767276125
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 51.745544125,
+      "min_seconds": 51.743072208,
+      "max_seconds": 51.767276125
+    },
+    {
+      "id": "fannkuchredux-gcc-8-llvm",
+      "language": "c",
+      "variant": 8,
+      "path": "upstream/fannkuchredux-gcc-8.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-8.html",
+      "sha256": "65c8d4b7b5697e1ee1ccff75aec8fb66ae97811fbd96b02a0ef46941c49dea97",
+      "upstream_starred": false,
+      "published_secs": 39.34,
+      "published_gz": 483,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 01:16:33 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge  fannkuchredux.gcc-8.c -o fannkuchredux.gcc-8.gcc_run \nrm fannkuchredux.gcc-8.c\n\n2.20s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc-8.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "llvm",
+      "executable_sha256": "1fc30f91a90604711e91b6ba1e2a180f05ba78d6ddf4576026761f39f8e67b6c",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-8.c"
+        ],
+        "sha256": "65c8d4b7b5697e1ee1ccff75aec8fb66ae97811fbd96b02a0ef46941c49dea97",
+        "physical_lines": 71,
+        "nonblank_noncomment_lines": 56,
+        "normalized_bytes": 991,
+        "gzip1_bytes": 469
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-8.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-8-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-8-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        48.407162541,
+        48.416634125,
+        48.406337
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 48.407162541,
+      "min_seconds": 48.406337,
+      "max_seconds": 48.416634125
+    },
+    {
+      "id": "fannkuchredux-gcc-1-gcc",
+      "language": "c",
+      "variant": 1,
+      "path": "upstream/fannkuchredux-gcc-1.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-1.html",
+      "sha256": "d109b20a1ef2dcc601d3fc3dca2b7d06f423b72d3a0fa650afb4cef5fa8e9a18",
+      "upstream_starred": false,
+      "published_secs": 39.65,
+      "published_gz": 514,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 02:06:48 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge  fannkuchredux.c -o fannkuchredux.gcc_run \nrm fannkuchredux.c\n\n2.12s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "gcc",
+      "executable_sha256": "002d065f958b23b492701d54381a4cf7a7894e7dc0458cb3e56355a677922c97",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-1.c"
+        ],
+        "sha256": "d109b20a1ef2dcc601d3fc3dca2b7d06f423b72d3a0fa650afb4cef5fa8e9a18",
+        "physical_lines": 82,
+        "nonblank_noncomment_lines": 62,
+        "normalized_bytes": 1067,
+        "gzip1_bytes": 504
+      },
+      "compile_command": [
+        "/opt/homebrew/bin/gcc-16",
+        "-O3",
+        "-march=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-1.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-1-gcc",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-include",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-1-gcc"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        50.984169208,
+        51.022139958,
+        51.073007916
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 51.022139958,
+      "min_seconds": 50.984169208,
+      "max_seconds": 51.073007916
+    },
+    {
+      "id": "fannkuchredux-gcc-1-llvm",
+      "language": "c",
+      "variant": 1,
+      "path": "upstream/fannkuchredux-gcc-1.c",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-gcc-1.html",
+      "sha256": "d109b20a1ef2dcc601d3fc3dca2b7d06f423b72d3a0fa650afb4cef5fa8e9a18",
+      "upstream_starred": false,
+      "published_secs": 39.65,
+      "published_gz": 514,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngcc (Ubuntu 14.2.0-4ubuntu2) 14.2.0\n\n\n Mon, 27 Jan 2025 02:06:48 GMT\n\nMAKE:\n/usr/bin/gcc -pipe -Wall -O3 -fomit-frame-pointer -march=ivybridge  fannkuchredux.c -o fannkuchredux.gcc_run \nrm fannkuchredux.c\n\n2.12s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.gcc_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "cc_backend": "llvm",
+      "executable_sha256": "007a481799482373fa28e540d1fb5c02822a62cbbed4c5f8e6048947e27dfb9c",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-gcc-1.c"
+        ],
+        "sha256": "d109b20a1ef2dcc601d3fc3dca2b7d06f423b72d3a0fa650afb4cef5fa8e9a18",
+        "physical_lines": 82,
+        "nonblank_noncomment_lines": 62,
+        "normalized_bytes": 1067,
+        "gzip1_bytes": 504
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-mcpu=native",
+        "-fomit-frame-pointer",
+        "-funroll-loops",
+        "-flto",
+        "-std=gnu11",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gcc-1.c",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-1-llvm",
+        "-lm",
+        "-pthread",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gcc-1-llvm"
+      ],
+      "worker_policy": "source OpenMP/pthread/std::thread policy",
+      "samples_seconds": [
+        49.090211625,
+        49.070218459,
+        49.094895709
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 49.090211625,
+      "min_seconds": 49.070218459,
+      "max_seconds": 49.094895709
+    },
+    {
+      "id": "fannkuchredux-julia-1",
+      "language": "julia",
+      "variant": 1,
+      "path": "upstream/fannkuchredux-julia-1.jl",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-julia-1.html",
+      "sha256": "98dbee45fe7940783aec1dcc18579f6cda293963d77dc522e55720cd218e0a01",
+      "upstream_starred": false,
+      "published_secs": 42.57,
+      "published_gz": 441,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\njulia version 1.11.1\n\n\n Sun, 23 Feb 2025 06:45:00 GMT\n\nMAKE:\nprintenv JULIA_NUM_THREADS\n4\n\n0.13 seconds to complete and log all make actions\n\nCOMMAND LINE:\n /opt/src/julia-1.11.1/bin/julia -O3 --cpu-target=ivybridge --math-mode=ieee  -- fannkuchredux.julia 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-julia-1.jl"
+        ],
+        "sha256": "98dbee45fe7940783aec1dcc18579f6cda293963d77dc522e55720cd218e0a01",
+        "physical_lines": 77,
+        "nonblank_noncomment_lines": 69,
+        "normalized_bytes": 806,
+        "gzip1_bytes": 423
+      },
+      "compile_command": null,
+      "command": [
+        "/tmp/mech-clbg-julia/julia-1.13.1/bin/julia",
+        "--threads=8,0",
+        "--startup-file=no",
+        "--history-file=no",
+        "-O3",
+        "--",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-julia-1.jl"
+      ],
+      "worker_policy": "Julia source Threads policy",
+      "samples_seconds": [
+        29.417422666,
+        29.429445333,
+        29.415891708
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 29.417422666,
+      "min_seconds": 29.415891708,
+      "max_seconds": 29.429445333
+    },
+    {
+      "id": "fannkuchredux-go-8",
+      "language": "go",
+      "variant": 8,
+      "path": "upstream/fannkuchredux-go-8.go",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-go-8.html",
+      "sha256": "e746d5097b2ecde2df42387b1da17a0d8c4214d5ffdc396dd2498b11ba19c3e4",
+      "upstream_starred": false,
+      "published_secs": 46.15,
+      "published_gz": 500,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\ngo version go1.23.1 linux/amd64\nGOAMD64=v2\n\n\n Fri, 10 Jan 2025 21:38:54 GMT\n\nMAKE:\n/opt/src/go1.23.1/go/bin/go build -o fannkuchredux.go-8.go_run fannkuchredux.go-8.go\n\n5.43s to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.go-8.go_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "executable_sha256": "e3d3b559dd06e59eacd53b11fc5542803b9096bcbf7241f9d1560f51fe2a0dcd",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-go-8.go"
+        ],
+        "sha256": "e746d5097b2ecde2df42387b1da17a0d8c4214d5ffdc396dd2498b11ba19c3e4",
+        "physical_lines": 74,
+        "nonblank_noncomment_lines": 57,
+        "normalized_bytes": 958,
+        "gzip1_bytes": 486
+      },
+      "compile_command": [
+        "go",
+        "build",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-go-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-go-8.go"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-go-8"
+      ],
+      "worker_policy": "source goroutines/GOMAXPROCS",
+      "samples_seconds": [
+        42.740088708,
+        42.733603166,
+        42.74067775
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 42.740088708,
+      "min_seconds": 42.733603166,
+      "max_seconds": 42.74067775
+    },
+    {
+      "id": "fannkuchredux-graalvmaot-2",
+      "language": "java",
+      "variant": 2,
+      "path": "upstream/fannkuchredux-graalvmaot-2.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-graalvmaot-2.html",
+      "sha256": "f55e671f4aab2ac2881f9ab9ada9a67bb08c72de74fef273fd999d8e47237296",
+      "upstream_starred": false,
+      "published_secs": 46.96,
+      "published_gz": 520,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 01:16:36 GMT\n\nMAKE:\nmv fannkuchredux.graalvmaot-2.graalvmaot fannkuchredux.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  fannkuchredux.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native fannkuchredux -o fannkuchredux.graalvmaot-2.graalvmaot_run\n\n95.31 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.graalvmaot-2.graalvmaot_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-graalvmaot-2.java"
+        ],
+        "sha256": "f55e671f4aab2ac2881f9ab9ada9a67bb08c72de74fef273fd999d8e47237296",
+        "physical_lines": 69,
+        "nonblank_noncomment_lines": 51,
+        "normalized_bytes": 1074,
+        "gzip1_bytes": 508
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-2",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-2/fannkuchredux.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-2",
+        "fannkuchredux"
+      ],
+      "worker_policy": "OpenJDK JIT; source was published as native AOT",
+      "samples_seconds": [
+        44.926054625,
+        38.143920708,
+        45.08551775
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 44.926054625,
+      "min_seconds": 38.143920708,
+      "max_seconds": 45.08551775
+    },
+    {
+      "id": "mech-fannkuch-simd",
+      "language": "mech",
+      "path": "fannkuchredux.mec",
+      "simd": true,
+      "upstream_starred": false,
+      "mech_compiler_executable_sha256": "eb6303a9357d833d7797d27f31755273a4a84841bd6841118bbd8fdf3a3fc830",
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings"
+      },
+      "native_object_sha256": "714740d11c5a3bcb10de7ec4b19a5d9b93d2897c8c02c6530fa777a76eebc07a",
+      "descriptor_sha256": "9eb87cc1e601675006c9dc71ba0f23ad3cd7651c5f355160e59a404f84d13e7c",
+      "executable_sha256": "2a9b9e5a0e78a0b4a152727b292790fe49b4f42bca10664d3911549d4dfedae1",
+      "source": {
+        "paths": [
+          "fannkuchredux.mec"
+        ],
+        "sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+        "physical_lines": 43,
+        "nonblank_noncomment_lines": 43,
+        "normalized_bytes": 2478,
+        "gzip1_bytes": 853
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-simd"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-simd"
+      ],
+      "worker_policy": "general Rayon range scheduler; Mech loop callbacks compiled by Cranelift",
+      "samples_seconds": [
+        4.083360833,
+        4.131917625,
+        3.902056375
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 4.083360833,
+      "min_seconds": 3.902056375,
+      "max_seconds": 4.131917625,
+      "preserved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/preserved-full-mech-fannkuch-simd"
+      ]
+    },
+    {
+      "id": "mech-fannkuch-scalar",
+      "language": "mech",
+      "path": "fannkuchredux.mec",
+      "simd": false,
+      "upstream_starred": false,
+      "mech_compiler_executable_sha256": "eb6303a9357d833d7797d27f31755273a4a84841bd6841118bbd8fdf3a3fc830",
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings"
+      },
+      "native_object_sha256": "54c5917c4bcdd3cdcc7ed4d771c5883dd719f05be3a2c2828e72d3d60861e73d",
+      "descriptor_sha256": "34f68c8cb723e7096fde32794ff23c1c6cfec353bbf474ab2b6a1621d6968c3d",
+      "executable_sha256": "51fbdcc6f06e7ceb4eabf0b217435e1f3762ecbd4dbf520ca330154f73858aa0",
+      "source": {
+        "paths": [
+          "fannkuchredux.mec"
+        ],
+        "sha256": "8e6732c29c7c6010c3769a43ed125085dd2643d55c80efb5c3b8ab9009e8a824",
+        "physical_lines": 43,
+        "nonblank_noncomment_lines": 43,
+        "normalized_bytes": 2478,
+        "gzip1_bytes": 853
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-scalar",
+        "--scalar"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-scalar"
+      ],
+      "worker_policy": "general Rayon range scheduler; Mech loop callbacks compiled by Cranelift",
+      "samples_seconds": [
+        7.637805541,
+        8.128824458,
+        8.043360875
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 8.043360875,
+      "min_seconds": 7.637805541,
+      "max_seconds": 8.128824458,
+      "preserved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/preserved-full-mech-fannkuch-scalar"
+      ]
+    },
+    {
+      "id": "mech-fannkuch-coarse",
+      "language": "mech",
+      "path": "fannkuchredux-coarse.mec",
+      "simd": true,
+      "upstream_starred": false,
+      "mech_compiler_executable_sha256": "eb6303a9357d833d7797d27f31755273a4a84841bd6841118bbd8fdf3a3fc830",
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings"
+      },
+      "native_object_sha256": "426281dd0636d19f451cbb81d7f10a3b6b868c54ac8b413f12508412615129a9",
+      "descriptor_sha256": "9eb87cc1e601675006c9dc71ba0f23ad3cd7651c5f355160e59a404f84d13e7c",
+      "executable_sha256": "9b1bb1a1050d82d93d6f593353e09d2a04522e1e33b0020a80cbd12b9e7d13af",
+      "source": {
+        "paths": [
+          "fannkuchredux-coarse.mec"
+        ],
+        "sha256": "78e374c6a533626d435a3a693ba0eb3d8bb9f9d563b79344f7e26669978273c0",
+        "physical_lines": 45,
+        "nonblank_noncomment_lines": 45,
+        "normalized_bytes": 2538,
+        "gzip1_bytes": 878
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-coarse.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-coarse"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-coarse"
+      ],
+      "worker_policy": "general Rayon range scheduler; Mech loop callbacks compiled by Cranelift",
+      "samples_seconds": [
+        3.823862292,
+        3.94441575,
+        4.037295209
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 3.94441575,
+      "min_seconds": 3.823862292,
+      "max_seconds": 4.037295209,
+      "preserved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/preserved-full-mech-fannkuch-coarse"
+      ]
+    },
+    {
+      "id": "mech-fannkuch-paired",
+      "language": "mech",
+      "path": "fannkuchredux-paired.mec",
+      "simd": true,
+      "upstream_starred": false,
+      "mech_compiler_executable_sha256": "eb6303a9357d833d7797d27f31755273a4a84841bd6841118bbd8fdf3a3fc830",
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings"
+      },
+      "native_object_sha256": "622355a0f69344936e3ef014a345f53f78bfb4d86b833ec245c423722474c23e",
+      "descriptor_sha256": "9eb87cc1e601675006c9dc71ba0f23ad3cd7651c5f355160e59a404f84d13e7c",
+      "executable_sha256": "33aae30b971250c4a6d02e3761e974e829ceb225d10d4a32702f7ae1e9f4c856",
+      "source": {
+        "paths": [
+          "fannkuchredux-paired.mec"
+        ],
+        "sha256": "4141ed3c7f30f3e0162642b3a1e0ab934a1a8deb0789c070d0a8a5dfbb93d098",
+        "physical_lines": 64,
+        "nonblank_noncomment_lines": 64,
+        "normalized_bytes": 3946,
+        "gzip1_bytes": 1190
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-paired.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-paired"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-paired"
+      ],
+      "worker_policy": "general Rayon range scheduler; Mech loop callbacks compiled by Cranelift",
+      "samples_seconds": [
+        3.160055917,
+        3.124052084,
+        3.253703791
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 3.160055917,
+      "min_seconds": 3.124052084,
+      "max_seconds": 3.253703791,
+      "preserved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/preserved-full-mech-fannkuch-paired"
+      ]
+    },
+    {
+      "id": "fannkuchredux-graalvmaot-1",
+      "language": "java",
+      "variant": 1,
+      "path": "upstream/fannkuchredux-graalvmaot-1.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-graalvmaot-1.html",
+      "sha256": "dcff27bde49720bdc698c669dca93ddf3bfacc8e3f349422aefe9c51049600cc",
+      "upstream_starred": false,
+      "published_secs": 9.26,
+      "published_gz": 1289,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 01:12:57 GMT\n\nMAKE:\nmv fannkuchredux.graalvmaot fannkuchredux.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  fannkuchredux.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native fannkuchredux -o fannkuchredux.graalvmaot_run\n\n96.54 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.graalvmaot_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-graalvmaot-1.java"
+        ],
+        "sha256": "dcff27bde49720bdc698c669dca93ddf3bfacc8e3f349422aefe9c51049600cc",
+        "physical_lines": 182,
+        "nonblank_noncomment_lines": 150,
+        "normalized_bytes": 2961,
+        "gzip1_bytes": 1278
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-1/fannkuchredux.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-1",
+        "fannkuchredux"
+      ],
+      "worker_policy": "OpenJDK JIT; source was published as native AOT",
+      "samples_seconds": [
+        5.732445916,
+        5.876948458,
+        5.664633125
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 5.732445916,
+      "min_seconds": 5.664633125,
+      "max_seconds": 5.876948458
+    },
+    {
+      "id": "fannkuchredux-graalvmaot-3",
+      "language": "java",
+      "variant": 3,
+      "path": "upstream/fannkuchredux-graalvmaot-3.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-graalvmaot-3.html",
+      "sha256": "03438b4110e6e72a29aee4cada71ff0e7ab807b8648a59f5b3c7dceb89a6ee49",
+      "upstream_starred": false,
+      "published_secs": 34.41,
+      "published_gz": 1264,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 00:52:07 GMT\n\nMAKE:\nmv fannkuchredux.graalvmaot-3.graalvmaot fannkuchredux.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  fannkuchredux.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native fannkuchredux -o fannkuchredux.graalvmaot-3.graalvmaot_run\n\n98.17 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.graalvmaot-3.graalvmaot_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-graalvmaot-3.java"
+        ],
+        "sha256": "03438b4110e6e72a29aee4cada71ff0e7ab807b8648a59f5b3c7dceb89a6ee49",
+        "physical_lines": 183,
+        "nonblank_noncomment_lines": 150,
+        "normalized_bytes": 2920,
+        "gzip1_bytes": 1253
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-3",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-3/fannkuchredux.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-3",
+        "fannkuchredux"
+      ],
+      "worker_policy": "OpenJDK JIT; source was published as native AOT",
+      "samples_seconds": [
+        31.741167,
+        31.769073625,
+        31.668971042
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 31.741167,
+      "min_seconds": 31.668971042,
+      "max_seconds": 31.769073625
+    },
+    {
+      "id": "fannkuchredux-graalvmaot-8",
+      "language": "java",
+      "variant": 8,
+      "path": "upstream/fannkuchredux-graalvmaot-8.java",
+      "url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-graalvmaot-8.html",
+      "sha256": "546f1d8bdb8d19eb739bc18d23bb2f6d8d1c302ec596445f2e363ab190de198b",
+      "upstream_starred": false,
+      "published_secs": 51.93,
+      "published_gz": 517,
+      "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\nnative-image 23.0.2 2025-01-21\nGraalVM Runtime Environment\nOracle GraalVM 23.0.2+7.1\n\n\n\n Mon, 17 Feb 2025 01:00:46 GMT\n\nMAKE:\nmv fannkuchredux.graalvmaot-8.graalvmaot fannkuchredux.java\n/opt/src/graalvm-jdk-23/bin/javac -d . -cp .  fannkuchredux.java\n/opt/src/graalvm-jdk-23/bin/native-image --silent --gc=G1 -cp . -O3 -march=native fannkuchredux -o fannkuchredux.graalvmaot-8.graalvmaot_run\n\n93.86 seconds to complete and log all make actions\n\nCOMMAND LINE:\n ./fannkuchredux.graalvmaot-8.graalvmaot_run 12\n\nPROGRAM OUTPUT:\n3968050\nPfannkuchen(12) = 65",
+      "execution_mode": "OpenJDK JIT; source was published as native AOT",
+      "source": {
+        "paths": [
+          "upstream/fannkuchredux-graalvmaot-8.java"
+        ],
+        "sha256": "546f1d8bdb8d19eb739bc18d23bb2f6d8d1c302ec596445f2e363ab190de198b",
+        "physical_lines": 69,
+        "nonblank_noncomment_lines": 54,
+        "normalized_bytes": 1045,
+        "gzip1_bytes": 503
+      },
+      "compile_command": [
+        "/opt/homebrew/opt/openjdk/bin/javac",
+        "-d",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-8/fannkuchredux.java"
+      ],
+      "command": [
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "-XX:ActiveProcessorCount=8",
+        "-cp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-graalvmaot-8",
+        "fannkuchredux"
+      ],
+      "worker_policy": "OpenJDK JIT; source was published as native AOT",
+      "samples_seconds": [
+        39.251175583,
+        40.314076792,
+        39.367563666
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 39.367563666,
+      "min_seconds": 39.251175583,
+      "max_seconds": 40.314076792
+    },
+    {
+      "id": "mech-fannkuch-cached",
+      "language": "mech",
+      "path": "fannkuchredux-cached.mec",
+      "simd": true,
+      "upstream_starred": false,
+      "mech_compiler_executable_sha256": "eb6303a9357d833d7797d27f31755273a4a84841bd6841118bbd8fdf3a3fc830",
+      "build_environment": {
+        "CARGO_TARGET_DIR": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target",
+        "RUSTFLAGS": "-D warnings"
+      },
+      "native_object_sha256": "c3c9d540268a2c910e147083d36e4290647f36ec168bace945f864e39d3b7dab",
+      "descriptor_sha256": "9eb87cc1e601675006c9dc71ba0f23ad3cd7651c5f355160e59a404f84d13e7c",
+      "executable_sha256": "f7786b63ad27d903991265293e47670317be8b3c8a6182b37ce4403c50eb013d",
+      "source": {
+        "paths": [
+          "fannkuchredux-cached.mec"
+        ],
+        "sha256": "f62d757ae78b562a0de35b7b52c2a6a43c8724b0e844a1e378c647cc6724a30c",
+        "physical_lines": 64,
+        "nonblank_noncomment_lines": 64,
+        "normalized_bytes": 4081,
+        "gzip1_bytes": 1218
+      },
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech",
+        "build",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-cached.mec",
+        "--backend",
+        "cranelift",
+        "--offline",
+        "--keep-project",
+        "--no-config",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-cached"
+      ],
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/mech-fannkuch-cached"
+      ],
+      "worker_policy": "general Rayon range scheduler; Mech loop callbacks compiled by Cranelift",
+      "samples_seconds": [
+        3.041069375,
+        3.114637417,
+        3.069731625
+      ],
+      "runtime_environment": {},
+      "correctness_7": {
+        "exact_reference_match": true,
+        "output": "228\nPfannkuchen(7) = 16\n"
+      },
+      "correctness_12": {
+        "exact_reference_match": true,
+        "output": "3968050\nPfannkuchen(12) = 65\n"
+      },
+      "median_seconds": 3.069731625,
+      "min_seconds": 3.041069375,
+      "max_seconds": 3.114637417,
+      "preserved_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/preserved-full-mech-fannkuch-cached"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "id": "fannkuchredux-gcc-6-gcc",
+      "language": "c",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-gcc-6-llvm",
+      "language": "c",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-gpp-6-gcc",
+      "language": "cpp",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-gpp-6-llvm",
+      "language": "cpp",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-rust-6",
+      "language": "rust",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-rust-6-panic-abort",
+      "language": "rust",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-gpp-4-gcc",
+      "language": "cpp",
+      "reason": "Command '['/opt/homebrew/bin/g++-16', '-O3', '-march=native', '-fomit-frame-pointer', '-funroll-loops', '-flto', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-4.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-4-gcc', '-lm', '-pthread', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-include', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-I/opt/homebrew/opt/boost/include', '-L/opt/homebrew/opt/boost/lib', '-lboost_thread', '-lboost_system']' returned non-zero exit status 1."
+    },
+    {
+      "id": "fannkuchredux-gpp-4-llvm",
+      "language": "cpp",
+      "reason": "Command '['/opt/homebrew/opt/llvm@22/bin/clang-22', '-O3', '-mcpu=native', '-fomit-frame-pointer', '-funroll-loops', '-flto', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-4.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-4-llvm', '-lm', '-pthread', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-I/opt/homebrew/opt/boost/include', '-L/opt/homebrew/opt/boost/lib', '-lboost_thread', '-lboost_system', '-lc++']' returned non-zero exit status 1."
+    },
+    {
+      "id": "fannkuchredux-gpp-2-gcc",
+      "language": "cpp",
+      "reason": "Command '['/opt/homebrew/bin/g++-16', '-O3', '-march=native', '-fomit-frame-pointer', '-funroll-loops', '-flto', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-2.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-2-gcc', '-lm', '-pthread', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-include', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/gcc-sdk-compat.h', '-I/opt/homebrew/opt/boost/include', '-L/opt/homebrew/opt/boost/lib', '-lboost_thread', '-lboost_system']' returned non-zero exit status 1."
+    },
+    {
+      "id": "fannkuchredux-gpp-2-llvm",
+      "language": "cpp",
+      "reason": "Command '['/opt/homebrew/opt/llvm@22/bin/clang-22', '-O3', '-mcpu=native', '-fomit-frame-pointer', '-funroll-loops', '-flto', '-std=c++17', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/upstream/fannkuchredux-gpp-2.cpp', '-o', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/.build/fannkuchredux-gpp-2-llvm', '-lm', '-pthread', '-isysroot', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk', '-I/opt/homebrew/opt/boost/include', '-L/opt/homebrew/opt/boost/lib', '-lboost_thread', '-lboost_system', '-lc++']' returned non-zero exit status 1."
+    },
+    {
+      "id": "fannkuchredux-gcc-4-gcc",
+      "language": "c",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-gcc-4-llvm",
+      "language": "c",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-gpp-7-gcc",
+      "language": "cpp",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    },
+    {
+      "id": "fannkuchredux-gpp-7-llvm",
+      "language": "cpp",
+      "reason": "unmodified source requires x86 intrinsics; ARM host"
+    }
+  ],
+  "endpoints": {
+    "time_baseline_seconds": 3.069731625,
+    "size_baseline_bytes": 423,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 10,
+        "fastest": "fannkuchredux-gcc-5-gcc",
+        "smallest": "fannkuchredux-gcc-8-llvm",
+        "same_entry": false,
+        "smallest_time_over_fastest": 9.58263877585039,
+        "fastest_size_over_smallest": 1.9189765458422174,
+        "log2_tradeoff_distance": 3.3933157635507305,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.127659574468085,
+            "time_ratio": 1.6455993256413741
+          },
+          "smallest": {
+            "size_ratio": 1.1087470449172576,
+            "time_ratio": 15.769183907404281
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 1,
+        "fastest": "fannkuchredux-chapel-2",
+        "smallest": "fannkuchredux-chapel-2",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.7163120567375887,
+            "time_ratio": 2.3560640122733854
+          },
+          "smallest": {
+            "size_ratio": 1.7163120567375887,
+            "time_ratio": 2.3560640122733854
+          }
+        }
+      },
+      "cpp": {
+        "candidate_count": 6,
+        "fastest": "fannkuchredux-gpp-1-gcc",
+        "smallest": "fannkuchredux-gpp-3-llvm",
+        "same_entry": false,
+        "smallest_time_over_fastest": 7.0367538126916385,
+        "fastest_size_over_smallest": 1.7921635434412266,
+        "log2_tradeoff_distance": 2.938057400399618,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.486997635933806,
+            "time_ratio": 1.8609721434524427
+          },
+          "smallest": {
+            "size_ratio": 1.387706855791962,
+            "time_ratio": 13.095202825751908
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 4,
+        "fastest": "fannkuchredux-go-2",
+        "smallest": "fannkuchredux-go-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 9.536454302887948,
+        "fastest_size_over_smallest": 1.8353909465020577,
+        "log2_tradeoff_distance": 3.3693449398471635,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.1087470449172576,
+            "time_ratio": 1.4599839407785362
+          },
+          "smallest": {
+            "size_ratio": 1.148936170212766,
+            "time_ratio": 13.923070134184776
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 4,
+        "fastest": "fannkuchredux-graalvmaot-1",
+        "smallest": "fannkuchredux-graalvmaot-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 6.8674984889294866,
+        "fastest_size_over_smallest": 2.540755467196819,
+        "log2_tradeoff_distance": 3.0881905277952186,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.021276595744681,
+            "time_ratio": 1.867409472969807
+          },
+          "smallest": {
+            "size_ratio": 1.1891252955082743,
+            "time_ratio": 12.824431733832759
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 3,
+        "fastest": "fannkuchredux-julia-2",
+        "smallest": "fannkuchredux-julia-1",
+        "same_entry": false,
+        "smallest_time_over_fastest": 6.125700020543945,
+        "fastest_size_over_smallest": 2.4988179669030735,
+        "log2_tradeoff_distance": 2.9297201712345893,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.4988179669030735,
+            "time_ratio": 1.5644024473963583
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 9.58306010415487
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 5,
+        "fastest": "mech-fannkuch-cached",
+        "smallest": "mech-fannkuch-simd",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.3302012461757142,
+        "fastest_size_over_smallest": 1.4279015240328252,
+        "log2_tradeoff_distance": 0.6584381641682048,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.879432624113475,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 2.016548463356974,
+            "time_ratio": 1.3302012461757142
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 6,
+        "fastest": "fannkuchredux-rust-4",
+        "smallest": "fannkuchredux-rust-5",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.270621953710455,
+        "fastest_size_over_smallest": 1.0059760956175299,
+        "log2_tradeoff_distance": 0.34564175825088306,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.3877068557919623,
+            "time_ratio": 1.2734939003014636
+          },
+          "smallest": {
+            "size_ratio": 2.3735224586288415,
+            "time_ratio": 1.6181293076393932
+          }
+        }
+      }
+    }
+  },
+  "nonheroic_endpoints": {
+    "time_baseline_seconds": 3.069731625,
+    "size_baseline_bytes": 423,
+    "normalization_cohort": "Successfully validated local programs in this run only",
+    "languages": {
+      "c": {
+        "candidate_count": 8,
+        "fastest": "fannkuchredux-gcc-5-gcc",
+        "smallest": "fannkuchredux-gcc-8-llvm",
+        "same_entry": false,
+        "smallest_time_over_fastest": 9.58263877585039,
+        "fastest_size_over_smallest": 1.9189765458422174,
+        "log2_tradeoff_distance": 3.3933157635507305,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.127659574468085,
+            "time_ratio": 1.6455993256413741
+          },
+          "smallest": {
+            "size_ratio": 1.1087470449172576,
+            "time_ratio": 15.769183907404281
+          }
+        }
+      },
+      "chapel": {
+        "candidate_count": 1,
+        "fastest": "fannkuchredux-chapel-2",
+        "smallest": "fannkuchredux-chapel-2",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.7163120567375887,
+            "time_ratio": 2.3560640122733854
+          },
+          "smallest": {
+            "size_ratio": 1.7163120567375887,
+            "time_ratio": 2.3560640122733854
+          }
+        }
+      },
+      "cpp": {
+        "candidate_count": 6,
+        "fastest": "fannkuchredux-gpp-1-gcc",
+        "smallest": "fannkuchredux-gpp-3-llvm",
+        "same_entry": false,
+        "smallest_time_over_fastest": 7.0367538126916385,
+        "fastest_size_over_smallest": 1.7921635434412266,
+        "log2_tradeoff_distance": 2.938057400399618,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.486997635933806,
+            "time_ratio": 1.8609721434524427
+          },
+          "smallest": {
+            "size_ratio": 1.387706855791962,
+            "time_ratio": 13.095202825751908
+          }
+        }
+      },
+      "go": {
+        "candidate_count": 4,
+        "fastest": "fannkuchredux-go-2",
+        "smallest": "fannkuchredux-go-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 9.536454302887948,
+        "fastest_size_over_smallest": 1.8353909465020577,
+        "log2_tradeoff_distance": 3.3693449398471635,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.1087470449172576,
+            "time_ratio": 1.4599839407785362
+          },
+          "smallest": {
+            "size_ratio": 1.148936170212766,
+            "time_ratio": 13.923070134184776
+          }
+        }
+      },
+      "java": {
+        "candidate_count": 4,
+        "fastest": "fannkuchredux-graalvmaot-1",
+        "smallest": "fannkuchredux-graalvmaot-8",
+        "same_entry": false,
+        "smallest_time_over_fastest": 6.8674984889294866,
+        "fastest_size_over_smallest": 2.540755467196819,
+        "log2_tradeoff_distance": 3.0881905277952186,
+        "points": {
+          "fastest": {
+            "size_ratio": 3.021276595744681,
+            "time_ratio": 1.867409472969807
+          },
+          "smallest": {
+            "size_ratio": 1.1891252955082743,
+            "time_ratio": 12.824431733832759
+          }
+        }
+      },
+      "julia": {
+        "candidate_count": 1,
+        "fastest": "fannkuchredux-julia-1",
+        "smallest": "fannkuchredux-julia-1",
+        "same_entry": true,
+        "smallest_time_over_fastest": 1.0,
+        "fastest_size_over_smallest": 1.0,
+        "log2_tradeoff_distance": 0.0,
+        "points": {
+          "fastest": {
+            "size_ratio": 1.0,
+            "time_ratio": 9.58306010415487
+          },
+          "smallest": {
+            "size_ratio": 1.0,
+            "time_ratio": 9.58306010415487
+          }
+        }
+      },
+      "mech": {
+        "candidate_count": 5,
+        "fastest": "mech-fannkuch-cached",
+        "smallest": "mech-fannkuch-simd",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.3302012461757142,
+        "fastest_size_over_smallest": 1.4279015240328252,
+        "log2_tradeoff_distance": 0.6584381641682048,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.879432624113475,
+            "time_ratio": 1.0
+          },
+          "smallest": {
+            "size_ratio": 2.016548463356974,
+            "time_ratio": 1.3302012461757142
+          }
+        }
+      },
+      "rust": {
+        "candidate_count": 6,
+        "fastest": "fannkuchredux-rust-4",
+        "smallest": "fannkuchredux-rust-5",
+        "same_entry": false,
+        "smallest_time_over_fastest": 1.270621953710455,
+        "fastest_size_over_smallest": 1.0059760956175299,
+        "log2_tradeoff_distance": 0.34564175825088306,
+        "points": {
+          "fastest": {
+            "size_ratio": 2.3877068557919623,
+            "time_ratio": 1.2734939003014636
+          },
+          "smallest": {
+            "size_ratio": 2.3735224586288415,
+            "time_ratio": 1.6181293076393932
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Swift&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Swift&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">/* The Computer Language Benchmarks Game</span>
+<span class="com">   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">   contributed by Ralph Ganszky</span>
+<span class="com">*/</span>
+
+<span class="kwa">import</span> Foundation
+<span class="kwa">import</span> Dispatch
+
+<span class="kwa">let</span> <span class="kwc">i2c</span> <span class="opt">= [</span> <span class="num">0</span><span class="opt">:</span> <span class="sng">&quot;A&quot;</span><span class="opt">,</span> <span class="num">1</span><span class="opt">:</span> <span class="sng">&quot;C&quot;</span><span class="opt">,</span> <span class="num">2</span><span class="opt">:</span> <span class="sng">&quot;T&quot;</span><span class="opt">,</span> <span class="num">3</span><span class="opt">:</span> <span class="sng">&quot;G&quot;</span> <span class="opt">]</span>
+
+<span class="kwa">let</span> <span class="kwc">c2i</span><span class="opt">: [</span><span class="kwb">Character</span><span class="opt">:</span><span class="kwb">Int</span><span class="opt">] = [</span> <span class="sng">&quot;A&quot;</span><span class="opt">:</span> <span class="num">0</span><span class="opt">,</span> <span class="sng">&quot;C&quot;</span><span class="opt">:</span> <span class="num">1</span><span class="opt">,</span> <span class="sng">&quot;T&quot;</span><span class="opt">:</span> <span class="num">2</span><span class="opt">,</span> <span class="sng">&quot;G&quot;</span><span class="opt">:</span> <span class="num">3</span> <span class="opt">]</span>
+
+<span class="kwa">let</span> <span class="kwc">ntasks</span> <span class="opt">=</span> <span class="num">8</span>
+<span class="kwa">let</span> <span class="kwc">linewidth</span> <span class="opt">=</span> <span class="num">60</span>
+
+<span class="kwa">let</span> <span class="kwc">mQueue</span> <span class="opt">=</span> <span class="kwd">DispatchQueue</span><span class="opt">(</span>label<span class="opt">:</span> <span class="sng">&quot;mergeQueue&quot;</span><span class="opt">,</span> attributes<span class="opt">: [])</span>
+<span class="kwa">let</span> <span class="kwc">queue</span> <span class="opt">=</span> <span class="kwd">DispatchQueue</span><span class="opt">(</span>label<span class="opt">:</span> <span class="sng">&quot;hashQueue&quot;</span><span class="opt">,</span> attributes<span class="opt">:</span> DispatchQueue<span class="opt">.</span>Attributes<span class="opt">.</span>concurrent<span class="opt">)</span>
+
+<span class="kwa">func</span> <span class="kwd">compress</span><span class="opt">(</span>_ n<span class="opt">:</span> <span class="kwb">Int</span><span class="opt">,</span> seq<span class="opt">:</span> ArraySlice<span class="opt">&lt;</span><span class="kwb">Int8</span><span class="opt">&gt;) -&gt;</span> <span class="kwb">Int</span> <span class="opt">{</span>
+    <span class="kwa">var</span> <span class="kwc">res</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="kwa">for</span> i <span class="kwa">in</span> seq<span class="opt">.</span>indices <span class="opt">{</span>
+        <span class="kwc">res</span> <span class="opt">= (</span><span class="kwc">res</span> <span class="opt">&lt;&lt;</span> <span class="num">2</span><span class="opt">) |</span> <span class="kwb">Int</span><span class="opt">(</span>seq<span class="opt">[</span>i<span class="opt">])</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> <span class="kwc">res</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">decode</span><span class="opt">(</span>_ n<span class="opt">:</span> <span class="kwb">Int</span><span class="opt">,</span> _ len<span class="opt">:</span> <span class="kwb">Int</span><span class="opt">) -&gt;</span> <span class="kwb">String</span> <span class="opt">{</span>
+    <span class="kwa">var</span> <span class="kwc">val</span> <span class="opt">=</span> n
+    <span class="kwa">var</span> <span class="kwc">s</span> <span class="opt">=</span> <span class="sng">&quot;&quot;</span>
+    <span class="kwa">for</span> _ <span class="kwa">in</span> <span class="num">0</span><span class="opt">..&lt;</span>len <span class="opt">{</span>
+        <span class="kwc">s</span> <span class="opt">=</span> <span class="kwc">i2c</span><span class="opt">[</span><span class="kwc">val</span> <span class="opt">&amp;</span> <span class="num">0x3</span><span class="opt">]! +</span> <span class="kwc">s</span>
+        <span class="kwc">val</span> <span class="opt">&gt;&gt;=</span> <span class="num">2</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> <span class="kwc">s</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">encode</span><span class="opt">(</span>_ seq<span class="opt">:</span> <span class="kwb">String</span><span class="opt">) -&gt;</span>  <span class="kwb">Int</span> <span class="opt">{</span>
+    <span class="kwa">let</span> <span class="kwc">cSeq</span> <span class="opt">=</span> seq<span class="opt">.</span>utf8<span class="opt">.</span>map<span class="opt">{(</span><span class="kwb">Int8</span><span class="opt">(</span>$<span class="num">0</span><span class="opt">) &amp;</span> <span class="num">0x6</span><span class="opt">) &gt;&gt;</span> <span class="num">1</span><span class="opt">}</span>
+    <span class="kwa">var</span> <span class="kwc">res</span> <span class="opt">=</span> <span class="num">0</span>
+    <span class="kwa">for</span> c <span class="kwa">in</span> <span class="kwc">cSeq</span> <span class="opt">{</span>
+        <span class="kwc">res</span> <span class="opt">=</span> <span class="kwc">res</span> <span class="opt">&lt;&lt;</span> <span class="num">2</span> <span class="opt">|</span> <span class="kwb">Int</span><span class="opt">(</span>c<span class="opt">)</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> <span class="kwc">res</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">getSequenceHash</span><span class="opt">(</span>_ n<span class="opt">:</span> <span class="kwb">Int</span><span class="opt">,</span> seq<span class="opt">: [</span><span class="kwb">Int8</span><span class="opt">]) -&gt; [</span><span class="kwb">Int</span><span class="opt">:</span><span class="kwb">Int</span><span class="opt">] {</span>
+    <span class="kwa">var</span> <span class="kwc">hash</span> <span class="opt">= [</span><span class="kwb">Int</span><span class="opt">:</span><span class="kwb">Int</span><span class="opt">]()</span>
+    <span class="kwa">let</span> <span class="kwc">slice</span> <span class="opt">= (</span>seq<span class="opt">.</span>count<span class="opt">-(</span>n<span class="opt">-</span><span class="num">1</span><span class="opt">)) /</span> <span class="kwc">ntasks</span>
+    <span class="kwa">let</span> <span class="kwc">remainder</span> <span class="opt">= (</span>seq<span class="opt">.</span>count<span class="opt">-(</span>n<span class="opt">-</span><span class="num">1</span><span class="opt">)) %</span> <span class="kwc">ntasks</span>
+    <span class="kwa">let</span> <span class="kwc">mask</span> <span class="opt">= ~(-</span><span class="num">1</span> <span class="opt">&lt;&lt; (</span><span class="num">2</span><span class="opt">*</span>n<span class="opt">))</span>
+    DispatchQueue<span class="opt">.</span><span class="kwd">concurrentPerform</span><span class="opt">(</span>iterations<span class="opt">:</span> <span class="kwc">ntasks</span><span class="opt">) {</span> i <span class="kwa">in</span>
+        <span class="kwa">var</span> <span class="kwc">lHash</span> <span class="opt">= [</span><span class="kwb">Int</span><span class="opt">:</span><span class="kwb">Int</span><span class="opt">]()</span>
+        <span class="kwa">var</span> <span class="kwc">idx</span> <span class="opt">=</span> <span class="kwd">compress</span><span class="opt">(</span>n<span class="opt">,</span> seq<span class="opt">:</span> seq<span class="opt">[</span>i<span class="opt">*</span><span class="kwc">slice</span><span class="opt">..&lt;(</span>i<span class="opt">*</span><span class="kwc">slice</span><span class="opt">+</span>n<span class="opt">)])</span>
+        <span class="kwc">lHash</span><span class="opt">[</span><span class="kwc">idx</span><span class="opt">] =</span> <span class="num">1</span>
+        <span class="kwa">for</span> l <span class="kwa">in</span> i<span class="opt">*</span><span class="kwc">slice</span><span class="opt">+</span><span class="num">1</span><span class="opt">..&lt;(</span>i<span class="opt">+</span><span class="num">1</span><span class="opt">)*</span><span class="kwc">slice</span> <span class="opt">{</span>
+            <span class="kwc">idx</span> <span class="opt">= ((</span><span class="kwc">idx</span> <span class="opt">&lt;&lt;</span> <span class="num">2</span><span class="opt">) &amp;</span> <span class="kwc">mask</span><span class="opt">) |</span> <span class="kwb">Int</span><span class="opt">(</span>seq<span class="opt">[</span>l<span class="opt">+</span>n<span class="opt">-</span><span class="num">1</span><span class="opt">])</span>
+            <span class="kwa">if let</span> <span class="kwc">value</span> <span class="opt">=</span> <span class="kwc">lHash</span><span class="opt">[</span><span class="kwc">idx</span><span class="opt">] {</span>
+                <span class="kwc">lHash</span><span class="opt">[</span><span class="kwc">idx</span><span class="opt">] =</span> <span class="kwc">value</span> <span class="opt">+</span> <span class="num">1</span>
+            <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+                <span class="kwc">lHash</span><span class="opt">[</span><span class="kwc">idx</span><span class="opt">] =</span> <span class="num">1</span>
+            <span class="opt">}</span>
+        <span class="opt">}</span>
+        <span class="kwc">mQueue</span><span class="opt">.</span>sync <span class="opt">{</span>
+            <span class="kwa">for</span> <span class="opt">(</span>key<span class="opt">,</span> count<span class="opt">)</span> <span class="kwa">in</span> <span class="kwc">lHash</span> <span class="opt">{</span>
+                <span class="kwa">if let</span> <span class="kwc">value</span> <span class="opt">=</span> <span class="kwc">hash</span><span class="opt">[</span>key<span class="opt">] {</span>
+                    <span class="kwc">hash</span><span class="opt">[</span>key<span class="opt">] =</span> <span class="kwc">value</span> <span class="opt">+</span> count
+                <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+                    <span class="kwc">hash</span><span class="opt">[</span>key<span class="opt">] =</span> count
+                <span class="opt">}</span>
+            <span class="opt">}</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+    <span class="kwa">let</span> <span class="kwc">startIdx</span> <span class="opt">=</span> seq<span class="opt">.</span>count <span class="opt">-</span> <span class="kwc">remainder</span> <span class="opt">- (</span>n <span class="opt">-</span> <span class="num">1</span><span class="opt">)</span>
+    <span class="kwa">let</span> <span class="kwc">endIdx</span> <span class="opt">=</span> seq<span class="opt">.</span>count <span class="opt">- (</span>n <span class="opt">-</span> <span class="num">1</span><span class="opt">)</span>
+    <span class="kwa">for</span> i <span class="kwa">in</span> <span class="kwc">startIdx</span><span class="opt">..&lt;</span><span class="kwc">endIdx</span> <span class="opt">{</span>
+        <span class="kwa">let</span> <span class="kwc">idx</span> <span class="opt">=</span> <span class="kwd">compress</span><span class="opt">(</span>n<span class="opt">,</span> seq<span class="opt">:</span> seq<span class="opt">[</span>i<span class="opt">..&lt;(</span>i<span class="opt">+</span>n<span class="opt">)])</span>
+        <span class="kwa">if let</span> <span class="kwc">value</span> <span class="opt">=</span> <span class="kwc">hash</span><span class="opt">[</span><span class="kwc">idx</span><span class="opt">] {</span>
+            <span class="kwc">hash</span><span class="opt">[</span><span class="kwc">idx</span><span class="opt">] =</span> <span class="kwc">value</span> <span class="opt">+</span> <span class="num">1</span>
+        <span class="opt">}</span> <span class="kwa">else</span> <span class="opt">{</span>
+            <span class="kwc">hash</span><span class="opt">[</span><span class="kwc">idx</span><span class="opt">] =</span> <span class="num">1</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> <span class="kwc">hash</span>
+<span class="opt">}</span>
+
+<span class="kwa">func</span> <span class="kwd">readInputAndRewrite</span><span class="opt">() -&gt; [</span><span class="kwb">Int8</span><span class="opt">] {</span>
+    <span class="slc">// Read until sequence THREE</span>
+    <span class="kwa">let</span> <span class="kwc">buf</span> <span class="opt">=</span> UnsafeMutablePointer<span class="opt">&lt;</span><span class="kwb">Int8</span><span class="opt">&gt;.</span><span class="kwd">allocate</span><span class="opt">(</span>capacity<span class="opt">:</span> <span class="num">100</span><span class="opt">)</span>
+    defer <span class="opt">{</span>
+        <span class="kwc">buf</span><span class="opt">.</span><span class="kwd">deallocate</span><span class="opt">()</span>
+    <span class="opt">}</span>
+    <span class="kwa">let</span> <span class="kwc">three</span> <span class="opt">=</span> <span class="sng">&quot;&gt;THREE&quot;</span><span class="opt">.</span>utf8<span class="opt">.</span>map<span class="opt">{</span><span class="kwb">Int8</span><span class="opt">(</span>$<span class="num">0</span><span class="opt">)}</span>
+    <span class="kwa">while let</span> <span class="kwc">res</span> <span class="opt">=</span> <span class="kwd">fgets</span><span class="opt">(</span><span class="kwc">buf</span><span class="opt">,</span> <span class="num">100</span><span class="opt">,</span> stdin<span class="opt">) {</span>
+        <span class="kwa">if</span> <span class="kwc">res</span><span class="opt">[</span><span class="num">0</span><span class="opt">] ==</span> <span class="kwc">three</span><span class="opt">[</span><span class="num">0</span><span class="opt">] &amp;&amp;</span> <span class="kwc">res</span><span class="opt">[</span><span class="num">1</span><span class="opt">] ==</span> <span class="kwc">three</span><span class="opt">[</span><span class="num">1</span><span class="opt">] &amp;&amp;</span> <span class="kwc">res</span><span class="opt">[</span><span class="num">2</span><span class="opt">] ==</span> <span class="kwc">three</span><span class="opt">[</span><span class="num">2</span><span class="opt">] {</span>
+            <span class="kwa">break</span>
+        <span class="opt">}</span>
+    <span class="opt">}</span>
+    <span class="slc">// Read sequence</span>
+    <span class="kwa">var</span> <span class="kwc">seq</span> <span class="opt">= [</span><span class="kwb">Int8</span><span class="opt">]()</span>
+    <span class="kwa">while let</span> <span class="kwc">res</span> <span class="opt">=</span> <span class="kwd">fgets</span><span class="opt">(</span><span class="kwc">buf</span><span class="opt">,</span> <span class="num">100</span><span class="opt">,</span> stdin<span class="opt">) {</span>
+        <span class="kwc">seq</span><span class="opt">.</span><span class="kwd">append</span><span class="opt">(</span>contentsOf<span class="opt">:</span> <span class="kwd">UnsafeMutableBufferPointer</span><span class="opt">(</span>start<span class="opt">:</span> <span class="kwc">res</span><span class="opt">,</span> count<span class="opt">:</span> <span class="kwc">linewidth</span><span class="opt">))</span>
+    <span class="opt">}</span>
+    <span class="slc">// Locate newline from at the end</span>
+    <span class="kwa">var</span> <span class="kwc">nl</span> <span class="opt">=</span> <span class="kwc">seq</span><span class="opt">.</span>count <span class="opt">-</span> <span class="num">1</span>
+    <span class="kwa">var</span> <span class="kwc">pos</span> <span class="opt">=</span> <span class="kwc">nl</span>
+    <span class="kwa">while</span> <span class="kwc">pos</span> <span class="opt">&gt;</span> <span class="kwc">seq</span><span class="opt">.</span>count <span class="opt">-</span> <span class="kwc">linewidth</span> <span class="opt">{</span>
+        <span class="kwa">if</span> <span class="kwc">seq</span><span class="opt">[</span><span class="kwc">pos</span><span class="opt">] ==</span> <span class="num">10</span> <span class="opt">{</span> <span class="slc">// &quot;\n&quot;</span>
+            <span class="kwc">nl</span> <span class="opt">=</span> <span class="kwc">pos</span>
+            <span class="kwa">break</span>
+        <span class="opt">}</span>
+        <span class="kwc">pos</span> <span class="opt">-=</span> <span class="num">1</span>
+    <span class="opt">}</span>
+    <span class="slc">// Convert to bits</span>
+    <span class="kwa">var</span> <span class="kwc">bitSeq</span> <span class="opt">= [</span><span class="kwb">Int8</span><span class="opt">](</span>repeating<span class="opt">:</span> <span class="num">0</span><span class="opt">,</span> count<span class="opt">:</span> <span class="kwc">nl</span><span class="opt">)</span>
+    <span class="kwa">for</span> i <span class="kwa">in</span> <span class="num">0</span><span class="opt">..&lt;</span><span class="kwc">nl</span> <span class="opt">{</span>
+        <span class="kwc">bitSeq</span><span class="opt">[</span>i<span class="opt">] = (</span><span class="kwc">seq</span><span class="opt">[</span>i<span class="opt">] &amp;</span> <span class="num">0x6</span><span class="opt">) &gt;&gt;</span> <span class="num">1</span>
+    <span class="opt">}</span>
+    <span class="kwa">return</span> <span class="kwc">bitSeq</span>
+<span class="opt">}</span>
+
+<span class="slc">// Read sequence</span>
+<span class="kwa">var</span> <span class="kwc">sequence</span> <span class="opt">=</span> <span class="kwd">readInputAndRewrite</span><span class="opt">()</span>
+
+<span class="kwa">let</span> <span class="kwc">hash</span> <span class="opt">=</span> <span class="kwd">getSequenceHash</span><span class="opt">(</span><span class="num">1</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">)</span>
+<span class="kwa">let</span> <span class="kwc">total</span> <span class="opt">=</span> <span class="kwc">hash</span><span class="opt">.</span><span class="kwd">reduce</span><span class="opt">(</span><span class="num">0</span><span class="opt">) {</span> $<span class="num">0</span> <span class="opt">+</span> $<span class="num">1.1</span> <span class="opt">}</span>
+<span class="kwa">for</span> k <span class="kwa">in</span> <span class="kwc">hash</span><span class="opt">.</span>keys<span class="opt">.</span><span class="kwd">sorted</span><span class="opt">(</span>by<span class="opt">: {</span> <span class="kwc">hash</span><span class="opt">[</span>$<span class="num">1</span><span class="opt">]! &lt;</span> <span class="kwc">hash</span><span class="opt">[</span>$<span class="num">0</span><span class="opt">]! }) {</span>
+    <span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">\(i2c[k]!) \(String(format: &quot;%.3f&quot;, 100.0*Double(hash[k]!)</span><span class="sng">/Double(total)))&quot;</span><span class="opt">)</span>
+<span class="opt">}</span>
+<span class="kwd">print</span><span class="opt">()</span>
+
+<span class="kwa">let</span> <span class="kwc">hash2</span> <span class="opt">=</span> <span class="kwd">getSequenceHash</span><span class="opt">(</span><span class="num">2</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">)</span>
+<span class="kwa">let</span> <span class="kwc">total2</span> <span class="opt">=</span> <span class="kwc">hash2</span><span class="opt">.</span><span class="kwd">reduce</span><span class="opt">(</span><span class="num">0</span><span class="opt">) {</span> $<span class="num">0</span> <span class="opt">+</span> $<span class="num">1.1</span> <span class="opt">}</span>
+<span class="kwa">for</span> k <span class="kwa">in</span> <span class="kwc">hash2</span><span class="opt">.</span>keys<span class="opt">.</span><span class="kwd">sorted</span><span class="opt">(</span>by<span class="opt">: {</span> <span class="kwc">hash2</span><span class="opt">[</span>$<span class="num">1</span><span class="opt">]! &lt;</span> <span class="kwc">hash2</span><span class="opt">[</span>$<span class="num">0</span><span class="opt">]! }) {</span>
+    <span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">\(decode(k, 2)) \(String(format: &quot;%.3f&quot;, 100.0*Double(hash2[k]!)</span><span class="sng">/Double(total2)))&quot;</span><span class="opt">)</span>
+<span class="opt">}</span>
+<span class="kwd">print</span><span class="opt">()</span>
+
+<span class="kwa">let</span> <span class="kwc">hash3</span> <span class="opt">=</span> <span class="kwd">getSequenceHash</span><span class="opt">(</span><span class="num">3</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">)</span>
+<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">\(hash3[encode(&quot;GGT&quot;)</span><span class="sng">] ?? 0)</span><span class="esc">\t</span><span class="sng">GGT&quot;</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwc">hash4</span> <span class="opt">=</span> <span class="kwd">getSequenceHash</span><span class="opt">(</span><span class="num">4</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">)</span>
+<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">\(hash4[encode(&quot;GGTA&quot;)</span><span class="sng">] ?? 0)</span><span class="esc">\t</span><span class="sng">GGTA&quot;</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwc">hash6</span> <span class="opt">=</span> <span class="kwd">getSequenceHash</span><span class="opt">(</span><span class="num">6</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">)</span>
+<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">\(hash6[encode(&quot;GGTATT&quot;)</span><span class="sng">] ?? 0)</span><span class="esc">\t</span><span class="sng">GGTATT&quot;</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwc">hash12</span> <span class="opt">=</span> <span class="kwd">getSequenceHash</span><span class="opt">(</span><span class="num">12</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">)</span>
+<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">\(hash12[encode(&quot;GGTATTTTAATT&quot;)</span><span class="sng">] ?? 0)</span><span class="esc">\t</span><span class="sng">GGTATTTTAATT&quot;</span><span class="opt">)</span>
+
+<span class="kwa">let</span> <span class="kwc">hash18</span> <span class="opt">=</span> <span class="kwd">getSequenceHash</span><span class="opt">(</span><span class="num">18</span><span class="opt">,</span> <span class="kwc">seq</span><span class="opt">:</span> <span class="kwc">sequence</span><span class="opt">)</span>
+<span class="kwd">print</span><span class="opt">(</span><span class="sng">&quot;</span><span class="ipl">\(hash18[encode(&quot;GGTATTTTAATTTATAGT&quot;)</span><span class="sng">] ?? 0)</span><span class="esc">\t</span><span class="sng">GGTATTTTAATTTATAGT&quot;</span><span class="opt">)</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+Swift version 6.0.3
+(swift-6.0.3-RELEASE)
+Target: x86_64-unknown-linux-gnu
+
+
+ Sun, 23 Feb 2025 01:21:27 GMT
+
+MAKE:
+/opt/src/swift-6.0.3-RELEASE/usr/bin/swiftc knucleotide.swift-2.swift -Ounchecked -wmo  -o knucleotide.swift-2.swift_run
+
+15.39 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./knucleotide.swift-2.swift_run 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

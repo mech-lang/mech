@@ -1,0 +1,39 @@
+NeedsFlip(p<[u8]:16,1>, flips<u64>) => <bool> := sequence/get(p, 1) != 0
+Flip(p<[u8]:16,1>, flips<u64>) = (q<[u8]:16,1>, count<u64>) :=
+  q := sequence/reverse-prefix(p, sequence/get(p, 1) + 1)
+  count := flips + 1.
+NeedsDigit(p<[u8]:16,1>, c<[u8]:16,1>, index<u64>, rank<u64>) => <bool> := rank > 0
+Digit(p<[u8]:16,1>, c<[u8]:16,1>, index<u64>, rank<u64>) = (q<[u8]:16,1>, counts<[u8]:16,1>, remaining<u64>, next<u64>) :=
+  factorial := number/factorial(rank)
+  digit := index / factorial
+  q := sequence/rotate-prefix(p, rank + 1, digit)
+  counts := sequence/set(c, rank + 1, digit)
+  remaining := number/mod(index, factorial)
+  next := rank - 1.
+NeedsCarry(p<[u8]:16,1>, c<[u8]:16,1>, rank<u64>, finished<bool>) => <bool> := finished == false
+Carry(p<[u8]:16,1>, c<[u8]:16,1>, rank<u64>, finished<bool>) = (q<[u8]:16,1>, counts<[u8]:16,1>, next<u64>, done<bool>) :=
+  digit := sequence/get(c, rank + 1) + 1
+  overflow := digit > rank
+  q := sequence/rotate-prefix(p, rank + 1, 1)
+  counts := sequence/set(c, rank + 1, control/select(overflow, 0, digit))
+  next := control/select(overflow, rank + 1, rank)
+  done := digit <= rank.
+Advance(p<[u8]:16,1>, c<[u8]:16,1>) = (q<[u8]:16,1>, counts<[u8]:16,1>) :=
+  (q, counts, rank, done) := control/while((p, c, 1, false), NeedsCarry, Carry).
+Preserve(p<[u8]:16,1>, c<[u8]:16,1>) = (q<[u8]:16,1>, counts<[u8]:16,1>) :=
+  q := p
+  counts := c.
+More(p<[u8]:16,1>, c<[u8]:16,1>, index<u64>, end<u64>, sum<u64>, maximum<u64>) => <bool> := index < end
+Permutation(p<[u8]:16,1>, c<[u8]:16,1>, index<u64>, end<u64>, sum<u64>, maximum<u64>) = (q<[u8]:16,1>, counts<[u8]:16,1>, next<u64>, stop<u64>, checksum<u64>, most<u64>) :=
+  (flipped, flips) := control/while((p, 0), NeedsFlip, Flip)
+  checksum := control/select(number/mod(index, 2) == 0, sum + flips, sum - flips)
+  most := number/max(maximum, flips)
+  next := index + 1
+  stop := end
+  (q, counts) := control/if(next < end, Advance, Preserve, (p, c)).
+Chunk(start<u64>, end<u64>, n<u64>) = (checksum<u64>, maximum<u64>) :=
+  (p, c, rest, rank) := control/while((sequence/iota-bytes(16), sequence/zero-bytes(16), start, n - 1), NeedsDigit, Digit)
+  (q, counts, index, stop, checksum, maximum) := control/while((p, c, start, end, 0, 0), More, Permutation).
+n := number/bounded(io/argument-u64(1), 1, 16)
+(checksum, maximum) := parallel/reduce-ranges(0, number/factorial(n), 4096, Chunk, n, "sum,max")
+io/write(text/format("{:i64}\nPfannkuchen({}) = {}\n", checksum, n, maximum))

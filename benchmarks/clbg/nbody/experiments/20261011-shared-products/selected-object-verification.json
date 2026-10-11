@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "programs": [
+    {
+      "id": "pairwise-seed8",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8-selected-verification.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8-selected-verification.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails",
+        "--simplify-square-seeds",
+        "--schedule-regions",
+        "8"
+      ],
+      "object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+      "measured_object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+      "identical_to_measured_object": true
+    },
+    {
+      "id": "compact-regions8",
+      "generation_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compact-regions8-selected-verification.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/compact-regions8-selected-verification.o",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--schedule-regions",
+        "8"
+      ],
+      "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+      "measured_object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+      "identical_to_measured_object": true
+    }
+  ]
+}

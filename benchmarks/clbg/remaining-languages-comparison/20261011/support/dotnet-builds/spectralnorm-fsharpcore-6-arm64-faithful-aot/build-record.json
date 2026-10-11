@@ -1,0 +1,66 @@
+{
+  "id": "spectralnorm-fsharpcore-6-arm64-faithful-aot",
+  "key": "spectralnorm:spectralnorm-fsharpcore-6-arm64-faithful-aot",
+  "benchmark": "spectralnorm",
+  "language": "fsharp-aot",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/spectralnorm-fsharpcore-6-arm64-faithful.fs",
+  "source_sha256": "c0f75150b11b8adafcf7b2b1336d56977274a1fe922d43c2e6f3e4a38dc24304",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/spectralnorm-fsharpcore-6.fs",
+  "original_source_sha256": "e003e6b7ec765b68104e54ac25d2378d0371a371bd35e6f07da2ba356755bfaa",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-fsharpcore-6.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n Thu, 06 Feb 2025 14:06:44 GMT\n\nMAKE:\ncp spectralnorm.fsharpcore-6.fsharpcore Program.fs\ncp Include/fsharpcore/program.fsproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/program.fsproj (in 2.11 sec).\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:13.41\n\n15.15s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 5500\n\nPROGRAM OUTPUT:\n1.274224153",
+  "adaptations": [
+    "Retain the original matrix dimension with a masked final vector lane at odd sizes instead of truncating it to an even value."
+  ],
+  "local_adaptation": true,
+  "physical_loc": 50,
+  "normalized_loc": 50,
+  "expansions": [],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "publish",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/spectralnorm-fsharpcore-6-arm64-faithful-aot/app.fsproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-6-arm64-faithful-aot",
+    "--disable-build-servers",
+    "-v",
+    "quiet",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/spectralnorm-fsharpcore-6-arm64-faithful-aot.build.log",
+  "execution_mode": "aot",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-6-arm64-faithful-aot/app",
+  "binary_sha256": "0c4b3ed1734248980ac50353e2370ec856432bd89e95c6ac24539fb855d0611d",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-6-arm64-faithful-aot/app",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-fsharpcore-6-arm64-faithful-aot/app": "0c4b3ed1734248980ac50353e2370ec856432bd89e95c6ac24539fb855d0611d"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  },
+  "small_validation": {
+    "bytes": 12,
+    "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+    "reference_match": true
+  },
+  "published_elapsed_hint": 0.945,
+  "timing_selection_reasons": [
+    "Lowest officially published elapsed time at the prescribed full workload; local timing still required."
+  ]
+}

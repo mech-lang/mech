@@ -1,0 +1,67 @@
+{
+  "id": "spectralnorm-csharpcore-2-jit",
+  "key": "spectralnorm:spectralnorm-csharpcore-2-jit",
+  "benchmark": "spectralnorm",
+  "language": "csharp",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/csharp/spectralnorm-csharpcore-2.cs",
+  "source_sha256": "7a30be71df3162e20382b0411b3cc717cedf54bdabc370d0efc7bb599c0bfc8b",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/dotnet/spectralnorm-csharpcore-2.cs",
+  "original_source_sha256": "7a30be71df3162e20382b0411b3cc717cedf54bdabc370d0efc7bb599c0bfc8b",
+  "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-csharpcore-2.html",
+  "upstream_notes": "NOTES:\n64-bit Ubuntu quad core\n.NET SDK 9.0.100\nHost Version: 9.0.0\nCommit: 9d5a6a9aa4\n\n<OutputType>Exe\n<TargetFramework>net9.0\n<ImplicitUsings>enable\n<Nullable>enable\n<AllowUnsafeBlocks>true\n<ServerGarbageCollection>true\n<ConcurrentGarbageCollection>true\n<PublishAot>false\n\n\n\n Thu, 06 Feb 2025 14:07:20 GMT\n\nMAKE:\ncp spectralnorm.csharpcore-2.csharpcore Program.cs\ncp Include/csharpcore/program.csproj .\n/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release\t\n  Determining projects to restore...\n  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/program.csproj (in 748 ms).\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/Program.cs(167,13): warning CS8602: Dereference of a possibly null reference. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/program.csproj]\n  program -> /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/bin/Release/net9.0/linux-x64/program.dll\n\nBuild succeeded.\n\n/home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/Program.cs(167,13): warning CS8602: Dereference of a possibly null reference. [/home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/program.csproj]\n    1 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.17\n\n12.11s to complete and log all make actions\n\nCOMMAND LINE:\n ./bin/Release/net9.0/linux-x64/program 5500\n\nEMPTY \n\n\nPROGRAM OUTPUT:\nUnhandled exception. System.ObjectDisposedException: Cannot access a disposed object.\nObject name: 'Microsoft.Win32.SafeHandles.SafeWaitHandle'.\n   at System.Threading.WaitHandle.WaitOneNoCheck(Int32 millisecondsTimeout, Boolean useTrivialWaits, Object associatedObject, WaitHandleWaitSourceMap waitSource)\n   at SpectralNorm.BarrierHandle.WaitOne() in /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/Program.cs:line 30\n   at SpectralNorm.Approximate.MultiplyAtAv(Double[] v, Double[] tmp, Double[] AtAv) in /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/Program.cs:line 170\n   at SpectralNorm.Approximate.Evaluate() in /home/dunham/all-benchmarksgame/benchmarksgame_i53330/spectralnorm/tmp/Program.cs:line 122",
+  "adaptations": [],
+  "local_adaptation": false,
+  "physical_loc": 129,
+  "normalized_loc": 131,
+  "expansions": [
+    {
+      "line": 85,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    },
+    {
+      "line": 105,
+      "extra_lines": 1,
+      "reason": "Independent statements or initialized bindings packed on one source line."
+    }
+  ],
+  "build_command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "build",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/spectralnorm-csharpcore-2-jit/app.csproj",
+    "-c",
+    "Release",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-2-jit",
+    "--disable-build-servers",
+    "-v",
+    "quiet"
+  ],
+  "build_status": "passed",
+  "build_log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/results/spectralnorm-csharpcore-2-jit.build.log",
+  "execution_mode": "jit",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-2-jit/app.dll",
+  "binary_sha256": "2080259d17f835ac68a893346b4e06f9bf9b77a9dbf339a41fa5082e12cc2672",
+  "command": [
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet/dotnet",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-2-jit/app.dll",
+    "{n}"
+  ],
+  "runtime_environment": {
+    "DOTNET_PROCESSOR_COUNT": "8",
+    "DOTNET_GCHeapCount": "8"
+  },
+  "artifact_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-2-jit/app": "170d9000cc976ddbdcd6a6567083010045e8658b79954b18267894770f7e3fcc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-2-jit/app.runtimeconfig.json": "a353f1abd7b9a8071c01e045c5c3a20c1b2e566fda4ac7b61c12c3acddc7bec2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-2-jit/app.pdb": "ad1f36675b2568ab9f2b0e1729a831564d9c762cba8696b3842c30136a84212a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-2-jit/app.dll": "2080259d17f835ac68a893346b4e06f9bf9b77a9dbf339a41fa5082e12cc2672",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/binaries/spectralnorm-csharpcore-2-jit/app.deps.json": "6a462ac6276fa69b78e97b74d8228965ed0a0cd3ca99b82010e58d6384d0db61"
+  },
+  "algorithm": {
+    "strict": true,
+    "native_benchmark_kernel": false,
+    "arithmetic": "binary64",
+    "work": "Unchanged full benchmark workload; application code and all application FFI/helpers count toward LOC."
+  }
+}

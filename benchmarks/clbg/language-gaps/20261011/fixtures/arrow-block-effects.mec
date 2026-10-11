@@ -1,0 +1,6 @@
+Pair(x<u64>) => <(u64,u64)> :=
+  y := x + 3
+  io/print("touch:{}\n", y)
+  (x, y)
+(a, b) := Pair(7)
+io/print("{} {}\n", a, b)

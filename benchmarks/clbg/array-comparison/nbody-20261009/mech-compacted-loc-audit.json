@@ -1,0 +1,50 @@
+{
+  "metric": "Nonblank, noncomment LOC with one assignment or sequential executable statement per line",
+  "rows": [
+    {
+      "program": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "physical_loc": 20,
+      "normalized_loc": 20,
+      "no_packed_assignments": true,
+      "final_statement": "energy"
+    },
+    {
+      "program": "mech-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "physical_loc": 25,
+      "normalized_loc": 25,
+      "no_packed_assignments": true,
+      "final_statement": "energy"
+    },
+    {
+      "program": "k",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.k",
+      "sha256": "2959dfe06e689010eda151dbd6aca7b3299b5fe12d0caabb263311830cd94fc1",
+      "physical_loc": 36,
+      "normalized_loc": 36,
+      "no_packed_assignments": true,
+      "final_statement": null
+    },
+    {
+      "program": "bqn",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-compact.bqn",
+      "sha256": "93dca70492c1923f6790d488200e65a84cbdfc72da4e5fdcca5a2bc65e89ba75",
+      "physical_loc": 26,
+      "normalized_loc": 26,
+      "no_packed_assignments": true,
+      "final_statement": null
+    },
+    {
+      "program": "bqn-optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.bqn",
+      "sha256": "1f13dbbee9e775f6574c465944fa2bb14c41dcdbe9640c36daa7ca1701ea36b1",
+      "physical_loc": 39,
+      "normalized_loc": 39,
+      "no_packed_assignments": true,
+      "final_statement": null
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+--> Working on Math::GMP
+Fetching http://www.cpan.org/authors/id/S/SH/SHLOMIF/Math-GMP-2.25.tar.gz ... OK
+==> Found dependencies: Alien::GMP
+--> Working on Alien::GMP
+Fetching http://www.cpan.org/authors/id/P/PL/PLICEASE/Alien-GMP-1.16.tar.gz ... OK
+Configuring Alien-GMP-1.16 ... OK
+==> Found dependencies: Devel::CheckLib
+--> Working on Devel::CheckLib
+Fetching http://www.cpan.org/authors/id/M/MA/MATTN/Devel-CheckLib-1.16.tar.gz ... OK
+Configuring Devel-CheckLib-1.16 ... OK
+Building Devel-CheckLib-1.16 ... OK
+Successfully installed Devel-CheckLib-1.16
+Building Alien-GMP-1.16 ... OK
+Successfully installed Alien-GMP-1.16
+Configuring Math-GMP-2.25 ... OK
+Building Math-GMP-2.25 ... OK
+Successfully installed Math-GMP-2.25
+--> Working on Math::BigInt::GMP
+Fetching http://www.cpan.org/authors/id/P/PJ/PJACKLAM/Math-BigInt-GMP-1.7003.tar.gz ... OK
+Configuring Math-BigInt-GMP-1.7003 ... OK
+Building Math-BigInt-GMP-1.7003 ... OK
+Successfully installed Math-BigInt-GMP-1.7003
+4 distributions installed

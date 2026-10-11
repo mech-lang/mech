@@ -1,0 +1,70 @@
+{
+  "status": "passed",
+  "reference_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-state-reference",
+  "reference_binary_sha256": "8f6dfc3bb8d9a1e0b5e71eca8f49d154ddd7902323fe0d3b15ab604c37d25bde",
+  "reference_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-state-reference.rs",
+  "reference_source_sha256": "d516e54fd3f9cb15abf404f922a3166f257b2eedf43bcb2f6fc7c79a3d0bf05a",
+  "checks": [
+    {
+      "id": "pairwise-before",
+      "steps": 0,
+      "max_scaled_error": 3.465003555274769e-16
+    },
+    {
+      "id": "pairwise-before",
+      "steps": 1,
+      "max_scaled_error": 3.462799593712276e-16
+    },
+    {
+      "id": "pairwise-before",
+      "steps": 1000,
+      "max_scaled_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "pairwise-before",
+      "steps": 10000,
+      "max_scaled_error": 2.8703706078658797e-12
+    },
+    {
+      "id": "pairwise-seed8",
+      "steps": 0,
+      "max_scaled_error": 3.465003555274769e-16
+    },
+    {
+      "id": "pairwise-seed8",
+      "steps": 1,
+      "max_scaled_error": 3.462799593712276e-16
+    },
+    {
+      "id": "pairwise-seed8",
+      "steps": 1000,
+      "max_scaled_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "pairwise-seed8",
+      "steps": 10000,
+      "max_scaled_error": 2.8703706078658797e-12
+    },
+    {
+      "id": "compact-regions8",
+      "steps": 0,
+      "max_scaled_error": 3.465003555274769e-16
+    },
+    {
+      "id": "compact-regions8",
+      "steps": 1,
+      "max_scaled_error": 3.462799593712276e-16
+    },
+    {
+      "id": "compact-regions8",
+      "steps": 1000,
+      "max_scaled_error": 5.9287611933976234e-15
+    },
+    {
+      "id": "compact-regions8",
+      "steps": 10000,
+      "max_scaled_error": 1.6789902801406242e-12
+    }
+  ],
+  "max_scaled_error": 2.8703706078658797e-12
+}

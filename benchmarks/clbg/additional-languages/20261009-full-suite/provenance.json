@@ -1,0 +1,60 @@
+{
+  "repositories": [
+    {
+      "repo": "mikeleppane/mojo-rust-python-perf",
+      "commit": "39bf8264f68bfa9d75e1b6ac4ab6d9f44a2c3046",
+      "reused": [
+        "n_body_mojo/n_body.mojo",
+        "n_body_mojo/n_body_naive.mojo"
+      ],
+      "adaptation": "Mojo 1.1 API migration; official argv workload and initial/final energies rather than upstream timing/conservation diagnostics."
+    },
+    {
+      "repo": "cemrehancavdar/faster-python-bench",
+      "commit": "6c5ed6f801624d442f8e17183b3bac7db49367ee",
+      "reused": [
+        "mojo_benchmark/spectral_norm.mojo"
+      ],
+      "adaptation": "Mojo 1.1 def syntax and full 5500 input; native CLI/formatting wrapper. Optimized SIMD/parallel variant is a local port."
+    },
+    {
+      "repo": "modular/modular",
+      "commit": "135c332fec9b326cab8e2f3951a0b2f31d017a5d",
+      "reused": [],
+      "finding": "Current official Mandelbrot examples use different grids/iterations or GPU/Python paths. Official stdlib/MAX API references used."
+    },
+    {
+      "repo": "diku-dk/futhark-benchmarks",
+      "commit": "69aee0d23cea5acc3f7026e2380444717070382f",
+      "reused": [],
+      "finding": "Official N-body/mandelbrot examples are different workloads. All ten CLBG Futhark ports are written locally."
+    }
+  ],
+  "other_searches": [
+    "seed-lang.com/docs/comparison advertises seven Mojo benchmarks but publishes no linked Mojo suite/source; not used.",
+    "Futhark package index and project repositories did not provide a matching ten-program CLBG suite."
+  ],
+  "upstream_files": {
+    "upstream/pixi.toml": "c4bc1b459ec3f361dcc7c1bcbb2d51a7204d77325952864aa7d525c9eeaaf6aa",
+    "upstream/n_body.mojo": "600fe368b8707aad5a6927715a74f9594e525a8475b7fc0eacabf736da18b6f1",
+    "upstream/n_body_naive.mojo": "0e656b8271bd1237ebd9eafed55dbed5f66a8fb658bcf2ce280372c0a111742d",
+    "upstream/mojo-rust-python-perf/README.md": "76954182c4c795fd302034d20575a4d534aa47b7dc94eccaecf1bf725d56f9e8",
+    "upstream/mojo-api/_io.mojo": "127243d59b1a620c3e22a68ddc8143ed714a34091c29e68c0d40ea6f829972bb",
+    "upstream/mojo-api/file_descriptor.mojo": "5707d15601542e39cbfee3eac89c35c1db28a048fe1ca860585482dbf0c01afa",
+    "upstream/mojo-api/test_parallelize.mojo": "da6b54b77dea75251345032e61c49a809bd1547035309d00eaf57246581a8ec7",
+    "upstream/mojo-api/test_external_call.mojo": "b657356e8ee2fb434c4189a1f427a6c58383e733a46582e479d9ce2c5d398d9a",
+    "upstream/mojo-api/functional.mojo": "8fa72d58eabeb3e9b36d9b75eb17ab22b9c69764e9de7c87ed0abc42bca55838",
+    "upstream/mojo-api/list.mojo": "8d1c5e28a37062c49ca8d4a293dec7ab31d8d790bb9e005bdd80a5749501603f",
+    "upstream/mojo-api/test_write_to_stdout.mojo": "e06ecbe32d10917de0424c0c543d71c4469fa0d6259424149fb80177eeffe51f",
+    "upstream/mojo-api/test_file_descriptor.mojo": "28645254d69c794cbb3777c49ac35107024a9d721cafaef5d02838f72aa1ddf4",
+    "upstream/futhark-benchmarks/LICENSE": "3a9258b1a7b289806c72e7fe831c1a27d5016df18f6c68be99bfcf44f9ff9932",
+    "upstream/faster-python-bench/spectral_norm.mojo": "42febd61d51f3f8aed47dacd68652c980cef373a40a94fd05a69ab2892cc8ce9",
+    "upstream/faster-python-bench/bench.mojo": "9ef93215242797f49cfe414f3f7db597df03795f7d033da8d4d6ee746368e6d2",
+    "upstream/faster-python-bench/README.md": "eb23a86986e40677ee9de00dfe85f6d8ff74f77efe284d4215971cb077589845",
+    "upstream/faster-python-bench/nbody.mojo": "a6d24cc3e4d720c6d9398cb1ce8cfcd1acfbd6cae7dbccffedfca322d9bd134e",
+    "upstream/futhark-benchmarks/accelerate/nbody/nbody.fut": "2b75447e29dc0c178e3b3c3d113ed8aa09cb0ae21eaf73d3fdcd61eeaf21e23e",
+    "upstream/futhark-benchmarks/accelerate/nbody/physics.fut": "386217c5b4686c39ec7ad1e81f04bcd90483708e8819431884cc64f882f34bc9",
+    "upstream/futhark-benchmarks/accelerate/mandelbrot/generic_mandelbrot.fut": "82f3703bca2dc31122d555d186c8155dbb460b87649b8189a71f6a7d47c72c4a",
+    "upstream/futhark-benchmarks/accelerate/mandelbrot/mandelbrot.fut": "f813ecb7aa90547705004cac374aa6be33e3f48a7270625cc4e13daf6b89b699"
+  }
+}

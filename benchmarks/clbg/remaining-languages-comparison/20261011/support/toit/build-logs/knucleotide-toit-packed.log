@@ -1,0 +1,4 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/knucleotide-toit-packed.toit:7:15: warning: Class 'Buffer' is deprecated. Use 'io.Buffer' instead
+  sequence := Buffer
+              ^~~~~~
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/knucleotide-toit-packed: replacing existing signature

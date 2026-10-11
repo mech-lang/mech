@@ -1,0 +1,33 @@
+{
+  "status": "succeeded",
+  "url": "https://mech-benchmark-explorer.refreshthen.chatgpt.site",
+  "project_id": "appgprj_6ac8f49664688191961eac14d8a9465b",
+  "deployment_id": "appgdep_6ac9a393577881918b3a64b3cc01efdc",
+  "version_id": "appgprj_6ac8f49664688191961eac14d8a9465b~appgver_bf3302c2326881919af7a7787a19d2f8",
+  "commit_sha": "47ac01c5fc1b03f6e778844e3e9a558bb4a8c0b4",
+  "published_at": "2026-10-10T02:31:55.123131+00:00",
+  "coverage": {
+    "mojo": 10,
+    "futhark": 9
+  },
+  "admitted_candidate_sources": 50,
+  "admitted_compact_performance_pairs": 19,
+  "valid_full_samples": 180,
+  "explorer_endpoint_programs": 293,
+  "explorer_source_hashes": 308,
+  "verification": {
+    "numeric_source_median_geometric_mean_and_covariance_checks": "passed",
+    "responsive_ui_widths": [
+      1440,
+      900,
+      390,
+      320
+    ],
+    "sorting_widths": [
+      1440,
+      320
+    ],
+    "futhark_allocation_gap_and_shared_nine_selection": "passed",
+    "browser_errors": 0
+  }
+}

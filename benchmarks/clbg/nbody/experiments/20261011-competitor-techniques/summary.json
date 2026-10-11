@@ -1,0 +1,109 @@
+{
+  "status": "passed",
+  "selected": {
+    "fast": "pairwise-before",
+    "compact": "compact-regions8"
+  },
+  "comparisons": [
+    {
+      "candidate": "compact-regions8",
+      "baseline": "compact-before",
+      "before_seconds": 1.119697625,
+      "after_seconds": 1.089513042,
+      "median_ratio": 0.9730422014604168,
+      "paired_geomean_ratio": 0.9761713097083414,
+      "paired_bootstrap_95": [
+        0.9700336618937888,
+        0.9822329525062846
+      ],
+      "bootstrap_note": "Within-cohort paired-round diagnostic; not a guarantee against host/frequency effects."
+    },
+    {
+      "candidate": "compact-seed",
+      "baseline": "compact-before",
+      "before_seconds": 1.119697625,
+      "after_seconds": 1.093152958,
+      "median_ratio": 0.976293004104568,
+      "paired_geomean_ratio": 0.9766763277482343,
+      "paired_bootstrap_95": [
+        0.9729859322969311,
+        0.9790067013495081
+      ],
+      "bootstrap_note": "Within-cohort paired-round diagnostic; not a guarantee against host/frequency effects."
+    },
+    {
+      "candidate": "pairwise-regions16seed",
+      "baseline": "pairwise-before",
+      "before_seconds": 1.046597166,
+      "after_seconds": 1.047539,
+      "median_ratio": 1.0008999011564303,
+      "paired_geomean_ratio": 1.0023748642921513,
+      "paired_bootstrap_95": [
+        0.9978210637779497,
+        1.0065151117891633
+      ],
+      "bootstrap_note": "Within-cohort paired-round diagnostic; not a guarantee against host/frequency effects."
+    }
+  ],
+  "measured_programs": 8,
+  "completed_samples": 56,
+  "workload": {
+    "steps": 50000000,
+    "bodies": 5,
+    "pairs_per_step": 10,
+    "velocity_components": 3,
+    "initial_and_final_energy": true
+  },
+  "protocol": "Fresh sequential processes through exit; full input, initial/final output and startup counted; builds, full validation and one full-workload warmup excluded. Seeded shuffled rounds; AC/LPM and competing compiler checks. LOC only.",
+  "power": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "confirmation_report": "confirmation-50m.json",
+  "reports": {
+    "math-pilot-50m.json": "96f55ded89a8a8018efcfafe563d55ea201e90d5ed8bcd79d2ddaef191064160",
+    "columns-pilot-50m.json": "ba5a392437823c41420138584a474fa778f2c0b07fef3f8c7aec0a396205f3ff",
+    "region-pilot-50m.json": "bdbf558308e22c1f5731d1be2d77261fd494118d51b6f94bcbc9bab080014ab3",
+    "confirmation-50m.json": "deca5b727b0f060068dcc17bb6f6983ee68d68b075c5d375e8fc5dca737d68e9",
+    "region-combined-pilot-50m.json": "43db76e85a5e14acd94188c77631b253fea7672c9c265b230cd94a27a3241507",
+    "sign-pilot-50m.json": "2dcbca361ebc36e4d3dab8d13e16d1241ce64b51fdb310a5633cf3a14aebcfce",
+    "pressure-pilot-50m.json": "6a007ecc25e082c7fc2b8538cc7a168735bbcf7bff6c00c0f8b6a2b26ec75a1c",
+    "consumer-pilot-50m.json": "dec42331a4df99b372c65ef5084b2d28dec4ce712aa982b6b3b8bad9fa80b5fe"
+  },
+  "compiler_pins": {
+    "hosts/gpu/src/fused_f64/mod.rs": "a37b821a1f625be9f3ef7059b45d1d38dc590bd67a191067f7b1fd0ca800b901",
+    "hosts/gpu/src/fused_f64/native.rs": "37d0c34abd60b137e77770584960f679aef836c3269034280055b5dd68628579",
+    "hosts/gpu/src/fused_f64/runner.rs": "4a3b4aed09c82e189693ae4e1c355e680697696400193edf81e8bb65fad204e3",
+    "hosts/gpu/src/fused_f64/map_runner.rs": "711183412b2b769651da417559622512fffb9ca790eb16795c0e1f932a6f3476",
+    "benchmarks/clbg/nbody/mech-driver/tests/fused.rs": "2acab8a1e3443cf3a7509faa57f99bb5ce7ec2da1cb03fa43231ce96c880d606",
+    "benchmarks/clbg/mandelbrot/mech-driver/tests/native_map.rs": "a5141a9cbfa92be765f86b64df4e6a98d8762db142a7637f0e9abed1fd338160"
+  },
+  "final_compiler_snapshot": "compiler-final",
+  "final_object_verification_sha256": "4865043941a4e93a192ba47f693644e2b9d43d78098bbc84293e7bb1c7c3a1b7",
+  "independent_state_audit_sha256": "0955aee7341ea9e6d74ee2a572af5d16eb0ff701c90e619f4ad2b95a5c42cb83",
+  "independent_max_scaled_error": 2.8703706078658797e-12,
+  "tests": {
+    "fused": 31,
+    "native_map": 14,
+    "failures": 0
+  },
+  "control_sources": {
+    "nbody-gpp-6-llvm-native": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-6.cpp",
+      "source_sha256": "38b69a7d86681bd080b5d3ebff0fb10c847598910f41569ce3188d8aba94808f"
+    },
+    "chapel-3": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-chapel-3.chpl",
+      "source_sha256": "fb698d60d235ca97553a22a1c36156cc9ab9bfec6b4948017219de06b5bd070f"
+    },
+    "rust-3": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-rust-3.rs",
+      "source_sha256": "34c935a74f929712bf8864697763c7d37806eb97ffdbad5e987346f5e761c994"
+    }
+  },
+  "source_changes": false,
+  "specialized_host_kernel": false,
+  "fast_conclusion": "No confirmed gain; retain unchanged 25-LOC fast source and options. Fresh control timing is not a compiler speedup.",
+  "compact_conclusion": "20-LOC source unchanged. General pressure-aware arithmetic scheduling in 8-instruction compute regions improves the matched median by 2.7%.",
+  "summarize_sha256": "f7ca94cc455200897033f0f3e337d60ed4b6f69248c4b23dabeeb374df6b8dea"
+}

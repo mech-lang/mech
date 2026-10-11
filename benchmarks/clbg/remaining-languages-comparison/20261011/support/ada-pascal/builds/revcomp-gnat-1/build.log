@@ -1,0 +1,4 @@
+revcomp.adb:97:32: warning: index for "Fasta" may assume lower bound of 1 [-gnatww]
+revcomp.adb:97:32: warning: suggested replacement: "Fasta'First" [-gnatww]
+revcomp.adb:98:27: warning: index for "Fasta" may assume lower bound of 1 [-gnatww]
+revcomp.adb:98:27: warning: suggested replacement: "Fasta'First" [-gnatww]

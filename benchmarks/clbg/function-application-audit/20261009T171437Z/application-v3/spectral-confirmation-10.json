@@ -1,0 +1,121 @@
+{
+  "created_at": "2026-10-09T17:56:37.257179+00:00",
+  "build_report_sha256": "ff920ac9b8ea783924792133bbdbc51fa98e7bc0110469e2d4f31b4ed694f406",
+  "verification_sha256": "2bf44e8262c23fc77b5e6454afb8c3d8754f93f4be7f0f6f86eb27a3251d1814",
+  "protocol": {
+    "samples": 10,
+    "power": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "required_workloads": {
+      "nbody": 50000000,
+      "mandelbrot": 16000,
+      "knucleotide": 25000000,
+      "spectralnorm": 5500,
+      "revcomp": 25000000,
+      "fannkuchredux": 12,
+      "fasta": 25000000,
+      "binarytrees": 21,
+      "regexredux": 5000000,
+      "pidigits": 10000
+    },
+    "workers": 8,
+    "metric": "Physical LOC excluding blank/comment-only lines",
+    "selected_variants": "before,after",
+    "timing": "Sequential fresh process to exit with complete stdout to regular file; builds and output hashing excluded",
+    "ordering": "Randomized complete rounds; published binary plus new compiler before/after sources",
+    "compiler_guard": "Reject any sample with detected competing compiler or power change"
+  },
+  "programs": [
+    {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "source_distinction": null,
+      "variants": {
+        "before": {
+          "loc": 13,
+          "binary_sha256": "54c780617227a1c2f4411d748e7006a6ba413dd9bb66a11b7f7803f120067f1f",
+          "samples_seconds": [
+            0.0828975,
+            0.084550166,
+            0.085164625,
+            0.084828458,
+            0.085101459,
+            0.084346083,
+            0.09776075,
+            0.083859416,
+            0.085812916,
+            0.084314542
+          ],
+          "median_seconds": 0.08468931199999999,
+          "stdev_seconds": 0.004254771713750318,
+          "time_ratio_to_before": 1.0
+        },
+        "after": {
+          "loc": 9,
+          "binary_sha256": "02ba64480f916df8cc8726a14e370b4c214438421d8cf73f5618e0c8619bcf5d",
+          "samples_seconds": [
+            0.0879425,
+            0.09056475,
+            0.089182334,
+            0.088772583,
+            0.088688208,
+            0.088222916,
+            0.086205625,
+            0.088672625,
+            0.090836083,
+            0.090151541
+          ],
+          "median_seconds": 0.0887303955,
+          "stdev_seconds": 0.0013706386704891553,
+          "time_ratio_to_before": 1.0477165701853854
+        }
+      },
+      "discarded": [],
+      "order": [
+        [
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "after"
+        ],
+        [
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "after"
+        ],
+        [
+          "after",
+          "before"
+        ],
+        [
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "after"
+        ],
+        [
+          "after",
+          "before"
+        ],
+        [
+          "after",
+          "before"
+        ],
+        [
+          "before",
+          "after"
+        ]
+      ]
+    }
+  ],
+  "status": "complete"
+}

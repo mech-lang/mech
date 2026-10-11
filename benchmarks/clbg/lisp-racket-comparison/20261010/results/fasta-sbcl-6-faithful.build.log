@@ -1,0 +1,81 @@
+; compiling file "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-6-faithful.lisp" (written 10 OCT 2026 07:06:59 PM):
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-6-faithful.lisp
+; in: DEFUN CUMSUM
+;     (INCF SUM P)
+; --> THE 
+; ==>
+;   (+ P SUM)
+; 
+; note: doing float to pointer coercion (cost 13), for:
+;       the first result of inline float arithmetic
+
+; in: DEFUN MAKE-CPROB
+;     (LENGTH PROBS)
+; 
+; note: unable to
+;   optimize
+; due to type uncertainty:
+;   The first argument is a SEQUENCE, not a VECTOR.
+
+; in: DEFUN NEXT-RANDOM
+;     (DEFUN NEXT-RANDOM ()
+;       (DECLARE (VALUES DOUBLE-FLOAT))
+;       (SETF R (MOD (+ # IC) +IM+))
+;       (/ (FLOAT R 1.0d0) (FLOAT +IM+ 1.0d0)))
+; --> SB-IMPL::%DEFUN SB-INT:NAMED-LAMBDA 
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA NEXT-RANDOM
+;         NIL
+;       (DECLARE (VALUES DOUBLE-FLOAT))
+;       (BLOCK NEXT-RANDOM
+;         (SETF R (MOD # +IM+))
+;         (/ (FLOAT R 1.0d0) (FLOAT +IM+ 1.0d0))))
+; 
+; note: doing float to pointer coercion (cost 13) to "<return value>"
+
+; in: DEFUN RANDOMIZE
+;     (DEFUN RANDOMIZE (AMINO-ACIDS-SYMS AMINO-ACIDS-CPROBS TITLE N)
+;       (DECLARE (TYPE FIXNUM N))
+;       (DECLARE (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT (*)) AMINO-ACIDS-CPROBS))
+;       (OUTPUT-LINE TITLE)
+;       (LOOP WITH BUF OF-TYPE SIMPLE-BASE-STRING = (MAKE-STRING +BUFFER-SIZE+
+;                                                                :ELEMENT-TYPE
+;                                                                'BASE-CHAR)
+;             WITH I OF-TYPE FIXNUM = ...))
+; ==>
+;   (SB-IMPL::%DEFUN 'RANDOMIZE
+;                    (SB-INT:NAMED-LAMBDA RANDOMIZE
+;                        (AMINO-ACIDS-SYMS AMINO-ACIDS-CPROBS TITLE N)
+;                      (DECLARE (SB-C::TOP-LEVEL-FORM))
+;                      (DECLARE (TYPE FIXNUM N))
+;                      (DECLARE
+;                       (TYPE (SIMPLE-ARRAY DOUBLE-FLOAT #) AMINO-ACIDS-CPROBS))
+;                      (BLOCK RANDOMIZE
+;                        (OUTPUT-LINE TITLE)
+;                        (LOOP WITH BUF OF-TYPE SIMPLE-BASE-STRING = (MAKE-STRING
+;                                                                     +BUFFER-SIZE+
+;                                                                     :ELEMENT-TYPE
+;                                                                     'BASE-CHAR)
+;                              WITH I OF-TYPE FIXNUM = ...))))
+; 
+; caught STYLE-WARNING:
+;   Call to COMMON-LISP-USER::NEXT-RANDOM could not be inlined because no
+;   definition for it was seen prior to its first use.
+
+; file: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/sources/fasta-sbcl-6-faithful.lisp
+; in: DEFUN MAIN
+;     (RESET-RANDOM)
+; 
+; caught STYLE-WARNING:
+;   undefined function: COMMON-LISP-USER::RESET-RANDOM
+; 
+; compilation unit finished
+;   Undefined function:
+;     RESET-RANDOM
+;   caught 2 STYLE-WARNING conditions
+;   printed 3 notes
+
+
+; wrote /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/lisp-racket-comparison/20261010/builds/fasta-sbcl-6-faithful/program.fasl
+; compilation finished in 0:00:00.056

@@ -1,0 +1,89 @@
+{
+  "status": "passed",
+  "timed": false,
+  "purpose": "Supplemental identity checks for odd-depth constructor branches; exact pinned constructor bodies with helper renaming only. Does not execute benchmark workloads or enter timing means.",
+  "depths": [
+    1,
+    3,
+    7,
+    11
+  ],
+  "columns": [
+    "total cells",
+    "unique headers",
+    "unique backing stores",
+    "leaf cells",
+    "all nodes have two slots"
+  ],
+  "evidence": {
+    "compact": [
+      [
+        3,
+        3,
+        3,
+        2,
+        1
+      ],
+      [
+        15,
+        15,
+        15,
+        8,
+        1
+      ],
+      [
+        255,
+        255,
+        255,
+        128,
+        1
+      ],
+      [
+        4095,
+        4095,
+        4095,
+        2048,
+        1
+      ]
+    ],
+    "optimized": [
+      [
+        3,
+        3,
+        3,
+        2,
+        1
+      ],
+      [
+        15,
+        15,
+        15,
+        8,
+        1
+      ],
+      [
+        255,
+        255,
+        255,
+        128,
+        1
+      ],
+      [
+        4095,
+        4095,
+        4095,
+        2048,
+        1
+      ]
+    ]
+  },
+  "sha256": {
+    "evidence/work_probe_odd.m": "9ca3852a02660bbfac221850e1e033eaa29ee57e93d6421e19609e0e5f6556c1",
+    "evidence/allocation-identity-odd.json": "337984e1f00b9ae90d75ffeff40be9d2e206b7b97406aa5a68274e08cb5beae9",
+    "evidence/allocation_identity.cpp": "b264e77c479e0a4ebad17fa258bda23a778ef3aa030a5ecc441d6c0bb0352fad",
+    "evidence/allocation_identity.mexmaca64": "cb3f0a95c3043db6de47deb45aaba0b26a6e7c2519e2ea279bb3f49abe54f0dc",
+    "sources/binarytrees_compact.m": "0cc8469fc532bf963b10d2344ae0ca70236b435b627cfabbbea6e2cb58a24a89",
+    "sources/binarytrees_optimized.m": "5cdbc269335343bc82f1f669ae1ccf50194e8cc6a52ee67773a3656ccdcceec0"
+  },
+  "finished_at": "2026-10-10T19:08:51.963034+00:00"
+}

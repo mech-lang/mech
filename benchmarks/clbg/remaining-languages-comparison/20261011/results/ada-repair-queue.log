@@ -1,0 +1,20 @@
+WAITING for the native timing batch to finish and exit.
+STEP prepare_ada_regex_heap.py
+{"status": "reviewed", "key": "regexredux:regexredux-ada-pcre2-heap", "loc": 126, "probes": 6}
+STEP run_ada_regex_repair.py
+RUN 1 mech-control-regexredux
+SAMPLE 1 mech-control-regexredux 0.486047s
+RUN 1 regexredux-ada-pcre2-heap
+SAMPLE 1 regexredux-ada-pcre2-heap 2.522671s
+RUN 2 mech-control-regexredux
+SAMPLE 2 mech-control-regexredux 0.491364s
+RUN 2 regexredux-ada-pcre2-heap
+SAMPLE 2 regexredux-ada-pcre2-heap 2.512303s
+RUN 3 mech-control-regexredux
+SAMPLE 3 mech-control-regexredux 0.492640s
+RUN 3 regexredux-ada-pcre2-heap
+SAMPLE 3 regexredux-ada-pcre2-heap 2.541649s
+REPORT complete
+STEP summarize.py
+{"status": "passed", "comparisons": 100, "completed_samples": 645, "expected_samples": 645, "pending_groups": 0, "full_failures": 1}
+COMPLETE: corrected full-workload timings and summary.

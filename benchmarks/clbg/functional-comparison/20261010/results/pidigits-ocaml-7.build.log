@@ -1,0 +1,3 @@
+File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/functional-comparison/20261010/sources/pidigits-ocaml-7.ml", line 1:
+Warning 24 [bad-module-name]: bad source file name: Pidigits-ocaml-7 is not a valid module name.
+ld: warning: ignoring duplicate libraries: '-lcamlidl', '-lgmp', '-lmpfr'

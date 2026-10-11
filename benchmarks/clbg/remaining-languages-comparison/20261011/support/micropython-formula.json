@@ -1,0 +1,167 @@
+{
+  "name": "micropython",
+  "full_name": "micropython",
+  "tap": "homebrew/core",
+  "oldnames": [],
+  "aliases": [],
+  "versioned_formulae": [],
+  "desc": "Python implementation for microcontrollers and constrained systems",
+  "license": "MIT",
+  "homepage": "https://www.micropython.org/",
+  "versions": {
+    "stable": "1.29.0",
+    "head": null,
+    "bottle": true
+  },
+  "urls": {
+    "stable": {
+      "url": "https://github.com/micropython/micropython/releases/download/v1.29.0/micropython-1.29.0.tar.xz",
+      "tag": null,
+      "revision": null,
+      "using": null,
+      "checksum": "d925a7c664e79a2bdf3dfcb285ba5e2237041cc35a0bd4ee573b6c5711efeca0"
+    }
+  },
+  "patches": [],
+  "revision": 0,
+  "version_scheme": 0,
+  "compatibility_version": null,
+  "autobump": true,
+  "no_autobump_message": null,
+  "skip_livecheck": false,
+  "bottle": {
+    "stable": {
+      "rebuild": 0,
+      "root_url": "https://ghcr.io/v2/homebrew/core",
+      "files": {
+        "arm64_golden_gate": {
+          "cellar": ":any_skip_relocation",
+          "url": "https://ghcr.io/v2/homebrew/core/micropython/blobs/sha256:6907d511cdd5e334bcc8e20e06fe661bac2c30607de06871de7b409ef12366a4",
+          "sha256": "6907d511cdd5e334bcc8e20e06fe661bac2c30607de06871de7b409ef12366a4"
+        },
+        "arm64_tahoe": {
+          "cellar": ":any_skip_relocation",
+          "url": "https://ghcr.io/v2/homebrew/core/micropython/blobs/sha256:94590668f87b4e8c68591b0ebaefa7ec7aa739082a66abfc87327fb40e188046",
+          "sha256": "94590668f87b4e8c68591b0ebaefa7ec7aa739082a66abfc87327fb40e188046"
+        },
+        "arm64_sequoia": {
+          "cellar": ":any_skip_relocation",
+          "url": "https://ghcr.io/v2/homebrew/core/micropython/blobs/sha256:e753189ff0d5b5b8c23c5d586d466ea195ed0fd54c6ce396791d7da063c657d7",
+          "sha256": "e753189ff0d5b5b8c23c5d586d466ea195ed0fd54c6ce396791d7da063c657d7"
+        },
+        "arm64_sonoma": {
+          "cellar": ":any_skip_relocation",
+          "url": "https://ghcr.io/v2/homebrew/core/micropython/blobs/sha256:be511518e1ed503262886c4ed7a50c712b722f0878bd5462ff4bc6d244c7cab8",
+          "sha256": "be511518e1ed503262886c4ed7a50c712b722f0878bd5462ff4bc6d244c7cab8"
+        },
+        "sequoia": {
+          "cellar": ":any_skip_relocation",
+          "url": "https://ghcr.io/v2/homebrew/core/micropython/blobs/sha256:a4c6635bd2a429043a64ff3416a03cd162c8513eaf45f1edf47d417ded3846b7",
+          "sha256": "a4c6635bd2a429043a64ff3416a03cd162c8513eaf45f1edf47d417ded3846b7"
+        },
+        "sonoma": {
+          "cellar": ":any_skip_relocation",
+          "url": "https://ghcr.io/v2/homebrew/core/micropython/blobs/sha256:c478690e086c6e89447463ab23e7368cb6ef7a41f244dc32b696579289a6452f",
+          "sha256": "c478690e086c6e89447463ab23e7368cb6ef7a41f244dc32b696579289a6452f"
+        },
+        "arm64_linux": {
+          "cellar": ":any",
+          "url": "https://ghcr.io/v2/homebrew/core/micropython/blobs/sha256:5c38fe5e92841b7e294bc1d17e1e37cd1279a3cd0a68215bd1c91b9dbf240831",
+          "sha256": "5c38fe5e92841b7e294bc1d17e1e37cd1279a3cd0a68215bd1c91b9dbf240831"
+        },
+        "x86_64_linux": {
+          "cellar": ":any",
+          "url": "https://ghcr.io/v2/homebrew/core/micropython/blobs/sha256:7cf32cd611e2cad51408a2daaa974a105868f36e85a3e2c43706a7c6efc9d556",
+          "sha256": "7cf32cd611e2cad51408a2daaa974a105868f36e85a3e2c43706a7c6efc9d556"
+        }
+      }
+    }
+  },
+  "pour_bottle_only_if": null,
+  "keg_only": false,
+  "keg_only_reason": null,
+  "options": [],
+  "build_dependencies": [
+    "pkgconf"
+  ],
+  "dependencies": [],
+  "test_dependencies": [],
+  "recommended_dependencies": [],
+  "optional_dependencies": [],
+  "uses_from_macos": [
+    "libffi",
+    "python"
+  ],
+  "uses_from_macos_bounds": [
+    {},
+    {}
+  ],
+  "requirements": [],
+  "conflicts_with": [],
+  "conflicts_with_reasons": [],
+  "link_overwrite": [],
+  "caveats": null,
+  "installed": [],
+  "linked_keg": null,
+  "pinned": false,
+  "outdated": false,
+  "deprecated": false,
+  "deprecation_date": null,
+  "deprecation_reason": null,
+  "deprecation_replacement_formula": null,
+  "deprecation_replacement_cask": null,
+  "deprecate_args": null,
+  "disabled": false,
+  "disable_date": null,
+  "disable_reason": null,
+  "disable_replacement_formula": null,
+  "disable_replacement_cask": null,
+  "disable_args": null,
+  "post_install_steps": [],
+  "post_install_defined": false,
+  "service": null,
+  "tap_git_head": "dc8888f07ec33440c1b178e01e08cc89f56e6b76",
+  "ruby_source_path": "Formula/m/micropython.rb",
+  "ruby_source_checksum": {
+    "sha256": "2b50cdd44e0665fb87ed123e1cc8409352e2f51e029023ddadd202e0720228cd"
+  },
+  "variations": {},
+  "executables": [
+    "micropython",
+    "mpy-cross"
+  ],
+  "analytics": {
+    "install": {
+      "30d": {
+        "micropython": 713
+      },
+      "90d": {
+        "micropython": 2182,
+        "micropython --HEAD": 1
+      },
+      "365d": {
+        "micropython": 8606,
+        "micropython --HEAD": 6
+      }
+    },
+    "install_on_request": {
+      "30d": {
+        "micropython": 713
+      },
+      "90d": {
+        "micropython": 2182,
+        "micropython --HEAD": 1
+      },
+      "365d": {
+        "micropython": 8606,
+        "micropython --HEAD": 6
+      }
+    },
+    "build_error": {
+      "30d": {
+        "micropython": 0
+      }
+    }
+  },
+  "generated_date": "2026-10-11"
+}

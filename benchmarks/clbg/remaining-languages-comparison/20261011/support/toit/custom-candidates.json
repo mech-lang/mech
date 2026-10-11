@@ -1,0 +1,128 @@
+[
+  {
+    "id": "mandelbrot-toit-rows",
+    "benchmark": "mandelbrot",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/mandelbrot-toit-rows.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+    "adaptations": [
+      "Canonical 50-iteration binary64 Mandelbrot from z=0, complete PBM including arbitrary-width row padding; reuse a row buffer and cached squares instead of one native write per byte."
+    ],
+    "local_adaptation": true,
+    "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/mandelbrot-toit-8.toit",
+    "upstream_source_sha256": "81d0dc61682198b03f5f202f434ab747fd1ee64ad36e14d278d1156c53dc5433"
+  },
+  {
+    "id": "spectralnorm-toit-recurrence",
+    "benchmark": "spectralnorm",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/spectralnorm-toit-recurrence.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+    "adaptations": [
+      "Use exact integer denominator recurrence and one scratch List for the same 40 full dense matrix/vector products; retain binary64 division, products and summation order."
+    ],
+    "local_adaptation": true,
+    "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/spectralnorm-toit-8.toit",
+    "upstream_source_sha256": "12498a8a6684768c45d511f88411eab517feeac23528832da51d566bfd60a712"
+  },
+  {
+    "id": "fannkuchredux-toit-reuse",
+    "benchmark": "fannkuchredux",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fannkuchredux-toit-reuse.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+    "adaptations": [
+      "Generate every canonical prefix-rotation permutation with alternating checksum, including n=1; use standard List.replace into reusable scratch storage."
+    ],
+    "local_adaptation": true,
+    "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/fannkuchredux-toit-8.toit",
+    "upstream_source_sha256": "cfdf1d28a2e4bcab4bccbda1f6e3778472019500ac90edd6d9b5458f017a2aa5"
+  },
+  {
+    "id": "nbody-toit-cached-bodies",
+    "benchmark": "nbody",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/nbody-toit-cached-bodies.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+    "adaptations": [
+      "Cache each pair of Body references and use ordinary counted loops in the same five-body, all-pairs binary64 update; retain published solar constants, momentum offset, energies and every time step."
+    ],
+    "local_adaptation": true,
+    "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/nbody-toit-8.toit",
+    "upstream_source_sha256": "80f67e75e951e0b9291dc7f3bcab08c78d21dfdc318c6998cf960bbded648239"
+  },
+  {
+    "id": "knucleotide-toit-packed",
+    "benchmark": "knucleotide",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/knucleotide-toit-packed.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+    "adaptations": [
+      "Preserve all seven growing hash maps and every overlapping window; exact 36-bit ACGT keys use native signed 64-bit integers without aliasing long windows. Buffered general FASTA input and deterministic frequency ties."
+    ],
+    "local_adaptation": true,
+    "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/knucleotide-toit-8.toit",
+    "upstream_source_sha256": "26f2ea105a83f9b49a1866b03c256cda98fc2c73e5326300fd6ce3250190643c"
+  },
+  {
+    "id": "fasta-toit-streaming",
+    "benchmark": "fasta",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-streaming.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+    "adaptations": [
+      "Retain every sequential LCG advance, direct binary64 division and unscaled cumulative probabilities; general binary-search selection and reusable row/block buffers reduce allocation and native writes. Complete three-record output."
+    ],
+    "local_adaptation": true,
+    "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/fasta-toit-1.toit",
+    "upstream_source_sha256": "6e7141a0fb2308eea68fce32499b7f9b79436adcd50fb612cf9ac7a573791fe2"
+  },
+  {
+    "id": "revcomp-toit-lines",
+    "benchmark": "revcomp",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/revcomp-toit-lines.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+    "adaptations": [
+      "Replace the published scanner that misses multiple headers in a read with general FASTA record parsing, arbitrary headers/line lengths/comments/CRLF, in-place reverse/complement and canonical 60-column complete output. All parsing and transformation remain counted Toit source."
+    ],
+    "local_adaptation": true,
+    "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/revcomp-toit-1.toit",
+    "upstream_source_sha256": "653d97a68580645407c7c990637430c1d9b0507547485647f86c993eb24d451c"
+  },
+  {
+    "id": "revcomp-toit-buffered",
+    "benchmark": "revcomp",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/revcomp-toit-buffered.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+    "adaptations": [
+      "Same general FASTA parser and full in-place byte reversal/complement as the line-output form; standard block Buffer batches canonical output."
+    ],
+    "local_adaptation": true,
+    "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/revcomp-toit-1.toit",
+    "upstream_source_sha256": "653d97a68580645407c7c990637430c1d9b0507547485647f86c993eb24d451c"
+  },
+  {
+    "id": "pidigits-toit-bignum",
+    "benchmark": "pidigits",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/pidigits-toit-bignum.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+    "adaptations": [
+      "Author the required unbounded-integer streaming spigot using SDK Bignum. Both extract(3) and extract(4) use exact big-integer division at every eligible iteration; no precomputation, factor cancellation or bounded integer substitution."
+    ],
+    "local_adaptation": true
+  },
+  {
+    "id": "pidigits-toit-bignum-fields",
+    "benchmark": "pidigits",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/pidigits-toit-bignum-fields.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+    "adaptations": [
+      "Same strict unbounded-integer spigot and both exact extract divisions; use the pinned standard Bignum sign and byte representation for general sign/small-integer conversion rather than allocating hexadecimal strings. All local helpers are counted."
+    ],
+    "local_adaptation": true
+  },
+  {
+    "id": "regexredux-toit-regexp",
+    "benchmark": "regexredux",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/regexredux-toit-regexp.toit",
+    "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+    "adaptations": [
+      "Author regex-redux using the pinned general dartino_regexp 0.4.1 JavaScript-compatible regex package, with native buffered stdin, all nine independent nonoverlapping counts and five sequential whole-sequence substitutions. Complete lengths and output; no specialized motif recognizer."
+    ],
+    "local_adaptation": true
+  }
+]

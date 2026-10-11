@@ -1,0 +1,5 @@
+Factorial(n<u64>) => <u64>
+  | 0 => 1
+  | k => k * Factorial(k - 1).
+result := (Factorial(10))
+io/print("{}\n", result)

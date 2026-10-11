@@ -1,0 +1,2 @@
+<row> := <{child<row>}>
+r := io/print("{}\n", 1)

@@ -1,0 +1,19 @@
+[package]
+name = "mech-clbg-knucleotide"
+version = "0.0.0"
+edition = "2024"
+publish = false
+build = "build.rs"
+[dependencies]
+mech-gpu = { path = "../../../../hosts/gpu", default-features = false, features = ["sequence-cli"] }
+serde_json = "1.0"
+[build-dependencies]
+mech-gpu = { path = "../../../../hosts/gpu", default-features = false, features = ["sequence-cli"] }
+serde_json = "1.0"
+[patch.crates-io]
+mech-core = { path = "../../../../src/core" }
+mech-engine = { path = "../../../../src/engine" }
+mech-syntax = { path = "../../../../src/syntax" }
+mech-stdlib = { path = "../../../../src/stdlib" }
+
+[workspace]

@@ -1,0 +1,10 @@
+transform(header<string>, data<[u8]:_>) = (out<string>) :=
+  from := "ACGTUMRWSYKVHDBNacgtumrwsykvhdbn"
+  to := "TGCAAKYWSRMBDHVNTGCAAKYWSRMBDHVN"
+  table := bytes/table(from, to, "error")
+  reversed := sequence/reverse(data)
+  complemented := bytes/translate(reversed, table)
+  wrapped := text/wrap(complemented, 60, "\n")
+  out := string/concat(string/concat(header, "\n"), wrapped).
+records := io/read-records(">", "")
+io/write-each(records/map(records, transform))

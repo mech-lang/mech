@@ -1,0 +1,4 @@
+{
+  "scope": "Semantic checks only; no durations used, package/compiler setup may overlap. Final benchmark runner repeats validation with environment guards.",
+  "errors": []
+}

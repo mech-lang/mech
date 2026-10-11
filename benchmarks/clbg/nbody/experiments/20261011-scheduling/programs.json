@@ -1,0 +1,2305 @@
+[
+  {
+    "id": "pairwise-before",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-current-before",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before"
+    ],
+    "object_sha256": "9a82e2979ac24039d84f8536c13023532c739bf3949ac1cdeb2fab9607db0232",
+    "binary_sha256": "d2120116edfc33d4a791bd751bff6db100661ef7836051419563da006d646a24",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before",
+      "{n}"
+    ]
+  },
+  {
+    "id": "rust-3",
+    "language": "rust",
+    "loc": 196,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference",
+      "{n}"
+    ],
+    "binary_sha256": "f22eda84ff2640cc3830589c20739917f8282474af30b5184e8202cfe1941d6b"
+  },
+  {
+    "id": "chapel-3",
+    "language": "chapel",
+    "loc": 79,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+      "--n={n}"
+    ],
+    "binary_sha256": "a57be549397679c1cf1ef9c4702a3e3de3863899ee11b328bc06d8e996772f7d"
+  },
+  {
+    "id": "nbody-gpp-6-llvm-native",
+    "language": "cpp",
+    "loc": 202,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-gpp-6-llvm-native",
+      "{n}"
+    ],
+    "binary_sha256": "0c211e6499d12227c8d424673c1e8d123ae0eb301f9368addd6a2de7c192297b"
+  },
+  {
+    "id": "compact-regions8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/driver-regions8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-regions",
+      "8"
+    ],
+    "driver_sha256": "e98eef4486a57ae35e518c2acd97312314c8b6895e7a945740ca933085300e33",
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8"
+    ],
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "binary_sha256": "946b2b49b0a6a2aae7476104cc29f2c33026bf032d9ccf1461921c4c2abbedea",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/compact-regions8",
+      "{n}"
+    ],
+    "preserves_bits": true
+  },
+  {
+    "id": "nbody-zig-2-faithful",
+    "language": "zig",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+    "source_sha256": "0d5f3bc93014a64edf43caa6a5e95619c8ce924e14bd30bd3598b329eb9e65e8",
+    "loc": 117,
+    "build_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/support/zig/zig-aarch64-macos-0.17.0/zig",
+      "build-exe",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+      "-O",
+      "ReleaseFast",
+      "-mcpu=native",
+      "-fllvm",
+      "-lc",
+      "-femit-bin=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/nbody-zig-2-faithful"
+    ],
+    "binary_sha256": "8f1eb83ecca6beb33caca90237f07864c83d8050e566abba7abd1cd231990a66",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/nbody-zig-2-faithful",
+      "{n}"
+    ]
+  },
+  {
+    "id": "pairwise-seed8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/driver-seed8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8"
+    ],
+    "driver_sha256": "74ac7e189a33d5b26814861e7726dc5bb10ec294682704a1b6b0f6daa0468e01",
+    "object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+    "binary_sha256": "462a91334f74b3b942c9b7fba3ba1443a1f737c8d504d25b3c8d074f80b03609",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-shared-products/pairwise-seed8",
+      "{n}"
+    ],
+    "state_control": "pairwise-before",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-decomposed8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-decomposed8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--decompose-arithmetic",
+      "--schedule-regions",
+      "8",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+    "binary_sha256": "8410df9802a70184c520dc155db97fac41089c8ab9caaae6b53e4e0d457c6d7d",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed8",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-backward8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-backward8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--schedule-bottom-up",
+      "--schedule-regions",
+      "8",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "0f5a6a566f71ebadd7013ada4328b4e76619c8acd5c1459bbbfca8747065f1fa",
+    "binary_sha256": "caea5decf4751a8f4191ea6b82dc0a6170de737817f118d86dd64f96f901c3e2",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward8",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-backward24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-backward24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--schedule-bottom-up",
+      "--schedule-regions",
+      "24",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward24"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "cdae82ae00e80751895327eb1d165b98dde6dc9497504ec983a3e9c13b639767",
+    "binary_sha256": "439da2d44e9965ec999db50e3ca75fc7bd0cec87dd6d0020bc7f8cec27ed3183",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-backward24",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-latency8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-latency8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--schedule-latency",
+      "--schedule-regions",
+      "8",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "0f5a6a566f71ebadd7013ada4328b4e76619c8acd5c1459bbbfca8747065f1fa",
+    "binary_sha256": "32fe9552b000d4e8b1c234b467989832ddc173ca853ccfbb7f14bea1e52bf78d",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency8",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-latency24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-latency24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--schedule-latency",
+      "--schedule-regions",
+      "24",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency24"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "cdae82ae00e80751895327eb1d165b98dde6dc9497504ec983a3e9c13b639767",
+    "binary_sha256": "20ae68c125a233fcb305cf369e3010021e64f9a0348cc9883f7e0caa8e59a1fe",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-latency24",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-decomposed-backward8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-decomposed-backward8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-backward8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-backward8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--decompose-arithmetic",
+      "--schedule-bottom-up",
+      "--schedule-regions",
+      "8",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-backward8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-backward8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-backward8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "0f5a6a566f71ebadd7013ada4328b4e76619c8acd5c1459bbbfca8747065f1fa",
+    "binary_sha256": "537e9976866d8b2362f07d019d7cf8cc6570647d84e79dc6b69a7c9822e31ab9",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-backward8",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-decomposed-latency8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-decomposed-latency8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--decompose-arithmetic",
+      "--schedule-latency",
+      "--schedule-regions",
+      "8",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "0f5a6a566f71ebadd7013ada4328b4e76619c8acd5c1459bbbfca8747065f1fa",
+    "binary_sha256": "2424a54c002840f25bcb6aee1b81be2bed95f66bd919fc85d3a0cc0f110466fa",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency8",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-decomposed-latency24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-decomposed-latency24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--decompose-arithmetic",
+      "--schedule-latency",
+      "--schedule-regions",
+      "24",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency24"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "cdae82ae00e80751895327eb1d165b98dde6dc9497504ec983a3e9c13b639767",
+    "binary_sha256": "3cb156d8b53c4d3d0f39090ca61b4b615e4451e4dfed1bfe8bf86e559f7747a4",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-decomposed-latency24",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-decomposed8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-decomposed8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--decompose-arithmetic",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "binary_sha256": "7c6d676f43a0c20a83ba46300362b55c5a7941b6371a031f84774dc1a17dfd32",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed8",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-backward8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-backward8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-bottom-up",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "binary_sha256": "e903a4e4631942ec1aa4eb46f3dc31f45fdb0004720f2aa1cc0ed274b4eba6ff",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward8",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-backward24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-backward24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-bottom-up",
+      "--schedule-regions",
+      "24"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward24"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "60a685b24087729cab46b4c111c174aa4833b60db159c959192be515dcf94ea7",
+    "binary_sha256": "8e90582d7ff7dae9e8a1fefc13e904d0833fe1ae390a95cb13fc1cf6cc1c35e3",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-backward24",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-latency8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-latency8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-latency",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "c43df8cb2014ceb8e94f000188c6b41ea749c8681185cc9087c1c0fe735f9b8f",
+    "binary_sha256": "37cc4aa641a2bfd6b3dadc94785cc3edf15ccb1f1fb5749dc482fe8dd34f1111",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency8",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-latency24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-latency24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-latency",
+      "--schedule-regions",
+      "24"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency24"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "60a685b24087729cab46b4c111c174aa4833b60db159c959192be515dcf94ea7",
+    "binary_sha256": "d3e89284f469fccc41c06342d94c0efe7418dc539b784d9ea25c7729113a834a",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-latency24",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-decomposed-backward8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-decomposed-backward8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-backward8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-backward8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--decompose-arithmetic",
+      "--schedule-bottom-up",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-backward8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-backward8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-backward8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "binary_sha256": "02b1f89dd05b7edc4585d63959febc2466faa9bc5b69b14ac04a1a98293e391b",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-backward8",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-decomposed-latency8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-decomposed-latency8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--decompose-arithmetic",
+      "--schedule-latency",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency8"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "c43df8cb2014ceb8e94f000188c6b41ea749c8681185cc9087c1c0fe735f9b8f",
+    "binary_sha256": "57767423163ffd91e293d09484a4caf72e9361b1cf88f1c8911c52442165a7a3",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency8",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-decomposed-latency24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-decomposed-latency24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--decompose-arithmetic",
+      "--schedule-latency",
+      "--schedule-regions",
+      "24"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency24"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "60a685b24087729cab46b4c111c174aa4833b60db159c959192be515dcf94ea7",
+    "binary_sha256": "1ef5b667d6141128fa4d46ab7a5414de6d2486bd688d2bcc5fbcfe2e9916e0aa",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-decomposed-latency24",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-pressure12",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-pressure12",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure12.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure12.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "12"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure12.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure12.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure12"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "d1b686d3f028405467e5c152da651af6516dddc8049c6d3b0308247311518b09",
+    "binary_sha256": "e6883ba9a4ef548e1000b4c60e7111107e12cdf2c9caee47eb030c74c31ee06a",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure12",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-pressure16",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-pressure16",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure16.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "16"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure16.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure16"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "39a7b4a6cb18dcdc041d7f92589e80c7891cadaf22224574b96cf0453cb78d2f",
+    "binary_sha256": "b5164f1af5fcd1d86a91508f0dc04f28495c16b6ba553cbaaf76271ee454337c",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure16",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-pressure24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-pressure24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "24"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure24"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "cdae82ae00e80751895327eb1d165b98dde6dc9497504ec983a3e9c13b639767",
+    "binary_sha256": "b2b9e603b6373f19557ddec1e3fdaaa3e35a906c97484c0f138903b1eb4d6526",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure24",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-pressure32",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-pressure32",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure32.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "32"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure32.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure32"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "a22edd1847c9236844c32e7c6d0ada629e46303c6d8ec2cada780d2409fd4e67",
+    "binary_sha256": "0e22cc230bca4d9d0278c57fa2f94a27691e60129d67a460fa3574a8aaab9fdf",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure32",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-pressure48",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-pressure48",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure48.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "48"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure48.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure48"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "8feac3f5193913d28a6025255d7af94d00b0eb011c245c737a2067422cfa223a",
+    "binary_sha256": "3c1d79049470c482b883ffb18b8b18576c78c4d6f94817679f3d41dc164a4c89",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-pressure48",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-latency12",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-latency12",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency12.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency12.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "12",
+      "--schedule-latency"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency12.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency12.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency12"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "d1b686d3f028405467e5c152da651af6516dddc8049c6d3b0308247311518b09",
+    "binary_sha256": "bc1dd79f553cb402ca2490c08d8fa4cdaa6e3c7fbe4c86ce36efdf89b228ecb8",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency12",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-latency16",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-latency16",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency16.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "16",
+      "--schedule-latency"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency16.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency16"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "39a7b4a6cb18dcdc041d7f92589e80c7891cadaf22224574b96cf0453cb78d2f",
+    "binary_sha256": "75a905087d7956b5b7efd0eb0d3a0232d2528f18fcc1fd0fed7eafd381fab327",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency16",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-latency32",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-latency32",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency32.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "32",
+      "--schedule-latency"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency32.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency32"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "a22edd1847c9236844c32e7c6d0ada629e46303c6d8ec2cada780d2409fd4e67",
+    "binary_sha256": "8b476c385069e70c59bfce2048e006ba97fd9473e62562890c4706c88b54a7c0",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency32",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-latency48",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-latency48",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency48.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "48",
+      "--schedule-latency"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency48.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency48"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "8feac3f5193913d28a6025255d7af94d00b0eb011c245c737a2067422cfa223a",
+    "binary_sha256": "b55531208dc2fed44af13f965a13fcae172e301a322a1c84f049a9b3cd673c54",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-latency48",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-backward12",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-backward12",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward12.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward12.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "12",
+      "--schedule-bottom-up"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward12.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward12.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward12"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "d1b686d3f028405467e5c152da651af6516dddc8049c6d3b0308247311518b09",
+    "binary_sha256": "aec493fcbdd68056744884964ac414d08f0397cea18643dc7a2da87421a8af0a",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward12",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-backward16",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-backward16",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward16.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "16",
+      "--schedule-bottom-up"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward16.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward16"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "80181c26e80b4bc2c9db5978e754e42d7f9f345467c5c2881671af32239b9c6e",
+    "binary_sha256": "e7de93464cef3a34cdbf578fe9761f9e507b3c9e86f7b74ccfc96ff92979cbac",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward16",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-backward32",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-backward32",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward32.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "32",
+      "--schedule-bottom-up"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward32.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward32"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "260426e1513076a4282c169194f8e08f495f7759343fff28ad566dc3531e57c1",
+    "binary_sha256": "6a94720a94a09ef47ec54d4e980b9e60dce3d1626a327fb52a3550ad71065c06",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward32",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-sweep-backward48",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-sweep-backward48",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward48.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "48",
+      "--schedule-bottom-up"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward48.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward48"
+    ],
+    "driver_sha256": "aa4ddd3501d6abce41558876f0d91f2c4f8d6d70269eaa64f35878a59e40f711",
+    "object_sha256": "8feac3f5193913d28a6025255d7af94d00b0eb011c245c737a2067422cfa223a",
+    "binary_sha256": "b8a613137864fae3c766c76c0bf7537018defa46bb2ae0e7fef300911b18dbec",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-sweep-backward48",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-lazy8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "8",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy8"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+    "binary_sha256": "14ff81ecb82e4e9933c4c956c8a2d6bd02c5c722c46e36ec4c6285f27dceab05",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy8",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-lazy16",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy16",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy16.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "16",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy16.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy16"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "39a7b4a6cb18dcdc041d7f92589e80c7891cadaf22224574b96cf0453cb78d2f",
+    "binary_sha256": "6817c528873415e6941b197ca06f469d1b778ae41005f7d7ef0e266692bf9b9e",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy16",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-lazy24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "24",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy24"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "cdae82ae00e80751895327eb1d165b98dde6dc9497504ec983a3e9c13b639767",
+    "binary_sha256": "77f8bf6daaadad228af4ea68e9ee3948b0b9e43c53862c56b50a6c523d1e0f7c",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy24",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-lazy32",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy32",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy32.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "32",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy32.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy32"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "a22edd1847c9236844c32e7c6d0ada629e46303c6d8ec2cada780d2409fd4e67",
+    "binary_sha256": "c7ec5ef9dc37c693b448738ee330098e4ad07d0cb32925b187d278e5b96209d3",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy32",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-lazy48",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy48",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy48.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "48",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy48.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy48"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "8feac3f5193913d28a6025255d7af94d00b0eb011c245c737a2067422cfa223a",
+    "binary_sha256": "0ffe4237dd44b6b4c2ce1ea1bedcac9037d5837d8747278928ff747c3acaad5a",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-lazy48",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-lazy8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy8"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "binary_sha256": "0458291367b79b7919af9c887edc950eb0dde5241c6533a192e8f56d10be77e7",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy8",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-lazy16",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy16",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy16.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "16"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy16.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy16"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "f57a0389ff38d135bedc584d09a84d5a4a613efd413189249ee3b1185ee5d0fc",
+    "binary_sha256": "eb4933548500e7c593772cac00c15a36befd69f9d2f825f1f0115fe5a030242b",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy16",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-lazy24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "24"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy24"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "60a685b24087729cab46b4c111c174aa4833b60db159c959192be515dcf94ea7",
+    "binary_sha256": "6bc9f7933259f8ff8b9ff4e577d56dfc9cd74e34a159e1a8bbd3fa343e38f993",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy24",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-lazy32",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy32",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy32.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "32"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy32.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy32"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "58bf0b8a92f0b5ce54616bf7e5461540fb639e243c9512b95066cdc1654b4581",
+    "binary_sha256": "8af0eb2ec2977f10e0719e5d5c856d68f2d4484a69ea15fa67ebe2f4d9d7ca7d",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy32",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-lazy48",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-lazy48",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy48.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--defer-simd-lanes",
+      "--schedule-regions",
+      "48"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy48.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy48"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "fc2e31493232da2ab0a5f838c5ce6592d7b859a2258aa94ddb937dbd4bf2f63a",
+    "binary_sha256": "70ad7991b8a674ffd285b06d8935aee7b59909f497ef5b7b7272e3253f0b04b1",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-lazy48",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-plain16",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-plain16",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain16.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-regions",
+      "16"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain16.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain16"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "f57a0389ff38d135bedc584d09a84d5a4a613efd413189249ee3b1185ee5d0fc",
+    "binary_sha256": "d3b318d5d9ccd580c3eac41971f203046afbd2655b0093dbe42413d21bfcaf6b",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain16",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-plain24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-plain24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-regions",
+      "24"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain24"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "60a685b24087729cab46b4c111c174aa4833b60db159c959192be515dcf94ea7",
+    "binary_sha256": "2791714b84ff291976225937eb09074c982e0ce23d3d4100a5ed5a53473adf15",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain24",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-plain32",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-plain32",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain32.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-regions",
+      "32"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain32.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain32.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain32"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "58bf0b8a92f0b5ce54616bf7e5461540fb639e243c9512b95066cdc1654b4581",
+    "binary_sha256": "dfd95432eab3d586bcdcdb7d04e6c176ca5cb9354c8eaf57a5acaae5c5c18435",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain32",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-plain48",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-plain48",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain48.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-regions",
+      "48"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain48.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain48.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain48"
+    ],
+    "driver_sha256": "5d81ab084bdd4e4e8de804fa3b4a5c8d0ce2803e5df90bf4e7aec33a2c379963",
+    "object_sha256": "fc2e31493232da2ab0a5f838c5ce6592d7b859a2258aa94ddb937dbd4bf2f63a",
+    "binary_sha256": "16d98b1ba3de39e19afb0bad5d2347a9fdf9cfea57b374ef3e9c9b58f7b3cd92",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-plain48",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-retire8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-retire8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--schedule-retire",
+      "--schedule-regions",
+      "8",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire8"
+    ],
+    "driver_sha256": "8252a66a3cbcdfd50f98fdb2f109973552ef7197c1ea1dc09ef4ef8f363ccace",
+    "object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+    "binary_sha256": "64437fe47de7b1befacc923700e13dc937f293be9f00ab001388a8b5b728d0ac",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire8",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-retire16",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-retire16",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire16.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--schedule-retire",
+      "--schedule-regions",
+      "16",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire16.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire16"
+    ],
+    "driver_sha256": "8252a66a3cbcdfd50f98fdb2f109973552ef7197c1ea1dc09ef4ef8f363ccace",
+    "object_sha256": "39a7b4a6cb18dcdc041d7f92589e80c7891cadaf22224574b96cf0453cb78d2f",
+    "binary_sha256": "a390dfb614eae39723bbe59e8cfa48af03ee67adc29a6e8757f835e735388c60",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire16",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-retire24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-retire24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--schedule-retire",
+      "--schedule-regions",
+      "24",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire24"
+    ],
+    "driver_sha256": "8252a66a3cbcdfd50f98fdb2f109973552ef7197c1ea1dc09ef4ef8f363ccace",
+    "object_sha256": "cdae82ae00e80751895327eb1d165b98dde6dc9497504ec983a3e9c13b639767",
+    "binary_sha256": "9eb193a6ff429f5c06ef590bad8d0437c4c4f163627f2450b87342273f50dd67",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-retire24",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-reproduce",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-reproduce",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-reproduce.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-reproduce.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--schedule-regions",
+      "8",
+      "--simplify-square-seeds"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-reproduce.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-reproduce.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-reproduce"
+    ],
+    "driver_sha256": "8252a66a3cbcdfd50f98fdb2f109973552ef7197c1ea1dc09ef4ef8f363ccace",
+    "object_sha256": "10cf23836c23779bd28df29159aa6e70ea95c47568dd930dc81bcc99e56ac7c1",
+    "binary_sha256": "bdd4e39742e389a43ef0d2eaa462f533d853e28379f4080c1737ac2142a07f39",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-reproduce",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-retire8",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-retire8",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire8.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-retire",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire8.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire8.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire8"
+    ],
+    "driver_sha256": "8252a66a3cbcdfd50f98fdb2f109973552ef7197c1ea1dc09ef4ef8f363ccace",
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "binary_sha256": "2a2cb40310a45cecd3f4fa89eb5de3d7e788e274bd84c0ef7ec91d53a104a7a2",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire8",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-retire16",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-retire16",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire16.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-retire",
+      "--schedule-regions",
+      "16"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire16.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire16.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire16"
+    ],
+    "driver_sha256": "8252a66a3cbcdfd50f98fdb2f109973552ef7197c1ea1dc09ef4ef8f363ccace",
+    "object_sha256": "f57a0389ff38d135bedc584d09a84d5a4a613efd413189249ee3b1185ee5d0fc",
+    "binary_sha256": "eee762dd5644d3ce10582ed84a56bd73161e6f76541442ae3e5bd84adec666b9",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire16",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-retire24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-retire24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-retire",
+      "--schedule-regions",
+      "24"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire24"
+    ],
+    "driver_sha256": "8252a66a3cbcdfd50f98fdb2f109973552ef7197c1ea1dc09ef4ef8f363ccace",
+    "object_sha256": "60a685b24087729cab46b4c111c174aa4833b60db159c959192be515dcf94ea7",
+    "binary_sha256": "d561ed3e4abff19008ba5d5bbb1376eb6ca910983a56a1a88afeb8ce2459061f",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-retire24",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "compact-reproduce",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+    "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+    "loc": 20,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-reproduce",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-short.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-reproduce.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-reproduce.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--schedule-regions",
+      "8"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-reproduce.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-reproduce.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-reproduce"
+    ],
+    "driver_sha256": "8252a66a3cbcdfd50f98fdb2f109973552ef7197c1ea1dc09ef4ef8f363ccace",
+    "object_sha256": "e44126dfa876523be09ec7d8d06a115950ddf2d6417ee9d503d2ca0144fa822d",
+    "binary_sha256": "285df73bf144966da74a8c03baf2aa61b5d58d74cb38fb165c25dc8ebd6b24ea",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/compact-reproduce",
+      "{n}"
+    ],
+    "state_control": "compact-regions8",
+    "preserves_bits": true
+  },
+  {
+    "id": "pairwise-original24",
+    "language": "mech",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+    "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+    "loc": 25,
+    "generation_command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/driver-original24",
+      "0",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-matrix-pairwise.mec",
+      "emit-cranelift-simd",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-original24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-original24.o",
+      "--fp-contract",
+      "--algebraic-powers",
+      "--pack-state-tails",
+      "--simplify-square-seeds",
+      "--schedule-regions",
+      "24"
+    ],
+    "compile_command": [
+      "/opt/homebrew/opt/llvm@22/bin/clang-22",
+      "-O3",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-original24.c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-original24.o",
+      "-lm",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-original24"
+    ],
+    "driver_sha256": "74ac7e189a33d5b26814861e7726dc5bb10ec294682704a1b6b0f6daa0468e01",
+    "object_sha256": "cdae82ae00e80751895327eb1d165b98dde6dc9497504ec983a3e9c13b639767",
+    "binary_sha256": "dad0b31b592828c71b088af78d076f84272f9b5d2c6db3f5df61449b6b2fb4bc",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-scheduling/pairwise-original24",
+      "{n}"
+    ],
+    "state_control": "pairwise-seed8",
+    "preserves_bits": true
+  }
+]

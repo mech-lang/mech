@@ -1,0 +1,1314 @@
+{
+  "status": "prepared",
+  "language": "toit",
+  "runtimes": {
+    "toit": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+      "sha256": "4f5170ee11089c5f85c75439f09b53ee7dfb7555faa56da9b320a6bc24038ec6",
+      "version": "v2.0.0-alpha.199"
+    },
+    "toit.compile": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/bin/toit.compile",
+      "sha256": "a0c1e46dcd7070fef534c105c46c883dd852642b2e4ae34e33ace8f8e6adcc5a",
+      "version": "v2.0.0-alpha.199"
+    },
+    "toit.run": {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/bin/toit.run",
+      "sha256": "aff84ae7117a2fa7dba29d213726f14684ef46c5297f9329f39700a13fe9601b",
+      "version": "v2.0.0-alpha.199"
+    }
+  },
+  "libraries": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/statistics.toit": "e4bde0101e9f379428bc27b4d452bed292c7a2029ae601ff604b7563e73d335c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/spi.toit": "179ade11adff0c09624f3b3eeb22741b084b60cb5cf36343a00ac1956a851a8e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/uart.toit": "08e76f6877e11deb548a0d6ed01881e9756511561cc82486259ba89122f65322",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/line_wrap.toit": "1db9a1fe28a942a87bc5154c044129caae16bb2620b007dd29d078d49a23ca72",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/device.toit": "932d5d6928dde6ebaca9d3f3d4cd7c7115f808ce8803971893fd9454a376a9df",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/LICENSE": "068e8c83c3979e9f6373553fbc8449ff1876a74a1f6fb5f6e9013620e3989e93",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/rmt.toit": "bfbbe27bf96537710c1ac5d2f6147c34e6e6087ad0c9ce20f3a90da095057444",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/fixed_point.toit": "434d20ab96dffbebf2683a0ade8cfb72b81094062562f8485e276fe6a5ca8908",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/icons.toit": "ffce245cefabfe3a05dfb138bf75104b95dcb9576c5240748c35454f5dabe2cd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/monitor.toit": "73ab40705c08d32141ffc7a1670ddbc721baeb37dd21ea20404d7a3171c5777e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/math.toit": "df1216da35f59ffd005f2cd20616741e7b1528c448823709d93eed36743a7080",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/bignum.toit": "aedf6b9ed15af58d99f300abf14f155608ff4d78719703e9966a5e624a431029",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/i2c.toit": "9b15fdcdcac6acb1ce2be5b652b40da18ec8fcacaa4221e4b22fb7b2b8f004ab",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/bitmap.toit": "af53aaa7a586da224deccb310953251a0930a67824721a926086ad9541baa1b0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/README.md": "c20a9bb73fa7576adcc407994cbd6f7311d14348e945dcb2257bffceb2326553",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/pulse_counter.toit": "a749dba7b0c2c268f844152c413fe891d30e6110c896ade95cd4b80c386572aa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/reader_writer.toit": "465ddaa6559b2f9d43a0cf48ec3b85465827a6f0cb5d6e3a8c75323f2389da19",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/binary.toit": "5fbb0cb4a9a69df6fa09d06942bea238c44346452b66d1add96db97b6cc096d0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/words.toit": "414ecb36521d072ae8711d3877ce4ea481edba4a2c1900f055d06c0268437730",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/uuid.toit": "3e2acd66c04f45e16301022f06e22bcca87cc01101320119c0e3927ac85fd446",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/bytes.toit": "0837b15028d76fd8596de5571bed104435ae4c0c14496172e31eca5d105a1861",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/writer.toit": "35a5e153b1346fc58f41d5e1ebeb3ecfac96f42de9eec79b37eb3cf10942dad5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/zlib.toit": "6e37093fe497d5207b0494177353c73c3a7f45ecaeabeca12fc46c6f7a0931e8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/expect.toit": "bad0b7b36d37469b2205417b0e075a402525871a9bfaf359c9ff3a215b72e983",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/flash.toit": "d874e13225b9c6f97f9b1410b1e24d8aee446699cd95ff34685fb7582050c0bd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/i2s.toit": "d82bfc59a2b0c98eab69853b9e6b82308cb29a447baa7b584c87d4f86a872b0f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/reader.toit": "846fa40e545333c8c23d096af3d9184042426a83c04a0beada87519a0790824c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/hmac.toit": "d5714aac00b00536f2d8f16834f0041ffec4cd795daa98109582f82cdf3329a7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/ec.toit": "07315dd1402e3a9534a16098410639b24f800b6b02650e8cf66e98701183b4e3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/crc.toit": "d26a740453990954f87b9fb3aadbdbea691a4699ef9bbda67f26441888fd5831",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/cmac.toit": "6b1e2e910b2b222e69c632bfb9b177f976930561dafda0a629c88e4b0c4d151f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/adler32.toit": "870a4f5d966e0b51879ee621f5991d26f167eb2f152e66deab71cd8c9eb8a3bb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/crypto.toit": "542189fe8dec7bb66be5c4b8424ea75fba576d859e865ede2969abce6131f61d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/sha256.toit": "53ea353416b4fd47f2b098ed037b6cff3d66d6d1c961fb34f33137cf4f809692",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/rsa.toit": "f7f509f1e176078b73128627ad79f7dd1fafa19fcf50386080b7ddec389afa33",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/aes.toit": "961f3b26549ea4f91e984623443717794c0a89094ce9253fc173a827e7f2dd4c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/checksum.toit": "853b77edb099add51cc67f1d2831db8def82790dd16de3d189ac718b4e683a08",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/hamming.toit": "a79a6b54a474b4b2b384c427647d038a6b2871e725669c0502c2caa15b68c9e2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/siphash.toit": "0f90604b6ebb3b06753f192f5cdcebfecdfc601c418d5195d90ec6511c652e10",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/md5.toit": "59b203f913424126b4ab361dcf06b6bf4201b55e56f030048d0d6e4c0dde94cc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/hkdf.toit": "7adb0f1c117cb29c9247c28534ab28c2f3de758b358d6aceb9df247a124f9132",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/sha.toit": "688821a6a41fb2d3fdc7ec41572a8844c89d8a228db68bdee6b6ab038be818c8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/blake2.toit": "9c80a2e8d4014736674cdf9da97c719faf9896cf0e048033eab9be0449c9c335",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/chacha20.toit": "63a503c514821b3f279b2512a429f83c4b0b89bf7385c6ffd2f39d440009a502",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/crypto/sha1.toit": "e9bb62c77412be79a2727ebdb12204d3892c6c389d0eaf688883f58e9788b9f9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/tcp.toit": "8b810888427ce53772cd0549e73313b6b77341ac6e3254fd2afa3196e2fef58f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/wifi.toit": "349fb4a2556d5b8b074e447b3d335a0857f9adb405fecea8ae99070a53f438e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/ip_address.toit": "d7f6b718012401fcadda2d5c463911e95ac695eb19820ee45652cb1062c1deae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/socket_address.toit": "efcc1092bebb21f30baf2868b0a100fa85d569025f98d42474f68497beb47b26",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/x509.toit": "d5f2ebf1a0de87e6643c4e942f18d34ca5a392724bdd562b2cdd3ad32e3d6b57",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/cellular.toit": "4291711eeba8becfd57ca039756da4ed4e242cda734b482eaa9cc5e430b8cc06",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/net.toit": "f2a4f408d3aee815ede87f0478d35f5c4f601787ed6ff7165ccfd14f6b29f7b0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/ethernet.toit": "c8e3bb8e650761ede64150a2814c61536f38a25d7c2cde87de559dcaf9982904",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/udp.toit": "5572f4552a55517276e0340e62efe936568c8a1927b895bac4d7bee2c032aed6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/numbers.toit": "5eb17422c2e898611a8f5b77b0b085164dec4fd514443a1121fb67732d800c0d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/exceptions.toit": "f06a0d41e68215262c663a59edbd48afc4cb185da44f83c930d42b2206c3bc04",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/timer.toit": "08540f93bdefca6e59c0ef8c97b48eaa00664b9b0b42fe9f8dfea74a83342ce2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/events_.toit": "305b888553f6da60474a597c826408c2dcaf4212057ea74ff6703cb8e9f2ae0e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/monitor_impl_.toit": "8e6d4e703d4a13f0086437f3a057bbd5e657926212a7c840b43ced947650fdf3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/task.toit": "b065fc7a6c5e45977a1e81d1a7a306c77c7d71c393bb56acec30135dd5e24b9f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/collections.toit": "761c6aa97308c5c69251e37868130bc33f2d870ef75b2834d43401cf6b520e89",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/time_impl_.toit": "ed2066a4b2f35845768aadb122878988816e234cc17bb3373319674d5d86facb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/entry.toit": "bbfb05f409721de2b50ce7fcdba0ded89942d30fd1de891163f156480a6293a8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/for_testing_.toit": "c2da3475d0b3294fcfe2cc87d01d66c01b2a93b2fcad9dad1aadb6ef50612f86",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/assert_.toit": "f34e29ea5291164f573901ed8ad6c13be8d54b328c02c33b96c084f663c8e01c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/objects.toit": "b6e3465413152a85f9bd58af686b29f3a5d6d81990c8cb229575e0c15cfd024e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/process.toit": "8eb3401174ce15635801b1925b82bd2e85fe82984929d6fc2fda9c01be149945",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/message_.toit": "d11a893ac0596fcc4a321f4fbc81b19d4a18d8a6181d54c390f6ed9edddb7931",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/print.toit": "7f77af6267b8e0ae7d45aa31b402005f9e865be765e9a0d775e4065bfd51e5cc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/time.toit": "9879ea6029373e4cc210a3b806e7bb2309172ee851e38b2a62055980fd0a03a6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/core.toit": "e9c40c0c8307f13b149061a97be27c3e1288b585b5fba21b461856f3e3db6e0c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/comparable.toit": "aedaf67be6e2fa21c6f646ba9551e19e74274bcf1c38db81ccf7bef842475614",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/finalization.toit": "d8405090543d66ae259e4d305347a7318596f878188de9c735610e9f99fa6270",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/utils.toit": "e52eea050db6175c364286e4b970e9dfd43f26e4fb64f9247abdd79917ea3e23",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/core/string.toit": "19bed19908b6108db4ff50935ca411325e6622fde06fd9c7e725b3a435b0b563",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/ble/local.toit": "f87ce44961e535d84deb04b9727a93c7b28fabca7d9867c14874f8345131fa81",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/ble/ble.toit": "fcd27c9eb719b773752c15f1c280dccbc6b5dd8fd85955026ce10f9342633beb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/ble/remote.toit": "24768497f222470e6e42cb8fbcc87e759d9cabf71decafa38ab344e75c90c02c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/io/buffer.toit": "20fc3951160aee36f4d5e331003ef26b7fac59c2e0e2a12717226c5721a8a193",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/io/stdio.toit": "3a677519c1d23df1f087ce333a31e47434b5e457bc39801c7bad9da453080125",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/io/writer.toit": "f2150663f7f16fb1113f48b690930f7dd0e781596d08d37320eef10c8eb9f68d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/io/io.toit": "4c806d5bb5e9c93418db0288d95b4a0cf60d750926b096acadc4df772e036171",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/io/byte-order.toit": "b628fab37a4b8f6d786470759944bf0115e625c4c4c24ee01057ba54726d25e6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/io/data.toit": "ecc2302690f363a5fc269d19edb7613a13ea8ad1a2381b446a8a92d183cc1aec",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/io/reader.toit": "8e6424a57d5813008b89e51d982ef7d5ff73470341b12ce03f8cda5708f78281",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/json-like-encoder_.toit": "b3e61e59ba5d799926d8ceab130b0671eb081f136d32ab22ab76ee16260dd2b6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/tison.toit": "85fbe4515461e734c67ab2669d567eff107d43af361b03d1b9c5184fd983beb7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/ubjson.toit": "87ae0378e207cddeb1eff8f9c4d8388e842573d7b84f42a4672fc13b59a1da9d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/base64.toit": "468b40de92ea2a22271a7f30235d9a90ec427baa97579025a41d0176a9815d6a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/json.toit": "c8acdfe4a59ddc686983780ccc295f050f25732d64fbd01b0db31f1ab6ed1cfb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/hex.toit": "b1820bc27c925fb5f0e3186c037f759d754b2c63f8e8b7d2d0346b3bfaab28cc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/url.toit": "20461bd26a9d379954c51be6689de0f913378b4275690ce9ec4a3d2a63db3a7f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/ec618/slot.toit": "4eded50ee42009aa1c6b64eaee4a51d1ffdb54285e76407f20d56a8977e53516",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/ec618/watchdog.toit": "1915e708f08ba7bd5744b92673db1d8cf81dca44012cdbd0a1229a6a3b1fbb26",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/ec618/ec618.toit": "41f8fbe162cd9739dd14e91de66100afc29bcd6214410cb4d4b566dc1a13f7a4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/esp32/espnow.toit": "b9e80bd57b896baf69b66a64e1cfe9420726d7ed45115004bbfb5747f38ee74a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/esp32/esp32.toit": "2cb279f6338acdec15f217f3c85c8971531cd6854bd3b86d8de75d4502d494d7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/containers.toit": "4a7a027a32a1bf8367acb96d800481fac54ac7156677d4afe44bf7ea8fca46f3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/firmware.toit": "f3f0d5106fa3440c1409e16f91b6c81112c96ccf998f1ba421a5c191ba986d6f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/services.toit": "0a53c1b8c6e5d6f070925cbfed56957b653d59d8a7763a30780f5ab6f186134f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/trace.toit": "09729fc631f888ab4cf56107a112409dd9469360306d4186b196355a9b2da4f3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/system.toit": "aa7c3fb451e8cbc5d9cf1b57f65ddf7ab2390845d20bae160359b90c217bea32",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/storage.toit": "61746e9dad1064cf369288cd691cede187d3fa9e532e73ea3fa87051eae7607e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/assets.toit": "b11da1776d3ee605e094b9f0978609e7bedb770b15eeed934dad5b7b176204e4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/external.toit": "6a2d3b1dd6210d543f233261eada3d6b8a5fb39ffca324bf216e3439032aeb88",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/tls/socket.toit": "5f3c1ddf3ce2d2e16646a8d87379dd1c91722dffcf49c6d3228db2c634d426fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/tls/tls.toit": "8983b55f842d65a1775e610e01ffe711c45782505b197e828596cd2cef7fd8a6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/tls/session.toit": "4a2b8df2a8ed23303ead93c44f8798f6d5114ee8c22519e51926e65b3267d3bc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/tls/certificate.toit": "98744987fb64c00185b66dd2d036b453e986824b4b7a384e85d587add4c0aa76",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/log/log.toit": "4622d65eea2a5d6533a540100addcbe092ff5183a5914c178452c6791cb363b8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/log/target.toit": "6479aed21f281781ce57a4a5563293392d34b3cfcaa76daf8d4af687db8fabe3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/log/level.toit": "b4816f8e30271723660941360b159c1bee487369e2cdc2f13dea982957ce8d71",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/font/font.toit": "a3c372f0678c1bf1b81c142f813a770ae1e7c069c8a4741a5e7594918a47f06d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/rpc/broker.toit": "d25638cea06acc19afe4ef2b4dd8ef8aa657b20836c565a936f843c5062627f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/rpc/rpc.toit": "ef6a1472710922cc4fe26c21dc5f4f53750453a5c4f17709485e935a556fcb3c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/gpio/dac.toit": "392d0434c234ef4ea9e3fa8b096186a6f11260cfb9172f566a3eba7cc6d7ee8b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/gpio/pwm.toit": "78dd926f681f751ae24c1e2b519dbadb90244e9012600ac49cb5821187f4b0fe",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/gpio/touch.toit": "ec9f17ad2651003301df27166fc93cb2288ecf035cf9eda7b7eb6980af6851d8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/gpio/gpio.toit": "a2ea40812387022a1110ce5f21a1c1fbe9b6404a4e36c1b37b3eff6ca7409295",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/gpio/adc.toit": "862fa2b9c26eabf3a03b43eac397981b1238a98507f2561ce13544a7cd784f1a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/gpio/pin.toit": "1c1e18dcf31610485aaf62f04b6fb21cd28a33c60cddc4ca47b6162180e973c9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/coap/tcp.toit": "a366e86043f946604759e7de9ca09bf85879d0c40a8a6d0cedb58b89f6570676",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/coap/coap.toit": "f86281ee6f3c82286f1463957e17eca9046286f3b5af9e803b2e1e5965271922",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/coap/message.toit": "edb47bf7f91e6de70cc5c138fcaf89b4a3eb786afa9862c5fa3699e57ea62a75",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/coap/client.toit": "4958f000bd6ca7eb01daa4dd663792dd3fde2630befddfc0fd7cd8ffe3f790e4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/coap/option.toit": "0728bcd640938479dae27592207e881de8a72492fa8b2bc136f1f2dc64f40356",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/coap/transport.toit": "e5d6f0492e444d92493203ce14f74ed9a04e84593393ba8b73058701cb81251b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/serial/device.toit": "eca3d223f0cd657bc21a1236b70773003624cb6b6e39479ec49ec204a5520518",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/serial/registers.toit": "f4a2cd35bf9c8ecc1860324983b981409d70dbf90def9201026184c7ab48381a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/serial/serial.toit": "1345f52bfdc4d63408bc01e8119f527138be5d64252cfc9acc675d2ef141fa48",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/cron/cron.toit": "e528459e0afad17cd7b0eb07ad06fd5b030670dacacd83eac143bc2f4e77521e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/font/toitware/status_icons_16.toit": "e047384ee9428b74247feb73be2ace02fe8550bbc6761fcdab57cb061756e3ba",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/containers.toit": "4222226e6d9bcfeb16ce440d5d7fd9a3e868602d6e1ee7473629b3d7862bbc09",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/log.toit": "4891c08a32e6b73324a7a1cb6d66c62273c67695485dd7c692528f91dc2fbfaa",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/wifi.toit": "389d8bfd9f098c0c6a10fd36483526c01edad7967d8c042b44e991b88779f8ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/firmware.toit": "e24c44f9237d9f17f3c5c3bc3884498129d3e7dc541f005e96aeb41b92c5aee0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/trace.toit": "547bfdda3519cac621bcd734a0a29d0258ed4208b8e9e4644354fd902adb2941",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/service_discovery.toit": "685036041339069dd7344a1debe5597c286ccae7c7114fef32798ee3522c196f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/cellular.toit": "38b9118100f511e64dafb8860e53540ae5390bb7cc9aa9d41f116aeb428b52e9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/storage.toit": "c6e9614db142e5fb643adcaecba60295685a2d0816dde315aa242673146b9183",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/ethernet.toit": "40e238234b34fb7b6ed3e6961f5fdca3f115273ebac7ca6d7270e7bec1d9bde6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/network.toit": "162d7ad7d324196f4a699c6bb6c2ff52c73514e27fd4b3dc76fbac91033ab24b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/api/print.toit": "7f169054b5324da66988550ee140d4d74eb5e15a1515989bf5661b35feb9ac70",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/base/firmware.toit": "b17665f20d2418f195d34b681daf4b96eaca9e248ebc881845b5ee4b6cb48e0b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/system/base/network.toit": "d78059b5fb06985b5e8c7d89698af64658b8bc4386a68fb9f8a55b3396c4681d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/esp32/net/ethernet.toit": "860502fa118b90cd1a2d1404eb652422608004c8471766e4782f802e357a45b8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/yaml/encoder.toit": "0e9a2cbfd765e4ba4383bee05eed0e51226fe1a4bc108707bca672a62cd70368",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/yaml/parser.toit": "3f406b1fbfd6a6d9561a6b626fe277e587aad6d00062fcba0d9da0783f52eff3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/encoding/yaml/yaml.toit": "1160371aca45cbc02bd289da201d5db62ae58bb2de33b13061d0580bcb27fe32",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/modules/tcp.toit": "805732ae1d6d0d977180da88df5fda6c13f7a4e659266db0c469aad3bdbe23b9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/modules/dns.toit": "3a92bd08bea2faf2274bdff05f641d8d9c2a8cdfa53517ea42c171013cf5d3fc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/modules/mtu.toit": "dfe8b9b99eeb4e20cea99f222ec5f86407a0b3f97f2dbc7dec162772a5cd11a3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/lib/toit/lib/net/modules/udp.toit": "f573e0bb28317c840b5daf113884185348c7cb3c25676b93cdc696922728a1d2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/README.md": "551dd2d304d4c33e9db654863fb5cca2ca49d981964a61a7436fc4e04911ac38",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/contents.json": "cc468bbf1234f8515b7a3ea1b33aafc429acdf33b4f20f2dffaa3268f960618d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/LICENSE": "c7d5fcc6f4075e7ea1ba31f09de7ce1950d745c464dc86ca04ebcdcee2f541e7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/AUTHORS": "2ddcd445896da5d0e1b6e3cc39f3cc29e007299790d02429398fe79d1ec79fd7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/.toit-git": "d9331d2d243033b7f4136b527382f72c8b30ac9f03b897e245fd7f4fabbb958f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/README.md": "6c99359805f9e5448b7f55587cd20a9f77fde0cda7bf75a886232b653fecd63b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/.gitignore": "4b0616fc89ed00b3025044fc057e2731ca92303c9c31a0c57e434545ab0325f3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/package.yaml": "7f7dba7d02af596c9b0881bf88125aad9947208f245d9a7f2c3b7cd0217e4020",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/tests/package.lock": "e3542ede49cb2404278ced8d1706305333f2b4b1c002915c65b328a389160f0a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/tests/case.toit": "26091a96388aefd26975165275d38ecb33413266a310bcd78288dc3bff1159a7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/tests/package.yaml": "7fabb0256597e6e4b23f7179069ad4ea8ae000b6777124cc0e862fe84ef8a28a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/toitlang/pkg-case/0.2.0/src/case.toit": "c6cf3a985e13d615127891fe6afc4ebfa3045fc2c38ed1924a279eb2e7571347",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/LICENSE.md": "85d7b383fe8cf5264a6d2295b0789363bdf1f74acccd57b2f919a7ae2c6e1df4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/CMakeLists.txt": "0d587e26870311db893e44b8d2dc9ff319d389e7a753495c644d74791099c915",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/Makefile": "c03c00db846a8fdb4ad4b8d8121d38719381ae591ed5fbe75d2cf469cb4a85cb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/package.lock": "9264fd12831c8b0560ddb2ea88a43c2f705bf5738a9c602a9d42e4d53a3514cf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/.toit-git": "f460a102f5ef6a1ab31b63046478460c3c2b25449edb3e7c7e75dd62b980a9ca",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/README.md": "dfa44ba471da6da0d42b046f8afb8dfcf97fe41bc1c50a7ef0de5166e3b2515c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/.gitignore": "42ba21edd61ff8383df935b8738b535c467b37aa29633e8d9979c2cc241a9b8d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/package.yaml": "372847c9c7e4ce2922a956d86b182a3f1008ba32bc3ef8423b5a30ba741dbc03",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/tools/package.lock": "aec67d7caa293e1a246e7cd854847850d6c7792ec9480e9a5de195fa4094b7c5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/tools/package.yaml": "3a31cf44b6652ce25ed107707864af404f462d4d308a54660961147d45327c2e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/tests/CMakeLists.txt": "3db6277e04e933b02b22dd1a4776bba7db2899a732b5e66f7e105c30c9d3991f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/tests/package.lock": "3756a029b3b9afadde92e6cd3e2cf1313c1a8528dddc68af8e7081a5ecaa903a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/tests/regexp-test.toit": "18dac3a1a0a0f93137f10c33b58b68a3404729de4c9493df800a806f342e5e4c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/tests/package.yaml": "a65cc69ed9845663681cfcdc584e7bce42e573a9dddfcf378536b7f9443a7a09",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/examples/example.toit": "a1e4962f4f2b75c5071c58ba4d045127cb160f4cf3988d8824c4fb391b284690",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/examples/EXAMPLES_LICENSE": "11b40c976313d2bb81475436e7cb0784c9eda3f00e3dffab29f0451ec9021078",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/examples/package.lock": "3efbcd2ad3eac6f862c6325434ab63195e8903e2627adcdc60919eb14d327705",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/examples/package.yaml": "bfbff4cd449b0a46801389aa373b5150ebcb253007db1e37b7f636afb62a1f9f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/.github/dependabot.yml": "1a7995443095a0504bbb6e8e1b48193fab379931b2bfba7ab7c838c1dafb617b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/src/regexp.toit": "72c54e707d64e3a93840d363280051488338c45f20dbe241c4e570f94c236953",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/.github/workflows/publish.yml": "89a8d6a7399c1dae5fbd07b874b95985a03f2bf6c5cd75a25a2e09fbe59e1f6e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/.github/workflows/ci.yml": "189e6341f7bf20d777b12f1d1a0f6d759119e6c5f4635135866db8e22a74b5cb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/toitware/LICENSE": "73ce9171e4e7a73a93d2384b41eecb8518810cc383bab9a749c5d8bd8ff043fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/sputnik/LICENSE": "201fbee88fc1c603b6d97f3588273e1677599b5863bb50a4e3eb3e341175c354",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/sputnik/tests/sputnik-test-deseret.toit": "21502a48824479c98f72741dc9a74749b566b519f5d67cd74d249dac51ddd740",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/sputnik/tests/sputnik-test-unicode.toit": "e42c4e110b6c1abd9081301c7cba59de0c14f018a0eea7e1ec01d9eab427b555",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/sputnik/tests/package.lock": "d458498589a6f0b90b434ee40ebc12c7673dbe878009444e214e64f3a0825617",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/sputnik/tests/package.yaml": "4e6e63af5159ab62068005046dc3ff7eabfc460f4958fbee474bcb583da812a5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/sputnik/tests/sputnik-test.toit": "0c5cbccbf1d3059a3f94eff88e723baa08a2a0d831ac92be080f7508f83fc33a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/toitware/tools/make-sputnik-tests.toit": "f6babf399df7adcf2cda31179a33c397606408d27ee2948580f975397291b789",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/toitware/tools/package.lock": "5289f3886cc4bbe4bfa2b4e5e88c7e357cd3845f00b5b733e09a9b7130d5e3ed",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/toitware/tools/private-names.toit": "9c7367d99b9d70e85325c1d78920538273bf55c42a9202fb7e277f11ad926873",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/.packages/github.com/close2/toit-dartino-regexp/0.4.1/third_party/toitware/tools/package.yaml": "73f324c59aef7f71602f3c24e4626aa73605941ec37efde4e7a6d0bb98242be2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/package.yaml": "d4e6ba3ce62c40ab2e8e9a57a4bda88563d94e3c6adb9b1eec941cac5818de4e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/project/package.lock": "99089733fe4f2e509b3c1ee10cfc2340ff4dcfb5acf60308f60cb2b06ca20fea",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/package.yaml": "d4e6ba3ce62c40ab2e8e9a57a4bda88563d94e3c6adb9b1eec941cac5818de4e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/package.lock": "99089733fe4f2e509b3c1ee10cfc2340ff4dcfb5acf60308f60cb2b06ca20fea"
+  },
+  "programs": [
+    {
+      "id": "binarytrees-toit-published-1",
+      "benchmark": "binarytrees",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/binarytrees-toit-published-1.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-toit-1.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/binarytrees-toit-1.toit",
+      "upstream_source_sha256": "61e1a2ca012cefe62a70b54a12a0a35731f5f68cde9ef2e52fd912102a18f602",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable."
+      ],
+      "local_adaptation": true,
+      "key": "binarytrees:binarytrees-toit-published-1",
+      "language": "toit",
+      "source_sha256": "61e1a2ca012cefe62a70b54a12a0a35731f5f68cde9ef2e52fd912102a18f602",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/binarytrees-toit-published-1",
+      "binary_sha256": "dffbc2c428b3c30383c6da3f1b62964617b99f43c576d1147a85af614cb3d31f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/binarytrees-toit-published-1",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/binarytrees-toit-published-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/binarytrees-toit-published-1.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true,
+        "distinct_nodes": true,
+        "equal_size_leaves": true,
+        "long_lived_root": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 10,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/binarytrees-toit-published-1-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "binarytrees-toit-published-2",
+      "benchmark": "binarytrees",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/binarytrees-toit-published-2.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-toit-2.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/binarytrees-toit-2.toit",
+      "upstream_source_sha256": "5d7c8955a8533280976ac7a488a3ed8c4a15f1e83362f79cef8b3a4f6b885ea1",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable."
+      ],
+      "local_adaptation": true,
+      "key": "binarytrees:binarytrees-toit-published-2",
+      "language": "toit",
+      "source_sha256": "5d7c8955a8533280976ac7a488a3ed8c4a15f1e83362f79cef8b3a4f6b885ea1",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/binarytrees-toit-published-2",
+      "binary_sha256": "4788a8e7b4ba8575b75bebdfb6764ba920e747e61370ad2e05e8fd38a1499235",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/binarytrees-toit-published-2",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/binarytrees-toit-published-2",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/binarytrees-toit-published-2.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true,
+        "distinct_nodes": true,
+        "equal_size_leaves": true,
+        "long_lived_root": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 10,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/binarytrees-toit-published-2-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "fannkuchredux-toit-published-8",
+      "benchmark": "fannkuchredux",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fannkuchredux-toit-published-8.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fannkuchredux-toit-8.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/fannkuchredux-toit-8.toit",
+      "upstream_source_sha256": "cfdf1d28a2e4bcab4bccbda1f6e3778472019500ac90edd6d9b5458f017a2aa5",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable."
+      ],
+      "local_adaptation": true,
+      "key": "fannkuchredux:fannkuchredux-toit-published-8",
+      "language": "toit",
+      "source_sha256": "cfdf1d28a2e4bcab4bccbda1f6e3778472019500ac90edd6d9b5458f017a2aa5",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fannkuchredux-toit-published-8",
+      "binary_sha256": "241f0df782a9d08aa7bc63a4eaf5fa469bac0ec05a53c5d242d180bdd607351a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fannkuchredux-toit-published-8",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fannkuchredux-toit-published-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fannkuchredux-toit-published-8.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 7,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/fannkuchredux-toit-published-8-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 7
+      }
+    },
+    {
+      "id": "fasta-toit-published-1",
+      "benchmark": "fasta",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-published-1.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-toit-1.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/fasta-toit-1.toit",
+      "upstream_source_sha256": "6e7141a0fb2308eea68fce32499b7f9b79436adcd50fb612cf9ac7a573791fe2",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable.",
+        "Use SDK io.stdio for the same native standard streams; the obsolete host.pipe dependency is not required, and SDK streams are not closeable.",
+        "Explicit binary64 division by 139968.0 after every LCG advance; no scaled integer selection thresholds."
+      ],
+      "local_adaptation": true,
+      "key": "fasta:fasta-toit-published-1",
+      "language": "toit",
+      "source_sha256": "d548837c8b36acd1ba834ce90f8e99b6fc6482919b71aa8718cdae041e1fb9db",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-published-1",
+      "binary_sha256": "b130ad01225e394cba84e43c66f60386bf34385ad8a836c331ef7aef7890ccf5",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-published-1",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-published-1",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-published-1.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/fasta-toit-published-1-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "fasta-toit-published-8",
+      "benchmark": "fasta",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-published-8.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-toit-8.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/fasta-toit-8.toit",
+      "upstream_source_sha256": "ad3dbe3b97336266eb8077b589b79be09975053d3bff538412a5b7b6b7d62943",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable.",
+        "Explicit binary64 division by 139968.0 after every LCG advance; no scaled integer selection thresholds.",
+        "Replace subtracting individual probabilities with the required cumulative binary64 probability thresholds, retaining sequential symbol generation."
+      ],
+      "local_adaptation": true,
+      "key": "fasta:fasta-toit-published-8",
+      "language": "toit",
+      "source_sha256": "6b7dc41ab4544f8501aa7efa2af0a42c9d017773a5594b05453734bbb6fe7557",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-published-8",
+      "binary_sha256": "0b26eb1b571ebff1c5c321313458d554f1911beff72afe0d17a07f0a59d884b0",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-published-8",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-published-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-published-8.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/fasta-toit-published-8-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "knucleotide-toit-published-8",
+      "benchmark": "knucleotide",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/knucleotide-toit-published-8.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-toit-8.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/knucleotide-toit-8.toit",
+      "upstream_source_sha256": "26f2ea105a83f9b49a1866b03c256cda98fc2c73e5326300fd6ce3250190643c",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable.",
+        "Use SDK io.stdio for the same native standard streams; the obsolete host.pipe dependency is not required, and SDK streams are not closeable.",
+        "Skip FASTA comment lines and enforce deterministic descending frequency/ascending nucleotide tie ordering; all seven growing maps and every window remain."
+      ],
+      "local_adaptation": true,
+      "key": "knucleotide:knucleotide-toit-published-8",
+      "language": "toit",
+      "source_sha256": "162dbaf9b42eb009ec59e0b1b8944f3476ea54157ce05d8533a5d6439694e473",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/knucleotide-toit-published-8",
+      "binary_sha256": "1ae07ccf8c23367e53c76b723a6675a86b47be734b17435d2bc28c82c8bde49f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/knucleotide-toit-published-8",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/knucleotide-toit-published-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/knucleotide-toit-published-8.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true,
+        "seven_growing_maps": true,
+        "all_overlapping_windows": true,
+        "max_key_bits": 36
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 10245,
+        "stdin_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/knucleotide-toit-published-8-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 3
+      }
+    },
+    {
+      "id": "mandelbrot-toit-published-8",
+      "benchmark": "mandelbrot",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/mandelbrot-toit-published-8.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-toit-8.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/mandelbrot-toit-8.toit",
+      "upstream_source_sha256": "81d0dc61682198b03f5f202f434ab747fd1ee64ad36e14d278d1156c53dc5433",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable.",
+        "Use SDK io.stdio for the same native standard streams; the obsolete host.pipe dependency is not required, and SDK streams are not closeable."
+      ],
+      "local_adaptation": true,
+      "key": "mandelbrot:mandelbrot-toit-published-8",
+      "language": "toit",
+      "source_sha256": "c5b0c292680aff0727a46bfec96b7eda5cc5284e012e8519841cdc10220ec7ee",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/mandelbrot-toit-published-8",
+      "binary_sha256": "e935de7a05df3a1cfb6fea7b64f27636ad9acfa906c8ae145283981b0e6c9dbe",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/mandelbrot-toit-published-8",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/mandelbrot-toit-published-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/mandelbrot-toit-published-8.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 32,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 137,
+        "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/mandelbrot-toit-published-8-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 10
+      }
+    },
+    {
+      "id": "nbody-toit-published-8",
+      "benchmark": "nbody",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/nbody-toit-published-8.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/nbody-toit-8.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/nbody-toit-8.toit",
+      "upstream_source_sha256": "80f67e75e951e0b9291dc7f3bcab08c78d21dfdc318c6998cf960bbded648239",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable."
+      ],
+      "local_adaptation": true,
+      "key": "nbody:nbody-toit-published-8",
+      "language": "toit",
+      "source_sha256": "80f67e75e951e0b9291dc7f3bcab08c78d21dfdc318c6998cf960bbded648239",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/nbody-toit-published-8",
+      "binary_sha256": "c4f17c1036176eea86fa74b27e5629770f78e02cc83a72b97e251af11bdc2ee6",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/nbody-toit-published-8",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/nbody-toit-published-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/nbody-toit-published-8.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/nbody-toit-published-8-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "spectralnorm-toit-published-8",
+      "benchmark": "spectralnorm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/spectralnorm-toit-published-8.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/spectralnorm-toit-8.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/spectralnorm-toit-8.toit",
+      "upstream_source_sha256": "12498a8a6684768c45d511f88411eab517feeac23528832da51d566bfd60a712",
+      "adaptations": [
+        "Compile before timing using Toit alpha.199 -O2 into a native arm64 standalone VM executable."
+      ],
+      "local_adaptation": true,
+      "key": "spectralnorm:spectralnorm-toit-published-8",
+      "language": "toit",
+      "source_sha256": "12498a8a6684768c45d511f88411eab517feeac23528832da51d566bfd60a712",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/spectralnorm-toit-published-8",
+      "binary_sha256": "912163497310b67b71ea229ef31f4c0cfdd2042beb3299c00f5c8863ad5a6524",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/spectralnorm-toit-published-8",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/spectralnorm-toit-published-8",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/spectralnorm-toit-published-8.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 30,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 12,
+        "sha256": "bd01322781ac2e7492973559cfb23b4db14f8ea2ab3379eca13a2e8a2a0156d1",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/spectralnorm-toit-published-8-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "mandelbrot-toit-rows",
+      "benchmark": "mandelbrot",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/mandelbrot-toit-rows.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+      "adaptations": [
+        "Canonical 50-iteration binary64 Mandelbrot from z=0, complete PBM including arbitrary-width row padding; reuse a row buffer and cached squares instead of one native write per byte."
+      ],
+      "local_adaptation": true,
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/mandelbrot-toit-8.toit",
+      "upstream_source_sha256": "81d0dc61682198b03f5f202f434ab747fd1ee64ad36e14d278d1156c53dc5433",
+      "key": "mandelbrot:mandelbrot-toit-rows",
+      "language": "toit",
+      "source_sha256": "bf74309781b4595e2251155569ebdb0efb18a5f4b08b953e5c619eaf7f6f77a4",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/mandelbrot-toit-rows",
+      "binary_sha256": "9dabc23b6c2d6d288b4b240ed95a3708ca62185a3e9acc623c38f19b60ebec14",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/mandelbrot-toit-rows",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/mandelbrot-toit-rows",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/mandelbrot-toit-rows.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 32,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 137,
+        "sha256": "31d22e00e21e6aa643032125660bc0e59bb6b9b3064be14cc240b418f4b004ad",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/mandelbrot-toit-rows-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 10
+      }
+    },
+    {
+      "id": "spectralnorm-toit-recurrence",
+      "benchmark": "spectralnorm",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/spectralnorm-toit-recurrence.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/spectralnorm.html",
+      "adaptations": [
+        "Use exact integer denominator recurrence and one scratch List for the same 40 full dense matrix/vector products; retain binary64 division, products and summation order."
+      ],
+      "local_adaptation": true,
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/spectralnorm-toit-8.toit",
+      "upstream_source_sha256": "12498a8a6684768c45d511f88411eab517feeac23528832da51d566bfd60a712",
+      "key": "spectralnorm:spectralnorm-toit-recurrence",
+      "language": "toit",
+      "source_sha256": "f45e55a60d169844aac748cb3c0b1fc98d6fe36f546e5f77df655006709e484d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/spectralnorm-toit-recurrence",
+      "binary_sha256": "d8b52531528ce4f4e3f4b24443a3295ff834c44ebf57520377179bf531cd480e",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/spectralnorm-toit-recurrence",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/spectralnorm-toit-recurrence",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/spectralnorm-toit-recurrence.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 30,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 12,
+        "sha256": "bd01322781ac2e7492973559cfb23b4db14f8ea2ab3379eca13a2e8a2a0156d1",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/spectralnorm-toit-recurrence-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "fannkuchredux-toit-reuse",
+      "benchmark": "fannkuchredux",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fannkuchredux-toit-reuse.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+      "adaptations": [
+        "Generate every canonical prefix-rotation permutation with alternating checksum, including n=1; use standard List.replace into reusable scratch storage."
+      ],
+      "local_adaptation": true,
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/fannkuchredux-toit-8.toit",
+      "upstream_source_sha256": "cfdf1d28a2e4bcab4bccbda1f6e3778472019500ac90edd6d9b5458f017a2aa5",
+      "key": "fannkuchredux:fannkuchredux-toit-reuse",
+      "language": "toit",
+      "source_sha256": "9b55d6668c2f0504dd3d1dd7766c369da2c795dfd0d0803993f33d15b69a45f9",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fannkuchredux-toit-reuse",
+      "binary_sha256": "2834011d3032b145182234dd3216ddf0be17cd7d2932be3b261a1afb24799d23",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fannkuchredux-toit-reuse",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fannkuchredux-toit-reuse",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fannkuchredux-toit-reuse.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 7,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/fannkuchredux-toit-reuse-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 7
+      }
+    },
+    {
+      "id": "nbody-toit-cached-bodies",
+      "benchmark": "nbody",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/nbody-toit-cached-bodies.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+      "adaptations": [
+        "Cache each pair of Body references and use ordinary counted loops in the same five-body, all-pairs binary64 update; retain published solar constants, momentum offset, energies and every time step."
+      ],
+      "local_adaptation": true,
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/nbody-toit-8.toit",
+      "upstream_source_sha256": "80f67e75e951e0b9291dc7f3bcab08c78d21dfdc318c6998cf960bbded648239",
+      "key": "nbody:nbody-toit-cached-bodies",
+      "language": "toit",
+      "source_sha256": "485998dfb8e289cd2b8a158c35eeb449dd8bfed30b82d7151379b65125e95f77",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/nbody-toit-cached-bodies",
+      "binary_sha256": "91dd9c9a5e818cdd5310781445a66f1d5ace37b85ecc096c1f4a0f90c90644ee",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/nbody-toit-cached-bodies",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/nbody-toit-cached-bodies",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/nbody-toit-cached-bodies.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/nbody-toit-cached-bodies-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 4
+      }
+    },
+    {
+      "id": "knucleotide-toit-packed",
+      "benchmark": "knucleotide",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/knucleotide-toit-packed.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "adaptations": [
+        "Preserve all seven growing hash maps and every overlapping window; exact 36-bit ACGT keys use native signed 64-bit integers without aliasing long windows. Buffered general FASTA input and deterministic frequency ties."
+      ],
+      "local_adaptation": true,
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/knucleotide-toit-8.toit",
+      "upstream_source_sha256": "26f2ea105a83f9b49a1866b03c256cda98fc2c73e5326300fd6ce3250190643c",
+      "key": "knucleotide:knucleotide-toit-packed",
+      "language": "toit",
+      "source_sha256": "860dd4d62ca9b3c98bec8c474507576b6fe7cc31c168d5ed1d30a46f47488983",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/knucleotide-toit-packed",
+      "binary_sha256": "e52178d569c661df9db5c73cab6c4951ad1e38bb0762fbd30734cf3e93d7ce04",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/knucleotide-toit-packed",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/knucleotide-toit-packed",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/knucleotide-toit-packed.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true,
+        "seven_growing_maps": true,
+        "all_overlapping_windows": true,
+        "max_key_bits": 36
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 10245,
+        "stdin_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/knucleotide-toit-packed-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 3
+      }
+    },
+    {
+      "id": "fasta-toit-streaming",
+      "benchmark": "fasta",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-streaming.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "adaptations": [
+        "Retain every sequential LCG advance, direct binary64 division and unscaled cumulative probabilities; general binary-search selection and reusable row/block buffers reduce allocation and native writes. Complete three-record output."
+      ],
+      "local_adaptation": true,
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/fasta-toit-1.toit",
+      "upstream_source_sha256": "6e7141a0fb2308eea68fce32499b7f9b79436adcd50fb612cf9ac7a573791fe2",
+      "key": "fasta:fasta-toit-streaming",
+      "language": "toit",
+      "source_sha256": "cb1f7df4a481145b9b1b3b7cd5c028421b420a95be0bbbd368a52c5c5407029b",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-streaming",
+      "binary_sha256": "7adbf59a6e9cb75059447a9c2116d78529596c4cd78bbac1c75f5a1e8cba50e5",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-streaming",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/fasta-toit-streaming",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/fasta-toit-streaming.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/fasta-toit-streaming-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "revcomp-toit-lines",
+      "benchmark": "revcomp",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/revcomp-toit-lines.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "adaptations": [
+        "Replace the published scanner that misses multiple headers in a read with general FASTA record parsing, arbitrary headers/line lengths/comments/CRLF, in-place reverse/complement and canonical 60-column complete output. All parsing and transformation remain counted Toit source."
+      ],
+      "local_adaptation": true,
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/revcomp-toit-1.toit",
+      "upstream_source_sha256": "653d97a68580645407c7c990637430c1d9b0507547485647f86c993eb24d451c",
+      "key": "revcomp:revcomp-toit-lines",
+      "language": "toit",
+      "source_sha256": "5e05ab126cba17e178448cd69352627828ba122f787ad6271c3333779291b364",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/revcomp-toit-lines",
+      "binary_sha256": "20a09fd04805951b2ae8624c6333f299de45a859f23eaa3dd46cde85f0797a12",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/revcomp-toit-lines",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/revcomp-toit-lines",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/revcomp-toit-lines.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 10245,
+        "stdin_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/revcomp-toit-lines-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "revcomp-toit-buffered",
+      "benchmark": "revcomp",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/revcomp-toit-buffered.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "adaptations": [
+        "Same general FASTA parser and full in-place byte reversal/complement as the line-output form; standard block Buffer batches canonical output."
+      ],
+      "local_adaptation": true,
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/revcomp-toit-1.toit",
+      "upstream_source_sha256": "653d97a68580645407c7c990637430c1d9b0507547485647f86c993eb24d451c",
+      "key": "revcomp:revcomp-toit-buffered",
+      "language": "toit",
+      "source_sha256": "5febb017a5bd8ae40491b2f7a9e238d0b879d6a32d48bb7b42f28cf92f3815f6",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/revcomp-toit-buffered",
+      "binary_sha256": "0ce484fee900dc9a78c9a989c41909e269be47723b4648933082ddf7ce1ca895",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/revcomp-toit-buffered",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/revcomp-toit-buffered",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/revcomp-toit-buffered.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 10245,
+        "stdin_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/revcomp-toit-buffered-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 5
+      }
+    },
+    {
+      "id": "pidigits-toit-bignum",
+      "benchmark": "pidigits",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/pidigits-toit-bignum.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+      "adaptations": [
+        "Author the required unbounded-integer streaming spigot using SDK Bignum. Both extract(3) and extract(4) use exact big-integer division at every eligible iteration; no precomputation, factor cancellation or bounded integer substitution."
+      ],
+      "local_adaptation": true,
+      "key": "pidigits:pidigits-toit-bignum",
+      "language": "toit",
+      "source_sha256": "535860cdc6219521bd11f9fdd53e501b99d407237b683ead79a50400fb5ea6a7",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/pidigits-toit-bignum",
+      "binary_sha256": "853073b8ef431b56f1e3da462927f163f78eb5d3c5d33b1fce43fa5a048f8c8f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/pidigits-toit-bignum",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/pidigits-toit-bignum",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/pidigits-toit-bignum.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true,
+        "both_exact_extract_divisions": true,
+        "arbitrary_precision": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 103,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 167,
+        "sha256": "d2f6289aa2de82787665dfa4c55b57f9ae7088d36e9cfc691949823681781bf3",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/pidigits-toit-bignum-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 6
+      }
+    },
+    {
+      "id": "pidigits-toit-bignum-fields",
+      "benchmark": "pidigits",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/pidigits-toit-bignum-fields.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+      "adaptations": [
+        "Same strict unbounded-integer spigot and both exact extract divisions; use the pinned standard Bignum sign and byte representation for general sign/small-integer conversion rather than allocating hexadecimal strings. All local helpers are counted."
+      ],
+      "local_adaptation": true,
+      "key": "pidigits:pidigits-toit-bignum-fields",
+      "language": "toit",
+      "source_sha256": "90b26b5e4804dbe59685e1f68c358a59e421c0a99c3ebc65734a8ceb9b5b0e35",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/pidigits-toit-bignum-fields",
+      "binary_sha256": "9c46a9cb7dfa85b3bd3cb175fdd2c3e76e8495228d09b891d06fe2aeea3a860c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/pidigits-toit-bignum-fields",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/pidigits-toit-bignum-fields",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/pidigits-toit-bignum-fields.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true,
+        "both_exact_extract_divisions": true,
+        "arbitrary_precision": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 103,
+        "stdin_bytes": 0,
+        "stdin_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 167,
+        "sha256": "d2f6289aa2de82787665dfa4c55b57f9ae7088d36e9cfc691949823681781bf3",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/pidigits-toit-bignum-fields-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 6
+      }
+    },
+    {
+      "id": "regexredux-toit-regexp",
+      "benchmark": "regexredux",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/regexredux-toit-regexp.toit",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "adaptations": [
+        "Author regex-redux using the pinned general dartino_regexp 0.4.1 JavaScript-compatible regex package, with native buffered stdin, all nine independent nonoverlapping counts and five sequential whole-sequence substitutions. Complete lengths and output; no specialized motif recognizer."
+      ],
+      "local_adaptation": true,
+      "key": "regexredux:regexredux-toit-regexp",
+      "language": "toit",
+      "source_sha256": "0db1acabbb679cf2bfe334c316d58d0e2244b4933d58dc47f24f2883cea09283",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/regexredux-toit-regexp",
+      "binary_sha256": "568714967b48d06f015acfa68a72d527866be64306020590742022ac074ab964",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/regexredux-toit-regexp",
+        "{n}"
+      ],
+      "compile_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit/bin/toit",
+        "compile",
+        "-O2",
+        "--project-root",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/bin/regexredux-toit-regexp",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/toit/regexredux-toit-regexp.toit"
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "application_language": "Toit",
+        "complete_output": true
+      },
+      "execution": "Optimized Toit bytecode compiled before timing, executed by an embedded native arm64 VM; cold process startup included.",
+      "small_validation": {
+        "reference_match": true,
+        "n": 1000,
+        "stdin_bytes": 10245,
+        "stdin_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "output": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/checks/regexredux-toit-regexp-canonical.stdout",
+        "binary_unchanged": true
+      },
+      "adversarial_validation": {
+        "passed": true,
+        "evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json",
+        "checks": 7
+      }
+    }
+  ],
+  "provenance": {
+    "sdk_url": "https://github.com/toitlang/toit/releases/download/v2.0.0-alpha.199/toit-macos.tar.gz",
+    "sdk_archive": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/toit-macos-alpha199.tar.gz",
+    "sdk_archive_sha256": "d12a49f5bf4f65f1535845de04dd8b2fc94a0509933c5312a681b09c53f6d7a5",
+    "upstream_index": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/upstream/toit/source-index.json",
+    "regexp_repository": "https://github.com/close2/toit-dartino-regexp",
+    "regexp_version": "0.4.1",
+    "regexp_commit": "768fed0da7102530356c5f94f2d373546892697a"
+  },
+  "adversarial_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/toit/adversarial-checks.json"
+}

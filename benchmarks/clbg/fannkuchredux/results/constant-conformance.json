@@ -1,0 +1,247 @@
+{
+  "all_passed": true,
+  "checked_results": 40,
+  "compiler_executable_sha256": "d77087a33ad0e99d21d66e3629a79aac156d5862e5333c45b547ee2c93adb1b8",
+  "cases": [
+    {
+      "shape": 1,
+      "simd": false,
+      "selector": 0,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": false,
+      "selector": 1,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": false,
+      "selector": 2,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": false,
+      "selector": 3,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": false,
+      "selector": 4,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": false,
+      "selector": 0,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": false,
+      "selector": 1,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": false,
+      "selector": 2,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": false,
+      "selector": 3,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": false,
+      "selector": 4,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": false,
+      "selector": 0,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": false,
+      "selector": 1,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": false,
+      "selector": 2,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": false,
+      "selector": 3,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": false,
+      "selector": 4,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": false,
+      "selector": 0,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": false,
+      "selector": 1,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": false,
+      "selector": 2,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": false,
+      "selector": 3,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": false,
+      "selector": 4,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": true,
+      "selector": 0,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": true,
+      "selector": 1,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": true,
+      "selector": 2,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": true,
+      "selector": 3,
+      "passed": true
+    },
+    {
+      "shape": 1,
+      "simd": true,
+      "selector": 4,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": true,
+      "selector": 0,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": true,
+      "selector": 1,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": true,
+      "selector": 2,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": true,
+      "selector": 3,
+      "passed": true
+    },
+    {
+      "shape": 16,
+      "simd": true,
+      "selector": 4,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": true,
+      "selector": 0,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": true,
+      "selector": 1,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": true,
+      "selector": 2,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": true,
+      "selector": 3,
+      "passed": true
+    },
+    {
+      "shape": 17,
+      "simd": true,
+      "selector": 4,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": true,
+      "selector": 0,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": true,
+      "selector": 1,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": true,
+      "selector": 2,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": true,
+      "selector": 3,
+      "passed": true
+    },
+    {
+      "shape": 64,
+      "simd": true,
+      "selector": 4,
+      "passed": true
+    }
+  ]
+}

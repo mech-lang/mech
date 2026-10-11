@@ -1,0 +1,9 @@
+/binaries/
+/builds/
+/toolchains/*
+!/toolchains/bin/
+/toolchains/bin/*
+!/toolchains/bin/clang
+!/toolchains/ghc-env
+/sources/*.hi
+/sources/*.cm*

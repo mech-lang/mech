@@ -1,0 +1,8 @@
+Replace(text<string>, change<(string,string)>) => <string> := regex/replace-bytes(text, change.1, change.2)
+raw := io/read()
+initial := text/length(raw)
+dna := regex/replace-bytes(raw, ">[^\n]*\n|\n", "")
+cleaned := text/length(dna)
+io/write(text/join([text/format("{} {}\n", pattern, regex/count-bytes(dna, pattern)) | pattern <- ["agggtaaa|tttaccct", "[cgt]gggtaaa|tttaccc[acg]", "a[act]ggtaaa|tttacc[agt]t", "ag[act]gtaaa|tttac[agt]ct", "agg[act]taaa|ttta[agt]cct", "aggg[acg]aaa|ttt[cgt]ccct", "agggt[cgt]aa|tt[acg]accct", "agggta[cgt]a|t[acg]taccct", "agggtaa[cgt]|[acg]ttaccct"]], ""))
+final := sequence/fold(sequence/zip(["tHa[Nt]", "aND|caN|Ha[DS]|WaS", "a[NSt]|BY", "<[^>]*>", "\\|[^|][^|]*\\|"], ["<4>", "<3>", "<2>", "|", "-"]), dna, Replace)
+io/write(text/format("\n{}\n{}\n{}\n", initial, cleaned, text/length(final)))

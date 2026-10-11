@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Compare measured Benchmark Game programs by source lines and execution time. Explore code, timing samples, geometric means, and standard-deviation ellipses.">
+  <title>Mech Benchmark Explorer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23151b21'/%3E%3Cpath d='M7 7v18h18M10 21l6-7 7-5' fill='none' stroke='%23f6c04e' stroke-width='2'/%3E%3Ccircle cx='16' cy='14' r='3' fill='%23f6c04e'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./mech-palette.css">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="https://mech-lang.org/blog/" target="_blank" rel="noopener">MECH<span>/</span></a>
+    <span class="edition">Benchmark Game · v0.4</span>
+    <a class="blog-link" href="https://mech-lang.org/blog/" target="_blank" rel="noopener">Mech blog</a>
+  </header>
+  <main>
+    <div class="page-heading"><h1>Benchmark explorer</h1><div id="selection-summary" class="selection-summary" aria-live="polite">Loading measured results…</div></div>
+    <div id="load-error" role="alert" hidden></div>
+    <div class="workspace">
+      <aside class="controls" aria-label="Chart selections">
+        <section><div class="section-heading"><h2><button id="toggle-benchmark-filters" class="filter-toggle" aria-expanded="true" aria-controls="benchmark-filter-body">Benchmarks <span id="benchmark-filter-count"></span></button></h2><div class="text-actions"><button id="all-benchmarks">All</button><button id="no-benchmarks">None</button></div></div>
+          <div class="filter-body" id="benchmark-filter-body">
+          <p class="control-note">Check to include. Click a name to inspect.</p>
+          <div id="benchmark-controls"></div>
+          </div>
+        </section>
+        <section><div class="section-heading"><h2><button id="toggle-language-filters" class="filter-toggle" aria-expanded="true" aria-controls="language-filter-body">Languages <span id="language-filter-count"></span></button></h2><div class="text-actions"><button id="all-languages">All</button><button id="no-languages">None</button><button id="only-mech">Mech</button></div></div>
+          <div class="filter-body" id="language-filter-body">
+          <p class="control-note">Select a language or its execution variants. Hover to see covariance contours; oval buttons keep them visible.</p>
+          <fieldset class="year-controls"><legend>Release year</legend>
+            <div class="year-heading"><label for="release-year">Release year</label><output id="release-year-value" for="release-year"></output></div>
+            <input id="release-year" type="range" step="1" aria-label="Language release year">
+            <div class="year-range-labels"><span id="release-year-min"></span><span id="release-year-max"></span></div>
+            <p id="release-year-status" class="year-status" aria-live="polite"></p>
+            <details class="year-sources"><summary>Year sources</summary><p>First release or public introduction, including early previews. Mech uses 2026 for the version under test. Runtime variants share their language's year.</p><ul id="release-year-sources"></ul></details>
+          </fieldset>
+          <fieldset class="group-controls"><legend>Language groups</legend><div id="language-groups"></div><p>Groups can overlap. “Only” isolates a group.</p></fieldset>
+          <div id="language-controls"></div>
+          <details id="coverage-note" class="coverage-note"><summary>Measured coverage</summary><p id="coverage-message" class="coverage-copy"></p></details>
+          </div>
+        </section>
+      </aside>
+      <div class="stage">
+        <div class="chart-toolbar">
+          <div class="view-tabs" role="group" aria-label="Chart view">
+            <button data-view="summary" aria-pressed="true">Geometric means</button>
+            <button data-view="benchmark" aria-pressed="false">Benchmark</button>
+            <button data-view="mech" aria-pressed="false">Mech</button>
+          </div>
+          <select id="focused-benchmark" aria-label="Benchmark to inspect" hidden></select>
+          <button id="compare-shared" class="quiet-button">Compare shared benchmarks</button>
+        </div>
+        <div class="chart-card">
+          <div id="chart-detail-layout" class="chart-detail-layout">
+          <div class="chart-plot">
+          <div class="chart-heading"><div><h2 id="chart-title">All ten benchmarks</h2><p id="chart-subtitle">Equal-weight geometric means</p></div><button id="reset" class="quiet-button">Reset selections</button></div>
+          <div class="plot-options">
+            <label><input id="fast-profile" type="checkbox" checked> <span class="circle-symbol"></span>Fastest</label>
+            <label><input id="small-profile" type="checkbox" checked> <span class="square-symbol"></span>Fewest LOC</label>
+            <label><input id="show-samples" type="checkbox" checked>Samples</label>
+            <label id="focus-means-option" title="Fit axes to geometric-mean endpoints. Uncheck to fit benchmark samples and covariance contours while Samples is enabled."><input id="focus-means" type="checkbox" checked>Focus on means</label>
+            <label title="Global geometric averages, coordinate medians, and 1σ/2σ covariance across visible execution variants, separately for each profile."><input id="show-global" type="checkbox">Global average &amp; SD</label>
+          </div>
+          <p id="global-statistics-note" class="global-statistics-note inactive" aria-hidden="true">Global: + geometric average · ◇ median · 1σ / 2σ covariance</p>
+          <div id="chart-wrap"><svg id="chart" role="img" aria-label="Source lines and elapsed time on logarithmic base-2 axes"></svg><div id="empty-state" hidden></div></div>
+          <div class="plot-caption"><span>Fewer lines left · faster below · fixed log₂ axes</span><span>Click a point for code and timing samples.</span></div>
+          </div>
+  <dialog id="inspector" aria-labelledby="inspector-title">
+    <div class="inspector-header"><div><p id="inspector-context" class="eyebrow"></p><h2 id="inspector-title">Program details</h2></div><button id="close-inspector" class="close-button" aria-label="Close program details">×</button></div>
+    <div id="inspector-body"></div>
+  </dialog>
+          </div>
+          <p id="table-metric-note" class="table-metric-note">LOC × uses the fewest-LOC endpoint; Fastest × uses the fastest-time endpoint. 1× is the full cohort baseline. Slope and length describe their connecting line in log₂ coordinates; a point has length 0 and no slope. The 2σ area columns measure the full covariance ellipse for each profile in squared doublings, across the selected benchmarks. At least two benchmarks are required.</p>
+          <div id="mean-table-wrap"><table id="mean-table" aria-describedby="table-metric-note"><thead></thead><tbody></tbody></table></div>
+        </div>
+        <details class="method"><summary>Measurements and how to read the chart</summary>
+          <div class="method-copy"><p>Each benchmark is normalized to the full measured cohort’s fewest source lines and fastest median elapsed time. Hiding a language or program does not move those baselines. Axis limits use the full admitted cohort for the selected benchmark set and remain fixed when languages, profiles, programs, or standard-deviation ellipses are toggled. Changing the benchmark set, chart view, or Focus on means setting establishes a new range. Hiding Samples restores the means range and removes the option to fit hidden data points. Selecting benchmarks recomputes equal-weight geometric means from that subset.</p>
+          <p>Circles are the fastest included programs; squares are those with the fewest LOC. A line joins the two profiles. Faint dots are their benchmark inputs. The website includes only the fastest and fewest-LOC programs for each language and benchmark. Clicking a mean lets you inspect its contributing programs.</p>
+          <p>Global average &amp; SD adds separate whole-set statistics for the fastest and fewest-LOC profiles: white for fastest, gold for fewest LOC. A plus marks the geometric average; a diamond marks the coordinate median. Inner contours show 1σ covariance in log₂ LOC/time space, with a lighter 2σ outer contour. Each visible execution variant has equal weight: the full chart uses its geometric-mean endpoint, and an individual chart uses its benchmark endpoint. Language, variant, benchmark, year and program selections recompute these statistics. These describe variation between the visible entries, not timing uncertainty. With one entry the average and median remain defined; covariance needs at least two. This overlay preserves the existing axis limits, so contours can be cropped in the means-focused view or at the 1× baseline.</p>
+          <p>Language checkboxes group runtime variants: Mech has AOT, JIT and interpreted execution; Lua has interpreted Lua and LuaJIT; C# and F# each have JIT and AOT; Dart has AOT and JIT. Child checkboxes keep each variant independently selectable, with separate measured endpoints and means. A partially checked parent means some variants are enabled. Lua has nine admitted workloads and no recorded pi-digits endpoint; its partial coverage is labelled, with no invented timing.</p>
+          <p>The comparison table shows each language’s fewest-LOC multiple and fastest-time multiple relative to 1×. On the full chart these are equal-weight geometric means over the compared benchmarks. A 1.46× LOC value means 46% more lines than the shortest-source baseline. These two best values can come from different programs. For the line from the square to the circle, Δx = log₂(fastest LOC / fewest LOC) and Δy = log₂(fastest time / fewest-LOC time). Slope = Δy/Δx; length = √(Δx² + Δy²), in doublings rather than screen pixels. Coincident endpoints have zero length and undefined slope.</p>
+          <p>Release year builds up the comparison chronologically, stepping only through years with a language in this dataset. Mech uses 2026 for the version under test. Language years and their sources are listed in the controls. This changes visibility only: benchmark samples, geometric-mean inputs, normalization baselines and axis limits stay tied to the selected benchmark cohort.</p>
+          <p>Hovering a language’s point or line shows its covariance contours; each oval button keeps them visible. Contours use log₂ LOC/time space, separately for the fastest and fewest-LOC profiles. Inner contours are 1σ; lighter outer contours have twice the radius along both covariance axes. Centers are the geometric means and tilt preserves LOC/time correlation. The sortable 2σ area columns report 4π√det(Σ), using sample covariance across the selected benchmarks, in squared doublings. They measure each full ellipse before display clipping and remain available when its contours are hidden. With fewer than two benchmarks the area is undefined (—); a degenerate ellipse has zero area. These statistics describe variation across benchmarks, not timing uncertainty or a confidence interval. The code panel separately shows run-to-run timing deviation. Focus on means fits the axes to the full cohort’s geometric-mean endpoints, cropping outlying samples and contours. While Samples is enabled, uncheck it to fit benchmark samples and complete covariance envelopes. Hiding Samples restores Focus on means and removes the full-data fit option; showing Samples again retains the means range until you change it. In either mode, visibility controls keep the limits fixed. The first labelled tick on each axis is always the 1× measured baseline; covariance tails below 1× are clipped without changing the computed means or covariance.</p>
+          <p>Apple M3 · AC power · Low Power Mode off · October 8–11, 2026. Three samples in broad comparisons; five, seven, or ten in subsequent measurements and confirmations. Fresh-process times include startup and full output. Mech JIT also includes compilation. Mech interpreted measures loaded execution, including input and output, with loading and activation excluded; its code panel also records whole-process times. LOC excludes blank and comment-only lines. Packed independent statements and assignments are counted separately in every language. Complete application source, including helpers and FFI declarations, is counted; general libraries and compilers are excluded.</p>
+          <p>Mech includes AOT, JIT, and interpreted execution of the same audited source candidates. Solid, dashed, and dotted gold lines distinguish these paths. Each path selects its fastest and fewest-LOC endpoints from its own measurements. A program’s final statement is its output. Known work mismatches are excluded before selecting endpoints; correct output alone is insufficient. Library allocation strategies are recorded. Fastest means the best eligible measured program in this cohort. Each language’s geometric means use its measured selected benchmarks. Partial suites are labelled with their coverage, such as 9/10, on the line and in the table; missing or failed tests contribute no invented result. “Compare shared benchmarks” selects the same measured subset for every enabled language. BQN and K cover all ten full workloads; their faithful spectral-norm and k-nucleotide sources replace the archived shortcuts.</p>
+          <p>MATLAB R2026b covers all ten full workloads with twenty local compact/optimized source candidates and three complete, validated fresh-process samples per source. Endpoints use the measured winners; an optimized candidate is not assumed to be faster. Each algorithm remains in the displayed MATLAB source. Base MATLAB standard JIT and automatic computation threads are used, with no Parallel Computing Toolbox or Coder. General Java BigInteger supplies pi arithmetic. Startup, cached online-license checks, first-use JIT, complete input, computation, output and teardown are timed. The source selector shows the stream-only input launcher separately from counted application code. Untimed identity probes verify independent two-slot allocations for tree interiors and leaves through both even- and odd-depth constructor branches. Current unchanged Mech AOT controls were measured alongside MATLAB; earlier chart samples are retained.</p>
+          <p>Haskell and OCaml cover all ten full workloads with three local samples per admitted source. The Functional group includes Haskell, OCaml and Futhark. Published sources are retained or explicitly labelled when corrected; all corrections count toward LOC. Packed independent statements and bindings count separately, and semantic compiler pragmas count as code. Tree checks preserve per-node allocation and lifetime; nucleotide maps include every window and grow from small initial tables. Full source and sample timings are available by clicking their points.</p>
+          <p>The current Mech JIT and interpreted cohort reruns all source candidates after general execution improvements. Native admission shares one parsed document, releases it after admission, and reuses the admitted control graph. The standard counting container keeps its batch dispatch inlined while retaining every input update. Interpreted matrix products batch the source coefficient instructions across independent elements, retain checked-arithmetic errors and scalar sum order, and recompute every coefficient for each product. Fifty-four semantic checks and fifteen byte-identical AOT objects accompany the full-workload output checks. Earlier timings remain archived.</p>
+          <p>Swift covers all ten workloads. All 37 published sources were considered; 35 admitted candidates have three complete fresh-process samples. Ten local corrections are labelled in the code panel: API compatibility, common floating-point FASTA work, or required tree lifetimes. Originals are retained in the audit. Builds use Apple Swift 5.10 with the published optimization flags; published Linux timings are not reused. Current unchanged Mech AOT programs were timed alongside Swift as controls. Existing Mech cohort measurements are retained.</p>
+          <p>Rust’s fastest FASTA source is a local adaptation of published Rust #7. It retains the threaded pipeline and uses unscaled floating-point probabilities and direct division. Five full-size runs verify its complete output; the unchanged Mech FASTA binary was measured in the same rounds. The code panel identifies the adaptation and shows its complete source. Language groups can overlap; execution groups describe the timed implementations, including GraalVM native AOT for Java.</p>
+          <p>The latest n-body audit includes matched C++, Chapel, Rust and Zig controls. Two seven-round cohorts confirm a 1.4% improvement for the unchanged 25-LOC Mech source using square-reduction simplification and general graph scheduling (1.054 s to 1.039 s). Zig takes 1.007 s (0.968× Mech). The unchanged compact source retains its previous scheduling improvement and takes 1.090 s at 20 LOC. All execute every pair on all 50 million steps. <a href="./nbody-compiler-mech.csv" download>Matched seconds, × Mech and LOC table</a> · <a href="./nbody-compiler-audit.md" target="_blank" rel="noopener">Compiler and work audit</a>.</p>
+          <p>The remaining Benchmark Game cohort includes C#, F#, Ada, Free Pascal, Fortran, Dart, and Smalltalk. All use the same ten prescribed workloads with three sequential fresh-process samples per admitted candidate and fresh unchanged Mech AOT controls. Published sources are preserved, with local ARM64 portability and required-work corrections shown in each code panel. Smalltalk runs in a headless Pharo JIT image; Fortran uses GNU Fortran rather than the published Intel compiler. Generic arithmetic and regex libraries are allowed; the benchmark control and application helpers remain in the named language. <a href="./remaining-languages-mech.csv" download>Seconds and × Mech tables (CSV)</a> · <a href="./remaining-languages-mech.md" download>Readable tables</a>.</p>
+          <p>Mojo covers all ten full CPU workloads; Futhark covers nine. Twenty distinct compact/performance pairs were attempted, with nineteen pairs and fifty candidate sources admitted after review. At most eight workers and three fresh samples per source. Endpoints select measured winners across this pool. Matching community Mojo N-body and Spectral Norm sources were adapted; the remaining Mojo programs and all Futhark programs are local ports. Each algorithm executes in its language source. Generic IO, containers, arithmetic, regex and APR pool support is pinned, independently tested and inspectable in the source selector. Corrected Mojo trees allocate sixteen bytes for every node through the Apache APR library pool, as in the C reference; test instrumentation confirms every allocation. Earlier collapsed loops and array-allocation mismatches are archived and excluded under the <a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/binarytrees.html">official tree allocation rules</a>. Stock C and multicore allocation probes confirm that non-inlined per-node arrays are copied into flat storage and released immediately, failing the required lifetime. A faithful tree program needs a general heap-reference or allocator compiler extension. Futhark appears on the full chart with a 9/10 label, using its nine admitted workloads. Other languages retain their ten-test means. “Compare shared benchmarks” selects the common nine for every enabled language. Current Mech controls use the original arguments and runtime settings.</p>
+          <p>Zig, Odin, Roc and Elm each cover ten full workloads. Fastest and fewest-LOC endpoints select the validated measured winners. All application helpers and FFI declarations count toward LOC; ordinary library implementations and generic process I/O support are excluded. Roc uses the established alpha4 LLVM compiler from September 2025; Elm uses optimized JavaScript under Node. Their source panels show raw seconds and ratios to fresh unchanged Mech AOT controls. The chart retains the earlier Mech cohort measurements. <a href="./zig-odin-roc-elm-mech.csv" download>Download all four comparisons to Mech (CSV)</a> · <a href="./zig-odin-roc-elm-mech.md" target="_blank" rel="noopener">Read the full timing and LOC tables</a>.</p>
+          <a href="https://chapel-lang.org/chapelcon/2024/chamberlain-clbg.pdf" target="_blank" rel="noopener">Chapel benchmark comparison</a></div>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <div id="tooltip" role="tooltip" hidden></div>
+  <div id="sort-status" class="sr-only" role="status" aria-live="polite"></div>
+  <footer>Mech Robotics Lab <span>Measured programs, complete source, recorded samples.</span></footer>
+</body>
+</html>

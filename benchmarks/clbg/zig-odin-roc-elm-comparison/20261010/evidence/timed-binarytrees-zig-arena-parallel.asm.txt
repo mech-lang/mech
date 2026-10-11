@@ -1,0 +1,163 @@
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/binarytrees-zig-arena-parallel:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000100001768 <_binarytrees-zig-arena-parallel.build>:
+100001768:     	sub	sp, sp, #80
+10000176c:     	stp	x22, x21, [sp, #32]
+100001770:     	stp	x20, x19, [sp, #48]
+100001774:     	stp	x29, x30, [sp, #64]
+100001778:     	add	x29, sp, #64
+10000177c:     	mov	x3, x30
+100001780:     	mov	x22, x2
+100001784:     	mov	x20, x1
+100001788:     	mov	x19, x0
+10000178c:     	ldp	x0, x8, [x1]
+100001790:     	xpaci	x3
+100001794:     	ldr	x8, [x8]
+100001798:     	mov	w1, #16
+10000179c:     	mov	w2, #3
+1000017a0:     	blr	x8
+1000017a4:     	cbz	x0, 0x100001804 <_binarytrees-zig-arena-parallel.build+0x9c>
+1000017a8:     	mov	x21, x0
+1000017ac:     	stp	xzr, xzr, [x0]
+1000017b0:     	cbz	x22, 0x1000017f8 <_binarytrees-zig-arena-parallel.build+0x90>
+1000017b4:     	sub	x22, x22, #1
+1000017b8:     	mov	x0, sp
+1000017bc:     	mov	x1, x20
+1000017c0:     	mov	x2, x22
+1000017c4:     	bl	0x100001768 <_binarytrees-zig-arena-parallel.build>
+1000017c8:     	ldrh	w8, [sp, #8]
+1000017cc:     	cbnz	w8, 0x100001808 <_binarytrees-zig-arena-parallel.build+0xa0>
+1000017d0:     	ldr	x8, [sp]
+1000017d4:     	str	x8, [x21]
+1000017d8:     	add	x0, sp, #16
+1000017dc:     	mov	x1, x20
+1000017e0:     	mov	x2, x22
+1000017e4:     	bl	0x100001768 <_binarytrees-zig-arena-parallel.build>
+1000017e8:     	ldrh	w8, [sp, #24]
+1000017ec:     	cbnz	w8, 0x100001808 <_binarytrees-zig-arena-parallel.build+0xa0>
+1000017f0:     	ldr	x8, [sp, #16]
+1000017f4:     	str	x8, [x21, #8]
+1000017f8:     	mov	w8, #0
+1000017fc:     	str	x21, [x19]
+100001800:     	b	0x100001808 <_binarytrees-zig-arena-parallel.build+0xa0>
+100001804:     	mov	w8, #26
+100001808:     	strh	w8, [x19, #8]
+10000180c:     	ldp	x29, x30, [sp, #64]
+100001810:     	ldp	x20, x19, [sp, #48]
+100001814:     	ldp	x22, x21, [sp, #32]
+100001818:     	add	sp, sp, #80
+10000181c:     	ret
+
+0000000100001820 <_binarytrees-zig-arena-parallel.batch>:
+100001820:     	sub	sp, sp, #144
+100001824:     	stp	x26, x25, [sp, #64]
+100001828:     	stp	x24, x23, [sp, #80]
+10000182c:     	stp	x22, x21, [sp, #96]
+100001830:     	stp	x20, x19, [sp, #112]
+100001834:     	stp	x29, x30, [sp, #128]
+100001838:     	add	x29, sp, #128
+10000183c:     	mov	x20, x2
+100001840:     	mov	x22, x1
+100001844:     	mov	x19, x0
+100001848:     	mov	x8, #-2
+10000184c:     	lsl	x8, x8, x1
+100001850:     	mvn	x8, x8
+100001854:     	lsl	x23, x8, #4
+100001858:     	mov	x0, x23
+10000185c:     	bl	0x10003e91c <dyld_stub_binder+0x10003e91c>
+100001860:     	cbz	x0, 0x1000018cc <_binarytrees-zig-arena-parallel.batch+0xac>
+100001864:     	mov	x21, x0
+100001868:     	stp	xzr, x0, [sp, #8]
+10000186c:     	str	x23, [sp, #24]
+100001870:     	mov	x23, #0
+100001874:     	cbz	x20, 0x1000018b8 <_binarytrees-zig-arena-parallel.batch+0x98>
+100001878:     	add	x24, sp, #8
+10000187c:     	adrp	x25, 0x100051000 <_start.main+0xc0>
+100001880:     	add	x25, x25, #168
+100001884:     	stp	x24, x25, [sp, #32]
+100001888:     	add	x0, sp, #48
+10000188c:     	add	x1, sp, #32
+100001890:     	mov	x2, x22
+100001894:     	bl	0x100001768 <_binarytrees-zig-arena-parallel.build>
+100001898:     	ldrh	w26, [sp, #56]
+10000189c:     	cbnz	w26, 0x1000018f0 <_binarytrees-zig-arena-parallel.batch+0xd0>
+1000018a0:     	ldr	x0, [sp, #48]
+1000018a4:     	bl	0x10003c13c <_binarytrees-zig-arena-parallel.check>
+1000018a8:     	add	x23, x0, x23
+1000018ac:     	str	xzr, [sp, #8]
+1000018b0:     	subs	x20, x20, #1
+1000018b4:     	b.ne	0x100001884 <_binarytrees-zig-arena-parallel.batch+0x64>
+1000018b8:     	mov	x0, x21
+1000018bc:     	bl	0x10003e910 <dyld_stub_binder+0x10003e910>
+1000018c0:     	mov	w26, #0
+1000018c4:     	str	x23, [x19]
+1000018c8:     	b	0x1000018d0 <_binarytrees-zig-arena-parallel.batch+0xb0>
+1000018cc:     	mov	w26, #26
+1000018d0:     	strh	w26, [x19, #8]
+1000018d4:     	ldp	x29, x30, [sp, #128]
+1000018d8:     	ldp	x20, x19, [sp, #112]
+1000018dc:     	ldp	x22, x21, [sp, #96]
+1000018e0:     	ldp	x24, x23, [sp, #80]
+1000018e4:     	ldp	x26, x25, [sp, #64]
+1000018e8:     	add	sp, sp, #144
+1000018ec:     	ret
+1000018f0:     	mov	x0, x21
+1000018f4:     	bl	0x10003e910 <dyld_stub_binder+0x10003e910>
+1000018f8:     	b	0x1000018d0 <_binarytrees-zig-arena-parallel.batch+0xb0>
+
+00000001000244ec <_heap.FixedBufferAllocator.alloc>:
+1000244ec:     	stp	x29, x30, [sp, #-16]!
+1000244f0:     	mov	x29, sp
+1000244f4:     	ldp	x9, x8, [x0]
+1000244f8:     	tst	w2, #0x3f
+1000244fc:     	b.eq	0x100024544 <_heap.FixedBufferAllocator.alloc+0x58>
+100024500:     	mov	w10, #1
+100024504:     	lsl	x10, x10, x2
+100024508:     	sub	x12, x10, #1
+10002450c:     	add	x11, x8, x9
+100024510:     	adds	x12, x11, x12
+100024514:     	b.hs	0x10002455c <_heap.FixedBufferAllocator.alloc+0x70>
+100024518:     	neg	x10, x10
+10002451c:     	and	x10, x12, x10
+100024520:     	sub	x10, x10, x11
+100024524:     	add	x9, x10, x9
+100024528:     	add	x10, x9, x1
+10002452c:     	ldr	x11, [x0, #16]
+100024530:     	cmp	x10, x11
+100024534:     	b.hi	0x10002455c <_heap.FixedBufferAllocator.alloc+0x70>
+100024538:     	str	x10, [x0]
+10002453c:     	add	x0, x8, x9
+100024540:     	b	0x100024560 <_heap.FixedBufferAllocator.alloc+0x74>
+100024544:     	mov	x10, #0
+100024548:     	add	x9, x10, x9
+10002454c:     	add	x10, x9, x1
+100024550:     	ldr	x11, [x0, #16]
+100024554:     	cmp	x10, x11
+100024558:     	b.ls	0x100024538 <_heap.FixedBufferAllocator.alloc+0x4c>
+10002455c:     	mov	x0, #0
+100024560:     	ldp	x29, x30, [sp], #16
+100024564:     	ret
+
+000000010003c13c <_binarytrees-zig-arena-parallel.check>:
+10003c13c:     	stp	x20, x19, [sp, #-32]!
+10003c140:     	stp	x29, x30, [sp, #16]
+10003c144:     	add	x29, sp, #16
+10003c148:     	mov	x19, x0
+10003c14c:     	ldr	x0, [x0]
+10003c150:     	cbz	x0, 0x10003c178 <_binarytrees-zig-arena-parallel.check+0x3c>
+10003c154:     	bl	0x10003c13c <_binarytrees-zig-arena-parallel.check>
+10003c158:     	add	x20, x0, #1
+10003c15c:     	ldr	x0, [x19, #8]
+10003c160:     	cbz	x0, 0x10003c168 <_binarytrees-zig-arena-parallel.check+0x2c>
+10003c164:     	bl	0x10003c13c <_binarytrees-zig-arena-parallel.check>
+10003c168:     	add	x0, x0, x20
+10003c16c:     	ldp	x29, x30, [sp, #16]
+10003c170:     	ldp	x20, x19, [sp], #32
+10003c174:     	ret
+10003c178:     	mov	w20, #1
+10003c17c:     	ldr	x0, [x19, #8]
+10003c180:     	cbnz	x0, 0x10003c164 <_binarytrees-zig-arena-parallel.check+0x28>
+10003c184:     	b	0x10003c168 <_binarytrees-zig-arena-parallel.check+0x2c>

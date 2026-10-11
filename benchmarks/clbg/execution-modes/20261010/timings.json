@@ -1,0 +1,5171 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-10T04:26:34.967835+00:00",
+  "machine": "Apple M3",
+  "sample_count": 3,
+  "power_profile": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "workloads": {
+    "nbody": [
+      1000,
+      50000000
+    ],
+    "mandelbrot": [
+      200,
+      16000
+    ],
+    "knucleotide": [
+      1000,
+      25000000
+    ],
+    "spectralnorm": [
+      100,
+      5500
+    ],
+    "revcomp": [
+      1000,
+      25000000
+    ],
+    "fannkuchredux": [
+      7,
+      12
+    ],
+    "fasta": [
+      1000,
+      25000000
+    ],
+    "binarytrees": [
+      10,
+      21
+    ],
+    "regexredux": [
+      30,
+      5000000
+    ],
+    "pidigits": [
+      30,
+      10000
+    ]
+  },
+  "builds_sha256": "17db6963e128cffa89868076108d1ba8a82af02c4958681cc38825bea890fa97",
+  "runner_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+  "programs": {
+    "nbody:pairwise-mass-tails:jit": {
+      "key": "nbody:pairwise-mass-tails:jit",
+      "source_key": "nbody:pairwise-mass-tails",
+      "benchmark": "nbody",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+        "jit",
+        "{n}",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.807507042,
+        1.797601916,
+        1.80538125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.807507042,
+          "wall_seconds": 1.807507042,
+          "prepare_seconds": 0.196630916,
+          "kernel_seconds": 1.0495495
+        },
+        {
+          "seconds": 1.797601916,
+          "wall_seconds": 1.797601916,
+          "prepare_seconds": 0.196199,
+          "kernel_seconds": 1.039792667
+        },
+        {
+          "seconds": 1.80538125,
+          "wall_seconds": 1.80538125,
+          "prepare_seconds": 0.198005083,
+          "kernel_seconds": 1.03679475
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08
+      },
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "median_seconds": 1.80538125,
+      "sample_stdev_seconds": 0.0052145397717454425
+    },
+    "nbody:pairwise-mass-tails:resident": {
+      "key": "nbody:pairwise-mass-tails:resident",
+      "source_key": "nbody:pairwise-mass-tails",
+      "benchmark": "nbody",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+        "resident",
+        "{n}",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        16.700818208,
+        16.6679895,
+        16.657314166
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 16.700818208,
+          "wall_seconds": 17.459202375,
+          "prepare_seconds": 0.1946775,
+          "kernel_seconds": 16.700818208
+        },
+        {
+          "seconds": 16.6679895,
+          "wall_seconds": 17.430194875,
+          "prepare_seconds": 0.195071125,
+          "kernel_seconds": 16.6679895
+        },
+        {
+          "seconds": 16.657314166,
+          "wall_seconds": 17.414072625,
+          "prepare_seconds": 0.194981,
+          "kernel_seconds": 16.657314166
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08
+      },
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "median_seconds": 16.6679895,
+      "sample_stdev_seconds": 0.022672628487888306
+    },
+    "nbody:pairwise-mass-tails:aot-new": {
+      "key": "nbody:pairwise-mass-tails:aot-new",
+      "source_key": "nbody:pairwise-mass-tails",
+      "benchmark": "nbody",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/nbody-pairwise-mass-tails/aot",
+      "binary_sha256": "5dbc4d8d90c41cec23d253ff3ec1120b8ca3f8f6ebce7e8faa59e45eede9b36c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/nbody-pairwise-mass-tails/aot",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.051977584,
+        1.052689666,
+        1.050896917
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.051977584,
+          "wall_seconds": 1.051977584
+        },
+        {
+          "seconds": 1.052689666,
+          "wall_seconds": 1.052689666
+        },
+        {
+          "seconds": 1.050896917,
+          "wall_seconds": 1.050896917
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08
+      },
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "median_seconds": 1.051977584,
+      "sample_stdev_seconds": 0.0009026674282937078
+    },
+    "nbody:pairwise-mass-tails:aot-original": {
+      "key": "nbody:pairwise-mass-tails:aot-original",
+      "source_key": "nbody:pairwise-mass-tails",
+      "benchmark": "nbody",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/nbody/pairwise-mass-tails-before",
+      "binary_sha256": "107aeba5684de79eb1ed8f5907fb5d4ef47efc91d30c24d1e843b30f614ebabc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/nbody/pairwise-mass-tails-before",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.052449084,
+        1.056044958,
+        1.064093541
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.052449084,
+          "wall_seconds": 1.052449084
+        },
+        {
+          "seconds": 1.056044958,
+          "wall_seconds": 1.056044958
+        },
+        {
+          "seconds": 1.064093541,
+          "wall_seconds": 1.064093541
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08
+      },
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "median_seconds": 1.056044958,
+      "sample_stdev_seconds": 0.005962429272209672
+    },
+    "nbody:compact-baseline:jit": {
+      "key": "nbody:compact-baseline:jit",
+      "source_key": "nbody:compact-baseline",
+      "benchmark": "nbody",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+        "jit",
+        "{n}",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.637296959,
+        1.628762125,
+        1.628211208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.637296959,
+          "wall_seconds": 1.637296959,
+          "prepare_seconds": 0.137145916,
+          "kernel_seconds": 1.117222709
+        },
+        {
+          "seconds": 1.628762125,
+          "wall_seconds": 1.628762125,
+          "prepare_seconds": 0.138149,
+          "kernel_seconds": 1.101361916
+        },
+        {
+          "seconds": 1.628211208,
+          "wall_seconds": 1.628211208,
+          "prepare_seconds": 0.136320709,
+          "kernel_seconds": 1.1064370000000001
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08
+      },
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "median_seconds": 1.628762125,
+      "sample_stdev_seconds": 0.005094077806342796
+    },
+    "nbody:compact-baseline:resident": {
+      "key": "nbody:compact-baseline:resident",
+      "source_key": "nbody:compact-baseline",
+      "benchmark": "nbody",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+        "resident",
+        "{n}",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        17.106357,
+        17.108072458,
+        17.093702875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 17.106357,
+          "wall_seconds": 17.628401875,
+          "prepare_seconds": 0.137006333,
+          "kernel_seconds": 17.106357
+        },
+        {
+          "seconds": 17.108072458,
+          "wall_seconds": 17.630246542,
+          "prepare_seconds": 0.135686917,
+          "kernel_seconds": 17.108072458
+        },
+        {
+          "seconds": 17.093702875,
+          "wall_seconds": 17.613307166,
+          "prepare_seconds": 0.134954542,
+          "kernel_seconds": 17.093702875
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08
+      },
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "median_seconds": 17.106357,
+      "sample_stdev_seconds": 0.00784808459922043
+    },
+    "nbody:compact-baseline:aot-new": {
+      "key": "nbody:compact-baseline:aot-new",
+      "source_key": "nbody:compact-baseline",
+      "benchmark": "nbody",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/nbody-compact-baseline/aot",
+      "binary_sha256": "ce8ea367e8c752a918eda8c9f4caf731bf1880d4ff31de155f8fa98114ee3543",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/nbody-compact-baseline/aot",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.1244745,
+        1.1229445,
+        1.12312125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.1244745,
+          "wall_seconds": 1.1244745
+        },
+        {
+          "seconds": 1.1229445,
+          "wall_seconds": 1.1229445
+        },
+        {
+          "seconds": 1.12312125,
+          "wall_seconds": 1.12312125
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08
+      },
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "median_seconds": 1.12312125,
+      "sample_stdev_seconds": 0.0008370012071875049
+    },
+    "nbody:compact-baseline:aot-original": {
+      "key": "nbody:compact-baseline:aot-original",
+      "source_key": "nbody:compact-baseline",
+      "benchmark": "nbody",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/nbody/compact-baseline-before",
+      "binary_sha256": "ea853a1d836b803ce9cf14631e6948b31375205849706f1697b52765e4189f56",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/nbody/compact-baseline-before",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.125961916,
+        1.130803209,
+        1.124848542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.125961916,
+          "wall_seconds": 1.125961916
+        },
+        {
+          "seconds": 1.130803209,
+          "wall_seconds": 1.130803209
+        },
+        {
+          "seconds": 1.124848542,
+          "wall_seconds": 1.124848542
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08
+      },
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      },
+      "median_seconds": 1.125961916,
+      "sample_stdev_seconds": 0.003165853719946963
+    },
+    "mandelbrot:mech-program-simd-loop-fma:jit": {
+      "key": "mandelbrot:mech-program-simd-loop-fma:jit",
+      "source_key": "mandelbrot:mech-program-simd-loop-fma",
+      "benchmark": "mandelbrot",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+        "jit",
+        "{n}",
+        "--fp-contract-loop"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.066214917,
+        1.066207542,
+        1.0580385
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.066214917,
+          "wall_seconds": 1.066214917,
+          "prepare_seconds": 0.623998375,
+          "kernel_seconds": 0.429176042
+        },
+        {
+          "seconds": 1.066207542,
+          "wall_seconds": 1.066207542,
+          "prepare_seconds": 0.617026875,
+          "kernel_seconds": 0.435850875
+        },
+        {
+          "seconds": 1.0580385,
+          "wall_seconds": 1.0580385,
+          "prepare_seconds": 0.618814917,
+          "kernel_seconds": 0.428004333
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 1.066207542,
+      "sample_stdev_seconds": 0.004718529017717841
+    },
+    "mandelbrot:mech-program-simd-loop-fma:resident": {
+      "key": "mandelbrot:mech-program-simd-loop-fma:resident",
+      "source_key": "mandelbrot:mech-program-simd-loop-fma",
+      "benchmark": "mandelbrot",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+        "resident",
+        "{n}",
+        "--fp-contract-loop"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        10.768539875,
+        10.783962667,
+        10.991449834
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 10.768539875,
+          "wall_seconds": 11.403869292,
+          "prepare_seconds": 0.622756375,
+          "kernel_seconds": 10.768539875
+        },
+        {
+          "seconds": 10.783962667,
+          "wall_seconds": 11.418036375,
+          "prepare_seconds": 0.620349875,
+          "kernel_seconds": 10.783962667
+        },
+        {
+          "seconds": 10.991449834,
+          "wall_seconds": 11.621705709,
+          "prepare_seconds": 0.616053416,
+          "kernel_seconds": 10.991449834
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 10.783962667,
+      "sample_stdev_seconds": 0.12448402628727324
+    },
+    "mandelbrot:mech-program-simd-loop-fma:aot-new": {
+      "key": "mandelbrot:mech-program-simd-loop-fma:aot-new",
+      "source_key": "mandelbrot:mech-program-simd-loop-fma",
+      "benchmark": "mandelbrot",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/mandelbrot-mech-program-simd-loop-fma/aot",
+      "binary_sha256": "9103e2375d1e3ac99bde564b7a3a190bce08dcad00ad16e4cc7707341a9ee6e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/mandelbrot-mech-program-simd-loop-fma/aot",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.464436959,
+        0.4454395,
+        0.447153167
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.464436959,
+          "wall_seconds": 0.464436959
+        },
+        {
+          "seconds": 0.4454395,
+          "wall_seconds": 0.4454395
+        },
+        {
+          "seconds": 0.447153167,
+          "wall_seconds": 0.447153167
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 0.447153167,
+      "sample_stdev_seconds": 0.010508485213886544
+    },
+    "mandelbrot:mech-program-simd-loop-fma:aot-original": {
+      "key": "mandelbrot:mech-program-simd-loop-fma:aot-original",
+      "source_key": "mandelbrot:mech-program-simd-loop-fma",
+      "benchmark": "mandelbrot",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+      "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.440006291,
+        0.440734834,
+        0.441674792
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.440006291,
+          "wall_seconds": 0.440006291
+        },
+        {
+          "seconds": 0.440734834,
+          "wall_seconds": 0.440734834
+        },
+        {
+          "seconds": 0.441674792,
+          "wall_seconds": 0.441674792
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 0.440734834,
+      "sample_stdev_seconds": 0.0008364798793768574
+    },
+    "mandelbrot:mech-program-compact:jit": {
+      "key": "mandelbrot:mech-program-compact:jit",
+      "source_key": "mandelbrot:mech-program-compact",
+      "benchmark": "mandelbrot",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+        "jit",
+        "{n}",
+        "--scalar"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        2.40651525,
+        2.45670025,
+        2.422596708
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 2.40651525,
+          "wall_seconds": 2.40651525,
+          "prepare_seconds": 0.171392041,
+          "kernel_seconds": 2.221875709
+        },
+        {
+          "seconds": 2.45670025,
+          "wall_seconds": 2.45670025,
+          "prepare_seconds": 0.170667959,
+          "kernel_seconds": 2.272150625
+        },
+        {
+          "seconds": 2.422596708,
+          "wall_seconds": 2.422596708,
+          "prepare_seconds": 0.172202375,
+          "kernel_seconds": 2.236647083
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 2.422596708,
+      "sample_stdev_seconds": 0.02562615556207992
+    },
+    "mandelbrot:mech-program-compact:resident": {
+      "key": "mandelbrot:mech-program-compact:resident",
+      "source_key": "mandelbrot:mech-program-compact",
+      "benchmark": "mandelbrot",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+        "resident",
+        "{n}",
+        "--scalar"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        51.776927458,
+        53.393884166,
+        54.005716875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 51.776927458,
+          "wall_seconds": 51.9606275,
+          "prepare_seconds": 0.170150333,
+          "kernel_seconds": 51.776927458
+        },
+        {
+          "seconds": 53.393884166,
+          "wall_seconds": 53.580240417,
+          "prepare_seconds": 0.171955084,
+          "kernel_seconds": 53.393884166
+        },
+        {
+          "seconds": 54.005716875,
+          "wall_seconds": 54.190750041,
+          "prepare_seconds": 0.170780916,
+          "kernel_seconds": 54.005716875
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 53.393884166,
+      "sample_stdev_seconds": 1.1515489948094288
+    },
+    "mandelbrot:mech-program-compact:aot-new": {
+      "key": "mandelbrot:mech-program-compact:aot-new",
+      "source_key": "mandelbrot:mech-program-compact",
+      "benchmark": "mandelbrot",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/mandelbrot-mech-program-compact/aot",
+      "binary_sha256": "efafa97256046607b977cbaa00b0594b0ef917df6758d9b33cbef4b85fcb115d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/mandelbrot-mech-program-compact/aot",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        2.323305833,
+        2.282916917,
+        2.239804375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 2.323305833,
+          "wall_seconds": 2.323305833
+        },
+        {
+          "seconds": 2.282916917,
+          "wall_seconds": 2.282916917
+        },
+        {
+          "seconds": 2.239804375,
+          "wall_seconds": 2.239804375
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 2.282916917,
+      "sample_stdev_seconds": 0.04175813154640789
+    },
+    "mandelbrot:mech-program-compact:aot-original": {
+      "key": "mandelbrot:mech-program-compact:aot-original",
+      "source_key": "mandelbrot:mech-program-compact",
+      "benchmark": "mandelbrot",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-compact-after",
+      "binary_sha256": "a4e2b0c8ca8bccdeca54a4f76b13b202472e5445a4e93384d70565869cedba34",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-compact-after",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        2.254640584,
+        2.264141125,
+        2.26469925
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 2.254640584,
+          "wall_seconds": 2.254640584
+        },
+        {
+          "seconds": 2.264141125,
+          "wall_seconds": 2.264141125
+        },
+        {
+          "seconds": 2.26469925,
+          "wall_seconds": 2.26469925
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "median_seconds": 2.264141125,
+      "sample_stdev_seconds": 0.005653148746611046
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4:jit": {
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4:jit",
+      "source_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "benchmark": "knucleotide",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "loc": 17,
+      "physical_loc": 17,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "jit"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "samples_seconds": [
+        0.719868542,
+        0.659211333,
+        0.615638417
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.719868542,
+          "wall_seconds": 0.719868542,
+          "prepare_seconds": 0.08104025,
+          "kernel_seconds": 0.624558292
+        },
+        {
+          "seconds": 0.659211333,
+          "wall_seconds": 0.659211333,
+          "prepare_seconds": 0.081839709,
+          "kernel_seconds": 0.562963416
+        },
+        {
+          "seconds": 0.615638417,
+          "wall_seconds": 0.615638417,
+          "prepare_seconds": 0.081583667,
+          "kernel_seconds": 0.520649417
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "median_seconds": 0.659211333,
+      "sample_stdev_seconds": 0.05234789866831387
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4:resident": {
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4:resident",
+      "source_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "benchmark": "knucleotide",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "loc": 17,
+      "physical_loc": 17,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "resident"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "samples_seconds": [
+        0.604582792,
+        0.714540917,
+        0.595234625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.604582792,
+          "wall_seconds": 0.703247625,
+          "prepare_seconds": 0.07917175,
+          "kernel_seconds": 0.604582792
+        },
+        {
+          "seconds": 0.714540917,
+          "wall_seconds": 0.808877125,
+          "prepare_seconds": 0.078256042,
+          "kernel_seconds": 0.714540917
+        },
+        {
+          "seconds": 0.595234625,
+          "wall_seconds": 0.687454584,
+          "prepare_seconds": 0.077575042,
+          "kernel_seconds": 0.595234625
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "median_seconds": 0.604582792,
+      "sample_stdev_seconds": 0.06634778166420334
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4:aot-new": {
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4:aot-new",
+      "source_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "benchmark": "knucleotide",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "loc": 17,
+      "physical_loc": 17,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/knucleotide-mech-compact-final-std1-simd0-p4/aot",
+      "binary_sha256": "179bf9749bf0bdbdc6e6359de734aad2a88146ca37ed2b8cd12ab0c5a01ee7c7",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/knucleotide-mech-compact-final-std1-simd0-p4/aot"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "samples_seconds": [
+        0.521786125,
+        0.502183917,
+        0.53234075
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.521786125,
+          "wall_seconds": 0.521786125
+        },
+        {
+          "seconds": 0.502183917,
+          "wall_seconds": 0.502183917
+        },
+        {
+          "seconds": 0.53234075,
+          "wall_seconds": 0.53234075
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "median_seconds": 0.521786125,
+      "sample_stdev_seconds": 0.015302947667882934
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4:aot-original": {
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4:aot-original",
+      "source_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "benchmark": "knucleotide",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "loc": 17,
+      "physical_loc": 17,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "samples_seconds": [
+        0.551570042,
+        0.551937083,
+        0.5283135
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.551570042,
+          "wall_seconds": 0.551570042
+        },
+        {
+          "seconds": 0.551937083,
+          "wall_seconds": 0.551937083
+        },
+        {
+          "seconds": 0.5283135,
+          "wall_seconds": 0.5283135
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "median_seconds": 0.551570042,
+      "sample_stdev_seconds": 0.013534370682644344
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit": {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit",
+      "source_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+        "jit",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_NUMERIC_UNROLL": "4",
+        "MECH_NUMERIC_ROWS": "4",
+        "MECH_NUMERIC_INDUCTION": "0",
+        "MECH_ARRAY_GRAIN": "8",
+        "MECH_SEQUENCE_PARTITIONS": "8"
+      },
+      "samples_seconds": [
+        0.230202166,
+        0.239738292,
+        0.261429875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.230202166,
+          "wall_seconds": 0.230202166,
+          "prepare_seconds": 0.147296709,
+          "kernel_seconds": 0.076719208
+        },
+        {
+          "seconds": 0.239738292,
+          "wall_seconds": 0.239738292,
+          "prepare_seconds": 0.146357334,
+          "kernel_seconds": 0.080031875
+        },
+        {
+          "seconds": 0.261429875,
+          "wall_seconds": 0.261429875,
+          "prepare_seconds": 0.153188292,
+          "kernel_seconds": 0.09900575
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 0.239738292,
+      "sample_stdev_seconds": 0.016003292794101485
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident": {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident",
+      "source_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+        "resident",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_NUMERIC_UNROLL": "4",
+        "MECH_NUMERIC_ROWS": "4",
+        "MECH_NUMERIC_INDUCTION": "0",
+        "MECH_ARRAY_GRAIN": "8",
+        "MECH_SEQUENCE_PARTITIONS": "8"
+      },
+      "samples_seconds": [
+        5.047614875,
+        5.1848855,
+        5.543314583
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 5.047614875,
+          "wall_seconds": 5.176288459,
+          "prepare_seconds": 0.117103,
+          "kernel_seconds": 5.047614875
+        },
+        {
+          "seconds": 5.1848855,
+          "wall_seconds": 5.317330875,
+          "prepare_seconds": 0.11760625,
+          "kernel_seconds": 5.1848855
+        },
+        {
+          "seconds": 5.543314583,
+          "wall_seconds": 5.672274792,
+          "prepare_seconds": 0.116692958,
+          "kernel_seconds": 5.543314583
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 5.1848855,
+      "sample_stdev_seconds": 0.2559403682303741
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new": {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new",
+      "source_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8/aot",
+      "binary_sha256": "c49ffce37e146aa17849e3cde8884b1e48e832cf7b5f16ea1827b910ed865509",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8/aot",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_NUMERIC_UNROLL": "4",
+        "MECH_NUMERIC_ROWS": "4",
+        "MECH_NUMERIC_INDUCTION": "0",
+        "MECH_ARRAY_GRAIN": "8",
+        "MECH_SEQUENCE_PARTITIONS": "8"
+      },
+      "samples_seconds": [
+        0.089262084,
+        0.088446875,
+        0.119949584
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.089262084,
+          "wall_seconds": 0.089262084
+        },
+        {
+          "seconds": 0.088446875,
+          "wall_seconds": 0.088446875
+        },
+        {
+          "seconds": 0.119949584,
+          "wall_seconds": 0.119949584
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 0.089262084,
+      "sample_stdev_seconds": 0.017957393539070762
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-original": {
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-original",
+      "source_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_NUMERIC_UNROLL": "4",
+        "MECH_NUMERIC_ROWS": "4",
+        "MECH_NUMERIC_INDUCTION": "0",
+        "MECH_ARRAY_GRAIN": "8",
+        "MECH_SEQUENCE_PARTITIONS": "8"
+      },
+      "samples_seconds": [
+        0.095698125,
+        0.097807625,
+        0.119063791
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.095698125,
+          "wall_seconds": 0.095698125
+        },
+        {
+          "seconds": 0.097807625,
+          "wall_seconds": 0.097807625
+        },
+        {
+          "seconds": 0.119063791,
+          "wall_seconds": 0.119063791
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "median_seconds": 0.097807625,
+      "sample_stdev_seconds": 0.012924324166038706
+    },
+    "revcomp:mech-revcomp-optimized:jit": {
+      "key": "revcomp:mech-revcomp-optimized:jit",
+      "source_key": "revcomp:mech-revcomp-optimized",
+      "benchmark": "revcomp",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "loc": 7,
+      "physical_loc": 7,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+        "jit"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "samples_seconds": [
+        0.184468917,
+        0.176790875,
+        0.178911125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.184468917,
+          "wall_seconds": 0.184468917,
+          "prepare_seconds": 0.028798,
+          "kernel_seconds": 0.13964625
+        },
+        {
+          "seconds": 0.176790875,
+          "wall_seconds": 0.176790875,
+          "prepare_seconds": 0.028745084,
+          "kernel_seconds": 0.135071
+        },
+        {
+          "seconds": 0.178911125,
+          "wall_seconds": 0.178911125,
+          "prepare_seconds": 0.028757583,
+          "kernel_seconds": 0.134595625
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "median_seconds": 0.178911125,
+      "sample_stdev_seconds": 0.003965199468112722
+    },
+    "revcomp:mech-revcomp-optimized:resident": {
+      "key": "revcomp:mech-revcomp-optimized:resident",
+      "source_key": "revcomp:mech-revcomp-optimized",
+      "benchmark": "revcomp",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "loc": 7,
+      "physical_loc": 7,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+        "resident"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "samples_seconds": [
+        0.240835625,
+        0.233855792,
+        0.225025791
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.240835625,
+          "wall_seconds": 0.281958458,
+          "prepare_seconds": 0.027867125,
+          "kernel_seconds": 0.240835625
+        },
+        {
+          "seconds": 0.233855792,
+          "wall_seconds": 0.277945958,
+          "prepare_seconds": 0.028074541,
+          "kernel_seconds": 0.233855792
+        },
+        {
+          "seconds": 0.225025791,
+          "wall_seconds": 0.267839459,
+          "prepare_seconds": 0.027915959,
+          "kernel_seconds": 0.225025791
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "median_seconds": 0.233855792,
+      "sample_stdev_seconds": 0.007922939663570227
+    },
+    "revcomp:mech-revcomp-optimized:aot-new": {
+      "key": "revcomp:mech-revcomp-optimized:aot-new",
+      "source_key": "revcomp:mech-revcomp-optimized",
+      "benchmark": "revcomp",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "loc": 7,
+      "physical_loc": 7,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/revcomp-mech-revcomp-optimized/aot",
+      "binary_sha256": "3267d5ce99625a26ffc245d80dd7b0971d174d6797db842ae68b65429fec9c96",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/revcomp-mech-revcomp-optimized/aot"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "samples_seconds": [
+        0.204050083,
+        0.148410459,
+        0.144655916
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.204050083,
+          "wall_seconds": 0.204050083
+        },
+        {
+          "seconds": 0.148410459,
+          "wall_seconds": 0.148410459
+        },
+        {
+          "seconds": 0.144655916,
+          "wall_seconds": 0.144655916
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "median_seconds": 0.148410459,
+      "sample_stdev_seconds": 0.03326041547551712
+    },
+    "revcomp:mech-revcomp-optimized:aot-original": {
+      "key": "revcomp:mech-revcomp-optimized:aot-original",
+      "source_key": "revcomp:mech-revcomp-optimized",
+      "benchmark": "revcomp",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "loc": 7,
+      "physical_loc": 7,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after",
+      "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "samples_seconds": [
+        0.151938375,
+        0.146754667,
+        0.149448542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.151938375,
+          "wall_seconds": 0.151938375
+        },
+        {
+          "seconds": 0.146754667,
+          "wall_seconds": 0.146754667
+        },
+        {
+          "seconds": 0.149448542,
+          "wall_seconds": 0.149448542
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "median_seconds": 0.149448542,
+      "sample_stdev_seconds": 0.0025925232082785587
+    },
+    "fannkuchredux:mech-fannkuch-even:jit": {
+      "key": "fannkuchredux:mech-fannkuch-even:jit",
+      "source_key": "fannkuchredux:mech-fannkuch-even",
+      "benchmark": "fannkuchredux",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "loc": 59,
+      "physical_loc": 59,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+        "jit",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        2.473722042,
+        2.476234958,
+        2.502492334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 2.473722042,
+          "wall_seconds": 2.473722042,
+          "prepare_seconds": 0.771162,
+          "kernel_seconds": 1.690618208
+        },
+        {
+          "seconds": 2.476234958,
+          "wall_seconds": 2.476234958,
+          "prepare_seconds": 0.770269041,
+          "kernel_seconds": 1.69459475
+        },
+        {
+          "seconds": 2.502492334,
+          "wall_seconds": 2.502492334,
+          "prepare_seconds": 0.765939875,
+          "kernel_seconds": 1.724999
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "median_seconds": 2.476234958,
+      "sample_stdev_seconds": 0.015934732729657355
+    },
+    "fannkuchredux:mech-fannkuch-even:resident": {
+      "key": "fannkuchredux:mech-fannkuch-even:resident",
+      "source_key": "fannkuchredux:mech-fannkuch-even",
+      "benchmark": "fannkuchredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "loc": 59,
+      "physical_loc": 59,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+        "resident",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        75.232775208,
+        76.814841625,
+        76.796050125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 75.232775208,
+          "wall_seconds": 75.740615292,
+          "prepare_seconds": 0.49407725,
+          "kernel_seconds": 75.232775208
+        },
+        {
+          "seconds": 76.814841625,
+          "wall_seconds": 77.322311125,
+          "prepare_seconds": 0.496066333,
+          "kernel_seconds": 76.814841625
+        },
+        {
+          "seconds": 76.796050125,
+          "wall_seconds": 77.304064083,
+          "prepare_seconds": 0.494605416,
+          "kernel_seconds": 76.796050125
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "median_seconds": 76.796050125,
+      "sample_stdev_seconds": 0.9080304450102211
+    },
+    "fannkuchredux:mech-fannkuch-even:aot-new": {
+      "key": "fannkuchredux:mech-fannkuch-even:aot-new",
+      "source_key": "fannkuchredux:mech-fannkuch-even",
+      "benchmark": "fannkuchredux",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "loc": 59,
+      "physical_loc": 59,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/fannkuchredux-mech-fannkuch-even/aot",
+      "binary_sha256": "df5124b101043c7379cb397d830c39fd6aac0e2c456eb36c47f4c94e0f7fb5e3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/fannkuchredux-mech-fannkuch-even/aot",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.722161917,
+        1.789029125,
+        1.760364167
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.722161917,
+          "wall_seconds": 1.722161917
+        },
+        {
+          "seconds": 1.789029125,
+          "wall_seconds": 1.789029125
+        },
+        {
+          "seconds": 1.760364167,
+          "wall_seconds": 1.760364167
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "median_seconds": 1.760364167,
+      "sample_stdev_seconds": 0.033546771399345206
+    },
+    "fannkuchredux:mech-fannkuch-even:aot-original": {
+      "key": "fannkuchredux:mech-fannkuch-even:aot-original",
+      "source_key": "fannkuchredux:mech-fannkuch-even",
+      "benchmark": "fannkuchredux",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "loc": 59,
+      "physical_loc": 59,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+      "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.726073,
+        1.76775425,
+        1.737474125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.726073,
+          "wall_seconds": 1.726073
+        },
+        {
+          "seconds": 1.76775425,
+          "wall_seconds": 1.76775425
+        },
+        {
+          "seconds": 1.737474125,
+          "wall_seconds": 1.737474125
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "median_seconds": 1.737474125,
+      "sample_stdev_seconds": 0.021541426070263478
+    },
+    "fannkuchredux:mech-fannkuch-default:jit": {
+      "key": "fannkuchredux:mech-fannkuch-default:jit",
+      "source_key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "loc": 39,
+      "physical_loc": 39,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "jit",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        3.390912583,
+        3.298633916,
+        3.312110375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 3.390912583,
+          "wall_seconds": 3.390912583,
+          "prepare_seconds": 0.466172334,
+          "kernel_seconds": 2.91816275
+        },
+        {
+          "seconds": 3.298633916,
+          "wall_seconds": 3.298633916,
+          "prepare_seconds": 0.465109875,
+          "kernel_seconds": 2.81963525
+        },
+        {
+          "seconds": 3.312110375,
+          "wall_seconds": 3.312110375,
+          "prepare_seconds": 0.465064958,
+          "kernel_seconds": 2.835370625
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "median_seconds": 3.312110375,
+      "sample_stdev_seconds": 0.049844349924123496
+    },
+    "fannkuchredux:mech-fannkuch-default:resident": {
+      "key": "fannkuchredux:mech-fannkuch-default:resident",
+      "source_key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "loc": 39,
+      "physical_loc": 39,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "resident",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        55.767737042,
+        59.393436,
+        60.02543625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 55.767737042,
+          "wall_seconds": 56.088541792,
+          "prepare_seconds": 0.308675208,
+          "kernel_seconds": 55.767737042
+        },
+        {
+          "seconds": 59.393436,
+          "wall_seconds": 59.716067625,
+          "prepare_seconds": 0.309880292,
+          "kernel_seconds": 59.393436
+        },
+        {
+          "seconds": 60.02543625,
+          "wall_seconds": 60.347491209,
+          "prepare_seconds": 0.308508209,
+          "kernel_seconds": 60.02543625
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "median_seconds": 59.393436,
+      "sample_stdev_seconds": 2.2975755263554873
+    },
+    "fannkuchredux:mech-fannkuch-default:aot-new": {
+      "key": "fannkuchredux:mech-fannkuch-default:aot-new",
+      "source_key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "loc": 39,
+      "physical_loc": 39,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/fannkuchredux-mech-fannkuch-default/aot",
+      "binary_sha256": "8b4aa136dcc5055e039f70dfcd5929f4ca3094972b076e4f5245ca50f93329d3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/fannkuchredux-mech-fannkuch-default/aot",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        2.861518708,
+        2.842864083,
+        2.8599695
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 2.861518708,
+          "wall_seconds": 2.861518708
+        },
+        {
+          "seconds": 2.842864083,
+          "wall_seconds": 2.842864083
+        },
+        {
+          "seconds": 2.8599695,
+          "wall_seconds": 2.8599695
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "median_seconds": 2.8599695,
+      "sample_stdev_seconds": 0.01035205591546755
+    },
+    "fannkuchredux:mech-fannkuch-default:aot-original": {
+      "key": "fannkuchredux:mech-fannkuch-default:aot-original",
+      "source_key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "loc": 39,
+      "physical_loc": 39,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-default-after",
+      "binary_sha256": "8e61ad4638bddb023721a4c23e38005db39eb3d4248f55675fae88708a9d8c50",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-default-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        2.843903625,
+        2.851556792,
+        2.827278375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 2.843903625,
+          "wall_seconds": 2.843903625
+        },
+        {
+          "seconds": 2.851556792,
+          "wall_seconds": 2.851556792
+        },
+        {
+          "seconds": 2.827278375,
+          "wall_seconds": 2.827278375
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "median_seconds": 2.843903625,
+      "sample_stdev_seconds": 0.012412436201368443
+    },
+    "fasta:mech-fasta-final-expanded-v2:jit": {
+      "key": "fasta:mech-fasta-final-expanded-v2:jit",
+      "source_key": "fasta:mech-fasta-final-expanded-v2",
+      "benchmark": "fasta",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "loc": 43,
+      "physical_loc": 43,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+        "jit",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "samples_seconds": [
+        1.129462542,
+        1.126172125,
+        1.125456125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.129462542,
+          "wall_seconds": 1.129462542,
+          "prepare_seconds": 0.548876708,
+          "kernel_seconds": 0.566247125
+        },
+        {
+          "seconds": 1.126172125,
+          "wall_seconds": 1.126172125,
+          "prepare_seconds": 0.548138083,
+          "kernel_seconds": 0.566642167
+        },
+        {
+          "seconds": 1.125456125,
+          "wall_seconds": 1.125456125,
+          "prepare_seconds": 0.547890334,
+          "kernel_seconds": 0.563463458
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 1.126172125,
+      "sample_stdev_seconds": 0.0021366202755667557
+    },
+    "fasta:mech-fasta-final-expanded-v2:resident": {
+      "key": "fasta:mech-fasta-final-expanded-v2:resident",
+      "source_key": "fasta:mech-fasta-final-expanded-v2",
+      "benchmark": "fasta",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "loc": 43,
+      "physical_loc": 43,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+        "resident",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "samples_seconds": [
+        18.761385417,
+        18.67223675,
+        18.721241333000002
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 18.761385417,
+          "wall_seconds": 19.136088042,
+          "prepare_seconds": 0.362384333,
+          "kernel_seconds": 18.761385417
+        },
+        {
+          "seconds": 18.67223675,
+          "wall_seconds": 19.042523459,
+          "prepare_seconds": 0.358632875,
+          "kernel_seconds": 18.67223675
+        },
+        {
+          "seconds": 18.721241333000002,
+          "wall_seconds": 19.097051292,
+          "prepare_seconds": 0.361846958,
+          "kernel_seconds": 18.721241333000002
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 18.721241333000002,
+      "sample_stdev_seconds": 0.044647660377448384
+    },
+    "fasta:mech-fasta-final-expanded-v2:aot-new": {
+      "key": "fasta:mech-fasta-final-expanded-v2:aot-new",
+      "source_key": "fasta:mech-fasta-final-expanded-v2",
+      "benchmark": "fasta",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "loc": 43,
+      "physical_loc": 43,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/fasta-mech-fasta-final-expanded-v2/aot",
+      "binary_sha256": "a32f4c07086136c759e01f76ec9cc0cbbb914fb3d19a04afe268553d9b2dee97",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/fasta-mech-fasta-final-expanded-v2/aot",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "samples_seconds": [
+        0.578311667,
+        0.577122333,
+        0.576391875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.578311667,
+          "wall_seconds": 0.578311667
+        },
+        {
+          "seconds": 0.577122333,
+          "wall_seconds": 0.577122333
+        },
+        {
+          "seconds": 0.576391875,
+          "wall_seconds": 0.576391875
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 0.577122333,
+      "sample_stdev_seconds": 0.0009689930836168847
+    },
+    "fasta:mech-fasta-final-expanded-v2:aot-original": {
+      "key": "fasta:mech-fasta-final-expanded-v2:aot-original",
+      "source_key": "fasta:mech-fasta-final-expanded-v2",
+      "benchmark": "fasta",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "loc": 43,
+      "physical_loc": 43,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "samples_seconds": [
+        0.579017209,
+        0.578279875,
+        0.573167458
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.579017209,
+          "wall_seconds": 0.579017209
+        },
+        {
+          "seconds": 0.578279875,
+          "wall_seconds": 0.578279875
+        },
+        {
+          "seconds": 0.573167458,
+          "wall_seconds": 0.573167458
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 0.578279875,
+      "sample_stdev_seconds": 0.00318590792322077
+    },
+    "fasta:mech-fasta-final-compact-v2:jit": {
+      "key": "fasta:mech-fasta-final-compact-v2:jit",
+      "source_key": "fasta:mech-fasta-final-compact-v2",
+      "benchmark": "fasta",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "loc": 32,
+      "physical_loc": 32,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+        "jit",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "samples_seconds": [
+        1.590150459,
+        1.588658166,
+        1.582454625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.590150459,
+          "wall_seconds": 1.590150459,
+          "prepare_seconds": 0.355326875,
+          "kernel_seconds": 1.22221
+        },
+        {
+          "seconds": 1.588658166,
+          "wall_seconds": 1.588658166,
+          "prepare_seconds": 0.354150708,
+          "kernel_seconds": 1.222211625
+        },
+        {
+          "seconds": 1.582454625,
+          "wall_seconds": 1.582454625,
+          "prepare_seconds": 0.355488542,
+          "kernel_seconds": 1.2142241249999999
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 1.588658166,
+      "sample_stdev_seconds": 0.004081191008600432
+    },
+    "fasta:mech-fasta-final-compact-v2:resident": {
+      "key": "fasta:mech-fasta-final-compact-v2:resident",
+      "source_key": "fasta:mech-fasta-final-compact-v2",
+      "benchmark": "fasta",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "loc": 32,
+      "physical_loc": 32,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+        "resident",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "samples_seconds": [
+        22.563047417,
+        22.5494505,
+        22.608259791000002
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 22.563047417,
+          "wall_seconds": 22.810164458,
+          "prepare_seconds": 0.238918166,
+          "kernel_seconds": 22.563047417
+        },
+        {
+          "seconds": 22.5494505,
+          "wall_seconds": 22.802289458,
+          "prepare_seconds": 0.238398958,
+          "kernel_seconds": 22.5494505
+        },
+        {
+          "seconds": 22.608259791000002,
+          "wall_seconds": 22.855778834,
+          "prepare_seconds": 0.234294,
+          "kernel_seconds": 22.608259791000002
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 22.563047417,
+      "sample_stdev_seconds": 0.030788438367196597
+    },
+    "fasta:mech-fasta-final-compact-v2:aot-new": {
+      "key": "fasta:mech-fasta-final-compact-v2:aot-new",
+      "source_key": "fasta:mech-fasta-final-compact-v2",
+      "benchmark": "fasta",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "loc": 32,
+      "physical_loc": 32,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/fasta-mech-fasta-final-compact-v2/aot",
+      "binary_sha256": "5917a4af420775c5cf5b41627953e1dc3384144d3676d9d978d6dcc4c6410649",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/fasta-mech-fasta-final-compact-v2/aot",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "samples_seconds": [
+        1.229997375,
+        1.22616075,
+        1.229242292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.229997375,
+          "wall_seconds": 1.229997375
+        },
+        {
+          "seconds": 1.22616075,
+          "wall_seconds": 1.22616075
+        },
+        {
+          "seconds": 1.229242292,
+          "wall_seconds": 1.229242292
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 1.229242292,
+      "sample_stdev_seconds": 0.002032475617946284
+    },
+    "fasta:mech-fasta-final-compact-v2:aot-original": {
+      "key": "fasta:mech-fasta-final-compact-v2:aot-original",
+      "source_key": "fasta:mech-fasta-final-compact-v2",
+      "benchmark": "fasta",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "loc": 32,
+      "physical_loc": 32,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-floating",
+      "binary_sha256": "a5c498195826e54f4b5fa351020e94fb951b06500358c884cce0560ca5ccd064",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-compact-v2-floating",
+        "{n}"
+      ],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "samples_seconds": [
+        1.234860208,
+        1.233836417,
+        1.225582583
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 1.234860208,
+          "wall_seconds": 1.234860208
+        },
+        {
+          "seconds": 1.233836417,
+          "wall_seconds": 1.233836417
+        },
+        {
+          "seconds": 1.225582583,
+          "wall_seconds": 1.225582583
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "median_seconds": 1.233836417,
+      "sample_stdev_seconds": 0.005086718807375754
+    },
+    "binarytrees:mech-binarytrees-parallel:jit": {
+      "key": "binarytrees:mech-binarytrees-parallel:jit",
+      "source_key": "binarytrees:mech-binarytrees-parallel",
+      "benchmark": "binarytrees",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "loc": 26,
+      "physical_loc": 26,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+        "jit",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.733499125,
+        0.73227625,
+        0.733148
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.733499125,
+          "wall_seconds": 0.733499125,
+          "prepare_seconds": 0.331251917,
+          "kernel_seconds": 0.386912375
+        },
+        {
+          "seconds": 0.73227625,
+          "wall_seconds": 0.73227625,
+          "prepare_seconds": 0.329217708,
+          "kernel_seconds": 0.386157708
+        },
+        {
+          "seconds": 0.733148,
+          "wall_seconds": 0.733148,
+          "prepare_seconds": 0.329781458,
+          "kernel_seconds": 0.3858385
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "median_seconds": 0.733148,
+      "sample_stdev_seconds": 0.0006296374742328948
+    },
+    "binarytrees:mech-binarytrees-parallel:resident": {
+      "key": "binarytrees:mech-binarytrees-parallel:resident",
+      "source_key": "binarytrees:mech-binarytrees-parallel",
+      "benchmark": "binarytrees",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "loc": 26,
+      "physical_loc": 26,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+        "resident",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        9.827585375,
+        9.743936709,
+        9.604482833
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 9.827585375,
+          "wall_seconds": 10.051014708,
+          "prepare_seconds": 0.211968291,
+          "kernel_seconds": 9.827585375
+        },
+        {
+          "seconds": 9.743936709,
+          "wall_seconds": 9.972287625,
+          "prepare_seconds": 0.211520125,
+          "kernel_seconds": 9.743936709
+        },
+        {
+          "seconds": 9.604482833,
+          "wall_seconds": 9.831984417,
+          "prepare_seconds": 0.210947375,
+          "kernel_seconds": 9.604482833
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "median_seconds": 9.743936709,
+      "sample_stdev_seconds": 0.11270849354408646
+    },
+    "binarytrees:mech-binarytrees-parallel:aot-new": {
+      "key": "binarytrees:mech-binarytrees-parallel:aot-new",
+      "source_key": "binarytrees:mech-binarytrees-parallel",
+      "benchmark": "binarytrees",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "loc": 26,
+      "physical_loc": 26,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/binarytrees-mech-binarytrees-parallel/aot",
+      "binary_sha256": "d419aabe9117a8921ef3711acb28fb7690b0279961db72dbe4480d5dad7b2baa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/binarytrees-mech-binarytrees-parallel/aot",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.40326175,
+        0.403539833,
+        0.40591175
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.40326175,
+          "wall_seconds": 0.40326175
+        },
+        {
+          "seconds": 0.403539833,
+          "wall_seconds": 0.403539833
+        },
+        {
+          "seconds": 0.40591175,
+          "wall_seconds": 0.40591175
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "median_seconds": 0.403539833,
+      "sample_stdev_seconds": 0.0014563550625779327
+    },
+    "binarytrees:mech-binarytrees-parallel:aot-original": {
+      "key": "binarytrees:mech-binarytrees-parallel:aot-original",
+      "source_key": "binarytrees:mech-binarytrees-parallel",
+      "benchmark": "binarytrees",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "loc": 26,
+      "physical_loc": 26,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+      "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.403126166,
+        0.407585875,
+        0.402424208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.403126166,
+          "wall_seconds": 0.403126166
+        },
+        {
+          "seconds": 0.407585875,
+          "wall_seconds": 0.407585875
+        },
+        {
+          "seconds": 0.402424208,
+          "wall_seconds": 0.402424208
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "median_seconds": 0.403126166,
+      "sample_stdev_seconds": 0.0027995403080188484
+    },
+    "regexredux:mech-regex-final-reuse-signed:jit": {
+      "key": "regexredux:mech-regex-final-reuse-signed:jit",
+      "source_key": "regexredux:mech-regex-final-reuse-signed",
+      "benchmark": "regexredux",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+        "jit"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "samples_seconds": [
+        0.573872833,
+        0.560838208,
+        0.564666334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.573872833,
+          "wall_seconds": 0.573872833,
+          "prepare_seconds": 0.076214333,
+          "kernel_seconds": 0.489385667
+        },
+        {
+          "seconds": 0.560838208,
+          "wall_seconds": 0.560838208,
+          "prepare_seconds": 0.076048917,
+          "kernel_seconds": 0.470247958
+        },
+        {
+          "seconds": 0.564666334,
+          "wall_seconds": 0.564666334,
+          "prepare_seconds": 0.075618083,
+          "kernel_seconds": 0.473497042
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "median_seconds": 0.564666334,
+      "sample_stdev_seconds": 0.006699696776714413
+    },
+    "regexredux:mech-regex-final-reuse-signed:resident": {
+      "key": "regexredux:mech-regex-final-reuse-signed:resident",
+      "source_key": "regexredux:mech-regex-final-reuse-signed",
+      "benchmark": "regexredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+        "resident"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "samples_seconds": [
+        0.474300708,
+        0.471978375,
+        0.473002875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.474300708,
+          "wall_seconds": 0.563740958,
+          "prepare_seconds": 0.074428917,
+          "kernel_seconds": 0.474300708
+        },
+        {
+          "seconds": 0.471978375,
+          "wall_seconds": 0.560710583,
+          "prepare_seconds": 0.074666958,
+          "kernel_seconds": 0.471978375
+        },
+        {
+          "seconds": 0.473002875,
+          "wall_seconds": 0.562772042,
+          "prepare_seconds": 0.074409709,
+          "kernel_seconds": 0.473002875
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "median_seconds": 0.473002875,
+      "sample_stdev_seconds": 0.0011638442986340626
+    },
+    "regexredux:mech-regex-final-reuse-signed:aot-new": {
+      "key": "regexredux:mech-regex-final-reuse-signed:aot-new",
+      "source_key": "regexredux:mech-regex-final-reuse-signed",
+      "benchmark": "regexredux",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/regexredux-mech-regex-final-reuse-signed/aot",
+      "binary_sha256": "9edfc37a7443d2c32f959a5f40973df89cc37dd766d609d99c2a62f987f7bf62",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/regexredux-mech-regex-final-reuse-signed/aot"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "samples_seconds": [
+        0.490432834,
+        0.484678417,
+        0.484440958
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.490432834,
+          "wall_seconds": 0.490432834
+        },
+        {
+          "seconds": 0.484678417,
+          "wall_seconds": 0.484678417
+        },
+        {
+          "seconds": 0.484440958,
+          "wall_seconds": 0.484440958
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "median_seconds": 0.484678417,
+      "sample_stdev_seconds": 0.003392940705492956
+    },
+    "regexredux:mech-regex-final-reuse-signed:aot-original": {
+      "key": "regexredux:mech-regex-final-reuse-signed:aot-original",
+      "source_key": "regexredux:mech-regex-final-reuse-signed",
+      "benchmark": "regexredux",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "samples_seconds": [
+        0.492652708,
+        0.4898835,
+        0.491313208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.492652708,
+          "wall_seconds": 0.492652708
+        },
+        {
+          "seconds": 0.4898835,
+          "wall_seconds": 0.4898835
+        },
+        {
+          "seconds": 0.491313208,
+          "wall_seconds": 0.491313208
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "median_seconds": 0.491313208,
+      "sample_stdev_seconds": 0.0013848488583312216
+    },
+    "pidigits:mech-pi-final-advance-signed:jit": {
+      "key": "pidigits:mech-pi-final-advance-signed:jit",
+      "source_key": "pidigits:mech-pi-final-advance-signed",
+      "benchmark": "pidigits",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "loc": 38,
+      "physical_loc": 38,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+        "jit",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.719662417,
+        0.719949667,
+        0.722374
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.719662417,
+          "wall_seconds": 0.719662417,
+          "prepare_seconds": 0.410857708,
+          "kernel_seconds": 0.294835459
+        },
+        {
+          "seconds": 0.719949667,
+          "wall_seconds": 0.719949667,
+          "prepare_seconds": 0.412131708,
+          "kernel_seconds": 0.294214292
+        },
+        {
+          "seconds": 0.722374,
+          "wall_seconds": 0.722374,
+          "prepare_seconds": 0.413752833,
+          "kernel_seconds": 0.295718292
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "median_seconds": 0.719949667,
+      "sample_stdev_seconds": 0.0014895516900104416
+    },
+    "pidigits:mech-pi-final-advance-signed:resident": {
+      "key": "pidigits:mech-pi-final-advance-signed:resident",
+      "source_key": "pidigits:mech-pi-final-advance-signed",
+      "benchmark": "pidigits",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "loc": 38,
+      "physical_loc": 38,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+        "resident",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.306255125,
+        0.30659575,
+        0.306381708
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.306255125,
+          "wall_seconds": 0.592220084,
+          "prepare_seconds": 0.273123792,
+          "kernel_seconds": 0.306255125
+        },
+        {
+          "seconds": 0.30659575,
+          "wall_seconds": 0.590713416,
+          "prepare_seconds": 0.270687041,
+          "kernel_seconds": 0.30659575
+        },
+        {
+          "seconds": 0.306381708,
+          "wall_seconds": 0.592619958,
+          "prepare_seconds": 0.273300417,
+          "kernel_seconds": 0.306381708
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "median_seconds": 0.306381708,
+      "sample_stdev_seconds": 0.0001721736644002158
+    },
+    "pidigits:mech-pi-final-advance-signed:aot-new": {
+      "key": "pidigits:mech-pi-final-advance-signed:aot-new",
+      "source_key": "pidigits:mech-pi-final-advance-signed",
+      "benchmark": "pidigits",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "loc": 38,
+      "physical_loc": 38,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/pidigits-mech-pi-final-advance-signed/aot",
+      "binary_sha256": "c28fd3ec5351c5ed3b2fbca951c9127eac8b2596f0ce482baf209e00ec1b5bec",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/pidigits-mech-pi-final-advance-signed/aot",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.300747042,
+        0.308822375,
+        0.306175542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.300747042,
+          "wall_seconds": 0.300747042
+        },
+        {
+          "seconds": 0.308822375,
+          "wall_seconds": 0.308822375
+        },
+        {
+          "seconds": 0.306175542,
+          "wall_seconds": 0.306175542
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "median_seconds": 0.306175542,
+      "sample_stdev_seconds": 0.004116741029843413
+    },
+    "pidigits:mech-pi-final-advance-signed:aot-original": {
+      "key": "pidigits:mech-pi-final-advance-signed:aot-original",
+      "source_key": "pidigits:mech-pi-final-advance-signed",
+      "benchmark": "pidigits",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "loc": 38,
+      "physical_loc": 38,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+      "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.303945916,
+        0.307669042,
+        0.305799375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.303945916,
+          "wall_seconds": 0.303945916
+        },
+        {
+          "seconds": 0.307669042,
+          "wall_seconds": 0.307669042
+        },
+        {
+          "seconds": 0.305799375,
+          "wall_seconds": 0.305799375
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "median_seconds": 0.305799375,
+      "sample_stdev_seconds": 0.001861568879889856
+    },
+    "pidigits:mech-pi-final-compact-signed:jit": {
+      "key": "pidigits:mech-pi-final-compact-signed:jit",
+      "source_key": "pidigits:mech-pi-final-compact-signed",
+      "benchmark": "pidigits",
+      "mode": "jit",
+      "language": "mech-jit",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+        "jit",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.781699083,
+        0.77893875,
+        0.781046375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.781699083,
+          "wall_seconds": 0.781699083,
+          "prepare_seconds": 0.380239792,
+          "kernel_seconds": 0.388469125
+        },
+        {
+          "seconds": 0.77893875,
+          "wall_seconds": 0.77893875,
+          "prepare_seconds": 0.379344416,
+          "kernel_seconds": 0.386465417
+        },
+        {
+          "seconds": 0.781046375,
+          "wall_seconds": 0.781046375,
+          "prepare_seconds": 0.380037542,
+          "kernel_seconds": 0.387882083
+        }
+      ],
+      "timing_boundary": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "median_seconds": 0.781046375,
+      "sample_stdev_seconds": 0.0014426566434173835
+    },
+    "pidigits:mech-pi-final-compact-signed:resident": {
+      "key": "pidigits:mech-pi-final-compact-signed:resident",
+      "source_key": "pidigits:mech-pi-final-compact-signed",
+      "benchmark": "pidigits",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "binary": "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+      "binary_sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6",
+      "command": [
+        "/tmp/mech-execution-modes-target/release/mech-execution-modes-compiled",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+        "resident",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.400441916,
+        0.402602875,
+        0.399690458
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.400441916,
+          "wall_seconds": 0.662510833,
+          "prepare_seconds": 0.25091525,
+          "kernel_seconds": 0.400441916
+        },
+        {
+          "seconds": 0.402602875,
+          "wall_seconds": 0.666783334,
+          "prepare_seconds": 0.2526635,
+          "kernel_seconds": 0.402602875
+        },
+        {
+          "seconds": 0.399690458,
+          "wall_seconds": 0.664893875,
+          "prepare_seconds": 0.252981084,
+          "kernel_seconds": 0.399690458
+        }
+      ],
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "eligible_for_chart": true,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "median_seconds": 0.400441916,
+      "sample_stdev_seconds": 0.0015119857642260863
+    },
+    "pidigits:mech-pi-final-compact-signed:aot-new": {
+      "key": "pidigits:mech-pi-final-compact-signed:aot-new",
+      "source_key": "pidigits:mech-pi-final-compact-signed",
+      "benchmark": "pidigits",
+      "mode": "aot-new",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/pidigits-mech-pi-final-compact-signed/aot",
+      "binary_sha256": "3e13201207639b35de815f0680512cce050b09ca59116e9526dbc286eb79ab7e",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010/builds/pidigits-mech-pi-final-compact-signed/aot",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.397706167,
+        0.399230708,
+        0.397796666
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.397706167,
+          "wall_seconds": 0.397706167
+        },
+        {
+          "seconds": 0.399230708,
+          "wall_seconds": 0.399230708
+        },
+        {
+          "seconds": 0.397796666,
+          "wall_seconds": 0.397796666
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "median_seconds": 0.397796666,
+      "sample_stdev_seconds": 0.0008552671889966983
+    },
+    "pidigits:mech-pi-final-compact-signed:aot-original": {
+      "key": "pidigits:mech-pi-final-compact-signed:aot-original",
+      "source_key": "pidigits:mech-pi-final-compact-signed",
+      "benchmark": "pidigits",
+      "mode": "aot-original",
+      "language": "mech",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+      "binary_sha256": "53d91c7a51c126d660129311ee7c011ff6d30ce629adea543ca7136683fbb336",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-compact-signed-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.398178041,
+        0.399564375,
+        0.398262334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.398178041,
+          "wall_seconds": 0.398178041
+        },
+        {
+          "seconds": 0.399564375,
+          "wall_seconds": 0.399564375
+        },
+        {
+          "seconds": 0.398262334,
+          "wall_seconds": 0.398262334
+        }
+      ],
+      "timing_boundary": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+      "eligible_for_chart": false,
+      "required_work_validated": true,
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "median_seconds": 0.398262334,
+      "sample_stdev_seconds": 0.0007772106144289556
+    }
+  },
+  "orders": {
+    "revcomp": [
+      [
+        "revcomp:mech-revcomp-optimized:aot-new",
+        "revcomp:mech-revcomp-optimized:resident",
+        "revcomp:mech-revcomp-optimized:jit",
+        "revcomp:mech-revcomp-optimized:aot-original"
+      ],
+      [
+        "revcomp:mech-revcomp-optimized:resident",
+        "revcomp:mech-revcomp-optimized:jit",
+        "revcomp:mech-revcomp-optimized:aot-new",
+        "revcomp:mech-revcomp-optimized:aot-original"
+      ],
+      [
+        "revcomp:mech-revcomp-optimized:aot-original",
+        "revcomp:mech-revcomp-optimized:aot-new",
+        "revcomp:mech-revcomp-optimized:resident",
+        "revcomp:mech-revcomp-optimized:jit"
+      ]
+    ],
+    "regexredux": [
+      [
+        "regexredux:mech-regex-final-reuse-signed:jit",
+        "regexredux:mech-regex-final-reuse-signed:resident",
+        "regexredux:mech-regex-final-reuse-signed:aot-new",
+        "regexredux:mech-regex-final-reuse-signed:aot-original"
+      ],
+      [
+        "regexredux:mech-regex-final-reuse-signed:aot-new",
+        "regexredux:mech-regex-final-reuse-signed:aot-original",
+        "regexredux:mech-regex-final-reuse-signed:jit",
+        "regexredux:mech-regex-final-reuse-signed:resident"
+      ],
+      [
+        "regexredux:mech-regex-final-reuse-signed:jit",
+        "regexredux:mech-regex-final-reuse-signed:aot-original",
+        "regexredux:mech-regex-final-reuse-signed:resident",
+        "regexredux:mech-regex-final-reuse-signed:aot-new"
+      ]
+    ],
+    "knucleotide": [
+      [
+        "knucleotide:mech-compact-final-std1-simd0-p4:aot-new",
+        "knucleotide:mech-compact-final-std1-simd0-p4:resident",
+        "knucleotide:mech-compact-final-std1-simd0-p4:aot-original",
+        "knucleotide:mech-compact-final-std1-simd0-p4:jit"
+      ],
+      [
+        "knucleotide:mech-compact-final-std1-simd0-p4:resident",
+        "knucleotide:mech-compact-final-std1-simd0-p4:jit",
+        "knucleotide:mech-compact-final-std1-simd0-p4:aot-new",
+        "knucleotide:mech-compact-final-std1-simd0-p4:aot-original"
+      ],
+      [
+        "knucleotide:mech-compact-final-std1-simd0-p4:aot-original",
+        "knucleotide:mech-compact-final-std1-simd0-p4:resident",
+        "knucleotide:mech-compact-final-std1-simd0-p4:aot-new",
+        "knucleotide:mech-compact-final-std1-simd0-p4:jit"
+      ]
+    ],
+    "pidigits": [
+      [
+        "pidigits:mech-pi-final-advance-signed:aot-new",
+        "pidigits:mech-pi-final-compact-signed:resident",
+        "pidigits:mech-pi-final-advance-signed:resident",
+        "pidigits:mech-pi-final-advance-signed:aot-original",
+        "pidigits:mech-pi-final-compact-signed:jit",
+        "pidigits:mech-pi-final-compact-signed:aot-original",
+        "pidigits:mech-pi-final-advance-signed:jit",
+        "pidigits:mech-pi-final-compact-signed:aot-new"
+      ],
+      [
+        "pidigits:mech-pi-final-compact-signed:resident",
+        "pidigits:mech-pi-final-advance-signed:aot-original",
+        "pidigits:mech-pi-final-advance-signed:jit",
+        "pidigits:mech-pi-final-compact-signed:jit",
+        "pidigits:mech-pi-final-advance-signed:aot-new",
+        "pidigits:mech-pi-final-compact-signed:aot-new",
+        "pidigits:mech-pi-final-compact-signed:aot-original",
+        "pidigits:mech-pi-final-advance-signed:resident"
+      ],
+      [
+        "pidigits:mech-pi-final-compact-signed:resident",
+        "pidigits:mech-pi-final-compact-signed:jit",
+        "pidigits:mech-pi-final-advance-signed:aot-original",
+        "pidigits:mech-pi-final-advance-signed:aot-new",
+        "pidigits:mech-pi-final-compact-signed:aot-new",
+        "pidigits:mech-pi-final-advance-signed:jit",
+        "pidigits:mech-pi-final-advance-signed:resident",
+        "pidigits:mech-pi-final-compact-signed:aot-original"
+      ]
+    ],
+    "nbody": [
+      [
+        "nbody:compact-baseline:resident",
+        "nbody:pairwise-mass-tails:resident",
+        "nbody:compact-baseline:aot-new",
+        "nbody:pairwise-mass-tails:aot-new",
+        "nbody:pairwise-mass-tails:jit",
+        "nbody:compact-baseline:aot-original",
+        "nbody:pairwise-mass-tails:aot-original",
+        "nbody:compact-baseline:jit"
+      ],
+      [
+        "nbody:compact-baseline:aot-new",
+        "nbody:compact-baseline:aot-original",
+        "nbody:pairwise-mass-tails:aot-new",
+        "nbody:pairwise-mass-tails:resident",
+        "nbody:compact-baseline:resident",
+        "nbody:compact-baseline:jit",
+        "nbody:pairwise-mass-tails:jit",
+        "nbody:pairwise-mass-tails:aot-original"
+      ],
+      [
+        "nbody:compact-baseline:aot-original",
+        "nbody:compact-baseline:jit",
+        "nbody:pairwise-mass-tails:jit",
+        "nbody:compact-baseline:aot-new",
+        "nbody:pairwise-mass-tails:resident",
+        "nbody:compact-baseline:resident",
+        "nbody:pairwise-mass-tails:aot-original",
+        "nbody:pairwise-mass-tails:aot-new"
+      ]
+    ],
+    "mandelbrot": [
+      [
+        "mandelbrot:mech-program-simd-loop-fma:resident",
+        "mandelbrot:mech-program-compact:aot-original",
+        "mandelbrot:mech-program-simd-loop-fma:aot-original",
+        "mandelbrot:mech-program-simd-loop-fma:aot-new",
+        "mandelbrot:mech-program-compact:aot-new",
+        "mandelbrot:mech-program-simd-loop-fma:jit",
+        "mandelbrot:mech-program-compact:resident",
+        "mandelbrot:mech-program-compact:jit"
+      ],
+      [
+        "mandelbrot:mech-program-simd-loop-fma:aot-original",
+        "mandelbrot:mech-program-compact:resident",
+        "mandelbrot:mech-program-simd-loop-fma:aot-new",
+        "mandelbrot:mech-program-compact:aot-new",
+        "mandelbrot:mech-program-compact:aot-original",
+        "mandelbrot:mech-program-simd-loop-fma:jit",
+        "mandelbrot:mech-program-compact:jit",
+        "mandelbrot:mech-program-simd-loop-fma:resident"
+      ],
+      [
+        "mandelbrot:mech-program-compact:aot-original",
+        "mandelbrot:mech-program-compact:aot-new",
+        "mandelbrot:mech-program-compact:jit",
+        "mandelbrot:mech-program-simd-loop-fma:jit",
+        "mandelbrot:mech-program-simd-loop-fma:resident",
+        "mandelbrot:mech-program-simd-loop-fma:aot-new",
+        "mandelbrot:mech-program-simd-loop-fma:aot-original",
+        "mandelbrot:mech-program-compact:resident"
+      ]
+    ],
+    "spectralnorm": [
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-original"
+      ],
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-original"
+      ],
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:resident",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-new",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:jit",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:aot-original"
+      ]
+    ],
+    "binarytrees": [
+      [
+        "binarytrees:mech-binarytrees-parallel:resident",
+        "binarytrees:mech-binarytrees-parallel:aot-new",
+        "binarytrees:mech-binarytrees-parallel:jit",
+        "binarytrees:mech-binarytrees-parallel:aot-original"
+      ],
+      [
+        "binarytrees:mech-binarytrees-parallel:jit",
+        "binarytrees:mech-binarytrees-parallel:resident",
+        "binarytrees:mech-binarytrees-parallel:aot-original",
+        "binarytrees:mech-binarytrees-parallel:aot-new"
+      ],
+      [
+        "binarytrees:mech-binarytrees-parallel:resident",
+        "binarytrees:mech-binarytrees-parallel:aot-new",
+        "binarytrees:mech-binarytrees-parallel:jit",
+        "binarytrees:mech-binarytrees-parallel:aot-original"
+      ]
+    ],
+    "fasta": [
+      [
+        "fasta:mech-fasta-final-compact-v2:resident",
+        "fasta:mech-fasta-final-compact-v2:aot-new",
+        "fasta:mech-fasta-final-expanded-v2:resident",
+        "fasta:mech-fasta-final-expanded-v2:jit",
+        "fasta:mech-fasta-final-expanded-v2:aot-new",
+        "fasta:mech-fasta-final-compact-v2:aot-original",
+        "fasta:mech-fasta-final-compact-v2:jit",
+        "fasta:mech-fasta-final-expanded-v2:aot-original"
+      ],
+      [
+        "fasta:mech-fasta-final-expanded-v2:resident",
+        "fasta:mech-fasta-final-compact-v2:aot-original",
+        "fasta:mech-fasta-final-expanded-v2:jit",
+        "fasta:mech-fasta-final-compact-v2:aot-new",
+        "fasta:mech-fasta-final-compact-v2:jit",
+        "fasta:mech-fasta-final-expanded-v2:aot-new",
+        "fasta:mech-fasta-final-compact-v2:resident",
+        "fasta:mech-fasta-final-expanded-v2:aot-original"
+      ],
+      [
+        "fasta:mech-fasta-final-compact-v2:aot-new",
+        "fasta:mech-fasta-final-expanded-v2:aot-new",
+        "fasta:mech-fasta-final-expanded-v2:jit",
+        "fasta:mech-fasta-final-expanded-v2:resident",
+        "fasta:mech-fasta-final-expanded-v2:aot-original",
+        "fasta:mech-fasta-final-compact-v2:resident",
+        "fasta:mech-fasta-final-compact-v2:aot-original",
+        "fasta:mech-fasta-final-compact-v2:jit"
+      ]
+    ],
+    "fannkuchredux": [
+      [
+        "fannkuchredux:mech-fannkuch-default:jit",
+        "fannkuchredux:mech-fannkuch-default:resident",
+        "fannkuchredux:mech-fannkuch-even:aot-original",
+        "fannkuchredux:mech-fannkuch-even:aot-new",
+        "fannkuchredux:mech-fannkuch-even:resident",
+        "fannkuchredux:mech-fannkuch-default:aot-original",
+        "fannkuchredux:mech-fannkuch-even:jit",
+        "fannkuchredux:mech-fannkuch-default:aot-new"
+      ],
+      [
+        "fannkuchredux:mech-fannkuch-even:jit",
+        "fannkuchredux:mech-fannkuch-default:resident",
+        "fannkuchredux:mech-fannkuch-even:resident",
+        "fannkuchredux:mech-fannkuch-even:aot-new",
+        "fannkuchredux:mech-fannkuch-even:aot-original",
+        "fannkuchredux:mech-fannkuch-default:aot-original",
+        "fannkuchredux:mech-fannkuch-default:aot-new",
+        "fannkuchredux:mech-fannkuch-default:jit"
+      ],
+      [
+        "fannkuchredux:mech-fannkuch-default:resident",
+        "fannkuchredux:mech-fannkuch-even:resident",
+        "fannkuchredux:mech-fannkuch-even:jit",
+        "fannkuchredux:mech-fannkuch-default:jit",
+        "fannkuchredux:mech-fannkuch-default:aot-original",
+        "fannkuchredux:mech-fannkuch-even:aot-new",
+        "fannkuchredux:mech-fannkuch-default:aot-new",
+        "fannkuchredux:mech-fannkuch-even:aot-original"
+      ]
+    ]
+  },
+  "completed_benchmarks": [
+    "revcomp",
+    "regexredux",
+    "knucleotide",
+    "pidigits",
+    "nbody",
+    "mandelbrot",
+    "spectralnorm",
+    "binarytrees",
+    "fasta",
+    "fannkuchredux"
+  ],
+  "protocol": {
+    "jit": "Fresh-process elapsed wall time including startup, source parsing, admission, JIT compilation, execution, input, full output to a regular file, flush and teardown.",
+    "resident": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+    "controls": "Old and rebuilt AOT binaries measured in the same randomized rounds, with byte-identical source-generated native objects.",
+    "samples": "Three fresh runs per source/mode at the full standard workloads, <=8 workers, randomized sequential rounds, AC power and Low Power Mode off. All full outputs independently checked; compiler/power contention discards samples. Compilation of the implementation, output hashes, and validation comparisons are outside every reported region."
+  },
+  "aot_regressions": {
+    "nbody:pairwise-mass-tails": {
+      "native_object_identical": true,
+      "old_seconds": 1.056044958,
+      "new_seconds": 1.051977584,
+      "ratio": 0.9961484840496725
+    },
+    "nbody:compact-baseline": {
+      "native_object_identical": true,
+      "old_seconds": 1.125961916,
+      "new_seconds": 1.12312125,
+      "ratio": 0.9974771207092941
+    },
+    "mandelbrot:mech-program-simd-loop-fma": {
+      "native_object_identical": true,
+      "old_seconds": 0.440734834,
+      "new_seconds": 0.447153167,
+      "ratio": 1.0145627994541497
+    },
+    "mandelbrot:mech-program-compact": {
+      "native_object_identical": true,
+      "old_seconds": 2.264141125,
+      "new_seconds": 2.282916917,
+      "ratio": 1.0082926774275167
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4": {
+      "native_object_identical": true,
+      "old_seconds": 0.551570042,
+      "new_seconds": 0.521786125,
+      "ratio": 0.9460015687363962
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8": {
+      "native_object_identical": true,
+      "old_seconds": 0.097807625,
+      "new_seconds": 0.089262084,
+      "ratio": 0.9126290920569844
+    },
+    "revcomp:mech-revcomp-optimized": {
+      "native_object_identical": true,
+      "old_seconds": 0.149448542,
+      "new_seconds": 0.148410459,
+      "ratio": 0.9930539101545734
+    },
+    "fannkuchredux:mech-fannkuch-even": {
+      "native_object_identical": true,
+      "old_seconds": 1.737474125,
+      "new_seconds": 1.760364167,
+      "ratio": 1.0131743210852133
+    },
+    "fannkuchredux:mech-fannkuch-default": {
+      "native_object_identical": true,
+      "old_seconds": 2.843903625,
+      "new_seconds": 2.8599695,
+      "ratio": 1.0056492332787825
+    },
+    "fasta:mech-fasta-final-expanded-v2": {
+      "native_object_identical": true,
+      "old_seconds": 0.578279875,
+      "new_seconds": 0.577122333,
+      "ratio": 0.9979983014280067
+    },
+    "fasta:mech-fasta-final-compact-v2": {
+      "native_object_identical": true,
+      "old_seconds": 1.233836417,
+      "new_seconds": 1.229242292,
+      "ratio": 0.9962765525991116
+    },
+    "binarytrees:mech-binarytrees-parallel": {
+      "native_object_identical": true,
+      "old_seconds": 0.403126166,
+      "new_seconds": 0.403539833,
+      "ratio": 1.0010261477296416
+    },
+    "regexredux:mech-regex-final-reuse-signed": {
+      "native_object_identical": true,
+      "old_seconds": 0.491313208,
+      "new_seconds": 0.484678417,
+      "ratio": 0.9864958016760664
+    },
+    "pidigits:mech-pi-final-advance-signed": {
+      "native_object_identical": true,
+      "old_seconds": 0.305799375,
+      "new_seconds": 0.306175542,
+      "ratio": 1.0012301104277928
+    },
+    "pidigits:mech-pi-final-compact-signed": {
+      "native_object_identical": true,
+      "old_seconds": 0.398262334,
+      "new_seconds": 0.397796666,
+      "ratio": 0.9988307505876266
+    }
+  },
+  "finished_at": "2026-10-10T04:44:46.826462+00:00"
+}

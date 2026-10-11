@@ -1,0 +1,81 @@
+{
+  "programs": [
+    {
+      "key": "revcomp:revcomp-zig-compact",
+      "id": "revcomp-zig-compact",
+      "benchmark": "revcomp",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/revcomp-zig-compact.zig",
+      "source_sha256": "e80d2dced499ff9afb77e3d677da39813818bd7a742145b06619210110027328",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general language libraries; all application logic and bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "uses_gmp": false,
+      "libraries": []
+    },
+    {
+      "key": "revcomp:revcomp-zig-table",
+      "id": "revcomp-zig-table",
+      "benchmark": "revcomp",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/revcomp-zig-table.zig",
+      "source_sha256": "e381c9c7b698a8dcb5df35e9d3daf5808cf321aed59009dcf584125c387bc448",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general language libraries; all application logic and bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "uses_gmp": false,
+      "libraries": []
+    },
+    {
+      "key": "regexredux:regexredux-zig-compact-pcre2",
+      "id": "regexredux-zig-compact-pcre2",
+      "benchmark": "regexredux",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/regexredux-zig-compact-pcre2.zig",
+      "source_sha256": "51606bc251c3ccf08e683fb03a6e8f32a6c014bd67604cdc6d19d0261c151898",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general language libraries; all application logic and bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "uses_gmp": false,
+      "libraries": []
+    },
+    {
+      "key": "regexredux:regexredux-zig-jit-pcre2",
+      "id": "regexredux-zig-jit-pcre2",
+      "benchmark": "regexredux",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/regexredux-zig-jit-pcre2.zig",
+      "source_sha256": "8599b5da94a1718c563e22527f94e0853dc50c61f37ac1824b6061a34873a8c8",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general language libraries; all application logic and bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "uses_gmp": false,
+      "libraries": []
+    },
+    {
+      "key": "pidigits:pidigits-zig-gmp",
+      "id": "pidigits-zig-gmp",
+      "benchmark": "pidigits",
+      "language": "zig",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/pidigits-zig-gmp.zig",
+      "source_sha256": "5a95d65236c8be8cfb4c1c52cc3a344b655e7631e133697d96aabb55bd38f490",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general language libraries; all application logic and bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+      "uses_gmp": true,
+      "libraries": [
+        "gmp"
+      ]
+    }
+  ]
+}

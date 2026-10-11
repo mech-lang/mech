@@ -1,0 +1,4367 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-10T01:50:45.289736+00:00",
+  "sample_count": 3,
+  "source_audit_sha256": "9b4ec1b0e5d14ec98f83d7ff85888ab228dcebfb3bd7744d42d45f9726af0c79",
+  "programs": {
+    "fannkuchredux:mojo-fannkuchredux-optimized": {
+      "key": "fannkuchredux:mojo-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.mojo",
+      "source_sha256": "99c545558787ac3f5c2cc85a4e5f4aab1d973c35234b1a38a03490886262951a",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fannkuchredux-optimized-mojo",
+      "binary_sha256": "096f244c58314be99c36b1f2deaf9e706c05774418fc3051321a3751f74a03c0",
+      "loc": 71,
+      "physical_loc": 71,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "All 479,001,600 permutations in canonical rotation order; factoradic starting ranks partition only the enumeration. Every prefix reversal, alternating checksum and maximum is computed in the language, using eight CPU workers.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fannkuchredux-optimized-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        7.406255875,
+        7.340605041,
+        7.311026917
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.265106792,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "full_validation_seconds": 7.363639958,
+      "median_seconds": 7.340605041,
+      "sample_stdev_seconds": 0.04873987393298682
+    },
+    "fannkuchredux:mojo-fannkuchredux": {
+      "key": "fannkuchredux:mojo-fannkuchredux",
+      "benchmark": "fannkuchredux",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux.mojo",
+      "source_sha256": "23cd35914c38f909155889a2337799e657ce424c30167bbb7eba2f0f196c62d7",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fannkuchredux-mojo",
+      "binary_sha256": "7e6a5b677117471f2e3ac4288f5b8f08b273af2992c92f2192faf3358721f900",
+      "loc": 66,
+      "physical_loc": 66,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "All 479,001,600 permutations in canonical rotation order; factoradic starting ranks partition only the enumeration. Every prefix reversal, alternating checksum and maximum is computed in the language, using eight CPU workers.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fannkuchredux-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        14.086725667,
+        14.135072667,
+        14.174851583
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.190267917,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "full_validation_seconds": 14.141086125,
+      "median_seconds": 14.135072667,
+      "sample_stdev_seconds": 0.04413232307121836
+    },
+    "fasta:mojo-fasta-compact": {
+      "key": "fasta:mojo-fasta-compact",
+      "benchmark": "fasta",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-compact.mojo",
+      "source_sha256": "dcebf9eab2424430bf209ca958895803948c274ce246db0c38254f4e2b87bddc",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-compact-mojo",
+      "binary_sha256": "ccdda2d43f9359ceee10d07948a39ff7df4e1012a4a552b9cfbe0be4dd09a912",
+      "loc": 31,
+      "physical_loc": 31,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical 287-byte ALU repetition; every one of 200,000,000 random LCG updates, division by 139968.0 and cumulative floating probability comparisons. No period caching, skip-ahead generation or integer cutoffs.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-compact-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        2.685012292,
+        2.632095875,
+        2.675716167
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.224815917,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.735568875,
+      "median_seconds": 2.675716167,
+      "sample_stdev_seconds": 0.028252713740744683
+    },
+    "fasta:mojo-fasta-optimized": {
+      "key": "fasta:mojo-fasta-optimized",
+      "benchmark": "fasta",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.mojo",
+      "source_sha256": "c7023e482aaecd425ce43c3e686f68febf0e17c4be196af5bf28c62ff002e2e8",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-optimized-mojo",
+      "binary_sha256": "84e47420f30a125467aeb6f821ead97dbab5099a5193f8d194f938d609293656",
+      "loc": 53,
+      "physical_loc": 53,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical 287-byte ALU repetition; every one of 200,000,000 random LCG updates, division by 139968.0 and cumulative floating probability comparisons. No period caching, skip-ahead generation or integer cutoffs.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-optimized-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.232753958,
+        1.220089666,
+        1.22295175
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.185899958,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.223031666,
+      "median_seconds": 1.22295175,
+      "sample_stdev_seconds": 0.006641524653767168
+    },
+    "fasta:mojo-fasta": {
+      "key": "fasta:mojo-fasta",
+      "benchmark": "fasta",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta.mojo",
+      "source_sha256": "70827ce20d87749462842548dc45cf472eb37248a590425cf12b32a77453877f",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-mojo",
+      "binary_sha256": "9770f46f3eb63910fb77b8bd45e605772f8b7e616d88e919c8dae6f1dbce2236",
+      "loc": 44,
+      "physical_loc": 44,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical 287-byte ALU repetition; every one of 200,000,000 random LCG updates, division by 139968.0 and cumulative floating probability comparisons. No period caching, skip-ahead generation or integer cutoffs.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        2.602842166,
+        2.581116916,
+        2.590844292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.183773625,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.600825875,
+      "median_seconds": 2.590844292,
+      "sample_stdev_seconds": 0.010882381111439871
+    },
+    "knucleotide:mojo-knucleotide-compact": {
+      "key": "knucleotide:mojo-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-compact.mojo",
+      "source_sha256": "d1eecd789b6ff5bcb218a2b7270f830e64169558e350e8b08837168f3514d9f1",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-compact-mojo",
+      "binary_sha256": "edc0f7ce954c052755197337761474289bf681ab1da6af4e7f1127fd3d31372c",
+      "loc": 44,
+      "physical_loc": 44,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Extract THREE in the language; all seven widths 1,2,3,4,6,12,18. Every one of 874,999,961 overlapping keys is looked up and updated in growing hash tables. Serial compact forms and parallel forms retain all keys before queries; parallel forms distribute positions over 32 ranges in eight CPU workers. No selective query counting or histogram substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-compact-mojo"
+      ],
+      "samples_seconds": [
+        4.716092625,
+        4.753924,
+        4.798077667
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.191785875,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "full_validation_seconds": 4.76896175,
+      "median_seconds": 4.753924,
+      "sample_stdev_seconds": 0.0410331296143319
+    },
+    "knucleotide:mojo-knucleotide-optimized": {
+      "key": "knucleotide:mojo-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.mojo",
+      "source_sha256": "be05541c9022d9eab0ff28f145b24f25399e8235819d3a6456b36042c4f7ca17",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-optimized-mojo",
+      "binary_sha256": "2a200123d5b7bba5de6d6022c18f8fa04707c3bddd945f523601287a29e39698",
+      "loc": 77,
+      "physical_loc": 77,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Extract THREE in the language; all seven widths 1,2,3,4,6,12,18. Every one of 874,999,961 overlapping keys is looked up and updated in growing hash tables. Serial compact forms and parallel forms retain all keys before queries; parallel forms distribute positions over 32 ranges in eight CPU workers. No selective query counting or histogram substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/uintmap.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-optimized-mojo"
+      ],
+      "samples_seconds": [
+        1.710079792,
+        1.696192584,
+        1.696559958
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.197255083,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.673323333,
+      "median_seconds": 1.696559958,
+      "sample_stdev_seconds": 0.007913863585281766
+    },
+    "knucleotide:mojo-knucleotide": {
+      "key": "knucleotide:mojo-knucleotide",
+      "benchmark": "knucleotide",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide.mojo",
+      "source_sha256": "efb4ce5eb4ed57c14351edb8cfa9838a16ca9976513c2b65355deb015150c5e6",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-mojo",
+      "binary_sha256": "631ce96cf79b7a362609919b938f515946d86d9bc1fb94bfecce15bd7caa9fd4",
+      "loc": 75,
+      "physical_loc": 75,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Extract THREE in the language; all seven widths 1,2,3,4,6,12,18. Every one of 874,999,961 overlapping keys is looked up and updated in growing hash tables. Serial compact forms and parallel forms retain all keys before queries; parallel forms distribute positions over 32 ranges in eight CPU workers. No selective query counting or histogram substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-mojo"
+      ],
+      "samples_seconds": [
+        3.168671375,
+        3.09083725,
+        3.0724005
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.198344709,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "full_validation_seconds": 3.079441584,
+      "median_seconds": 3.09083725,
+      "sample_stdev_seconds": 0.051098183494040515
+    },
+    "mandelbrot:mojo-mandelbrot-compact": {
+      "key": "mandelbrot:mojo-mandelbrot-compact",
+      "benchmark": "mandelbrot",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/mandelbrot-compact.mojo",
+      "source_sha256": "3e4fda434fefaed22ecb9a44a5c0724c6c5d95a2235ea6ccfad33848d3211e24",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-compact-mojo",
+      "binary_sha256": "07279755643f575b9dbf4413a6173ca1f793484a0dad9ba0199b4ff67be2c5ed",
+      "loc": 27,
+      "physical_loc": 27,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical grid, z=0, at most 50 updates per pixel, ordinary escape check and complete PBM. No cardioid/periodicity pruning. Contracted coordinate arithmetic is disabled to preserve reference pixels.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-compact-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        10.549695667,
+        10.600292542,
+        10.523619583
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "small_validation_seconds": 1.032919292,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "full_validation_seconds": 10.515456375,
+      "median_seconds": 10.549695667,
+      "sample_stdev_seconds": 0.038984502387393864
+    },
+    "mandelbrot:mojo-mandelbrot-optimized": {
+      "key": "mandelbrot:mojo-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/mandelbrot-optimized.mojo",
+      "source_sha256": "b7cd3290466bb1fc73c6de3cb8690760aa8d73997fc800318c30ac66fe186996",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-optimized-mojo",
+      "binary_sha256": "ea42829c853370fd8b44adfc1e5df0e8cb075499309fce90052df977eb421550",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical grid, z=0, at most 50 updates per pixel, ordinary escape check and complete PBM. No cardioid/periodicity pruning. Contracted coordinate arithmetic is disabled to preserve reference pixels.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-optimized-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.140949417,
+        1.149276917,
+        1.182013375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.282827625,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.13779125,
+      "median_seconds": 1.149276917,
+      "sample_stdev_seconds": 0.021707416494758627
+    },
+    "mandelbrot:mojo-mandelbrot": {
+      "key": "mandelbrot:mojo-mandelbrot",
+      "benchmark": "mandelbrot",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/mandelbrot.mojo",
+      "source_sha256": "ba2745023800cb2ae276fbaaa99ec50e8ddd1fc214c01dcd94fb4767cf11504f",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-mojo",
+      "binary_sha256": "fb2c578b447ac74cab279a83ef1169593ddbdbef67492e88081fa22550c24315",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical grid, z=0, at most 50 updates per pixel, ordinary escape check and complete PBM. No cardioid/periodicity pruning. Contracted coordinate arithmetic is disabled to preserve reference pixels.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.868893,
+        1.887287959,
+        1.883901791
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.211167,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.867981083,
+      "median_seconds": 1.883901791,
+      "sample_stdev_seconds": 0.009790339265636577
+    },
+    "nbody:mojo-nbody-compact": {
+      "key": "nbody:mojo-nbody-compact",
+      "benchmark": "nbody",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-compact.mojo",
+      "source_sha256": "798bc5e88c9cf8d11516b05fb898d629ad08d23d1f7686c7e23ccbee4e3995fc",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-compact-mojo",
+      "binary_sha256": "17efacc6583fd5ef7a0d16e6f916e0de2a3fb2458853f7df07c0d2676736686b",
+      "loc": 55,
+      "physical_loc": 55,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Pinned published Mojo source adapted to the official workload and four-function requirement.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-compact-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.76200575,
+        1.769423875,
+        1.768158166
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "small_validation_seconds": 2.292726625,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.760799334,
+      "median_seconds": 1.768158166,
+      "sample_stdev_seconds": 0.003968266213040746
+    },
+    "nbody:mojo-nbody-optimized": {
+      "key": "nbody:mojo-nbody-optimized",
+      "benchmark": "nbody",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-optimized.mojo",
+      "source_sha256": "9b3fc69b671e39b8f679dd4d281c6c2d80f0c3f441c95f93fbf8d3e45777fc25",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-optimized-mojo",
+      "binary_sha256": "e6e8e2fae838a1ed7a863516610104df6262dc1a42e43106922308d401fe07a9",
+      "loc": 62,
+      "physical_loc": 62,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Pinned published Mojo source adapted to the official workload and four-function requirement.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-optimized-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.084872833,
+        1.082756875,
+        1.089305959
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.444399417,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.062551875,
+      "median_seconds": 1.084872833,
+      "sample_stdev_seconds": 0.003342164608670461
+    },
+    "nbody:mojo-nbody-small": {
+      "key": "nbody:mojo-nbody-small",
+      "benchmark": "nbody",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-small.mojo",
+      "source_sha256": "11aad35b4fd613b42b815b4e6da9a7601162e19b54c158ddd547c99fa9502738",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-small-mojo",
+      "binary_sha256": "dd5048741e9d65231c864cb2b57c038ab814421a8ec24255a93b0ea93ffe534d",
+      "loc": 128,
+      "physical_loc": 128,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Pinned published Mojo source adapted to the official workload and four-function requirement.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-small-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        6.5017405,
+        6.658702542,
+        6.551982208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.200280875,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "full_validation_seconds": 6.426628166,
+      "median_seconds": 6.551982208,
+      "sample_stdev_seconds": 0.08015666071371175
+    },
+    "nbody:mojo-nbody": {
+      "key": "nbody:mojo-nbody",
+      "benchmark": "nbody",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody.mojo",
+      "source_sha256": "a5ade071c0bb13c3c4c448f10ae9a049364be44eb2025bfe095ba3b1a658604b",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-mojo",
+      "binary_sha256": "d62aba556860fb260f72e29f69ce1cad130dd75ee7e3ec7fad640f87aeb005f3",
+      "loc": 62,
+      "physical_loc": 62,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Pinned published Mojo source adapted to the official workload and four-function requirement.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.751326416,
+        1.75152925,
+        1.757185833
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.708316083,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.748807791,
+      "median_seconds": 1.75152925,
+      "sample_stdev_seconds": 0.003325929455238477
+    },
+    "pidigits:mojo-pidigits-compact": {
+      "key": "pidigits:mojo-pidigits-compact",
+      "benchmark": "pidigits",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/pidigits-compact.mojo",
+      "source_sha256": "3a2fdb84c0f1d7951e7d1af2f1ec501faeb6e26958afd75a31d6cfb651ec9623",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-compact-mojo",
+      "binary_sha256": "1b225ba4587e9396644301c4575994261be54a812a3d9b8727295ba351e52a9f",
+      "loc": 30,
+      "physical_loc": 30,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Sequential unbounded LFT spigot in the language, published q>r guard, extract(3) and extract(4) checked before each emitted digit. Mojo uses ordinary GMP operations; Futhark uses dynamically growing signed limb arithmetic. No Chudnovsky algorithm or precision bound chosen from N.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/integer.mojo",
+        "stdlib/native.c",
+        "stdlib/khash.h"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-compact-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.494614916,
+        0.493705125,
+        0.49255
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.244499958,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.49521475,
+      "median_seconds": 0.493705125,
+      "sample_stdev_seconds": 0.0010348841735803242
+    },
+    "pidigits:mojo-pidigits-optimized": {
+      "key": "pidigits:mojo-pidigits-optimized",
+      "benchmark": "pidigits",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/pidigits-optimized.mojo",
+      "source_sha256": "e4eb0b14ca785a93db6ca7c959c9bd61c3600dda715a573d2cb0ab0145b4426d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-optimized-mojo",
+      "binary_sha256": "8313b4bae44f4f8b35f9ad333008b5294b80a6e9533c4f7242454d2f2c635490",
+      "loc": 43,
+      "physical_loc": 43,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Sequential unbounded LFT spigot in the language, published q>r guard, extract(3) and extract(4) checked before each emitted digit. Mojo uses ordinary GMP operations; Futhark uses dynamically growing signed limb arithmetic. No Chudnovsky algorithm or precision bound chosen from N.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/integer.mojo",
+        "stdlib/native.c",
+        "stdlib/khash.h"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-optimized-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.432245083,
+        0.429661375,
+        0.429041584
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.186066417,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.4314325,
+      "median_seconds": 0.429661375,
+      "sample_stdev_seconds": 0.0016991220162163086
+    },
+    "pidigits:mojo-pidigits": {
+      "key": "pidigits:mojo-pidigits",
+      "benchmark": "pidigits",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/pidigits.mojo",
+      "source_sha256": "0c2c809a87d349232d41771c264086bc25dbbb609b7ee52a3243ca5074a54b7a",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-mojo",
+      "binary_sha256": "c94eb3de991c189b9ab77afb55b69e7fb87b36a456e0973db9c084ad877ff6fe",
+      "loc": 45,
+      "physical_loc": 45,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Sequential unbounded LFT spigot in the language, published q>r guard, extract(3) and extract(4) checked before each emitted digit. Mojo uses ordinary GMP operations; Futhark uses dynamically growing signed limb arithmetic. No Chudnovsky algorithm or precision bound chosen from N.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/integer.mojo",
+        "stdlib/native.c",
+        "stdlib/khash.h"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.439547333,
+        0.447260625,
+        0.4373545
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.188278541,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.436796875,
+      "median_seconds": 0.439547333,
+      "sample_stdev_seconds": 0.005203119297735085
+    },
+    "regexredux:mojo-regexredux-compact": {
+      "key": "regexredux:mojo-regexredux-compact",
+      "benchmark": "regexredux",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/regexredux-compact.mojo",
+      "source_sha256": "e7bcedb86784377a977e84426f377c93ae12559ecabb9380362b7b534717c2d4",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-compact-mojo",
+      "binary_sha256": "251922339f9ca65dc0dd9fd628e86efa636a3bafc699dcfeba32710bba47856c",
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Full input cleanup, nine separate complete regex searches, then five ordered global substitutions. Mojo uses general PCRE2; Futhark parsing/matching/substitution is written in Futhark. No combined benchmark pattern executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/regex.mojo",
+        "stdlib/native.c",
+        "stdlib/khash.h"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-compact-mojo"
+      ],
+      "samples_seconds": [
+        2.188111666,
+        2.179495958,
+        2.212125209
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.189168041,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.201314792,
+      "median_seconds": 2.188111666,
+      "sample_stdev_seconds": 0.01690931051509344
+    },
+    "regexredux:mojo-regexredux-optimized": {
+      "key": "regexredux:mojo-regexredux-optimized",
+      "benchmark": "regexredux",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/regexredux-optimized.mojo",
+      "source_sha256": "49217710f37322ee3d4df4ce88a46d97c83a57fd504526fa33a26c744ea6fabb",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-optimized-mojo",
+      "binary_sha256": "fad606f10e2bd76a699261a1b3ec4efb4b406c021bcb837020b1f844a29f3283",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Full input cleanup, nine separate complete regex searches, then five ordered global substitutions. Mojo uses general PCRE2; Futhark parsing/matching/substitution is written in Futhark. No combined benchmark pattern executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/regex.mojo",
+        "stdlib/native.c",
+        "stdlib/khash.h"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-optimized-mojo"
+      ],
+      "samples_seconds": [
+        1.252947709,
+        1.259126292,
+        1.271282125
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.0168095,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.259709084,
+      "median_seconds": 1.259126292,
+      "sample_stdev_seconds": 0.00932818286942699
+    },
+    "regexredux:mojo-regexredux": {
+      "key": "regexredux:mojo-regexredux",
+      "benchmark": "regexredux",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/regexredux.mojo",
+      "source_sha256": "21eeaf0c8ec04cfd5f241f854f56dca58abfd9ac4a24107cb99c101d06ed16aa",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-mojo",
+      "binary_sha256": "00308dc1d87493ff97b23ca793ef64333958f102bc52f9e644ea9a0d686cfcc6",
+      "loc": 26,
+      "physical_loc": 26,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Full input cleanup, nine separate complete regex searches, then five ordered global substitutions. Mojo uses general PCRE2; Futhark parsing/matching/substitution is written in Futhark. No combined benchmark pattern executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/regex.mojo",
+        "stdlib/native.c",
+        "stdlib/khash.h"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-mojo"
+      ],
+      "samples_seconds": [
+        2.191963833,
+        2.193613333,
+        2.1860135
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.196318334,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.184343584,
+      "median_seconds": 2.191963833,
+      "sample_stdev_seconds": 0.003997598751933826
+    },
+    "revcomp:mojo-revcomp-compact": {
+      "key": "revcomp:mojo-revcomp-compact",
+      "benchmark": "revcomp",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/revcomp-compact.mojo",
+      "source_sha256": "4865b4b4af0d623b44c40026a97afc39a00e4ec52596f0c5587f3588fba2bbf7",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-compact-mojo",
+      "binary_sha256": "48418a952122678cb6630bee1c97b8c9b1b1151d4bd380bc738c97c966231732",
+      "loc": 33,
+      "physical_loc": 33,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read full stdin with growing buffers, preserve each header, reverse and complement every sequence and output sixty-column FASTA. No file-size knowledge, cached answers or native DNA executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-compact-mojo"
+      ],
+      "samples_seconds": [
+        2.350093,
+        2.348935125,
+        2.389072875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.144302667,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.380885167,
+      "median_seconds": 2.350093,
+      "sample_stdev_seconds": 0.022846627411916984
+    },
+    "revcomp:mojo-revcomp-optimized": {
+      "key": "revcomp:mojo-revcomp-optimized",
+      "benchmark": "revcomp",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/revcomp-optimized.mojo",
+      "source_sha256": "3b42a9209d919994d447133fb68a753f3be004a060cd8ed05674fc2ec2f6d45f",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-optimized-mojo",
+      "binary_sha256": "e63a62bf37184ab387049cae9d71c837ebf0b6dcf1db477eba019b0205b3eaaf",
+      "loc": 42,
+      "physical_loc": 42,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read full stdin with growing buffers, preserve each header, reverse and complement every sequence and output sixty-column FASTA. No file-size knowledge, cached answers or native DNA executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-optimized-mojo"
+      ],
+      "samples_seconds": [
+        0.431201875,
+        0.432882667,
+        0.427178542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.190690208,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.431718541,
+      "median_seconds": 0.431201875,
+      "sample_stdev_seconds": 0.002931134939227982
+    },
+    "revcomp:mojo-revcomp": {
+      "key": "revcomp:mojo-revcomp",
+      "benchmark": "revcomp",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/revcomp.mojo",
+      "source_sha256": "a4180d598e52c24e43a4b11dd4a471659771bddc4f13414a665379152519a8ee",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-mojo",
+      "binary_sha256": "5e5857b4baf9d61558a31b7fe6cca42997ce3c5d01a206f304e3dec794d7c82d",
+      "loc": 44,
+      "physical_loc": 44,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read full stdin with growing buffers, preserve each header, reverse and complement every sequence and output sixty-column FASTA. No file-size knowledge, cached answers or native DNA executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-mojo"
+      ],
+      "samples_seconds": [
+        0.436108666,
+        0.445306959,
+        0.441093958
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.183933667,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.442312834,
+      "median_seconds": 0.441093958,
+      "sample_stdev_seconds": 0.004604546808411491
+    },
+    "spectralnorm:mojo-spectralnorm-small": {
+      "key": "spectralnorm:mojo-spectralnorm-small",
+      "benchmark": "spectralnorm",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/spectralnorm-small.mojo",
+      "source_sha256": "8f73a6f98825e4c258a92226ca67b62a037d8fac64a9636d358ffed6d94cfafc",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/spectralnorm-small-mojo",
+      "binary_sha256": "4047e6622772e39887895c4db2d91818f91148cad6433ae38f9bde352e74aae5",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Four required functions are explicit. All 40 matrix/vector products evaluate all N\u00b2 coefficients during multiplication. No stored coefficient matrix. SIMD/parallelism changes execution only.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Pinned published Mojo source adapted to the official workload and four-function requirement.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/spectralnorm-small-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.871881584,
+        0.865268083,
+        0.870142041
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.352854833,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.830287125,
+      "median_seconds": 0.870142041,
+      "sample_stdev_seconds": 0.0034283103688652625
+    },
+    "spectralnorm:mojo-spectralnorm": {
+      "key": "spectralnorm:mojo-spectralnorm",
+      "benchmark": "spectralnorm",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/spectralnorm.mojo",
+      "source_sha256": "199b151d21bf229acdb50bc9d57a07bec3e20e4a7374037c0b5bd492ba7256e6",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/spectralnorm-mojo",
+      "binary_sha256": "da9583efee89f7cfafc87374a7b87b7572b3a752b170b5578b3dc1b3de43d269",
+      "loc": 50,
+      "physical_loc": 50,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Four required functions are explicit. All 40 matrix/vector products evaluate all N\u00b2 coefficients during multiplication. No stored coefficient matrix. SIMD/parallelism changes execution only.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/spectralnorm-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.274502583,
+        0.272153791,
+        0.272595292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.190591459,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.270350375,
+      "median_seconds": 0.272595292,
+      "sample_stdev_seconds": 0.0012482992396955109
+    },
+    "fannkuchredux:futhark-fannkuchredux-optimized": {
+      "key": "fannkuchredux:futhark-fannkuchredux-optimized",
+      "benchmark": "fannkuchredux",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux-optimized.fut",
+      "source_sha256": "6c66c90cfc679873ecfc1a125a55f7619f08951983e0bc6a09dbb50396b11b00",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fannkuchredux-optimized-futhark",
+      "binary_sha256": "066bc018dcda7924c04d152e9bc7242f38e848fc175ef37f1d0b16a14b51bad5",
+      "loc": 44,
+      "physical_loc": 44,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "All 479,001,600 permutations in canonical rotation order; factoradic starting ranks partition only the enumeration. Every prefix reversal, alternating checksum and maximum is computed in the language, using eight CPU workers.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fannkuchredux-optimized-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        5.630263208,
+        5.602464958,
+        5.99188375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.177454209,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "full_validation_seconds": 5.587120583,
+      "median_seconds": 5.630263208,
+      "sample_stdev_seconds": 0.21725144980804179
+    },
+    "fannkuchredux:futhark-fannkuchredux": {
+      "key": "fannkuchredux:futhark-fannkuchredux",
+      "benchmark": "fannkuchredux",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fannkuchredux.fut",
+      "source_sha256": "5189c4cc14658a14bc631ce9db54cc2a05df12ec11bcd965b2d3f36adfb094d6",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fannkuchredux-futhark",
+      "binary_sha256": "6980140bb6cf1349f5a104477786acb058986564255da554d5a01661e2f31d84",
+      "loc": 36,
+      "physical_loc": 36,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "All 479,001,600 permutations in canonical rotation order; factoradic starting ranks partition only the enumeration. Every prefix reversal, alternating checksum and maximum is computed in the language, using eight CPU workers.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fannkuchredux-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        70.989302375,
+        71.365455042,
+        68.510997916
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.188009417,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "full_validation_seconds": 69.1688055,
+      "median_seconds": 70.989302375,
+      "sample_stdev_seconds": 1.5508819697494
+    },
+    "fasta:futhark-fasta-compact": {
+      "key": "fasta:futhark-fasta-compact",
+      "benchmark": "fasta",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-compact.fut",
+      "source_sha256": "1c55d5e56aca8c5cd0c984e1691cd37137a9763a153d725983f55af03f23518a",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-compact-futhark",
+      "binary_sha256": "436a34b39789d3aaa4c53a00fdfe205e22b5a92662e3102a068c5a15c6b8bdf4",
+      "loc": 16,
+      "physical_loc": 16,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical 287-byte ALU repetition; every one of 200,000,000 random LCG updates, division by 139968.0 and cumulative floating probability comparisons. No period caching, skip-ahead generation or integer cutoffs.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-compact-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        2.188421667,
+        2.136921167,
+        2.105251375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.18150775,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.116400875,
+      "median_seconds": 2.136921167,
+      "sample_stdev_seconds": 0.04197732462679218
+    },
+    "fasta:futhark-fasta-optimized": {
+      "key": "fasta:futhark-fasta-optimized",
+      "benchmark": "fasta",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta-optimized.fut",
+      "source_sha256": "18c0a10f25017766f56fd896f92abfde786f95f9ce20390fc6c70a9582162370",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-optimized-futhark",
+      "binary_sha256": "0b3176f98b17393153716e327e9ad8e09534377fd2e9bee71fead7ba67f74d09",
+      "loc": 18,
+      "physical_loc": 18,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical 287-byte ALU repetition; every one of 200,000,000 random LCG updates, division by 139968.0 and cumulative floating probability comparisons. No period caching, skip-ahead generation or integer cutoffs.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-optimized-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.984710375,
+        0.98772775,
+        0.982860333
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.181575708,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.983105542,
+      "median_seconds": 0.984710375,
+      "sample_stdev_seconds": 0.0024569274695670374
+    },
+    "fasta:futhark-fasta": {
+      "key": "fasta:futhark-fasta",
+      "benchmark": "fasta",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/fasta.fut",
+      "source_sha256": "cc63dba4a1cbc95e327288bf28846ca31e032d294abc76d37266a92405fefcb0",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-futhark",
+      "binary_sha256": "ce48eb3d5d6871caed6359d1c64a1962648b07a80ae4bac494e8faff8687f2fd",
+      "loc": 21,
+      "physical_loc": 21,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical 287-byte ALU repetition; every one of 200,000,000 random LCG updates, division by 139968.0 and cumulative floating probability comparisons. No period caching, skip-ahead generation or integer cutoffs.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/fasta-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        2.28543775,
+        2.35648375,
+        2.434877708
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.182137666,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.439650792,
+      "median_seconds": 2.35648375,
+      "sample_stdev_seconds": 0.07475008117492546
+    },
+    "knucleotide:futhark-knucleotide-compact": {
+      "key": "knucleotide:futhark-knucleotide-compact",
+      "benchmark": "knucleotide",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-compact.fut",
+      "source_sha256": "83dda7809af2c2884e0e977d3a90ad11b6c04f63593aa2860d1f9ed29090b06c",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-compact-futhark",
+      "binary_sha256": "fd210ce88f9426428068ba5f6cf1ae3525f9b0e7e6802429fdac40829a56c564",
+      "loc": 37,
+      "physical_loc": 37,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Extract THREE in the language; all seven widths 1,2,3,4,6,12,18. Every one of 874,999,961 overlapping keys is looked up and updated in growing hash tables. Serial compact forms and parallel forms retain all keys before queries; parallel forms distribute positions over 32 ranges in eight CPU workers. No selective query counting or histogram substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/hashmap.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-compact-futhark"
+      ],
+      "samples_seconds": [
+        29.153263792,
+        29.069172291,
+        29.038587292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.19216225,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "full_validation_seconds": 29.141732625,
+      "median_seconds": 29.069172291,
+      "sample_stdev_seconds": 0.059382267774863336
+    },
+    "knucleotide:futhark-knucleotide-optimized": {
+      "key": "knucleotide:futhark-knucleotide-optimized",
+      "benchmark": "knucleotide",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide-optimized.fut",
+      "source_sha256": "86279a96aff35f6dc90a7ffff727c33cf9da642e647856e341139836aea97dc6",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-optimized-futhark",
+      "binary_sha256": "0cc65c82edefc4e4e2d2d60b0ac2804c4faa74c919a0da9d29ce87e92630c99a",
+      "loc": 54,
+      "physical_loc": 54,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Extract THREE in the language; all seven widths 1,2,3,4,6,12,18. Every one of 874,999,961 overlapping keys is looked up and updated in growing hash tables. Serial compact forms and parallel forms retain all keys before queries; parallel forms distribute positions over 32 ranges in eight CPU workers. No selective query counting or histogram substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/hashmap.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-optimized-futhark"
+      ],
+      "samples_seconds": [
+        8.778160417,
+        9.040683625,
+        9.040219375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.011987875,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "full_validation_seconds": 9.018220666,
+      "median_seconds": 9.040219375,
+      "sample_stdev_seconds": 0.15143400528212425
+    },
+    "knucleotide:futhark-knucleotide": {
+      "key": "knucleotide:futhark-knucleotide",
+      "benchmark": "knucleotide",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/knucleotide.fut",
+      "source_sha256": "089ef1d8565758568fd66c3f3e32b187f62061ec582a7e2b602c66e3dafaa4e5",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-futhark",
+      "binary_sha256": "8769631d88750ba9a4c875a3c9b758f67e3c98f6b1a46c5160caaf1986b8eec6",
+      "loc": 50,
+      "physical_loc": 50,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Extract THREE in the language; all seven widths 1,2,3,4,6,12,18. Every one of 874,999,961 overlapping keys is looked up and updated in growing hash tables. Serial compact forms and parallel forms retain all keys before queries; parallel forms distribute positions over 32 ranges in eight CPU workers. No selective query counting or histogram substitution.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/hashmap.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/knucleotide-futhark"
+      ],
+      "samples_seconds": [
+        17.166589958,
+        16.705348625,
+        15.086120709
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.243777833,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "full_validation_seconds": 16.603200959,
+      "median_seconds": 16.705348625,
+      "sample_stdev_seconds": 1.092626415817711
+    },
+    "mandelbrot:futhark-mandelbrot-optimized": {
+      "key": "mandelbrot:futhark-mandelbrot-optimized",
+      "benchmark": "mandelbrot",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/mandelbrot-optimized.fut",
+      "source_sha256": "916bf3f136b0d2444382082acd3580ce8b74e33abea81de5cebdb78b88732765",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-optimized-futhark",
+      "binary_sha256": "da4c345ca157ee7c72f732abc8435fcf4b5ca93eaca969f365f8948c097e1e8b",
+      "loc": 31,
+      "physical_loc": 31,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical grid, z=0, at most 50 updates per pixel, ordinary escape check and complete PBM. No cardioid/periodicity pruning. Contracted coordinate arithmetic is disabled to preserve reference pixels.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-optimized-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.890895916,
+        0.891355583,
+        0.889405583
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "small_validation_seconds": 3.152787709,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.911688625,
+      "median_seconds": 0.890895916,
+      "sample_stdev_seconds": 0.0010193859427597653
+    },
+    "mandelbrot:futhark-mandelbrot": {
+      "key": "mandelbrot:futhark-mandelbrot",
+      "benchmark": "mandelbrot",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/mandelbrot.fut",
+      "source_sha256": "8547b78195437f90dc4891e208bad4c8e4c907879754fbf7739cb8a4cee4d6b0",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-futhark",
+      "binary_sha256": "02c3479a4b7cc117e572b50d2b0c4e2bdf22972e7ad120cacfb92e9bac65c17e",
+      "loc": 19,
+      "physical_loc": 19,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical grid, z=0, at most 50 updates per pixel, ordinary escape check and complete PBM. No cardioid/periodicity pruning. Contracted coordinate arithmetic is disabled to preserve reference pixels.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/mandelbrot-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        2.1136595,
+        2.110574459,
+        2.111419625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.142171709,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.101533208,
+      "median_seconds": 2.111419625,
+      "sample_stdev_seconds": 0.001594199044183864
+    },
+    "nbody:futhark-nbody-optimized": {
+      "key": "nbody:futhark-nbody-optimized",
+      "benchmark": "nbody",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody-optimized.fut",
+      "source_sha256": "753c0eb6e2506436f155022591d76b5d247aef6b2124498e8bf489ca4b3f7125",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-optimized-futhark",
+      "binary_sha256": "c4d7d0076b2e0a2772c27a6ee79d516bc40e9456e5d95901ea3475df1c82ce3d",
+      "loc": 53,
+      "physical_loc": 53,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-optimized-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        1.076639708,
+        1.081222584,
+        1.079082333
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.194552959,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.078616292,
+      "median_seconds": 1.079082333,
+      "sample_stdev_seconds": 0.002293099927499938
+    },
+    "nbody:futhark-nbody": {
+      "key": "nbody:futhark-nbody",
+      "benchmark": "nbody",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/nbody.fut",
+      "source_sha256": "acb4b2efced80f24056cf317aecf6d15b1763024736cbd1d276fb73d3f5d4a6a",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-futhark",
+      "binary_sha256": "b40cc882730fc4d973de8dad037eb1744bceadc15418abdb3bd7c585f1e3ae62",
+      "loc": 40,
+      "physical_loc": 40,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical five bodies, momentum offset, all ten symmetric pairs and all five position updates at each of 50,000,000 steps; initial/final energies. No analytic orbit or omitted steps.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/nbody-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        34.735945291,
+        34.909930083,
+        34.763904292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.191521792,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "full_validation_seconds": 34.6657245,
+      "median_seconds": 34.763904292,
+      "sample_stdev_seconds": 0.09343085252507723
+    },
+    "pidigits:futhark-pidigits-optimized": {
+      "key": "pidigits:futhark-pidigits-optimized",
+      "benchmark": "pidigits",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/pidigits-optimized.fut",
+      "source_sha256": "724e938fc9837346d2721f28119aafd3e783815b0f857d48b144d1731ae3e363",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-optimized-futhark",
+      "binary_sha256": "c5f38d6de2135be6db3c41fd066e3c5f7cf6ef1b9607c547726f6d6a4483cde7",
+      "loc": 23,
+      "physical_loc": 23,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Sequential unbounded LFT spigot in the language, published q>r guard, extract(3) and extract(4) checked before each emitted digit. Mojo uses ordinary GMP operations; Futhark uses dynamically growing signed limb arithmetic. No Chudnovsky algorithm or precision bound chosen from N.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/bigint-fast.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-optimized-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        2.916620375,
+        2.917066417,
+        2.926792
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.011560541,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.915061708,
+      "median_seconds": 2.917066417,
+      "sample_stdev_seconds": 0.005748157288735707
+    },
+    "pidigits:futhark-pidigits": {
+      "key": "pidigits:futhark-pidigits",
+      "benchmark": "pidigits",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/pidigits.fut",
+      "source_sha256": "e01ba1ef73392dca5a087d46f0f0c6f173ba72cb12ae8856744d43288a277d25",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-futhark",
+      "binary_sha256": "128f292edaeb491872833855157ff96a6afbcd09375771c2f6ffb4b255055abd",
+      "loc": 23,
+      "physical_loc": 23,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Sequential unbounded LFT spigot in the language, published q>r guard, extract(3) and extract(4) checked before each emitted digit. Mojo uses ordinary GMP operations; Futhark uses dynamically growing signed limb arithmetic. No Chudnovsky algorithm or precision bound chosen from N.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/bigint.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/pidigits-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        4.113740417,
+        4.112579791,
+        4.135398334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.175388291,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "full_validation_seconds": 4.116001917,
+      "median_seconds": 4.113740417,
+      "sample_stdev_seconds": 0.012852355984627788
+    },
+    "regexredux:futhark-regexredux-compact": {
+      "key": "regexredux:futhark-regexredux-compact",
+      "benchmark": "regexredux",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/regexredux-compact.fut",
+      "source_sha256": "3cd6d69e2b47f68249c7ce0281819b3568553e6bb924ca1830464f5a40f34cd1",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-compact-futhark",
+      "binary_sha256": "170d03526a00ace6c37f9169777d33262d2cafe0f69806d7e2fcdde8d97cbca0",
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Full input cleanup, nine separate complete regex searches, then five ordered global substitutions. Mojo uses general PCRE2; Futhark parsing/matching/substitution is written in Futhark. No combined benchmark pattern executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/regex.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-compact-futhark"
+      ],
+      "samples_seconds": [
+        2.607278,
+        2.627014875,
+        2.682151584
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.010754584,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.616582125,
+      "median_seconds": 2.627014875,
+      "sample_stdev_seconds": 0.038806473891009025
+    },
+    "regexredux:futhark-regexredux-optimized": {
+      "key": "regexredux:futhark-regexredux-optimized",
+      "benchmark": "regexredux",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/regexredux-optimized.fut",
+      "source_sha256": "3d40dec6a287d4bd8dd802ee7e3f8c21afe75445d88e0f0bc7229adfdd33365d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-optimized-futhark",
+      "binary_sha256": "3b703ef3959548a909628e19605cea118f9f834333101086bbd60a36f77bd329",
+      "loc": 27,
+      "physical_loc": 27,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Full input cleanup, nine separate complete regex searches, then five ordered global substitutions. Mojo uses general PCRE2; Futhark parsing/matching/substitution is written in Futhark. No combined benchmark pattern executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/regex.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-optimized-futhark"
+      ],
+      "samples_seconds": [
+        2.641809916,
+        2.628334041,
+        2.645257667
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.009876708,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.649597584,
+      "median_seconds": 2.641809916,
+      "sample_stdev_seconds": 0.008943296474282734
+    },
+    "regexredux:futhark-regexredux": {
+      "key": "regexredux:futhark-regexredux",
+      "benchmark": "regexredux",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/regexredux.fut",
+      "source_sha256": "a3643da919031ec8e0277afe58d2c7ab77e8aa7c72c3e9761e2de219a6392203",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-futhark",
+      "binary_sha256": "eb2e0c197f6e93d61b459b14d97f8a1160eb820ed8a3a49acf5d0f2648aef1da",
+      "loc": 26,
+      "physical_loc": 26,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Full input cleanup, nine separate complete regex searches, then five ordered global substitutions. Mojo uses general PCRE2; Futhark parsing/matching/substitution is written in Futhark. No combined benchmark pattern executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c",
+        "stdlib/regex.fut"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/regexredux-futhark"
+      ],
+      "samples_seconds": [
+        2.608741084,
+        2.658307667,
+        2.62034725
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.185696167,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.632663167,
+      "median_seconds": 2.62034725,
+      "sample_stdev_seconds": 0.02592470667892344
+    },
+    "revcomp:futhark-revcomp-compact": {
+      "key": "revcomp:futhark-revcomp-compact",
+      "benchmark": "revcomp",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/revcomp-compact.fut",
+      "source_sha256": "e5794e32b3f625af40e83e68fc890baaa4866747d5d71bf718b8ede7b5cd7106",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-compact-futhark",
+      "binary_sha256": "72a6b60766de2d10045976f8799d8ccf1a508961a953d1bfa0c39d660e6095d7",
+      "loc": 15,
+      "physical_loc": 15,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read full stdin with growing buffers, preserve each header, reverse and complement every sequence and output sixty-column FASTA. No file-size knowledge, cached answers or native DNA executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-compact-futhark"
+      ],
+      "samples_seconds": [
+        0.6504365,
+        0.646279916,
+        0.665919041
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.179545709,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.659276209,
+      "median_seconds": 0.6504365,
+      "sample_stdev_seconds": 0.010349569211094098
+    },
+    "revcomp:futhark-revcomp-optimized": {
+      "key": "revcomp:futhark-revcomp-optimized",
+      "benchmark": "revcomp",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/revcomp-optimized.fut",
+      "source_sha256": "0fce51daead5923b094bb1f2282c2ff7dbeae76457d11a37eea78a514dc96cae",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-optimized-futhark",
+      "binary_sha256": "fc5410446539f6d5ec2cbba45ef6fbcb5afe116c8b5d1461e8abe0450b40cb8c",
+      "loc": 30,
+      "physical_loc": 30,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read full stdin with growing buffers, preserve each header, reverse and complement every sequence and output sixty-column FASTA. No file-size knowledge, cached answers or native DNA executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-optimized-futhark"
+      ],
+      "samples_seconds": [
+        0.392229083,
+        0.388541792,
+        0.400242083
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.178484458,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.386828375,
+      "median_seconds": 0.392229083,
+      "sample_stdev_seconds": 0.005981932427504277
+    },
+    "revcomp:futhark-revcomp": {
+      "key": "revcomp:futhark-revcomp",
+      "benchmark": "revcomp",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/revcomp.fut",
+      "source_sha256": "e935b10ec4e24335c0c1802586221dc8e8e623e2b14a5a8fa2626ae5694ff710",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-futhark",
+      "binary_sha256": "cda23bcdab1a0cba82c745ff1af45e301ed598e34dece776d161f5374741fac8",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Read full stdin with growing buffers, preserve each header, reverse and complement every sequence and output sixty-column FASTA. No file-size knowledge, cached answers or native DNA executor.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "baseline-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/revcomp-futhark"
+      ],
+      "samples_seconds": [
+        0.809391333,
+        0.799194792,
+        0.809018834
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.269698292,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.800212792,
+      "median_seconds": 0.809018834,
+      "sample_stdev_seconds": 0.005782444769695105
+    },
+    "spectralnorm:futhark-spectralnorm-optimized": {
+      "key": "spectralnorm:futhark-spectralnorm-optimized",
+      "benchmark": "spectralnorm",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/spectralnorm-optimized.fut",
+      "source_sha256": "6a6c6cf422da41079e8b10db8dc322409d98def979d9ab2edf594e0d608a2d4d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/spectralnorm-optimized-futhark",
+      "binary_sha256": "7b9919f925e9e3dc7c3244edb3fd649a8a7aa2ec16c86f07291855edd5a4f0e6",
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Four required functions are explicit. All 40 matrix/vector products evaluate all N\u00b2 coefficients during multiplication. No stored coefficient matrix. SIMD/parallelism changes execution only.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/spectralnorm-optimized-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.214413416,
+        0.218352875,
+        0.226001542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.180446875,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.215514458,
+      "median_seconds": 0.218352875,
+      "sample_stdev_seconds": 0.005892171476932283
+    },
+    "spectralnorm:futhark-spectralnorm": {
+      "key": "spectralnorm:futhark-spectralnorm",
+      "benchmark": "spectralnorm",
+      "language": "futhark",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/spectralnorm.fut",
+      "source_sha256": "a1a180bd455baba4a8627d47250c7c91f2f7b5679bb7f6ffa86e7c14e1d8c661",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/spectralnorm-futhark",
+      "binary_sha256": "a9894745151d05af602f857beb997b4cd9a9d1e8f457841056a3b69a8963a2c6",
+      "loc": 16,
+      "physical_loc": 16,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Four required functions are explicit. All 40 matrix/vector products evaluate all N\u00b2 coefficients during multiplication. No stored coefficient matrix. SIMD/parallelism changes execution only.",
+        "native_benchmark_kernel": false
+      },
+      "stdlib_files": [
+        "stdlib/common.fut",
+        "adapters/futhark.c"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/spectralnorm-futhark",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.234290791,
+        0.237235,
+        0.233291916
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.181452916,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.239581959,
+      "median_seconds": 0.234290791,
+      "sample_stdev_seconds": 0.002049960541586193
+    },
+    "fannkuchredux:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+      "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+      "benchmark": "fannkuchredux",
+      "chart_key": "fannkuchredux:mech-fannkuch-even",
+      "key": "fannkuchredux:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/fannkuchredux/mech-fannkuch-even-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.747547916,
+        1.695695875,
+        1.702457333
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.010728208,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.682905541,
+      "median_seconds": 1.702457333,
+      "sample_stdev_seconds": 0.028188390475014567
+    },
+    "fasta:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "benchmark": "fasta",
+      "chart_key": "fasta:mech-fasta-final-expanded-v2",
+      "audited_variant": "floating",
+      "key": "fasta:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/fasta-mech-fasta-final-expanded-v2-floating",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.549559625,
+        0.547089375,
+        0.54874775
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.008980542,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.543655625,
+      "median_seconds": 0.54874775,
+      "sample_stdev_seconds": 0.0012590660373698983
+    },
+    "knucleotide:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "benchmark": "knucleotide",
+      "chart_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "key": "knucleotide:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "samples_seconds": [
+        0.514645333,
+        0.51382825,
+        0.511360375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.011321416,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.50063375,
+      "median_seconds": 0.51382825,
+      "sample_stdev_seconds": 0.0017102134713868579
+    },
+    "mandelbrot:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+      "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+      "benchmark": "mandelbrot",
+      "chart_key": "mandelbrot:mech-program-simd-loop-fma",
+      "key": "mandelbrot:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "{n}",
+        "8"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.442236125,
+        0.439738792,
+        0.438664792
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.009745792,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.437663125,
+      "median_seconds": 0.439738792,
+      "sample_stdev_seconds": 0.0018323285508598773
+    },
+    "nbody:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "benchmark": "nbody",
+      "chart_key": "nbody:pairwise-mass-tails",
+      "key": "nbody:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-matrix-optimized",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        1.053863167,
+        1.049582125,
+        1.05385575
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08,
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.008901292,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true
+      },
+      "full_validation_seconds": 1.049169709,
+      "median_seconds": 1.05385575,
+      "sample_stdev_seconds": 0.002469522432181322
+    },
+    "pidigits:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+      "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+      "benchmark": "pidigits",
+      "chart_key": "pidigits:mech-pi-final-advance-signed",
+      "key": "pidigits:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/pidigits/mech-pi-final-advance-signed-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.300272042,
+        0.295433917,
+        0.304735166
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.009930959,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.298941917,
+      "median_seconds": 0.300272042,
+      "sample_stdev_seconds": 0.004651884247538882
+    },
+    "regexredux:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "benchmark": "regexredux",
+      "chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "key": "regexredux:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/regexredux/mech-regex-final-reuse-signed-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "samples_seconds": [
+        0.489611584,
+        0.493169167,
+        0.485795291
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.008027917,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.484438042,
+      "median_seconds": 0.489611584,
+      "sample_stdev_seconds": 0.0036876943186566233
+    },
+    "revcomp:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after",
+      "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+      "benchmark": "revcomp",
+      "chart_key": "revcomp:mech-revcomp-optimized",
+      "key": "revcomp:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-after"
+      ],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "samples_seconds": [
+        0.150758708,
+        0.147125375,
+        0.149272625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.007008458,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.143009083,
+      "median_seconds": 0.149272625,
+      "sample_stdev_seconds": 0.001826665173400144
+    },
+    "spectralnorm:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "benchmark": "spectralnorm",
+      "chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "runtime_environment": {},
+      "audited_variant": "four-functions",
+      "key": "spectralnorm:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/builds/spectralnorm-mech-integer-simd1-u4-r4-p8-g8-four-functions",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.085478125,
+        0.087581917,
+        0.086075292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.011287084,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.088359875,
+      "median_seconds": 0.086075292,
+      "sample_stdev_seconds": 0.0010841638941121064
+    },
+    "binarytrees:mojo-binarytrees-compact": {
+      "key": "binarytrees:mojo-binarytrees-compact",
+      "benchmark": "binarytrees",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees-compact.mojo",
+      "source_sha256": "681f6c7dd82c66798d0de8bac21a8dd5ca651b94f09fd4cd7b677a69c1a6bc7f",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/binarytrees-compact-mojo",
+      "binary_sha256": "adfc35648c8ddb3a3aa7a20d1794f51e0e51e3d3547c75e888417f5280d27b6f",
+      "loc": 38,
+      "physical_loc": 38,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical bottom-up construction. Every node, including every leaf, is separately allocated with apr_palloc from the existing Apache APR library pool, as in the C reference. All nodes have two child slots and the same 16-byte allocation. Every tree is walked and its temporary pool cleared. Stretch storage is destroyed before long-lived allocation; long-lived nodes remain live through all temporary trees. Algorithm is entirely in Mojo; library only allocates/releases bytes. Flat/indexed-array tree candidates are archived and excluded for omitting per-node allocation.",
+        "native_benchmark_kernel": false,
+        "generated_work_evidence": "results/tree-work-audit.json"
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/pool.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "compact-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/binarytrees-compact-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        2.134609417,
+        2.224066333,
+        2.218423417
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.015641542,
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "full_validation_seconds": 2.068044458,
+      "median_seconds": 2.218423417,
+      "sample_stdev_seconds": 0.05009851780444557
+    },
+    "binarytrees:mojo-binarytrees-optimized": {
+      "key": "binarytrees:mojo-binarytrees-optimized",
+      "benchmark": "binarytrees",
+      "language": "mojo",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/sources/binarytrees-optimized.mojo",
+      "source_sha256": "058edaa6361f952cd5715b4ea3c8c1fa644a65beb1811340f31d10fe8d0b9118",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/binarytrees-optimized-mojo",
+      "binary_sha256": "4971663ebd8ec56a5c956c52cc5b64958002ef240c6b411b9ba58990c210f17a",
+      "loc": 49,
+      "physical_loc": 49,
+      "loc_expansions": [],
+      "algorithm": {
+        "strict": true,
+        "status": "required-work-reviewed",
+        "reason": "Canonical bottom-up construction. Every node, including every leaf, is separately allocated with apr_palloc from the existing Apache APR library pool, as in the C reference. All nodes have two child slots and the same 16-byte allocation. Every tree is walked and its temporary pool cleared. Stretch storage is destroyed before long-lived allocation; long-lived nodes remain live through all temporary trees. Algorithm is entirely in Mojo; library only allocates/releases bytes. Flat/indexed-array tree candidates are archived and excluded for omitting per-node allocation.",
+        "native_benchmark_kernel": false,
+        "generated_work_evidence": "results/tree-work-audit.json"
+      },
+      "stdlib_files": [
+        "stdlib/common.mojo",
+        "stdlib/pool.mojo"
+      ],
+      "source_provenance": "Local faithful CPU port; benchmark computation is in the named language.",
+      "candidate_role": "performance-candidate",
+      "eligible_for_chart": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/additional-languages/20261009-full-suite/binaries/binarytrees-optimized-mojo",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.6569195,
+        0.66561325,
+        0.676355542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.016396834,
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.664617625,
+      "median_seconds": 0.66561325,
+      "sample_stdev_seconds": 0.009735997253333718
+    },
+    "binarytrees:mech-control": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+      "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+      "benchmark": "binarytrees",
+      "chart_key": "binarytrees:mech-binarytrees-parallel",
+      "key": "binarytrees:mech-control",
+      "language": "mech",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "{n}"
+      ],
+      "runtime_environment": {},
+      "samples_seconds": [
+        0.392365584,
+        0.396581708,
+        0.394411208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "small_validation": {
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true
+      },
+      "small_validation_seconds": 0.011771042,
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "full_validation_seconds": 0.392934292,
+      "median_seconds": 0.394411208,
+      "sample_stdev_seconds": 0.0021083701992594436
+    }
+  },
+  "completed_benchmarks": [
+    "spectralnorm",
+    "regexredux",
+    "pidigits",
+    "nbody",
+    "mandelbrot",
+    "revcomp",
+    "fasta",
+    "knucleotide",
+    "fannkuchredux",
+    "binarytrees"
+  ],
+  "orders": {
+    "spectralnorm": [
+      [
+        "spectralnorm:mech-control",
+        "spectralnorm:mojo-spectralnorm",
+        "spectralnorm:futhark-spectralnorm",
+        "spectralnorm:futhark-spectralnorm-optimized",
+        "spectralnorm:mojo-spectralnorm-small"
+      ],
+      [
+        "spectralnorm:mech-control",
+        "spectralnorm:futhark-spectralnorm",
+        "spectralnorm:futhark-spectralnorm-optimized",
+        "spectralnorm:mojo-spectralnorm",
+        "spectralnorm:mojo-spectralnorm-small"
+      ],
+      [
+        "spectralnorm:futhark-spectralnorm-optimized",
+        "spectralnorm:mojo-spectralnorm",
+        "spectralnorm:mojo-spectralnorm-small",
+        "spectralnorm:futhark-spectralnorm",
+        "spectralnorm:mech-control"
+      ]
+    ],
+    "regexredux": [
+      [
+        "regexredux:mech-control",
+        "regexredux:mojo-regexredux",
+        "regexredux:mojo-regexredux-compact",
+        "regexredux:mojo-regexredux-optimized",
+        "regexredux:futhark-regexredux",
+        "regexredux:futhark-regexredux-optimized",
+        "regexredux:futhark-regexredux-compact"
+      ],
+      [
+        "regexredux:mojo-regexredux-compact",
+        "regexredux:futhark-regexredux",
+        "regexredux:mojo-regexredux-optimized",
+        "regexredux:futhark-regexredux-compact",
+        "regexredux:mojo-regexredux",
+        "regexredux:futhark-regexredux-optimized",
+        "regexredux:mech-control"
+      ],
+      [
+        "regexredux:mojo-regexredux-compact",
+        "regexredux:mojo-regexredux-optimized",
+        "regexredux:mojo-regexredux",
+        "regexredux:futhark-regexredux-compact",
+        "regexredux:futhark-regexredux-optimized",
+        "regexredux:mech-control",
+        "regexredux:futhark-regexredux"
+      ]
+    ],
+    "pidigits": [
+      [
+        "pidigits:mojo-pidigits-compact",
+        "pidigits:mojo-pidigits",
+        "pidigits:mojo-pidigits-optimized",
+        "pidigits:mech-control",
+        "pidigits:futhark-pidigits",
+        "pidigits:futhark-pidigits-optimized"
+      ],
+      [
+        "pidigits:mojo-pidigits-optimized",
+        "pidigits:mojo-pidigits",
+        "pidigits:mojo-pidigits-compact",
+        "pidigits:futhark-pidigits-optimized",
+        "pidigits:mech-control",
+        "pidigits:futhark-pidigits"
+      ],
+      [
+        "pidigits:futhark-pidigits-optimized",
+        "pidigits:mech-control",
+        "pidigits:futhark-pidigits",
+        "pidigits:mojo-pidigits-compact",
+        "pidigits:mojo-pidigits-optimized",
+        "pidigits:mojo-pidigits"
+      ]
+    ],
+    "nbody": [
+      [
+        "nbody:mojo-nbody",
+        "nbody:mojo-nbody-compact",
+        "nbody:mech-control",
+        "nbody:futhark-nbody",
+        "nbody:futhark-nbody-optimized",
+        "nbody:mojo-nbody-small",
+        "nbody:mojo-nbody-optimized"
+      ],
+      [
+        "nbody:mojo-nbody-optimized",
+        "nbody:futhark-nbody",
+        "nbody:mech-control",
+        "nbody:futhark-nbody-optimized",
+        "nbody:mojo-nbody",
+        "nbody:mojo-nbody-compact",
+        "nbody:mojo-nbody-small"
+      ],
+      [
+        "nbody:futhark-nbody-optimized",
+        "nbody:mojo-nbody-small",
+        "nbody:mojo-nbody-optimized",
+        "nbody:mech-control",
+        "nbody:mojo-nbody-compact",
+        "nbody:mojo-nbody",
+        "nbody:futhark-nbody"
+      ]
+    ],
+    "mandelbrot": [
+      [
+        "mandelbrot:futhark-mandelbrot",
+        "mandelbrot:futhark-mandelbrot-optimized",
+        "mandelbrot:mojo-mandelbrot-optimized",
+        "mandelbrot:mojo-mandelbrot",
+        "mandelbrot:mech-control",
+        "mandelbrot:mojo-mandelbrot-compact"
+      ],
+      [
+        "mandelbrot:mojo-mandelbrot-optimized",
+        "mandelbrot:futhark-mandelbrot",
+        "mandelbrot:mech-control",
+        "mandelbrot:futhark-mandelbrot-optimized",
+        "mandelbrot:mojo-mandelbrot",
+        "mandelbrot:mojo-mandelbrot-compact"
+      ],
+      [
+        "mandelbrot:mojo-mandelbrot-compact",
+        "mandelbrot:futhark-mandelbrot",
+        "mandelbrot:futhark-mandelbrot-optimized",
+        "mandelbrot:mech-control",
+        "mandelbrot:mojo-mandelbrot-optimized",
+        "mandelbrot:mojo-mandelbrot"
+      ]
+    ],
+    "revcomp": [
+      [
+        "revcomp:mech-control",
+        "revcomp:futhark-revcomp-optimized",
+        "revcomp:mojo-revcomp-compact",
+        "revcomp:mojo-revcomp",
+        "revcomp:futhark-revcomp",
+        "revcomp:mojo-revcomp-optimized",
+        "revcomp:futhark-revcomp-compact"
+      ],
+      [
+        "revcomp:futhark-revcomp",
+        "revcomp:mojo-revcomp-optimized",
+        "revcomp:mech-control",
+        "revcomp:mojo-revcomp-compact",
+        "revcomp:futhark-revcomp-optimized",
+        "revcomp:mojo-revcomp",
+        "revcomp:futhark-revcomp-compact"
+      ],
+      [
+        "revcomp:futhark-revcomp-compact",
+        "revcomp:futhark-revcomp-optimized",
+        "revcomp:mojo-revcomp-compact",
+        "revcomp:mojo-revcomp-optimized",
+        "revcomp:mojo-revcomp",
+        "revcomp:mech-control",
+        "revcomp:futhark-revcomp"
+      ]
+    ],
+    "fasta": [
+      [
+        "fasta:futhark-fasta",
+        "fasta:futhark-fasta-optimized",
+        "fasta:mojo-fasta-optimized",
+        "fasta:mojo-fasta",
+        "fasta:futhark-fasta-compact",
+        "fasta:mech-control",
+        "fasta:mojo-fasta-compact"
+      ],
+      [
+        "fasta:mojo-fasta-compact",
+        "fasta:mech-control",
+        "fasta:mojo-fasta",
+        "fasta:futhark-fasta-optimized",
+        "fasta:futhark-fasta",
+        "fasta:mojo-fasta-optimized",
+        "fasta:futhark-fasta-compact"
+      ],
+      [
+        "fasta:futhark-fasta-optimized",
+        "fasta:mojo-fasta-optimized",
+        "fasta:futhark-fasta",
+        "fasta:mech-control",
+        "fasta:mojo-fasta",
+        "fasta:mojo-fasta-compact",
+        "fasta:futhark-fasta-compact"
+      ]
+    ],
+    "knucleotide": [
+      [
+        "knucleotide:futhark-knucleotide",
+        "knucleotide:futhark-knucleotide-compact",
+        "knucleotide:mech-control",
+        "knucleotide:mojo-knucleotide-optimized",
+        "knucleotide:futhark-knucleotide-optimized",
+        "knucleotide:mojo-knucleotide",
+        "knucleotide:mojo-knucleotide-compact"
+      ],
+      [
+        "knucleotide:mojo-knucleotide-compact",
+        "knucleotide:mojo-knucleotide-optimized",
+        "knucleotide:futhark-knucleotide-compact",
+        "knucleotide:futhark-knucleotide-optimized",
+        "knucleotide:mojo-knucleotide",
+        "knucleotide:mech-control",
+        "knucleotide:futhark-knucleotide"
+      ],
+      [
+        "knucleotide:futhark-knucleotide-optimized",
+        "knucleotide:mojo-knucleotide",
+        "knucleotide:futhark-knucleotide-compact",
+        "knucleotide:mojo-knucleotide-optimized",
+        "knucleotide:mech-control",
+        "knucleotide:futhark-knucleotide",
+        "knucleotide:mojo-knucleotide-compact"
+      ]
+    ],
+    "fannkuchredux": [
+      [
+        "fannkuchredux:mojo-fannkuchredux",
+        "fannkuchredux:futhark-fannkuchredux",
+        "fannkuchredux:futhark-fannkuchredux-optimized",
+        "fannkuchredux:mojo-fannkuchredux-optimized",
+        "fannkuchredux:mech-control"
+      ],
+      [
+        "fannkuchredux:futhark-fannkuchredux-optimized",
+        "fannkuchredux:mojo-fannkuchredux-optimized",
+        "fannkuchredux:mojo-fannkuchredux",
+        "fannkuchredux:futhark-fannkuchredux",
+        "fannkuchredux:mech-control"
+      ],
+      [
+        "fannkuchredux:futhark-fannkuchredux-optimized",
+        "fannkuchredux:mojo-fannkuchredux",
+        "fannkuchredux:mech-control",
+        "fannkuchredux:mojo-fannkuchredux-optimized",
+        "fannkuchredux:futhark-fannkuchredux"
+      ]
+    ],
+    "binarytrees": [
+      [
+        "binarytrees:mojo-binarytrees-compact",
+        "binarytrees:mojo-binarytrees-optimized",
+        "binarytrees:mech-control"
+      ],
+      [
+        "binarytrees:mojo-binarytrees-optimized",
+        "binarytrees:mech-control",
+        "binarytrees:mojo-binarytrees-compact"
+      ],
+      [
+        "binarytrees:mojo-binarytrees-optimized",
+        "binarytrees:mojo-binarytrees-compact",
+        "binarytrees:mech-control"
+      ]
+    ]
+  },
+  "protocol": "CPU only, <=8 workers; sequential fresh processes in randomized rounds; elapsed time includes startup, input parsing, language/library execution, full output to a regular file and process teardown. Compilation and full output hashing excluded. AC power, Low Power Mode off; concurrent compiler/power guards. Three full samples per candidate and current Mech fastest control.",
+  "machine": "Apple M3",
+  "workloads": {
+    "nbody": [
+      1000,
+      50000000
+    ],
+    "mandelbrot": [
+      200,
+      16000
+    ],
+    "knucleotide": [
+      1000,
+      25000000
+    ],
+    "spectralnorm": [
+      100,
+      5500
+    ],
+    "revcomp": [
+      1000,
+      25000000
+    ],
+    "fannkuchredux": [
+      7,
+      12
+    ],
+    "fasta": [
+      1000,
+      25000000
+    ],
+    "binarytrees": [
+      10,
+      21
+    ],
+    "regexredux": [
+      30,
+      5000000
+    ],
+    "pidigits": [
+      30,
+      10000
+    ]
+  },
+  "runtimes": {
+    "mojo": {
+      "path": "/tmp/mech-extra-languages-20261009/mojo-runtime/bin/mojo",
+      "sha256": "5d0b1538df7c73dfb131654caa5fb5bd20b847a78d87c0a6677e433027cc90c7",
+      "version": "Mojo 1.1.0 (8189361e)"
+    },
+    "futhark": {
+      "path": "/opt/homebrew/bin/futhark",
+      "sha256": "5ee05389c9bc9a27bbb91b540f3e13caeae8db8c5e56282332913dd900796d5e",
+      "version": "Futhark 0.27.1.\nCompiled with GHC 9.14.1.\n\nCopyright (C) DIKU, University of Copenhagen, released under the ISC license.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law."
+    }
+  },
+  "library_pins": {
+    "stdlib/uintmap.mojo": "dea810818fdf05ea629c48e01a5ef5280b37e6c5270752f40bbddde0e9f48b20",
+    "stdlib/common.mojo": "7138aab40685a0e2d053bcded452f0d90b5b39f6658647930b31bae14ad3c5d6",
+    "stdlib/regex.fut": "e2e210be516999df38defd6ee473d8b80746b66818e6de048d41d5670bacffe4",
+    "stdlib/khash.h": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074",
+    "stdlib/bigint-fast.fut": "7b13bc13bd760401d46db9dfb209c5ccb252b403de288dcc7dd3061a1e07708a",
+    "stdlib/native.c": "e5c39f5ccc4544a0e5454af1edbd64c8e82381f80b6770d2e6d8eb03f463712a",
+    "stdlib/integer.mojo": "0137eef4dfeb3ecc4064417b21e914571a988ed1d29effa6cc2a957b4fc4e8ec",
+    "stdlib/regex.mojo": "708ab2b2a0d43cb8583a0d1a1a7b5d2d09f069dc117d49d90335363b4c93b8ec",
+    "stdlib/common.fut": "56b559f220977ddb2dfe2b6c4b847081fbba71bb181e9aaa5fac58cedbb3342d",
+    "stdlib/hashmap.fut": "0c1b898695cbe779412defe8208936b59631d4689f2b0230175575e5fe6ddcbf",
+    "stdlib/bigint.fut": "6a1dd08fc56091a66d6e78a058a974ee5daeb028531c45659783c0503d853a50",
+    "stdlib/libnative.dylib": "7e96f72c72402deaabf19d6e47052ffb49ed9ef8167e09bea6e6640ab51c7ff8",
+    "stdlib/pool.mojo": "40750de800d27df0ca79c00d7850e7f3d9ed83416947b82c14c8f1d1295714cf",
+    "adapters/futhark.c": "0014598c2062c35c3e0ad2b527e8ce6f359dead2ab2b558bfd9c10b5828ebad9"
+  },
+  "review_pins": {
+    "profiles.json": "d830af16493bd652715239d13731c2909ad1cb60a215ce45977c6b11fea91086",
+    "results/builds.json": "67f4e5ea0f6c83c7540d4a7aa19bcba16c766b21dbb699149c04e71c2a693ea0",
+    "results/stdlib-tests.json": "4cf4939190d42e0593b19f5c53dd8ee51e513b6736deed6fc25e1306355a918f",
+    "results/tree-work-audit.json": "509ceee2ee3d00c2b136ba95a4dab6fb59d0cf00fdb1ba11ab957df40a020357",
+    "source-audit.json": "9b4ec1b0e5d14ec98f83d7ff85888ab228dcebfb3bd7744d42d45f9726af0c79",
+    "run.py": "8ebe7340c8f310854d4a6e7ee0ab37641588fa96e46874ff3398919d3b5a4718",
+    "prepare_allocation_remeasurement.py": "04a8259e1c79b6c6f4b95da534d373022e4bd1a957c429d2dd2c3366860296fc"
+  },
+  "external_library_pins": {
+    "/opt/homebrew/Cellar/apr/1.7.6/lib/libapr-1.0.dylib": "0a10f4741a4c2560a095b48f2dcc3f3f0451c71f6cc353c5435236e3711202fb"
+  },
+  "unsupported": [
+    {
+      "benchmark": "binarytrees",
+      "language": "futhark",
+      "reason": "The array representation constructs and traverses all node values, but omits the required per-node heap/library-pool allocations. Futhark 0.27.1 has flattened array values and no recursive heap-reference data model or outgoing C allocator calls. A native tree executor would violate the language-source rule."
+    }
+  ],
+  "reused_after_allocation_audit": {
+    "snapshot": "snapshots/pre-allocation-audit/results/timings.json",
+    "snapshot_sha256": "2a926d1bfa43fc0f3989a53dc651282eed40d20f0a78e2401a4bb709c8de6c0e",
+    "at": "2026-10-10T02:21:12.647547+00:00",
+    "program_keys": [
+      "fannkuchredux:futhark-fannkuchredux",
+      "fannkuchredux:futhark-fannkuchredux-optimized",
+      "fannkuchredux:mech-control",
+      "fannkuchredux:mojo-fannkuchredux",
+      "fannkuchredux:mojo-fannkuchredux-optimized",
+      "fasta:futhark-fasta",
+      "fasta:futhark-fasta-compact",
+      "fasta:futhark-fasta-optimized",
+      "fasta:mech-control",
+      "fasta:mojo-fasta",
+      "fasta:mojo-fasta-compact",
+      "fasta:mojo-fasta-optimized",
+      "knucleotide:futhark-knucleotide",
+      "knucleotide:futhark-knucleotide-compact",
+      "knucleotide:futhark-knucleotide-optimized",
+      "knucleotide:mech-control",
+      "knucleotide:mojo-knucleotide",
+      "knucleotide:mojo-knucleotide-compact",
+      "knucleotide:mojo-knucleotide-optimized",
+      "mandelbrot:futhark-mandelbrot",
+      "mandelbrot:futhark-mandelbrot-optimized",
+      "mandelbrot:mech-control",
+      "mandelbrot:mojo-mandelbrot",
+      "mandelbrot:mojo-mandelbrot-compact",
+      "mandelbrot:mojo-mandelbrot-optimized",
+      "nbody:futhark-nbody",
+      "nbody:futhark-nbody-optimized",
+      "nbody:mech-control",
+      "nbody:mojo-nbody",
+      "nbody:mojo-nbody-compact",
+      "nbody:mojo-nbody-optimized",
+      "nbody:mojo-nbody-small",
+      "pidigits:futhark-pidigits",
+      "pidigits:futhark-pidigits-optimized",
+      "pidigits:mech-control",
+      "pidigits:mojo-pidigits",
+      "pidigits:mojo-pidigits-compact",
+      "pidigits:mojo-pidigits-optimized",
+      "regexredux:futhark-regexredux",
+      "regexredux:futhark-regexredux-compact",
+      "regexredux:futhark-regexredux-optimized",
+      "regexredux:mech-control",
+      "regexredux:mojo-regexredux",
+      "regexredux:mojo-regexredux-compact",
+      "regexredux:mojo-regexredux-optimized",
+      "revcomp:futhark-revcomp",
+      "revcomp:futhark-revcomp-compact",
+      "revcomp:futhark-revcomp-optimized",
+      "revcomp:mech-control",
+      "revcomp:mojo-revcomp",
+      "revcomp:mojo-revcomp-compact",
+      "revcomp:mojo-revcomp-optimized",
+      "spectralnorm:futhark-spectralnorm",
+      "spectralnorm:futhark-spectralnorm-optimized",
+      "spectralnorm:mech-control",
+      "spectralnorm:mojo-spectralnorm",
+      "spectralnorm:mojo-spectralnorm-small"
+    ],
+    "samples": 171,
+    "unchanged_sources_binaries_and_used_libraries_verified": true,
+    "reason": "All nine other workloads and their compiled binaries/support are unchanged. Five tree candidates fail the per-node allocation rule; they and the old tree control are removed. Corrected APR Mojo trees and current Mech control receive fresh full samples. Futhark tree allocation remains unsupported."
+  },
+  "finished_at": "2026-10-10T02:21:29.018085+00:00"
+}

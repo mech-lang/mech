@@ -1,0 +1,153 @@
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/binarytrees-odin-arena-compact:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000100001694 <_main::build>:
+100001694:     	sub	sp, sp, #80
+100001698:     	stp	x24, x23, [sp, #16]
+10000169c:     	stp	x22, x21, [sp, #32]
+1000016a0:     	stp	x20, x19, [sp, #48]
+1000016a4:     	stp	x29, x30, [sp, #64]
+1000016a8:     	mov	x19, x3
+1000016ac:     	mov	x20, x2
+1000016b0:     	mov	x21, x1
+1000016b4:     	mov	x22, x0
+1000016b8:     	stp	xzr, xzr, [sp]
+1000016bc:     	adrp	x4, 0x100026000 <_main::build+0xbc>
+1000016c0:     	add	x4, x4, #3552
+1000016c4:     	mov	x5, sp
+1000016c8:     	mov	w0, #16
+1000016cc:     	mov	w1, #8
+1000016d0:     	mov	x2, x21
+1000016d4:     	mov	x3, x20
+1000016d8:     	mov	x6, x19
+1000016dc:     	bl	0x100003cf4 <_runtime::mem_alloc_bytes>
+1000016e0:     	ldr	x8, [sp]
+1000016e4:     	tst	w0, #0xff
+1000016e8:     	csel	x23, x8, xzr, eq
+1000016ec:     	cbz	x23, 0x100001748 <_main::build+0xb4>
+1000016f0:     	cmp	x22, #0
+1000016f4:     	b.le	0x10000172c <_main::build+0x98>
+1000016f8:     	sub	x22, x22, #1
+1000016fc:     	mov	x0, x22
+100001700:     	mov	x1, x21
+100001704:     	mov	x2, x20
+100001708:     	mov	x3, x19
+10000170c:     	bl	0x100001694 <_main::build>
+100001710:     	str	x0, [x23]
+100001714:     	mov	x0, x22
+100001718:     	mov	x1, x21
+10000171c:     	mov	x2, x20
+100001720:     	mov	x3, x19
+100001724:     	bl	0x100001694 <_main::build>
+100001728:     	str	x0, [x23, #8]
+10000172c:     	mov	x0, x23
+100001730:     	ldp	x29, x30, [sp, #64]
+100001734:     	ldp	x20, x19, [sp, #48]
+100001738:     	ldp	x22, x21, [sp, #32]
+10000173c:     	ldp	x24, x23, [sp, #16]
+100001740:     	add	sp, sp, #80
+100001744:     	ret
+100001748:     	ldr	x8, [x19, #32]
+10000174c:     	adrp	x9, 0x100019000 <___floattidf+0x24>
+100001750:     	add	x9, x9, #1028
+100001754:     	cmp	x8, #0
+100001758:     	csel	x8, x9, x8, eq
+10000175c:     	adrp	x0, 0x10001e000 <___floattidf+0x48>
+100001760:     	add	x0, x0, #3168
+100001764:     	adrp	x2, 0x10001d000 <___floattidf+0x4c>
+100001768:     	add	x2, x2, #2536
+10000176c:     	adrp	x4, 0x100026000 <___floattidf+0x78>
+100001770:     	add	x4, x4, #3600
+100001774:     	mov	w1, #17
+100001778:     	mov	w3, #11
+10000177c:     	mov	x5, x19
+100001780:     	blr	x8
+100001784:     	brk	#0x1
+
+0000000100001a44 <_main::check>:
+100001a44:     	stp	x20, x19, [sp, #-32]!
+100001a48:     	stp	x29, x30, [sp, #16]
+100001a4c:     	cbz	x0, 0x100001a74 <_main::check+0x30>
+100001a50:     	mov	x19, x0
+100001a54:     	mov	x20, #0
+100001a58:     	ldr	x0, [x19]
+100001a5c:     	bl	0x100001a44 <_main::check>
+100001a60:     	ldr	x19, [x19, #8]
+100001a64:     	add	x8, x20, x0
+100001a68:     	add	x20, x8, #1
+100001a6c:     	cbnz	x19, 0x100001a58 <_main::check+0x14>
+100001a70:     	b	0x100001a78 <_main::check+0x34>
+100001a74:     	mov	x20, #0
+100001a78:     	mov	x0, x20
+100001a7c:     	ldp	x29, x30, [sp, #16]
+100001a80:     	ldp	x20, x19, [sp], #32
+100001a84:     	ret
+
+0000000100001a88 <_main::batch>:
+100001a88:     	sub	sp, sp, #144
+100001a8c:     	stp	x26, x25, [sp, #64]
+100001a90:     	stp	x24, x23, [sp, #80]
+100001a94:     	stp	x22, x21, [sp, #96]
+100001a98:     	stp	x20, x19, [sp, #112]
+100001a9c:     	stp	x29, x30, [sp, #128]
+100001aa0:     	mov	x19, x2
+100001aa4:     	mov	x20, x1
+100001aa8:     	mov	x21, x0
+100001aac:     	add	x8, x0, #1
+100001ab0:     	mov	x9, #-1
+100001ab4:     	lsl	x9, x9, x8
+100001ab8:     	mvn	x9, x9
+100001abc:     	lsl	x9, x9, #4
+100001ac0:     	mov	x10, #-16
+100001ac4:     	cmp	x8, #64
+100001ac8:     	csel	x23, x9, x10, lo
+100001acc:     	ldr	x2, [x2]
+100001ad0:     	ldr	x3, [x19, #8]
+100001ad4:     	stp	xzr, xzr, [sp, #48]
+100001ad8:     	adrp	x4, 0x100026000 <_main::batch+0xe4>
+100001adc:     	add	x4, x4, #3744
+100001ae0:     	add	x5, sp, #48
+100001ae4:     	mov	x0, x23
+100001ae8:     	mov	w1, #1
+100001aec:     	mov	x6, x19
+100001af0:     	bl	0x100003cf4 <_runtime::mem_alloc_bytes>
+100001af4:     	ldr	x22, [sp, #48]
+100001af8:     	cmp	x22, #0
+100001afc:     	csel	x23, xzr, x23, eq
+100001b00:     	stp	x22, x23, [sp, #8]
+100001b04:     	stp	xzr, xzr, [sp, #32]
+100001b08:     	str	xzr, [sp, #24]
+100001b0c:     	cmp	x20, #1
+100001b10:     	b.lt	0x100001b4c <_main::batch+0xc4>
+100001b14:     	mov	x24, #0
+100001b18:     	adrp	x25, 0x100006000 <_main::batch+0xa4>
+100001b1c:     	add	x25, x25, #448
+100001b20:     	add	x2, sp, #8
+100001b24:     	mov	x0, x21
+100001b28:     	mov	x1, x25
+100001b2c:     	mov	x3, x19
+100001b30:     	bl	0x100001694 <_main::build>
+100001b34:     	bl	0x100001a44 <_main::check>
+100001b38:     	add	x24, x0, x24
+100001b3c:     	str	xzr, [sp, #24]
+100001b40:     	subs	x20, x20, #1
+100001b44:     	b.ne	0x100001b20 <_main::batch+0x98>
+100001b48:     	b	0x100001b50 <_main::batch+0xc8>
+100001b4c:     	mov	x24, #0
+100001b50:     	ldp	x2, x3, [x19]
+100001b54:     	adrp	x4, 0x100026000 <_io::write_u64+0x5c>
+100001b58:     	add	x4, x4, #3792
+100001b5c:     	mov	x0, x22
+100001b60:     	mov	x1, x23
+100001b64:     	mov	x5, x19
+100001b68:     	bl	0x100005038 <_runtime::mem_free_with_size>
+100001b6c:     	mov	x0, x24
+100001b70:     	ldp	x29, x30, [sp, #128]
+100001b74:     	ldp	x20, x19, [sp, #112]
+100001b78:     	ldp	x22, x21, [sp, #96]
+100001b7c:     	ldp	x24, x23, [sp, #80]
+100001b80:     	ldp	x26, x25, [sp, #64]
+100001b84:     	add	sp, sp, #144
+100001b88:     	ret

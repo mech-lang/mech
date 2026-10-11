@@ -1,0 +1,970 @@
+{
+  "created_at": "2026-10-09T19:29:26.830581+00:00",
+  "machine": "Apple M3",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.2\nBuildVersion:\t\t25C56",
+  "full_steps": 50000000,
+  "sample_count": 5,
+  "energy_tolerance": 1e-08,
+  "protocol": "Sequential fresh processes, randomized complete rounds. Blocking wait for process exit, without timeout polling; a separate watchdog kills only a stalled process after 180 seconds. Stdout to regular files. Builds, warmups, validation, conditions checks, and hashing excluded from samples. All samples retained.",
+  "requested_workers": 8,
+  "environment": {
+    "GOMAXPROCS": "8",
+    "AMBER_THREADS": "8",
+    "OMP_NUM_THREADS": "8",
+    "OPENBLAS_NUM_THREADS": "8"
+  },
+  "reference": {
+    "source_sha256": "cc6ee052ae53281bac6e664d890acf64816806f2f677a8725bb08ec9b4e500ed",
+    "binary_sha256": "113a7afc89b55a9ea30beb14fe9b7c2d0805fbee52f46b6ce29530d549b31f0d",
+    "build": [
+      "clang",
+      "-O3",
+      "-ffp-contract=off",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gcc-3.c",
+      "-lm"
+    ]
+  },
+  "array_source_commit": "27ae402a948ec85c02125a64363e29585ed21e41",
+  "programs": {
+    "mech": {
+      "label": "Mech (AOT, compact)",
+      "normalized_loc": 32,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody.mec",
+      "source_sha256": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109",
+      "binary_sha256": "ea853a1d836b803ce9cf14631e6948b31375205849706f1697b52765e4189f56",
+      "runtime_commit": null,
+      "source_provenance": "verified v0.4 integration",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 1.118165791,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 2,
+          "seconds": 1.248950958,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 3,
+          "seconds": 1.123815792,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 4,
+          "seconds": 1.123992875,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 5,
+          "seconds": 1.122734208,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.035568875
+      },
+      "median_seconds": 1.123815792,
+      "sample_stdev_seconds": 0.05674429197846539,
+      "time_over_mech_compact": 1.0
+    },
+    "mech-optimized": {
+      "label": "Mech (AOT, optimized)",
+      "normalized_loc": 37,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/mech-optimized"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-pairwise-mass.mec",
+      "source_sha256": "5cd6698ea94a5c4430702631bc21243f1e6361c9b05199ef598115e544b01e45",
+      "binary_sha256": "107aeba5684de79eb1ed8f5907fb5d4ef47efc91d30c24d1e843b30f614ebabc",
+      "runtime_commit": null,
+      "source_provenance": "verified v0.4 integration",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 1.054695166,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 2,
+          "seconds": 1.055932709,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 3,
+          "seconds": 1.052734083,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 4,
+          "seconds": 1.058119125,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        },
+        {
+          "round": 5,
+          "seconds": 1.052590917,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 0
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.032956875
+      },
+      "median_seconds": 1.054695166,
+      "sample_stdev_seconds": 0.002316119306277147,
+      "time_over_mech_compact": 0.938494701273961
+    },
+    "k": {
+      "label": "K (Growler, compact/optimized)",
+      "normalized_loc": 36,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/growler",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.k"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.k",
+      "source_sha256": "2959dfe06e689010eda151dbd6aca7b3299b5fe12d0caabb263311830cd94fc1",
+      "binary_sha256": "87b25c5f8e9f0b62bdf2aefc04618c6df07554ea99778c534223ad326870a90d",
+      "runtime_commit": "48067b30de7c63f2d457727245ba34f7a714d1ce",
+      "source_provenance": "locally simplified initialization/reporting; original advance algorithm",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 23.183338375,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 2,
+          "seconds": 23.340015583,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 3,
+          "seconds": 23.383073708,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 4,
+          "seconds": 23.322430917,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        },
+        {
+          "round": 5,
+          "seconds": 23.398879958,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 2
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.459088667
+      },
+      "median_seconds": 23.340015583,
+      "sample_stdev_seconds": 0.08533666819064376,
+      "time_over_mech_compact": 20.76854209484182
+    },
+    "bqn": {
+      "label": "BQN (CBQN, compact)",
+      "normalized_loc": 26,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-compact.bqn"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-compact.bqn",
+      "source_sha256": "93dca70492c1923f6790d488200e65a84cbdfc72da4e5fdcca5a2bc65e89ba75",
+      "binary_sha256": "588c7a127cdf25001145f3f1a2e1b46b25f21df7d09b17f9c58a2b8bc7cb8b6d",
+      "runtime_commit": "c893d3e7828899a50150df03ad33c9052fa51d3c",
+      "source_provenance": "locally simplified initialization/reporting; original full-pair advance algorithm",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 31.446608,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 2,
+          "seconds": 31.362123083,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 3,
+          "seconds": 31.389509167,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 4,
+          "seconds": 31.506540958,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        },
+        {
+          "round": 5,
+          "seconds": 31.417152792,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 3
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.629136542
+      },
+      "median_seconds": 31.417152792,
+      "sample_stdev_seconds": 0.055652129375729255,
+      "time_over_mech_compact": 27.955785116783623
+    },
+    "bqn-optimized": {
+      "label": "BQN (CBQN, optimized)",
+      "normalized_loc": 39,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/binaries/bqn",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.bqn"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-optimized-short.bqn",
+      "source_sha256": "1f13dbbee9e775f6574c465944fa2bb14c41dcdbe9640c36daa7ca1701ea36b1",
+      "binary_sha256": "588c7a127cdf25001145f3f1a2e1b46b25f21df7d09b17f9c58a2b8bc7cb8b6d",
+      "runtime_commit": "c893d3e7828899a50150df03ad33c9052fa51d3c",
+      "source_provenance": "locally optimized pure BQN",
+      "samples": [
+        {
+          "round": 1,
+          "seconds": 18.81621,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        },
+        {
+          "round": 2,
+          "seconds": 18.940399291,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        },
+        {
+          "round": 3,
+          "seconds": 18.818422125,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        },
+        {
+          "round": 4,
+          "seconds": 18.840257208,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        },
+        {
+          "round": 5,
+          "seconds": 18.839977541,
+          "energy": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "stdout_sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "before": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "after": {
+            "ac_power": true,
+            "low_power_mode": 0,
+            "active_compilers": []
+          },
+          "monitor_checks": 1
+        }
+      ],
+      "warmup": {
+        "steps": 1000000,
+        "seconds": 0.381722292
+      },
+      "median_seconds": 18.839977541,
+      "sample_stdev_seconds": 0.051236664812462,
+      "time_over_mech_compact": 16.764293289980746
+    }
+  },
+  "verification": [
+    {
+      "program": "mech",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "k",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "bqn",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 1,
+      "energy": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2"
+    },
+    {
+      "program": "mech",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "k",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "bqn",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 2,
+      "energy": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "stdout_sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee"
+    },
+    {
+      "program": "mech",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "k",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "bqn",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 10,
+      "energy": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "stdout_sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5"
+    },
+    {
+      "program": "mech",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "k",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "bqn",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 1000,
+      "energy": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7"
+    },
+    {
+      "program": "mech",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "k",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "bqn",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 10000,
+      "energy": [
+        -0.169075164,
+        -0.169016441
+      ],
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648"
+    },
+    {
+      "program": "mech",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "mech-optimized",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "k",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "bqn",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    },
+    {
+      "program": "bqn-optimized",
+      "steps": 1000000,
+      "energy": [
+        -0.169075164,
+        -0.169086185
+      ],
+      "stdout_sha256": "3fb938822f2b87322baee13eea59620bab076cca553f7e01214dbc674bd09387"
+    }
+  ],
+  "status": "complete",
+  "sample_order": [
+    [
+      "bqn-optimized",
+      "bqn",
+      "mech",
+      "k",
+      "mech-optimized"
+    ],
+    [
+      "k",
+      "mech",
+      "mech-optimized",
+      "bqn",
+      "bqn-optimized"
+    ],
+    [
+      "mech",
+      "k",
+      "bqn",
+      "bqn-optimized",
+      "mech-optimized"
+    ],
+    [
+      "bqn-optimized",
+      "mech-optimized",
+      "bqn",
+      "k",
+      "mech"
+    ],
+    [
+      "mech-optimized",
+      "mech",
+      "bqn",
+      "bqn-optimized",
+      "k"
+    ]
+  ],
+  "selection_pilots": [
+    "candidate-pilots.json",
+    "candidate-pilots-2.json",
+    "candidate-pilots-3.json",
+    "compaction-pilots.json"
+  ],
+  "selection": "K retains the winning published cached-pair advance algorithm and simplifies setup/reporting. BQN compact retains the published full-pair advance algorithm with matrix data; BQN optimized retains the winning flat-pair advance algorithm with shared state and cached indices.",
+  "earlier_results": [
+    "results.json",
+    "comparison.json"
+  ],
+  "timer_change": "Earlier results used Python subprocess timeout polling. This confirmation uses blocking waits for every endpoint, including both Mech baselines; previous samples are preserved separately.",
+  "expected_full_energy": [
+    -0.169075164,
+    -0.169059907
+  ],
+  "finished_at": "2026-10-09T19:35:55.627984+00:00",
+  "final_conditions": {
+    "ac_power": true,
+    "low_power_mode": 0,
+    "active_compilers": []
+  }
+}

@@ -1,0 +1,138 @@
+# PODNAME: Alien::Build::Plugin::Extract
+# ABSTRACT: Extract Alien::Build plugins
+# VERSION
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::Build::Plugin::Extract - Extract Alien::Build plugins
+
+=head1 VERSION
+
+version 2.88
+
+=head1 SYNOPSIS
+
+ use alienfile
+ share {
+   plugin 'Extract' => 'tar.gz';
+ };
+
+=head1 DESCRIPTION
+
+Extract plugins extract packages that have been downloaded from the internet.
+Unless you are doing something unusual you will likely want to use the
+L<Alien::Build::Plugin::Extract::Negotiate> plugin to select the best
+Extract plugin available.
+
+=over 4
+
+=item L<Alien::Build::Plugin::Extract::ArchiveTar>
+
+Extract using C<tar>.  Typically also works with compressed tarballs like C<tar.gz>.
+
+=item L<Alien::Build::Plugin::Extract::ArchiveZip>
+
+Extract using L<Archive::Zip>.
+
+=item L<Alien::Build::Plugin::Extract::CommandLine>
+
+Extract using command line tools like C<tar> or C<unxip>.
+
+=item L<Alien::Build::Plugin::Extract::Directory>
+
+Extract a local directory.
+
+=item L<Alien::Build::Plugin::Extract::File>
+
+"Extract" a single file.
+
+=item L<Alien::Build::Plugin::Extract::Negotiate>
+
+Pick the best extract plugin based on the extension of the package archive.
+
+=back
+
+=head1 SEE ALSO
+
+L<Alien::Build>, L<Alien::Build::Plugin>
+
+=head1 AUTHOR
+
+Author: Graham Ollis E<lt>plicease@cpan.orgE<gt>
+
+Contributors:
+
+Diab Jerius (DJERIUS)
+
+Roy Storey (KIWIROY)
+
+Ilya Pavlov
+
+David Mertens (run4flat)
+
+Mark Nunberg (mordy, mnunberg)
+
+Christian Walde (Mithaldu)
+
+Brian Wightman (MidLifeXis)
+
+Zaki Mughal (zmughal)
+
+mohawk (mohawk2, ETJ)
+
+Vikas N Kumar (vikasnkumar)
+
+Flavio Poletti (polettix)
+
+Salvador Fandiño (salva)
+
+Gianni Ceccarelli (dakkar)
+
+Pavel Shaydo (zwon, trinitum)
+
+Kang-min Liu (劉康民, gugod)
+
+Nicholas Shipp (nshp)
+
+Juan Julián Merelo Guervós (JJ)
+
+Joel Berger (JBERGER)
+
+Petr Písař (ppisar)
+
+Lance Wicks (LANCEW)
+
+Ahmad Fatoum (a3f, ATHREEF)
+
+José Joaquín Atria (JJATRIA)
+
+Duke Leto (LETO)
+
+Shoichi Kaji (SKAJI)
+
+Shawn Laffan (SLAFFAN)
+
+Paul Evans (leonerd, PEVANS)
+
+Håkon Hægland (hakonhagland, HAKONH)
+
+nick nauwelaerts (INPHOBIA)
+
+Florian Weimer
+
+Marcel Telka (mtelka)
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011-2022 by Graham Ollis.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

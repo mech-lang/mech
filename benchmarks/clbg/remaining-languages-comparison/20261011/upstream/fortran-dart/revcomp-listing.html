@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="all">
+<meta name="description" content="reverse-complement - Which programs are fastest? — How fast programs read DNA sequences and write their reverse-complement.">
+<title>reverse-complement - Which programs are fastest? (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article,footer{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}.external{border-bottom:.1em dashed #333}p a,span{border-bottom: .1em solid #333;padding-bottom: .1em}.best{font-weight:bold}.message{font-size: .8em}img{display:block;width:100%}table{color:#333;margin:1.3em auto 0;text-align:right}tbody::after{content:"-";display:block;line-height:2.6em;visibility:hidden}td{border-bottom: .15em dotted #eee;padding: .7em 0 0 1em}td a, th a{display:block}th{font-weight:normal;padding:0 0 0 1em}td:first-child{padding-left:0}td:nth-child(2),th:nth-child(2){text-align:left}
+
+@media only screen{th:nth-child(1),td:nth-child(1),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7){display:none}}
+@media only screen and (min-width:23em){th:nth-child(1),td:nth-child(1){display:table-cell}}@media only screen and (min-width:37em){th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6){display:table-cell}li{display:inline-block}}@media only screen and (min-width:43em){th:nth-child(7),td:nth-child(7){display:table-cell}}@media only screen and (min-width:60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+
+<article>
+
+  <div>
+     <h1>reverse-complement sorted-by "secs"</h1>
+     <aside>
+        
+        <p><a href="../description/revcomp.html#revcomp">description</a>
+     </aside>
+  </div>
+  
+    
+  <section>
+    <div>
+      <h2></h2> 
+        <p>Always look at the source code.<p>(Lumpers and Splitters.)<p>Some of these programs are single-thread and some are multi-thread: compare "secs" and "cpu secs". Some of these programs are un-optimised and some are heavily optimised: sort-by "gz" source code size. <p>Some of these programs are "naked ffi" and some put that in a library. Some of these programs are high-level and some are hand-written vector instructions.<p>Always look at the source code.
+                
+      <h2></h2>
+    </div>
+    <table>
+      <tr>
+        <th>&nbsp;
+        <th colspan="5">*&nbsp;possible hand-written vector instructions or "unsafe"
+      <tr>
+        <th colspan='6'>&nbsp;
+      <tr>
+        <th>&#215;
+        <th>source
+        <th class="best">secs
+        <th><a href="./revcomp-mem.html"><span>mem</span></a>
+        <th><a href="./revcomp-gz.html"><span>gz</span></a>
+        <th><a href="./revcomp-cpu.html"><span>cpu secs</span></a>
+      <tr>
+        <td>1.0
+        <td><a href="../program/revcomp-gcc-7.html"><span>* <strong>C</strong>&nbsp;gcc&nbsp;#7</span></a>
+        <td class="best">0.44
+        <td>514,208
+        <td>1899
+        <td>0.59
+      <tr>
+        <td>1.1
+        <td><a href="../program/revcomp-gcc-9.html"><span>C gcc&nbsp;#9</span></a>
+        <td>0.49
+        <td>514,159
+        <td>1551
+        <td>0.77
+      <tr>
+        <td>1.2
+        <td><a href="../program/revcomp-rust-1.html"><span>* <strong>Rust</strong></span></a>
+        <td class="best">0.55
+        <td>512,963
+        <td>2762
+        <td>0.85
+      <tr>
+        <td>1.7
+        <td><a href="../program/revcomp-gpp-2.html"><span>* <strong>C++</strong>g++&nbsp;#2</span></a>
+        <td class="best">0.76
+        <td>514,101
+        <td>2099
+        <td>0.75
+      <tr>
+        <td>2.2
+        <td><a href="../program/revcomp-gcc-6.html"><span>C gcc&nbsp;#6</span></a>
+        <td>0.97
+        <td>693,969
+        <td>828
+        <td>1.36
+      <tr>
+        <td>2.3
+        <td><a href="../program/revcomp-rust-2.html"><span>Rust&nbsp;#2</span></a>
+        <td>1.01
+        <td>1,022,128
+        <td>1332
+        <td>1.60
+      <tr>
+        <td>2.3
+        <td><a href="../program/revcomp-rust-3.html"><span>Rust&nbsp;#3</span></a>
+        <td>1.02
+        <td>1,022,034
+        <td>1105
+        <td>1.71
+      <tr>
+        <td>2.3
+        <td><a href="../program/revcomp-chapel-9.html"><span><strong>Chapel</strong>&nbsp;#9</span></a>
+        <td class="best">1.03
+        <td>1,087,701
+        <td>1260
+        <td>2.83
+      <tr>
+        <td>2.4
+        <td><a href="../program/revcomp-gcc-2.html"><span>C gcc&nbsp;#2</span></a>
+        <td>1.07
+        <td>1,021,755
+        <td>757
+        <td>1.59
+      <tr>
+        <td>3.5
+        <td><a href="../program/revcomp-gcc-5.html"><span>C gcc&nbsp;#5</span></a>
+        <td>1.54
+        <td>1,020,662
+        <td>654
+        <td>1.53
+      <tr>
+        <td>3.6
+        <td><a href="../program/revcomp-csharpaot-7.html"><span><strong>C#</strong>&nbsp;naot&nbsp;#7</span></a>
+        <td class="best">1.56
+        <td>774,136
+        <td>1312
+        <td>4.10
+      <tr>
+        <td>4.1
+        <td><a href="../program/revcomp-julia-7.html"><span><strong>Julia</strong>&nbsp;#7</span></a>
+        <td class="best">1.79
+        <td>1,128,022
+        <td>531
+        <td>1.86
+      <tr>
+        <td>4.1
+        <td><a href="../program/revcomp-csharpaot-6.html"><span>C# naot&nbsp;#6</span></a>
+        <td>1.81
+        <td>1,029,992
+        <td>1627
+        <td>4.23
+      <tr>
+        <td>4.2
+        <td><a href="../program/revcomp-chapel-3.html"><span>Chapel&nbsp;#3</span></a>
+        <td>1.85
+        <td>1,669,710
+        <td>709
+        <td>3.19
+      <tr>
+        <td>4.2
+        <td><a href="../program/revcomp-chapel-5.html"><span>Chapel&nbsp;#5</span></a>
+        <td>1.86
+        <td>1,442,660
+        <td>554
+        <td>3.18
+      <tr>
+        <td>4.4
+        <td><a href="../program/revcomp-go-6.html"><span><strong>Go</strong>&nbsp;#6</span></a>
+        <td class="best">1.93
+        <td>1,277,608
+        <td>1340
+        <td>3.43
+      <tr>
+        <td>4.7
+        <td><a href="../program/revcomp-swift-1.html"><span>* <strong>Swift</strong></span></a>
+        <td class="best">2.05
+        <td>825,635
+        <td>1293
+        <td>2.47
+      <tr>
+        <td>4.8
+        <td><a href="../program/revcomp-julia-9.html"><span>Julia&nbsp;#9</span></a>
+        <td>2.12
+        <td>1,330,082
+        <td>456
+        <td>2.19
+      <tr>
+        <td>5.0
+        <td><a href="../program/revcomp-go-2.html"><span>Go&nbsp;#2</span></a>
+        <td>2.22
+        <td>822,211
+        <td>614
+        <td>2.32
+      <tr>
+        <td>5.2
+        <td><a href="../program/revcomp-ocaml-1.html"><span>* <strong>OCaml</strong></span></a>
+        <td class="best">2.27
+        <td>1,519,079
+        <td>1372
+        <td>5.14
+      <tr>
+        <td>5.2
+        <td><a href="../program/revcomp-ocaml-3.html"><span>OCaml&nbsp;#3</span></a>
+        <td>2.28
+        <td>1,518,805
+        <td>1361
+        <td>5.78
+      <tr>
+        <td>5.7
+        <td><a href="../program/revcomp-go-3.html"><span>Go&nbsp;#3</span></a>
+        <td>2.50
+        <td>821,985
+        <td>609
+        <td>2.60
+      <tr>
+        <td>6.2
+        <td><a href="../program/revcomp-csharpaot-5.html"><span>C# naot&nbsp;#5</span></a>
+        <td>2.74
+        <td>1,027,035
+        <td>1620
+        <td>3.73
+      <tr>
+        <td>6.9
+        <td><a href="../program/revcomp-gnat-2.html"><span><strong>Ada</strong>&nbsp;2012&nbsp;GNAT&nbsp;#2</span></a>
+        <td class="best">3.02
+        <td>845,664
+        <td>3285
+        <td>3.85
+      <tr>
+        <td>7.1
+        <td><a href="../program/revcomp-ghc-4.html"><span>* <strong>Haskell</strong>&nbsp;GHC&nbsp;#4</span></a>
+        <td class="best">3.11
+        <td>523,076
+        <td>1047
+        <td>3.19
+      <tr>
+        <td>7.6
+        <td><a href="../program/revcomp-ifx-1.html"><span>Intel&nbsp;<strong>Fortran</strong></span></a>
+        <td class="best">3.35
+        <td>1,012,519
+        <td>1026
+        <td>3.35
+      <tr>
+        <td>7.7
+        <td><a href="../program/revcomp-csharpaot-1.html"><span>C# naot</span></a>
+        <td>3.37
+        <td>637,997
+        <td>1130
+        <td>3.34
+      <tr>
+        <td>8.4
+        <td><a href="../program/revcomp-gcc-4.html"><span>* C gcc&nbsp;#4</span></a>
+        <td>3.70
+        <td>514,077
+        <td>716
+        <td>3.70
+      <tr>
+        <td>8.7
+        <td><a href="../program/revcomp-fpascal-2.html"><span>Free&nbsp;<strong>Pascal</strong>&nbsp;#2</span></a>
+        <td class="best">3.83
+        <td>538,989
+        <td>773
+        <td>3.83
+      <tr>
+        <td>9.2
+        <td><a href="../program/revcomp-graalvmaot-6.html"><span><strong>Java</strong>&nbsp;naot&nbsp;#6</span></a>
+        <td class="best">4.05
+        <td>2,063,376
+        <td>760
+        <td>4.72
+      <tr>
+        <td>9.5
+        <td><a href="../program/revcomp-python3-5.html"><span><strong>Python&nbsp;3</strong>&nbsp;#5</span></a>
+        <td class="best">4.18
+        <td>2,418,156
+        <td>960
+        <td>7.44
+      <tr>
+        <td>11
+        <td><a href="../program/revcomp-python3-3.html"><span>Python 3&nbsp;#3</span></a>
+        <td>4.96
+        <td>523,801
+        <td>803
+        <td>4.92
+      <tr>
+        <td>13
+        <td><a href="../program/revcomp-sbcl-1.html"><span><strong>Lisp</strong>&nbsp;SBCL</span></a>
+        <td class="best">5.51
+        <td>1,538,748
+        <td>911
+        <td>5.49
+      <tr>
+        <td>13
+        <td><a href="../program/revcomp-perl-4.html"><span><strong>Perl</strong>&nbsp;#4</span></a>
+        <td class="best">5.80
+        <td>1,026,572
+        <td>268
+        <td>5.78
+      <tr>
+        <td>14
+        <td><a href="../program/revcomp-ruby-4.html"><span><strong>Ruby</strong>&nbsp;#4</span></a>
+        <td class="best">6.01
+        <td>3,079,053
+        <td>608
+        <td>11.59
+      <tr>
+        <td>14
+        <td><a href="../program/revcomp-graalvmaot-5.html"><span>Java naot&nbsp;#5</span></a>
+        <td>6.03
+        <td>1,100,202
+        <td>1115
+        <td>6.02
+      <tr>
+        <td>15
+        <td><a href="../program/revcomp-ghc-2.html"><span>* Haskell GHC&nbsp;#2</span></a>
+        <td>6.55
+        <td>3,131,236
+        <td>998
+        <td>6.67
+      <tr>
+        <td>15
+        <td><a href="../program/revcomp-gpp-1.html"><span>C++ g++</span></a>
+        <td>6.55
+        <td>1,006,805
+        <td>599
+        <td>6.55
+      <tr>
+        <td>15
+        <td><a href="../program/revcomp-graalvmaot-4.html"><span>Java naot&nbsp;#4</span></a>
+        <td>6.75
+        <td>1,914,102
+        <td>656
+        <td>6.74
+      <tr>
+        <td>16
+        <td><a href="../program/revcomp-perl-3.html"><span>Perl&nbsp;#3</span></a>
+        <td>6.84
+        <td>1,535,848
+        <td>295
+        <td>6.82
+      <tr>
+        <td>17
+        <td><a href="../program/revcomp-python3-6.html"><span>Python 3&nbsp;#6</span></a>
+        <td>7.59
+        <td>2,795,930
+        <td>821
+        <td>11.03
+      <tr>
+        <td>19
+        <td><a href="../program/revcomp-php-3.html"><span><strong>PHP</strong>&nbsp;#3</span></a>
+        <td class="best">8.29
+        <td>1,821,659
+        <td>452
+        <td>12.58
+      <tr>
+        <td>19
+        <td><a href="../program/revcomp-ruby-3.html"><span>Ruby&nbsp;#3</span></a>
+        <td>8.46
+        <td>4,884,902
+        <td>490
+        <td>16.64
+      <tr>
+        <td>19
+        <td><a href="../program/revcomp-dartexe-5.html"><span><strong>Dart</strong>&nbsp;aot&nbsp;#5</span></a>
+        <td class="best">8.55
+        <td>2,049,769
+        <td>942
+        <td>11.57
+      <tr>
+        <td>20
+        <td><a href="../program/revcomp-csharpaot-3.html"><span>C# naot&nbsp;#3</span></a>
+        <td>8.76
+        <td>1,236,947
+        <td>934
+        <td>13.24
+      <tr>
+        <td>21
+        <td><a href="../program/revcomp-racket-2.html"><span>* <strong>Racket</strong>&nbsp;#2</span></a>
+        <td class="best">9.12
+        <td>854,643
+        <td>1038
+        <td>9.07
+      <tr>
+        <td>21
+        <td><a href="../program/revcomp-ocaml-2.html"><span>OCaml&nbsp;#2</span></a>
+        <td>9.29
+        <td>933,937
+        <td>426
+        <td>9.29
+      <tr>
+        <td>23
+        <td><a href="../program/revcomp-python3-2.html"><span>Python 3&nbsp;#2</span></a>
+        <td>10.09
+        <td>1,837,285
+        <td>440
+        <td>10.05
+      <tr>
+        <td>24
+        <td><a href="../program/revcomp-php-1.html"><span>PHP</span></a>
+        <td>10.35
+        <td>1,531,154
+        <td>323
+        <td>10.32
+      <tr>
+        <td>24
+        <td><a href="../program/revcomp-python3-1.html"><span>Python 3</span></a>
+        <td>10.43
+        <td>2,040,713
+        <td>484
+        <td>10.39
+      <tr>
+        <td>28
+        <td><a href="../program/revcomp-php-2.html"><span>PHP&nbsp;#2</span></a>
+        <td>12.31
+        <td>1,836,716
+        <td>288
+        <td>12.28
+      <tr>
+        <td>30
+        <td><a href="../program/revcomp-ruby-1.html"><span>Ruby</span></a>
+        <td>13.29
+        <td>6,528,086
+        <td>521
+        <td>25.84
+      <tr>
+        <td>31
+        <td><a href="../program/revcomp-python3-4.html"><span>Python 3&nbsp;#4</span></a>
+        <td>13.47
+        <td>4,109,324
+        <td>343
+        <td>13.43
+      <tr>
+        <td>31
+        <td><a href="../program/revcomp-ruby-5.html"><span>Ruby&nbsp;#5</span></a>
+        <td>13.63
+        <td>1,647,829
+        <td>301
+        <td>13.59
+      <tr>
+        <td>32
+        <td><a href="../program/revcomp-gnat-1.html"><span>Ada 2012 GNAT</span></a>
+        <td>14.15
+        <td>543,805
+        <td>943
+        <td>14.14
+      <tr>
+        <td>35
+        <td><a href="../program/revcomp-node-2.html"><span>* <strong>Node.js</strong>&nbsp;#2</span></a>
+        <td class="best">15.53
+        <td>763,048
+        <td>1228
+        <td>16.20
+      <tr>
+        <td>40
+        <td><a href="../program/revcomp-dartexe-8.html"><span>Dart aot&nbsp;#8</span></a>
+        <td>17.41
+        <td>1,029,464
+        <td>651
+        <td>18.11
+      <tr>
+        <td>44
+        <td><a href="../program/revcomp-ruby-2.html"><span>Ruby&nbsp;#2</span></a>
+        <td>19.54
+        <td>519,827
+        <td>272
+        <td>19.50
+      <tr>
+        <td>67
+        <td><a href="../program/revcomp-julia-2.html"><span>Julia&nbsp;#2</span></a>
+        <td>29.48
+        <td>2,259,153
+        <td>464
+        <td>29.93
+      <tr>
+        <td>86
+        <td><a href="../program/revcomp-gpp-5.html"><span>C++ g++&nbsp;#5</span></a>
+        <td>37.66
+        <td>792,846
+        <td>704
+        <td>37.65
+      <tr>
+        <td>88
+        <td><a href="../program/revcomp-lua-2.html"><span><strong>Lua</strong>&nbsp;#2</span></a>
+        <td class="best">38.73
+        <td>2,724,770
+        <td>560
+        <td>38.71
+      <tr>
+        <td>95
+        <td><a href="../program/revcomp-fsharpcore-1.html"><span><strong>F#</strong></span></a>
+        <td class="best">41.59
+        <td>3,088,159
+        <td>603
+        <td>42.79
+      <tr>
+        <td>97
+        <td><a href="../program/revcomp-racket-1.html"><span>Racket</span></a>
+        <td>42.51
+        <td>2,151,363
+        <td>560
+        <td>42.45
+      <tr>
+        <td>97
+        <td><a href="../program/revcomp-lua-5.html"><span>Lua&nbsp;#5</span></a>
+        <td>42.84
+        <td>2,227,048
+        <td>758
+        <td>42.82
+      <tr>
+        <td>103
+        <td><a href="../program/revcomp-ifx-2.html"><span>Intel Fortran&nbsp;#2</span></a>
+        <td>45.22
+        <td>790,307
+        <td>778
+        <td>45.21
+      <tr>
+        <td>105
+        <td><a href="../program/revcomp-lua-4.html"><span>Lua&nbsp;#4</span></a>
+        <td>46.06
+        <td>653,398
+        <td>600
+        <td>46.05
+      <tr>
+        <td>144
+        <td><a href="../program/revcomp-dartexe-3.html"><span>Dart aot&nbsp;#3</span></a>
+        <td>63.21
+        <td>6,642,663
+        <td>571
+        <td>71.63
+      <tr>
+        <td>235
+        <td><a href="../program/revcomp-dartexe-2.html"><span>Dart aot&nbsp;#2</span></a>
+        <td>103.48
+        <td>6,579,233
+        <td>575
+        <td>117.60
+      <tr>
+        <td>345
+        <td><a href="../program/revcomp-pharo-2.html"><span>Pharo&nbsp;<strong>Smalltalk</strong>&nbsp;#2</span></a>
+        <td class="best">151.89
+        <td>1,164,440
+        <td>724
+        <td>152.85
+      <tr>
+        <td>&nbsp;
+        <td><a href="../program/revcomp-pharo-1.html"><span>Pharo Smalltalk</span></a>
+        <td>9&nbsp;min
+        <td>2,728,526
+        <td>907
+        <td>9&nbsp;min
+      <tr>
+        <td>&nbsp;
+        <td><a href="../program/revcomp-erlang-1.html"><span><strong>Erlang</strong></span></a>
+        <td class="best">29&nbsp;min
+        <td>4,154,388
+        <td>1309
+        <td>32&nbsp;min
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-csharpaot-9.html"><span>C# naot&nbsp;#9</span></a>
+        <td class="message">Bad&nbsp;Output
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-gpp-6.html"><span>C++ g++&nbsp;#6</span></a>
+        <td class="message">Bad&nbsp;Output
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-gpp-3.html"><span>C++ g++&nbsp;#3</span></a>
+        <td class="message">Bad&nbsp;Output
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-dartexe-4.html"><span>Dart aot&nbsp;#4</span></a>
+        <td class="message">Bad&nbsp;Output
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-erlang-4.html"><span>Erlang&nbsp;#4</span></a>
+        <td class="message">Timed&nbsp;Out
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-erlang-3.html"><span>Erlang&nbsp;#3</span></a>
+        <td class="message">Timed&nbsp;Out
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-fsharpcore-4.html"><span>F#&nbsp;#4</span></a>
+        <td class="message">Timed&nbsp;Out
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-fsharpcore-5.html"><span>F#&nbsp;#5</span></a>
+        <td class="message">Timed&nbsp;Out
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-go-5.html"><span>Go&nbsp;#5</span></a>
+        <td class="message">Bad&nbsp;Output
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-go-1.html"><span>Go</span></a>
+        <td class="message">Empty
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-graalvmaot-3.html"><span>Java naot&nbsp;#3</span></a>
+        <td class="message">Bad&nbsp;Output
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-graalvmaot-7.html"><span>Java naot&nbsp;#7</span></a>
+        <td class="message">Bad&nbsp;Output
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-node-7.html"><span>Node.js&nbsp;#7</span></a>
+        <td class="message">Bad&nbsp;Output
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/revcomp-sbcl-2.html"><span>Lisp SBCL&nbsp;#2</span></a>
+        <td class="message">Timed&nbsp;Out
+        <td>
+        <td>
+        <td>
+      </table>
+      <nav>
+        <ul>
+          <li class="best">by secs
+          <li><a href="./revcomp-mem.html"><span>by mem</span></a>
+          <li><a href="./revcomp-gz.html"><span>by gz</span></a>
+          <li><a href="./revcomp-cpu.html"><span>by cpu secs</span></a>
+        </ul>
+      </nav>
+  </section>
+</article>
+<footer>
+    <p>Isaac Gouy. (n. d.). The Computer Language Benchmarks Game. <a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/">https://benchmarksgame-team.pages.debian.net/benchmarksgame/</a>
+    <p><br>&nbsp;
+</footer>
+
+
+
+
+
+

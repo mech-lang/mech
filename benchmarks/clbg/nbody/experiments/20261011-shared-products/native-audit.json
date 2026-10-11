@@ -1,0 +1,93 @@
+{
+  "programs": [
+    {
+      "id": "nbody-gpp-6-llvm-native",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-gpp-6.cpp",
+      "source_sha256": "38b69a7d86681bd080b5d3ebff0fb10c847598910f41569ce3188d8aba94808f",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/nbody-gpp-6-llvm-native",
+      "binary_sha256": "0c211e6499d12227c8d424673c1e8d123ae0eb301f9368addd6a2de7c192297b",
+      "static_instructions": 172,
+      "stack_loads": 11,
+      "stack_stores": 2,
+      "fused_instructions": 52,
+      "vector_sqrt_and_divide_each": 4,
+      "scalar_sqrt_and_divide_each": 2,
+      "product_order": "displacement * each mass, then magnitude"
+    },
+    {
+      "id": "chapel-3",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/upstream/nbody-chapel-3.chpl",
+      "source_sha256": "fb698d60d235ca97553a22a1c36156cc9ab9bfec6b4948017219de06b5bd070f",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+      "binary_sha256": "a57be549397679c1cf1ef9c4702a3e3de3863899ee11b328bc06d8e996772f7d",
+      "static_instructions": 204,
+      "stack_loads": 25,
+      "stack_stores": 9,
+      "fused_instructions": 44,
+      "vector_sqrt_and_divide_each": 4,
+      "scalar_sqrt_and_divide_each": 2,
+      "product_order": "displacement * each mass, then magnitude"
+    },
+    {
+      "id": "nbody-zig-2-faithful",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/nbody-zig-2-faithful.zig",
+      "source_sha256": "0d5f3bc93014a64edf43caa6a5e95619c8ce924e14bd30bd3598b329eb9e65e8",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/binaries/nbody-zig-2-faithful",
+      "binary_sha256": "8f1eb83ecca6beb33caca90237f07864c83d8050e566abba7abd1cd231990a66",
+      "static_instructions": 204,
+      "stack_loads": 8,
+      "stack_stores": 2,
+      "fused_instructions": 50,
+      "vector_sqrt_and_divide_each": 0,
+      "scalar_sqrt_and_divide_each": 10,
+      "product_order": "displacement * magnitude, then each mass"
+    },
+    {
+      "id": "pairwise-before",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/experiments/20261011-competitor-techniques/pairwise-before",
+      "binary_sha256": "d2120116edfc33d4a791bd751bff6db100661ef7836051419563da006d646a24",
+      "static_instructions": 282,
+      "stack_loads": 59,
+      "stack_stores": 21,
+      "fused_instructions": 65,
+      "vector_sqrt_and_divide_each": 5,
+      "scalar_sqrt_and_divide_each": 0,
+      "product_order": "displacement * each mass, then magnitude"
+    }
+  ],
+  "source_and_binary_pins_verified": true,
+  "work": "All ten interactions and five position updates each step; ordinary binary64 square root and division.",
+  "cpp_example": [
+    [
+      "0x100003854",
+      "displacement XY"
+    ],
+    [
+      "0x100003858\u20130x10000386c",
+      "norm, square root and distance cubed"
+    ],
+    [
+      "0x100003914",
+      "magnitude from division"
+    ],
+    [
+      "0x10000394c",
+      "displacement times mass_j"
+    ],
+    [
+      "0x100003958",
+      "FMA with magnitude into velocity_i"
+    ],
+    [
+      "0x100003964",
+      "displacement times mass_i"
+    ],
+    [
+      "0x100003968",
+      "FMA with magnitude into velocity_j"
+    ]
+  ],
+  "inference": "The gap involves SIMD packing, temporary lifetimes and scheduling; shared products alone were separately measured and did not improve the native time."
+}

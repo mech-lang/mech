@@ -1,0 +1,41 @@
+prepared mech-regexredux
+prepared mech-regexredux-async
+prepared regexredux-rust-7
+prepared regexredux-gcc-5
+prepared regexredux-gpp-6
+prepared regexredux-rust-3
+excluded regexredux-graalvmaot-4 exredux.java:213: error: cannot find symbol
+    public void duringSetup(DuringSetupAccess access) {
+                            ^
+  symbol:   class DuringSetupAccess
+  location: class ForeignRegistrationFeature
+4 errors
+
+prepared regexredux-python3-2
+prepared regexredux-php-1
+prepared regexredux-julia-5
+prepared regexredux-lua-1
+prepared regexredux-chapel-3
+prepared regexredux-gcc-2
+excluded regexredux-go-5 
+# regexredux-go-5
+./main.go:28:62: pcre.MustCompileJIT(pat, 0, pcre.STUDY_JIT_COMPILE).Matcher undefined (type pcre.Regexp has no field or method Matcher)
+
+prepared regexredux-chapel-2
+prepared regexredux-node-3
+prepared regexredux-julia-1
+prepared regexredux-node-4
+prepared regexredux-graalvmaot-6
+prepared regexredux-python3-1
+prepared regexredux-perl-3
+prepared regexredux-ruby-3
+excluded regexredux-racket-2 runtime not configured
+prepared regexredux-perl-1
+excluded regexredux-racket-1 runtime not configured
+prepared regexredux-ruby-9
+excluded regexredux-gpp-1 .codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/upstream/regexredux-gpp-1.cpp:9:10: fatal error: re2.h: No such file or directory
+    9 | #include <re2.h>
+      |          ^~~~~~~
+compilation terminated.
+
+prepared regexredux-lua-1-luajit

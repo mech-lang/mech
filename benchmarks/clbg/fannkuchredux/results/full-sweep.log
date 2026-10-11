@@ -1,0 +1,156 @@
+full output passed fannkuchredux-rust-4
+full output passed fannkuchredux-rust-4-panic-abort
+full output passed fannkuchredux-gcc-5-gcc
+full output passed fannkuchredux-gcc-5-llvm
+full output passed fannkuchredux-rust-5
+full output passed fannkuchredux-rust-5-panic-abort
+full output passed fannkuchredux-gpp-5-gcc
+full output passed fannkuchredux-gpp-5-llvm
+full output passed fannkuchredux-go-3
+full output passed fannkuchredux-chapel-2
+full output passed fannkuchredux-julia-2
+full output passed fannkuchredux-rust-2
+full output passed fannkuchredux-rust-2-panic-abort
+full output passed fannkuchredux-julia-3
+full output passed fannkuchredux-gcc-2-gcc
+full output passed fannkuchredux-gcc-2-llvm
+full output passed fannkuchredux-gpp-1-gcc
+full output passed fannkuchredux-gpp-1-llvm
+full output passed fannkuchredux-go-1
+full output passed fannkuchredux-go-2
+full output passed fannkuchredux-gcc-3-gcc
+full output passed fannkuchredux-gcc-3-llvm
+full output passed fannkuchredux-gpp-3-gcc
+full output passed fannkuchredux-gpp-3-llvm
+full output passed fannkuchredux-gcc-8-gcc
+full output passed fannkuchredux-gcc-8-llvm
+full output passed fannkuchredux-gcc-1-gcc
+full output passed fannkuchredux-gcc-1-llvm
+full output passed fannkuchredux-julia-1
+full output passed fannkuchredux-go-8
+full output passed fannkuchredux-graalvmaot-2
+full output passed mech-fannkuch-simd
+full output passed mech-fannkuch-scalar
+full output passed mech-fannkuch-coarse
+full output passed mech-fannkuch-paired
+full output passed fannkuchredux-graalvmaot-1
+full output passed fannkuchredux-graalvmaot-3
+full output passed fannkuchredux-graalvmaot-8
+full output passed mech-fannkuch-cached
+1/3 fannkuchredux-graalvmaot-8 39.251176
+1/3 fannkuchredux-julia-3 5.586157
+1/3 fannkuchredux-gcc-5-gcc 4.920372
+1/3 fannkuchredux-graalvmaot-1 5.732446
+1/3 fannkuchredux-gpp-5-llvm 6.817017
+1/3 fannkuchredux-gpp-1-gcc 5.712685
+1/3 fannkuchredux-rust-4-panic-abort 3.927439
+1/3 fannkuchredux-rust-2-panic-abort 10.175651
+1/3 mech-fannkuch-scalar 7.637806
+1/3 fannkuchredux-graalvmaot-3 31.741167
+1/3 fannkuchredux-graalvmaot-2 44.926055
+1/3 fannkuchredux-chapel-2 7.388709
+1/3 fannkuchredux-gcc-1-llvm 49.090212
+1/3 fannkuchredux-go-2 4.443581
+1/3 mech-fannkuch-cached 3.041069
+1/3 fannkuchredux-julia-1 29.417423
+1/3 fannkuchredux-rust-2 10.341007
+1/3 fannkuchredux-gcc-8-llvm 48.407163
+1/3 fannkuchredux-julia-2 4.711655
+1/3 fannkuchredux-gcc-8-gcc 51.743072
+1/3 fannkuchredux-gcc-3-llvm 41.484310
+1/3 fannkuchredux-rust-5-panic-abort 5.030193
+1/3 mech-fannkuch-coarse 3.823862
+1/3 fannkuchredux-go-8 42.740089
+1/3 fannkuchredux-gpp-3-llvm 40.198758
+1/3 mech-fannkuch-simd 4.083361
+1/3 fannkuchredux-gcc-3-gcc 42.699232
+1/3 fannkuchredux-rust-4 3.948706
+1/3 fannkuchredux-gcc-2-llvm 10.359782
+1/3 fannkuchredux-gcc-5-llvm 5.344271
+1/3 fannkuchredux-gcc-1-gcc 50.984169
+1/3 mech-fannkuch-paired 3.160056
+1/3 fannkuchredux-go-3 6.938860
+1/3 fannkuchredux-gpp-1-llvm 5.777514
+1/3 fannkuchredux-gpp-5-gcc 7.296651
+1/3 fannkuchredux-go-1 6.982896
+1/3 fannkuchredux-rust-5 4.967223
+1/3 fannkuchredux-gpp-3-gcc 43.200180
+1/3 fannkuchredux-gcc-2-gcc 10.882680
+2/3 fannkuchredux-gpp-1-llvm 5.753624
+2/3 fannkuchredux-chapel-2 7.195214
+2/3 fannkuchredux-gcc-2-llvm 10.462233
+2/3 fannkuchredux-gcc-8-gcc 51.745544
+2/3 fannkuchredux-gcc-5-llvm 5.362497
+2/3 fannkuchredux-gpp-3-gcc 43.176833
+2/3 fannkuchredux-julia-3 5.553052
+2/3 fannkuchredux-go-2 4.687033
+2/3 fannkuchredux-rust-4 3.909285
+2/3 fannkuchredux-rust-5-panic-abort 4.984890
+2/3 fannkuchredux-rust-2 10.110908
+2/3 fannkuchredux-go-3 6.918711
+2/3 fannkuchredux-gcc-8-llvm 48.416634
+2/3 fannkuchredux-graalvmaot-3 31.769074
+2/3 mech-fannkuch-coarse 3.944416
+2/3 mech-fannkuch-simd 4.131918
+2/3 fannkuchredux-graalvmaot-1 5.876948
+2/3 fannkuchredux-rust-5 4.915009
+2/3 fannkuchredux-gcc-1-llvm 49.070218
+2/3 fannkuchredux-gcc-3-llvm 41.498365
+2/3 fannkuchredux-rust-2-panic-abort 10.278455
+2/3 fannkuchredux-gpp-1-gcc 5.672398
+2/3 fannkuchredux-gpp-5-gcc 7.101143
+2/3 fannkuchredux-gcc-2-gcc 11.108782
+2/3 fannkuchredux-gpp-3-llvm 40.207579
+2/3 fannkuchredux-gcc-1-gcc 51.022140
+2/3 fannkuchredux-graalvmaot-2 38.143921
+2/3 fannkuchredux-gcc-3-gcc 42.704940
+2/3 fannkuchredux-julia-2 4.802296
+2/3 fannkuchredux-julia-1 29.429445
+2/3 mech-fannkuch-paired 3.124052
+2/3 fannkuchredux-go-1 6.922549
+2/3 fannkuchredux-gpp-5-llvm 6.759973
+2/3 fannkuchredux-go-8 42.733603
+2/3 fannkuchredux-graalvmaot-8 40.314077
+2/3 mech-fannkuch-scalar 8.128824
+2/3 mech-fannkuch-cached 3.114637
+2/3 fannkuchredux-rust-4-panic-abort 3.933644
+2/3 fannkuchredux-gcc-5-gcc 5.356163
+3/3 fannkuchredux-julia-1 29.415892
+3/3 fannkuchredux-gcc-3-llvm 41.493237
+3/3 fannkuchredux-gpp-5-llvm 7.021620
+3/3 fannkuchredux-chapel-2 7.232484
+3/3 mech-fannkuch-coarse 4.037295
+3/3 fannkuchredux-gpp-1-gcc 5.857040
+3/3 fannkuchredux-rust-2 10.186379
+3/3 fannkuchredux-gcc-8-gcc 51.767276
+3/3 fannkuchredux-graalvmaot-8 39.367564
+3/3 mech-fannkuch-cached 3.069732
+3/3 fannkuchredux-gpp-3-llvm 40.198722
+3/3 fannkuchredux-go-2 4.481759
+3/3 fannkuchredux-gcc-1-llvm 49.094896
+3/3 fannkuchredux-rust-5-panic-abort 4.923001
+3/3 mech-fannkuch-paired 3.253704
+3/3 fannkuchredux-go-3 6.952389
+3/3 fannkuchredux-gpp-5-gcc 7.109870
+3/3 fannkuchredux-gcc-5-llvm 5.156498
+3/3 mech-fannkuch-simd 3.902056
+3/3 fannkuchredux-gcc-2-llvm 10.456142
+3/3 fannkuchredux-graalvmaot-1 5.664633
+3/3 fannkuchredux-graalvmaot-3 31.668971
+3/3 fannkuchredux-julia-2 4.925223
+3/3 fannkuchredux-rust-5 5.012944
+3/3 fannkuchredux-gcc-3-gcc 42.658800
+3/3 fannkuchredux-rust-4 3.868236
+3/3 fannkuchredux-rust-4-panic-abort 3.902947
+3/3 mech-fannkuch-scalar 8.043361
+3/3 fannkuchredux-julia-3 5.507737
+3/3 fannkuchredux-gpp-1-llvm 5.900975
+3/3 fannkuchredux-gcc-5-gcc 5.051548
+3/3 fannkuchredux-gcc-1-gcc 51.073008
+3/3 fannkuchredux-gcc-8-llvm 48.406337
+3/3 fannkuchredux-go-1 7.117605
+3/3 fannkuchredux-rust-2-panic-abort 10.096239
+3/3 fannkuchredux-graalvmaot-2 45.085518
+3/3 fannkuchredux-go-8 42.740678
+3/3 fannkuchredux-gcc-2-gcc 10.873946
+3/3 fannkuchredux-gpp-3-gcc 43.475979

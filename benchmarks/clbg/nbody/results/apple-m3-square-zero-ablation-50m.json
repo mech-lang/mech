@@ -1,0 +1,515 @@
+{
+  "created_at": "2026-10-07T11:35:40.572546+00:00",
+  "steps": 50000000,
+  "samples": 5,
+  "hardware": {
+    "cpu": "Apple M3"
+  },
+  "compiler_snapshot": {
+    "path": "apple-m3-square-zero-ablation-50m.compiler.tar.gz",
+    "sha256": "1b3c079cd08d02c124403cf78f53329caacb4646c547d48efd54beb2f7c2daca",
+    "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+    "note": "Exact compiler/runtime/source/script snapshot; apply on this v0.4 base. Pinned competitor sources are separately hashed in manifest.json."
+  },
+  "compiler_sha256": {
+    "hosts/gpu/Cargo.toml": "0feeb6388428311681cfa0c193c9f92f5a0e96f46905ffa15ead56f10a01ad9f",
+    "hosts/gpu/src/batched/aot.rs": "b236c1b9203d2aa478e415d0ad90a15baf7881a8a1d83d3c6eb2f412a89e6033",
+    "hosts/gpu/src/batched/jit.rs": "cfa21a7582792fbc43d03137bba3196beea03d9207069925306ad6448dd0a77f",
+    "hosts/gpu/src/bin/mech-native-f64.rs": "8b63d8f2602e5b0cff3ab5f0a2f0724830c8a0e37313a914185e1b40a0456720",
+    "hosts/gpu/src/fused_f64/mod.rs": "a5201bdae97de02b37870fd0b72c6d1fbfd09d593243d7c0216f1119b61d18a0",
+    "hosts/gpu/src/fused_f64/native.rs": "2d547f7de59e87a53cc727d854cd2400435ffaf418f113c26841975218b9f163",
+    "hosts/gpu/src/fused_f64/runner.c": "1d7a025984152fe2a5c44763794e16de7fd9df30be28008edfc7bde2a4f9231d",
+    "hosts/gpu/src/fused_f64/runner.rs": "8dab3f068a05df75b8fede7b699aa8dff110404a5b554ef072be5a9d0e155901"
+  },
+  "sample_order": [
+    [
+      "square-zero-sqrt-fma",
+      "chapel-3",
+      "rust-3",
+      "square-zero-pairwise-fma",
+      "baseline-sqrt-fma",
+      "baseline-pairwise-fma"
+    ],
+    [
+      "chapel-3",
+      "rust-3",
+      "square-zero-pairwise-fma",
+      "square-zero-sqrt-fma",
+      "baseline-sqrt-fma",
+      "baseline-pairwise-fma"
+    ],
+    [
+      "baseline-pairwise-fma",
+      "square-zero-sqrt-fma",
+      "rust-3",
+      "chapel-3",
+      "baseline-sqrt-fma",
+      "square-zero-pairwise-fma"
+    ],
+    [
+      "baseline-sqrt-fma",
+      "chapel-3",
+      "square-zero-pairwise-fma",
+      "rust-3",
+      "square-zero-sqrt-fma",
+      "baseline-pairwise-fma"
+    ],
+    [
+      "square-zero-pairwise-fma",
+      "rust-3",
+      "baseline-pairwise-fma",
+      "chapel-3",
+      "square-zero-sqrt-fma",
+      "baseline-sqrt-fma"
+    ]
+  ],
+  "protocol": "One discarded warmup, shuffled sequential fresh-process samples, AOT builds excluded; every energy checked. Same pinned binaries within a run.",
+  "programs": [
+    {
+      "id": "baseline-sqrt-fma",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma",
+        "50000000"
+      ],
+      "source": {
+        "paths": [
+          "nbody.mec"
+        ],
+        "sha256": {
+          "nbody.mec": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1364,
+        "gzip1_bytes": 735
+      },
+      "binary_sha256": "1c09e43aaf335accbdbc5e91e2bc7e36f07abf444ea4ceaf712f6fc4f8457141",
+      "native_object_sha256": "4c1452617d12a6398f5ae8d80d7729fff657eb95eb0aa8a55bc6f32c2359b3f2",
+      "compiler_snapshot": {
+        "path": "apple-m3-square-zero-ablation-50m.compiler.tar.gz",
+        "sha256": "1b3c079cd08d02c124403cf78f53329caacb4646c547d48efd54beb2f7c2daca",
+        "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+        "note": "Exact compiler/runtime/source/script snapshot; apply on this v0.4 base. Pinned competitor sources are separately hashed in manifest.json."
+      },
+      "generation_command_template": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command_template": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma"
+      ],
+      "codegen": {
+        "disassembly_path": "apple-m3-square-zero-ablation-50m.baseline-sqrt-fma.disassembly.txt",
+        "loop_start_hex": "0x100003488",
+        "loop_backedge_hex": "0x10000396c",
+        "static_instructions": 314,
+        "stack_load_instructions": 89,
+        "stack_store_instructions": 33,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        2.02127425,
+        2.030234542,
+        2.029235041,
+        2.026806084,
+        2.029740417
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.005329
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.013709
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.012756
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.010087
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.013124
+        }
+      ],
+      "median_seconds": 2.029235041,
+      "median_kernel_seconds": 2.012756
+    },
+    {
+      "id": "square-zero-sqrt-fma",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/square-zero-sqrt-fma",
+        "50000000"
+      ],
+      "source": {
+        "paths": [
+          "nbody.mec"
+        ],
+        "sha256": {
+          "nbody.mec": "7d10f0caccf215d5835262236bb31e9a0d97dc8fe11fbe8bf14919fd2a316109"
+        },
+        "physical_lines": 35,
+        "nonblank_noncomment_lines": 32,
+        "normalized_bytes": 1364,
+        "gzip1_bytes": 735
+      },
+      "binary_sha256": "fa03c0437fab382dc1fa752fd2d96fe86584a7504fbc56911fd21206ce11e581",
+      "native_object_sha256": "d963924ac5cc09b3f94af0778e558b06b6d08eda08ebfbb430b72a30e829919e",
+      "compiler_snapshot": {
+        "path": "apple-m3-square-zero-enabled-50m.compiler.tar.gz",
+        "sha256": "43305c109f262f5353fedb747fd8be418be13f9ae1c440b439dcdcb6f9e7cbcb"
+      },
+      "generation_command_template": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command_template": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-sqrt-fma"
+      ],
+      "codegen": {
+        "disassembly_path": "apple-m3-square-zero-ablation-50m.square-zero-sqrt-fma.disassembly.txt",
+        "loop_start_hex": "0x1000034a4",
+        "loop_backedge_hex": "0x100003968",
+        "static_instructions": 306,
+        "stack_load_instructions": 84,
+        "stack_store_instructions": 31,
+        "fused_instructions": 60,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        2.080041709,
+        2.066077041,
+        2.068189459,
+        2.066895792,
+        2.066220333
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.063009
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.049744
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.052839
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.05034
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.049543
+        }
+      ],
+      "median_seconds": 2.066895792,
+      "median_kernel_seconds": 2.05034
+    },
+    {
+      "id": "baseline-pairwise-fma",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma",
+        "50000000"
+      ],
+      "source": {
+        "paths": [
+          "nbody-pairwise.mec"
+        ],
+        "sha256": {
+          "nbody-pairwise.mec": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728"
+        },
+        "physical_lines": 41,
+        "nonblank_noncomment_lines": 38,
+        "normalized_bytes": 1728,
+        "gzip1_bytes": 877
+      },
+      "binary_sha256": "30daa43bba8aca01866a5d4e8a1d77697fd6444491bc2c3bad8bdb4868c46d4a",
+      "native_object_sha256": "527db7887fdadbb1a29818fdf98f59308f1abdfb4d387883741aad827c7467ff",
+      "compiler_snapshot": {
+        "path": "apple-m3-square-zero-ablation-50m.compiler.tar.gz",
+        "sha256": "1b3c079cd08d02c124403cf78f53329caacb4646c547d48efd54beb2f7c2daca",
+        "base_commit": "c4777b7015fe8ff47fdfa48d18606c49aace7d97",
+        "note": "Exact compiler/runtime/source/script snapshot; apply on this v0.4 base. Pinned competitor sources are separately hashed in manifest.json."
+      },
+      "generation_command_template": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command_template": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma"
+      ],
+      "codegen": {
+        "disassembly_path": "apple-m3-square-zero-ablation-50m.baseline-pairwise-fma.disassembly.txt",
+        "loop_start_hex": "0x10000358c",
+        "loop_backedge_hex": "0x100003974",
+        "static_instructions": 251,
+        "stack_load_instructions": 58,
+        "stack_store_instructions": 22,
+        "fused_instructions": 65,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        1.983439333,
+        1.981059791,
+        1.979275875,
+        1.976285708,
+        1.983903833
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.96796
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.964625
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.965776
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.959526
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.966859
+        }
+      ],
+      "median_seconds": 1.981059791,
+      "median_kernel_seconds": 1.965776
+    },
+    {
+      "id": "square-zero-pairwise-fma",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/square-zero-pairwise-fma",
+        "50000000"
+      ],
+      "source": {
+        "paths": [
+          "nbody-pairwise.mec"
+        ],
+        "sha256": {
+          "nbody-pairwise.mec": "8c95b454f5f7112d27f4ba15dae5304fd3639436cb8b62a0b6142b9669aa1728"
+        },
+        "physical_lines": 41,
+        "nonblank_noncomment_lines": 38,
+        "normalized_bytes": 1728,
+        "gzip1_bytes": 877
+      },
+      "binary_sha256": "e6f904eb8cb3278292edc7f931631b48bfc2c683626781314824585307ae044c",
+      "native_object_sha256": "ce5199b4a139d31b3d22d6ceaabc612f856869c8d1430f304cd4eb0c8519e8dc",
+      "compiler_snapshot": {
+        "path": "apple-m3-square-zero-enabled-50m.compiler.tar.gz",
+        "sha256": "43305c109f262f5353fedb747fd8be418be13f9ae1c440b439dcdcb6f9e7cbcb"
+      },
+      "generation_command_template": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/mech-driver/target/release/mech-clbg-nbody-compiled",
+        "0",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/nbody-pairwise.mec",
+        "emit-cranelift-simd",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma.o",
+        "--output",
+        "energy",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "compile_command_template": [
+        "/opt/homebrew/opt/llvm@22/bin/clang-22",
+        "-O3",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma.c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma.o",
+        "-lm",
+        "-o",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/square-zero-comparison/baseline-pairwise-fma"
+      ],
+      "codegen": {
+        "disassembly_path": "apple-m3-square-zero-ablation-50m.square-zero-pairwise-fma.disassembly.txt",
+        "loop_start_hex": "0x1000035a8",
+        "loop_backedge_hex": "0x100003970",
+        "static_instructions": 243,
+        "stack_load_instructions": 51,
+        "stack_store_instructions": 22,
+        "fused_instructions": 60,
+        "sqrt_instructions": 5,
+        "divide_instructions": 5,
+        "loop_calls": []
+      },
+      "samples_seconds": [
+        2.008827167,
+        2.009419,
+        2.008211542,
+        2.047091916,
+        2.011419791
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "timing_diagnostics": [
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.99194
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.992296
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.991846
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 2.029821
+        },
+        {
+          "prepare_seconds": 0,
+          "kernel_seconds": 1.993136
+        }
+      ],
+      "median_seconds": 2.009419,
+      "median_kernel_seconds": 1.992296
+    },
+    {
+      "id": "rust-3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-rust-reference",
+        "50000000"
+      ],
+      "binary_sha256": "f22eda84ff2640cc3830589c20739917f8282474af30b5184e8202cfe1941d6b",
+      "provenance": "Unchanged source and build commands in apple-m3-chapel-tricks-square-zero-pilot-5m.json",
+      "samples_seconds": [
+        2.004028541,
+        1.956077333,
+        1.955907709,
+        1.987151542,
+        1.956715584
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "timing_diagnostics": [],
+      "median_seconds": 1.956715584
+    },
+    {
+      "id": "chapel-3",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/.build/chapel-tricks-chapel-reference",
+        "--n=50000000"
+      ],
+      "binary_sha256": "4b24bbfaaa525a514933be0e7cfd0baa145ac53f5b59a6618faf8f6f2c46036c",
+      "provenance": "Unchanged source and build commands in apple-m3-chapel-tricks-square-zero-pilot-5m.json",
+      "samples_seconds": [
+        1.70282575,
+        1.702088792,
+        1.707874916,
+        1.703356667,
+        1.70500125
+      ],
+      "samples_stdout": [
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n",
+        "-0.169075164\n-0.169059907\n"
+      ],
+      "timing_diagnostics": [],
+      "median_seconds": 1.703356667
+    }
+  ]
+}

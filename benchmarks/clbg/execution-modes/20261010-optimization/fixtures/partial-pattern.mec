@@ -1,0 +1,3 @@
+f(x<u64>) => <u64>
+  | 1 => 9.
+io/print("{}\n", f(io/argument-u64(1)))

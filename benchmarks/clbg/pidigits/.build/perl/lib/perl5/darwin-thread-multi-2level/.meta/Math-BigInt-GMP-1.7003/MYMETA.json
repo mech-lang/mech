@@ -1,0 +1,55 @@
+{
+   "abstract" : "unknown",
+   "author" : [
+      "Peter John Acklam <pjacklam@gmail.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "ExtUtils::MakeMaker version 7.72, CPAN::Meta::Converter version 2.150010, CPAN::Meta::Converter version 2.150013",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "Math-BigInt-GMP",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "inc"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {}
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.58"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Carp" : "1.22",
+            "Math::BigInt" : "2.005001",
+            "XSLoader" : "0.02",
+            "perl" : "5.008"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test::More" : "0.88"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/pjacklam/p5-Math-BigInt-GMP.git",
+         "web" : "https://github.com/pjacklam/p5-Math-BigInt-GMP"
+      }
+   },
+   "version" : "1.7003",
+   "x_serialization_backend" : "JSON::PP version 4.16"
+}

@@ -1,0 +1,104 @@
+{
+  "programs": [
+    {
+      "key": "fannkuchredux:fannkuchredux-odin-compact",
+      "id": "fannkuchredux-odin-compact",
+      "benchmark": "fannkuchredux",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fannkuchredux-odin-compact.odin",
+      "source_sha256": "ee7b5e4ca3420f12e70d2f07dfa35b6b8346b8cd331edc6c6b6209dae58b7b92",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general libraries; application sequencing, helpers, and FFI bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fannkuchredux.html",
+      "libraries": []
+    },
+    {
+      "key": "fasta:fasta-odin-linear",
+      "id": "fasta-odin-linear",
+      "benchmark": "fasta",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fasta-odin-linear.odin",
+      "source_sha256": "1c5d1a402fad19e60e77301ba1c07b6b665b14db98b305efc4bc50b6a010a5a7",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general libraries; application sequencing, helpers, and FFI bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "libraries": []
+    },
+    {
+      "key": "fasta:fasta-odin-binary",
+      "id": "fasta-odin-binary",
+      "benchmark": "fasta",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/fasta-odin-binary.odin",
+      "source_sha256": "d0ccb4f1e56f490491586541224ecfbece9edf0d883745a47ef9eb9c29e471ce",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general libraries; application sequencing, helpers, and FFI bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "libraries": []
+    },
+    {
+      "key": "knucleotide:knucleotide-odin-growable-maps",
+      "id": "knucleotide-odin-growable-maps",
+      "benchmark": "knucleotide",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/knucleotide-odin-growable-maps.odin",
+      "source_sha256": "fdc5eabad076f87e5b1dd6bd795487e984e80d9927819074e7bcbaaa1f7d9a98",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general libraries; application sequencing, helpers, and FFI bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "libraries": []
+    },
+    {
+      "key": "revcomp:revcomp-odin-compact",
+      "id": "revcomp-odin-compact",
+      "benchmark": "revcomp",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/revcomp-odin-compact.odin",
+      "source_sha256": "aad84d6480fff1ae0c22f0223f73995f204d013b603f3a58654eb1d33cff0bf1",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general libraries; application sequencing, helpers, and FFI bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "libraries": []
+    },
+    {
+      "key": "regexredux:regexredux-odin-stdlib",
+      "id": "regexredux-odin-stdlib",
+      "benchmark": "regexredux",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/regexredux-odin-stdlib.odin",
+      "source_sha256": "179975ae5d243f8109ece5c4dce94a8f06fb83772e007cb21afb57f664082b1b",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general libraries; application sequencing, helpers, and FFI bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "libraries": []
+    },
+    {
+      "key": "pidigits:pidigits-odin-gmp",
+      "id": "pidigits-odin-gmp",
+      "benchmark": "pidigits",
+      "language": "odin",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/zig-odin-roc-elm-comparison/20261010/sources/pidigits-odin-gmp.odin",
+      "source_sha256": "376714974cc38e30b3eadb87afe6a642d814a9ac588339b10c7a5cced8501f5f",
+      "local_adaptation": true,
+      "adaptations": [
+        "Locally authored faithful workload using only general libraries; application sequencing, helpers, and FFI bindings count toward LOC."
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+      "libraries": [
+        "gmp"
+      ]
+    }
+  ]
+}

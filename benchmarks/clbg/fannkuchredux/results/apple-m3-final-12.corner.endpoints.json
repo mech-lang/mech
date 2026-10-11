@@ -1,0 +1,64 @@
+{
+  "source_report": "apple-m3-final-12.json",
+  "metric": "gzip1_bytes",
+  "time_baseline_seconds": 2.46061375,
+  "size_baseline": 423,
+  "languages": {
+    "c": {
+      "fastest": "fannkuchredux-gcc-5-gcc",
+      "smallest": "fannkuchredux-gcc-8-llvm",
+      "time_cost": 9.481159913723188,
+      "size_cost": 1.9189765458422174,
+      "log2_line_length": 3.3785605483250616
+    },
+    "chapel": {
+      "fastest": "fannkuchredux-chapel-2",
+      "smallest": "fannkuchredux-chapel-2",
+      "time_cost": 1.0,
+      "size_cost": 1.0,
+      "log2_line_length": 0.0
+    },
+    "cpp": {
+      "fastest": "fannkuchredux-gpp-1-gcc",
+      "smallest": "fannkuchredux-gpp-3-llvm",
+      "time_cost": 6.884362808564274,
+      "size_cost": 1.7921635434412266,
+      "log2_line_length": 2.9078085220992937
+    },
+    "go": {
+      "fastest": "fannkuchredux-go-2",
+      "smallest": "fannkuchredux-go-8",
+      "time_cost": 9.335741466464137,
+      "size_cost": 1.8353909465020577,
+      "log2_line_length": 3.339721672900319
+    },
+    "java": {
+      "fastest": "fannkuchredux-graalvmaot-1",
+      "smallest": "fannkuchredux-graalvmaot-8",
+      "time_cost": 6.767688699072944,
+      "size_cost": 2.540755467196819,
+      "log2_line_length": 3.069192161513809
+    },
+    "julia": {
+      "fastest": "fannkuchredux-julia-2",
+      "smallest": "fannkuchredux-julia-1",
+      "time_cost": 6.201599561661716,
+      "size_cost": 2.4988179669030735,
+      "log2_line_length": 2.945587517645257
+    },
+    "mech": {
+      "fastest": "mech-fannkuch-even",
+      "smallest": "mech-fannkuch-default",
+      "time_cost": 1.4155775728674,
+      "size_cost": 1.4126611957796014,
+      "log2_line_length": 0.7069729521649166
+    },
+    "rust": {
+      "fastest": "fannkuchredux-rust6-neon-lto",
+      "smallest": "fannkuchredux-rust-5",
+      "time_cost": 2.018692575785208,
+      "size_cost": 1.245019920318725,
+      "log2_line_length": 1.0615956375839337
+    }
+  }
+}

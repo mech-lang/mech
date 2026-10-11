@@ -1,0 +1,47 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.83.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It will check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA256 88b19ff686d7fe79f6e4b6e120408cab2c6e0309afb78b902f7009c466b3703e COPYING.LIB
+SHA256 5ce4515dcee9c00f38f20eb897864ef75edc6149cc388db34cbf3669d3add2b9 Changes
+SHA256 ed3a2101a49c16ba70362b7f62f58b927dd24d428f220dfa26f4d4240af32276 GMP.xs
+SHA256 6a4f87f2d3c779702beceb3be73a1f5121e6215ba956af6abfde2337623216d3 INSTALL
+SHA256 bf4f18c29045b9cd4202185b35f6bc8e3bd67ed477ce55eba4e3d00fcd5aa6db LICENSE
+SHA256 f810245bcbd2aca65bfd05c69b345c2204f4e0c4c109f82ca257e27f4478f236 MANIFEST
+SHA256 73b65b071b2f4872030425a4d15199517bca9dc48aa7d9dc94bd7c5aefaec3b7 META.json
+SHA256 16d4aaf0e18d20f80532e14344a8f6804af1f790497717061bb3d11e44b7a31e META.yml
+SHA256 a347c86f81996360bd911c50b44655ebeeb5d2b9c975d261551bb9531df05e48 Makefile.PL
+SHA256 22df80e747b2e6435dabb21e01e385f84ca8249cb62de6ed234aec5e60164a16 README.md
+SHA256 338ad74d61f771b0cf8b31b4526b52c5fe9d48cbc505cb687af45f39c9d79c5c dist.ini
+SHA256 5535db7e21dd4b85d0630bb27b6af0787fb601e91926b9e257168da196f679cb lib/Math/GMP.pm
+SHA256 463bbbc00b3618934c4a20a233fe4b5e0ed00675e582e0da9640faf04c77657f t/00-compile.t
+SHA256 279780e84118395af4106b508907ee90d0b94bd8a57f0b2e09e52eaacb714c5d t/01_gmppm.t
+SHA256 5c869763f47dfe4cf07f67f02b8271df46bb6db182fda3cb08c1949d4e7a3427 t/02_init_from_float.t
+SHA256 f7f86a812eb6d498f24aadcd661db3688759f23dd3dbbddcd4266d144e25ac40 t/check-funcs-ret-value--rt92593.t
+SHA256 4c910321d5dc4e2159b9b1aaa748564f4455b56823d892d2ef49c1a857a95b1f t/test-use-constant.t
+SHA256 079ccf4b62fd995fa4e9ee57fe4b0e02cea38759a1808ae6cf8b021fd2de92b2 typemap
+SHA256 576bfcb745eb615592498b3c911ae340f233fe6e60842f21a1aaebef265366e7 weaver.ini
+SHA256 beb34fed103e8a72b8e2acdf71f7794fe3d10cfd51ce117c76c78d029afc8c92 xt/99_spellcheck.t
+SHA256 ce8e6d06f3f04133010e177de154be84d5523f1b11b5d34d1d331b1e5bba33b3 xt/99_yaml.t
+SHA256 8036be88c2eaf3e7dc5e870df19b9d82e7ede9da6ed400a112ce70b335a9902d xt/author/pod-coverage.t
+SHA256 01c189b60dbbc17780700c3d394ebe0930b9802329799f968dcce40436484111 xt/author/pod-syntax.t
+SHA256 f01b1c021d2a667978e559521daf1fa74723886bd94febabb8f3d3bfffb41e52 xt/release/cpan-changes.t
+SHA256 dc5efc57dfb75d237226e738436163cf52c61d724e2dc595d97d7b95a1196352 xt/release/trailing-space.t
+-----BEGIN PGP SIGNATURE-----
+
+iF0EARECAB0WIQSyXb4zszuCHbnrZ9jPeX803fCxSQUCXkBYqgAKCRDPeX803fCx
+Se76AJ4vVD5v0n5X2aMVUzQfE/NOIqZ6DgCdHJGtMQQIn6SkAxOuyDN2Djplwf0=
+=2tU5
+-----END PGP SIGNATURE-----

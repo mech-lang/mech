@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="all">
+<meta name="description" content="binary-trees - Which programs are fastest? — How fast programs allocate and deallocate many many binary trees.">
+<title>binary-trees - Which programs are fastest? (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article,footer{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}.external{border-bottom:.1em dashed #333}p a,span{border-bottom: .1em solid #333;padding-bottom: .1em}.best{font-weight:bold}.message{font-size: .8em}img{display:block;width:100%}table{color:#333;margin:1.3em auto 0;text-align:right}tbody::after{content:"-";display:block;line-height:2.6em;visibility:hidden}td{border-bottom: .15em dotted #eee;padding: .7em 0 0 1em}td a, th a{display:block}th{font-weight:normal;padding:0 0 0 1em}td:first-child{padding-left:0}td:nth-child(2),th:nth-child(2){text-align:left}
+
+@media only screen{th:nth-child(1),td:nth-child(1),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7){display:none}}
+@media only screen and (min-width:23em){th:nth-child(1),td:nth-child(1){display:table-cell}}@media only screen and (min-width:37em){th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6){display:table-cell}li{display:inline-block}}@media only screen and (min-width:43em){th:nth-child(7),td:nth-child(7){display:table-cell}}@media only screen and (min-width:60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+
+<article>
+
+  <div>
+     <h1>binary-trees sorted-by "secs"</h1>
+     <aside>
+        <p>[&nbsp;Contentious. <a class="external" href="https://news.ycombinator.com/item?id=29323468">Different approaches.</a>&nbsp;]
+        <p><a href="../description/binarytrees.html#binarytrees">description</a>
+     </aside>
+  </div>
+  
+    
+  <section>
+    <div>
+      <h2></h2> 
+        <p>Always look at the source code.<p>(Lumpers and Splitters.)<p>Some of these programs are single-thread and some are multi-thread: compare "secs" and "cpu secs". Some of these programs are un-optimised and some are heavily optimised: sort-by "gz" source code size. <p>Some of these programs are "naked ffi" and some put that in a library. Some of these programs are high-level and some are hand-written vector instructions.<p>Always look at the source code.
+                
+      <h2></h2>
+    </div>
+    <table>
+      <tr>
+        <th>&nbsp;
+        <th colspan="5">*&nbsp;possible hand-written vector instructions or "unsafe"
+      <tr>
+        <th colspan='6'>&nbsp;
+      <tr>
+        <th>&#215;
+        <th>source
+        <th class="best">secs
+        <th><a href="./binarytrees-mem.html"><span>mem</span></a>
+        <th><a href="./binarytrees-gz.html"><span>gz</span></a>
+        <th><a href="./binarytrees-cpu.html"><span>cpu secs</span></a>
+      <tr>
+        <td>1.0
+        <td><a href="../program/binarytrees-gpp-7.html"><span><strong>C++</strong>g++&nbsp;#7</span></a>
+        <td class="best">1.01
+        <td>175,108
+        <td>896
+        <td>3.44
+      <tr>
+        <td>1.1
+        <td><a href="../program/binarytrees-rust-5.html"><span><strong>Rust</strong>&nbsp;#5</span></a>
+        <td class="best">1.07
+        <td>139,121
+        <td>771
+        <td>3.72
+      <tr>
+        <td>1.2
+        <td><a href="../program/binarytrees-gpp-5.html"><span>C++ g++&nbsp;#5</span></a>
+        <td>1.17
+        <td>208,171
+        <td>891
+        <td>4.11
+      <tr>
+        <td>1.2
+        <td><a href="../program/binarytrees-rust-2.html"><span>Rust&nbsp;#2</span></a>
+        <td>1.17
+        <td>140,157
+        <td>729
+        <td>4.12
+      <tr>
+        <td>1.4
+        <td><a href="../program/binarytrees-rust-4.html"><span>Rust&nbsp;#4</span></a>
+        <td>1.38
+        <td>202,686
+        <td>765
+        <td>4.95
+      <tr>
+        <td>1.4
+        <td><a href="../program/binarytrees-rust-3.html"><span>Rust&nbsp;#3</span></a>
+        <td>1.40
+        <td>172,392
+        <td>762
+        <td>5.05
+      <tr>
+        <td>1.5
+        <td><a href="../program/binarytrees-gcc-2.html"><span><strong>C</strong>&nbsp;gcc&nbsp;#2</span></a>
+        <td class="best">1.56
+        <td>174,780
+        <td>816
+        <td>4.24
+      <tr>
+        <td>1.7
+        <td><a href="../program/binarytrees-gpp-9.html"><span>C++ g++&nbsp;#9</span></a>
+        <td>1.76
+        <td>140,571
+        <td>815
+        <td>4.65
+      <tr>
+        <td>1.9
+        <td><a href="../program/binarytrees-gpp-6.html"><span>C++ g++&nbsp;#6</span></a>
+        <td>1.93
+        <td>273,973
+        <td>851
+        <td>4.77
+      <tr>
+        <td>1.9
+        <td><a href="../program/binarytrees-gcc-3.html"><span>C gcc&nbsp;#3</span></a>
+        <td>1.96
+        <td>138,711
+        <td>842
+        <td>4.72
+      <tr>
+        <td>2.1
+        <td><a href="../program/binarytrees-chapel-5.html"><span><strong>Chapel</strong>&nbsp;#5</span></a>
+        <td class="best">2.09
+        <td>1,825,436
+        <td>646
+        <td>7.30
+      <tr>
+        <td>2.1
+        <td><a href="../program/binarytrees-rust-1.html"><span>Rust</span></a>
+        <td>2.10
+        <td>137,417
+        <td>760
+        <td>7.44
+      <tr>
+        <td>2.1
+        <td><a href="../program/binarytrees-fpascal-5.html"><span>Free&nbsp;<strong>Pascal</strong>&nbsp;#5</span></a>
+        <td class="best">2.12
+        <td>136,892
+        <td>959
+        <td>5.04
+      <tr>
+        <td>2.1
+        <td><a href="../program/binarytrees-fpascal-6.html"><span>Free Pascal&nbsp;#6</span></a>
+        <td>2.12
+        <td>136,897
+        <td>967
+        <td>5.05
+      <tr>
+        <td>2.1
+        <td><a href="../program/binarytrees-ghc-4.html"><span><strong>Haskell</strong>&nbsp;GHC&nbsp;#4</span></a>
+        <td class="best">2.16
+        <td>227,852
+        <td>807
+        <td>5.32
+      <tr>
+        <td>2.2
+        <td><a href="../program/binarytrees-fpascal-7.html"><span>Free Pascal&nbsp;#7</span></a>
+        <td>2.17
+        <td>136,897
+        <td>1010
+        <td>5.15
+      <tr>
+        <td>2.2
+        <td><a href="../program/binarytrees-gpp-4.html"><span>C++ g++&nbsp;#4</span></a>
+        <td>2.22
+        <td>273,977
+        <td>826
+        <td>5.23
+      <tr>
+        <td>2.2
+        <td><a href="../program/binarytrees-ifx-2.html"><span>Intel&nbsp;<strong>Fortran</strong>&nbsp;#2</span></a>
+        <td class="best">2.24
+        <td>148,124
+        <td>1155
+        <td>6.93
+      <tr>
+        <td>2.3
+        <td><a href="../program/binarytrees-gpp-3.html"><span>C++ g++&nbsp;#3</span></a>
+        <td>2.28
+        <td>273,715
+        <td>951
+        <td>5.06
+      <tr>
+        <td>2.6
+        <td><a href="../program/binarytrees-ghc-7.html"><span>Haskell GHC&nbsp;#7</span></a>
+        <td>2.66
+        <td>237,572
+        <td>817
+        <td>6.72
+      <tr>
+        <td>2.7
+        <td><a href="../program/binarytrees-gpp-1.html"><span>C++ g++</span></a>
+        <td>2.69
+        <td>1,896,727
+        <td>760
+        <td>9.42
+      <tr>
+        <td>2.8
+        <td><a href="../program/binarytrees-sbcl-3.html"><span><strong>Lisp</strong>&nbsp;SBCL&nbsp;#3</span></a>
+        <td class="best">2.83
+        <td>641,151
+        <td>938
+        <td>7.18
+      <tr>
+        <td>3.5
+        <td><a href="../program/binarytrees-ocaml-2.html"><span><strong>OCaml</strong>&nbsp;#2</span></a>
+        <td class="best">3.55
+        <td>868,213
+        <td>759
+        <td>10.48
+      <tr>
+        <td>3.9
+        <td><a href="../program/binarytrees-graalvmaot-7.html"><span><strong>Java</strong>&nbsp;naot&nbsp;#7</span></a>
+        <td class="best">3.90
+        <td>338,911
+        <td>841
+        <td>7.25
+      <tr>
+        <td>3.9
+        <td><a href="../program/binarytrees-ghc-6.html"><span>Haskell GHC&nbsp;#6</span></a>
+        <td>3.92
+        <td>246,542
+        <td>601
+        <td>7.63
+      <tr>
+        <td>4.1
+        <td><a href="../program/binarytrees-gnat-4.html"><span><strong>Ada</strong>&nbsp;2012&nbsp;GNAT&nbsp;#4</span></a>
+        <td class="best">4.16
+        <td>210,969
+        <td>2117
+        <td>12.10
+      <tr>
+        <td>4.8
+        <td><a href="../program/binarytrees-racket-4.html"><span>* <strong>Racket</strong>&nbsp;#4</span></a>
+        <td class="best">4.81
+        <td>471,519
+        <td>861
+        <td>9.30
+      <tr>
+        <td>4.8
+        <td><a href="../program/binarytrees-graalvmaot-3.html"><span>Java naot&nbsp;#3</span></a>
+        <td>4.85
+        <td>290,574
+        <td>546
+        <td>4.85
+      <tr>
+        <td>5.0
+        <td><a href="../program/binarytrees-erlang-2.html"><span><strong>Erlang</strong>&nbsp;#2</span></a>
+        <td class="best">5.08
+        <td>500,834
+        <td>485
+        <td>13.56
+      <tr>
+        <td>5.1
+        <td><a href="../program/binarytrees-graalvmaot-6.html"><span>Java naot&nbsp;#6</span></a>
+        <td>5.12
+        <td>299,389
+        <td>535
+        <td>5.11
+      <tr>
+        <td>5.1
+        <td><a href="../program/binarytrees-graalvmaot-2.html"><span>Java naot&nbsp;#2</span></a>
+        <td>5.15
+        <td>299,610
+        <td>558
+        <td>5.15
+      <tr>
+        <td>5.5
+        <td><a href="../program/binarytrees-graalvmaot-4.html"><span>Java naot&nbsp;#4</span></a>
+        <td>5.54
+        <td>305,373
+        <td>846
+        <td>5.53
+      <tr>
+        <td>6.2
+        <td><a href="../program/binarytrees-racket-3.html"><span>* Racket&nbsp;#3</span></a>
+        <td>6.22
+        <td>278,237
+        <td>480
+        <td>6.16
+      <tr>
+        <td>6.2
+        <td><a href="../program/binarytrees-csharpaot-2.html"><span><strong>C#</strong>&nbsp;naot&nbsp;#2</span></a>
+        <td class="best">6.22
+        <td>1,018,946
+        <td>717
+        <td>17.10
+      <tr>
+        <td>6.2
+        <td><a href="../program/binarytrees-csharpaot-7.html"><span>C# naot&nbsp;#7</span></a>
+        <td>6.22
+        <td>1,115,476
+        <td>706
+        <td>16.92
+      <tr>
+        <td>6.7
+        <td><a href="../program/binarytrees-csharpaot-3.html"><span>C# naot&nbsp;#3</span></a>
+        <td>6.71
+        <td>2,829,128
+        <td>688
+        <td>17.67
+      <tr>
+        <td>6.8
+        <td><a href="../program/binarytrees-csharpaot-1.html"><span>C# naot</span></a>
+        <td>6.80
+        <td>2,819,092
+        <td>668
+        <td>18.71
+      <tr>
+        <td>6.9
+        <td><a href="../program/binarytrees-ghc-3.html"><span>Haskell GHC&nbsp;#3</span></a>
+        <td>6.97
+        <td>697,176
+        <td>544
+        <td>15.86
+      <tr>
+        <td>7.2
+        <td><a href="../program/binarytrees-ghc-5.html"><span>Haskell GHC&nbsp;#5</span></a>
+        <td>7.22
+        <td>684,757
+        <td>567
+        <td>15.49
+      <tr>
+        <td>7.2
+        <td><a href="../program/binarytrees-chapel-4.html"><span>Chapel&nbsp;#4</span></a>
+        <td>7.29
+        <td>495,682
+        <td>489
+        <td>26.60
+      <tr>
+        <td>7.4
+        <td><a href="../program/binarytrees-julia-3.html"><span><strong>Julia</strong>&nbsp;#3</span></a>
+        <td class="best">7.40
+        <td>564,216
+        <td>640
+        <td>19.51
+      <tr>
+        <td>7.7
+        <td><a href="../program/binarytrees-ocaml-5.html"><span>OCaml&nbsp;#5</span></a>
+        <td>7.78
+        <td>228,925
+        <td>468
+        <td>7.78
+      <tr>
+        <td>8.5
+        <td><a href="../program/binarytrees-node-6.html"><span><strong>Node.js</strong>&nbsp;#6</span></a>
+        <td class="best">8.61
+        <td>1,275,720
+        <td>752
+        <td>31.10
+      <tr>
+        <td>8.6
+        <td><a href="../program/binarytrees-chapel-3.html"><span>Chapel&nbsp;#3</span></a>
+        <td>8.63
+        <td>313,868
+        <td>494
+        <td>25.90
+      <tr>
+        <td>8.6
+        <td><a href="../program/binarytrees-gcc-5.html"><span>C gcc&nbsp;#5</span></a>
+        <td>8.71
+        <td>361,587
+        <td>914
+        <td>31.96
+      <tr>
+        <td>8.9
+        <td><a href="../program/binarytrees-node-1.html"><span>Node.js</span></a>
+        <td>8.94
+        <td>1,389,228
+        <td>717
+        <td>33.88
+      <tr>
+        <td>8.9
+        <td><a href="../program/binarytrees-fsharpcore-7.html"><span><strong>F#</strong>&nbsp;#7</span></a>
+        <td class="best">8.98
+        <td>1,127,907
+        <td>527
+        <td>22.38
+      <tr>
+        <td>9.1
+        <td><a href="../program/binarytrees-racket-2.html"><span>Racket&nbsp;#2</span></a>
+        <td>9.20
+        <td>385,794
+        <td>422
+        <td>9.15
+      <tr>
+        <td>9.5
+        <td><a href="../program/binarytrees-dartexe-7.html"><span><strong>Dart</strong>&nbsp;aot&nbsp;#7</span></a>
+        <td class="best">9.57
+        <td>635,625
+        <td>869
+        <td>23.66
+      <tr>
+        <td>9.5
+        <td><a href="../program/binarytrees-sbcl-1.html"><span>Lisp SBCL</span></a>
+        <td>9.60
+        <td>665,092
+        <td>595
+        <td>9.58
+      <tr>
+        <td>10
+        <td><a href="../program/binarytrees-dartexe-4.html"><span>Dart aot&nbsp;#4</span></a>
+        <td>10.24
+        <td>692,199
+        <td>1394
+        <td>24.21
+      <tr>
+        <td>11
+        <td><a href="../program/binarytrees-erlang-1.html"><span>Erlang</span></a>
+        <td>10.97
+        <td>501,953
+        <td>426
+        <td>11.13
+      <tr>
+        <td>11
+        <td><a href="../program/binarytrees-gnat-3.html"><span>Ada 2012 GNAT&nbsp;#3</span></a>
+        <td>11.26
+        <td>545,702
+        <td>1275
+        <td>37.28
+      <tr>
+        <td>12
+        <td><a href="../program/binarytrees-dartexe-6.html"><span>Dart aot&nbsp;#6</span></a>
+        <td>11.72
+        <td>474,780
+        <td>488
+        <td>16.18
+      <tr>
+        <td>12
+        <td><a href="../program/binarytrees-dartexe-5.html"><span>Dart aot&nbsp;#5</span></a>
+        <td>12.17
+        <td>524,239
+        <td>1023
+        <td>29.92
+      <tr>
+        <td>12
+        <td><a href="../program/binarytrees-ghc-1.html"><span>Haskell GHC</span></a>
+        <td>12.58
+        <td>702,763
+        <td>500
+        <td>14.29
+      <tr>
+        <td>13
+        <td><a href="../program/binarytrees-julia-2.html"><span>Julia&nbsp;#2</span></a>
+        <td>12.65
+        <td>552,669
+        <td>430
+        <td>13.72
+      <tr>
+        <td>13
+        <td><a href="../program/binarytrees-ghc-2.html"><span>Haskell GHC&nbsp;#2</span></a>
+        <td>12.84
+        <td>274,993
+        <td>498
+        <td>14.62
+      <tr>
+        <td>14
+        <td><a href="../program/binarytrees-go-2.html"><span><strong>Go</strong>&nbsp;#2</span></a>
+        <td class="best">14.21
+        <td>635,613
+        <td>672
+        <td>56.53
+      <tr>
+        <td>14
+        <td><a href="../program/binarytrees-fsharpcore-1.html"><span>F#</span></a>
+        <td>14.36
+        <td>938,693
+        <td>517
+        <td>14.94
+      <tr>
+        <td>14
+        <td><a href="../program/binarytrees-julia-4.html"><span>Julia&nbsp;#4</span></a>
+        <td>14.42
+        <td>550,064
+        <td>378
+        <td>15.75
+      <tr>
+        <td>15
+        <td><a href="../program/binarytrees-go-5.html"><span>Go&nbsp;#5</span></a>
+        <td>14.68
+        <td>386,056
+        <td>957
+        <td>58.09
+      <tr>
+        <td>15
+        <td><a href="../program/binarytrees-go-3.html"><span>Go&nbsp;#3</span></a>
+        <td>14.90
+        <td>329,499
+        <td>806
+        <td>57.98
+      <tr>
+        <td>15
+        <td><a href="../program/binarytrees-racket-1.html"><span>Racket</span></a>
+        <td>15.19
+        <td>608,461
+        <td>482
+        <td>15.13
+      <tr>
+        <td>16
+        <td><a href="../program/binarytrees-node-7.html"><span>Node.js&nbsp;#7</span></a>
+        <td>16.07
+        <td>1,128,059
+        <td>458
+        <td>28.42
+      <tr>
+        <td>17
+        <td><a href="../program/binarytrees-dartexe-3.html"><span>Dart aot&nbsp;#3</span></a>
+        <td>17.52
+        <td>4,337,738
+        <td>1219
+        <td>54.09
+      <tr>
+        <td>18
+        <td><a href="../program/binarytrees-swift-4.html"><span><strong>Swift</strong>&nbsp;#4</span></a>
+        <td class="best">17.62
+        <td>733,094
+        <td>772
+        <td>55.85
+      <tr>
+        <td>18
+        <td><a href="../program/binarytrees-swift-1.html"><span>Swift</span></a>
+        <td>18.21
+        <td>763,523
+        <td>720
+        <td>54.00
+      <tr>
+        <td>18
+        <td><a href="../program/binarytrees-swift-2.html"><span>Swift&nbsp;#2</span></a>
+        <td>18.24
+        <td>732,828
+        <td>822
+        <td>58.93
+      <tr>
+        <td>18
+        <td><a href="../program/binarytrees-swift-3.html"><span>Swift&nbsp;#3</span></a>
+        <td>18.26
+        <td>733,180
+        <td>868
+        <td>58.19
+      <tr>
+        <td>19
+        <td><a href="../program/binarytrees-ruby-5.html"><span><strong>Ruby</strong>&nbsp;#5</span></a>
+        <td class="best">18.86
+        <td>2,280,051
+        <td>1016
+        <td>53.80
+      <tr>
+        <td>19
+        <td><a href="../program/binarytrees-swift-5.html"><span>Swift&nbsp;#5</span></a>
+        <td>18.90
+        <td>764,391
+        <td>813
+        <td>56.23
+      <tr>
+        <td>21
+        <td><a href="../program/binarytrees-gcc-1.html"><span>C gcc</span></a>
+        <td>21.21
+        <td>272,065
+        <td>660
+        <td>21.21
+      <tr>
+        <td>22
+        <td><a href="../program/binarytrees-julia-5.html"><span>Julia&nbsp;#5</span></a>
+        <td>21.83
+        <td>1,336,107
+        <td>396
+        <td>61.36
+      <tr>
+        <td>22
+        <td><a href="../program/binarytrees-php-7.html"><span><strong>PHP</strong>&nbsp;#7</span></a>
+        <td class="best">22.24
+        <td>1,316,532
+        <td>767
+        <td>81.13
+      <tr>
+        <td>23
+        <td><a href="../program/binarytrees-gpp-2.html"><span>C++ g++&nbsp;#2</span></a>
+        <td>22.77
+        <td>274,080
+        <td>514
+        <td>22.76
+      <tr>
+        <td>23
+        <td><a href="../program/binarytrees-gnat-1.html"><span>Ada 2012 GNAT</span></a>
+        <td>23.45
+        <td>275,038
+        <td>896
+        <td>23.44
+      <tr>
+        <td>25
+        <td><a href="../program/binarytrees-php-4.html"><span>PHP&nbsp;#4</span></a>
+        <td>24.74
+        <td>1,280,827
+        <td>786
+        <td>81.41
+      <tr>
+        <td>28
+        <td><a href="../program/binarytrees-go-6.html"><span>Go&nbsp;#6</span></a>
+        <td>27.93
+        <td>416,195
+        <td>618
+        <td>29.26
+      <tr>
+        <td>32
+        <td><a href="../program/binarytrees-go-1.html"><span>Go</span></a>
+        <td>32.05
+        <td>243,114
+        <td>488
+        <td>59.77
+      <tr>
+        <td>32
+        <td><a href="../program/binarytrees-go-7.html"><span>Go&nbsp;#7</span></a>
+        <td>32.57
+        <td>241,345
+        <td>531
+        <td>61.36
+      <tr>
+        <td>33
+        <td><a href="../program/binarytrees-ifx-1.html"><span>Intel Fortran</span></a>
+        <td>32.74
+        <td>540,066
+        <td>780
+        <td>32.73
+      <tr>
+        <td>33
+        <td><a href="../program/binarytrees-python3-4.html"><span><strong>Python&nbsp;3</strong>&nbsp;#4</span></a>
+        <td class="best">33.37
+        <td>460,771
+        <td>481
+        <td>121.26
+      <tr>
+        <td>35
+        <td><a href="../program/binarytrees-python3-1.html"><span>Python 3</span></a>
+        <td>34.85
+        <td>445,649
+        <td>597
+        <td>122.94
+      <tr>
+        <td>35
+        <td><a href="../program/binarytrees-pharo-1.html"><span>Pharo&nbsp;<strong>Smalltalk</strong></span></a>
+        <td class="best">35.22
+        <td>399,409
+        <td>673
+        <td>35.41
+      <tr>
+        <td>35
+        <td><a href="../program/binarytrees-python3-5.html"><span>Python 3&nbsp;#5</span></a>
+        <td>35.37
+        <td>806,117
+        <td>669
+        <td>125.53
+      <tr>
+        <td>38
+        <td><a href="../program/binarytrees-php-6.html"><span>PHP&nbsp;#6</span></a>
+        <td>38.32
+        <td>2,379,801
+        <td>877
+        <td>130.85
+      <tr>
+        <td>39
+        <td><a href="../program/binarytrees-perl-6.html"><span><strong>Perl</strong>&nbsp;#6</span></a>
+        <td class="best">39.22
+        <td>782,742
+        <td>800
+        <td>144.71
+      <tr>
+        <td>47
+        <td><a href="../program/binarytrees-php-5.html"><span>PHP&nbsp;#5</span></a>
+        <td>47.09
+        <td>1,745,932
+        <td>1048
+        <td>124.38
+      <tr>
+        <td>47
+        <td><a href="../program/binarytrees-ruby-4.html"><span>Ruby&nbsp;#4</span></a>
+        <td>47.09
+        <td>489,144
+        <td>371
+        <td>47.03
+      <tr>
+        <td>47
+        <td><a href="../program/binarytrees-lua-4.html"><span><strong>Lua</strong>&nbsp;#4</span></a>
+        <td class="best">47.56
+        <td>2,055,766
+        <td>670
+        <td>176.34
+      <tr>
+        <td>48
+        <td><a href="../program/binarytrees-ruby-2.html"><span>Ruby&nbsp;#2</span></a>
+        <td>48.03
+        <td>487,801
+        <td>385
+        <td>47.96
+      <tr>
+        <td>48
+        <td><a href="../program/binarytrees-ruby-1.html"><span>Ruby</span></a>
+        <td>48.14
+        <td>487,592
+        <td>383
+        <td>48.08
+      <tr>
+        <td>49
+        <td><a href="../program/binarytrees-ruby-3.html"><span>Ruby&nbsp;#3</span></a>
+        <td>49.67
+        <td>523,936
+        <td>407
+        <td>49.60
+      <tr>
+        <td>50
+        <td><a href="../program/binarytrees-perl-5.html"><span>Perl&nbsp;#5</span></a>
+        <td>50.17
+        <td>1,078,489
+        <td>805
+        <td>185.46
+      <tr>
+        <td>52
+        <td><a href="../program/binarytrees-python3-3.html"><span>Python 3&nbsp;#3</span></a>
+        <td>51.88
+        <td>819,077
+        <td>1247
+        <td>148.88
+      <tr>
+        <td>69
+        <td><a href="../program/binarytrees-php-3.html"><span>PHP&nbsp;#3</span></a>
+        <td>69.00
+        <td>948,552
+        <td>434
+        <td>68.95
+      <tr>
+        <td>77
+        <td><a href="../program/binarytrees-perl-4.html"><span>Perl&nbsp;#4</span></a>
+        <td>77.36
+        <td>2,587,648
+        <td>769
+        <td>281.04
+      <tr>
+        <td>81
+        <td><a href="../program/binarytrees-lua-3.html"><span>Lua&nbsp;#3</span></a>
+        <td>82.05
+        <td>1,753,616
+        <td>690
+        <td>163.72
+      <tr>
+        <td>90
+        <td><a href="../program/binarytrees-php-1.html"><span>PHP</span></a>
+        <td>90.45
+        <td>771,105
+        <td>457
+        <td>90.40
+      <tr>
+        <td>93
+        <td><a href="../program/binarytrees-php-2.html"><span>PHP&nbsp;#2</span></a>
+        <td>93.90
+        <td>771,146
+        <td>429
+        <td>93.85
+      <tr>
+        <td>100
+        <td><a href="../program/binarytrees-python3-2.html"><span>Python 3&nbsp;#2</span></a>
+        <td>100.49
+        <td>281,829
+        <td>344
+        <td>100.42
+      <tr>
+        <td>109
+        <td><a href="../program/binarytrees-perl-3.html"><span>Perl&nbsp;#3</span></a>
+        <td>110.03
+        <td>2,260,713
+        <td>655
+        <td>6&nbsp;min
+      <tr>
+        <td>141
+        <td><a href="../program/binarytrees-lua-2.html"><span>Lua&nbsp;#2</span></a>
+        <td>142.32
+        <td>1,043,743
+        <td>418
+        <td>142.27
+      <tr>
+        <td>257
+        <td><a href="../program/binarytrees-perl-1.html"><span>Perl</span></a>
+        <td>258.70
+        <td>617,132
+        <td>401
+        <td>258.64
+      <tr>
+        <td>
+        <td><a href="../program/binarytrees-csharpaot-6.html"><span>C# naot&nbsp;#6</span></a>
+        <td class="message">Empty
+        <td>
+        <td>
+        <td>
+      <tr>
+        <td>
+        <td><a href="../program/binarytrees-swift-9.html"><span>Swift&nbsp;#9</span></a>
+        <td class="message">Empty
+        <td>
+        <td>
+        <td>
+      </table>
+      <nav>
+        <ul>
+          <li class="best">by secs
+          <li><a href="./binarytrees-mem.html"><span>by mem</span></a>
+          <li><a href="./binarytrees-gz.html"><span>by gz</span></a>
+          <li><a href="./binarytrees-cpu.html"><span>by cpu secs</span></a>
+        </ul>
+      </nav>
+  </section>
+</article>
+<footer>
+    <p>Isaac Gouy. (n. d.). The Computer Language Benchmarks Game. <a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/">https://benchmarksgame-team.pages.debian.net/benchmarksgame/</a>
+    <p><br>&nbsp;
+</footer>
+
+
+
+
+
+

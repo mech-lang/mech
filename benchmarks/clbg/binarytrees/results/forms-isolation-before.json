@@ -1,0 +1,106 @@
+{
+  "compiler_sha256": "d0b47c701effa7156401b2e0f227e510c84438f02835c74e5f2b6747d0b6066e",
+  "sample_order": [
+    [
+      "both",
+      "matches",
+      "callbacks",
+      "sums"
+    ],
+    [
+      "sums",
+      "both",
+      "callbacks",
+      "matches"
+    ],
+    [
+      "matches",
+      "both",
+      "sums",
+      "callbacks"
+    ]
+  ],
+  "samples": {
+    "callbacks": [
+      0.944296208,
+      0.819436708,
+      0.872078542
+    ],
+    "matches": [
+      0.87313175,
+      0.859226333,
+      0.866752792
+    ],
+    "sums": [
+      0.845293167,
+      0.825951875,
+      0.825650291
+    ],
+    "both": [
+      0.836478875,
+      0.869554875,
+      0.885810875
+    ]
+  },
+  "compiler_snapshot": "apple-m3-forms-21.compiler.tar.gz",
+  "protocol": {
+    "n": 21,
+    "samples": 3,
+    "threads": 8,
+    "validation": "Every timed fresh process matched the full reference bytes and SHA256; no builds or hashing inside timing."
+  },
+  "programs": [
+    {
+      "id": "callbacks",
+      "source_path": "experiments/callback-forms/binarytrees-parallel.mec",
+      "source_sha256": "76c30e167d2441be0f99bbab1abef8cc640b5d2b935cc1e8d54f9b174d69d611",
+      "executable_sha256": "50fcf03ca380bd9bff6539b5d3cc7b0b101015d4eff591c10c8ac74d9575ad33",
+      "native_object_sha256": "6a52cc96308d9e5087429e2ec3c0abb7b914b448e474b17d0db916c8228005de",
+      "median_seconds": 0.872078542,
+      "samples_seconds": [
+        0.944296208,
+        0.819436708,
+        0.872078542
+      ]
+    },
+    {
+      "id": "matches",
+      "source_path": "experiments/canonical-forms/matches-only.mec",
+      "source_sha256": "f4264e759aff9f56d08818d8058b8d9fbdd1bc012703d3486859faae2a8dfcfd",
+      "executable_sha256": "23f78210942c81de15c30b00a1ccc2688c87e234b7ca753b445162937a9807c3",
+      "native_object_sha256": "047ccaca1a0dba9e2614ed5ae2abc1f6bd33794c14fad7341a9c343f08562e24",
+      "median_seconds": 0.866752792,
+      "samples_seconds": [
+        0.87313175,
+        0.859226333,
+        0.866752792
+      ]
+    },
+    {
+      "id": "sums",
+      "source_path": "experiments/canonical-forms/sums-only.mec",
+      "source_sha256": "349318d27aec558073ab310986ace99fd98d4c15586dfb1996faf80d5cadb065",
+      "executable_sha256": "b60b229b325cc45843354a336bd0a962a2786044d0d64661eadffb359dc8557e",
+      "native_object_sha256": "7d8d26e3e4d920481a4bbfdbad32b6213f1dfcbf554dd4e3b8a564537bf23d22",
+      "median_seconds": 0.825951875,
+      "samples_seconds": [
+        0.845293167,
+        0.825951875,
+        0.825650291
+      ]
+    },
+    {
+      "id": "both",
+      "source_path": "binarytrees-parallel.mec",
+      "source_sha256": "d64191b398fea60eaf678c6f345952c9af4e68c93f0efe708a37aa3ed4bf8b9f",
+      "executable_sha256": "3a3d78d5383b861bbbaf72aca381638f1627731ec4e287f41bbc045d6c0a873b",
+      "native_object_sha256": "6030e19dd3e035eef10540c90fac3a4a066c1321cac5fdf2fb1f95517bc35da5",
+      "median_seconds": 0.869554875,
+      "samples_seconds": [
+        0.836478875,
+        0.869554875,
+        0.885810875
+      ]
+    }
+  ]
+}

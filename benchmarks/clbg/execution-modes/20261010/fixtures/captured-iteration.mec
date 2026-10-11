@@ -1,0 +1,5 @@
+bias := 2.0
+Step(x<[f64]>) => <[f64]> := x + bias
+x := [1.0 | i <- 0..3]'
+y := sequence/iterate(x, 4, Step)
+io/write(text/join-terminated(number/format(y, 0), " "))

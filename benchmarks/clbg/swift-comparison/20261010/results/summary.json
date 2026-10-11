@@ -1,0 +1,625 @@
+{
+  "status": "passed",
+  "timing_report_sha256": "ea44fa3f6d9a6828f60fc60a8f1938c79185053c7c592949d8945840903188ee",
+  "source_audit_sha256": "6da0a5a5a1e2758552d973860565ba540719b497589f8649eade0001450107e9",
+  "admitted_sources": 35,
+  "output_exclusions": [
+    {
+      "id": "mandelbrot-swift-3",
+      "benchmark": "mandelbrot",
+      "language": "swift",
+      "stage": "small output validation",
+      "reason": "('mandelbrot', 5011, '2ee3f39b94d852c059375291020edb36843eb7a2b0675b2c2aca30b17ee8a51f', 5011, '97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5')",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/mandelbrot-swift-3.swift",
+      "source_sha256": "01b1f345cee02d4f9a04177793a0e9b6abb16481e8b51ccfe529cf978d00cb42",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-swift-3.html"
+    }
+  ],
+  "excluded": [
+    {
+      "id": "binarytrees-swift-2",
+      "benchmark": "binarytrees",
+      "language": "swift",
+      "reason": "The original long-lived tree is checked in an independently scheduled closure, whose lifetime ends before temporary work is guaranteed complete. The current description requires keeping it alive throughout temporary work; a corrected Swift candidate is retained separately.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/binarytrees-swift-2.swift",
+      "source_sha256": "e84debaef175f8d0759636592ba30d823f4bb80500a03fe4ddafb5d8648c10ec",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-swift-2.html"
+    },
+    {
+      "id": "binarytrees-swift-9",
+      "benchmark": "binarytrees",
+      "language": "swift",
+      "reason": "Build failed; pinned compiler diagnostics retained.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/binarytrees-swift-9.swift",
+      "source_sha256": "7db784342df88976dc54adb9259d1db34d7b5ba0383e108634f9ff7b6679c9bd",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-swift-9.html"
+    },
+    {
+      "id": "binarytrees-swift-1",
+      "benchmark": "binarytrees",
+      "language": "swift",
+      "reason": "The original stretch tree remains globally rooted during temporary work. The current description requires releasing it before long-lived allocation; a corrected Swift candidate is retained separately.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/binarytrees-swift-1.swift",
+      "source_sha256": "bc2f4fdaf043541c25c6771ab1a5b97127354dbdf2e5aef8f6342ab95a716200",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-swift-1.html"
+    },
+    {
+      "id": "binarytrees-swift-5",
+      "benchmark": "binarytrees",
+      "language": "swift",
+      "reason": "The original stretch tree remains globally rooted during temporary work. The current description requires releasing it before long-lived allocation; a corrected Swift candidate is retained separately.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/binarytrees-swift-5.swift",
+      "source_sha256": "31073c7d87272c80fda85cd7f317797b28957a3d4a82ef6c119f748129b92e40",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-swift-5.html"
+    },
+    {
+      "id": "binarytrees-swift-3",
+      "benchmark": "binarytrees",
+      "language": "swift",
+      "reason": "The original long-lived tree is checked in an independently scheduled closure, whose lifetime ends before temporary work is guaranteed complete. The current description requires keeping it alive throughout temporary work; a corrected Swift candidate is retained separately.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/binarytrees-swift-3.swift",
+      "source_sha256": "c1c9d1d8da2b0cb435283cfd5b453c69ef62187652c1e43faa2a6141aa2f38d7",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-swift-3.html"
+    },
+    {
+      "id": "binarytrees-swift-4",
+      "benchmark": "binarytrees",
+      "language": "swift",
+      "reason": "The original long-lived tree is checked in an independently scheduled closure, whose lifetime ends before temporary work is guaranteed complete. The current description requires keeping it alive throughout temporary work; a corrected Swift candidate is retained separately.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/binarytrees-swift-4.swift",
+      "source_sha256": "2f7acb7c2e977a0bba8a2c235517f9e8f076b6b287da91b878d324811c5a68a7",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/binarytrees-swift-4.html"
+    },
+    {
+      "id": "fasta-swift-1",
+      "benchmark": "fasta",
+      "language": "swift",
+      "reason": "Reciprocal multiplication replaced with explicit binary64 division for our common sampling workload. This is a cohort comparability decision, not a blanket claim that this submission violates CLBG.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-1.swift",
+      "source_sha256": "595ddf81befce1b70d39d1061b870ae1c0406753f84c9ef3887c53deefff372d",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-swift-1.html"
+    },
+    {
+      "id": "fasta-swift-3",
+      "benchmark": "fasta",
+      "language": "swift",
+      "reason": "Integer-scaled cumulative cutoffs conflict with the current FASTA description, which explicitly prohibits lookup scaling. A separate corrected candidate uses binary64 probabilities and division.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-3.swift",
+      "source_sha256": "78cb5f5e239806f1845e43029bf28c6e6972e378386eaf4f4981bb340101849d",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-swift-3.html"
+    },
+    {
+      "id": "fasta-swift-2",
+      "benchmark": "fasta",
+      "language": "swift",
+      "reason": "Binary32 sampling replaced with binary64 sampling and explicit division for our common workload. This is a cohort comparability decision, not a blanket claim that this submission violates CLBG.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-2.swift",
+      "source_sha256": "4ce70f8ace84f5dc9bc6c9bc11fd0ab856e7cbb857c6a697e6e043bff52ebdbe",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-swift-2.html"
+    },
+    {
+      "id": "fasta-swift-8",
+      "benchmark": "fasta",
+      "language": "swift",
+      "reason": "Probability subtraction does not implement the cumulative-probability lookup in the current FASTA description. A separate corrected candidate builds and searches the cumulative distribution.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/fasta-swift-8.swift",
+      "source_sha256": "f4baa808fcc86df051ce13a8735bde2016bbd2aca58eb69513fbf1bc0f963bd4",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/fasta-swift-8.html"
+    },
+    {
+      "id": "knucleotide-swift-1",
+      "benchmark": "knucleotide",
+      "language": "swift",
+      "reason": "Build failed; pinned compiler diagnostics retained.",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/knucleotide-swift-1.swift",
+      "source_sha256": "c5465eb65d627b345821a4917fdd9c9fd177df9398ea0acb03c6624bcdb4be62",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/knucleotide-swift-1.html"
+    },
+    {
+      "id": "mandelbrot-swift-3",
+      "benchmark": "mandelbrot",
+      "language": "swift",
+      "stage": "small output validation",
+      "reason": "('mandelbrot', 5011, '2ee3f39b94d852c059375291020edb36843eb7a2b0675b2c2aca30b17ee8a51f', 5011, '97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5')",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/swift-comparison/20261010/sources/mandelbrot-swift-3.swift",
+      "source_sha256": "01b1f345cee02d4f9a04177793a0e9b6abb16481e8b51ccfe529cf978d00cb42",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/mandelbrot-swift-3.html"
+    }
+  ],
+  "rows": [
+    {
+      "benchmark": "spectralnorm",
+      "candidates": 2,
+      "fast": {
+        "key": "spectralnorm:spectralnorm-swift-3",
+        "id": "spectralnorm-swift-3",
+        "loc": 59,
+        "source_sha256": "244aab9aa0bb54424abcec05f794e507e5dbc6a6ebc1d1c688f2caa639f420cb",
+        "binary_sha256": "aa861f61d53e21a1dc44c02049b7639c2aff162ec08708869aa09d6108924846",
+        "median_seconds": 0.1479255,
+        "samples_seconds": [
+          0.146557667,
+          0.148229791,
+          0.1479255
+        ],
+        "sample_stdev_seconds": 0.0008906513346933203
+      },
+      "small": {
+        "key": "spectralnorm:spectralnorm-swift-8",
+        "id": "spectralnorm-swift-8",
+        "loc": 45,
+        "source_sha256": "631666cf19e4513bc25b94224602d609aa1d4e730b6201a7660c75eb4a311a67",
+        "binary_sha256": "11d9a5df1763c435a607bb2d6e42e4d79262cdf7b0b4be68a377d3c6a25bad35",
+        "median_seconds": 0.784320125,
+        "samples_seconds": [
+          0.781815292,
+          0.786715209,
+          0.784320125
+        ],
+        "sample_stdev_seconds": 0.002450163339175386
+      },
+      "fastest_seconds_over_mech": 1.7073982548457771
+    },
+    {
+      "benchmark": "pidigits",
+      "candidates": 1,
+      "fast": {
+        "key": "pidigits:pidigits-swift-2",
+        "id": "pidigits-swift-2",
+        "loc": 72,
+        "source_sha256": "1900605f666ecbce7087abdb8e0d7cb690ce0b1a30653f3812bd995e39caf8d7",
+        "binary_sha256": "a0713b8f1e8508e9bd7036c3f67ac830c25aea8468c32b4142b21a88cd50b586",
+        "median_seconds": 0.287800458,
+        "samples_seconds": [
+          0.286075417,
+          0.288020375,
+          0.287800458
+        ],
+        "sample_stdev_seconds": 0.0010651284398554893
+      },
+      "small": {
+        "key": "pidigits:pidigits-swift-2",
+        "id": "pidigits-swift-2",
+        "loc": 72,
+        "source_sha256": "1900605f666ecbce7087abdb8e0d7cb690ce0b1a30653f3812bd995e39caf8d7",
+        "binary_sha256": "a0713b8f1e8508e9bd7036c3f67ac830c25aea8468c32b4142b21a88cd50b586",
+        "median_seconds": 0.287800458,
+        "samples_seconds": [
+          0.286075417,
+          0.288020375,
+          0.287800458
+        ],
+        "sample_stdev_seconds": 0.0010651284398554893
+      },
+      "fastest_seconds_over_mech": 1.0018629713256935
+    },
+    {
+      "benchmark": "nbody",
+      "candidates": 8,
+      "fast": {
+        "key": "nbody:nbody-swift-4",
+        "id": "nbody-swift-4",
+        "loc": 108,
+        "source_sha256": "a1a1dc8bf240f116b69e9e92b49b42dba8e96832654b15d23b136a3aa98b23ce",
+        "binary_sha256": "268964d5a7e55f373dbbbb669a9ece599985ff3317700e8e9c284b7e0c36e2df",
+        "median_seconds": 1.620821292,
+        "samples_seconds": [
+          1.612101875,
+          1.621983417,
+          1.620821292
+        ],
+        "sample_stdev_seconds": 0.005400982003816198
+      },
+      "small": {
+        "key": "nbody:nbody-swift-6",
+        "id": "nbody-swift-6",
+        "loc": 95,
+        "source_sha256": "9c843743cc9cbbeed07b6ea2870f7a11e0c06539247e69422777b73f8964ec06",
+        "binary_sha256": "189314d308083861a0628ff574af4731e27fc714883cde0291e8e85ca725937b",
+        "median_seconds": 1.622503167,
+        "samples_seconds": [
+          1.623265167,
+          1.622503167,
+          1.620404708
+        ],
+        "sample_stdev_seconds": 0.001481350727397303
+      },
+      "fastest_seconds_over_mech": 1.5410526805313676
+    },
+    {
+      "benchmark": "mandelbrot",
+      "candidates": 5,
+      "fast": {
+        "key": "mandelbrot:mandelbrot-swift-7",
+        "id": "mandelbrot-swift-7",
+        "loc": 97,
+        "source_sha256": "9ef842779170c4c4512719d16567f6d9167137ecdab9cebfb06d4b20a47e378a",
+        "binary_sha256": "1cc82c9b6ac813b53834d1bbf46c031c041ebb11078660bb124db6f1132dc4ad",
+        "median_seconds": 0.433000875,
+        "samples_seconds": [
+          0.433000875,
+          0.436968666,
+          0.432573625
+        ],
+        "sample_stdev_seconds": 0.0024235749549601955
+      },
+      "small": {
+        "key": "mandelbrot:mandelbrot-swift-1",
+        "id": "mandelbrot-swift-1",
+        "loc": 39,
+        "source_sha256": "b60c6439df5fdf8640cfe4042c01133386a4b0e91222056bdc40e4bfd6913b1f",
+        "binary_sha256": "602abf62c588131eb58fa2919a74c568057dba36ea9d998213b77474c4bc674b",
+        "median_seconds": 10.89658925,
+        "samples_seconds": [
+          10.89658925,
+          10.880868833,
+          10.91508825
+        ],
+        "sample_stdev_seconds": 0.017128499698231388
+      },
+      "fastest_seconds_over_mech": 0.9775280923227679
+    },
+    {
+      "benchmark": "revcomp",
+      "candidates": 1,
+      "fast": {
+        "key": "revcomp:revcomp-swift-1",
+        "id": "revcomp-swift-1",
+        "loc": 165,
+        "source_sha256": "d64ad6426a67a30d5ee3314305f1fb832311380d49673094de83e281f4bd569c",
+        "binary_sha256": "f8ec1cdc2b6d075f4c9495291c0d8765a5ab42e62ba802b5dd16765a46b592a7",
+        "median_seconds": 0.139846375,
+        "samples_seconds": [
+          0.149983292,
+          0.136403959,
+          0.139846375
+        ],
+        "sample_stdev_seconds": 0.007059338955204822
+      },
+      "small": {
+        "key": "revcomp:revcomp-swift-1",
+        "id": "revcomp-swift-1",
+        "loc": 165,
+        "source_sha256": "d64ad6426a67a30d5ee3314305f1fb832311380d49673094de83e281f4bd569c",
+        "binary_sha256": "f8ec1cdc2b6d075f4c9495291c0d8765a5ab42e62ba802b5dd16765a46b592a7",
+        "median_seconds": 0.139846375,
+        "samples_seconds": [
+          0.149983292,
+          0.136403959,
+          0.139846375
+        ],
+        "sample_stdev_seconds": 0.007059338955204822
+      },
+      "fastest_seconds_over_mech": 0.9580156517440838
+    },
+    {
+      "benchmark": "fasta",
+      "candidates": 4,
+      "fast": {
+        "key": "fasta:fasta-swift-3-faithful",
+        "id": "fasta-swift-3-faithful",
+        "loc": 199,
+        "source_sha256": "6e8d8c87d26d4af70cdd33e9d6f5865eabe70f130d9c6c04a11acfe6f5740130",
+        "binary_sha256": "14cd0ade6d73b730c95f27c7dd204e48f7fdfe5cfaeb8cb0e1ba71ea9574e5a9",
+        "median_seconds": 0.973553666,
+        "samples_seconds": [
+          0.973553666,
+          0.976153292,
+          0.971793709
+        ],
+        "sample_stdev_seconds": 0.0021932269952292757
+      },
+      "small": {
+        "key": "fasta:fasta-swift-8-faithful",
+        "id": "fasta-swift-8-faithful",
+        "loc": 77,
+        "source_sha256": "1b4422b75c3d60ad5a75c1a8f6ab0b69cda1dee182dce6d0b16b8f4810212f10",
+        "binary_sha256": "ae70d552b2f1cbac3a0bb457cdb4a7d64765e4b77bebb642524c98d0a48643cd",
+        "median_seconds": 6.357263875,
+        "samples_seconds": [
+          6.34591475,
+          6.357263875,
+          6.383575375
+        ],
+        "sample_stdev_seconds": 0.019319335504041274
+      },
+      "fastest_seconds_over_mech": 1.7800057337342317
+    },
+    {
+      "benchmark": "binarytrees",
+      "candidates": 5,
+      "fast": {
+        "key": "binarytrees:binarytrees-swift-3-faithful",
+        "id": "binarytrees-swift-3-faithful",
+        "loc": 72,
+        "source_sha256": "4890b81370ef5f35d08f0bc03e495b46a674274f87d23170eee1adf17301f8ae",
+        "binary_sha256": "c3da0921004c1f363206cf7afa8dc2a58a049020934db3f876f80b18044b8747",
+        "median_seconds": 5.820679333,
+        "samples_seconds": [
+          5.222902416,
+          5.820679333,
+          5.82152375
+        ],
+        "sample_stdev_seconds": 0.34537068420708833
+      },
+      "small": {
+        "key": "binarytrees:binarytrees-swift-1-faithful",
+        "id": "binarytrees-swift-1-faithful",
+        "loc": 64,
+        "source_sha256": "663da696abb947d86f386aa00c6951901677a174e69b57c4ff1c6ba5406d618c",
+        "binary_sha256": "6a71e015b640a1ec2e09365c00bbb21adf09c70acf070f90dc180812a13b11cb",
+        "median_seconds": 6.831532125,
+        "samples_seconds": [
+          6.856630125,
+          6.831532125,
+          6.703695667
+        ],
+        "sample_stdev_seconds": 0.08201729293441665
+      },
+      "fastest_seconds_over_mech": 14.667636834402934
+    },
+    {
+      "benchmark": "knucleotide",
+      "candidates": 4,
+      "fast": {
+        "key": "knucleotide:knucleotide-swift-2",
+        "id": "knucleotide-swift-2",
+        "loc": 124,
+        "source_sha256": "775b96e06322295eeacc41f660ee643b2bcb5094b44ccc0e32e2377d5f102dcb",
+        "binary_sha256": "1d4e95d34bfc0b2a64320265a44f893042788f7c516d317f41300e666ba07046",
+        "median_seconds": 3.7248025,
+        "samples_seconds": [
+          3.707403917,
+          3.7248025,
+          3.74881925
+        ],
+        "sample_stdev_seconds": 0.020795611630306566
+      },
+      "small": {
+        "key": "knucleotide:knucleotide-swift-7",
+        "id": "knucleotide-swift-7",
+        "loc": 48,
+        "source_sha256": "bfdb84fac8aed535edc96e9fb2f87131d740fd355a71aeb500f69e305ea8a947",
+        "binary_sha256": "34fd94a229b67975e5a50fb7e78fd52e736996b5891eacf2e7ad800fc67d7e87",
+        "median_seconds": 67.34129325,
+        "samples_seconds": [
+          67.34129325,
+          67.68024525,
+          66.653125667
+        ],
+        "sample_stdev_seconds": 0.5233605701582427
+      },
+      "fastest_seconds_over_mech": 7.165419683194978
+    },
+    {
+      "benchmark": "fannkuchredux",
+      "candidates": 2,
+      "fast": {
+        "key": "fannkuchredux:fannkuchredux-swift-3",
+        "id": "fannkuchredux-swift-3",
+        "loc": 136,
+        "source_sha256": "d2d642102acdd2bbe85f28309614a75591ee4cd19df69746c3aa0df140d72bb7",
+        "binary_sha256": "e1851d5e74ca48da11a078e9c58ec3d6495a312f77310cc5ecf90c5a9a142eee",
+        "median_seconds": 3.315373333,
+        "samples_seconds": [
+          3.315373333,
+          3.334541375,
+          3.28500875
+        ],
+        "sample_stdev_seconds": 0.024976331043170756
+      },
+      "small": {
+        "key": "fannkuchredux:fannkuchredux-swift-8",
+        "id": "fannkuchredux-swift-8",
+        "loc": 53,
+        "source_sha256": "13dfb3fd024239077adf10abadc8821e533719973cf36451c7ef32e96005a790",
+        "binary_sha256": "2258c70adef201139a7a8d358920e98829587b40829863edf6211d626e968072",
+        "median_seconds": 22.834604167,
+        "samples_seconds": [
+          22.839084958,
+          22.715449459,
+          22.834604167
+        ],
+        "sample_stdev_seconds": 0.07012329444097083
+      },
+      "fastest_seconds_over_mech": 1.9436181178561984
+    },
+    {
+      "benchmark": "regexredux",
+      "candidates": 3,
+      "fast": {
+        "key": "regexredux:regexredux-swift-4",
+        "id": "regexredux-swift-4",
+        "loc": 52,
+        "source_sha256": "ede9ebca015bb0dcc69b09d33246c2d2fcead4cdce22541dd20b62ac2fe44d5b",
+        "binary_sha256": "4987fe8bdd08ed40d0c1ea1ec0df52c95b08a5a8f86db739c4669153d970e284",
+        "median_seconds": 7.093230125,
+        "samples_seconds": [
+          7.093230125,
+          7.148069417,
+          7.048548583
+        ],
+        "sample_stdev_seconds": 0.04984673934942115
+      },
+      "small": {
+        "key": "regexredux:regexredux-swift-2",
+        "id": "regexredux-swift-2",
+        "loc": 39,
+        "source_sha256": "e66022d52d741e4a5ea48ab9d1970474cd2f3bf6b97ecc5996ed24b9adf161b8",
+        "binary_sha256": "50b3edf3dc8a09c8f5be8856dd5417651034b9b29fd22f1ab099777ba88ffa64",
+        "median_seconds": 19.864430834,
+        "samples_seconds": [
+          19.864430834,
+          19.89180325,
+          19.814122833
+        ],
+        "sample_stdev_seconds": 0.039400489226207515
+      },
+      "fastest_seconds_over_mech": 14.398462024169993
+    }
+  ],
+  "controls": {
+    "spectralnorm": {
+      "chart_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "binary_sha256": "18e1664f3374fd80f356e4b2f496a3d6add7534854930a82d7037e9306358e69",
+      "previous_seconds": 0.086075292,
+      "samples_seconds": [
+        0.087802208,
+        0.086637959,
+        0.083900208
+      ],
+      "median_seconds": 0.086637959,
+      "median_ratio": 1.0065369165404632
+    },
+    "pidigits": {
+      "chart_key": "pidigits:mech-pi-final-advance-signed",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "binary_sha256": "4bf41cc5207d91962cd380b094720c43ca3f7def96c6a0606d513e84fdef7dea",
+      "previous_seconds": 0.300272042,
+      "samples_seconds": [
+        0.287265291,
+        0.284660334,
+        0.28765925
+      ],
+      "median_seconds": 0.287265291,
+      "median_ratio": 0.956683443075929
+    },
+    "nbody": {
+      "chart_key": "nbody:pairwise-mass-tails",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "binary_sha256": "4ef1685b21284de80fd6bdea33bff0f3e2d23b16dedf76bdf5263914514e5dda",
+      "previous_seconds": 1.05385575,
+      "samples_seconds": [
+        1.049647,
+        1.052751042,
+        1.051762417
+      ],
+      "median_seconds": 1.051762417,
+      "median_ratio": 0.9980136437078793
+    },
+    "mandelbrot": {
+      "chart_key": "mandelbrot:mech-program-simd-loop-fma",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "binary_sha256": "7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd",
+      "previous_seconds": 0.439738792,
+      "samples_seconds": [
+        0.442656792,
+        0.442954917,
+        0.443787417
+      ],
+      "median_seconds": 0.442954917,
+      "median_ratio": 1.0073137168212352
+    },
+    "revcomp": {
+      "chart_key": "revcomp:mech-revcomp-optimized",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "binary_sha256": "c8948d85d696163cc24497763ab75c5b8385deaa1018d457714ca109745001dc",
+      "previous_seconds": 0.149272625,
+      "samples_seconds": [
+        0.149116125,
+        0.145975042,
+        0.143993375
+      ],
+      "median_seconds": 0.145975042,
+      "median_ratio": 0.9779089903456847
+    },
+    "fasta": {
+      "chart_key": "fasta:mech-fasta-final-expanded-v2",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "binary_sha256": "37c24e617689fbbec6221ff4c107d9ea35f18eb62ed7387286bfa7d6224a92e4",
+      "previous_seconds": 0.541193292,
+      "samples_seconds": [
+        0.5469385,
+        0.544530916,
+        0.547721292
+      ],
+      "median_seconds": 0.5469385,
+      "median_ratio": 1.0106158152455444
+    },
+    "binarytrees": {
+      "chart_key": "binarytrees:mech-binarytrees-parallel",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "binary_sha256": "b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0",
+      "previous_seconds": 0.394411208,
+      "samples_seconds": [
+        0.396193875,
+        0.399268667,
+        0.39683825
+      ],
+      "median_seconds": 0.39683825,
+      "median_ratio": 1.0061535827349004
+    },
+    "knucleotide": {
+      "chart_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "binary_sha256": "4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc",
+      "previous_seconds": 0.51382825,
+      "samples_seconds": [
+        0.509834708,
+        0.54649075,
+        0.519830333
+      ],
+      "median_seconds": 0.519830333,
+      "median_ratio": 1.0116811074517604
+    },
+    "fannkuchredux": {
+      "chart_key": "fannkuchredux:mech-fannkuch-even",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "binary_sha256": "3d3599f1f174915251d6323592ea81bf3dc7ca57f0f07b8f310cd6825393e004",
+      "previous_seconds": 1.702457333,
+      "samples_seconds": [
+        1.705774042,
+        1.710041,
+        1.698065708
+      ],
+      "median_seconds": 1.705774042,
+      "median_ratio": 1.0019481892061022
+    },
+    "regexredux": {
+      "chart_key": "regexredux:mech-regex-final-reuse-signed",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "binary_sha256": "026fa8c40c7d425282349c20a8cb155db271f2b7f4fdfefc1699408adcee0eef",
+      "previous_seconds": 0.489611584,
+      "samples_seconds": [
+        0.488844459,
+        0.49504,
+        0.492638041
+      ],
+      "median_seconds": 0.492638041,
+      "median_ratio": 1.0061813427192114
+    }
+  },
+  "fastest_seconds_over_mech_geomean": 2.577159347827154,
+  "protocol": "Every admitted Swift candidate and one current fastest Mech AOT control per benchmark have three shuffled sequential fresh-process full-workload samples. Startup, full input, computation, complete stdout to a regular file, and teardown are timed; compilation and output validation/hashing are excluded. AC power, Low Power Mode off, eight logical CPUs; published Swift Dispatch scheduling is retained (task counts can exceed core counts). Competing compiler and power changes invalidate a sample. Correct output and prescribed algorithm work are both required. Smallest means nonblank/noncomment LOC after separating packed statements; no gzip selection.",
+  "compiler": {
+    "path": "/usr/bin/swiftc",
+    "sha256": "3e7d30871a9740446f33a907b14d28f10ebe6d4e1c146a4c0788308f573a6609",
+    "version": "Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)\nTarget: arm64-apple-darwin25.2.0",
+    "driver_path": "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+    "driver_sha256": "c9ec6833426f73098b9f0abb45229087efa6b724a6f54a4d62d48cc419eaec90",
+    "frontend_path": "/Library/Developer/CommandLineTools/usr/bin/swift-frontend",
+    "frontend_sha256": "c9ec6833426f73098b9f0abb45229087efa6b724a6f54a4d62d48cc419eaec90",
+    "target_info": {
+      "compilerVersion": "Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)",
+      "target": {
+        "triple": "arm64-apple-macosx16.0",
+        "unversionedTriple": "arm64-apple-macosx",
+        "moduleTriple": "arm64-apple-macos",
+        "compatibilityLibraries": [],
+        "librariesRequireRPath": false
+      },
+      "paths": {
+        "runtimeLibraryPaths": [
+          "/Library/Developer/CommandLineTools/usr/lib/swift/macosx",
+          "/usr/lib/swift"
+        ],
+        "runtimeLibraryImportPaths": [
+          "/Library/Developer/CommandLineTools/usr/lib/swift/macosx"
+        ],
+        "runtimeResourcePath": "/Library/Developer/CommandLineTools/usr/lib/swift"
+      }
+    }
+  },
+  "discarded_samples": 0
+}

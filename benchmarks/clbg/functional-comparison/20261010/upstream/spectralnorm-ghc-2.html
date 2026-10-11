@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>spectral-norm Haskell GHC&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>spectral-norm Haskell GHC&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/spectralnorm.html#spectralnorm">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--</span>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">-- Contributed by Greg Buchholz </span>
+
+<span class="kwb">import</span> Data<span class="opt">.</span>Array<span class="opt">.</span>Base
+<span class="kwb">import</span> System<span class="opt">.</span>Environment
+<span class="kwb">import</span> Numeric
+
+main <span class="opt">=</span> <span class="kwd">do</span> 
+        <span class="kwc">[</span>arg<span class="kwc">]</span> <span class="opt">&lt;-</span> getArgs
+        <span class="kwd">let</span> n <span class="opt">=</span> <span class="kwc">(</span>read arg<span class="kwc">)</span> <span class="opt">-</span> <span class="num">1</span> 
+        <span class="kwd">let</span> init <span class="opt">=</span> listArray <span class="kwc">(</span><span class="num">0</span><span class="kwc">,</span>n<span class="kwc">) (</span>repeat <span class="num">1.0</span><span class="kwc">)</span>
+        <span class="kwd">let</span> <span class="kwc">(</span>v:u:rest<span class="kwc">)</span> <span class="opt">=</span> drop <span class="num">19</span> <span class="opt">$</span> iterate <span class="kwc">(</span>eval_AtA_times_u n<span class="kwc">)</span> init
+        <span class="kwd">let</span> vBv <span class="opt">=</span> sum <span class="kwc">[(</span>u<span class="opt">!</span>i<span class="kwc">)</span><span class="opt">*</span><span class="kwc">(</span>v<span class="opt">!</span>i<span class="kwc">)</span> <span class="opt">|</span>i<span class="opt">&lt;-</span><span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>n<span class="kwc">]]</span>
+        <span class="kwd">let</span> vv  <span class="opt">=</span> sum <span class="kwc">[(</span>v<span class="opt">!</span>i<span class="kwc">)</span><span class="opt">*</span><span class="kwc">(</span>v<span class="opt">!</span>i<span class="kwc">)</span> <span class="opt">|</span>i<span class="opt">&lt;-</span><span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>n<span class="kwc">]]</span>
+        putStrLn <span class="opt">$</span> showFFloat <span class="kwc">(</span>Just <span class="num">9</span><span class="kwc">) (</span>sqrt <span class="kwc">(</span>vBv<span class="opt">/</span>vv<span class="kwc">))</span> <span class="sng">&quot;&quot;</span>
+
+eval_AtA_times_u n u <span class="opt">=</span> eval_At_times_u n v
+    <span class="kwb">where</span> v <span class="opt">=</span> eval_A_times_u n u
+
+eval_A x y <span class="opt">=</span> <span class="num">1.0</span><span class="opt">/</span><span class="kwc">((</span>i<span class="opt">+</span>j<span class="kwc">)</span><span class="opt">*</span><span class="kwc">(</span>i<span class="opt">+</span>j<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span><span class="opt">/</span><span class="num">2</span><span class="opt">+</span>i<span class="opt">+</span><span class="num">1</span><span class="kwc">)</span>
+    <span class="kwb">where</span> i <span class="opt">=</span> fromIntegral x
+          j <span class="opt">=</span> fromIntegral y
+
+eval_A_times_u :: Int <span class="opt">-&gt;</span> UArray Int Double <span class="opt">-&gt;</span> UArray Int Double
+eval_A_times_u n u <span class="opt">=</span> unsafeAccumArray <span class="kwc">(</span><span class="opt">+</span><span class="kwc">)</span> <span class="num">0</span> <span class="kwc">(</span><span class="num">0</span><span class="kwc">,</span>n<span class="kwc">)</span> 
+                     <span class="kwc">[(</span>i<span class="kwc">,(</span>eval_A i j<span class="kwc">)</span> <span class="opt">*</span> u<span class="opt">!</span>j<span class="kwc">)</span><span class="opt">|</span>i<span class="opt">&lt;-</span><span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>n<span class="kwc">],</span> j<span class="opt">&lt;-</span><span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>n<span class="kwc">]]</span>
+   
+eval_At_times_u :: Int <span class="opt">-&gt;</span> UArray Int Double <span class="opt">-&gt;</span> UArray Int Double
+eval_At_times_u n u <span class="opt">=</span> unsafeAccumArray <span class="kwc">(</span><span class="opt">+</span><span class="kwc">)</span> <span class="num">0</span> <span class="kwc">(</span><span class="num">0</span><span class="kwc">,</span>n<span class="kwc">)</span> 
+                      <span class="kwc">[(</span>i<span class="kwc">,(</span>eval_A j i<span class="kwc">)</span> <span class="opt">*</span> u<span class="opt">!</span>j<span class="kwc">)</span><span class="opt">|</span>i<span class="opt">&lt;-</span><span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>n<span class="kwc">],</span> j<span class="opt">&lt;-</span><span class="kwc">[</span><span class="num">0</span><span class="opt">..</span>n<span class="kwc">]]</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 09:39:20 GMT
+
+MAKE:
+mv spectralnorm.ghc-2.ghc spectralnorm.ghc-2.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XMagicHash spectralnorm.ghc-2.hs -o spectralnorm.ghc-2.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( spectralnorm.ghc-2.hs, spectralnorm.ghc-2.o )
+[2 of 2] Linking spectralnorm.ghc-2.ghc_run
+rm spectralnorm.ghc-2.hs
+
+17.83 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./spectralnorm.ghc-2.ghc_run +RTS -N4 -RTS 5500
+
+PROGRAM OUTPUT:
+1.274224153
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

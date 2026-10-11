@@ -1,0 +1,7 @@
+Trace(n<u64>) = (result<u64>) :=
+  printed := io/print("trace={}\n", n)
+  result := n.
+Chunk(start<u64>, end<u64>, arg<u64>) = (result<u64>) :=
+  result := stats/sum([Trace(i) | i <- start..end]).
+result := (parallel/reduce-ranges(0, 10, 1, Chunk, 0, "sum"))
+io/print("{}\n", result)

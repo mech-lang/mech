@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>reverse-complement F#&nbsp;#5 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>reverse-complement F#&nbsp;#5 program</h1>
+    <aside>
+      <p><a href="../description/revcomp.html#revcomp">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">// The Computer Language Benchmarks Game</span>
+<span class="slc">// https://benchmarksgame-team.pages.debian.net/benchmarksgame/</span>
+<span class="slc">//</span>
+<span class="slc">// contributed by Jimmy Tang</span>
+<span class="slc">// multithreaded by Anthony Lloyd</span>
+<span class="kwa">open</span> <span class="kwd">System</span>
+<span class="kwa">open</span> <span class="kwd">System</span><span class="opt">.</span><span class="kwd">Threading</span>
+
+<span class="opt">[&lt;</span><span class="kwd">Literal</span><span class="opt">&gt;]</span>
+<span class="kwa">let</span> <span class="kwc">PageSize</span> <span class="opt">=</span> <span class="num">1048576</span> <span class="slc">// 1024 * 1024</span>
+<span class="kwa">let</span> <span class="kwc">pages</span> <span class="opt">=</span> <span class="kwd">Array</span><span class="opt">.</span>zeroCreate <span class="kwc">2048</span>
+<span class="kwa">let mutable</span> <span class="kwc">readCount</span><span class="opt">,</span> canWriteCount<span class="opt">,</span> lastPageSize <span class="opt">=</span> <span class="num">0</span><span class="opt">,</span> <span class="num">0</span><span class="opt">, -</span><span class="num">1</span>
+
+<span class="kwd">Thread</span><span class="opt">(</span><span class="kwa">fun</span> <span class="opt">() -&gt;</span>
+    <span class="kwa">let</span> <span class="kwc">stream</span> <span class="opt">=</span> <span class="kwd">Console</span><span class="opt">.</span><span class="kwd">OpenStandardInput</span><span class="opt">()</span>
+    <span class="kwa">let rec</span> loop<span class="opt">() =</span>
+        <span class="kwa">let</span> <span class="kwc">buffer</span> <span class="opt">=</span> <span class="kwd">Array</span><span class="opt">.</span>zeroCreate <span class="kwc">PageSize</span>
+        <span class="kwa">let rec</span> read offset <span class="kwc">count</span> <span class="opt">=</span>
+            <span class="kwa">let</span> <span class="kwc">bytesRead</span> <span class="opt">=</span> <span class="kwc">stream</span><span class="opt">.</span><span class="kwd">Read</span><span class="opt">(</span><span class="kwc">buffer</span><span class="opt">,</span> offset<span class="opt">,</span> <span class="kwc">count</span><span class="opt">)</span>
+            <span class="kwa">if</span> <span class="kwc">bytesRead</span><span class="opt">=</span><span class="kwc">count</span> <span class="kwa">then</span> offset<span class="opt">+</span><span class="kwc">count</span>
+            elif <span class="kwc">bytesRead</span><span class="opt">=</span><span class="num">0</span> <span class="kwa">then</span> offset
+            <span class="kwa">else</span> <span class="kwc">read</span> <span class="opt">(</span>offset<span class="opt">+</span><span class="kwc">bytesRead</span><span class="opt">) (</span><span class="kwc">count</span><span class="opt">-</span><span class="kwc">bytesRead</span><span class="opt">)</span>
+        <span class="kwa">let</span> <span class="kwc">bytesRead</span> <span class="opt">=</span> <span class="kwc">read</span> <span class="num">0</span> <span class="kwc">PageSize</span>
+        <span class="kwc">pages</span><span class="opt">.[</span><span class="kwc">readCount</span><span class="opt">] &lt;-</span> <span class="kwc">buffer</span>
+        <span class="kwc">readCount</span> <span class="opt">&lt;-</span> <span class="kwc">readCount</span> <span class="opt">+</span> <span class="num">1</span>
+        <span class="kwa">if</span> <span class="kwc">bytesRead</span><span class="opt">&lt;&gt;</span><span class="kwc">PageSize</span> <span class="kwa">then</span> lastPageSize <span class="opt">&lt;-</span> <span class="kwc">bytesRead</span> <span class="kwa">else</span> <span class="kwc">loop</span><span class="opt">()</span>
+    <span class="kwc">loop</span><span class="opt">()</span>
+<span class="opt">).</span><span class="kwd">Start</span><span class="opt">()</span>
+
+<span class="kwd">Thread</span><span class="opt">(</span><span class="kwa">fun</span> <span class="opt">() -&gt;</span>
+    <span class="kwa">let</span> <span class="kwc">map</span> <span class="opt">=</span> <span class="kwd">Array</span><span class="opt">.</span>init <span class="kwc">256</span> byte
+    <span class="kwd">Array</span><span class="opt">.</span>iter2 <span class="opt">(</span><span class="kwa">fun</span> i v <span class="opt">-&gt;</span> <span class="kwc">map</span><span class="opt">.[</span><span class="kwb">int</span> <span class="kwc">i</span><span class="opt">] &lt;-</span> v<span class="opt">)</span>
+        <span class="sng">&quot;ABCDGHKMRTVYabcdghkmrtvy&quot;</span><span class="kwd">B</span>
+        <span class="sng">&quot;TVGHCDMKYABRTVGHCDMKYABR&quot;</span><span class="kwd">B</span>
+
+    <span class="kwa">let</span> <span class="kwc">reverse</span> startPage <span class="kwc">startIndex</span> endPage <span class="kwc">endIndex</span> <span class="opt">(</span>previous<span class="opt">:</span><span class="kwd">Thread</span> <span class="kwb">option</span><span class="opt">) =</span>
+        <span class="kwa">let mutable</span> <span class="kwc">loPageID</span><span class="opt">,</span> lo<span class="opt">,</span> loPage <span class="opt">=</span> startPage<span class="opt">,</span> <span class="kwc">startIndex</span><span class="opt">,</span> <span class="kwc">pages</span><span class="opt">.[</span>startPage<span class="opt">]</span>
+        <span class="kwa">let mutable</span> <span class="kwc">hiPageID</span><span class="opt">,</span> hi<span class="opt">,</span> hiPage <span class="opt">=</span> endPage<span class="opt">,</span> <span class="kwc">endIndex</span><span class="opt">,</span> <span class="kwc">pages</span><span class="opt">.[</span>endPage<span class="opt">]</span>
+        <span class="kwa">let inline</span> checkhilo<span class="opt">() =</span>
+            <span class="kwa">if</span> <span class="kwc">PageSize</span><span class="opt">=</span>lo <span class="kwa">then</span>
+                <span class="kwc">loPageID</span> <span class="opt">&lt;-</span> <span class="kwc">loPageID</span><span class="opt">+</span><span class="num">1</span>
+                <span class="kwa">if</span> previous<span class="opt">.</span><span class="kwd">IsNone</span> <span class="opt">||</span> <span class="kwc">not</span> previous<span class="opt">.</span><span class="kwd">Value</span><span class="opt">.</span><span class="kwd">IsAlive</span> <span class="kwa">then</span>
+                    canWriteCount <span class="opt">&lt;-</span> <span class="kwc">loPageID</span>
+                loPage <span class="opt">&lt;-</span> <span class="kwc">pages</span><span class="opt">.[</span><span class="kwc">loPageID</span><span class="opt">]</span>
+                lo <span class="opt">&lt;-</span> <span class="num">0</span>
+            <span class="kwa">if</span> <span class="opt">-</span><span class="num">1</span><span class="opt">=</span>hi <span class="kwa">then</span>
+                <span class="kwc">hiPageID</span> <span class="opt">&lt;-</span> <span class="kwc">hiPageID</span><span class="opt">-</span><span class="num">1</span>
+                hiPage <span class="opt">&lt;-</span> <span class="kwc">pages</span><span class="opt">.[</span><span class="kwc">hiPageID</span><span class="opt">]</span>
+                hi <span class="opt">&lt;-</span> <span class="kwc">PageSize</span><span class="opt">-</span><span class="num">1</span>
+            <span class="kwc">loPageID</span><span class="opt">&lt;</span><span class="kwc">hiPageID</span> <span class="opt">|| (</span><span class="kwc">loPageID</span><span class="opt">=</span><span class="kwc">hiPageID</span> <span class="opt">&amp;&amp;</span> lo<span class="opt">&lt;=</span>hi<span class="opt">)</span>
+        <span class="kwa">while</span> <span class="kwc">checkhilo</span><span class="opt">()</span> <span class="kwa">do</span>
+            <span class="kwa">let</span> <span class="kwc">iValue</span> <span class="opt">=</span> loPage<span class="opt">.[</span>lo<span class="opt">]</span>
+            <span class="kwa">let</span> <span class="kwc">jValue</span> <span class="opt">=</span> hiPage<span class="opt">.[</span>hi<span class="opt">]</span>
+            <span class="kwa">if</span> <span class="kwc">iValue</span><span class="opt">=</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwd">B</span> <span class="opt">||</span> <span class="kwc">jValue</span><span class="opt">=</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwd">B</span> <span class="kwa">then</span>
+                <span class="kwa">if</span> <span class="kwc">iValue</span><span class="opt">=</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwd">B</span> <span class="kwa">then</span> lo <span class="opt">&lt;-</span> lo<span class="opt">+</span><span class="num">1</span>
+                <span class="kwa">if</span> <span class="kwc">jValue</span><span class="opt">=</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwd">B</span> <span class="kwa">then</span> hi <span class="opt">&lt;-</span> hi<span class="opt">-</span><span class="num">1</span>
+            <span class="kwa">else</span>
+                loPage<span class="opt">.[</span>lo<span class="opt">] &lt;-</span> <span class="kwc">map</span><span class="opt">.[</span><span class="kwb">int</span> <span class="kwc">jValue</span><span class="opt">]</span>
+                hiPage<span class="opt">.[</span>hi<span class="opt">] &lt;-</span> <span class="kwc">map</span><span class="opt">.[</span><span class="kwb">int</span> <span class="kwc">iValue</span><span class="opt">]</span>
+                lo <span class="opt">&lt;-</span> lo<span class="opt">+</span><span class="num">1</span>
+                hi <span class="opt">&lt;-</span> hi<span class="opt">-</span><span class="num">1</span>
+        <span class="kwa">if</span> previous<span class="opt">.</span><span class="kwd">IsSome</span> <span class="kwa">then</span> previous<span class="opt">.</span><span class="kwd">Value</span><span class="opt">.</span><span class="kwd">Join</span><span class="opt">()</span>
+        canWriteCount <span class="opt">&lt;-</span> endPage
+
+    <span class="kwa">let rec</span> reverseAll <span class="kwc">page i</span> previousThread <span class="opt">=</span>
+        <span class="kwa">let rec</span> skipHeader <span class="kwc">page i</span> <span class="opt">=</span>
+            <span class="kwa">while</span> <span class="kwc">page</span> <span class="opt">=</span> <span class="kwc">readCount</span> <span class="kwa">do</span> <span class="kwd">Thread</span><span class="opt">.</span><span class="kwd">MemoryBarrier</span><span class="opt">()</span>
+            <span class="kwa">let</span> <span class="kwc">i</span> <span class="opt">=</span> <span class="kwd">Array</span><span class="opt">.</span><span class="kwd">IndexOf</span><span class="opt">(</span><span class="kwc">pages</span><span class="opt">.[</span><span class="kwc">page</span><span class="opt">],</span><span class="sng">&#39;</span><span class="esc">\n</span><span class="sng">&#39;</span><span class="kwd">B</span><span class="opt">,</span> <span class="kwc">i</span><span class="opt">,</span> <span class="kwc">PageSize</span><span class="opt">-</span><span class="kwc">i</span><span class="opt">)</span>
+            <span class="kwa">if</span> <span class="opt">-</span><span class="num">1</span><span class="opt">&lt;&gt;</span><span class="kwc">i</span> <span class="kwa">then</span> <span class="kwc">page</span><span class="opt">,</span><span class="kwc">i</span><span class="opt">+</span><span class="num">1</span> <span class="kwa">else</span> <span class="kwc">skipHeader</span> <span class="opt">(</span><span class="kwc">page</span><span class="opt">+</span><span class="num">1</span><span class="opt">)</span> <span class="num">0</span>
+        <span class="kwa">let</span> <span class="kwc">loPageID</span><span class="opt">,</span> lo <span class="opt">=</span> <span class="kwc">skipHeader page i</span>
+        <span class="kwa">let rec</span> findNextAndReverse <span class="kwc">pageID i</span> previousThread <span class="opt">=</span>
+            <span class="kwa">while</span> <span class="kwc">pageID</span> <span class="opt">=</span> <span class="kwc">readCount</span> <span class="kwa">do</span> <span class="kwd">Thread</span><span class="opt">.</span><span class="kwd">MemoryBarrier</span><span class="opt">()</span>
+            <span class="kwa">let</span> <span class="kwc">onLastPage</span> <span class="opt">=</span> <span class="kwc">pageID</span> <span class="opt">+</span> <span class="num">1</span> <span class="opt">=</span> <span class="kwc">readCount</span> <span class="opt">&amp;&amp;</span> lastPageSize <span class="opt">&lt;&gt; -</span><span class="num">1</span>
+            <span class="kwa">let</span> <span class="kwc">thisPageSize</span> <span class="opt">=</span> <span class="kwa">if</span> <span class="kwc">onLastPage</span> <span class="kwa">then</span> lastPageSize <span class="kwa">else</span> <span class="kwc">PageSize</span>
+            <span class="kwa">let</span> <span class="kwc">i</span> <span class="opt">=</span> <span class="kwd">Array</span><span class="opt">.</span><span class="kwd">IndexOf</span><span class="opt">(</span><span class="kwc">pages</span><span class="opt">.[</span><span class="kwc">pageID</span><span class="opt">],</span><span class="sng">&#39;&gt;&#39;</span><span class="kwd">B</span><span class="opt">,</span> <span class="kwc">i</span><span class="opt">,</span> <span class="kwc">thisPageSize</span><span class="opt">-</span><span class="kwc">i</span><span class="opt">)</span>
+            <span class="kwa">if</span> <span class="opt">-</span><span class="num">1</span><span class="opt">&lt;&gt;</span><span class="kwc">i</span> <span class="kwa">then</span>
+                <span class="kwa">let</span> <span class="kwc">newThread</span> <span class="opt">=</span> <span class="kwd">Thread</span><span class="opt">(</span><span class="kwa">fun</span> <span class="opt">() -&gt;</span>
+                    <span class="kwc">reverse loPageID</span> lo <span class="kwc">pageID</span> <span class="opt">(</span><span class="kwc">i</span><span class="opt">-</span><span class="num">1</span><span class="opt">)</span> previousThread<span class="opt">)</span>
+                <span class="kwc">newThread</span><span class="opt">.</span><span class="kwd">Start</span><span class="opt">()</span>
+                reverseAll <span class="kwc">pageID i</span> <span class="opt">(</span><span class="kwd">Some</span> <span class="kwc">newThread</span><span class="opt">)</span>
+            elif <span class="kwc">onLastPage</span> <span class="kwa">then</span>
+                <span class="kwc">reverse loPageID</span> lo <span class="kwc">pageID</span> <span class="opt">(</span>lastPageSize<span class="opt">-</span><span class="num">1</span><span class="opt">)</span> previousThread
+                canWriteCount <span class="opt">&lt;-</span> <span class="kwc">readCount</span>
+            <span class="kwa">else</span> <span class="kwc">findNextAndReverse</span> <span class="opt">(</span><span class="kwc">pageID</span><span class="opt">+</span><span class="num">1</span><span class="opt">)</span> <span class="num">0</span> previousThread
+        <span class="kwc">findNextAndReverse loPageID</span> lo previousThread
+    reverseAll <span class="kwc">0</span> <span class="num">0</span> <span class="kwd">None</span>
+<span class="opt">).</span><span class="kwd">Start</span><span class="opt">()</span>
+
+<span class="kwa">let</span> <span class="kwc">stream</span> <span class="opt">=</span> <span class="kwd">Console</span><span class="opt">.</span><span class="kwd">OpenStandardOutput</span><span class="opt">()</span>
+<span class="kwa">let rec</span> <span class="kwc">loop</span> writtenCount <span class="opt">=</span>
+    <span class="kwa">while</span> <span class="kwc">writtenCount</span> <span class="opt">=</span> canWriteCount <span class="kwa">do</span> <span class="kwd">Thread</span><span class="opt">.</span><span class="kwd">MemoryBarrier</span><span class="opt">()</span>
+    <span class="kwa">if</span> <span class="kwc">writtenCount</span><span class="opt">+</span><span class="num">1</span> <span class="opt">=</span> <span class="kwc">readCount</span> <span class="opt">&amp;&amp;</span> lastPageSize <span class="opt">&lt;&gt; -</span><span class="num">1</span> <span class="kwa">then</span>
+        <span class="kwc">stream</span><span class="opt">.</span><span class="kwd">Write</span><span class="opt">(</span><span class="kwc">pages</span><span class="opt">.[</span><span class="kwc">writtenCount</span><span class="opt">],</span> <span class="num">0</span><span class="opt">,</span> lastPageSize<span class="opt">)</span>
+    <span class="kwa">else</span>
+        <span class="kwc">stream</span><span class="opt">.</span><span class="kwd">Write</span><span class="opt">(</span><span class="kwc">pages</span><span class="opt">.[</span><span class="kwc">writtenCount</span><span class="opt">],</span> <span class="num">0</span><span class="opt">,</span> <span class="kwc">PageSize</span><span class="opt">)</span>
+        <span class="kwc">loop</span> <span class="opt">(</span><span class="kwc">writtenCount</span><span class="opt">+</span><span class="num">1</span><span class="opt">)</span>
+<span class="kwc">loop</span> <span class="num">0</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+.NET SDK 9.0.100
+Host Version: 9.0.0
+Commit: 9d5a6a9aa4
+
+&lt;OutputType&gt;Exe
+&lt;TargetFramework&gt;net9.0
+&lt;ImplicitUsings&gt;enable
+&lt;Nullable&gt;enable
+&lt;AllowUnsafeBlocks&gt;true
+&lt;ServerGarbageCollection&gt;true
+&lt;ConcurrentGarbageCollection&gt;true
+&lt;PublishAot&gt;false
+
+
+ Thu, 06 Feb 2025 08:48:27 GMT
+
+MAKE:
+cp revcomp.fsharpcore-5.fsharpcore Program.fs
+cp Include/fsharpcore/program.fsproj .
+/opt/src/dotnet-sdk-9.0.100/dotnet build -r linux-x64 -c Release	
+  Determining projects to restore...
+  Restored /home/dunham/all-benchmarksgame/benchmarksgame_i53330/revcomp/tmp/program.fsproj (in 772 ms).
+  program -&gt; /home/dunham/all-benchmarksgame/benchmarksgame_i53330/revcomp/tmp/bin/Release/net9.0/linux-x64/program.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:09.67
+
+11.51s to complete and log all make actions
+
+COMMAND LINE:
+ ./bin/Release/net9.0/linux-x64/program 0 &lt; revcomp-input100000001.txt
+
+TIMED OUT after 3600s
+
+
+(TRUNCATED) PROGRAM OUTPUT:
+&gt;ONE Homo sapiens alu
+CTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTC
+GCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTC
+AAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGC
+CCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT
+CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGG
+CGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAG
+TGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCT
+GCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTT
+GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACC
+TCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGC
+GCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGA
+TCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCC
+GAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAG
+AGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGC
+CCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTT
+GAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTG
+CAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGAT
+TACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCA
+CCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTC
+CCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTC
+GCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTC
+CCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGC
+CACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAG
+GCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGG
+ATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCA
+GGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCG
+ATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGC
+TAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAAC
+TCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGA
+GCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAG
+TGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTC
+AGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATT
+TTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGG
+TGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCG
+GCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCG
+GCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTA
+GCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACG
+GGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCC
+TCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGAC
+GGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACC
+TCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAG
+GCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATG
+TTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAA
+GTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCT
+GTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGG
+TTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCA
+CGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGG
+TCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTAC
+AGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTG
+GAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCT
+CCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT
+TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTG
+ACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCAC
+CGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCG
+CGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCT
+CCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAG
+TAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATC
+CGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTT
+TTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCA
+CTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGG
+GATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTT
+TCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGC
+CTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGT
+CTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGC
+CTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCG
+CGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGC
+CAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCT
+GGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGC
+CCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAA
+GCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCC
+GGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCG
+AACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCG
+TGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTG
+CAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGC
+CTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGT
+ATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTC
+AGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGC
+CCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATC
+TCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGA
+GTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAG
+ACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCC
+GCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGA
+GACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCA
+ACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTA
+CAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACC
+ATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCC
+AAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGC
+TCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCC
+GGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCA
+CCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGC
+TGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGAT
+TACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGG
+CTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGAT
+TCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTA
+ATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTC
+CTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGC
+CACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTG
+GCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG
+CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTT
+TAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTG
+ATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGC
+CTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGC
+TCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGC
+TGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGG
+GTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTC
+GGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGG
+AGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTC
+CGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGC
+GCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTT
+GGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGT
+GCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGT
+CGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTT
+CAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACG
+CCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTC
+TCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAG
+GCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGA
+GTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCC
+TGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTT
+TGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGAC
+CTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCG
+CGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCG
+ATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCC
+CGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTA
+GAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCG
+CCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTT
+TGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACT
+GCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGA
+TTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTC
+ACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCT
+CCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCT
+CGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCT
+CCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCG
+CCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCA
+GGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGG
+GATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCC
+AGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGC
+GATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGG
+CTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAA
+CTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTG
+AGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCA
+GTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCT
+CAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTAT
+TTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAG
+GTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCC
+GGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC
+GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGT
+AGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGAC
+GGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGC
+CTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGA
+CGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAAC
+CTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACA
+GGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCAT
+GTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAA
+AGTGCTGGGATTACAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTC
+TGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGG
+GTTCAAGCGATTCTCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACC
+ACGCCCGGCTAATTTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTG
+GTCTCGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTA
+CAGGCGTGAGCCACCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCT
+GGAGTGCAGTGGCGCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTC
+TCCTGCCTCAGCCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAAT
+TTTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCT
+GACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTGGGATTACAGGCGTGAGCCA
+CCGCGCCCGGCCTTTTTGAGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGC
+GCGATCTCGGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAGCC
+TCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATTTTTGTATTTTTA
+GTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCTCGAACTCCTGACCTCAGGTGAT
+CCGCCCGCCTCGGCCTCCCAAAGTGCTGGGA    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

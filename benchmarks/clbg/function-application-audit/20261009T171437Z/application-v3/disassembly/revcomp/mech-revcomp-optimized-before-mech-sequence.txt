@@ -1,0 +1,502 @@
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/revcomp/mech-revcomp-optimized-before.project/mech-sequence.o:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000000000000 <_mech_bytes_0_2>:
+       0:      	pacibsp
+       4:      	stp	x29, x30, [sp, #-0x10]!
+       8:      	mov	x29, sp
+       c:      	str	x19, [sp, #-0x10]!
+      10:      	mov	x19, x0
+      14:      	adrp	x4, 0x0 <_mech_bytes_0_2>
+      18:      	ldr	x4, [x4]
+      1c:      	mov	x0, x19
+      20:      	blr	x4
+      24:      	cmp	x0, #0x0
+      28:      	b.eq	0x14 <_mech_bytes_0_2+0x14>
+      2c:      	ldr	x19, [sp], #0x10
+      30:      	ldp	x29, x30, [sp], #0x10
+      34:      	retab
+		...
+
+0000000000000040 <_mech_bytes_1_2>:
+      40:      	cmp	x4, x5
+      44:      	b.lo	0x50 <_mech_bytes_1_2+0x10>
+      48:      	mov	w0, #0x0                ; =0
+      4c:      	ret
+      50:      	add	x6, x4, #0x10
+      54:      	cmp	x6, x5
+      58:      	cset	x7, ls
+      5c:      	add	x8, x4, x4
+      60:      	add	x8, x8, #0x20
+      64:      	cmp	x8, x2
+      68:      	cset	x8, ls
+      6c:      	and	w8, w7, w8
+      70:      	uxtb	w8, w8
+      74:      	cbnz	x8, 0xc8 <_mech_bytes_1_2+0x88>
+      78:      	sub	x9, x2, #0x1
+      7c:      	sub	x9, x9, x4
+      80:      	ldrb	w10, [x0, x9]
+      84:      	ldrb	w11, [x0, x4]
+      88:      	uxtb	w10, w10
+      8c:      	ldrh	w10, [x3, x10, lsl #1]
+      90:      	mov	w12, #0xffff            ; =65535
+      94:      	uxth	w13, w10
+      98:      	cmp	w13, w12, uxth
+      9c:      	b.eq	0x184 <_mech_bytes_1_2+0x144>
+      a0:      	uxtb	w12, w11
+      a4:      	ldrh	w12, [x3, x12, lsl #1]
+      a8:      	mov	w13, #0xffff            ; =65535
+      ac:      	uxth	w14, w12
+      b0:      	cmp	w14, w13, uxth
+      b4:      	b.eq	0x184 <_mech_bytes_1_2+0x144>
+      b8:      	strb	w10, [x1, x4]
+      bc:      	strb	w12, [x1, x9]
+      c0:      	add	x4, x4, #0x1
+      c4:      	b	0x40 <_mech_bytes_1_2>
+      c8:      	add	x6, x4, #0x10
+      cc:      	sub	x6, x2, x6
+      d0:      	ldr	q31, [x0, x6]
+      d4:      	ldr	q18, [x0, x4]
+      d8:      	mov.16b	v3, v18
+      dc:      	ldr	q18, 0x190 <_mech_bytes_1_2+0x150>
+      e0:      	ldr	q17, 0x1a0 <_mech_bytes_1_2+0x160>
+      e4:      	mov.16b	v30, v31
+      e8:      	tbl.16b	v19, { v30, v31 }, v17
+      ec:      	movi.16b	v20, #0xdf
+      f0:      	and.16b	v19, v19, v20
+      f4:      	movi.16b	v21, #0x41
+      f8:      	sub.16b	v24, v19, v21
+      fc:      	tbl.16b	v19, { v18 }, v24
+     100:      	ldr	q22, 0x1b0 <_mech_bytes_1_2+0x170>
+     104:      	movi.16b	v23, #0x10
+     108:      	sub.16b	v24, v24, v23
+     10c:      	tbl.16b	v24, { v22 }, v24
+     110:      	orr.16b	v19, v19, v24
+     114:      	cmeq.16b	v24, v19, #0
+     118:      	umaxp.4s	v16, v24, v24
+     11c:      	mov.d	x7, v16[0]
+     120:      	cmp	x7, #0x0
+     124:      	cset	x7, ne
+     128:      	uxtb	w7, w7
+     12c:      	cbnz	x7, 0x184 <_mech_bytes_1_2+0x144>
+     130:      	ldr	q24, 0x1c0 <_mech_bytes_1_2+0x180>
+     134:      	mov.16b	v31, v3
+     138:      	mov.16b	v30, v31
+     13c:      	tbl.16b	v24, { v30, v31 }, v24
+     140:      	and.16b	v24, v24, v20
+     144:      	sub.16b	v24, v24, v21
+     148:      	tbl.16b	v21, { v18 }, v24
+     14c:      	sub.16b	v23, v24, v23
+     150:      	tbl.16b	v22, { v22 }, v23
+     154:      	orr.16b	v21, v21, v22
+     158:      	cmeq.16b	v22, v21, #0
+     15c:      	umaxp.4s	v20, v22, v22
+     160:      	mov.d	x7, v20[0]
+     164:      	cmp	x7, #0x0
+     168:      	cset	x7, ne
+     16c:      	uxtb	w7, w7
+     170:      	cbnz	x7, 0x184 <_mech_bytes_1_2+0x144>
+     174:      	str	q19, [x1, x4]
+     178:      	str	q21, [x1, x6]
+     17c:      	add	x4, x4, #0x10
+     180:      	b	0x40 <_mech_bytes_1_2>
+     184:      	mov	w0, #0x1                ; =1
+     188:      	ret
+     18c:      	udf	#0x0
+     190:      	ldxrh	w20, [x18]
+     194:      	sdot	z0.h, z0.b, z3.b
+     198:      	<unknown>
+     19c:      	udf	#0x4e4b
+     1a0:      	<unknown>
+     1a4:      	stxrb	w9, w11, [x16]
+     1a8:      	<unknown>
+     1ac:      	<unknown>
+     1b0:      	<unknown>
+     1b4:      	<unknown>
+     1b8:      	udf	#0x52
+     1bc:      	udf	#0x0
+     1c0:      	<unknown>
+     1c4:      	stxrb	w9, w11, [x16]
+     1c8:      	<unknown>
+     1cc:      	<unknown>
+
+00000000000001d0 <_mech_bytes_1_3>:
+     1d0:      	mov	x8, #0x0                ; =0
+     1d4:      	mov	x11, x8
+     1d8:      	cmp	x8, x2
+     1dc:      	b.lo	0x1e4 <_mech_bytes_1_3+0x14>
+     1e0:      	ret
+     1e4:      	add	x3, x8, #0x3c
+     1e8:      	cmp	x3, x2
+     1ec:      	b.ls	0x20c <_mech_bytes_1_3+0x3c>
+     1f0:      	cmp	x8, x2
+     1f4:      	b.hs	0x25c <_mech_bytes_1_3+0x8c>
+     1f8:      	ldrb	w3, [x0, x8]
+     1fc:      	strb	w3, [x1, x11]
+     200:      	add	x8, x8, #0x1
+     204:      	add	x11, x11, #0x1
+     208:      	b	0x1f0 <_mech_bytes_1_3+0x20>
+     20c:      	ldr	q0, [x0, x8]
+     210:      	str	q0, [x1, x11]
+     214:      	add	x3, x0, #0x10
+     218:      	ldr	q0, [x3, x8]
+     21c:      	add	x3, x1, #0x10
+     220:      	str	q0, [x3, x11]
+     224:      	add	x3, x0, #0x20
+     228:      	ldr	q0, [x3, x8]
+     22c:      	add	x3, x1, #0x20
+     230:      	str	q0, [x3, x11]
+     234:      	add	x3, x0, #0x30
+     238:      	ldr	x3, [x3, x8]
+     23c:      	add	x4, x1, #0x30
+     240:      	str	x3, [x4, x11]
+     244:      	add	x3, x0, #0x38
+     248:      	ldr	w3, [x3, x8]
+     24c:      	add	x4, x1, #0x38
+     250:      	str	w3, [x4, x11]
+     254:      	add	x8, x8, #0x3c
+     258:      	add	x11, x11, #0x3c
+     25c:      	mov	w3, #0xa                ; =10
+     260:      	strb	w3, [x1, x11]
+     264:      	add	x11, x11, #0x1
+     268:      	b	0x1d8 <_mech_bytes_1_3+0x8>
+
+000000000000026c <_mech_sequence_entry>:
+     26c:      	pacibsp
+     270:      	stp	x29, x30, [sp, #-0x10]!
+     274:      	mov	x29, sp
+     278:      	str	x23, [sp, #-0x10]!
+     27c:      	stp	x21, x22, [sp, #-0x10]!
+     280:      	stp	x19, x20, [sp, #-0x10]!
+     284:      	mov	x23, x0
+     288:      	mov	x1, #0x34               ; =52
+     28c:      	mov	x21, #0x2               ; =2
+     290:      	mov	x19, #0x0               ; =0
+     294:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     298:      	ldr	x8, [x8]
+     29c:      	mov	x2, x21
+     2a0:      	mov	x3, x19
+     2a4:      	mov	x4, x19
+     2a8:      	mov	x5, x19
+     2ac:      	mov	x6, x19
+     2b0:      	mov	x7, x19
+     2b4:      	blr	x8
+     2b8:      	mov	x20, #0x9               ; =9
+     2bc:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     2c0:      	ldr	x8, [x8]
+     2c4:      	mov	x0, x23
+     2c8:      	mov	x1, x20
+     2cc:      	mov	x2, x19
+     2d0:      	mov	x3, x19
+     2d4:      	mov	x4, x19
+     2d8:      	mov	x5, x19
+     2dc:      	mov	x6, x19
+     2e0:      	mov	x7, x19
+     2e4:      	blr	x8
+     2e8:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     2ec:      	ldr	x8, [x8]
+     2f0:      	mov	x2, x21
+     2f4:      	mov	x0, x23
+     2f8:      	mov	x1, x20
+     2fc:      	mov	x3, x19
+     300:      	mov	x4, x19
+     304:      	mov	x5, x19
+     308:      	mov	x6, x19
+     30c:      	mov	x7, x19
+     310:      	blr	x8
+     314:      	mov	x1, #0x2a               ; =42
+     318:      	movk	x1, #0x1, lsl #32
+     31c:      	mov	x21, #0xc               ; =12
+     320:      	mov	x22, #0xb               ; =11
+     324:      	adrp	x7, 0x0 <_mech_bytes_0_2>
+     328:      	ldr	x7, [x7]
+     32c:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     330:      	ldr	x8, [x8]
+     334:      	mov	x0, x23
+     338:      	mov	x2, x21
+     33c:      	mov	x3, x22
+     340:      	mov	x4, x19
+     344:      	mov	x5, x19
+     348:      	mov	x6, x19
+     34c:      	blr	x8
+     350:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     354:      	ldr	x8, [x8]
+     358:      	mov	x2, x22
+     35c:      	mov	x0, x23
+     360:      	mov	x1, x20
+     364:      	mov	x3, x19
+     368:      	mov	x4, x19
+     36c:      	mov	x5, x19
+     370:      	mov	x6, x19
+     374:      	mov	x7, x19
+     378:      	blr	x8
+     37c:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     380:      	ldr	x8, [x8]
+     384:      	mov	x2, x21
+     388:      	mov	x0, x23
+     38c:      	mov	x1, x20
+     390:      	mov	x3, x19
+     394:      	mov	x4, x19
+     398:      	mov	x5, x19
+     39c:      	mov	x6, x19
+     3a0:      	mov	x7, x19
+     3a4:      	blr	x8
+     3a8:      	mov	x1, #0x2d               ; =45
+     3ac:      	mov	x21, #0xd               ; =13
+     3b0:      	adrp	x7, 0x0 <_mech_bytes_0_2>
+     3b4:      	ldr	x7, [x7]
+     3b8:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     3bc:      	ldr	x8, [x8]
+     3c0:      	mov	x0, x23
+     3c4:      	mov	x2, x21
+     3c8:      	mov	x3, x19
+     3cc:      	mov	x4, x19
+     3d0:      	mov	x5, x19
+     3d4:      	mov	x6, x19
+     3d8:      	blr	x8
+     3dc:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     3e0:      	ldr	x8, [x8]
+     3e4:      	mov	x0, x23
+     3e8:      	mov	x1, x20
+     3ec:      	mov	x2, x21
+     3f0:      	mov	x7, x19
+     3f4:      	mov	x3, x7
+     3f8:      	mov	x4, x7
+     3fc:      	mov	x5, x7
+     400:      	mov	x6, x7
+     404:      	blr	x8
+     408:      	ldp	x19, x20, [sp], #0x10
+     40c:      	ldp	x21, x22, [sp], #0x10
+     410:      	ldr	x23, [sp], #0x10
+     414:      	ldp	x29, x30, [sp], #0x10
+     418:      	retab
+
+000000000000041c <_mech_callable_1>:
+     41c:      	pacibsp
+     420:      	stp	x29, x30, [sp, #-0x10]!
+     424:      	mov	x29, sp
+     428:      	stp	x23, x24, [sp, #-0x10]!
+     42c:      	stp	x21, x22, [sp, #-0x10]!
+     430:      	stp	x19, x20, [sp, #-0x10]!
+     434:      	mov	x24, x0
+     438:      	mov	x1, #0x30               ; =48
+     43c:      	mov	x19, #0x0               ; =0
+     440:      	mov	x22, #0x1               ; =1
+     444:      	mov	x21, #0x2               ; =2
+     448:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     44c:      	ldr	x8, [x8]
+     450:      	mov	x2, x19
+     454:      	mov	x3, x22
+     458:      	mov	x4, x21
+     45c:      	mov	x5, x19
+     460:      	mov	x6, x19
+     464:      	mov	x7, x19
+     468:      	blr	x8
+     46c:      	mov	x20, #0x9               ; =9
+     470:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     474:      	ldr	x8, [x8]
+     478:      	mov	x0, x24
+     47c:      	mov	x1, x20
+     480:      	mov	x2, x19
+     484:      	mov	x3, x19
+     488:      	mov	x4, x19
+     48c:      	mov	x5, x19
+     490:      	mov	x6, x19
+     494:      	mov	x7, x19
+     498:      	blr	x8
+     49c:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     4a0:      	ldr	x8, [x8]
+     4a4:      	mov	x2, x22
+     4a8:      	mov	x0, x24
+     4ac:      	mov	x1, x20
+     4b0:      	mov	x3, x19
+     4b4:      	mov	x4, x19
+     4b8:      	mov	x5, x19
+     4bc:      	mov	x6, x19
+     4c0:      	mov	x7, x19
+     4c4:      	blr	x8
+     4c8:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     4cc:      	ldr	x8, [x8]
+     4d0:      	mov	x2, x21
+     4d4:      	mov	x0, x24
+     4d8:      	mov	x1, x20
+     4dc:      	mov	x3, x19
+     4e0:      	mov	x4, x19
+     4e4:      	mov	x5, x19
+     4e8:      	mov	x6, x19
+     4ec:      	mov	x7, x19
+     4f0:      	blr	x8
+     4f4:      	mov	x1, #0x2f               ; =47
+     4f8:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     4fc:      	ldr	x8, [x8]
+     500:      	mov	x0, x24
+     504:      	mov	x2, x19
+     508:      	mov	x3, x19
+     50c:      	mov	x4, x19
+     510:      	mov	x5, x19
+     514:      	mov	x6, x19
+     518:      	mov	x7, x19
+     51c:      	blr	x8
+     520:      	mov	x1, #0x2e               ; =46
+     524:      	movk	x1, #0x1, lsl #32
+     528:      	mov	x22, #0xd               ; =13
+     52c:      	mov	x21, #0xe               ; =14
+     530:      	adrp	x7, 0x0 <_mech_bytes_0_2>
+     534:      	ldr	x7, [x7]
+     538:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     53c:      	ldr	x8, [x8]
+     540:      	mov	x0, x24
+     544:      	mov	x2, x22
+     548:      	mov	x3, x21
+     54c:      	mov	x4, x19
+     550:      	mov	x5, x19
+     554:      	mov	x6, x19
+     558:      	blr	x8
+     55c:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     560:      	ldr	x8, [x8]
+     564:      	mov	x2, x22
+     568:      	mov	x0, x24
+     56c:      	mov	x1, x20
+     570:      	mov	x3, x19
+     574:      	mov	x4, x19
+     578:      	mov	x5, x19
+     57c:      	mov	x6, x19
+     580:      	mov	x7, x19
+     584:      	blr	x8
+     588:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     58c:      	ldr	x8, [x8]
+     590:      	mov	x2, x21
+     594:      	mov	x0, x24
+     598:      	mov	x1, x20
+     59c:      	mov	x3, x19
+     5a0:      	mov	x4, x19
+     5a4:      	mov	x5, x19
+     5a8:      	mov	x6, x19
+     5ac:      	mov	x7, x19
+     5b0:      	blr	x8
+     5b4:      	mov	x1, #0x31               ; =49
+     5b8:      	mov	x21, #0x10              ; =16
+     5bc:      	mov	x22, #0x7               ; =7
+     5c0:      	mov	x23, #0x3               ; =3
+     5c4:      	adrp	x7, 0x0 <_mech_bytes_0_2>
+     5c8:      	ldr	x7, [x7]
+     5cc:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     5d0:      	ldr	x8, [x8]
+     5d4:      	mov	x0, x24
+     5d8:      	mov	x2, x21
+     5dc:      	mov	x3, x22
+     5e0:      	mov	x4, x23
+     5e4:      	mov	x5, x19
+     5e8:      	mov	x6, x19
+     5ec:      	blr	x8
+     5f0:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     5f4:      	ldr	x8, [x8]
+     5f8:      	mov	x2, x23
+     5fc:      	mov	x0, x24
+     600:      	mov	x1, x20
+     604:      	mov	x3, x19
+     608:      	mov	x4, x19
+     60c:      	mov	x5, x19
+     610:      	mov	x6, x19
+     614:      	mov	x7, x19
+     618:      	blr	x8
+     61c:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     620:      	ldr	x8, [x8]
+     624:      	mov	x2, x22
+     628:      	mov	x0, x24
+     62c:      	mov	x1, x20
+     630:      	mov	x3, x19
+     634:      	mov	x4, x19
+     638:      	mov	x5, x19
+     63c:      	mov	x6, x19
+     640:      	mov	x7, x19
+     644:      	blr	x8
+     648:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     64c:      	ldr	x8, [x8]
+     650:      	mov	x2, x21
+     654:      	mov	x0, x24
+     658:      	mov	x1, x20
+     65c:      	mov	x3, x19
+     660:      	mov	x4, x19
+     664:      	mov	x5, x19
+     668:      	mov	x6, x19
+     66c:      	mov	x7, x19
+     670:      	blr	x8
+     674:      	mov	x21, #0x1b              ; =27
+     678:      	mov	x22, #0xc               ; =12
+     67c:      	mov	x23, #0x4               ; =4
+     680:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     684:      	ldr	x8, [x8]
+     688:      	mov	x0, x24
+     68c:      	mov	x1, x21
+     690:      	mov	x2, x22
+     694:      	mov	x3, x23
+     698:      	mov	x4, x19
+     69c:      	mov	x5, x19
+     6a0:      	mov	x6, x19
+     6a4:      	mov	x7, x19
+     6a8:      	blr	x8
+     6ac:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     6b0:      	ldr	x8, [x8]
+     6b4:      	mov	x2, x23
+     6b8:      	mov	x0, x24
+     6bc:      	mov	x1, x20
+     6c0:      	mov	x3, x19
+     6c4:      	mov	x4, x19
+     6c8:      	mov	x5, x19
+     6cc:      	mov	x6, x19
+     6d0:      	mov	x7, x19
+     6d4:      	blr	x8
+     6d8:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     6dc:      	ldr	x8, [x8]
+     6e0:      	mov	x2, x22
+     6e4:      	mov	x0, x24
+     6e8:      	mov	x1, x20
+     6ec:      	mov	x3, x19
+     6f0:      	mov	x4, x19
+     6f4:      	mov	x5, x19
+     6f8:      	mov	x6, x19
+     6fc:      	mov	x7, x19
+     700:      	blr	x8
+     704:      	mov	x22, #0x12              ; =18
+     708:      	mov	x23, #0x11              ; =17
+     70c:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     710:      	ldr	x8, [x8]
+     714:      	mov	x1, x21
+     718:      	mov	x0, x24
+     71c:      	mov	x2, x22
+     720:      	mov	x3, x23
+     724:      	mov	x4, x19
+     728:      	mov	x5, x19
+     72c:      	mov	x6, x19
+     730:      	mov	x7, x19
+     734:      	blr	x8
+     738:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     73c:      	ldr	x8, [x8]
+     740:      	mov	x2, x23
+     744:      	mov	x0, x24
+     748:      	mov	x1, x20
+     74c:      	mov	x3, x19
+     750:      	mov	x4, x19
+     754:      	mov	x5, x19
+     758:      	mov	x6, x19
+     75c:      	mov	x7, x19
+     760:      	blr	x8
+     764:      	adrp	x8, 0x0 <_mech_bytes_0_2>
+     768:      	ldr	x8, [x8]
+     76c:      	mov	x0, x24
+     770:      	mov	x1, x20
+     774:      	mov	x2, x22
+     778:      	mov	x7, x19
+     77c:      	mov	x3, x7
+     780:      	mov	x4, x7
+     784:      	mov	x5, x7
+     788:      	mov	x6, x7
+     78c:      	blr	x8
+     790:      	ldp	x19, x20, [sp], #0x10
+     794:      	ldp	x21, x22, [sp], #0x10
+     798:      	ldp	x23, x24, [sp], #0x10
+     79c:      	ldp	x29, x30, [sp], #0x10
+     7a0:      	retab

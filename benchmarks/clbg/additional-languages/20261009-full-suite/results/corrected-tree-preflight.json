@@ -1,0 +1,20 @@
+[
+  {
+    "key": "binarytrees:mojo-binarytrees-optimized",
+    "source_sha256": "c2f58ed4fc34cfa8552260c9d370585c9c61165f3a726a7b8680217b76f72986",
+    "binary_sha256": "45b1e6f0bbbaed8e991b6fde1d2975871b32328df972b6ae6efd94ea81a37f76",
+    "full": true,
+    "result": {
+      "seconds": 0.8121625,
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "competing_compilers": [],
+      "power_changes": []
+    },
+    "at": "2026-10-10T01:31:18.888154+00:00",
+    "formal_sample": false
+  }
+]

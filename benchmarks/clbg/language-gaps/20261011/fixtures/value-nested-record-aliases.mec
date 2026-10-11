@@ -1,0 +1,12 @@
+<state> := <{a<bigint>, b<bigint>, i<u64>}>
+AsU64(x<bigint>) => <u64> := x
+InnerMore(x<bigint>, j<u64>) => <bool> := j < 3
+InnerStep(x<bigint>, j<u64>) => <(bigint,u64)> := (x + 1, j + 1)
+OuterMore(s<state>) => <bool> := s.i < 4
+OuterStep(s<state>) => <state> :=
+  (next, j) := control/while((s.a, 0), InnerMore, InnerStep)
+  {a: next, b: next, i: s.i + 1}
+seed<bigint> := 10
+alias := seed
+result := control/while({a: seed, b: seed, i: 0}, OuterMore, OuterStep)
+io/print("{} {} {} {}\n", AsU64(result.a), AsU64(result.b), AsU64(alias), result.i)

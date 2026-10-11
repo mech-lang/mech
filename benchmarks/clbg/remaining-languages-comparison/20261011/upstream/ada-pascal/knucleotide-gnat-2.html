@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>k-nucleotide Ada 2012 GNAT&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>k-nucleotide Ada 2012 GNAT&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/knucleotide.html#knucleotide">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--  The Computer Language Benchmarks Game</span>
+<span class="slc">--  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">--  Contributed by Martin Krischik</span>
+<span class="slc">--  Modified by Georg Bauhaus and Jonathan Parker</span>
+
+<span class="kwa">pragma</span> <span class="kwc">Restrictions</span> <span class="opt">(</span>No_Abort_Statements<span class="opt">);</span>
+<span class="kwa">pragma</span> <span class="kwc">Restrictions</span> <span class="opt">(</span>Max_Asynchronous_Select_Nesting <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+
+<span class="kwa">with</span> Ada<span class="opt">.</span>Characters<span class="opt">.</span>Latin_1<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Integer_Text_IO<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Float_Text_IO<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Text_IO<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Exceptions<span class="opt">;</span>
+
+<span class="kwa">with</span> String_Fragments<span class="opt">;</span>
+<span class="kwa">with</span> Data_Input<span class="opt">;</span>
+<span class="kwa">with</span> GNAT<span class="opt">.</span>Heap_Sort_G<span class="opt">;</span>
+<span class="kwa">with</span> GNAT<span class="opt">.</span>HTable<span class="opt">;</span>
+
+<span class="kwa">procedure</span> KNucleotide <span class="kwa">is</span>
+
+   <span class="kwa">subtype</span> Fragment_Lengths <span class="kwa">is</span> <span class="kwb">Integer</span> <span class="kwa">range</span> <span class="num">1</span> <span class="opt">..</span> <span class="num">18</span><span class="opt">;</span>
+
+   <span class="slc">--  Data read as single String:</span>
+
+   Buffer <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">String</span> <span class="opt">:=</span> Data_Input<span class="opt">.</span>Read<span class="opt">;</span>
+
+   <span class="slc">--  Calculate and write data - either a percentage for all fragments found</span>
+   <span class="slc">--  or - when Nucleotide_Fragment is given - the count for that fragment.</span>
+
+   <span class="kwa">generic</span>
+      <span class="kwa">with package</span> Fragments <span class="kwa">is new</span> <span class="kwc">String_Fragments</span><span class="opt">(&lt;&gt;);</span>
+   <span class="kwa">package</span> Work <span class="kwa">is</span>
+
+      <span class="kwa">procedure</span> Write
+        <span class="opt">(</span>Nucleotide_Length   <span class="opt">:</span> <span class="kwa">in</span> Fragment_Lengths<span class="opt">;</span>
+         Nucleotide_Fragment <span class="opt">:</span> <span class="kwa">in</span> Fragments<span class="opt">.</span>Fragment <span class="opt">:=</span> Fragments<span class="opt">.</span>Null_Fragment<span class="opt">);</span>
+
+      <span class="kwa">task</span> Writer <span class="kwa">is</span>
+         <span class="slc">--</span>
+         <span class="slc">--  Performs `Write` calls</span>
+         <span class="slc">--</span>
+         <span class="kwa">pragma</span> <span class="kwc">Storage_Size</span> <span class="opt">(</span><span class="num">2</span><span class="opt">**</span><span class="num">24</span><span class="opt">);</span>
+
+         <span class="kwa">entry</span> <span class="kwc">Set</span> <span class="opt">(</span>Nucleotide_Length   <span class="opt">:</span> <span class="kwa">in</span> Fragment_Lengths<span class="opt">;</span>
+                    Nucleotide_Fragment <span class="opt">:</span> <span class="kwa">in</span> Fragments<span class="opt">.</span>Fragment <span class="opt">:=</span> Fragments<span class="opt">.</span>Null_Fragment<span class="opt">);</span>
+      <span class="kwa">end</span> Writer<span class="opt">;</span>
+
+   <span class="kwa">end</span> Work<span class="opt">;</span>
+
+
+   <span class="kwa">type</span> Order <span class="kwa">is array</span> <span class="opt">(</span>Fragment_Lengths<span class="opt">)</span> <span class="kwa">of</span> <span class="kwb">Boolean</span><span class="opt">;</span>
+
+   <span class="kwa">protected</span> Printer <span class="kwa">is</span>
+      <span class="slc">--</span>
+      <span class="slc">--  Serializes access to output</span>
+      <span class="slc">--</span>
+      <span class="kwa">entry</span> <span class="kwc">Seize</span> <span class="opt">(</span>Fragment_Lengths<span class="opt">);</span>
+      <span class="kwa">procedure</span> <span class="kwc">Release</span> <span class="opt">(</span>L <span class="opt">:</span> Fragment_Lengths<span class="opt">);</span>
+
+   <span class="kwa">private</span>
+      Done <span class="opt">:</span> Order <span class="opt">:=</span>
+        <span class="opt">(</span><span class="num">1</span> | <span class="num">2</span> | <span class="num">3</span> | <span class="num">4</span> | <span class="num">6</span> | <span class="num">12</span> | <span class="num">18</span> <span class="opt">=&gt;</span> <span class="kwd">False</span><span class="opt">,</span>
+         <span class="kwa">others</span> <span class="opt">=&gt;</span> <span class="kwd">True</span><span class="opt">);</span>
+   <span class="kwa">end</span> Printer<span class="opt">;</span>
+
+   <span class="kwa">protected body</span> Printer <span class="kwa">is</span>
+
+      <span class="slc">--  Use families&#39; entry indexes to find that output of preceding</span>
+      <span class="slc">--  `Write`s has already been produced thus ordering the tasks&#39;s results.</span>
+
+      <span class="kwa">entry</span> <span class="kwc">Seize</span> <span class="opt">(</span><span class="kwa">for</span> L <span class="kwa">in</span> Fragment_Lengths<span class="opt">)</span>
+      <span class="kwa">when</span> <span class="kwc">Done</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Fragment_Lengths<span class="kwd">&#39;Pred</span><span class="opt">(</span>L<span class="opt">)) = (</span><span class="num">1</span> <span class="opt">..</span> Fragment_Lengths<span class="kwd">&#39;Pred</span><span class="opt">(</span>L<span class="opt">) =&gt;</span> <span class="kwd">True</span><span class="opt">)</span> <span class="kwa">is</span>
+      <span class="kwa">begin</span>
+         <span class="kwa">null</span><span class="opt">;</span>
+      <span class="kwa">end</span> Seize<span class="opt">;</span>
+
+      <span class="kwa">procedure</span> <span class="kwc">Release</span> <span class="opt">(</span>L <span class="opt">:</span> Fragment_Lengths<span class="opt">)</span> <span class="kwa">is</span>
+      <span class="kwa">begin</span>
+         <span class="kwc">Done</span> <span class="opt">(</span>L<span class="opt">) :=</span> <span class="kwd">True</span><span class="opt">;</span>
+      <span class="kwa">end</span> Release<span class="opt">;</span>
+
+   <span class="kwa">end</span> Printer<span class="opt">;</span>
+
+   <span class="kwa">package body</span> Work <span class="kwa">is</span>
+
+      <span class="slc">---------------------</span>
+      <span class="slc">-- procedure Write --</span>
+      <span class="slc">---------------------</span>
+
+      <span class="slc">--  Procedure KNucleotide&#39;s tasks call Write in order to calculate and</span>
+      <span class="slc">--  write data - either a percentage for all fragments found or - when</span>
+      <span class="slc">--  Nucleotide_Fragment is given - the count for that fragment.</span>
+      <span class="slc">--</span>
+      <span class="kwa">procedure</span> Write
+        <span class="opt">(</span>Nucleotide_Length   <span class="opt">:</span> <span class="kwa">in</span> Fragment_Lengths<span class="opt">;</span>
+         Nucleotide_Fragment <span class="opt">:</span> <span class="kwa">in</span> Fragments<span class="opt">.</span>Fragment <span class="opt">:=</span> Fragments<span class="opt">.</span>Null_Fragment<span class="opt">)</span>
+      <span class="kwa">is</span>
+         <span class="kwa">use</span> Fragments<span class="opt">;</span>
+
+         <span class="slc">--  Package is an interface to GNAT&#39;s simple hash table: GNAT.HTable.</span>
+         <span class="slc">--  The package calculates nucleotide Fragment_Lengths and keeps the</span>
+         <span class="slc">--  result inside a hash table as requested by the shootout rules.</span>
+
+         <span class="kwa">package</span> Calculator <span class="kwa">is</span>
+
+            <span class="slc">--  Elements used to store inside hash table:</span>
+
+            <span class="kwa">type</span> Element_Type <span class="kwa">is private</span><span class="opt">;</span>
+            <span class="kwa">type</span> Element_Access <span class="kwa">is access</span> Element_Type<span class="opt">;</span>
+            <span class="kwa">for</span> Element_Access<span class="kwd">&#39;Storage_Size</span> <span class="kwa">use</span> <span class="num">16</span>#<span class="num">60_00_01</span>#<span class="opt">;</span>
+
+
+<span class="slc">--  Calculate frequency of occurrence of the nucleotides:</span>
+
+            <span class="kwa">procedure</span> <span class="kwc">Get_Frequencies</span> <span class="opt">(</span>Length <span class="opt">:</span> Fragment_Lengths<span class="opt">);</span>
+
+            <span class="slc">--  Get the count for the given nucleotide fragment:</span>
+
+            <span class="kwa">function</span> <span class="kwc">Number_Counted</span> <span class="opt">(</span>Nucleotide_Fragment <span class="opt">:</span> Fragment<span class="opt">)</span> <span class="kwa">return</span> <span class="kwb">Natural</span><span class="opt">;</span>
+
+            <span class="slc">--  Start to iterate over all elements of hash table:</span>
+
+            <span class="kwa">function</span> Get_First <span class="kwa">return</span> Element_Access<span class="opt">;</span>
+
+            <span class="slc">--  Continue itereation over the hash table:</span>
+
+            <span class="kwa">function</span> Get_Next <span class="kwa">return</span> Element_Access<span class="opt">;</span>
+
+            <span class="slc">--  Key and value when computed:</span>
+
+            <span class="kwa">function</span> <span class="kwc">Count_Of</span> <span class="opt">(</span>Element <span class="opt">:</span> <span class="kwa">not null</span> Element_Access<span class="opt">)</span> <span class="kwa">return</span> <span class="kwb">Natural</span><span class="opt">;</span>
+            <span class="kwa">function</span> <span class="kwc">Fragment_Of</span> <span class="opt">(</span>Element <span class="opt">:</span> <span class="kwa">not null</span> Element_Access<span class="opt">)</span> <span class="kwa">return</span> Fragment<span class="opt">;</span>
+
+            <span class="slc">--  Get total count over all elements - as well as the count of</span>
+            <span class="slc">--  elements:</span>
+
+            <span class="kwa">procedure</span> <span class="kwc">Get_Totals</span> <span class="opt">(</span>Total <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">;</span> Count <span class="opt">:</span> <span class="kwa">out</span> <span class="kwb">Natural</span><span class="opt">);</span>
+
+         <span class="kwa">private</span>
+            <span class="kwa">pragma</span> <span class="kwc">Inline</span> <span class="opt">(</span>Count_of<span class="opt">,</span> Fragment_Of<span class="opt">);</span>
+
+            <span class="kwa">type</span> Element_Type <span class="kwa">is record</span>
+               Count <span class="opt">:</span> <span class="kwb">Natural</span>        <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+               Key   <span class="opt">:</span> Fragment       <span class="opt">:=</span> Fragments<span class="opt">.</span>Null_Fragment<span class="opt">;</span>
+               Next  <span class="opt">:</span> Element_Access <span class="opt">:=</span> <span class="kwa">null</span><span class="opt">;</span>
+            <span class="kwa">end record</span><span class="opt">;</span>
+         <span class="kwa">end</span> Calculator<span class="opt">;</span>
+
+         <span class="kwa">package body</span> Calculator <span class="kwa">is</span>
+
+            Log_Table_Size <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="kwb">Natural</span><span class="kwd">&#39;Min</span> <span class="opt">(</span>Fragment<span class="kwd">&#39;Last</span><span class="opt">*</span><span class="num">2</span><span class="opt">+</span><span class="num">4</span><span class="opt">,</span> <span class="num">17</span><span class="opt">);</span>
+            Table_Size     <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Natural</span> <span class="opt">:=</span> <span class="num">2</span> <span class="opt">**</span> Log_Table_Size<span class="opt">;</span>
+
+            <span class="kwa">subtype</span> Hash_Type <span class="kwa">is</span> <span class="kwb">Natural</span> <span class="kwa">range</span> <span class="num">0</span> <span class="opt">..</span> Table_Size <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+
+            <span class="kwa">function</span> <span class="kwc">Hash</span> <span class="opt">(</span>Key <span class="opt">:</span> Fragment<span class="opt">)</span> <span class="kwa">return</span> Hash_Type<span class="opt">;</span>
+            <span class="kwa">procedure</span> <span class="kwc">Set_Next</span> <span class="opt">(</span>E <span class="opt">:</span> Element_Access<span class="opt">;</span> Next <span class="opt">:</span> Element_Access<span class="opt">);</span>
+            <span class="kwa">function</span> <span class="kwc">Next</span> <span class="opt">(</span>E <span class="opt">:</span> Element_Access<span class="opt">)</span> <span class="kwa">return</span> Element_Access<span class="opt">;</span>
+            <span class="kwa">function</span> <span class="kwc">Get_Key</span> <span class="opt">(</span>E <span class="opt">:</span> <span class="kwa">not null</span> Element_Access<span class="opt">)</span> <span class="kwa">return</span> Fragment<span class="opt">;</span>
+
+            <span class="kwa">pragma</span> <span class="kwc">Inline</span> <span class="opt">(</span>Hash<span class="opt">,</span> Set_Next<span class="opt">,</span> Next<span class="opt">,</span> Get_Key<span class="opt">);</span>
+
+            <span class="kwa">package</span> Table <span class="kwa">is new</span> GNAT<span class="opt">.</span>HTable<span class="opt">.</span>Static_HTable
+              <span class="opt">(</span>Header_Num <span class="opt">=&gt;</span> Hash_Type<span class="opt">,</span>
+               Element    <span class="opt">=&gt;</span> Element_Type<span class="opt">,</span>
+               Elmt_Ptr   <span class="opt">=&gt;</span> Element_Access<span class="opt">,</span>
+               Null_Ptr   <span class="opt">=&gt;</span> <span class="kwa">null</span><span class="opt">,</span>
+               Key        <span class="opt">=&gt;</span> Fragment<span class="opt">,</span>
+               Hash       <span class="opt">=&gt;</span> Hash<span class="opt">,</span>
+               Equal      <span class="opt">=&gt;</span> Fragments<span class="opt">.</span><span class="sng">&quot;=&quot;</span><span class="opt">,</span>
+               Set_Next   <span class="opt">=&gt;</span> Set_Next<span class="opt">,</span>
+               Next       <span class="opt">=&gt;</span> Next<span class="opt">,</span>
+               Get_Key    <span class="opt">=&gt;</span> Get_Key<span class="opt">);</span>
+
+
+            <span class="kwa">function</span> <span class="kwc">Hash</span> <span class="opt">(</span>Key <span class="opt">:</span> Fragment<span class="opt">)</span> <span class="kwa">return</span> Hash_Type <span class="kwa">is</span>
+               <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>Hash_Type<span class="kwd">&#39;First</span> <span class="opt">=</span> <span class="num">0</span><span class="opt">);</span>
+               <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>Hash_Type<span class="kwd">&#39;Last</span>  <span class="opt">=</span> <span class="num">2</span><span class="opt">**</span>Log_Table_Size <span class="opt">-</span> <span class="num">1</span><span class="opt">);</span>
+               <span class="kwa">type</span> Uns_32 <span class="kwa">is mod</span> <span class="num">2</span><span class="opt">**</span><span class="num">32</span><span class="opt">;</span>
+               H <span class="opt">:</span> Uns_32 <span class="opt">:=</span> <span class="kwb">Character</span><span class="kwd">&#39;Pos</span> <span class="opt">(</span><span class="kwc">Key</span> <span class="opt">(</span>Key<span class="kwd">&#39;First</span><span class="opt">));</span>
+            <span class="kwa">begin</span>
+               <span class="kwa">for</span> J <span class="kwa">in</span> Key<span class="kwd">&#39;First</span> <span class="opt">+</span> <span class="num">1</span> <span class="opt">..</span> Key<span class="kwd">&#39;Last</span> <span class="kwa">loop</span>
+                  H <span class="opt">:=</span> <span class="kwb">Character</span><span class="kwd">&#39;Pos</span> <span class="opt">(</span><span class="kwc">Key</span> <span class="opt">(</span>J<span class="opt">)) +</span> H <span class="opt">*</span> <span class="num">2</span><span class="opt">**</span><span class="num">3</span> <span class="opt">+</span> H<span class="opt">;</span>
+               <span class="kwa">end loop</span><span class="opt">;</span>
+               H <span class="opt">:= (</span>H <span class="opt">/</span> <span class="num">2</span><span class="opt">**</span>Log_Table_Size<span class="opt">)</span> <span class="kwa">xor</span> H<span class="opt">;</span>
+               <span class="kwa">return</span> Hash_Type<span class="kwd">&#39;Base</span> <span class="opt">(</span>H <span class="kwa">mod</span> <span class="num">2</span><span class="opt">**</span>Log_Table_Size<span class="opt">);</span>
+            <span class="kwa">end</span> Hash<span class="opt">;</span>
+
+
+            <span class="kwa">procedure</span> <span class="kwc">Get_Frequencies</span> <span class="opt">(</span>Length <span class="opt">:</span> Fragment_Lengths<span class="opt">)</span> <span class="kwa">is</span>
+            <span class="kwa">begin</span>
+               <span class="kwa">for</span> I <span class="kwa">in</span>  <span class="num">1</span> <span class="opt">..</span> Buffer<span class="kwd">&#39;Last</span> <span class="opt">-</span> Length <span class="opt">+</span> <span class="num">1</span> <span class="kwa">loop</span>
+                  <span class="kwa">declare</span>
+                     Key <span class="opt">:</span> <span class="kwb">String</span> <span class="kwa">renames</span> <span class="kwc">Buffer</span><span class="opt">(</span>I <span class="opt">..</span> I <span class="opt">+</span> Length <span class="opt">-</span> <span class="num">1</span><span class="opt">);</span>
+                     Element <span class="opt">:</span> <span class="kwa">constant</span> Element_Access <span class="opt">:=</span> Table<span class="opt">.</span><span class="kwc">Get</span> <span class="opt">(</span>Key<span class="opt">);</span>
+                  <span class="kwa">begin</span>
+                     <span class="kwa">if</span> Element <span class="opt">/=</span> <span class="kwa">null then</span>
+                        Element<span class="opt">.</span><span class="kwa">all</span><span class="opt">.</span>Count <span class="opt">:=</span> <span class="kwb">Natural</span><span class="kwd">&#39;Succ</span> <span class="opt">(</span>Element<span class="opt">.</span><span class="kwa">all</span><span class="opt">.</span>Count<span class="opt">);</span>
+                     <span class="kwa">else</span>
+                        Table<span class="opt">.</span><span class="kwc">Set</span> <span class="opt">(</span><span class="kwa">new</span> Element_Type<span class="sng">&#39;(Count =&gt; 1,</span>
+<span class="sng">                                                     Key =&gt; Key,</span>
+<span class="sng">                                                     Next =&gt; null));</span>
+<span class="sng">                     end if;</span>
+<span class="sng">                  end;</span>
+<span class="sng">               end loop;</span>
+<span class="sng">               return;</span>
+<span class="sng">            end Get_Frequencies;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">            function Count_Of (Element : not null Element_Access) return Natural is</span>
+<span class="sng">            begin</span>
+<span class="sng">               return Element.all.Count;</span>
+<span class="sng">            end Count_Of;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">            function Number_Counted (Nucleotide_Fragment : Fragment) return Natural is</span>
+<span class="sng">               The_Element : constant Element_Access := Table.Get (Nucleotide_Fragment);</span>
+<span class="sng">            begin</span>
+<span class="sng">               if The_Element /= null then</span>
+<span class="sng">                  return The_Element.all.Count;</span>
+<span class="sng">               else</span>
+<span class="sng">                  return 0;</span>
+<span class="sng">               end if;</span>
+<span class="sng">            end Number_Counted;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">            function Get_First return Element_Access is</span>
+<span class="sng">            begin</span>
+<span class="sng">               return Table.Get_First;</span>
+<span class="sng">            end Get_First;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">            function Get_Key (E : not null Element_Access) return Fragment is</span>
+<span class="sng">            begin</span>
+<span class="sng">               return E.all.Key;</span>
+<span class="sng">            end Get_Key;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">            function Get_Next return Element_Access is</span>
+<span class="sng">            begin</span>
+<span class="sng">               return Table.Get_Next;</span>
+<span class="sng">            end Get_Next;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">            procedure Get_Totals (Total : out Natural; Count : out Natural) is</span>
+<span class="sng">               The_Element : Element_Access := Table.Get_First;</span>
+<span class="sng">            begin</span>
+<span class="sng">               Total := 0;</span>
+<span class="sng">               Count := 0;</span>
+<span class="sng">               while The_Element /= null loop</span>
+<span class="sng">                  Total       := Total + The_Element.all.Count;</span>
+<span class="sng">                  Count       := Count + 1;</span>
+<span class="sng">                  The_Element := Table.Get_Next;</span>
+<span class="sng">               end loop;</span>
+<span class="sng">            end Get_Totals;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">            function Fragment_Of (Element : not null Element_Access) return Fragment is</span>
+<span class="sng">            begin</span>
+<span class="sng">               return Element.all.Key;</span>
+<span class="sng">            end Fragment_Of;</span>
+<span class="sng"></span>
+<span class="sng">            function Next (E : Element_Access) return Element_Access is</span>
+<span class="sng">            begin</span>
+<span class="sng">               return E.all.Next;</span>
+<span class="sng">            end Next;</span>
+<span class="sng"></span>
+<span class="sng">            procedure Set_Next (E : Element_Access; Next : Element_Access) is</span>
+<span class="sng">            begin</span>
+<span class="sng">               E.all.Next := Next;</span>
+<span class="sng">            end Set_Next;</span>
+<span class="sng"></span>
+<span class="sng">         end Calculator;</span>
+<span class="sng"></span>
+<span class="sng">      begin --  Write</span>
+<span class="sng"></span>
+<span class="sng">         Calculator.Get_Frequencies (Nucleotide_Length);</span>
+<span class="sng"></span>
+<span class="sng">         if Nucleotide_Fragment = Fragments.Null_Fragment then</span>
+<span class="sng">            Calculate_Total : declare</span>
+<span class="sng">               Num_Table_Entries : Natural;</span>
+<span class="sng">               Sum_Of_Counts     : Natural;</span>
+<span class="sng">            begin</span>
+<span class="sng">               Calculator.Get_Totals</span>
+<span class="sng">                 (Total =&gt; Sum_Of_Counts,</span>
+<span class="sng">                  Count =&gt; Num_Table_Entries);</span>
+<span class="sng"></span>
+<span class="sng">               Get_Sort_Put : declare</span>
+<span class="sng">                  Data : array (0 .. Num_Table_Entries) of Calculator.Element_Access;</span>
+<span class="sng"></span>
+<span class="sng">                  --  heap sort subprograms</span>
+<span class="sng">                  procedure Move (From : Natural; To : Natural);</span>
+<span class="sng">                  function Less_Then (Op1, Op2 : Natural) return Boolean;</span>
+<span class="sng"></span>
+<span class="sng">                  pragma Inline (Move, Less_Then);</span>
+<span class="sng"></span>
+<span class="sng">                  function Less_Then (Op1, Op2 : Natural) return Boolean is</span>
+<span class="sng">                  begin</span>
+<span class="sng">                     return</span>
+<span class="sng">                       Calculator.Count_Of (Data (Op1))</span>
+<span class="sng">                       &gt;</span>
+<span class="sng">                       Calculator.Count_Of (Data (Op2));</span>
+<span class="sng">                  end Less_Then;</span>
+<span class="sng"></span>
+<span class="sng">                  procedure Move (From : Natural; To : Natural) is</span>
+<span class="sng">                  begin</span>
+<span class="sng">                     Data (To) := Data (From);</span>
+<span class="sng">                  end Move;</span>
+<span class="sng"></span>
+<span class="sng">                  package Heap_Sort is new GNAT.Heap_Sort_G</span>
+<span class="sng">                    (Move =&gt; Move,</span>
+<span class="sng">                     Lt   =&gt; Less_Then);</span>
+<span class="sng"></span>
+<span class="sng">               begin  -- Get_Sort_Put</span>
+<span class="sng">                  Data (0) := null;</span>
+<span class="sng">                  Data (1) := Calculator.Get_First;</span>
+<span class="sng"></span>
+<span class="sng">                  for I in  2 .. Data&#39;Last loop</span>
+<span class="sng">                     Data (I) := Calculator.Get_Next;</span>
+<span class="sng">                  end loop;</span>
+<span class="sng"></span>
+<span class="sng">                  Heap_Sort.Sort (Data&#39;Last);</span>
+<span class="sng"></span>
+<span class="sng">                  Printer.Seize (Nucleotide_Length);</span>
+<span class="sng">                  for I in  1 .. Data&#39;Last loop</span>
+<span class="sng">                     Ada.Text_IO.Put (Calculator.Fragment_Of (Data (I)) &amp; &#39;</span> <span class="sng">&#39;);</span>
+<span class="sng">                     Ada.Float_Text_IO.Put</span>
+<span class="sng">                       (Item =&gt; (100.0</span>
+<span class="sng">                                   * Float (Calculator.Count_Of (Data (I)))</span>
+<span class="sng">                                   / Float (Sum_Of_Counts)),</span>
+<span class="sng">                        Fore =&gt; 1,</span>
+<span class="sng">                        Aft  =&gt; 3,</span>
+<span class="sng">                        Exp  =&gt; 0);</span>
+<span class="sng">                     Ada.Text_IO.New_Line;</span>
+<span class="sng">                  end loop;</span>
+<span class="sng">                  Ada.Text_IO.New_Line;</span>
+<span class="sng">                  Printer.Release (Nucleotide_Length);</span>
+<span class="sng">               end Get_Sort_Put;</span>
+<span class="sng">            end Calculate_Total;</span>
+<span class="sng">         else</span>
+<span class="sng">            Printer.Seize (Nucleotide_Length);</span>
+<span class="sng">            Ada.Integer_Text_IO.Put</span>
+<span class="sng">              (Item =&gt; Calculator.Number_Counted (Nucleotide_Fragment),</span>
+<span class="sng">               Width =&gt; 1);</span>
+<span class="sng">            Ada.Text_IO.Put (Ada.Characters.Latin_1.HT);</span>
+<span class="sng">            Ada.Text_IO.Put_Line (Nucleotide_Fragment);</span>
+<span class="sng">            Printer.Release (Nucleotide_Length);</span>
+<span class="sng">         end if;</span>
+<span class="sng">      end Write;</span>
+<span class="sng"></span>
+<span class="sng">      task body Writer is</span>
+<span class="sng">         Current_Length   : Fragment_Lengths;</span>
+<span class="sng">         Current_Fragment : Fragments.Fragment;</span>
+<span class="sng"></span>
+<span class="sng">         use Fragments;</span>
+<span class="sng">      begin</span>
+<span class="sng">         loop</span>
+<span class="sng">            --</span>
+<span class="sng">            --  perform a `Write` with parameters `Set` or terminate</span>
+<span class="sng">            --</span>
+<span class="sng">            select</span>
+<span class="sng">               accept Set (Nucleotide_Length   : in Fragment_Lengths;</span>
+<span class="sng">                           Nucleotide_Fragment : in Fragment := Null_Fragment)</span>
+<span class="sng">               do</span>
+<span class="sng">                  Current_Length   := Nucleotide_Length;</span>
+<span class="sng">                  Current_Fragment := Nucleotide_Fragment;</span>
+<span class="sng">               end Set;</span>
+<span class="sng">               Write (Current_Length, Current_Fragment);</span>
+<span class="sng">            or</span>
+<span class="sng">               terminate;</span>
+<span class="sng">            end select;</span>
+<span class="sng">         end loop;</span>
+<span class="sng">      exception</span>
+<span class="sng">         when E : others =&gt;</span>
+<span class="sng">            Ada.Text_IO.Put_Line(Ada.Text_IO.Current_Error,</span>
+<span class="sng">              Ada.Exceptions.Exception_Information(E));</span>
+<span class="sng">      end Writer;</span>
+<span class="sng"></span>
+<span class="sng">   end Work;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">   package Fragments_1 is new String_Fragments (1);</span>
+<span class="sng">   package Fragments_2 is new String_Fragments (2);</span>
+<span class="sng">   package Fragments_3 is new String_Fragments (3);</span>
+<span class="sng">   package Fragments_4 is new String_Fragments (4);</span>
+<span class="sng">   package Fragments_6 is new String_Fragments (6);</span>
+<span class="sng">   package Fragments_12 is new String_Fragments (12);</span>
+<span class="sng">   package Fragments_18 is new String_Fragments (18);</span>
+<span class="sng"></span>
+<span class="sng">   --  List of fragments to be analyzed for this test:</span>
+<span class="sng"></span>
+<span class="sng">   Fragment_3  : constant Fragments_3.Fragment := Fragments_3.To_Fragment (&quot;GGT&quot;);</span>
+<span class="sng">   Fragment_4  : constant Fragments_4.Fragment := Fragments_4.To_Fragment (&quot;GGTA&quot;);</span>
+<span class="sng">   Fragment_6  : constant Fragments_6.Fragment := Fragments_6.To_Fragment (&quot;GGTATT&quot;);</span>
+<span class="sng">   Fragment_12 : constant Fragments_12.Fragment := Fragments_12.To_Fragment (&quot;GGTATTTTAATT&quot;);</span>
+<span class="sng">   Fragment_18 : constant Fragments_18.Fragment := Fragments_18.To_Fragment (&quot;GGTATTTTAATTTATAGT&quot;);</span>
+<span class="sng"></span>
+<span class="sng">   package Work_On_1 is new Work (Fragments_1);</span>
+<span class="sng">   package Work_On_2 is new Work (Fragments_2);</span>
+<span class="sng">   package Work_On_3 is new Work (Fragments_3);</span>
+<span class="sng">   package Work_On_4 is new Work (Fragments_4);</span>
+<span class="sng">   package Work_On_6 is new Work (Fragments_6);</span>
+<span class="sng">   package Work_On_12 is new Work (Fragments_12);</span>
+<span class="sng">   package Work_On_18 is new Work (Fragments_18);</span>
+<span class="sng"></span>
+<span class="sng">begin</span>
+<span class="sng">   Work_On_1.Writer.Set (1);</span>
+<span class="sng">   Work_On_12.Writer.Set (Fragment_12&#39;Length, Fragment_12);</span>
+<span class="sng">   Work_On_18.Writer.Set (Fragment_18&#39;Length, Fragment_18);</span>
+<span class="sng">   Work_On_6.Writer.Set (Fragment_6&#39;Length, Fragment_6);</span>
+<span class="sng">   Work_On_2.Writer.Set (2);</span>
+<span class="sng">   Work_On_4.Writer.Set (Fragment_4&#39;Length, Fragment_4);</span>
+<span class="sng">   Work_On_3.Writer.Set (Fragment_3&#39;Length, Fragment_3);</span>
+<span class="sng">end KNucleotide;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">generic</span>
+<span class="sng">   Max_String_Length : Positive;</span>
+<span class="sng">package String_Fragments is</span>
+<span class="sng"></span>
+<span class="sng">   subtype Fragment is String (1 .. Max_String_Length);</span>
+<span class="sng"></span>
+<span class="sng">   function To_Fragment (Source : String) return Fragment;</span>
+<span class="sng">   function Null_Fragment return Fragment;</span>
+<span class="sng">   function &quot;=&quot; (Left, Right: Fragment) return Boolean;</span>
+<span class="sng"></span>
+<span class="sng">end String_Fragments;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">with Ada.Unchecked_Conversion;</span>
+<span class="sng"></span>
+<span class="sng">package body String_Fragments is</span>
+<span class="sng"></span>
+<span class="sng">   Bytes_Per_Word : constant := 4;</span>
+<span class="sng">   type Uns is mod 2**(8 * Bytes_Per_Word);</span>
+<span class="sng">   for Uns&#39;Size use 8 * Bytes_Per_Word;</span>
+<span class="sng">   subtype Str is String (1 .. Bytes_Per_Word);</span>
+<span class="sng"></span>
+<span class="sng">   function Null_Fragment return Fragment is</span>
+<span class="sng">   begin</span>
+<span class="sng">      return Fragment&#39;</span><span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Max_String_Length <span class="opt">=&gt;</span> <span class="sng">&#39;*&#39;</span><span class="opt">);</span>
+   <span class="kwa">end</span> Null_Fragment<span class="opt">;</span>
+
+
+   <span class="kwa">function</span> To_Uns <span class="kwa">is new</span> Ada<span class="opt">.</span><span class="kwc">Unchecked_Conversion</span> <span class="opt">(</span>Str<span class="opt">,</span> Uns<span class="opt">);</span>
+
+   <span class="kwa">function</span> <span class="sng">&quot;=&quot;</span> <span class="opt">(</span>Left<span class="opt">,</span> Right<span class="opt">:</span> Fragment<span class="opt">)</span> <span class="kwa">return</span> <span class="kwb">Boolean</span> <span class="kwa">is</span>
+      Strt <span class="opt">:</span> <span class="kwb">Integer</span> <span class="opt">:=</span> <span class="num">1</span><span class="opt">;</span>
+      Fnsh <span class="opt">:</span> <span class="kwb">Integer</span> <span class="opt">:=</span> Bytes_Per_Word<span class="opt">;</span>
+      Last <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Integer</span> <span class="opt">:=</span> Left<span class="kwd">&#39;Last</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">if</span> Last <span class="opt">/=</span> Right<span class="kwd">&#39;Last</span> <span class="kwa">then</span>
+         <span class="kwa">return</span> <span class="kwd">False</span><span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+      <span class="kwa">loop</span>
+         <span class="kwa">exit when</span> Fnsh <span class="opt">&gt;</span> Last<span class="opt">;</span>
+         <span class="kwa">if</span> <span class="kwc">To_Uns</span> <span class="opt">(</span><span class="kwc">Left</span><span class="opt">(</span>Strt<span class="opt">..</span>Fnsh<span class="opt">)) /=</span> <span class="kwc">To_Uns</span> <span class="opt">(</span><span class="kwc">Right</span><span class="opt">(</span>Strt<span class="opt">..</span>Fnsh<span class="opt">))</span> <span class="kwa">then</span>
+            <span class="kwa">return</span> <span class="kwd">False</span><span class="opt">;</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+         Strt <span class="opt">:=</span> Strt <span class="opt">+</span> Bytes_Per_Word<span class="opt">;</span>
+         Fnsh <span class="opt">:=</span> Fnsh <span class="opt">+</span> Bytes_Per_Word<span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">for</span> I <span class="kwa">in</span> Strt <span class="opt">..</span> Last <span class="kwa">loop</span>
+         <span class="kwa">if</span> <span class="kwc">Left</span><span class="opt">(</span>I<span class="opt">) /=</span> <span class="kwc">Right</span><span class="opt">(</span>I<span class="opt">)</span> <span class="kwa">then</span>
+            <span class="kwa">return</span> <span class="kwd">False</span><span class="opt">;</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwa">return</span> <span class="kwd">True</span><span class="opt">;</span>
+   <span class="kwa">end</span> <span class="sng">&quot;=&quot;</span><span class="opt">;</span>
+
+
+   <span class="kwa">function</span> <span class="kwc">To_Fragment</span> <span class="opt">(</span>Source <span class="opt">:</span> <span class="kwb">String</span><span class="opt">)</span> <span class="kwa">return</span> Fragment <span class="kwa">is</span>
+      Result <span class="opt">:</span> Fragment<span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">if</span> Source<span class="kwd">&#39;Length</span> <span class="opt">/=</span> Max_String_Length <span class="kwa">then</span>
+         <span class="kwa">raise</span> Constraint_Error<span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+      <span class="kwc">Result</span> <span class="opt">(</span><span class="num">1</span> <span class="opt">..</span> Source<span class="kwd">&#39;Length</span><span class="opt">) :=</span> Source<span class="opt">;</span>
+      <span class="kwa">return</span> Result<span class="opt">;</span>
+   <span class="kwa">end</span> To_Fragment<span class="opt">;</span>
+
+<span class="kwa">end</span> String_Fragments<span class="opt">;</span>
+
+
+<span class="slc">----------------</span>
+<span class="slc">-- data input --</span>
+<span class="slc">----------------</span>
+
+<span class="kwa">package</span> Data_Input <span class="kwa">is</span>
+
+   <span class="slc">--  Read data from Standard_Input and return section THREE as String:</span>
+
+   <span class="kwa">function</span> Read <span class="kwa">return</span> <span class="kwb">String</span><span class="opt">;</span>
+
+<span class="kwa">end</span> Data_Input<span class="opt">;</span>
+
+<span class="kwa">with</span> Ada<span class="opt">.</span>Strings<span class="opt">.</span>Maps<span class="opt">.</span>Constants<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>IO_Exceptions<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Strings<span class="opt">.</span>Unbounded<span class="opt">;</span>
+<span class="kwa">with</span> Line_IO<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Unchecked_Deallocation<span class="opt">;</span>
+
+<span class="kwa">package body</span> Data_Input <span class="kwa">is</span>
+
+   <span class="kwa">use</span> Ada<span class="opt">.</span>Strings<span class="opt">;</span>
+   UnixLF <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">String</span> <span class="opt">:=</span> <span class="kwb">String</span><span class="sng">&#39;(1 =&gt; ASCII.LF);</span>
+<span class="sng">   package LIO is new Line_IO (UnixLF);</span>
+<span class="sng"></span>
+<span class="sng">   Data_Buffer : Unbounded.Unbounded_String := Unbounded.Null_Unbounded_String;</span>
+<span class="sng"></span>
+<span class="sng">   Section_Marker : constant Character := &#39;</span><span class="opt">&gt;</span><span class="sng">&#39;;</span>
+<span class="sng">   Section        : constant String    := Section_Marker &amp; &quot;THREE&quot;;</span>
+<span class="sng"></span>
+<span class="sng">   --  Read next data section - until EOF oder a line beginning with &gt; is found.</span>
+<span class="sng"></span>
+<span class="sng">   type String_Access is access String;</span>
+<span class="sng">   procedure Free is new Ada.Unchecked_Deallocation (String, String_Access);</span>
+<span class="sng"></span>
+<span class="sng">   procedure Read_Section is</span>
+<span class="sng">      Buffer     : String_Access;</span>
+<span class="sng">      Read_First : Natural;</span>
+<span class="sng">      Read_Last  : Natural;</span>
+<span class="sng">   begin</span>
+<span class="sng">      Buffer := new String (1 .. 1024 * 1024 * 16);</span>
+<span class="sng">      Get_Data : loop</span>
+<span class="sng">         Read_First := Buffer&#39;First;</span>
+<span class="sng">         Read_Last  := Buffer&#39;First - 1;</span>
+<span class="sng">         -- fill Buffer and append to Data_Buffer when filled</span>
+<span class="sng">         loop</span>
+<span class="sng">            declare</span>
+<span class="sng">               Line : String renames LIO.Get_Line;</span>
+<span class="sng">            begin</span>
+<span class="sng">               Read_Last := Read_First + Line&#39;Length - 1;</span>
+<span class="sng">               if Read_Last &gt;= Buffer&#39;Last then</span>
+<span class="sng">                  Unbounded.Append</span>
+<span class="sng">                    (Data_Buffer, New_Item =&gt; Buffer(1 .. Read_First - 1));</span>
+<span class="sng">                  Unbounded.Append (Data_Buffer, New_Item =&gt; Line);</span>
+<span class="sng">                  exit;</span>
+<span class="sng">               end if;</span>
+<span class="sng">               Buffer (Read_First .. Read_Last) := Line;</span>
+<span class="sng">            end;</span>
+<span class="sng">            exit Get_Data when Buffer (Read_First) = Section_Marker;</span>
+<span class="sng">            Read_First := Read_Last + 1;</span>
+<span class="sng">         end loop;</span>
+<span class="sng">      end loop Get_Data;</span>
+<span class="sng">      Unbounded.Append (Data_Buffer, Buffer (1 .. Read_Last));</span>
+<span class="sng">      Free (Buffer);</span>
+<span class="sng">   exception</span>
+<span class="sng">      when Ada.IO_Exceptions.End_Error =&gt;</span>
+<span class="sng">         Unbounded.Append (Data_Buffer, Buffer (1 .. Read_Last));</span>
+<span class="sng">         Free (Buffer);</span>
+<span class="sng">   end Read_Section;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">   --  Skip data on Standard_Input until &quot;&gt;THREE&quot; is found</span>
+<span class="sng"></span>
+<span class="sng">   procedure Skip_To_Section is</span>
+<span class="sng">   begin</span>
+<span class="sng">      loop</span>
+<span class="sng">         declare</span>
+<span class="sng">            Line : constant String := LIO.Get_Line;</span>
+<span class="sng">         begin</span>
+<span class="sng">            exit when Line(1) = Section(1)</span>
+<span class="sng">              and then Line(Section&#39;Range) = Section;</span>
+<span class="sng">         end;</span>
+<span class="sng">      end loop;</span>
+<span class="sng">   end Skip_To_Section;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">   function Read return String is</span>
+<span class="sng">   begin</span>
+<span class="sng">      Skip_To_Section;</span>
+<span class="sng">      Read_Section;</span>
+<span class="sng"></span>
+<span class="sng">      Unbounded.Translate</span>
+<span class="sng">        (Source =&gt; Data_Buffer,</span>
+<span class="sng">         Mapping =&gt; Maps.Constants.Upper_Case_Map);</span>
+<span class="sng"></span>
+<span class="sng">      return Unbounded.To_String (Data_Buffer);</span>
+<span class="sng">   end Read;</span>
+<span class="sng"></span>
+<span class="sng">end Data_Input;</span>
+<span class="sng"></span>
+<span class="sng">---------------------------</span>
+<span class="sng">--  Stream I/O of lines --</span>
+<span class="sng">---------------------------</span>
+<span class="sng">generic</span>
+<span class="sng">   Separator_Sequence : in String;  --  ends a line</span>
+<span class="sng">package Line_IO is</span>
+<span class="sng"></span>
+<span class="sng">   pragma Elaborate_Body;</span>
+<span class="sng"></span>
+<span class="sng">   procedure Put_Line (Item : String) is null;</span>
+<span class="sng">   -- not used in this program</span>
+<span class="sng"></span>
+<span class="sng">   function Get_Line return String;</span>
+<span class="sng"></span>
+<span class="sng">end Line_IO;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">with Ada.Streams.Stream_IO;</span>
+<span class="sng"></span>
+<span class="sng">package body Line_IO is</span>
+<span class="sng"></span>
+<span class="sng">   use Ada.Streams;</span>
+<span class="sng"></span>
+<span class="sng">   Stdin : Stream_IO.File_Type;</span>
+<span class="sng"></span>
+<span class="sng">   -- Types etc., status variables, and the buffer.</span>
+<span class="sng"></span>
+<span class="sng">   BUFSIZ: constant := 8_192;</span>
+<span class="sng">   pragma Assert(Character&#39;Size = Stream_Element&#39;Size);</span>
+<span class="sng"></span>
+<span class="sng">   SL : constant Natural := Separator_Sequence&#39;Length;</span>
+<span class="sng"></span>
+<span class="sng">   subtype Extended_Buffer_Index is Positive range 1 .. BUFSIZ + SL;</span>
+<span class="sng">   subtype Buffer_Index is Extended_Buffer_Index</span>
+<span class="sng">     range Extended_Buffer_Index&#39;First .. Extended_Buffer_Index&#39;Last - SL;</span>
+<span class="sng">   subtype Extended_Bytes_Index is Stream_Element_Offset</span>
+<span class="sng">     range 1 .. Stream_Element_Offset(Extended_Buffer_Index&#39;Last);</span>
+<span class="sng">   subtype Bytes_Index is Extended_Bytes_Index</span>
+<span class="sng">     range Extended_Bytes_Index&#39;First</span>
+<span class="sng">     .. (Extended_Bytes_Index&#39;Last - Stream_Element_Offset(SL));</span>
+<span class="sng"></span>
+<span class="sng">   subtype Buffer_Data is String(Extended_Buffer_Index);</span>
+<span class="sng">   subtype Buffer_Bytes is Stream_Element_Array(Extended_Bytes_Index);</span>
+<span class="sng"></span>
+<span class="sng">   Buffer : Buffer_Data;</span>
+<span class="sng">   Bytes  : Buffer_Bytes;</span>
+<span class="sng">   for Bytes&#39;Address use Buffer&#39;Address;</span>
+<span class="sng">   pragma Import (Ada, Bytes);</span>
+<span class="sng"></span>
+<span class="sng">   -- start of next substring and last valid character in buffer</span>
+<span class="sng">   Position : Natural range 0 .. Extended_Buffer_Index&#39;Last;</span>
+<span class="sng">   Last     : Natural range 0 .. Buffer_Index&#39;Last;</span>
+<span class="sng">   End_Of_Input : Boolean;</span>
+<span class="sng"></span>
+<span class="sng">   function Get_Line return String is</span>
+<span class="sng"></span>
+<span class="sng">      procedure Reload is</span>
+<span class="sng">         --  fill Buffer with bytes available</span>
+<span class="sng">         Last_Filled : Stream_Element_Offset;</span>
+<span class="sng">      begin</span>
+<span class="sng">         if Last &lt; Buffer_Index&#39;Last then</span>
+<span class="sng">            raise Stream_IO.End_Error;</span>
+<span class="sng">         end if;</span>
+<span class="sng">         Stream_IO.Read(Stdin,</span>
+<span class="sng">           Item =&gt; Bytes(Bytes_Index),</span>
+<span class="sng">           Last =&gt; Last_Filled);</span>
+<span class="sng">         Last := Natural(Last_Filled);</span>
+<span class="sng">         Position := 1;</span>
+<span class="sng">         Buffer(Last + 1 .. Last + SL) := Separator_Sequence;</span>
+<span class="sng">      end Reload;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">      function Separator_Position return Natural is</span>
+<span class="sng">         --   index of next Separator_Sequence (may be sentinel)</span>
+<span class="sng">         pragma Inline(Separator_Position);</span>
+<span class="sng">         K : Extended_Buffer_Index := Position;</span>
+<span class="sng">      begin</span>
+<span class="sng">         while Buffer(K) /= Separator_Sequence(1) loop</span>
+<span class="sng">            K := K + 1;</span>
+<span class="sng">         end loop;</span>
+<span class="sng">         return K;</span>
+<span class="sng">      end Separator_Position;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">      Next_Separator : Natural range 0 .. Extended_Buffer_Index&#39;Last;</span>
+<span class="sng">   begin  -- Get_Line</span>
+<span class="sng"></span>
+<span class="sng">      if End_Of_Input then</span>
+<span class="sng">         raise Stream_IO.End_Error;</span>
+<span class="sng">      end if;</span>
+<span class="sng"></span>
+<span class="sng">      Next_Separator := Separator_Position;</span>
+<span class="sng"></span>
+<span class="sng">      if Next_Separator &gt; Last then</span>
+<span class="sng">         declare</span>
+<span class="sng">            Result : constant String := Buffer(Position .. Last);</span>
+<span class="sng">            subtype XString is String (1 .. Last - Position + 1);</span>
+<span class="sng">         begin</span>
+<span class="sng">            begin</span>
+<span class="sng">               Reload;</span>
+<span class="sng">               return XString(Result) &amp; Get_Line;</span>
+<span class="sng">            exception</span>
+<span class="sng">               when Stream_IO.End_Error =&gt;</span>
+<span class="sng">                  End_Of_Input := True;</span>
+<span class="sng">                  return XString(Result);</span>
+<span class="sng">            end;</span>
+<span class="sng">         end;</span>
+<span class="sng">      else</span>
+<span class="sng">         declare</span>
+<span class="sng">            Result : String renames Buffer(Position .. Next_Separator - 1);</span>
+<span class="sng">            subtype XString is String (1 .. Next_Separator - Position);</span>
+<span class="sng">         begin</span>
+<span class="sng">            Position := Next_Separator + SL;</span>
+<span class="sng">            return XString (Result);</span>
+<span class="sng">         end;</span>
+<span class="sng">      end if;</span>
+<span class="sng"></span>
+<span class="sng">      raise Program_Error;</span>
+<span class="sng">   end Get_Line;</span>
+<span class="sng"></span>
+<span class="sng"></span>
+<span class="sng">begin</span>
+<span class="sng">   Stream_IO.Open (Stdin,</span>
+<span class="sng">     Mode =&gt; Stream_IO.In_File,</span>
+<span class="sng">     Name =&gt; &quot;/dev/stdin&quot;);</span>
+<span class="sng"></span>
+<span class="sng">   Buffer(Buffer_Index&#39;Last + 1 .. Buffer&#39;Last) := Separator_Sequence;</span>
+<span class="sng">   Position := Buffer_Index&#39;Last + 1;</span>
+<span class="sng">   Last := Buffer_Index&#39;Last;</span>
+<span class="sng">   End_Of_Input := False;</span>
+<span class="sng">end Line_IO;</span>
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+GNATMAKE 13.3.0
+
+
+ Fri, 10 Jan 2025 03:54:37 GMT
+
+MAKE:
+gnatchop -r -w knucleotide.gnat-2.gnat
+splitting knucleotide.gnat-2.gnat into:
+   knucleotide.adb
+   string_fragments.ads
+   string_fragments.adb
+   data_input.ads
+   data_input.adb
+   line_io.ads
+   line_io.adb
+gnatmake -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 -f knucleotide.adb -o knucleotide.gnat-2.gnat_run 
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 knucleotide.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 data_input.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 string_fragments.adb
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 line_io.adb
+knucleotide.gnat-2.gnat:706:07: warning: unreachable code [enabled by default]
+x86_64-linux-gnu-gnatbind-13 -x knucleotide.ali
+x86_64-linux-gnu-gnatlink-13 knucleotide.ali -O3 -fomit-frame-pointer -march=ivybridge -o knucleotide.gnat-2.gnat_run
+
+6.08s to complete and log all make actions
+
+COMMAND LINE:
+ ./knucleotide.gnat-2.gnat_run 0 &lt; knucleotide-input25000000.txt
+
+PROGRAM OUTPUT:
+A 30.295
+T 30.151
+C 19.800
+G 19.754
+
+AA 9.177
+TA 9.132
+AT 9.131
+TT 9.091
+CA 6.002
+AC 6.001
+AG 5.987
+GA 5.984
+CT 5.971
+TC 5.971
+GT 5.957
+TG 5.956
+CC 3.917
+GC 3.911
+CG 3.909
+GG 3.902
+
+1471758	GGT
+446535	GGTA
+47336	GGTATT
+893	GGTATTTTAATT
+893	GGTATTTTAATTTATAGT
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

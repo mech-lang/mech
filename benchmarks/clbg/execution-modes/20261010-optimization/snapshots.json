@@ -1,0 +1,33 @@
+{
+  "source_pins": {
+    "hosts/gpu/src/execution.rs": "0ccdb7470014f99773dd40b9548557261757b2566e4d360d5bc1adcacea827d9",
+    "hosts/gpu/src/sequence/resident.rs": "b398b17c7e7e7f55d631477f36140b58e30241b7be249c896203187eebd2754d",
+    "hosts/gpu/src/sequence/compiler.rs": "00bc0ac907d81d69469a281257620d5c3c8d7d8831a3f8b9ac1097a98a3ade4e",
+    "hosts/gpu/src/control/compiler.rs": "61341e0752ed2aa99691befa561f61202f9e56b1c244cb8c1fe00953c380bef6",
+    "hosts/gpu/src/fused_f64/runner.rs": "6d2b63392e206cdc58a81720c0820f21a258eb2d240a4ad4be647030f781661e",
+    "src/engine/src/native_sequence/mod.rs": "9fcd50db9d2dbf21d3440437809e1433372449626c91ed7c34847ab898114a33",
+    "src/engine/src/native_sequence/control.rs": "7758c61ef9bcf4bab43cfb368c58d260818bfcd80c87733e2d8b97b368aab150",
+    "src/engine/src/native_sequence/grid.rs": "8ff364dc9f4d16536f26f9f626a977886c217a7d5efd6db1bce354de876f888d",
+    "src/engine/src/native_sequence/matrix.rs": "5f140a747008a2f20d71d1818a30ecaad39ffc9f88559aa0742430fdcf729d15",
+    "src/engine/src/native_sequence/application.rs": "0b6fa0ff3c2984f3ba31e9290b8e70c22e35b3bc7c28160f11a9ef1424af4951"
+  },
+  "executables": {
+    "mech-execution-modes-compiled": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-optimization/.build/executables/mech-execution-modes-compiled",
+      "sha256": "b711eb9fb138d0939c4558cdc1e342aeee6a653d7af332a535ff4db78ef36ef6"
+    },
+    "mech-execution-modes-emit": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-optimization/.build/executables/mech-execution-modes-emit",
+      "sha256": "a1227648aa75e9e67eee4d5addabc554494616c24bb1b143b4558723220e62f4"
+    },
+    "mech-execution-modes-optimized": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-optimization/.build/executables/mech-execution-modes-optimized",
+      "sha256": "395125ed3f3a3d4237841f72773e7e06017234e7429cf8967991e58a30a0780b"
+    },
+    "mech-execution-modes-opt-emit": {
+      "snapshot": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-optimization/.build/executables/mech-execution-modes-opt-emit",
+      "sha256": "aa5c6bf90778efcf4aa781ac98c1c851a4c182d6f2e051a1a41803900366a503"
+    }
+  },
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n"
+}

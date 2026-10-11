@@ -1,0 +1,2 @@
+result := (memory/null() ? | memory/null() => 1 | * => 0)
+io/print("{}\n", result)

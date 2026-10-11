@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fannkuch-redux Haskell GHC&nbsp;#2 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fannkuch-redux Haskell GHC&nbsp;#2 program</h1>
+    <aside>
+      <p><a href="../description/fannkuchredux.html#fannkuchredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="com">{-  The Computer Language Benchmarks Game</span>
+<span class="com"></span>
+<span class="com">    https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="com"></span>
+<span class="com">    contributed by Miha Vučkovič</span>
+<span class="com"></span>
+<span class="com">-}</span>
+
+<span class="kwb">import</span> System<span class="opt">.</span>Environment
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Unboxed <span class="kwb">as</span> V
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Unboxed<span class="opt">.</span>Mutable <span class="kwb">as</span> MV
+<span class="kwb">import qualified</span> Data<span class="opt">.</span>Vector<span class="opt">.</span>Generic<span class="opt">.</span>Mutable <span class="kwb">as</span> GMV
+<span class="kwb">import</span> Control<span class="opt">.</span>Monad <span class="kwc">(</span>unless<span class="kwc">,</span> void<span class="kwc">,</span> forM_<span class="kwc">)</span>
+<span class="kwb">import</span> Control<span class="opt">.</span>Monad<span class="opt">.</span>ST
+<span class="kwb">import</span> Control<span class="opt">.</span>Parallel
+<span class="kwb">import</span> Control<span class="opt">.</span>Parallel<span class="opt">.</span>Strategies
+<span class="kwb">import</span> Data<span class="opt">.</span>STRef
+
+flopST v flopCount <span class="opt">=</span> <span class="kwd">do</span>
+    h <span class="opt">&lt;-</span> MV<span class="opt">.</span>unsafeRead v <span class="num">0</span>
+    <span class="kwd">if</span> h <span class="opt">==</span> <span class="num">1</span> <span class="kwd">then</span> return flopCount
+    <span class="kwd">else do</span>
+        GMV<span class="opt">.</span>reverse <span class="opt">$</span> MV<span class="opt">.</span>unsafeSlice <span class="num">0</span> h v
+        flopST v <span class="kwc">(</span>flopCount <span class="opt">+</span> <span class="num">1</span><span class="kwc">)</span>
+
+countFlops :: V<span class="opt">.</span>Vector Int <span class="opt">-&gt;</span> Int
+countFlops v <span class="opt">=</span> runST <span class="opt">$</span> <span class="kwd">do</span>
+    mv <span class="opt">&lt;-</span> V<span class="opt">.</span>thaw v
+    flopST mv <span class="num">0</span>
+
+permut n <span class="opt">=</span> foldr permConcat <span class="kwc">[</span>V<span class="opt">.</span>fromList <span class="kwc">[</span><span class="num">1</span><span class="opt">..</span>n<span class="kwc">]] [</span><span class="num">5</span><span class="opt">..</span>n<span class="kwc">]</span>
+
+permConcat x lst <span class="opt">=</span> concat <span class="kwc">[</span>take x <span class="opt">$</span> iterate <span class="kwc">(</span>rotate x<span class="kwc">)</span> l <span class="opt">|</span> l <span class="opt">&lt;-</span> lst<span class="kwc">]</span>
+
+perm :: Int <span class="opt">-&gt;</span> V<span class="opt">.</span>Vector Int <span class="opt">-&gt;</span> <span class="kwc">[</span>V<span class="opt">.</span>Vector Int<span class="kwc">]</span>
+perm x l <span class="opt">=</span> take x <span class="opt">$</span> iterate <span class="kwc">(</span>rotate x<span class="kwc">)</span> l
+
+rotate :: Int <span class="opt">-&gt;</span> V<span class="opt">.</span>Vector Int <span class="opt">-&gt;</span> V<span class="opt">.</span>Vector Int
+rotate <span class="num">1</span> xs <span class="opt">=</span> xs
+rotate n v <span class="opt">=</span> runST <span class="opt">$</span> <span class="kwd">do</span>
+    mv <span class="opt">&lt;-</span> V<span class="opt">.</span>thaw v
+    veryUnsafeV <span class="opt">&lt;-</span> V<span class="opt">.</span>unsafeThaw v
+    h <span class="opt">&lt;-</span> MV<span class="opt">.</span>unsafeRead mv <span class="num">0</span>
+    MV<span class="opt">.</span>unsafeCopy <span class="kwc">(</span>MV<span class="opt">.</span>unsafeSlice <span class="num">0</span> <span class="kwc">(</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">)</span> mv<span class="kwc">) (</span>MV<span class="opt">.</span>unsafeSlice <span class="num">1</span> <span class="kwc">(</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">)</span> veryUnsafeV<span class="kwc">)</span>
+    MV<span class="opt">.</span>unsafeWrite mv <span class="kwc">(</span>n<span class="opt">-</span><span class="num">1</span><span class="kwc">)</span> h
+    V<span class="opt">.</span>unsafeFreeze mv
+
+calculateMaxAndChecksum :: <span class="kwc">[</span>Int<span class="kwc">]</span> <span class="opt">-&gt;</span> <span class="kwc">(</span>Int<span class="kwc">,</span> Int<span class="kwc">)</span>
+calculateMaxAndChecksum <span class="opt">=</span> go <span class="num">0 0</span>
+    <span class="kwb">where</span> go <span class="opt">!</span>m <span class="opt">!</span>c <span class="kwc">[]</span> <span class="opt">=</span> <span class="kwc">(</span>m<span class="kwc">,</span> c<span class="kwc">)</span>
+          go <span class="opt">!</span>m <span class="opt">!</span>c <span class="kwc">[</span>x<span class="kwc">]</span> <span class="opt">=</span> <span class="kwc">(</span>max m x<span class="kwc">,</span> c <span class="opt">+</span> x<span class="kwc">)</span>
+          go <span class="opt">!</span>m <span class="opt">!</span>c <span class="kwc">(</span>x0:x1:xs<span class="kwc">)</span> <span class="opt">=</span> go <span class="kwc">(</span>max3 m x0 x1<span class="kwc">) (</span>c <span class="opt">+</span> x0 <span class="opt">-</span> x1<span class="kwc">)</span> xs
+          max3 <span class="opt">!</span>a <span class="opt">!</span>b <span class="opt">!</span>c <span class="opt">=</span> max c <span class="kwc">(</span>max a b<span class="kwc">)</span>
+
+niceParallelMap :: NFData b <span class="opt">=&gt;</span> Int <span class="opt">-&gt;</span> <span class="kwc">(</span>a <span class="opt">-&gt;</span> b<span class="kwc">)</span> <span class="opt">-&gt;</span> <span class="kwc">[</span>a<span class="kwc">]</span> <span class="opt">-&gt;</span> <span class="kwc">[</span>b<span class="kwc">]</span>
+niceParallelMap bufferSize f xs <span class="opt">=</span> runEval <span class="opt">$</span> parBuffer bufferSize rdeepseq <span class="opt">$</span> map f xs
+
+main :: IO <span class="kwc">()</span>
+main <span class="opt">=</span> <span class="kwd">do</span>
+   n <span class="opt">&lt;-</span> fmap <span class="kwc">(</span>read <span class="opt">.</span> head<span class="kwc">)</span> getArgs
+   <span class="kwd">let</span> permutations <span class="opt">=</span> permut n
+       flopCounts <span class="opt">=</span> concat <span class="opt">$</span> niceParallelMap <span class="num">50</span>
+            <span class="kwc">(</span>map countFlops <span class="opt">.</span> concatMap <span class="kwc">(</span>perm <span class="num">2</span><span class="kwc">)</span> <span class="opt">.</span> concatMap <span class="kwc">(</span>perm <span class="num">3</span><span class="kwc">)</span> <span class="opt">.</span> perm <span class="num">4</span><span class="kwc">)</span> permutations
+       <span class="kwc">(</span>mflops<span class="kwc">,</span> checksum<span class="kwc">)</span> <span class="opt">=</span> calculateMaxAndChecksum flopCounts
+   putStrLn <span class="opt">$</span> show checksum <span class="opt">++</span> <span class="sng">&quot;</span><span class="esc">\n</span><span class="sng">Pfannkuchen(&quot;</span> <span class="opt">++</span> show n <span class="opt">++</span> <span class="sng">&quot;) = &quot;</span> <span class="opt">++</span> show mflops
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+The Glorious Glasgow Haskell
+Compilation System,
+version 9.10.1
+LLVM version 19.1.1
+
+
+ Sun, 23 Feb 2025 06:35:33 GMT
+
+MAKE:
+mv fannkuchredux.ghc-2.ghc fannkuchredux.ghc-2.hs
+~/.ghcup/bin/ghc --make -fllvm -O2 -XBangPatterns -threaded -rtsopts -XScopedTypeVariables fannkuchredux.ghc-2.hs -o fannkuchredux.ghc-2.ghc_run
+Loaded package environment from /home/dunham/.ghc/x86_64-linux-9.10.1/environments/default
+[1 of 2] Compiling Main             ( fannkuchredux.ghc-2.hs, fannkuchredux.ghc-2.o )
+fannkuchredux.ghc-2.hs:60:22: warning: [GHC-63394] [-Wx-partial]
+    In the use of ‘head’
+    (imported from Prelude, but defined in GHC.Internal.List):
+    &quot;This is a partial function, it throws an error on empty lists. Use pattern matching, 'Data.List.uncons' or 'Data.Maybe.listToMaybe' instead. Consider refactoring to use &quot;Data.List.NonEmpty&quot;.&quot;
+   |
+60 |    n &lt;- fmap (read . head) getArgs
+   |                      ^^^^
+
+[2 of 2] Linking fannkuchredux.ghc-2.ghc_run
+rm fannkuchredux.ghc-2.hs
+
+18.51 seconds to complete and log all make actions
+
+COMMAND LINE:
+ ./fannkuchredux.ghc-2.ghc_run +RTS -N4 -RTS 12
+
+PROGRAM OUTPUT:
+3968050
+Pfannkuchen(12) = 65
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

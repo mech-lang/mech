@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow,noarchive">
+
+<title>fannkuch-redux Ada 2012 GNAT&nbsp;#3 program (Benchmarks Game) </title>
+<style><!--
+a{color:black;text-decoration:none}article{padding:0 0 2.9em}article,div,footer,header{margin:auto;width:92%}body{font:100% Droid Sans, Ubuntu, Verdana, sans-serif;margin:0;-webkit-text-size-adjust:100%}h3, h1, h2, li a{font-family:Ubuntu Mono,Consolas,Menlo,monospace}div,footer,header{max-width:31em}footer{padding:2.6em 0 0}h3{font-size:1.4em;font-weight:bold;margin:0;padding: .4em}h3, h3 a{color:white;background-color:#77216f}h3 small{font-size:0.64em}h1,h2{margin:1.5em 0 0}h1{font-size:1.4em;font-weight:normal}h2{font-size:1.2em}li{list-style-type:none;vertical-align:top}li a{display:block;font-size:1.2em;margin: .5em .5em 0;padding: .5em .5em .3em}ul{clear:left;margin:-0.3em 0 1.5em;padding-left:0;text-align:center}p{color:#333;line-height:1.4;margin: .3em 0 0}p a, a span{border-bottom: .1em solid #333;padding-bottom: .1em}.com,.slc{color:#888}.kwa{color:#066}.kwb{color:#900}.kwc{color:#050}.kwa,.kwb,.kwc{font-weight:bold}.dstr,.str,.sym,.num{color:#930}pre{color:#222;font-size:1em;overflow-wrap:break-word;white-space:pre-wrap;word-wrap:break-word}@media only screen and (min-width: 60em){article,footer,header{font-size:1.25em}}
+--></style>
+<link rel="shortcut icon" href="../favicon.ico">
+<header>
+  <h3><a href="https://benchmarksgame-team.pages.debian.net/benchmarksgame/index.html">The&nbsp;<small>Computer&nbsp;Language</small><br>25.03 Benchmarks&nbsp;Game</a></h3>
+</header>
+<article>
+  <div>
+    <h1>fannkuch-redux Ada 2012 GNAT&nbsp;#3 program</h1>
+    <aside>
+      <p><a href="../description/fannkuchredux.html#fannkuchredux">description</a>
+    </aside>
+  </div>
+  <section>
+    <div>
+      <h2>source code</h2>
+    </div>
+    <pre>
+<span class="slc">--</span>
+<span class="slc">-- The Computer Language Benchmarks Game</span>
+<span class="slc">-- https://salsa.debian.org/benchmarksgame-team/benchmarksgame/</span>
+<span class="slc">--</span>
+<span class="slc">-- Based on code by Dave Fladebo, Eckehard Berns, Heiner Marxen, Hongwei Xi,</span>
+<span class="slc">-- and The Anh Tran, and on the Java version of fannkuchredux by Oleg Mazurov.</span>
+<span class="slc">-- Updated by Jonathan Parker and Georg Bauhaus, Nov 2012.</span>
+<span class="slc">--</span>
+
+<span class="kwa">with</span> Ada<span class="opt">.</span>Command_Line<span class="opt">;</span>
+<span class="kwa">with</span> Ada<span class="opt">.</span>Text_Io<span class="opt">;</span> <span class="kwa">use</span> Ada<span class="opt">.</span>Text_Io<span class="opt">;</span>
+<span class="kwa">with</span> System<span class="opt">;</span>
+
+<span class="kwa">procedure</span> Fannkuchredux <span class="kwa">is</span>
+
+   Multitasking_Desired <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">Boolean</span> <span class="opt">:=</span> <span class="kwd">True</span><span class="opt">;</span>
+
+   <span class="kwa">type</span> Fann_Int <span class="kwa">is mod</span> <span class="num">2</span><span class="opt">**</span>System<span class="opt">.</span>Word_Size<span class="opt">;</span>
+
+   <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>Ada<span class="opt">.</span>Command_Line<span class="opt">.</span>Argument_Count <span class="opt">=</span> <span class="num">1</span><span class="opt">,</span>
+     <span class="sng">&quot;Exactly one input argument is required.&quot;</span><span class="opt">);</span>
+
+   N_image <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">String</span>   <span class="opt">:=</span> Ada<span class="opt">.</span>Command_Line<span class="opt">.</span><span class="kwc">Argument</span> <span class="opt">(</span><span class="num">1</span><span class="opt">);</span>
+   N       <span class="opt">:</span> <span class="kwa">constant</span> Fann_Int <span class="opt">:=</span> Fann_Int<span class="kwd">&#39;Value</span> <span class="opt">(</span>N_image<span class="opt">);</span>
+
+   <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>N <span class="opt">&gt;</span> <span class="num">1</span><span class="opt">,</span>  <span class="sng">&quot;Input argument N must be integer &gt; 1.&quot;</span><span class="opt">);</span>
+
+   Fann_0     <span class="opt">:</span> <span class="kwa">constant</span> Fann_Int <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+   Fann_First <span class="opt">:</span> <span class="kwa">constant</span> Fann_Int <span class="opt">:=</span> Fann_0<span class="opt">;</span>
+   Fann_Last  <span class="opt">:</span> <span class="kwa">constant</span> Fann_Int <span class="opt">:=</span> Fann_0 <span class="opt">+ (</span>N <span class="opt">-</span> <span class="num">1</span><span class="opt">);</span>
+
+   <span class="kwa">subtype</span> Perm_Index <span class="kwa">is</span> Fann_Int <span class="kwa">range</span> Fann_First <span class="opt">..</span> Fann_Last<span class="opt">;</span>
+
+   <span class="kwa">type</span> Permutation <span class="kwa">is array</span><span class="opt">(</span>Perm_Index<span class="opt">)</span> <span class="kwa">of</span> Fann_Int<span class="opt">;</span>
+
+   <span class="slc">-- The N! permutations are indexed from 0 to N!-1.  The indices</span>
+   <span class="slc">-- and the factorials have type Perm_id_Range.</span>
+
+   <span class="kwa">type</span> Perm_id_Range <span class="kwa">is mod</span> <span class="num">2</span><span class="opt">**</span>System<span class="opt">.</span>Word_Size<span class="opt">;</span>
+   <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>N <span class="opt">&lt;</span> <span class="num">13</span> <span class="kwa">or</span> System<span class="opt">.</span>Word_Size <span class="opt">=</span> <span class="num">64</span><span class="opt">);</span>
+   <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>N <span class="opt">&lt;</span> <span class="num">21</span><span class="opt">,</span> <span class="sng">&quot;Input argument N must be integer &lt; 21.&quot;</span><span class="opt">);</span>
+
+   <span class="kwa">subtype</span> Enum_Index <span class="kwa">is</span> Fann_Int <span class="kwa">range</span> Fann_First <span class="opt">..</span> Fann_Last<span class="opt">+</span><span class="num">1</span><span class="opt">;</span>
+   <span class="kwa">type</span> Enumeration <span class="kwa">is array</span><span class="opt">(</span>Enum_Index<span class="opt">)</span> <span class="kwa">of</span> Perm_id_Range<span class="opt">;</span> <span class="slc">-- holds N!&#39;s</span>
+
+   No_of_Tasks <span class="opt">:</span> <span class="kwa">constant</span> <span class="opt">:=</span> <span class="num">12</span><span class="opt">;</span>
+   <span class="slc">-- Using stnd setting of 12, Chunk_Size = (N! / No_of_Tasks) is even for N&gt;3.</span>
+
+   <span class="kwa">type</span> Task_id_Range <span class="kwa">is range</span> <span class="num">1</span> <span class="opt">..</span> No_of_Tasks<span class="opt">;</span>
+
+   <span class="kwa">type</span> Checksum_Int <span class="kwa">is range</span>
+      <span class="opt">-</span><span class="num">2</span><span class="opt">**(</span>System<span class="opt">.</span>Word_Size<span class="opt">-</span><span class="num">1</span><span class="opt">)+</span><span class="num">1</span> <span class="opt">..</span> <span class="num">2</span><span class="opt">**(</span>System<span class="opt">.</span>Word_Size<span class="opt">-</span><span class="num">1</span><span class="opt">)-</span><span class="num">1</span><span class="opt">;</span>
+
+
+   <span class="kwa">procedure</span> <span class="kwc">Swap</span> <span class="opt">(</span>Perm1<span class="opt">:</span> <span class="kwa">in out</span> Permutation<span class="opt">;</span> Hi<span class="opt">,</span> Lo<span class="opt">:</span> Fann_Int<span class="opt">)</span> <span class="kwa">is</span>
+      Tmp <span class="opt">:</span> <span class="kwa">constant</span> Fann_Int <span class="opt">:=</span> <span class="kwc">Perm1</span><span class="opt">(</span>Hi<span class="opt">);</span>
+   <span class="kwa">begin</span>
+      <span class="kwc">Perm1</span><span class="opt">(</span>Hi<span class="opt">) :=</span> <span class="kwc">Perm1</span><span class="opt">(</span>Lo<span class="opt">);</span>
+      <span class="kwc">Perm1</span><span class="opt">(</span>Lo<span class="opt">) :=</span> Tmp<span class="opt">;</span>
+   <span class="kwa">end</span> Swap<span class="opt">;</span>
+
+   <span class="kwa">function</span> Count_of_Flips
+     <span class="opt">(</span>Perm <span class="opt">:</span> <span class="kwa">in</span> Permutation<span class="opt">)</span>
+      <span class="kwa">return</span> Fann_Int
+   <span class="kwa">is</span>
+      Lo_1st <span class="opt">:</span> <span class="kwa">constant</span> Fann_Int <span class="opt">:=</span> Fann_First <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+      Hi<span class="opt">,</span> Hi_1st<span class="opt">,</span> Tmp <span class="opt">:</span> Fann_Int<span class="opt">;</span>
+      Flip_Count  <span class="opt">:</span> Fann_Int <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      P_1st <span class="opt">:</span> Fann_Int<span class="opt">;</span>
+      Perm1 <span class="opt">:</span> Permutation<span class="opt">;</span>
+   <span class="kwa">begin</span>
+      P_1st <span class="opt">:=</span> <span class="kwc">Perm</span><span class="opt">(</span>Perm<span class="kwd">&#39;First</span><span class="opt">);</span>
+
+      <span class="kwa">for</span> i <span class="kwa">in</span> Perm<span class="kwd">&#39;Range</span> <span class="kwa">loop</span>
+         <span class="kwc">Perm1</span><span class="opt">(</span>i<span class="opt">) :=</span> <span class="kwc">Perm</span><span class="opt">(</span>i<span class="opt">);</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">loop</span>                      <span class="slc">-- Flip until P_1st = Fann_First</span>
+
+         <span class="kwa">exit when</span> P_1st <span class="opt">=</span> Fann_First<span class="opt">;</span>
+         Flip_Count <span class="opt">:=</span> Flip_Count <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+         Hi_1st <span class="opt">:=</span> P_1st <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+
+         <span class="kwa">if</span> Lo_1st <span class="opt">&lt;</span> Hi_1st <span class="kwa">then</span>
+            Hi <span class="opt">:=</span> Hi_1st<span class="opt">;</span>
+            <span class="kwa">for</span> Lo <span class="kwa">in</span> Lo_1st <span class="opt">..</span> Lo_1st<span class="opt">+</span><span class="num">16</span> <span class="kwa">loop</span>
+               <span class="kwc">Swap</span> <span class="opt">(</span>Perm1<span class="opt">,</span> Hi<span class="opt">,</span> Lo<span class="opt">);</span>
+               <span class="kwa">exit when</span> Lo<span class="opt">+</span><span class="num">3</span> <span class="opt">&gt;</span> Hi<span class="opt">;</span>
+               Hi <span class="opt">:=</span> Hi <span class="opt">-</span> <span class="num">1</span><span class="opt">;</span>
+            <span class="kwa">end loop</span><span class="opt">;</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+
+         Tmp          <span class="opt">:=</span> <span class="kwc">Perm1</span><span class="opt">(</span>P_1st<span class="opt">);</span>
+         <span class="kwc">Perm1</span><span class="opt">(</span>P_1st<span class="opt">) :=</span> P_1st<span class="opt">;</span>
+         P_1st        <span class="opt">:=</span> Tmp<span class="opt">;</span>
+
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">return</span> Flip_Count<span class="opt">;</span>
+
+   <span class="kwa">end</span> Count_of_Flips<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Get_First_Permutation
+     <span class="opt">(</span>Perm_id   <span class="opt">:</span> <span class="kwa">in</span>     Perm_id_Range<span class="opt">;</span>
+      Factorial <span class="opt">:</span> <span class="kwa">in</span>     Enumeration<span class="opt">;</span>
+      Perm      <span class="opt">:</span>     <span class="kwa">out</span> Permutation<span class="opt">;</span>
+      Count     <span class="opt">:</span>     <span class="kwa">out</span> Permutation<span class="opt">)</span>
+   <span class="kwa">is</span>
+      d <span class="opt">:</span> Fann_Int<span class="opt">;</span>
+      p_id <span class="opt">:</span> Perm_id_Range <span class="opt">:=</span> Perm_id<span class="opt">;</span>
+      Perm1 <span class="opt">:</span> Permutation<span class="opt">;</span>
+   <span class="kwa">begin</span>
+      Perm  <span class="opt">:= (</span><span class="kwa">others</span> <span class="opt">=&gt;</span> Fann_Int<span class="kwd">&#39;First</span><span class="opt">);</span>
+      Count <span class="opt">:= (</span><span class="kwa">others</span> <span class="opt">=&gt;</span> Fann_Int<span class="kwd">&#39;First</span><span class="opt">);</span>
+
+      <span class="kwa">for</span> i <span class="kwa">in</span> Perm<span class="kwd">&#39;Range</span> <span class="kwa">loop</span>
+         <span class="kwc">Perm</span><span class="opt">(</span>i<span class="opt">) :=</span> i<span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">for</span> i <span class="kwa">in reverse</span> Fann_First<span class="opt">+</span><span class="num">1</span> <span class="opt">..</span> Fann_Last <span class="kwa">loop</span>
+         d        <span class="opt">:=</span> <span class="kwc">Fann_Int</span> <span class="opt">(</span>p_id  <span class="opt">/</span>  <span class="kwc">Factorial</span><span class="opt">(</span>i<span class="opt">));</span>
+         p_id     <span class="opt">:=</span> p_id <span class="kwa">mod</span> <span class="kwc">Factorial</span><span class="opt">(</span>i<span class="opt">);</span>
+         <span class="kwc">Count</span><span class="opt">(</span>i<span class="opt">) :=</span> d<span class="opt">;</span>
+
+         Perm1 <span class="opt">:=</span> Perm<span class="opt">;</span>
+         <span class="kwa">for</span> j <span class="kwa">in</span> Fann_First <span class="opt">..</span> i <span class="kwa">loop</span>
+            <span class="kwa">if</span> j<span class="opt">+</span>d <span class="opt">&lt;=</span> i <span class="kwa">then</span>
+               <span class="kwc">Perm</span><span class="opt">(</span>j<span class="opt">) :=</span>  <span class="kwc">Perm1</span><span class="opt">(</span>j<span class="opt">+</span>d<span class="opt">);</span>
+            <span class="kwa">else</span>
+               <span class="kwc">Perm</span><span class="opt">(</span>j<span class="opt">) :=</span>  <span class="kwc">Perm1</span><span class="opt">(</span>j<span class="opt">+</span>d<span class="opt">-</span>i<span class="opt">-</span><span class="num">1</span><span class="opt">);</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">end</span> Get_First_Permutation<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Get_Next_Permutation
+     <span class="opt">(</span>Perm  <span class="opt">:</span> <span class="kwa">in out</span> Permutation<span class="opt">;</span>
+      Count <span class="opt">:</span> <span class="kwa">in out</span> Permutation<span class="opt">)</span>
+   <span class="kwa">is</span>
+      Rotation_Upper_Bound <span class="opt">:</span> <span class="kwa">constant</span> Fann_Int <span class="opt">:=</span> <span class="num">17</span><span class="opt">;</span>
+      <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>Rotation_Upper_Bound <span class="opt">&gt;=</span> Perm<span class="kwd">&#39;Last</span><span class="opt">);</span>
+      <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>Perm<span class="kwd">&#39;First</span> <span class="opt">=</span> <span class="num">0</span><span class="opt">);</span>
+      First<span class="opt">,</span> Next_First <span class="opt">:</span> Fann_Int<span class="opt">;</span>
+      i <span class="opt">:</span> Fann_Int <span class="opt">:=</span> <span class="num">1</span><span class="opt">;</span>
+   <span class="kwa">begin</span>
+      First    <span class="opt">:=</span> <span class="kwc">Perm</span><span class="opt">(</span><span class="num">1</span><span class="opt">);</span>
+      <span class="kwc">Perm</span><span class="opt">(</span><span class="num">1</span><span class="opt">)  :=</span> <span class="kwc">Perm</span><span class="opt">(</span><span class="num">0</span><span class="opt">);</span>
+      <span class="kwc">Perm</span><span class="opt">(</span><span class="num">0</span><span class="opt">)  :=</span> First<span class="opt">;</span>
+      <span class="kwc">Count</span><span class="opt">(</span>i<span class="opt">) :=</span> <span class="kwc">Count</span><span class="opt">(</span>i<span class="opt">) +</span> <span class="num">1</span><span class="opt">;</span>
+
+      <span class="kwa">if</span> <span class="kwc">Count</span><span class="opt">(</span>i<span class="opt">) &gt;</span> i <span class="kwa">then</span>
+      <span class="kwa">loop</span>
+         <span class="kwa">exit when</span> <span class="kwc">Count</span><span class="opt">(</span>i<span class="opt">) &lt;=</span> i<span class="opt">;</span>
+         <span class="kwc">Count</span><span class="opt">(</span>i<span class="opt">) :=</span> <span class="num">0</span><span class="opt">;</span>
+
+         i <span class="opt">:=</span> i <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+
+         Next_First <span class="opt">:=</span> <span class="kwc">Perm</span><span class="opt">(</span><span class="num">1</span><span class="opt">);</span>
+         <span class="kwc">Perm</span><span class="opt">(</span><span class="num">0</span><span class="opt">)    :=</span> Next_First<span class="opt">;</span>
+         <span class="kwa">for</span> j <span class="kwa">in</span> <span class="num">2</span> <span class="opt">..</span> Rotation_Upper_Bound <span class="kwa">loop</span>
+            <span class="kwc">Perm</span><span class="opt">(</span>j<span class="opt">-</span><span class="num">1</span><span class="opt">) :=</span> <span class="kwc">Perm</span><span class="opt">(</span>j<span class="opt">);</span>
+            <span class="kwa">exit when</span> j <span class="opt">=</span> i<span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+         <span class="kwc">Perm</span><span class="opt">(</span>i<span class="opt">) :=</span> First<span class="opt">;</span>
+         First   <span class="opt">:=</span> Next_First<span class="opt">;</span>
+
+         <span class="kwc">Count</span><span class="opt">(</span>i<span class="opt">) :=</span> <span class="kwc">Count</span><span class="opt">(</span>i<span class="opt">) +</span> <span class="num">1</span><span class="opt">;</span>
+
+      <span class="kwa">end loop</span><span class="opt">;</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+
+   <span class="kwa">end</span> Get_Next_Permutation<span class="opt">;</span>
+
+   <span class="kwa">procedure</span> Get_Checksum_and_Flips
+     <span class="opt">(</span>Task_id   <span class="opt">:</span> <span class="kwa">in</span>     Task_id_Range<span class="opt">;</span>
+      Factorial <span class="opt">:</span> <span class="kwa">in</span>     Enumeration<span class="opt">;</span>
+      Max_Flips <span class="opt">:</span>    <span class="kwa">out</span> Fann_Int<span class="opt">;</span>
+      Checksum  <span class="opt">:</span>    <span class="kwa">out</span> Checksum_Int<span class="opt">)</span>
+   <span class="kwa">is</span>
+      Perm_id<span class="opt">,</span> Perm_id_Min<span class="opt">,</span> Perm_id_Max <span class="opt">:</span> Perm_id_Range<span class="opt">;</span>
+      Flip_Count  <span class="opt">:</span> Fann_Int<span class="opt">;</span>
+      Perm<span class="opt">,</span> Count <span class="opt">:</span> Permutation<span class="opt">;</span>
+      Chunk_Size  <span class="opt">:</span> Perm_id_Range<span class="opt">;</span>
+   <span class="kwa">begin</span>
+
+      Chunk_Size <span class="opt">:=</span> <span class="kwc">Factorial</span><span class="opt">(</span>N<span class="opt">) /</span> No_of_Tasks<span class="opt">;</span>
+      <span class="kwa">pragma</span> <span class="kwc">Assert</span> <span class="opt">(</span>Chunk_Size <span class="kwa">mod</span> <span class="num">2</span> <span class="opt">=</span> <span class="num">0</span><span class="opt">);</span>
+      <span class="slc">--  so checksums work if No_of_Tasks&gt;1.</span>
+
+      Perm_id_Min <span class="opt">:=</span> <span class="kwc">Perm_id_Range</span> <span class="opt">(</span>Task_id <span class="opt">-</span> Task_id_Range<span class="kwd">&#39;First</span><span class="opt">) *</span> Chunk_Size<span class="opt">;</span>
+      Perm_id_Max <span class="opt">:=</span> Perm_id_Range<span class="kwd">&#39;Min</span> <span class="opt">(</span><span class="kwc">Factorial</span><span class="opt">(</span>N<span class="opt">),</span> Perm_id_Min<span class="opt">+</span>Chunk_Size<span class="opt">)-</span><span class="num">1</span><span class="opt">;</span>
+      <span class="slc">--  for the First task:   Perm_id_Min = 0;  Perm_id_Max := Chunk_Size-1</span>
+      <span class="slc">--  Perm_id ultimately runs from 0 .. Factorial(N)-1</span>
+
+      <span class="kwc">Get_First_Permutation</span> <span class="opt">(</span>Perm_id_Min<span class="opt">,</span> Factorial<span class="opt">,</span> Perm<span class="opt">,</span> Count<span class="opt">);</span>
+      <span class="slc">--  Initialize Perm and Count</span>
+
+      Max_Flips <span class="opt">:=</span> <span class="num">1</span><span class="opt">;</span>
+      Checksum  <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+      Perm_id   <span class="opt">:=</span> Perm_id_Min<span class="opt">;</span>
+      <span class="kwa">loop</span>
+
+         <span class="kwa">if</span>  <span class="kwc">Perm</span><span class="opt">(</span><span class="num">0</span><span class="opt">) &gt;</span> <span class="num">0</span>  <span class="kwa">then</span>
+            Flip_Count <span class="opt">:=</span> <span class="kwc">Count_of_Flips</span> <span class="opt">(</span>Perm<span class="opt">);</span>
+            Max_Flips  <span class="opt">:=</span> Fann_Int<span class="kwd">&#39;Max</span> <span class="opt">(</span>Max_Flips<span class="opt">,</span> Flip_Count<span class="opt">);</span>
+            <span class="kwa">if</span> Perm_id <span class="kwa">mod</span> <span class="num">2</span> <span class="opt">=</span> <span class="num">0</span> <span class="kwa">then</span>
+               Checksum <span class="opt">:=</span> Checksum <span class="opt">+</span> <span class="kwc">Checksum_Int</span> <span class="opt">(</span>Flip_Count<span class="opt">);</span>
+            <span class="kwa">else</span>
+               Checksum <span class="opt">:=</span> Checksum <span class="opt">-</span> <span class="kwc">Checksum_Int</span> <span class="opt">(</span>Flip_Count<span class="opt">);</span>
+            <span class="kwa">end if</span><span class="opt">;</span>
+         <span class="kwa">end if</span><span class="opt">;</span>
+
+         <span class="kwa">exit when</span> Perm_id <span class="opt">&gt;=</span> Perm_id_Max<span class="opt">;</span>
+         Perm_id <span class="opt">:=</span> Perm_id <span class="opt">+</span> <span class="num">1</span><span class="opt">;</span>
+         <span class="kwc">Get_Next_Permutation</span> <span class="opt">(</span>Perm<span class="opt">,</span> Count<span class="opt">);</span>
+
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">end</span> Get_Checksum_and_Flips<span class="opt">;</span>
+
+   <span class="kwa">task type</span> Flip_Counter <span class="kwa">is</span>
+      <span class="kwa">pragma</span> <span class="kwc">Storage_Size</span> <span class="opt">(</span><span class="num">2</span><span class="opt">**</span><span class="num">12</span><span class="opt">);</span>
+      <span class="kwa">entry</span> Start
+        <span class="opt">(</span>Task_id   <span class="opt">:</span> <span class="kwa">in</span> Task_id_Range<span class="opt">;</span>
+         Factorial <span class="opt">:</span> <span class="kwa">in</span> Enumeration<span class="opt">);</span>
+      <span class="kwa">entry</span> Return_Result
+        <span class="opt">(</span>Partial_Flip_Count <span class="opt">:</span> <span class="kwa">out</span> Fann_Int<span class="opt">;</span>
+         Partial_Checksum   <span class="opt">:</span> <span class="kwa">out</span> Checksum_Int<span class="opt">);</span>
+   <span class="kwa">end</span> Flip_Counter<span class="opt">;</span>
+
+
+   <span class="kwa">task body</span> Flip_Counter <span class="kwa">is</span>
+      Task_id_Local <span class="opt">:</span> Task_id_Range<span class="opt">;</span>
+      Max_Flips     <span class="opt">:</span> Fann_Int<span class="opt">;</span>
+      Checksum      <span class="opt">:</span> Checksum_Int<span class="opt">;</span>
+      F <span class="opt">:</span> Enumeration<span class="opt">;</span>
+   <span class="kwa">begin</span>
+      <span class="kwa">accept</span> Start
+        <span class="opt">(</span>Task_id   <span class="opt">:</span> <span class="kwa">in</span> Task_id_Range<span class="opt">;</span>
+         Factorial <span class="opt">:</span> <span class="kwa">in</span> Enumeration<span class="opt">)</span>
+      <span class="kwa">do</span>
+         Task_id_Local <span class="opt">:=</span> Task_id<span class="opt">;</span>
+         F <span class="opt">:=</span> Factorial<span class="opt">;</span>
+      <span class="kwa">end</span> Start<span class="opt">;</span>
+
+      <span class="kwc">Get_Checksum_and_Flips</span> <span class="opt">(</span>Task_id_Local<span class="opt">,</span> F<span class="opt">,</span> Max_Flips<span class="opt">,</span> Checksum<span class="opt">);</span>
+
+      <span class="kwa">accept</span> Return_Result
+        <span class="opt">(</span>Partial_Flip_Count <span class="opt">:</span> <span class="kwa">out</span> Fann_Int<span class="opt">;</span>
+         Partial_Checksum   <span class="opt">:</span> <span class="kwa">out</span> Checksum_Int<span class="opt">)</span>
+      <span class="kwa">do</span>
+         Partial_Flip_Count <span class="opt">:=</span> Max_Flips<span class="opt">;</span>
+         Partial_Checksum   <span class="opt">:=</span> Checksum<span class="opt">;</span>
+      <span class="kwa">end</span> Return_Result<span class="opt">;</span>
+   <span class="kwa">end</span> Flip_Counter<span class="opt">;</span>
+
+   <span class="kwa">type</span> Flip_Data   <span class="kwa">is array</span> <span class="opt">(</span>Task_id_Range<span class="opt">)</span> <span class="kwa">of</span> Fann_Int<span class="opt">;</span>
+   <span class="kwa">type</span> Chksum_Data <span class="kwa">is array</span> <span class="opt">(</span>Task_id_Range<span class="opt">)</span> <span class="kwa">of</span> Checksum_Int<span class="opt">;</span>
+   Flip_Count_Storage <span class="opt">:</span> Flip_Data   <span class="opt">:= (</span><span class="kwa">others</span> <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+   Checksum_Storage   <span class="opt">:</span> Chksum_Data <span class="opt">:= (</span><span class="kwa">others</span> <span class="opt">=&gt;</span> <span class="num">0</span><span class="opt">);</span>
+   Max_Flips <span class="opt">:</span> Fann_Int     <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+   Checksum  <span class="opt">:</span> Checksum_Int <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+
+   Factorial <span class="opt">:</span> Enumeration<span class="opt">;</span>
+
+<span class="kwa">begin</span>
+   <span class="kwa">if not</span> <span class="opt">(</span>N <span class="opt">&gt;</span> <span class="num">3</span> <span class="kwa">or</span> <span class="opt">(</span><span class="kwa">not</span> Multitasking_Desired <span class="kwa">and</span> No_of_Tasks <span class="opt">=</span> <span class="num">1</span><span class="opt">))</span> <span class="kwa">then</span>
+      Put_Line
+        <span class="opt">(</span><span class="sng">&quot;Set Multitasking_Desired = False and No_of_Tasks = 1 for N &lt; 4&quot;</span><span class="opt">);</span>
+      <span class="kwa">raise</span> Program_Error<span class="opt">;</span>
+   <span class="kwa">end if</span><span class="opt">;</span>
+
+   <span class="kwc">Factorial</span><span class="opt">(</span><span class="num">0</span><span class="opt">) :=</span> <span class="num">1</span><span class="opt">;</span>
+   <span class="kwa">for</span> i <span class="kwa">in</span> Enum_Index <span class="kwa">range</span> <span class="num">1</span> <span class="opt">..</span> Enum_Index<span class="kwd">&#39;Last</span> <span class="kwa">loop</span>
+      <span class="kwc">Factorial</span><span class="opt">(</span>i<span class="opt">) :=</span> <span class="kwc">Factorial</span><span class="opt">(</span>i<span class="opt">-</span><span class="num">1</span><span class="opt">) *</span> <span class="kwc">Perm_id_Range</span> <span class="opt">(</span>i<span class="opt">);</span>
+   <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">if</span> Multitasking_Desired <span class="kwa">then</span>
+
+      <span class="kwa">declare</span>  <span class="slc">-- and launch 1 task for each t in Task_id_Range:</span>
+
+         Counter <span class="opt">:</span> <span class="kwa">array</span><span class="opt">(</span>Task_id_Range<span class="opt">)</span> <span class="kwa">of</span> Flip_Counter<span class="opt">;</span> <span class="slc">-- the tasks.</span>
+
+      <span class="kwa">begin</span>
+
+         <span class="kwa">for</span> t <span class="kwa">in</span> Task_id_Range <span class="kwa">loop</span>
+            <span class="kwc">Counter</span><span class="opt">(</span>t<span class="opt">).</span><span class="kwc">Start</span> <span class="opt">(</span>t<span class="opt">,</span> Factorial<span class="opt">);</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+
+         <span class="kwa">for</span> t <span class="kwa">in</span> Task_id_Range <span class="kwa">loop</span>
+            <span class="kwc">Counter</span><span class="opt">(</span>t<span class="opt">).</span><span class="kwc">Return_Result</span> <span class="opt">(</span>Max_Flips<span class="opt">,</span> Checksum<span class="opt">);</span>
+            <span class="kwc">Flip_Count_Storage</span><span class="opt">(</span>t<span class="opt">) :=</span> Max_Flips<span class="opt">;</span>
+            <span class="kwc">Checksum_Storage</span><span class="opt">(</span>t<span class="opt">)   :=</span> Checksum<span class="opt">;</span>
+         <span class="kwa">end loop</span><span class="opt">;</span>
+
+      <span class="kwa">end</span><span class="opt">;</span>
+
+   <span class="kwa">else</span>  <span class="slc">-- Sequential:</span>
+
+      <span class="kwa">for</span> t <span class="kwa">in</span> Task_id_Range <span class="kwa">loop</span>
+         <span class="kwc">Get_Checksum_and_Flips</span> <span class="opt">(</span>t<span class="opt">,</span> Factorial<span class="opt">,</span> Max_Flips<span class="opt">,</span> Checksum<span class="opt">);</span>
+         <span class="kwc">Flip_Count_Storage</span><span class="opt">(</span>t<span class="opt">) :=</span> Max_Flips<span class="opt">;</span>
+         <span class="kwc">Checksum_Storage</span><span class="opt">(</span>t<span class="opt">)   :=</span> Checksum<span class="opt">;</span>
+      <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">end if</span><span class="opt">;</span>
+
+   Max_Flips <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+   <span class="kwa">for</span> t <span class="kwa">in</span> Task_id_Range <span class="kwa">loop</span>
+      <span class="kwa">if</span> <span class="kwc">Flip_Count_Storage</span><span class="opt">(</span>t<span class="opt">) &gt;</span> Max_Flips <span class="kwa">then</span>
+         Max_Flips <span class="opt">:=</span> <span class="kwc">Flip_Count_Storage</span><span class="opt">(</span>t<span class="opt">);</span>
+      <span class="kwa">end if</span><span class="opt">;</span>
+   <span class="kwa">end loop</span><span class="opt">;</span>
+
+   Checksum <span class="opt">:=</span> <span class="num">0</span><span class="opt">;</span>
+   <span class="kwa">for</span> t <span class="kwa">in</span> Task_id_Range <span class="kwa">loop</span>
+      Checksum <span class="opt">:=</span> Checksum <span class="opt">+</span> <span class="kwc">Checksum_Storage</span><span class="opt">(</span>t<span class="opt">);</span>
+   <span class="kwa">end loop</span><span class="opt">;</span>
+
+   <span class="kwa">declare</span>
+      C_Image <span class="opt">:</span> <span class="kwa">constant</span> <span class="kwb">String</span> <span class="opt">:=</span> Checksum_Int<span class="kwd">&#39;Image</span> <span class="opt">(</span>Checksum<span class="opt">);</span>
+   <span class="kwa">begin</span>
+      <span class="kwc">Put_Line</span> <span class="opt">(</span><span class="kwc">C_image</span><span class="opt">(</span><span class="num">2</span><span class="opt">..</span>C_image<span class="kwd">&#39;Last</span><span class="opt">));</span>
+      <span class="kwc">Put</span> <span class="opt">(</span><span class="sng">&quot;Pfannkuchen(&quot;</span><span class="opt">);</span> <span class="kwc">Put</span> <span class="opt">(</span>N_image<span class="opt">);</span> <span class="kwc">Put</span> <span class="opt">(</span><span class="sng">&quot;) =&quot;</span><span class="opt">);</span>
+      <span class="kwc">Put</span> <span class="opt">(</span>Fann_Int<span class="kwd">&#39;Image</span> <span class="opt">(</span>Max_Flips<span class="opt">));</span>
+   <span class="kwa">end</span><span class="opt">;</span>
+
+<span class="kwa">end</span> Fannkuchredux<span class="opt">;</span>
+
+    </pre>
+  </section>
+  <section>
+    <div>
+      <h2 id="log">notes, command-line, and program output</h2>
+    </div>
+    <pre>
+NOTES:
+64-bit Ubuntu quad core
+GNATMAKE 13.3.0
+
+
+ Fri, 10 Jan 2025 03:25:26 GMT
+
+MAKE:
+gnatchop -r -w fannkuchredux.gnat-3.gnat
+splitting fannkuchredux.gnat-3.gnat into:
+   fannkuchredux.adb
+gnatmake -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 -f fannkuchredux.adb -o fannkuchredux.gnat-3.gnat_run 
+x86_64-linux-gnu-gcc-13 -c -O3 -fomit-frame-pointer -march=ivybridge -gnatn2 fannkuchredux.adb
+x86_64-linux-gnu-gnatbind-13 -x fannkuchredux.ali
+x86_64-linux-gnu-gnatlink-13 fannkuchredux.ali -O3 -fomit-frame-pointer -march=ivybridge -o fannkuchredux.gnat-3.gnat_run
+
+3.95s to complete and log all make actions
+
+COMMAND LINE:
+ ./fannkuchredux.gnat-3.gnat_run 12
+
+PROGRAM OUTPUT:
+3968050
+Pfannkuchen(12) = 65
+    </pre>
+  </section>
+</article>
+<footer>
+  <nav>
+    <ul>
+      <li><a href="../license.html"><span>3-Clause BSD License</span></a>
+    </ul>
+  </nav>
+</footer>
+

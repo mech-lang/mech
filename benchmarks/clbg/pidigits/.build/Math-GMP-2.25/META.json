@@ -1,0 +1,85 @@
+{
+   "abstract" : "High speed arbitrary size integer math",
+   "author" : [
+      "Shlomi Fish <shlomif@cpan.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 6.024, CPAN::Meta::Converter version 2.150010",
+   "license" : [
+      "lgpl_2_1"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "Math-GMP",
+   "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "Alien::GMP" : "1.08",
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "File::Comments" : "0",
+            "Pod::Coverage::TrustPod" : "0",
+            "Pod::Spell" : "0",
+            "Test::CPAN::Changes" : "0.19",
+            "Test::More" : "0.96",
+            "Test::Pod" : "1.41",
+            "Test::Pod::Coverage" : "1.08",
+            "Test::TrailingSpace" : "0.0203",
+            "Test::YAML::Meta" : "0",
+            "Text::SpellChecker" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "AutoLoader" : "0",
+            "Carp" : "0",
+            "DynaLoader" : "0",
+            "Exporter" : "0",
+            "overload" : "0",
+            "perl" : "5.010",
+            "strict" : "0",
+            "vars" : "0",
+            "warnings" : "0"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Data::Dumper" : "0",
+            "File::Spec" : "0",
+            "File::Temp" : "0",
+            "IO::Handle" : "0",
+            "IPC::Open3" : "0",
+            "Scalar::Util" : "0",
+            "Test::More" : "0"
+         }
+      }
+   },
+   "provides" : {
+      "Math::GMP" : {
+         "file" : "lib/Math/GMP.pm",
+         "version" : "2.25"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "mailto" : "bug-math-gmp@rt.cpan.org",
+         "web" : "https://rt.cpan.org/Public/Dist/Display.html?Name=Math-GMP"
+      },
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/turnstep/Math-GMP.git",
+         "web" : "https://github.com/turnstep/Math-GMP"
+      }
+   },
+   "version" : "2.25",
+   "x_generated_by_perl" : "v5.34.0",
+   "x_serialization_backend" : "Cpanel::JSON::XS version 4.26",
+   "x_spdx_expression" : "LGPL-2.1"
+}
+

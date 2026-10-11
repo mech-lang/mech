@@ -1,0 +1,321 @@
+FRESH 63 TWO-SLOT NODES
+; disassembly for BUILD-BTREE
+; Size: 272 bytes. Origin: #x80038E5F58                       ; BUILD-BTREE
+; 5F58:       AA0A40F9         LDR R0, [THREAD, #16]          ; binding-stack-pointer
+; 5F5C:       AA0B00F9         STR R0, [CFP, #16]
+; 5F60:       A00F40F9         LDR NL0, [CFP, #24]
+; 5F64:       400500B4         CBZ NL0, L2
+; 5F68:       A00F40F9         LDR NL0, [CFP, #24]
+; 5F6C:       0B0800F1         SUBS R1, NL0, #2
+; 5F70:       A6060054         BVS L5
+; 5F74:       7D0300F9         STR CFP, [CSP]
+; 5F78:       0A0080D2         MOVZ R0, #0
+; 5F7C:       36FCFF58         LDR LEXENV, #x80038E5F00       ; #<SB-KERNEL:FDEFN BUILD-BTREE>
+; 5F80:       970080D2         MOVZ NARGS, #4
+; 5F84:       DE9240F8         LDR LR, [LEXENV, #9]
+; 5F88:       FD031BAA         MOV CFP, CSP
+; 5F8C:       C0033FD6         BLR LR
+; 5F90:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; 5F94:       EF030AAA         MOV R5, R0
+; 5F98:       AF1300F9         STR R5, [CFP, #32]
+; 5F9C:       A00F40F9         LDR NL0, [CFP, #24]
+; 5FA0:       0B0800D1         SUB R1, NL0, #2
+; 5FA4:       7D0300F9         STR CFP, [CSP]
+; 5FA8:       0A0080D2         MOVZ R0, #0
+; 5FAC:       B6FAFF58         LDR LEXENV, #x80038E5F00       ; #<SB-KERNEL:FDEFN BUILD-BTREE>
+; 5FB0:       970080D2         MOVZ NARGS, #4
+; 5FB4:       DE9240F8         LDR LR, [LEXENV, #9]
+; 5FB8:       FD031BAA         MOV CFP, CSP
+; 5FBC:       C0033FD6         BLR LR
+; 5FC0:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; 5FC4:       AF1340F9         LDR R5, [CFP, #32]
+; 5FC8:       EE030AAA         MOV R4, R0
+; 5FCC:       BA2A00B9         STR WNULL, [THREAD, #40]       ; pseudo-atomic-bits
+; 5FD0:       A9FA45A9         LDP TMP, LR, [THREAD, #88]     ; cons-tlab.{free-pointer, end-addr}
+; 5FD4:       2A410091         ADD R0, TMP, #16
+; 5FD8:       5F011EEB         CMP R0, LR
+; 5FDC:       68030054         BHI L6
+; 5FE0:       AA2E00F9         STR R0, [THREAD, #88]          ; cons-tlab
+; 5FE4: L0:   2A1D0091         ADD R0, TMP, #7
+; 5FE8:       2F3900A9         STP R5, R4, [TMP]
+; 5FEC:       BF2A00B9         STR WZR, [THREAD, #40]         ; pseudo-atomic-bits
+; 5FF0:       BE2E40B9         LDR WLR, [THREAD, #44]         ; pseudo-atomic-bits
+; 5FF4:       5E0000B4         CBZ LR, L1
+; 5FF8:       200120D4         BRK #9                         ; Pending interrupt trap
+; 5FFC: L1:   FB031DAA         MOV CSP, CFP
+; 6000:       5F0300F1         CMP NULL, #0
+; 6004:       BD7B40A9         LDP CFP, LR, [CFP]
+; 6008:       C0035FD6         RET
+; 600C: L2:   BA2A00B9         STR WNULL, [THREAD, #40]       ; pseudo-atomic-bits
+; 6010:       A9FA45A9         LDP TMP, LR, [THREAD, #88]     ; cons-tlab.{free-pointer, end-addr}
+; 6014:       2A410091         ADD R0, TMP, #16
+; 6018:       5F011EEB         CMP R0, LR
+; 601C:       E8010054         BHI L7
+; 6020:       AA2E00F9         STR R0, [THREAD, #88]          ; cons-tlab
+; 6024: L3:   2A1D0091         ADD R0, TMP, #7
+; 6028:       3A6900A9         STP NULL, NULL, [TMP]
+; 602C:       BF2A00B9         STR WZR, [THREAD, #40]         ; pseudo-atomic-bits
+; 6030:       BE2E40B9         LDR WLR, [THREAD, #44]         ; pseudo-atomic-bits
+; 6034:       5E0000B4         CBZ LR, L4
+; 6038:       200120D4         BRK #9                         ; Pending interrupt trap
+; 603C: L4:   F0FFFF17         B L1
+; 6040:       E00120D4         BRK #15                        ; Invalid argument count trap
+; 6044: L5:   A06521D4         BRK #2861                      ; ADD-SUB-OVERFLOW-ERROR
+                                                              ; R1
+; 6048: L6:   090280D2         MOVZ TMP, #16
+; 604C:       6AF6FF58         LDR R0, #x80038E5F18           ; SB-VM::LIST-ALLOC-TRAMP
+; 6050:       40013FD6         BLR R0
+; 6054:       E4FFFF17         B L0
+; 6058: L7:   090280D2         MOVZ TMP, #16
+; 605C:       EAF5FF58         LDR R0, #x80038E5F18           ; SB-VM::LIST-ALLOC-TRAMP
+; 6060:       40013FD6         BLR R0
+; 6064:       F0FFFF17         B L3
+; disassembly for CHECK-NODE
+; Size: 220 bytes. Origin: #x80038E5514                       ; CHECK-NODE
+; 14:       AA0A40F9         LDR R0, [THREAD, #16]            ; binding-stack-pointer
+; 18:       AA0B00F9         STR R0, [CFP, #16]
+; 1C:       AA0F40F9         LDR R0, [CFP, #24]
+; 20:       410D4092         AND NL1, R0, #15
+; 24:       3F1C00F1         CMP NL1, #7
+; 28:       E1050054         BNE L3
+; 2C:       AA0F40F9         LDR R0, [CFP, #24]
+; 30:       4C915FF8         LDR R2, [R0, #-7]
+; 34:       9F011AEB         CMP R2, NULL
+; 38:       20050054         BEQ L2
+; 3C:       AA0F40F9         LDR R0, [CFP, #24]
+; 40:       4A915FF8         LDR R0, [R0, #-7]
+; 44:       7D0300F9         STR CFP, [CSP]
+; 48:       56FCFF58         LDR LEXENV, #x80038E54D0         ; #<SB-KERNEL:FDEFN CHECK-NODE>
+; 4C:       570080D2         MOVZ NARGS, #2
+; 50:       DE9240F8         LDR LR, [LEXENV, #9]
+; 54:       FD031BAA         MOV CFP, CSP
+; 58:       C0033FD6         BLR LR
+; 5C:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; 60:       7D0300F9         STR CFP, [CSP]
+; 64:       4B0080D2         MOVZ R1, #2
+; 68:       297E80D2         MOVZ TMP, #1009
+; 6C:       5E6B69F8         LDR LR, [NULL, TMP]              ; SB-KERNEL:TWO-ARG-+
+; 70:       FD031BAA         MOV CFP, CSP
+; 74:       C0033FD6         BLR LR
+; 78:       ED030AAA         MOV R3, R0
+; 7C:       AD1300F9         STR R3, [CFP, #32]
+; 80:       AA0F40F9         LDR R0, [CFP, #24]
+; 84:       4A1140F8         LDR R0, [R0, #1]
+; 88:       7D0300F9         STR CFP, [CSP]
+; 8C:       36FAFF58         LDR LEXENV, #x80038E54D0         ; #<SB-KERNEL:FDEFN CHECK-NODE>
+; 90:       570080D2         MOVZ NARGS, #2
+; 94:       DE9240F8         LDR LR, [LEXENV, #9]
+; 98:       FD031BAA         MOV CFP, CSP
+; 9C:       C0033FD6         BLR LR
+; A0:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; A4:       AD1340F9         LDR R3, [CFP, #32]
+; A8:       EB030AAA         MOV R1, R0
+; AC:       7D0300F9         STR CFP, [CSP]
+; B0:       EA030DAA         MOV R0, R3
+; B4:       297E80D2         MOVZ TMP, #1009
+; B8:       5E6B69F8         LDR LR, [NULL, TMP]              ; SB-KERNEL:TWO-ARG-+
+; BC:       FD031BAA         MOV CFP, CSP
+; C0:       C0033FD6         BLR LR
+; C4:       AA000037         TBNZ WR0, #0, L1
+; C8: L0:   FB031DAA         MOV CSP, CFP
+; CC:       5F0300F1         CMP NULL, #0
+; D0:       BD7B40A9         LDP CFP, LR, [CFP]
+; D4:       C0035FD6         RET
+; D8: L1:   604B21D4         BRK #2651                        ; OBJECT-NOT-FIXNUM-ERROR
+                                                              ; R0
+; DC: L2:   4A0080D2         MOVZ R0, #2
+; E0:       FAFFFF17         B L0
+; E4: L3:   AA0F40F9         LDR R0, [CFP, #24]
+; E8:       A04A21D4         BRK #2645                        ; OBJECT-NOT-LIST-ERROR
+                                                              ; R0
+; EC:       E00120D4         BRK #15                          ; Invalid argument count trap
+; disassembly for MAIN
+; Size: 732 bytes. Origin: #x80038E5BF0                       ; MAIN
+; BF0:       AA0A40F9         LDR R0, [THREAD, #16]           ; binding-stack-pointer
+; BF4:       AA0F00F9         STR R0, [CFP, #24]
+; BF8:       A01340F9         LDR NL0, [CFP, #32]
+; BFC:       00080091         ADD NL0, NL0, #2
+; C00:       A01B00F9         STR NL0, [CFP, #48]
+; C04:       A01340F9         LDR NL0, [CFP, #32]
+; C08:       0B080091         ADD R1, NL0, #2
+; C0C:       7D0300F9         STR CFP, [CSP]
+; C10:       0A0080D2         MOVZ R0, #0
+; C14:       F6F4FF58         LDR LEXENV, #x80038E5AB0        ; #<SB-KERNEL:FDEFN BUILD-BTREE>
+; C18:       970080D2         MOVZ NARGS, #4
+; C1C:       DE9240F8         LDR LR, [LEXENV, #9]
+; C20:       FD031BAA         MOV CFP, CSP
+; C24:       C0033FD6         BLR LR
+; C28:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; C2C:       410D4092         AND NL1, R0, #15
+; C30:       3F1C00F1         CMP NL1, #7
+; C34:       44015AFA         CCMP R0, NULL, #4, EQ
+; C38:       40140054         BEQ L5
+; C3C:       7D0300F9         STR CFP, [CSP]
+; C40:       D6F3FF58         LDR LEXENV, #x80038E5AB8        ; #<SB-KERNEL:FDEFN CHECK-NODE>
+; C44:       570080D2         MOVZ NARGS, #2
+; C48:       DE9240F8         LDR LR, [LEXENV, #9]
+; C4C:       FD031BAA         MOV CFP, CSP
+; C50:       C0033FD6         BLR LR
+; C54:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; C58:       AA1700F9         STR R0, [CFP, #40]
+; C5C:       AA1740F9         LDR R0, [CFP, #40]
+; C60:       CA120037         TBNZ WR0, #0, L4
+; C64:       AE1A42F9         LDR R4, [THREAD, #1072]         ; tls: *STANDARD-OUTPUT*
+; C68:       6E00F8B6         TBZ R4, #63, L0
+; C6C:       AAF3FF58         LDR R0, #x80038E5AE0            ; '*STANDARD-OUTPUT*
+; C70:       4E1140F8         LDR R4, [R0, #1]
+; C74: L0:   AE1F00F9         STR R4, [CFP, #56]
+; C78:       7D0300F9         STR CFP, [CSP]
+; C7C:       6AF3FF58         LDR R0, #x80038E5AE8            ; "stretch tree of depth "
+; C80:       AB1F40F9         LDR R1, [CFP, #56]
+; C84:       29BA80D2         MOVZ TMP, #1489
+; C88:       5E6B69F8         LDR LR, [NULL, TMP]             ; WRITE-STRING
+; C8C:       970080D2         MOVZ NARGS, #4
+; C90:       FD031BAA         MOV CFP, CSP
+; C94:       C0033FD6         BLR LR
+; C98:       7D0300F9         STR CFP, [CSP]
+; C9C:       AA1B40F9         LDR R0, [CFP, #48]
+; CA0:       8B0280D2         MOVZ R1, #20
+; CA4:       AC1F40F9         LDR R2, [CFP, #56]
+; CA8:       D6F0FF58         LDR LEXENV, #x80038E5AC0        ; #<SB-KERNEL:FDEFN SB-IMPL::%OUTPUT-INTEGER-IN-BASE>
+; CAC:       D70080D2         MOVZ NARGS, #6
+; CB0:       DE9240F8         LDR LR, [LEXENV, #9]
+; CB4:       FD031BAA         MOV CFP, CSP
+; CB8:       C0033FD6         BLR LR
+; CBC:       7D0300F9         STR CFP, [CSP]
+; CC0:       8AF1FF58         LDR R0, #x80038E5AF0            ; "	 check: "
+; CC4:       AB1F40F9         LDR R1, [CFP, #56]
+; CC8:       29BA80D2         MOVZ TMP, #1489
+; CCC:       5E6B69F8         LDR LR, [NULL, TMP]             ; WRITE-STRING
+; CD0:       970080D2         MOVZ NARGS, #4
+; CD4:       FD031BAA         MOV CFP, CSP
+; CD8:       C0033FD6         BLR LR
+; CDC:       7D0300F9         STR CFP, [CSP]
+; CE0:       AA1740F9         LDR R0, [CFP, #40]
+; CE4:       8B0280D2         MOVZ R1, #20
+; CE8:       AC1F40F9         LDR R2, [CFP, #56]
+; CEC:       B6EEFF58         LDR LEXENV, #x80038E5AC0        ; #<SB-KERNEL:FDEFN SB-IMPL::%OUTPUT-INTEGER-IN-BASE>
+; CF0:       D70080D2         MOVZ NARGS, #6
+; CF4:       DE9240F8         LDR LR, [LEXENV, #9]
+; CF8:       FD031BAA         MOV CFP, CSP
+; CFC:       C0033FD6         BLR LR
+; D00:       7D0300F9         STR CFP, [CSP]
+; D04:       2A4A81D2         MOVZ R0, #2641
+; D08:       AB1F40F9         LDR R1, [CFP, #56]
+; D0C:       29BE80D2         MOVZ TMP, #1521
+; D10:       5E6B69F8         LDR LR, [NULL, TMP]             ; WRITE-CHAR
+; D14:       970080D2         MOVZ NARGS, #4
+; D18:       FD031BAA         MOV CFP, CSP
+; D1C:       C0033FD6         BLR LR
+; D20:       7D0300F9         STR CFP, [CSP]
+; D24:       0A0080D2         MOVZ R0, #0
+; D28:       AB1340F9         LDR R1, [CFP, #32]
+; D2C:       36ECFF58         LDR LEXENV, #x80038E5AB0        ; #<SB-KERNEL:FDEFN BUILD-BTREE>
+; D30:       970080D2         MOVZ NARGS, #4
+; D34:       DE9240F8         LDR LR, [LEXENV, #9]
+; D38:       FD031BAA         MOV CFP, CSP
+; D3C:       C0033FD6         BLR LR
+; D40:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; D44:       EF030AAA         MOV R5, R0
+; D48:       AF1700F9         STR R5, [CFP, #40]
+; D4C:       E10D4092         AND NL1, R5, #15
+; D50:       3F1C00F1         CMP NL1, #7
+; D54:       E4015AFA         CCMP R5, NULL, #4, EQ
+; D58:       E00A0054         BEQ L3
+; D5C:       A20A40F9         LDR NL2, [THREAD, #16]          ; binding-stack-pointer
+; D60:       41400091         ADD NL1, NL2, #16
+; D64:       A10A00F9         STR NL1, [THREAD, #16]          ; binding-stack-pointer
+; D68:       016A80D2         MOVZ NL1, #848
+; D6C:       AEAA41F9         LDR R4, [THREAD, #848]          ; tls: *PRINT-PRETTY*
+; D70:       4E0400A9         STP R4, NL1, [NL2]
+; D74:       BA6A21F8         STR NULL, [THREAD, NL1]
+; D78:       7D0300F9         STR CFP, [CSP]
+; D7C:       AA1340F9         LDR R0, [CFP, #32]
+; D80:       56EAFF58         LDR LEXENV, #x80038E5AC8        ; #<SB-KERNEL:FDEFN LOOP-DEPTHS>
+; D84:       570080D2         MOVZ NARGS, #2
+; D88:       DE9240F8         LDR LR, [LEXENV, #9]
+; D8C:       FD031BAA         MOV CFP, CSP
+; D90:       C0033FD6         BLR LR
+; D94:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; D98:       AF1740F9         LDR R5, [CFP, #40]
+; D9C:       7D0300F9         STR CFP, [CSP]
+; DA0:       EA030FAA         MOV R0, R5
+; DA4:       B6E8FF58         LDR LEXENV, #x80038E5AB8        ; #<SB-KERNEL:FDEFN CHECK-NODE>
+; DA8:       570080D2         MOVZ NARGS, #2
+; DAC:       DE9240F8         LDR LR, [LEXENV, #9]
+; DB0:       FD031BAA         MOV CFP, CSP
+; DB4:       C0033FD6         BLR LR
+; DB8:       3B039B9A         CSEL CSP, OCFP, CSP, EQ
+; DBC:       AA1700F9         STR R0, [CFP, #40]
+; DC0:       AA1740F9         LDR R0, [CFP, #40]
+; DC4:       4A070037         TBNZ WR0, #0, L2
+; DC8:       AE1A42F9         LDR R4, [THREAD, #1072]         ; tls: *STANDARD-OUTPUT*
+; DCC:       6E00F8B6         TBZ R4, #63, L1
+; DD0:       8AE8FF58         LDR R0, #x80038E5AE0            ; '*STANDARD-OUTPUT*
+; DD4:       4E1140F8         LDR R4, [R0, #1]
+; DD8: L1:   AE1B00F9         STR R4, [CFP, #48]
+; DDC:       7D0300F9         STR CFP, [CSP]
+; DE0:       0AE9FF58         LDR R0, #x80038E5B00            ; "long lived tree of depth "
+; DE4:       AB1B40F9         LDR R1, [CFP, #48]
+; DE8:       29BA80D2         MOVZ TMP, #1489
+; DEC:       5E6B69F8         LDR LR, [NULL, TMP]             ; WRITE-STRING
+; DF0:       970080D2         MOVZ NARGS, #4
+; DF4:       FD031BAA         MOV CFP, CSP
+; DF8:       C0033FD6         BLR LR
+; DFC:       7D0300F9         STR CFP, [CSP]
+; E00:       AA1340F9         LDR R0, [CFP, #32]
+; E04:       8B0280D2         MOVZ R1, #20
+; E08:       AC1B40F9         LDR R2, [CFP, #48]
+; E0C:       B6E5FF58         LDR LEXENV, #x80038E5AC0        ; #<SB-KERNEL:FDEFN SB-IMPL::%OUTPUT-INTEGER-IN-BASE>
+; E10:       D70080D2         MOVZ NARGS, #6
+; E14:       DE9240F8         LDR LR, [LEXENV, #9]
+; E18:       FD031BAA         MOV CFP, CSP
+; E1C:       C0033FD6         BLR LR
+; E20:       7D0300F9         STR CFP, [CSP]
+; E24:       6AE6FF58         LDR R0, #x80038E5AF0            ; "	 check: "
+; E28:       AB1B40F9         LDR R1, [CFP, #48]
+; E2C:       29BA80D2         MOVZ TMP, #1489
+; E30:       5E6B69F8         LDR LR, [NULL, TMP]             ; WRITE-STRING
+; E34:       970080D2         MOVZ NARGS, #4
+; E38:       FD031BAA         MOV CFP, CSP
+; E3C:       C0033FD6         BLR LR
+; E40:       7D0300F9         STR CFP, [CSP]
+; E44:       AA1740F9         LDR R0, [CFP, #40]
+; E48:       8B0280D2         MOVZ R1, #20
+; E4C:       AC1B40F9         LDR R2, [CFP, #48]
+; E50:       96E3FF58         LDR LEXENV, #x80038E5AC0        ; #<SB-KERNEL:FDEFN SB-IMPL::%OUTPUT-INTEGER-IN-BASE>
+; E54:       D70080D2         MOVZ NARGS, #6
+; E58:       DE9240F8         LDR LR, [LEXENV, #9]
+; E5C:       FD031BAA         MOV CFP, CSP
+; E60:       C0033FD6         BLR LR
+; E64:       7D0300F9         STR CFP, [CSP]
+; E68:       2A4A81D2         MOVZ R0, #2641
+; E6C:       AB1B40F9         LDR R1, [CFP, #48]
+; E70:       29BE80D2         MOVZ TMP, #1521
+; E74:       5E6B69F8         LDR LR, [NULL, TMP]             ; WRITE-CHAR
+; E78:       970080D2         MOVZ NARGS, #4
+; E7C:       FD031BAA         MOV CFP, CSP
+; E80:       C0033FD6         BLR LR
+; E84:       EA031AAA         MOV R0, NULL
+; E88:       A20A40F9         LDR NL2, [THREAD, #16]          ; binding-stack-pointer
+; E8C:       4E047FA9         LDP R4, NL1, [NL2, #-16]
+; E90:       AE6A21F8         STR R4, [THREAD, NL1]
+; E94:       5F7CBFA9         STP ZR, ZR, [NL2, #-16]!
+; E98:       A20A00F9         STR NL2, [THREAD, #16]          ; binding-stack-pointer
+; E9C:       FB031DAA         MOV CSP, CFP
+; EA0:       5F0300F1         CMP NULL, #0
+; EA4:       BD7B40A9         LDP CFP, LR, [CFP]
+; EA8:       C0035FD6         RET
+; EAC: L2:   AA1740F9         LDR R0, [CFP, #40]
+; EB0:       604B21D4         BRK #2651                       ; OBJECT-NOT-FIXNUM-ERROR
+                                                              ; R0
+; EB4: L3:   00ED21D4         BRK #3944                       ; OBJECT-NOT-CONS-ERROR
+                                                              ; R5
+; EB8: L4:   AA1740F9         LDR R0, [CFP, #40]
+; EBC:       604B21D4         BRK #2651                       ; OBJECT-NOT-FIXNUM-ERROR
+                                                              ; R0
+; EC0: L5:   004D21D4         BRK #2664                       ; OBJECT-NOT-CONS-ERROR
+                                                              ; R0
+; EC4:       E00120D4         BRK #15                         ; Invalid argument count trap
+; EC8:       006321D4         BRK #2840                       ; UNBOUND-SYMBOL-ERROR
+                                                              ; R1

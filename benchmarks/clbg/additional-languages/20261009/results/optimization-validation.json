@@ -1,0 +1,92 @@
+[
+  {
+    "benchmark": "nbody",
+    "candidate": "nbody-unrolled",
+    "full": false,
+    "seconds": 0.22789625,
+    "validation": {
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "benchmark": "nbody",
+    "candidate": "nbody-unrolled",
+    "full": true,
+    "seconds": 30.796722958,
+    "validation": {
+      "bytes": 26,
+      "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+      "energies": [
+        -0.169075164,
+        -0.169059907
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true
+    },
+    "stderr": "",
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "benchmark": "regexredux",
+    "candidate": "regex-fast-program",
+    "full": false,
+    "seconds": 0.235852667,
+    "validation": {
+      "bytes": 262,
+      "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "benchmark": "regexredux",
+    "candidate": "regex-fast-program",
+    "full": true,
+    "seconds": 2.748780959,
+    "validation": {
+      "bytes": 298,
+      "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "benchmark": "knucleotide",
+    "candidate": "knucleotide-fast",
+    "full": false,
+    "seconds": 0.185691083,
+    "validation": {
+      "bytes": 242,
+      "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  },
+  {
+    "benchmark": "knucleotide",
+    "candidate": "knucleotide-fast",
+    "full": true,
+    "seconds": 16.36311525,
+    "validation": {
+      "bytes": 259,
+      "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "reference_match": true
+    },
+    "competing_compilers": [],
+    "power_changes": []
+  }
+]

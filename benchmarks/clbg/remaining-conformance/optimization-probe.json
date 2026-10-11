@@ -1,0 +1,62 @@
+[
+  {
+    "id": "conformance-regex-0",
+    "path": "regexredux.mec",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/conformance-regex-0"
+    ],
+    "runtime_environment": {},
+    "samples_seconds": [
+      0.542993917,
+      0.545807834,
+      0.549528584
+    ],
+    "median_seconds": 0.545807834
+  },
+  {
+    "id": "conformance-pidigits",
+    "path": "pidigits.mec",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/conformance-pidigits",
+      "{n}"
+    ],
+    "runtime_environment": {},
+    "samples_seconds": [
+      0.769088959,
+      0.780670208,
+      0.812362333
+    ],
+    "median_seconds": 0.780670208
+  },
+  {
+    "id": "conformance-pidigits-gated",
+    "path": "pidigits-gated.mec",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/.build/conformance-pidigits-gated",
+      "{n}"
+    ],
+    "runtime_environment": {},
+    "samples_seconds": [
+      0.5068955,
+      0.51487225,
+      0.509018917
+    ],
+    "median_seconds": 0.509018917
+  },
+  {
+    "id": "conformance-regex-1",
+    "path": "regexredux.mec",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/.build/conformance-regex-1"
+    ],
+    "runtime_environment": {
+      "MECH_SEQUENCE_ASYNC": "1"
+    },
+    "samples_seconds": [
+      0.49393975,
+      0.488191958,
+      0.494018791
+    ],
+    "median_seconds": 0.49393975
+  }
+]

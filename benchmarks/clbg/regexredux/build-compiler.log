@@ -1,0 +1,38 @@
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+   Compiling mech v0.3.6 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech)
+warning: field `event` is never read
+ --> src/cli/config.rs:9:16
+  |
+7 | pub(crate) struct LoadedCliConfig {
+  |                   --------------- field in this struct
+8 |     pub(crate) config: Option<LoadedMechConfig>,
+9 |     pub(crate) event: ConfigLoadEvent,
+  |                ^^^^^
+  |
+  = note: `LoadedCliConfig` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `events` is never read
+  --> src/source_discovery.rs:21:9
+   |
+19 | pub(crate) struct SourceDiscoveryResult {
+   |                   --------------------- field in this struct
+20 |     pub entries: Vec<SourceEntry>,
+21 |     pub events: Vec<SourceDiscoveryEvent>,
+   |         ^^^^^^
+   |
+   = note: `SourceDiscoveryResult` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: variant `SkipBrokenSymlink` is never constructed
+  --> src/source_discovery.rs:53:5
+   |
+50 | pub(crate) enum MissingPathPolicy {
+   |                 ----------------- variant in this enum
+...
+53 |     SkipBrokenSymlink,
+   |     ^^^^^^^^^^^^^^^^^
+   |
+   = note: `MissingPathPolicy` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: `mech` (lib) generated 3 warnings
+    Finished `release` profile [optimized] target(s) in 9.48s

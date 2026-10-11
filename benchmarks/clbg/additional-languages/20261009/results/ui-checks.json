@@ -1,0 +1,49 @@
+{
+  "checks": [
+    {
+      "width": 1440,
+      "overflow": false,
+      "subset": true,
+      "source": true,
+      "timings": true,
+      "program_exclusion": true,
+      "ellipses": true,
+      "views": true,
+      "empty_state": true
+    },
+    {
+      "width": 900,
+      "overflow": false,
+      "subset": true,
+      "source": true,
+      "timings": true,
+      "program_exclusion": true,
+      "ellipses": true,
+      "views": true,
+      "empty_state": true
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "subset": true,
+      "source": true,
+      "timings": true,
+      "program_exclusion": true,
+      "ellipses": true,
+      "views": true,
+      "empty_state": true
+    },
+    {
+      "width": 320,
+      "overflow": false,
+      "subset": true,
+      "source": true,
+      "timings": true,
+      "program_exclusion": true,
+      "ellipses": true,
+      "views": true,
+      "empty_state": true
+    }
+  ],
+  "errors": []
+}

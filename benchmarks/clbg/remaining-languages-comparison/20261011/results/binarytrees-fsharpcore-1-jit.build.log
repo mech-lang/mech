@@ -1,0 +1,9 @@
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/binarytrees-fsharpcore-1.fs(9,1): warning FS0221: The declarations in this file will be placed in an implicit module 'Binarytrees-fsharpcore-1' based on the file name 'binarytrees-fsharpcore-1.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file. [/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/binarytrees-fsharpcore-1-jit/app.fsproj]
+
+Build succeeded.
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/fsharp/binarytrees-fsharpcore-1.fs(9,1): warning FS0221: The declarations in this file will be placed in an implicit module 'Binarytrees-fsharpcore-1' based on the file name 'binarytrees-fsharpcore-1.fs'. However this is not a valid F# identifier, so the contents will not be accessible from other files. Consider renaming the file or adding a 'module' or 'namespace' declaration at the top of the file. [/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/support/dotnet-builds/binarytrees-fsharpcore-1-jit/app.fsproj]
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.06

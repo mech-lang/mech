@@ -1,0 +1,4 @@
+splitting /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/remaining-languages-comparison/20261011/sources/ada/binarytrees-gnat-1.adb into:
+   binarytrees.adb
+   treenodes.ads
+   treenodes.adb

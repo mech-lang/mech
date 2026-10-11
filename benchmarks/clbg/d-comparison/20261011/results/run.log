@@ -1,0 +1,241 @@
+RUN 1 pidigits:d-compact
+SAMPLE 1 pidigits:d-compact 3.136910s
+RUN 1 mech-control-pidigits
+SAMPLE 1 mech-control-pidigits 0.294873s
+RUN 1 pidigits:d-fast
+SAMPLE 1 pidigits:d-fast 0.287363s
+RUN 2 pidigits:d-fast
+SAMPLE 2 pidigits:d-fast 0.287968s
+RUN 2 pidigits:d-compact
+SAMPLE 2 pidigits:d-compact 3.132168s
+RUN 2 mech-control-pidigits
+SAMPLE 2 mech-control-pidigits 0.287681s
+RUN 3 mech-control-pidigits
+SAMPLE 3 mech-control-pidigits 0.286752s
+RUN 3 pidigits:d-fast
+SAMPLE 3 pidigits:d-fast 0.291855s
+RUN 3 pidigits:d-compact
+SAMPLE 3 pidigits:d-compact 3.136244s
+RUN 1 spectralnorm-d-archive
+SAMPLE 1 spectralnorm-d-archive 0.872700s
+RUN 1 mech-control-spectralnorm
+SAMPLE 1 mech-control-spectralnorm 0.094535s
+RUN 1 spectralnorm-d-parallel-neon
+SAMPLE 1 spectralnorm-d-parallel-neon 0.091776s
+RUN 1 spectralnorm-d-modern
+SAMPLE 1 spectralnorm-d-modern 0.870150s
+RUN 1 spectralnorm-d-compact
+SAMPLE 1 spectralnorm-d-compact 0.873923s
+RUN 2 spectralnorm-d-modern
+SAMPLE 2 spectralnorm-d-modern 0.865392s
+RUN 2 spectralnorm-d-compact
+SAMPLE 2 spectralnorm-d-compact 0.873620s
+RUN 2 spectralnorm-d-archive
+SAMPLE 2 spectralnorm-d-archive 0.872440s
+RUN 2 mech-control-spectralnorm
+SAMPLE 2 mech-control-spectralnorm 0.089251s
+RUN 2 spectralnorm-d-parallel-neon
+SAMPLE 2 spectralnorm-d-parallel-neon 0.099142s
+RUN 3 spectralnorm-d-compact
+SAMPLE 3 spectralnorm-d-compact 0.873945s
+RUN 3 spectralnorm-d-parallel-neon
+SAMPLE 3 spectralnorm-d-parallel-neon 0.099992s
+RUN 3 spectralnorm-d-archive
+SAMPLE 3 spectralnorm-d-archive 0.874981s
+RUN 3 spectralnorm-d-modern
+SAMPLE 3 spectralnorm-d-modern 0.865303s
+RUN 3 mech-control-spectralnorm
+SAMPLE 3 mech-control-spectralnorm 0.087694s
+RUN 1 nbody-d-unrolled
+SAMPLE 1 nbody-d-unrolled 1.167697s
+RUN 1 nbody-d-archive-classless
+SAMPLE 1 nbody-d-archive-classless 1.693083s
+RUN 1 nbody-d-compact-array
+SAMPLE 1 nbody-d-compact-array 1.704738s
+RUN 1 nbody-d-modern-scalar
+SAMPLE 1 nbody-d-modern-scalar 1.826579s
+RUN 1 nbody-d-modern-vector-arrays
+SAMPLE 1 nbody-d-modern-vector-arrays 1.829162s
+RUN 1 mech-control-nbody
+SAMPLE 1 mech-control-nbody 1.054995s
+RUN 1 nbody-d-unrolled-precise
+SAMPLE 1 nbody-d-unrolled-precise 1.294996s
+RUN 2 nbody-d-compact-array
+SAMPLE 2 nbody-d-compact-array 1.706639s
+RUN 2 nbody-d-modern-scalar
+SAMPLE 2 nbody-d-modern-scalar 1.841441s
+RUN 2 nbody-d-unrolled
+SAMPLE 2 nbody-d-unrolled 1.169089s
+RUN 2 nbody-d-archive-classless
+SAMPLE 2 nbody-d-archive-classless 1.692712s
+RUN 2 mech-control-nbody
+SAMPLE 2 mech-control-nbody 1.056191s
+RUN 2 nbody-d-modern-vector-arrays
+SAMPLE 2 nbody-d-modern-vector-arrays 1.840510s
+RUN 2 nbody-d-unrolled-precise
+SAMPLE 2 nbody-d-unrolled-precise 1.305790s
+RUN 3 nbody-d-modern-vector-arrays
+SAMPLE 3 nbody-d-modern-vector-arrays 1.779166s
+RUN 3 nbody-d-modern-scalar
+SAMPLE 3 nbody-d-modern-scalar 1.831632s
+RUN 3 nbody-d-unrolled
+SAMPLE 3 nbody-d-unrolled 1.178826s
+RUN 3 nbody-d-archive-classless
+SAMPLE 3 nbody-d-archive-classless 1.692797s
+RUN 3 mech-control-nbody
+SAMPLE 3 mech-control-nbody 1.049892s
+RUN 3 nbody-d-unrolled-precise
+SAMPLE 3 nbody-d-unrolled-precise 1.302787s
+RUN 3 nbody-d-compact-array
+SAMPLE 3 nbody-d-compact-array 1.707342s
+RUN 1 mandelbrot-d-modern-array-eight
+SAMPLE 1 mandelbrot-d-modern-array-eight 2.296598s
+RUN 1 mech-control-mandelbrot
+SAMPLE 1 mech-control-mandelbrot 0.438897s
+RUN 1 mandelbrot-d-archive-complex
+SAMPLE 1 mandelbrot-d-archive-complex 10.958836s
+RUN 1 mandelbrot-d-parallel-array-eight
+SAMPLE 1 mandelbrot-d-parallel-array-eight 0.447483s
+RUN 2 mandelbrot-d-parallel-array-eight
+SAMPLE 2 mandelbrot-d-parallel-array-eight 0.448045s
+RUN 2 mandelbrot-d-archive-complex
+SAMPLE 2 mandelbrot-d-archive-complex 11.000811s
+RUN 2 mech-control-mandelbrot
+SAMPLE 2 mech-control-mandelbrot 0.440682s
+RUN 2 mandelbrot-d-modern-array-eight
+SAMPLE 2 mandelbrot-d-modern-array-eight 2.322613s
+RUN 3 mech-control-mandelbrot
+SAMPLE 3 mech-control-mandelbrot 0.440907s
+RUN 3 mandelbrot-d-modern-array-eight
+SAMPLE 3 mandelbrot-d-modern-array-eight 2.342472s
+RUN 3 mandelbrot-d-archive-complex
+SAMPLE 3 mandelbrot-d-archive-complex 10.965438s
+RUN 3 mandelbrot-d-parallel-array-eight
+SAMPLE 3 mandelbrot-d-parallel-array-eight 0.448744s
+RUN 1 mech-control-regexredux
+SAMPLE 1 mech-control-regexredux 0.488910s
+RUN 1 regexredux-d-published-2
+SAMPLE 1 regexredux-d-published-2 0.992152s
+RUN 1 regexredux-d-published-3
+SAMPLE 1 regexredux-d-published-3 0.695177s
+RUN 1 regexredux-d-compact
+SAMPLE 1 regexredux-d-compact 1.749552s
+RUN 1 regexredux-d-published-1
+SAMPLE 1 regexredux-d-published-1 0.993428s
+RUN 2 regexredux-d-published-1
+SAMPLE 2 regexredux-d-published-1 0.994829s
+RUN 2 regexredux-d-compact
+SAMPLE 2 regexredux-d-compact 1.757904s
+RUN 2 regexredux-d-published-3
+SAMPLE 2 regexredux-d-published-3 0.690555s
+RUN 2 mech-control-regexredux
+SAMPLE 2 mech-control-regexredux 0.485052s
+RUN 2 regexredux-d-published-2
+SAMPLE 2 regexredux-d-published-2 0.986311s
+RUN 3 mech-control-regexredux
+SAMPLE 3 mech-control-regexredux 0.489288s
+RUN 3 regexredux-d-published-3
+SAMPLE 3 regexredux-d-published-3 0.695072s
+RUN 3 regexredux-d-published-2
+SAMPLE 3 regexredux-d-published-2 0.988666s
+RUN 3 regexredux-d-published-1
+SAMPLE 3 regexredux-d-published-1 0.995850s
+RUN 3 regexredux-d-compact
+SAMPLE 3 regexredux-d-compact 1.760272s
+RUN 1 mech-control-binarytrees
+SAMPLE 1 mech-control-binarytrees 0.420492s
+RUN 1 binarytrees:d-fast
+SAMPLE 1 binarytrees:d-fast 0.437262s
+RUN 1 binarytrees:d-compact
+SAMPLE 1 binarytrees:d-compact 11.195699s
+RUN 2 binarytrees:d-compact
+SAMPLE 2 binarytrees:d-compact 11.226793s
+RUN 2 mech-control-binarytrees
+SAMPLE 2 mech-control-binarytrees 0.392370s
+RUN 2 binarytrees:d-fast
+SAMPLE 2 binarytrees:d-fast 0.445237s
+RUN 3 mech-control-binarytrees
+SAMPLE 3 mech-control-binarytrees 0.393323s
+RUN 3 binarytrees:d-compact
+SAMPLE 3 binarytrees:d-compact 11.216019s
+RUN 3 binarytrees:d-fast
+SAMPLE 3 binarytrees:d-fast 0.447850s
+RUN 1 fannkuchredux-d-compact-scalar
+SAMPLE 1 fannkuchredux-d-compact-scalar 30.518747s
+RUN 1 fannkuchredux-d-parallel-neon
+SAMPLE 1 fannkuchredux-d-parallel-neon 2.422496s
+RUN 1 mech-control-fannkuchredux
+SAMPLE 1 mech-control-fannkuchredux 1.714555s
+RUN 2 fannkuchredux-d-compact-scalar
+SAMPLE 2 fannkuchredux-d-compact-scalar 30.572716s
+RUN 2 fannkuchredux-d-parallel-neon
+SAMPLE 2 fannkuchredux-d-parallel-neon 2.435350s
+RUN 2 mech-control-fannkuchredux
+SAMPLE 2 mech-control-fannkuchredux 1.753494s
+RUN 3 fannkuchredux-d-parallel-neon
+SAMPLE 3 fannkuchredux-d-parallel-neon 2.498826s
+RUN 3 mech-control-fannkuchredux
+SAMPLE 3 mech-control-fannkuchredux 1.684972s
+RUN 3 fannkuchredux-d-compact-scalar
+SAMPLE 3 fannkuchredux-d-compact-scalar 30.551846s
+RUN 1 fasta-d-compact
+SAMPLE 1 fasta-d-compact 2.757641s
+RUN 1 fasta-d-published
+SAMPLE 1 fasta-d-published 1.064255s
+RUN 1 fasta-d-optimized
+SAMPLE 1 fasta-d-optimized 0.630651s
+RUN 1 mech-control-fasta
+SAMPLE 1 mech-control-fasta 0.553761s
+RUN 2 fasta-d-optimized
+SAMPLE 2 fasta-d-optimized 0.630613s
+RUN 2 fasta-d-published
+SAMPLE 2 fasta-d-published 1.060301s
+RUN 2 mech-control-fasta
+SAMPLE 2 mech-control-fasta 0.548812s
+RUN 2 fasta-d-compact
+SAMPLE 2 fasta-d-compact 2.786720s
+RUN 3 mech-control-fasta
+SAMPLE 3 mech-control-fasta 0.548834s
+RUN 3 fasta-d-compact
+SAMPLE 3 fasta-d-compact 2.759285s
+RUN 3 fasta-d-published
+SAMPLE 3 fasta-d-published 1.064669s
+RUN 3 fasta-d-optimized
+SAMPLE 3 fasta-d-optimized 0.625790s
+RUN 1 knucleotide-d-published-rolling
+SAMPLE 1 knucleotide-d-published-rolling 2.272068s
+RUN 1 knucleotide-d-compact
+SAMPLE 1 knucleotide-d-compact 10.298581s
+RUN 1 mech-control-knucleotide
+SAMPLE 1 mech-control-knucleotide 0.531179s
+RUN 2 knucleotide-d-compact
+SAMPLE 2 knucleotide-d-compact 10.401529s
+RUN 2 mech-control-knucleotide
+SAMPLE 2 mech-control-knucleotide 0.507609s
+RUN 2 knucleotide-d-published-rolling
+SAMPLE 2 knucleotide-d-published-rolling 2.270272s
+RUN 3 knucleotide-d-published-rolling
+SAMPLE 3 knucleotide-d-published-rolling 2.271609s
+RUN 3 mech-control-knucleotide
+SAMPLE 3 mech-control-knucleotide 0.542156s
+RUN 3 knucleotide-d-compact
+SAMPLE 3 knucleotide-d-compact 10.343109s
+RUN 1 mech-control-revcomp
+SAMPLE 1 mech-control-revcomp 0.147328s
+RUN 1 revcomp-d-compact
+SAMPLE 1 revcomp-d-compact 8.282927s
+RUN 1 revcomp-d-optimized
+SAMPLE 1 revcomp-d-optimized 0.687338s
+RUN 2 revcomp-d-compact
+SAMPLE 2 revcomp-d-compact 8.290351s
+RUN 2 mech-control-revcomp
+SAMPLE 2 mech-control-revcomp 0.143180s
+RUN 2 revcomp-d-optimized
+SAMPLE 2 revcomp-d-optimized 0.689254s
+RUN 3 revcomp-d-optimized
+SAMPLE 3 revcomp-d-optimized 0.685522s
+RUN 3 mech-control-revcomp
+SAMPLE 3 mech-control-revcomp 0.148546s
+RUN 3 revcomp-d-compact
+SAMPLE 3 revcomp-d-compact 8.324988s
+REPORT complete
