@@ -7,6 +7,7 @@ const state={benchmarks:new Set(),languages:new Set(),disabled:new Set(),ellipse
   view:'summary',focus:'nbody',fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYear:null,
   detail:{language:'mech',benchmark:'nbody',kind:'fast',program:null,aggregate:false,file:0}};
 const colors={};
+const mechViewColors={mech:'#F6C04E','mech-jit':'#8CCDB5','mech-resident':'#B3A0D7'};
 const domains=new Map();
 let currentDomain=null;
 let playbackTimer=null,historyCache={key:null,series:[]};
@@ -24,6 +25,16 @@ const missingNames=entry=>entry.coverage.missing.map(b=>b.title).join(', ');
 const meanChartName=entry=>chartName(entry.language.key)+(partialEntry(entry)?` · ${coverageLabel(entry)}`:'');
 const isMechLanguage=key=>language(key)?.family==='mech'||key==='mech';
 const mechKeys=()=>data.languages.filter(l=>isMechLanguage(l.key)).map(l=>l.key);
+const displayColor=key=>state.view==='mech'?(mechViewColors[key]??colors[key]):colors[key];
+function enterMechView(){
+  pauseYears();
+  state.view='mech';state.releaseYear=yearBounds().max;
+  state.benchmarks=new Set(data.benchmarks.map(b=>b.key));
+  for(const key of mechKeys())state.languages.add(key);
+  for(const program of Object.values(data.programs))if(isMechLanguage(program.language))state.disabled.delete(program.key);
+  state.collapsedFamilies.delete('mech');
+  Object.assign(state,{samples:true,fast:true,small:true,focusMeans:false,global:false});
+}
 const families=()=>languageFamilies(data.languages).map(f=>({...f,label:f.members.length>1?f.label:shortName(f.members[0].key)}))
   .sort((a,b)=>a.label.localeCompare(b.label,'en',{sensitivity:'base'}));
 const familyCount=keys=>new Set([...keys].map(key=>language(key).family??key)).size;
@@ -72,7 +83,7 @@ function renderYears(){
   $('#play-years').setAttribute('aria-pressed',String(state.playing));
 }
 function colorKeyStyle(key){
-  const color=colors[key],style=language(key).line_style;
+  const color=displayColor(key),style=language(key).line_style;
   return `background:${style==='dashed'?`repeating-linear-gradient(to right,${color} 0 5px,transparent 5px 8px)`:style==='dotted'?`repeating-linear-gradient(to right,${color} 0 2px,transparent 2px 5px)`:color}`;
 }
 
@@ -223,7 +234,9 @@ function renderChart(){
   delete svg.dataset.highlightLanguage;svg.onpointerleave=null;$('#tooltip').hidden=true;
   const entries=currentEntries(),isMech=state.view==='mech',single=state.view==='benchmark';
   $('#chart-title').textContent=single?benchmark(state.focus).title:isMech?'Mech across selected benchmarks':`${state.benchmarks.size} selected benchmark${state.benchmarks.size===1?'':'s'}`;
-  $('#chart-subtitle').textContent=single?benchmark(state.focus).workload:isMech?'AOT · JIT · interpreted · benchmark endpoints':entries.some(partialEntry)?'Equal-weight geometric means · partial suites labelled n/selected':'Equal-weight geometric means · selected benchmark subset';
+  if(isMech){
+    $('#chart-subtitle').innerHTML=mechKeys().map(key=>`<span class="mech-mode-key" data-mode-key="${key}" style="color:${displayColor(key)}"><svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" stroke="currentColor" stroke-width="2.5" ${lineDash(key)?`stroke-dasharray="${lineDash(key)}"`:''}/></svg>${esc(language(key).variant_label)}</span>`).join('')+'<span>Benchmark endpoints</span>';
+  }else $('#chart-subtitle').textContent=single?benchmark(state.focus).workload:entries.some(partialEntry)?'Equal-weight geometric means · partial suites labelled n/selected':'Equal-weight geometric means · selected benchmark subset';
   const empty=!entries.length||!state.fast&&!state.small;
   $('#empty-state').hidden=!empty;
   $('#empty-state').textContent=single&&!state.benchmarks.has(state.focus)?'Check this benchmark to include it on the chart.':!state.benchmarks.size?'Select at least one benchmark.':!state.fast&&!state.small?'Enable Fastest or Fewest LOC to show a profile.':state.languages.size&&!allSelection().languages.size?'No enabled languages match this release year. Adjust the year or choose All years.':'No measured comparisons. Enable a language or restore its programs.';
@@ -332,8 +345,8 @@ function renderChart(){
   }
   function drawSpread({entry,kind,region,sigma},parent=plot,hover=false){
     const d=region.boundary.map((p,i)=>`${i?'L':'M'}${X(p.x)},${Y(p.y)}`).join(' ')+'Z';
-    node('path',{d,fill:colors[entry.language.key],'fill-opacity':sigma===2?(kind==='fast'?.035:.018):(kind==='fast'?.10:.05),
-      stroke:colors[entry.language.key],'stroke-opacity':sigma===2?.3:.6,'stroke-width':sigma===2?.9:1.2,
+    node('path',{d,fill:displayColor(entry.language.key),'fill-opacity':sigma===2?(kind==='fast'?.035:.018):(kind==='fast'?.10:.05),
+      stroke:displayColor(entry.language.key),'stroke-opacity':sigma===2?.3:.6,'stroke-width':sigma===2?.9:1.2,
       'stroke-dasharray':sigma===2?'2 5':kind==='small'?'5 4':lineDash(entry.language.key),class:'spread-area',
       'clip-path':'url(#baseline-clip)',
       'data-chart-language':entry.language.key,'data-spread-language':entry.language.key,'data-spread-profile':kind,'data-spread-sigma':sigma,
@@ -344,7 +357,7 @@ function renderChart(){
   // Wide line hover targets sit below every marker, preserving point clicks.
   const connectorHits=node('g',{class:'connector-hit-regions'},plot);
   function marker(point,entry,kind,{faint=false,mean=false,program=null,benchmarkKey=null,label=null}={}){
-    const color=colors[entry.language.key],size=faint?3.3:mean?state.ellipses.has(entry.language.key)?8.5:7.2:7;
+    const color=displayColor(entry.language.key),size=faint?3.3:mean?state.ellipses.has(entry.language.key)?8.5:7.2:7;
     const attrs={fill:color,stroke:mean&&state.ellipses.has(entry.language.key)?'#f3f3e6':color,'stroke-width':mean?1:.7,
       opacity:faint?.23:1,class:`endpoint ${mean?'mean-mark':''}`,'data-language':entry.language.key,'data-profile':kind,
       'data-chart-language':entry.language.key,style:`--chart-opacity:${faint?.23:1}`,
@@ -370,7 +383,7 @@ function renderChart(){
   function pair(entry,fast,small,{mean=false,faint=false,benchmarkKey=null,label=null}={}){
     if(state.fast&&state.small&&!same(fast,small)){
       const geometry={x1:X(small.x),y1:Y(small.y),x2:X(fast.x),y2:Y(fast.y)};
-      node('line',{...geometry,stroke:colors[entry.language.key],
+      node('line',{...geometry,stroke:displayColor(entry.language.key),
         'stroke-width':mean&&isMechLanguage(entry.language.key)?2.8:1.9,'stroke-dasharray':lineDash(entry.language.key),opacity:faint?.15:1,
         class:'connector','data-chart-language':entry.language.key,style:`--chart-opacity:${faint?.15:1}`},plot);
       const hit={a:{x:geometry.x1,y:geometry.y1},b:{x:geometry.x2,y:geometry.y2},language:entry.language.key,
@@ -393,7 +406,7 @@ function renderChart(){
   }
   for(const entry of entries){
     if(single||isMech&&state.samples)for(const input of entry.inputs)pair(entry,input.fast,input.small,{benchmarkKey:input.benchmark.key,label:isMech?`${input.benchmark.title} · ${entry.language.execution??'AOT'}`:chartName(entry.language.key)});
-    if(!single)pair(entry,entry.fast,entry.small,{mean:true,label:isMech?'Geometric mean':meanChartName(entry)});
+    if(!single)pair(entry,entry.fast,entry.small,{mean:true,label:isMech?`${entry.language.execution??'AOT'} geometric mean`:meanChartName(entry)});
   }
   if(state.global&&state.trail)for(const kind of visibleKinds){
     const history=currentHistory().filter(item=>item.statistics[kind]);
@@ -434,7 +447,7 @@ function renderChart(){
     // their lines rather than pinning labels for offscreen pairs to the border.
     if(Math.max(item.a.x,item.b.x)<margins.left||Math.min(item.a.x,item.b.x)>margins.left+w||
       Math.max(item.a.y,item.b.y)<margins.top||Math.min(item.a.y,item.b.y)>margins.top+h)continue;
-    const label=text(labels,item.label,0,0,{class:'line-label',fill:colors[item.language],'data-label-language':item.language,'data-chart-language':item.language});
+    const label=text(labels,item.label,0,0,{class:'line-label',fill:displayColor(item.language),'data-label-language':item.language,'data-chart-language':item.language});
     const box=label.getBBox(),lw=box.width,lh=box.height;
     const vx=item.b.x-item.a.x,vy=item.b.y-item.a.y,length=Math.hypot(vx,vy);
     const nx=length>1?-vy/length:0,ny=length>1?vx/length:-1;
@@ -460,7 +473,7 @@ function renderChart(){
     if(!crowded)placed.push(best.padded);
     const nearest={x:Math.max(best.x,Math.min(best.x+lw,best.anchor.x)),y:Math.max(best.y,Math.min(best.y+lh,best.anchor.y))};
     if(Math.hypot(nearest.x-best.anchor.x,nearest.y-best.anchor.y)>19){
-      const guide=node('line',{x1:best.anchor.x,y1:best.anchor.y,x2:nearest.x,y2:nearest.y,stroke:colors[item.language],class:'label-guide','data-chart-language':item.language},labels);
+      const guide=node('line',{x1:best.anchor.x,y1:best.anchor.y,x2:nearest.x,y2:nearest.y,stroke:displayColor(item.language),class:'label-guide','data-chart-language':item.language},labels);
       guide.classList.toggle('label-crowded',crowded);
       labels.insertBefore(guide,label);
     }
@@ -583,7 +596,7 @@ async function start(){
       const group=data.language_groups.find(g=>g.key===groupButton.dataset.onlyGroup);
       state.languages=new Set(group.languages);if(state.view==='mech')state.view='summary';update();return;
     }
-    const view=event.target.closest('[data-view]');if(view){state.view=view.dataset.view;if(state.view==='mech')for(const key of mechKeys())state.languages.add(key);update();}
+    const view=event.target.closest('[data-view]');if(view){if(view.dataset.view==='mech')enterMechView();else state.view=view.dataset.view;update();}
     const inspect=event.target.closest('[data-inspect-benchmark]');if(inspect){state.focus=inspect.dataset.inspectBenchmark;state.view='benchmark';update();openPoint({language:'mech',benchmark:state.focus});}
     const spread=event.target.closest('[data-spread]');if(spread){const key=spread.dataset.spread;state.ellipses.has(key)?state.ellipses.delete(key):state.ellipses.add(key);update();}
     const table=event.target.closest('[data-table-language]');if(table)openPoint({language:table.dataset.tableLanguage,benchmark:state.focus,aggregate:state.view!=='benchmark'});

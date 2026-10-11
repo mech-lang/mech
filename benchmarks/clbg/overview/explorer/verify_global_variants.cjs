@@ -106,6 +106,7 @@ async function checkGlobalMarkers(page){
       await page.locator('#focus-means').check();
       await page.locator('#chart-wrap').screenshot({path:__dirname+`/global-suite-${width}-preview.png`});
       await click(page,'[data-view="mech"]');
+      await page.locator('#show-global').check();
       assert.equal((await globals(page)).fast.n,3);
       await page.locator('#show-samples').uncheck();
       assert.equal(await page.locator('.endpoint[data-program]').count(),0,'Mech benchmark endpoints follow Samples visibility');

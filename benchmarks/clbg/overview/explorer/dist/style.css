@@ -70,3 +70,4 @@
 @media(max-width:360px){
   .controls{grid-template-columns:minmax(0,1fr)}
 }
+.mech-mode-key{display:inline-flex;align-items:center;gap:6px;margin-right:14px;white-space:nowrap}.mech-mode-key svg{flex:none;vertical-align:middle}

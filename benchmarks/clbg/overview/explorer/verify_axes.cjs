@@ -67,6 +67,7 @@ async function setLanguages(page,keys){
       for(const view of ['summary','benchmark','mech']){
         await click(page,'#reset');
         await click(page,`[data-view="${view}"]`);
+        if(view==='mech')await page.locator('#focus-means').check();
         let baseline=await snapshot(page);
         assert(baseline.ticks.length>0,`${view} at ${width}: visible axis ticks`);
         assert(baseline.ticks.every(tick=>Number(tick.text.replace('×',''))>=1),`${view}: 1× is the first labelled tick`);
