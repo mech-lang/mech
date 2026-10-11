@@ -3,8 +3,30 @@ const fs=require('fs');const assert=require('assert/strict');
 const data=JSON.parse(fs.readFileSync(__dirname+'/dist/data.json','utf8'));
 const completeCount=data.languages.filter(l=>l.timed_benchmarks.length).length;
 const matlabCount=data.languages.find(l=>l.key==='matlab').timed_benchmarks.length;
-const sharedCount=data.benchmarks.filter(b=>data.languages.every(l=>l.timed_benchmarks.includes(b.key))).length;
+const sharedKeys=data.benchmarks.filter(b=>data.languages.every(l=>l.timed_benchmarks.includes(b.key))).map(b=>b.key);
 const mechPaths=data.languages.filter(l=>l.family==='mech'||l.key==='mech').map(l=>l.key);
+function expectedCoverage(selection){
+  const benchmarks=data.benchmarks.filter(benchmark=>selection.benchmarks.includes(benchmark.key));
+  return data.languages.filter(language=>selection.languages.includes(language.key)&&(selection.view!=='mech'||mechPaths.includes(language.key))).flatMap(language=>{
+    const measured=benchmarks.filter(benchmark=>benchmark.groups.some(group=>group.language===language.key&&group.programs.some(key=>!selection.disabled.includes(key)&&Number.isFinite(data.programs[key].seconds)&&data.programs[key].seconds>0)));
+    return measured.length?[{language:language.key,n:measured.length,selected:benchmarks.length,missing:benchmarks.filter(benchmark=>!measured.includes(benchmark)).map(benchmark=>benchmark.key)}]:[];
+  });
+}
+async function assertCoverage(page){
+  const {selection,summary}=await page.evaluate(()=>({selection:window.benchmarkExplorer.getSelection(),summary:window.benchmarkExplorer.getSummary()}));
+  const expected=expectedCoverage(selection);
+  assert.deepEqual(summary.map(({language,n,selected,missing})=>({language,n,selected,missing})),expected,'Coverage follows the selected measured benchmark groups and eligible languages');
+  return expected;
+}
+async function selectBenchmarks(page,keys){
+  for(const benchmark of data.benchmarks)await page.locator(`[data-benchmark="${benchmark.key}"]`).setChecked(keys.includes(benchmark.key));
+  assert.deepEqual(new Set((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).benchmarks),new Set(keys));
+}
+async function keepBenchmarks(page,changeLanguages){
+  const before=(await page.evaluate(()=>window.benchmarkExplorer.getSelection())).benchmarks;
+  await changeLanguages();
+  assert.deepEqual((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).benchmarks,before,'Language controls preserve selected benchmarks');
+}
 async function clickChartPoint(page,selector){
   const marker=page.locator(selector);await marker.scrollIntoViewIfNeeded();
   const center=await marker.evaluate(mark=>{
@@ -36,6 +58,9 @@ async function clickChartPoint(page,selector){
       assert.equal(await page.locator('[data-spread-language="mech"][data-spread-sigma="1"]').count(),2);
       assert.equal(await page.locator('[data-spread-language="mech"][data-spread-sigma="2"]').count(),2);
       assert.equal(await page.locator('#show-two-sigma').count(),0);
+      assert.equal(await page.locator('#compare-shared').count(),0,'Shared-benchmark button is removed');
+      assert.equal(await page.getByRole('button',{name:/compare shared benchmarks/i}).count(),0);
+      assert.doesNotMatch(await page.locator('#coverage-message').textContent(),/compare shared benchmarks/i,'Coverage text no longer refers to the removed button');
       for(const key of ['areaFast','areaSmall'])assert.equal(await page.locator(`[data-sort-table="comparison"][data-sort-key="${key}"]`).count(),1);
       for(const profile of ['fast','small'])assert.equal(await page.locator(`#mean-table [data-area-profile="${profile}"]`).count(),completeCount);
       if(width<=720)await page.locator('#toggle-language-filters').click();
@@ -59,7 +84,7 @@ async function clickChartPoint(page,selector){
       assert.equal(await page.locator('.line-label').count(),completeCount);
       const partial=first.summary.find(row=>row.language==='futhark');
       assert.equal(partial.n,9);assert.equal(partial.selected,10);assert.deepEqual(partial.missing,['binarytrees']);
-      assert(first.summary.filter(row=>!['futhark','matlab','lua'].includes(row.language)).every(row=>row.n===10));
+      await assertCoverage(page);
       assert.equal(first.summary.find(row=>row.language==='matlab').n,matlabCount);
       assert.equal(await page.locator('[data-label-language="matlab"]').textContent(),matlabCount===10?'MATLAB':`MATLAB · ${matlabCount}/10`);
       assert.equal(await page.locator('[data-label-language="futhark"]').textContent(),'Futhark · 9/10');
@@ -88,41 +113,41 @@ async function clickChartPoint(page,selector){
       assert.equal(await page.locator('.endpoint, .spread-area, .line-label').count(),0);
       assert.equal(await page.locator('#mean-table tbody tr').count(),0);
       assert(await page.locator('#empty-state').isVisible());
-      await page.locator('input[data-language="haskell"]').check();
+      await keepBenchmarks(page,()=>page.locator('input[data-language="haskell"]').check());
       assert.deepEqual((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages,['haskell']);
       assert.equal(await page.locator('.line-label').count(),1);
-      await page.locator('#all-languages').click();
+      await keepBenchmarks(page,()=>page.locator('#all-languages').click());
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,completeCount);
+      await keepBenchmarks(page,()=>page.locator('[data-family="mech"]').uncheck());
+      await keepBenchmarks(page,()=>page.locator('[data-family="mech"]').check());
       assert.equal(await page.locator('[data-language-group]').count(),data.language_groups.length);
       const functional=data.language_groups.find(group=>group.key==='functional').languages;
-      await page.locator('[data-only-group="functional"]').click();
+      await keepBenchmarks(page,()=>page.locator('[data-only-group="functional"]').click());
       assert.deepEqual(new Set((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages),new Set(functional));
-      assert.equal(await page.locator('.line-label').count(),functional.length);
-      assert((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).every(row=>row.n===(row.language==='futhark'?9:10)));
-      await page.locator('#compare-shared').click();
-      assert.equal(await page.locator('.line-label').count(),functional.length);
-      assert((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).every(row=>row.n===9));
+      assert.equal(await page.locator('.line-label').count(),(await assertCoverage(page)).length);
+      await page.locator('[data-benchmark="binarytrees"]').uncheck();
+      assert.equal(await page.locator('.line-label').count(),(await assertCoverage(page)).length);
       await page.locator('#reset').click();
-      await page.locator('[data-only-group="interpreted"]').click();
+      await keepBenchmarks(page,()=>page.locator('[data-only-group="interpreted"]').click());
       const interpreted=data.language_groups.find(group=>group.key==='interpreted').languages;
       assert.deepEqual(new Set((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages),new Set(interpreted));
-      assert.equal(await page.locator('.line-label').count(),interpreted.length);
-      await page.locator('input[data-language="python"]').uncheck();
+      assert.equal(await page.locator('.line-label').count(),(await assertCoverage(page)).length);
+      await keepBenchmarks(page,()=>page.locator('input[data-language="python"]').uncheck());
       assert.equal(await page.locator('[data-language-group="interpreted"]').evaluate(input=>input.indeterminate),true);
-      await page.locator('[data-language-group="interpreted"]').check();
+      await keepBenchmarks(page,()=>page.locator('[data-language-group="interpreted"]').check());
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages.length,interpreted.length);
-      await page.locator('[data-only-group="array"]').click();
+      await keepBenchmarks(page,()=>page.locator('[data-only-group="array"]').click());
       assert.deepEqual(new Set((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages),new Set(data.language_groups.find(group=>group.key==='array').languages));
-      await page.locator('#compare-shared').click();
-      assert.equal(await page.locator('.line-label').count(),data.language_groups.find(g=>g.key==='array').languages.length);
+      await selectBenchmarks(page,data.benchmarks.filter(b=>data.language_groups.find(g=>g.key==='array').languages.every(key=>data.languages.find(l=>l.key===key).timed_benchmarks.includes(b.key))).map(b=>b.key));
+      assert.equal(await page.locator('.line-label').count(),(await assertCoverage(page)).length);
       await page.locator('#reset').click();
       for(const group of ['array','dynamic','jit']){
-        await page.locator(`[data-only-group="${group}"]`).click();
+        await keepBenchmarks(page,()=>page.locator(`[data-only-group="${group}"]`).click());
         assert((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages.includes('matlab'));
         assert.equal(await page.locator('[data-mean=true][data-language="matlab"]').count(),2);
       }
       await page.locator('#no-languages').click();
-      await page.locator('input[data-language="matlab"]').check();
+      await keepBenchmarks(page,()=>page.locator('input[data-language="matlab"]').check());
       assert.deepEqual((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).languages,['matlab']);
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary()))[0].n,matlabCount);
       await clickChartPoint(page,'[data-mean=true][data-language="matlab"][data-profile="fast"]');
@@ -150,9 +175,8 @@ async function clickChartPoint(page,selector){
       await page.locator('#close-inspector').click();
       assert((await page.locator('#coverage-message').textContent()).includes('missing Binary trees'));
       assert.equal(await page.locator('.lang-check:has(input[data-language="futhark"]) .coverage-label').textContent(),'9/10 admitted');
-      await page.locator('#compare-shared').click();
-      assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,data.languages.length);
-      assert((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).every(row=>row.n===sharedCount));
+      await selectBenchmarks(page,sharedKeys);
+      await assertCoverage(page);
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).benchmarks.includes('binarytrees'),false);
       await page.locator('#reset').click();
       const reference=data.reference_summary.find(r=>r.lang==='mech');
@@ -162,8 +186,8 @@ async function clickChartPoint(page,selector){
       await page.locator('[data-spread="rust"]').click();
       assert.equal(await page.locator('[data-spread-language="rust"]').count(),4);
       await page.locator('[data-benchmark="mandelbrot"]').uncheck();
-      assert((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).every(row=>row.n===data.languages.find(l=>l.key===row.language).timed_benchmarks.filter(key=>key!=='mandelbrot').length));
-      await page.locator('input[data-language="ruby"]').uncheck();
+      await assertCoverage(page);
+      await keepBenchmarks(page,()=>page.locator('input[data-language="ruby"]').uncheck());
       assert.equal(await page.locator('[data-mean=true][data-language="ruby"]').count(),0);
       await clickChartPoint(page,'[data-mean=true][data-language="mech"][data-profile="fast"]');
       await page.waitForSelector('#inspector[open] #source-code');
@@ -185,10 +209,10 @@ async function clickChartPoint(page,selector){
       await page.locator('[data-view="mech"]').click();
       assert((await page.locator('#chart-subtitle').innerText()).startsWith('AOT'));
       assert.equal(await page.locator('[data-spread-language="mech"]').count(),4);
-      await page.locator('#no-languages').click();
+      await keepBenchmarks(page,()=>page.locator('#no-languages').click());
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,0);
       assert.equal(await page.locator('.endpoint').count(),0);
-      await page.locator('#only-mech').click();
+      await keepBenchmarks(page,()=>page.locator('#only-mech').click());
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,mechPaths.length);
       await page.locator('#no-benchmarks').click();
       assert(await page.locator('#empty-state').isVisible());
@@ -212,22 +236,21 @@ async function clickChartPoint(page,selector){
       await page.locator('#close-inspector').click();
       await page.locator('#no-benchmarks').click();
       await page.locator('[data-benchmark="nbody"]').check();
-      assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,data.languages.length);
+      await assertCoverage(page);
       assert.equal(await page.locator('[data-mean=true][data-language="bqn"]').count(),2);
       await clickChartPoint(page,'[data-mean=true][data-language="bqn"][data-profile="fast"]');
       assert.equal(await page.locator('.timings-table tbody tr').count(),5);
       assert.equal(await page.locator('.detail-stat strong').first().textContent(),'39');
       await page.locator('#close-inspector').click();
       await page.locator('#reset').click();
-      for(const lang of data.languages)if(!['bqn','k'].includes(lang.key))await page.locator(`input[data-language="${lang.key}"]`).uncheck();
+      await keepBenchmarks(page,async()=>{for(const lang of data.languages)if(!['bqn','k'].includes(lang.key))await page.locator(`input[data-language="${lang.key}"]`).uncheck();});
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,2);
       assert.equal(await page.locator('#empty-state').isVisible(),false);
       assert.equal(await page.locator('#chart-title').textContent(),'10 selected benchmarks');
       assert((await page.locator('#chart-subtitle').textContent()).includes('geometric means'));
       assert((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).every(row=>row.n===10));
       await page.screenshot({path:__dirname+`/arrays-only-${width}-preview.png`,fullPage:true});
-      assert.equal(await page.locator('#compare-shared').isVisible(),true);
-      assert.equal(await page.locator('#compare-shared').isDisabled(),true);
+      assert.equal(await page.locator('#compare-shared').count(),0);
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSelection())).benchmarks.length,10);
       assert.equal(await page.locator('.lang-check:has(input[data-language="futhark"]) .coverage-label').textContent(),'9/10 admitted');
       assert.equal(await page.locator('#coverage-note').isVisible(),true);
@@ -257,12 +280,12 @@ async function clickChartPoint(page,selector){
         }
       }
       await page.locator('#reset').click();
-      for(const lang of data.languages)if(!['mojo','futhark'].includes(lang.key))await page.locator(`input[data-language="${lang.key}"]`).uncheck();
+      await keepBenchmarks(page,async()=>{for(const lang of data.languages)if(!['mojo','futhark'].includes(lang.key))await page.locator(`input[data-language="${lang.key}"]`).uncheck();});
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,2);
       assert((await page.locator('#coverage-message').textContent()).includes('missing Binary trees'));
-      await page.locator('#compare-shared').click();
+      await page.locator('[data-benchmark="binarytrees"]').uncheck();
       assert.equal((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).length,2);
-      assert((await page.evaluate(()=>window.benchmarkExplorer.getSummary())).every(row=>row.n===9));
+      await assertCoverage(page);
       await page.locator('[data-spread="futhark"]').click();
       assert.equal(await page.locator('[data-spread-language="futhark"]').count(),4);
       if(width===390||width===1440)await page.screenshot({path:__dirname+`/mojo-futhark-${width}-preview.png`,fullPage:true});

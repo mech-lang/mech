@@ -1,4 +1,4 @@
-import {comparison,same,sharedBenchmarks,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies,medianHistory} from './math.mjs';
+import {comparison,same,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies,medianHistory} from './math.mjs';
 
 const $=selector=>document.querySelector(selector);
 const svgNS='http://www.w3.org/2000/svg';
@@ -7,7 +7,7 @@ const state={benchmarks:new Set(),languages:new Set(),disabled:new Set(),ellipse
   view:'summary',focus:'nbody',fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYear:null,
   detail:{language:'mech',benchmark:'nbody',kind:'fast',program:null,aggregate:false,file:0}};
 const colors={};
-const mechViewColors={mech:'#F6C04E','mech-jit':'#8CCDB5','mech-resident':'#B3A0D7'};
+const mechViewColors={mech:'#F6C04E','mech-jit':'#FFE59A','mech-resident':'#C99B2E'};
 const domains=new Map();
 let currentDomain=null;
 let playbackTimer=null,historyCache={key:null,series:[]};
@@ -143,9 +143,7 @@ function update(){
   const visible=currentEntries();
   const enabled=effectiveLanguages();
   const partial=visible.filter(partialEntry);
-  $('#coverage-message').textContent=partial.length?`${partial.map(e=>`${shortName(e.language.key)} uses ${coverageLabel(e)} selected benchmarks; missing ${missingNames(e)}.`).join(' ')} Each other mean uses its own measured benchmarks. Compare shared benchmarks to use the same subset for every enabled language. Failed tests contribute no timing or LOC ratio.`:'Enabled languages cover the compared benchmarks. The means give each benchmark equal weight.';
-  const shared=sharedBenchmarks(data,allSelection());
-  $('#compare-shared').disabled=state.view==='benchmark'||!shared.length||shared.length===state.benchmarks.size;
+  $('#coverage-message').textContent=partial.length?`${partial.map(e=>`${shortName(e.language.key)} uses ${coverageLabel(e)} selected benchmarks; missing ${missingNames(e)}.`).join(' ')} Each mean uses that language's measured tests from your selection. Failed tests contribute no timing or LOC ratio.`:'Enabled languages cover the compared benchmarks. The means give each benchmark equal weight.';
   $('#benchmark-filter-count').textContent=state.benchmarks.size;
   $('#language-filter-count').textContent=familyCount(state.view==='mech'?mechKeys().filter(key=>enabled.has(key)):enabled);
   for(const button of document.querySelectorAll('[data-view]'))button.setAttribute('aria-pressed',button.dataset.view===state.view);
@@ -582,7 +580,6 @@ async function start(){
   $('#play-years').onclick=playYears;
   addEventListener('pagehide',pauseYears,{once:true});
   $('#reset').onclick=reset;
-  $('#compare-shared').onclick=()=>{state.benchmarks=new Set(sharedBenchmarks(data,allSelection()).map(b=>b.key));state.view='summary';update();};
   $('#close-inspector').onclick=closeInspector;
   $('#focused-benchmark').onchange=event=>{state.focus=event.target.value;update();};
   for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-samples','samples'],['focus-means','focusMeans'],['show-global','global'],['show-median-trail','trail']])$('#'+id).onchange=event=>{if(event.target.disabled)return;state[key]=event.target.checked;update();};
