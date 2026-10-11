@@ -1,0 +1,41 @@
+[package]
+name = "numpy-ekf-array-driver"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+
+[features]
+default = ["jit"]
+jit = []
+
+[[test]]
+name = "batched_array_cpu"
+path = "/Users/coreymontella/mech-lang/mech/hosts/gpu/tests/batched_array_cpu.rs"
+
+[dependencies]
+mech-compute = { path = "/Users/coreymontella/mech-lang/mech/src/compute" }
+mech-core = { path = "/Users/coreymontella/mech-lang/mech/src/core", default-features = false, features = ["f32", "f64", "bool", "invariant_define", "subscript_slice", "matrixd", "vectord", "row_vectord", "tuple"] }
+mech-engine = { path = "/Users/coreymontella/mech-lang/mech/src/engine", default-features = false, features = ["compiler", "resident-artifact", "f32", "f64", "bool", "invariant_define", "subscript_slice", "range_inclusive", "matrixd", "vectord", "row_vectord", "tuple", "record", "table", "enum", "atom", "variables", "variable_assign", "kind_annotation", "access", "assign", "convert"] }
+mech-runtime = { path = "/Users/coreymontella/mech-lang/mech/src/runtime", default-features = false, features = ["compiler", "compute", "f32", "f64", "bool", "invariant_define", "subscript_slice", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_assign", "kind_annotation", "access", "assign", "convert"] }
+mech-stdlib = { path = "/Users/coreymontella/mech-lang/mech/src/stdlib", default-features = false, features = ["compiler", "native-plan", "f32", "f64", "bool", "invariant_define", "subscript_default", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_define", "access", "assign", "convert", "matrix_horzcat", "matrix_vertcat", "math_add", "math_sub", "math_mul", "math_div", "math_neg", "math_sin", "math_cos", "math_atan2", "math_abs", "math_sqrt", "math_ceil", "compare_default", "logic_default", "matrix_dot", "matrix_matmul", "matrix_transpose"] }
+mech-syntax = { path = "/Users/coreymontella/mech-lang/mech/src/syntax", default-features = false, features = ["compiler", "program", "formatter", "f32", "f64", "bool", "invariant_define", "subscript_slice", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_assign", "kind_annotation"] }
+mech-gpu = { path = "/Users/coreymontella/mech-lang/mech/hosts/gpu", default-features = false, features = ["jit"] }
+serde_json = "1.0"
+
+[patch.crates-io]
+mech-combinatorics = { path = "/Users/coreymontella/mech-lang/mech/machines/combinatorics" }
+mech-compare = { path = "/Users/coreymontella/mech-lang/mech/machines/compare" }
+mech-logic = { path = "/Users/coreymontella/mech-lang/mech/machines/logic" }
+mech-math = { path = "/Users/coreymontella/mech-lang/mech/machines/math" }
+mech-matrix = { path = "/Users/coreymontella/mech-lang/mech/machines/matrix" }
+mech-range = { path = "/Users/coreymontella/mech-lang/mech/machines/range" }
+mech-set = { path = "/Users/coreymontella/mech-lang/mech/machines/set" }
+mech-stats = { path = "/Users/coreymontella/mech-lang/mech/machines/stats" }
+mech-string = { path = "/Users/coreymontella/mech-lang/mech/machines/string" }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+debug = false

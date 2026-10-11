@@ -24,7 +24,7 @@ use crate::BatchedResidentGpuSession;
 #[cfg(feature = "native")]
 use crate::ResidentGpuSession;
 use crate::{
-    BatchedCpuSession, BatchedExecutionError, BatchedIntegrityFault, BatchedSimdCpuSession,
+    BatchedArrayCpuSession, BatchedCpuSession, BatchedExecutionError, BatchedIntegrityFault,
     ElementwiseKernel, FixedShapeKernel, OwnedResidentCpuSession,
 };
 
@@ -376,7 +376,7 @@ impl ComputeExecutable for FixedExecutable {
             FixedCpuImplementation::Simd => Ok(Box::new(FixedSimdSession {
                 backend: self.backend.clone(),
                 program: self.program.clone(),
-                session: self.program.prepare_simd_cpu(&inputs).map_err(|error| {
+                session: self.program.prepare_array_cpu(&inputs).map_err(|error| {
                     backend_error(&self.backend, "create session", error.to_string())
                 })?,
             })),
@@ -395,7 +395,7 @@ impl ComputeExecutable for FixedExecutable {
 struct FixedSimdSession {
     backend: BackendId,
     program: FixedShapeKernel,
-    session: BatchedSimdCpuSession,
+    session: BatchedArrayCpuSession,
 }
 
 impl ComputeSession for FixedSimdSession {

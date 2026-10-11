@@ -1,0 +1,41 @@
+--- a/hosts/gpu/src/batched/mod.rs
++++ b/hosts/gpu/src/batched/mod.rs
+@@ -24,6 +24,9 @@
+     BinaryOperation, ElementwiseOperation, GpuAdmissionError, GpuDiagnostic, GpuDiagnosticCode,
+     UnaryOperation, WORKGROUP_SIZE, display_operation, turn_required_nodes,
+ };
++
++mod array_cpu;
++pub use array_cpu::*;
+ 
+ #[cfg(feature = "jit")]
+ mod jit;
+--- a/hosts/gpu/src/compute_backends.rs
++++ b/hosts/gpu/src/compute_backends.rs
+@@ -28,7 +28,7 @@
+ #[cfg(feature = "aot")]
+ use crate::{BatchedAotCpuSession, BatchedAotSimdCpuSession};
+ use crate::{
+-    BatchedCpuSession, BatchedExecutionError, BatchedIntegrityFault, BatchedSimdCpuSession,
++    BatchedCpuSession, BatchedExecutionError, BatchedIntegrityFault, BatchedArrayCpuSession,
+     ElementwiseKernel, FixedShapeKernel, OwnedResidentCpuSession,
+ };
+ 
+@@ -492,7 +492,7 @@
+             FixedCpuImplementation::Simd => Ok(Box::new(FixedSimdSession {
+                 backend: self.backend.clone(),
+                 program: self.program.clone(),
+-                session: self.program.prepare_simd_cpu(&inputs).map_err(|error| {
++                session: self.program.prepare_array_cpu(&inputs).map_err(|error| {
+                     backend_error(&self.backend, "create session", error.to_string())
+                 })?,
+             })),
+@@ -530,7 +530,7 @@
+ struct FixedSimdSession {
+     backend: BackendId,
+     program: FixedShapeKernel,
+-    session: BatchedSimdCpuSession,
++    session: BatchedArrayCpuSession,
+ }
+ 
+ impl ComputeSession for FixedSimdSession {

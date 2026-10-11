@@ -1,0 +1,120 @@
+{
+  "started_at": "2026-10-11T16:44:06.896005+00:00",
+  "scope": "Small public resident f32 reactive interpreter diagnostic, not a kernel-only throughput comparison and not the nalgebra compiler planner.",
+  "binary": "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/build/target/release/numpy-ekf-resident-probe",
+  "binary_sha256": "4c7f60c2ede36edc0ded620819fc19834ed55ef517674daf8647a46451b78941",
+  "source_sha256": {
+    "benchmarks/numpy-ekf/paper-driver/resident-probe/collect.py": "55688657214377affd0d2e9ae08ad4bd948f295cd7bed96d668ee487ebb08570",
+    "benchmarks/numpy-ekf/paper-driver/resident-probe/main.rs": "549a46bd749d77d158acdfa90080035130c75043f792c80a8f256829f26987e7",
+    "benchmarks/numpy-ekf/mech-driver/ekf-numerical.mec": "9d9f9d4ddf9b951b953bc03f0c903bb418e61ddb962206b948e21632bf4274e3",
+    "benchmarks/numpy-ekf/numpy_batched.py": "e7e5cd95fe25227f91c7a7e9646a1f953af6f1b1ae8e196712e805f773626b06",
+    "benchmarks/numpy-ekf/run_comparison.py": "90d21286fe281fa633b6d996df2c490897c6a501e957be9a228aa96aa5ec05bc",
+    "benchmarks/numpy-ekf/paper-driver/Cargo.toml.in": "bcf3726ac09efdfc739be8ac427a5b17462b797a230f5d64a4e07ea429238b95",
+    "benchmarks/numpy-ekf/paper-driver/prepare.py": "9a6bf881019955b28930e173a8ab87a33f6bae16fb3d42da6af526b290b271f1"
+  },
+  "paper_build_provenance": {
+    "revision": "0d85319d60c460cdecb81e03c181d62ecfe1ef39",
+    "source": "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source",
+    "manifest": "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/build/Cargo.toml",
+    "archive_command": [
+      "git",
+      "archive",
+      "0d85319d60c460cdecb81e03c181d62ecfe1ef39",
+      "Cargo.toml",
+      "Cargo.lock",
+      ".cargo",
+      "src",
+      "machines",
+      "hosts/gpu",
+      "tests/fixtures/resident-ekf"
+    ],
+    "driver_source": "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/paper-driver/src/main.rs",
+    "resident_probe_source": "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/paper-driver/resident-probe/main.rs",
+    "fixture": "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/mech-driver/ekf-numerical.mec",
+    "manifest_sha256": "7e3d745d60acca1ba7a1dc47537327fddf2cbceb5c547a836ee07111bd83521a"
+  },
+  "build_command": "RUSTFLAGS='-D warnings -A dead_code' cargo build --release --offline --manifest-path <paper-build>/Cargo.toml --bin numpy-ekf-resident-probe",
+  "thread_environment": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "BLIS_NUM_THREADS": "1"
+  },
+  "contract": {
+    "dtype": "float32",
+    "workers": 1,
+    "warmup_turns": 5,
+    "reset_after_warmup": true,
+    "validation_atol": 0.0001,
+    "validation_rtol": 1e-05,
+    "integrity_predicates": false,
+    "publication": "Full public prepare_turn_values + publish, including scheduler, snapshot arithmetic, summary and state hash; final host-readable extraction also timed."
+  },
+  "validation": [
+    {
+      "command": [
+        "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/build/target/release/numpy-ekf-resident-probe",
+        "--instances",
+        "4",
+        "--turns",
+        "20",
+        "--warmup",
+        "5",
+        "--input",
+        "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/results/apple-m1-2026-10-11-resident-diagnostic/inputs-4.f32",
+        "--dump",
+        "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/results/apple-m1-2026-10-11-resident-diagnostic/resident-4-20.f32"
+      ],
+      "returncode": 0,
+      "stdout": "{\"backend_revision\":\"0d85319d60c460cdecb81e03c181d62ecfe1ef39\",\"checked\":false,\"checksum\":1074.4127735886723,\"compilation_seconds\":0.085349834,\"dump_layout\":\"little-endian f32: C-order state[N,3], then covariance[N,3,3]\",\"elapsed_s\":0.079226292,\"execution\":\"Public resident f32 snapshot interpreter; one independent reactive instance per filter; not the nalgebra compiler planner and not the fixed-shape kernel executor\",\"filter_turns_per_second\":1009.7657984548866,\"first_covariance\":[100.07359313964844,-0.6818314790725708,-0.16653434932231903,-0.6818310618400574,89.10494232177734,-0.9336417317390442,-0.16653431951999664,-0.9336414933204651,0.021987484768033028],\"first_state\":[56.8347282409668,25.710538864135742,0.42150580883026123],\"implementation\":\"mech-public-resident-f32\",\"instances\":4,\"preparation_and_warmup_seconds\":0.040017083,\"reset_after_warmup\":true,\"timing\":\"Full public prepare_turn_values + publish, including scheduler, snapshot arithmetic, state hash/summary and final host-readable state extraction; excludes compilation, activation, input rebinding, warmup, reset and file I/O\",\"turns\":20,\"warmup_turns\":5,\"workers\":1}\n",
+      "stderr": "",
+      "result": {
+        "backend_revision": "0d85319d60c460cdecb81e03c181d62ecfe1ef39",
+        "checked": false,
+        "checksum": 1074.4127735886723,
+        "compilation_seconds": 0.085349834,
+        "dump_layout": "little-endian f32: C-order state[N,3], then covariance[N,3,3]",
+        "elapsed_s": 0.079226292,
+        "execution": "Public resident f32 snapshot interpreter; one independent reactive instance per filter; not the nalgebra compiler planner and not the fixed-shape kernel executor",
+        "filter_turns_per_second": 1009.7657984548866,
+        "first_covariance": [
+          100.07359313964844,
+          -0.6818314790725708,
+          -0.16653434932231903,
+          -0.6818310618400574,
+          89.10494232177734,
+          -0.9336417317390442,
+          -0.16653431951999664,
+          -0.9336414933204651,
+          0.021987484768033028
+        ],
+        "first_state": [
+          56.8347282409668,
+          25.710538864135742,
+          0.42150580883026123
+        ],
+        "implementation": "mech-public-resident-f32",
+        "instances": 4,
+        "preparation_and_warmup_seconds": 0.040017083,
+        "reset_after_warmup": true,
+        "timing": "Full public prepare_turn_values + publish, including scheduler, snapshot arithmetic, state hash/summary and final host-readable state extraction; excludes compilation, activation, input rebinding, warmup, reset and file I/O",
+        "turns": 20,
+        "warmup_turns": 5,
+        "workers": 1
+      },
+      "passed": false,
+      "max_abs_error": 0.24036407470703125,
+      "max_tolerance_fraction": 673.371347840758,
+      "dump_sha256": "135066c07a5bc4c6f2ffc3e90cd978c8583bb75ea91479a6355c8a078ccc0f79",
+      "reference": "numpy_batched.BatchedEKF"
+    }
+  ],
+  "discarded": [],
+  "samples": [],
+  "input_sha256": {
+    "4": "08fba77e366e8b345fe18d9275b8463b5b34bf8789c2e72adca44572764367e9"
+  },
+  "error": "public resident full-output validation failed; no timings collected"
+}

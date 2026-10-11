@@ -41,6 +41,15 @@ lowered to the requested form instead of silently running a different kernel.
 `auto` and the browser product continue to use the portable elementwise form;
 automatic dual-form planning is a separate optimization.
 
+Fixed-shape `cpu-simd` sessions use component-major batch storage and interpret
+each operation across a cache-sized tile of independent instances. The array
+executor predecodes operands, reuses temporary columns, and fuses short
+sum-of-products loops without changing the source equations. Input updates are
+atomic, and a failed integrity check rejects the entire candidate batch.
+`FixedShapeKernel::prepare_array_cpu` exposes this executor directly;
+`prepare_array_cpu_with_tile` permits an explicit tile-size limit. The older
+`prepare_simd_cpu` API is retained as a four-instance-at-a-time control.
+
 On macOS, the opt-in `metal-native` feature exposes a direct Metal resident
 session for native-kernel measurements. It translates the same generated
 scalar IR to Metal Shading Language and uses a Metal command encoder directly;

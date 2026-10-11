@@ -24,6 +24,9 @@ use super::{
     UnaryOperation, WORKGROUP_SIZE, display_operation, turn_required_nodes,
 };
 
+mod array_cpu;
+pub use array_cpu::*;
+
 #[cfg(feature = "jit")]
 mod jit;
 #[cfg(feature = "jit")]

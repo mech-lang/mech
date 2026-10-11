@@ -1,0 +1,32 @@
+{
+  "revision": "0d85319d60c460cdecb81e03c181d62ecfe1ef39",
+  "source": "/private/tmp/mech-numpy-array-l7rbn1_0/source",
+  "manifest": "/private/tmp/mech-numpy-array-l7rbn1_0/build/Cargo.toml",
+  "archive_command": [
+    "git",
+    "archive",
+    "0d85319d60c460cdecb81e03c181d62ecfe1ef39",
+    "Cargo.toml",
+    "Cargo.lock",
+    ".cargo",
+    "src",
+    "machines",
+    "hosts/gpu",
+    "tests/fixtures/resident-ekf"
+  ],
+  "checkout_revision": "c217f2748fa8296940edf1d9122cb62bc9a9d69c",
+  "array_source": "/Users/coreymontella/mech-lang/mech/hosts/gpu/src/batched/array_cpu.rs",
+  "array_sha256": "17000f86436cb06022215a5bfebe185ca3fe4702a1e81646b5fdd33f04c924c3",
+  "original_module_sha256": "11dec519f59d59f404da8c5431daa6b86a4bf6d983b41655c235072f36d058db",
+  "patched_module_sha256": "7abdbbebac5d7d220d74f5c9f06d4c51351a3c98b96816daa50cd73287b9859e",
+  "original_factory_sha256": "b8f772f128ff17e143da3ef81854285a29d9dcae23f71d047e023cb2b59a76b3",
+  "patched_factory_sha256": "f9bf849aeb157e33c07e137e5bf24da5df670d0f10328702a9c407285f9691a1",
+  "production_factory_sha256": "c471c6a09ab75e329bebeb15ffeeaa617c37723f96f6061b70bc54b9e08dadab",
+  "integration_patch": "/private/tmp/mech-numpy-array-l7rbn1_0/array-integration.patch",
+  "integration_patch_sha256": "04cba0d73e9e98d65e5f0490744f6dcb5abb48c3cc28999cf1b53e052b0d60a6",
+  "driver_source": "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/array-driver/src/main.rs",
+  "driver_source_sha256": "5b7cef7e399e8da25d5d23c872ae2d7863080df1fa6ec45db3f31d2eb4bc4488",
+  "fixture": "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/mech-driver/ekf-numerical.mec",
+  "fixture_sha256": "9d9f9d4ddf9b951b953bc03f0c903bb418e61ddb962206b948e21632bf4274e3",
+  "manifest_sha256": "9c458482d269daddbd614e17b7cce5cade36f3e673a4fe6eaedd12fee602a598"
+}

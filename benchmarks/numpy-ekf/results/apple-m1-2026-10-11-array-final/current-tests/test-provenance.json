@@ -1,0 +1,18 @@
+{
+  "checkout": "/Users/coreymontella/mech-lang/mech",
+  "manifest": "/private/tmp/mech-array-current-tests-_sqmnvak/Cargo.toml",
+  "revision": "c217f2748fa8296940edf1d9122cb62bc9a9d69c",
+  "tracked_changes": [
+    "benchmarks/archive/compute/parallel-ekf/README.md",
+    "hosts/gpu/README.md",
+    "hosts/gpu/src/batched/mod.rs",
+    "hosts/gpu/src/compute_backends.rs"
+  ],
+  "manifest_sha256": "cab699630698a20d67ef49e99bf2134fafab4078eeaa32f490131e011a1fbdb4",
+  "source_sha256": {
+    "hosts/gpu/src/batched/array_cpu.rs": "abb91d9c981c7ba52cae17566da987bb1c65fbb37bd027736f0989153067c4df",
+    "hosts/gpu/src/batched/mod.rs": "18a08893511d4586184e9d3cf991f1eba8242b47c84a8219c9b37d85e907b8f4",
+    "hosts/gpu/src/compute_backends.rs": "c471c6a09ab75e329bebeb15ffeeaa617c37723f96f6061b70bc54b9e08dadab",
+    "hosts/gpu/tests/batched_array_cpu.rs": "3d1644f20106f9718918c54ffaaef7eb245cebee5a810c0a7fb08c29c0c90f1c"
+  }
+}
