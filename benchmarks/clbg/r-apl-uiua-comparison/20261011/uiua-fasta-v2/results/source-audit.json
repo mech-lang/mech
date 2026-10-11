@@ -1,0 +1,985 @@
+{
+  "status": "passed-source-audit",
+  "created_at": "2026-10-11T21:53:07.832528+00:00",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+  "source_sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+  "physical_loc": 34,
+  "original_sources": {
+    "compact": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fasta/compact.ua",
+      "sha256": "fba046bc5d20288547051f1fa56a80d52217edd614ed0efbbabe6ef16353a626",
+      "loc": 22
+    },
+    "fast": {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fasta/fast.ua",
+      "sha256": "f0dd51cda0e6dbae84afd0e95d7c4ceeb4aaac6d3892824a413926ab54c5cf05",
+      "loc": 24
+    }
+  },
+  "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+  "random_generation_block_byte_identical": true,
+  "transformation": "Construct complete character/LF gather indices and use one ordinary stdout Write per bounded chunk; ALU chunks carry their global character offset.",
+  "maximum_chunk_characters": 65520,
+  "line_width": 60,
+  "chunks_line_aligned": true,
+  "formatter_recipe": "For L input characters and B=L+ceil(L/60), indices j=0..B-1 select j-floor(j/61), except j%61=60 or j=B-1 selects index L from the input joined with one LF.",
+  "native_benchmark_kernel": false,
+  "host_helpers": false,
+  "input_specific_shortcuts": false,
+  "rng_period_shortcut": false,
+  "exhaustive_cdf_cache_in_production": false,
+  "arithmetic": "binary64",
+  "full_n": 25000000,
+  "full_random_draws": 200000000,
+  "full_sequence_characters": 250000000,
+  "record_length_multipliers": [
+    2,
+    3,
+    5
+  ],
+  "work_policy": "Materialize every requested random draw using the unchanged generic affine scan, compare direct state/139968 values against unscaled binary64 CDFs, emit every requested ALU/random character and exact line ending.",
+  "proof_type": "Pinned source/runtime code plus pending or completed bounded output/work/wrapping/CDF checks; no timing or native dispatch-counter claim.",
+  "native_runtime_proof": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fasta/fast.ua",
+      "sha256": "f0dd51cda0e6dbae84afd0e95d7c4ceeb4aaac6d3892824a413926ab54c5cf05",
+      "first_line": 1,
+      "last_line": 24,
+      "excerpt": "N     ← ⋕◇∘⊡1 &args\nAlu   ← \"GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA\"\nIub   ← \\+[0.27 0.12 0.12 0.27 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02]\nHuman ← \\+[0.3029549426680 0.1979883004921 0.1975473066391 0.3015094502008]\nWrap  ← ≡◇&p ⊕□⊸(⌊÷60⇡⧻)\n~G {Seed Left Letters Cdf}\n~Chunk {Draws State}\nSize         ← ↧65520 G.Left\nCompose      ← [⊃(◿139968×∩⊢)(◿139968+⊃⊣(×⊃⊢(⋅⊣)))]\nCoefficients ← \\Compose ↯65520_2 3877_29573\nSlice        ← ↙⊃Size(⋅Coefficients)\nDraw         ← ◿139968+⊃(×⊃G.Seed(≡⊢Slice))(≡⊣Slice)\nChars        ← ⊏⊃(/+⊞≥⊃(G.Cdf Chunk.State)(÷139968 Chunk.Draws))(G.Letters Chunk.State)\nAdvance ← (\n  ⟜(Wrap Chars)\n  G ⊃(⊣Chunk.Draws|-⊃(⧻Chunk.Draws)(G.Left Chunk.State)|G.Letters Chunk.State|G.Cdf Chunk.State)\n) Chunk ⊃Draw∘\nGenerate ← G.Seed ⍢(Advance|>0G.Left)\n&p \">ONE Homo sapiens alu\"\nWrap ↯[×2N] Alu\n&p \">TWO IUB ambiguity codes\"\nSeed ← Generate G 42 (×3N) \"acgtBDHKMNRSVWY\" Iub\n&p \">THREE Homo sapiens frequency\"\n◌ Generate G Seed (×5N) \"acgt\" Human",
+      "conclusion": "The original canonical optimized application prints each grouped sequence line; generic affine RNG, binary64 unscaled CDFs, headers and record lengths are the preserved baseline."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fasta/compact.ua",
+      "sha256": "fba046bc5d20288547051f1fa56a80d52217edd614ed0efbbabe6ef16353a626",
+      "first_line": 1,
+      "last_line": 22,
+      "excerpt": "N     ← ⋕◇∘⊡1 &args\nAlu   ← \"GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA\"\nIub   ← \\+[0.27 0.12 0.12 0.27 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02]\nHuman ← \\+[0.3029549426680 0.1979883004921 0.1975473066391 0.3015094502008]\nWrap  ← ≡◇&p ⊕□⊸(⌊÷60⇡⧻)\n~G {Seed Left Letters Cdf}\n~Chunk {Draws State}\nSize  ← ↧60 G.Left\nNext  ← ◿139968 +29573×3877\nDraw  ← ⍥(⟜∘Next) ⊃Size G.Seed\nChars ← ⊏⊃(/+⊞≥⊃(G.Cdf Chunk.State)(÷139968 Chunk.Draws))(G.Letters Chunk.State)\nAdvance ← (\n  ⟜(Wrap Chars)\n  G ⊃(⊣Chunk.Draws|-⊃(⧻Chunk.Draws)(G.Left Chunk.State)|G.Letters Chunk.State|G.Cdf Chunk.State)\n) Chunk ⊃Draw∘\nGenerate ← G.Seed ⍢(Advance|>0G.Left)\n&p \">ONE Homo sapiens alu\"\nWrap ↯[×2N] Alu\n&p \">TWO IUB ambiguity codes\"\nSeed ← Generate G 42 (×3N) \"acgtBDHKMNRSVWY\" Iub\n&p \">THREE Homo sapiens frequency\"\n◌ Generate G Seed (×5N) \"acgt\" Human",
+      "conclusion": "The original compact and optimized applications remain unchanged, separately pinned, measured and selected. This is an additional optimized candidate; actual measurements determine the eventual endpoints."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+      "sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+      "first_line": 1,
+      "last_line": 34,
+      "excerpt": "N     ← ⋕◇∘⊡1 &args\nAlu   ← \"GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGCGGATCACCTGAGGTCAGGAGTTCGAGACCAGCCTGGCCAACATGGTGAAACCCCGTCTCTACTAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAATCCCAGCTACTCGGGAGGCTGAGGCAGGAGAATCGCTTGAACCCGGGAGGCGGAGGTTGCAGTGAGCCGAGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACTCCGTCTCAAAAA\"\nIub   ← \\+[0.27 0.12 0.12 0.27 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02]\nHuman ← \\+[0.3029549426680 0.1979883004921 0.1975473066391 0.3015094502008]\n~Wrapped {Chars Indices}\nIndexed   ← Wrapped ⊃(∘|⇡+⊃⧻(⌈÷60⧻))\nCharIndex ← -⊃(⌊÷61Wrapped.Indices)Wrapped.Indices\nLineEnd   ← ↥⊃(=0◿61+1Wrapped.Indices)(=⊃Wrapped.Indices(-1⧻Wrapped.Indices))\nPacked    ← ⊏⊃(+⊃CharIndex(×⊃LineEnd(-⊃CharIndex(⧻Wrapped.Chars))))(⊂⊃Wrapped.Chars(⋅\"\\n\")) Indexed\nWrap      ← &w⊃Packed(⋅1)\n~G {Seed Left Letters Cdf}\n~Chunk {Draws State}\nSize         ← ↧65520 G.Left\nCompose      ← [⊃(◿139968×∩⊢)(◿139968+⊃⊣(×⊃⊢(⋅⊣)))]\nCoefficients ← \\Compose ↯65520_2 3877_29573\nSlice        ← ↙⊃Size(⋅Coefficients)\nDraw         ← ◿139968+⊃(×⊃G.Seed(≡⊢Slice))(≡⊣Slice)\nChars        ← ⊏⊃(/+⊞≥⊃(G.Cdf Chunk.State)(÷139968 Chunk.Draws))(G.Letters Chunk.State)\nAdvance ← (\n  ⟜(Wrap Chars)\n  G ⊃(⊣Chunk.Draws|-⊃(⧻Chunk.Draws)(G.Left Chunk.State)|G.Letters Chunk.State|G.Cdf Chunk.State)\n) Chunk ⊃Draw∘\nGenerate ← G.Seed ⍢(Advance|>0G.Left)\nAluDraw ← ⊏⊃(◿(⧻Alu)+⊃G.Seed(⇡Size))(⋅Alu)\nAluAdvance ← (\n  ⟜(Wrap AluDraw)\n  G ⊃(+⊃G.Seed Size|-⊃Size G.Left|G.Letters|G.Cdf)\n)\n&p \">ONE Homo sapiens alu\"\n◌ ⍢(AluAdvance|>0G.Left) G 0 (×2N) Alu []\n&p \">TWO IUB ambiguity codes\"\nSeed ← Generate G 42 (×3N) \"acgtBDHKMNRSVWY\" Iub\n&p \">THREE Homo sapiens frequency\"\n◌ Generate G Seed (×5N) \"acgt\" Human",
+      "conclusion": "All helpers occupy counted physical lines. Native gather constructs all output characters/LFs, one Write emits each bounded chunk, ALU retains its global offset, and the random-generation block is unchanged."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/structure.rs",
+      "sha256": "b011cfa4328e436551d00f248448ef215d5e604ff5e51ce0f91d6f1ae767c98d",
+      "first_line": 1138,
+      "last_line": 1145,
+      "excerpt": "    pub fn select(self, mut from: Self, env: &Uiua) -> UiuaResult<Self> {\n        from.match_fill(env.ctx());\n        let (indices_shape, indices_data) =\n            self.as_shaped_indices(env.ctx().is_scalar_filled(&from), env)?;\n        val_as_arr!(from, |a| {\n            let mut a = a;\n            a.select(indices_shape, &indices_data, env).map(Into::into)\n        })",
+      "conclusion": "Ordinary Select converts the complete index array and dispatches to the selected array datatype, including characters."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/structure.rs",
+      "sha256": "b011cfa4328e436551d00f248448ef215d5e604ff5e51ce0f91d6f1ae767c98d",
+      "first_line": 1268,
+      "last_line": 1358,
+      "excerpt": "    fn select(\n        &mut self,\n        indices_shape: &[usize],\n        indices: &[isize],\n        env: &Uiua,\n    ) -> UiuaResult<Self> {\n        if indices_shape.len() > 1 {\n            let row_count = indices_shape[0];\n            let row_len = indices_shape[1..].iter().product();\n            if row_len == 0 {\n                let shape: Shape = indices_shape\n                    .iter()\n                    .chain(self.shape.iter().skip(1))\n                    .copied()\n                    .collect();\n                return Ok(Array::new(shape, CowSlice::new()));\n            }\n            validate_size::<T>(\n                (indices_shape.iter())\n                    .chain(self.shape.iter().skip(1))\n                    .copied(),\n                env,\n            )?;\n            let mut rows = Vec::with_capacity(row_count);\n            for indices_row in indices.chunks_exact(row_len) {\n                rows.push(self.select(&indices_shape[1..], indices_row, env)?);\n            }\n            let mut arr = Array::from_row_arrays(rows, env)?;\n            if let Some(label) = &self.meta.label {\n                arr.meta.label = Some(label.clone());\n            }\n            Ok(arr)\n        } else {\n            let fill = env.ctx().scalar_fill::<T>().map(|fv| fv.value);\n            let indices_sorted_up =\n                indices_shape.len() == 1 && indices.is_sorted() && indices.iter().all(|&i| i >= 0);\n            let indices_sorted_down = indices_shape.len() == 1\n                && indices.is_sorted_by(|&a, &b| a >= b)\n                && indices.iter().all(|&i| i >= 0);\n            let selected_sorted_up = self.meta.is_sorted_up();\n            let selected_sorted_down = self.meta.is_sorted_down();\n\n            let mut selected = CowSlice::with_capacity(self.row_len() * indices.len());\n            let row_len = self.row_len();\n            let row_count = self.row_count();\n            let map_keys = self\n                .is_map()\n                .then(|| {\n                    let indices_are_total = indices_are_total(indices, row_count);\n                    if !indices_are_total {\n                        return None;\n                    }\n                    let keys = self.meta.take_map_keys().unwrap().normalized();\n                    Some(val_as_arr!(keys, |keys| {\n                        let mut keys = keys;\n                        keys.select(indices_shape, indices, env).unwrap().into()\n                    }))\n                })\n                .flatten();\n            for &i in indices {\n                let i = if i >= 0 {\n                    let ui = i as usize;\n                    if ui >= row_count {\n                        match &fill {\n                            Ok(fill) => {\n                                selected.extend_repeat(fill, row_len);\n                                continue;\n                            }\n                            Err(e) => {\n                                return Err(env\n                                    .error(format!(\n                                        \"Index {i} is out of bounds of length {row_count}{e}\"\n                                    ))\n                                    .fill());\n                            }\n                        }\n                    }\n                    ui\n                } else {\n                    match &fill {\n                        Ok(fill) => {\n                            selected.extend_repeat(fill, row_len);\n                            continue;\n                        }\n                        Err(e) => {\n                            let pos_i = (row_count as isize + i) as usize;\n                            if pos_i >= row_count {\n                                return Err(env\n                                    .error(format!(\n                                        \"Index {i} is out of bounds of length {row_count}{e}\"\n                                    ))",
+      "conclusion": "General native array selection allocates output storage and gathers every supplied index in order; no user-function call is required per character."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/pervade.rs",
+      "sha256": "a160e6d1f592346f06ee620d8913c88213a84ca53bf198227a0699a79564f6b3",
+      "first_line": 64,
+      "last_line": 104,
+      "excerpt": "\npub(crate) fn pervade_dim(a: usize, b: usize) -> usize {\n    if a == 1 {\n        b\n    } else if b == 1 {\n        a\n    } else {\n        a.max(b)\n    }\n}\n\npub fn derive_new_shape(\n    ash: &Shape,\n    bsh: &Shape,\n    a_fill_sh: Result<&Shape, &'static str>,\n    b_fill_sh: Result<&Shape, &'static str>,\n) -> Result<Shape, String> {\n    let new_rank = ash.len().max(bsh.len());\n    let mut new_shape = Shape::with_capacity(new_rank);\n    for i in 0..new_rank {\n        let c = match (ash.get(i).copied(), bsh.get(i).copied()) {\n            (None, None) => unreachable!(),\n            (Some(a), None) => a,\n            (None, Some(b)) => b,\n            (Some(ad), Some(bd)) => {\n                if ad == bd || (ad == 1 && a_fill_sh.is_err()) || (bd == 1 && b_fill_sh.is_err()) {\n                    pervade_dim(ad, bd)\n                } else if ad < bd {\n                    match a_fill_sh {\n                        Ok(sh) if !ash.row_slice().ends_with(sh) => {\n                            return Err(format!(\n                                \"Fill shape {sh} cannot be used to fill array with shape {ash}\"\n                            ));\n                        }\n                        Ok(_) => ad.max(bd),\n                        Err(e) => {\n                            return Err(format!(\"Shapes {ash} and {bsh} are not compatible{e}\"));\n                        }\n                    }\n                } else {\n                    match b_fill_sh {",
+      "conclusion": "Ordinary pervasive arithmetic applies singleton broadcasting over complete arrays, used to construct character and LF indices."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/parser/src/defs.rs",
+      "sha256": "a327aac533a20d1f092e1b82113084aa77aac07e499eed738033ab37c71821b0",
+      "first_line": 4075,
+      "last_line": 4082,
+      "excerpt": "    /// Write an array to a stream\n    ///\n    /// If the stream is a file, the file may not be written to until it is closed with [&cl].\n    /// The stream handle `1` is stdout.\n    /// The stream handle `2` is stderr.\n    /// ex: &cl ⊸&w \"Hello, world!\" &fc \"file.txt\"\n    ///   : &fras \"file.txt\"\n    (2(0), Write, Stream, \"&w\", \"write\", Mutating),",
+      "conclusion": "Write is an ordinary stream operation and stdout is stream handle 1."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/sys/mod.rs",
+      "sha256": "465d0bc73bf4ad30568b385accd679b24ad1d802302547f83104dcfa9f01531a",
+      "first_line": 1002,
+      "last_line": 1019,
+      "excerpt": "        SysOp::Write => {\n            let data = env.pop(1)?;\n            let handle = env.pop(2)?.as_handle(env, None)?;\n            let bytes: Vec<u8> = match data {\n                Value::Num(arr) => arr.data.iter().map(|&x| x as u8).collect(),\n                Value::Byte(arr) => arr.data.into(),\n                Value::Char(arr) => arr.data.iter().collect::<String>().into(),\n                val => return Err(env.error(format!(\"Cannot write {} array\", val.type_name()))),\n            };\n            match handle {\n                Handle::STDOUT => (env.rt.backend)\n                    .print_bytes_stdout(&bytes)\n                    .map_err(|e| env.error(e))?,\n                Handle::STDERR => (env.rt.backend)\n                    .print_bytes_stderr(&bytes)\n                    .map_err(|e| env.error(e))?,\n                Handle::STDIN => return Err(env.error(\"Cannot write to stdin\")),\n                _ => (env.rt.backend.write(handle, &bytes)).map_err(|e| env.error(e))?,",
+      "conclusion": "Write consumes unboxed numeric, byte or character arrays; characters encode to UTF-8, backing-data order is preserved, and no newline is added."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/sys/native.rs",
+      "sha256": "cc305879b2c5af142d8cb020d5c9ea0b1e5db9e64ac6ea2c902f388807df8cd4",
+      "first_line": 354,
+      "last_line": 361,
+      "excerpt": "    fn print_bytes_stdout(&self, bytes: &[u8]) -> Result<(), String> {\n        if !self.output_enabled() {\n            return Ok(());\n        }\n        let mut stdout = stdout().lock();\n        stdout.write_all(bytes).map_err(|e| e.to_string())?;\n        stdout.flush().map_err(|e| e.to_string())?;\n        Ok(())",
+      "conclusion": "The pinned native stdout backend writes all provided bytes and flushes for one runtime invocation; this is not a claim about OS syscall count."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/monadic/mod.rs",
+      "sha256": "4bd7477b748092e2dc8419dde94135f6149b51abd319fb814b7fe636a915ff0c",
+      "first_line": 2128,
+      "last_line": 2142,
+      "excerpt": "    /// Convert a string value to a list of UTF-8 bytes\n    pub fn utf8(&self, env: &Uiua) -> UiuaResult<Self> {\n        let s = self.as_string(env, \"Argument to utf₈ must be a string\")?;\n        Ok(Array::<u8>::from_iter(s.into_bytes()).into())\n    }\n    /// Convert a string value to a list of UTF-16 code units\n    pub fn utf16(&self, env: &Uiua) -> UiuaResult<Self> {\n        let s = self.as_string(env, \"Argument to utf₁₆ must be a string\")?;\n        Ok(Array::<f64>::from_iter(s.encode_utf16().map(|u| u as f64)).into())\n    }\n    /// Convert a list of UTF-8 bytes to a string value\n    pub fn unutf8(&self, env: &Uiua) -> UiuaResult<Self> {\n        let bytes = self.as_bytes(env, \"Argument to °utf₈ must be a list of bytes\")?;\n        let s = String::from_utf8(bytes.into_owned()).map_err(|e| env.error(e))?;\n        Ok(s.into())",
+      "conclusion": "Ordinary UTF-8 conversion serializes characters to bytes and rejects invalid UTF-8 on inverse conversion; production Write directly encodes the gathered character array."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/value.rs",
+      "sha256": "5c2251c80f1933dad53a72f2ff0cf51c88c4c31414c0402d62709c8310f38508",
+      "first_line": 545,
+      "last_line": 587,
+      "excerpt": "    pub fn format(&self) -> String {\n        fn recur(val: &Value, qoute: bool) -> String {\n            if val.is_map() {\n                let mut s = \"{\".to_string();\n                for (i, (k, v)) in val.map_kv().into_iter().enumerate() {\n                    if i > 0 {\n                        s.push(' ');\n                    }\n                    s.push_str(&recur(&k, true));\n                    s.push('→');\n                    s.push_str(&recur(&v, true));\n                }\n                s.push('}');\n                return s;\n            }\n            match val {\n                Value::Num(arr) if arr.rank() == 0 => arr.data[0].to_string(),\n                Value::Byte(arr) if arr.rank() == 0 => arr.data[0].to_string(),\n                Value::Complex(arr) if arr.rank() == 0 => arr.data[0].to_string(),\n                Value::Char(arr) if arr.rank() < 2 => {\n                    let mut s: String = arr.data.iter().collect();\n                    if qoute {\n                        s = format!(\"{s:?}\");\n                    }\n                    s\n                }\n                Value::Box(arr) if arr.rank() == 0 => recur(&arr.data[0].0, qoute),\n                value if value.rank() > 0 => {\n                    let mut s = \"[\".to_string();\n                    for (i, row) in value.rows().enumerate() {\n                        if i > 0 {\n                            s.push(' ');\n                        }\n                        s.push_str(&recur(&row, true));\n                    }\n                    s.push(']');\n                    s\n                }\n                value => value.to_string(),\n            }\n        }\n        recur(self, false)\n    }",
+      "conclusion": "Print formatting is raw only for rank0/1 character arrays; direct Write avoids formatting rank2 arrays with brackets, quoted rows or spaces."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/reduce.rs",
+      "sha256": "1abf66836ad1a77ce5edae86a6a9502b73c860e24b0de5626205f61be0e2f0c6",
+      "first_line": 849,
+      "last_line": 867,
+      "excerpt": "    match (f.node.as_flipped_primitive(), xs) {\n        (Some((prim, flipped)), Value::Num(nums)) => {\n            let mut sorted_up = false;\n            let mut sorted_down = false;\n            let mut arr = match prim {\n                Primitive::Eq => fast_scan(nums, |a, b| is_eq::num_num(a, b) as f64),\n                Primitive::Ne => fast_scan(nums, |a, b| is_ne::num_num(a, b) as f64),\n                Primitive::Lt => fast_scan(nums, |a, b| other_is_lt::num_num(a, b) as f64),\n                Primitive::Le => fast_scan(nums, |a, b| other_is_le::num_num(a, b) as f64),\n                Primitive::Gt => fast_scan(nums, |a, b| other_is_gt::num_num(a, b) as f64),\n                Primitive::Ge => fast_scan(nums, |a, b| other_is_ge::num_num(a, b) as f64),\n                Primitive::Add => fast_scan(nums, add::num_num),\n                Primitive::Sub if flipped => fast_scan(nums, flip(sub::num_num)),\n                Primitive::Sub => fast_scan(nums, sub::num_num),\n                Primitive::Mul => fast_scan(nums, mul::num_num),\n                Primitive::Div if flipped => fast_scan(nums, flip(div::num_num)),\n                Primitive::Div => fast_scan(nums, div::num_num),\n                Primitive::Modulo if flipped => fast_scan(nums, flip(modulo::num_num)),\n                Primitive::Modulo => fast_scan(nums, modulo::num_num),",
+      "conclusion": "The existing ordinary Add scan uses its general numeric/byte scan paths to construct binary64 cumulative probabilities."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/reduce.rs",
+      "sha256": "1abf66836ad1a77ce5edae86a6a9502b73c860e24b0de5626205f61be0e2f0c6",
+      "first_line": 974,
+      "last_line": 992,
+      "excerpt": "where\n    T: ArrayValue + Copy,\n{\n    match arr.shape.len() {\n        0 => unreachable!(\"fast_scan called on unit array, should have been guarded against\"),\n        1 => {\n            if arr.row_count() == 0 {\n                return arr;\n            }\n            arr.meta.take_value_flags();\n            let mut acc = arr.data[0];\n            for val in arr.data.as_mut_slice()[1..].iter_mut() {\n                acc = f(acc, *val);\n                *val = acc;\n            }\n            arr\n        }\n        _ => {\n            let row_len: usize = arr.row_len();",
+      "conclusion": "The numeric scan folds each input in sequence, preserving the original binary64 cumulative addition order."
+    }
+  ],
+  "full_performance_runs": 0,
+  "validation_status": "passed",
+  "validation_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/validation.json",
+  "validation_sha256": "4c75b06b61f1f082cf22eda5151e2625b2b9834984b65fa4e0e37110d7fa4a4d",
+  "expected_validation_counts": {
+    "passed": 27,
+    "work_checks_passed": 6,
+    "primitive_checks_passed": 13,
+    "cdf_checks_passed": 2
+  },
+  "instrumentation": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+      "source_sha256": "edba38c95f92308d0009fcbba6237740371f401abf52967e65734afb392c4e6d",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 395,
+      "sha256": "d5fe76022216c82eeb1c847a616877938a9b9efcb1cd7c517d083b91a9a29d33",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-0.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-0.stderr",
+      "stderr_sha256": "c69cfc8d567aaf609b2382991bce53231045d1880819d62aa828e3e280118934",
+      "actual_rng_draws": 0,
+      "expected_rng_draws": 0,
+      "every_sequential_rng_state_verified": true,
+      "every_binary64_division_bitwise_verified": true,
+      "binary64_divisions": 0,
+      "cdf_vectors_bitwise_verified": 0,
+      "unscaled_sequential_binary64_cdf": true,
+      "record_initial_seeds": [
+        42,
+        42
+      ],
+      "record_final_seeds": [
+        42,
+        42
+      ],
+      "record_seed_carry_verified": true,
+      "alu_characters_verified": 0,
+      "alu_global_phase_verified": true,
+      "chunk_counts": [
+        0,
+        0,
+        0
+      ],
+      "maximum_chunk_characters": 65520,
+      "whole_output_reference_match": true,
+      "reference_match": true,
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+      "original_source_sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+      "transformation": "Replace raw chunk writes with serialization of the exact Packed characters; wrap unchanged Draw/Chars/Advance/Generate numerical expressions with diagnostics. Explicit float bytes preserve binary64 divisions/CDFs. Trace is never timed."
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+      "source_sha256": "edba38c95f92308d0009fcbba6237740371f401abf52967e65734afb392c4e6d",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 2249,
+      "sha256": "3005a07bed6ba24891d96b50b52f1c2b22b05f60253d3e54d67aba16971d2baf",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-1.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-1.stderr",
+      "stderr_sha256": "c69cfc8d567aaf609b2382991bce53231045d1880819d62aa828e3e280118934",
+      "actual_rng_draws": 8,
+      "expected_rng_draws": 8,
+      "every_sequential_rng_state_verified": true,
+      "every_binary64_division_bitwise_verified": true,
+      "binary64_divisions": 8,
+      "cdf_vectors_bitwise_verified": 2,
+      "unscaled_sequential_binary64_cdf": true,
+      "record_initial_seeds": [
+        42,
+        89085
+      ],
+      "record_final_seeds": [
+        89085,
+        44290
+      ],
+      "record_seed_carry_verified": true,
+      "alu_characters_verified": 2,
+      "alu_global_phase_verified": true,
+      "chunk_counts": [
+        1,
+        1,
+        1
+      ],
+      "maximum_chunk_characters": 65520,
+      "whole_output_reference_match": true,
+      "reference_match": true,
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+      "original_source_sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+      "transformation": "Replace raw chunk writes with serialization of the exact Packed characters; wrap unchanged Draw/Chars/Advance/Generate numerical expressions with diagnostics. Explicit float bytes preserve binary64 divisions/CDFs. Trace is never timed."
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+      "source_sha256": "edba38c95f92308d0009fcbba6237740371f401abf52967e65734afb392c4e6d",
+      "n": 61,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+        "61"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 19518,
+      "sha256": "957257342643addaf1b32cc5f7143ef28ff5408ab3c04bc58aaee2e10f304ec2",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-61.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-61.stderr",
+      "stderr_sha256": "c69cfc8d567aaf609b2382991bce53231045d1880819d62aa828e3e280118934",
+      "actual_rng_draws": 488,
+      "expected_rng_draws": 488,
+      "every_sequential_rng_state_verified": true,
+      "every_binary64_division_bitwise_verified": true,
+      "binary64_divisions": 488,
+      "cdf_vectors_bitwise_verified": 2,
+      "unscaled_sequential_binary64_cdf": true,
+      "record_initial_seeds": [
+        42,
+        104457
+      ],
+      "record_final_seeds": [
+        104457,
+        43234
+      ],
+      "record_seed_carry_verified": true,
+      "alu_characters_verified": 122,
+      "alu_global_phase_verified": true,
+      "chunk_counts": [
+        1,
+        1,
+        1
+      ],
+      "maximum_chunk_characters": 65520,
+      "whole_output_reference_match": true,
+      "reference_match": true,
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+      "original_source_sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+      "transformation": "Replace raw chunk writes with serialization of the exact Packed characters; wrap unchanged Draw/Chars/Advance/Generate numerical expressions with diagnostics. Explicit float bytes preserve binary64 divisions/CDFs. Trace is never timed."
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+      "source_sha256": "edba38c95f92308d0009fcbba6237740371f401abf52967e65734afb392c4e6d",
+      "n": 13105,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+        "13105"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 3766934,
+      "sha256": "8acb7a5eccdba8965bfc44c9a092a788391baaefbd0d08c01c1b09c3a6da8516",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-13105.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-13105.stderr",
+      "stderr_sha256": "c69cfc8d567aaf609b2382991bce53231045d1880819d62aa828e3e280118934",
+      "actual_rng_draws": 104840,
+      "expected_rng_draws": 104840,
+      "every_sequential_rng_state_verified": true,
+      "every_binary64_division_bitwise_verified": true,
+      "binary64_divisions": 104840,
+      "cdf_vectors_bitwise_verified": 3,
+      "unscaled_sequential_binary64_cdf": true,
+      "record_initial_seeds": [
+        42,
+        96429
+      ],
+      "record_final_seeds": [
+        96429,
+        44866
+      ],
+      "record_seed_carry_verified": true,
+      "alu_characters_verified": 26210,
+      "alu_global_phase_verified": true,
+      "chunk_counts": [
+        1,
+        1,
+        2
+      ],
+      "maximum_chunk_characters": 65520,
+      "whole_output_reference_match": true,
+      "reference_match": true,
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+      "original_source_sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+      "transformation": "Replace raw chunk writes with serialization of the exact Packed characters; wrap unchanged Draw/Chars/Advance/Generate numerical expressions with diagnostics. Explicit float bytes preserve binary64 divisions/CDFs. Trace is never timed."
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+      "source_sha256": "edba38c95f92308d0009fcbba6237740371f401abf52967e65734afb392c4e6d",
+      "n": 21841,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+        "21841"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 6278020,
+      "sha256": "d2995118b0efa219d985e0179c7c8c3812ac7cb9ab8f57ec25931d312436885d",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-21841.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-21841.stderr",
+      "stderr_sha256": "c69cfc8d567aaf609b2382991bce53231045d1880819d62aa828e3e280118934",
+      "actual_rng_draws": 174728,
+      "expected_rng_draws": 174728,
+      "every_sequential_rng_state_verified": true,
+      "every_binary64_division_bitwise_verified": true,
+      "binary64_divisions": 174728,
+      "cdf_vectors_bitwise_verified": 4,
+      "unscaled_sequential_binary64_cdf": true,
+      "record_initial_seeds": [
+        42,
+        39117
+      ],
+      "record_final_seeds": [
+        39117,
+        105730
+      ],
+      "record_seed_carry_verified": true,
+      "alu_characters_verified": 43682,
+      "alu_global_phase_verified": true,
+      "chunk_counts": [
+        1,
+        2,
+        2
+      ],
+      "maximum_chunk_characters": 65520,
+      "whole_output_reference_match": true,
+      "reference_match": true,
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+      "original_source_sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+      "transformation": "Replace raw chunk writes with serialization of the exact Packed characters; wrap unchanged Draw/Chars/Advance/Generate numerical expressions with diagnostics. Explicit float bytes preserve binary64 divisions/CDFs. Trace is never timed."
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+      "source_sha256": "edba38c95f92308d0009fcbba6237740371f401abf52967e65734afb392c4e6d",
+      "n": 40003,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua",
+        "40003"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 11497139,
+      "sha256": "267598bd2a09b158ddef90c54852f40f0a1feb783c35874cbb896076d28499e8",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-40003.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/work-40003.stderr",
+      "stderr_sha256": "c69cfc8d567aaf609b2382991bce53231045d1880819d62aa828e3e280118934",
+      "actual_rng_draws": 320024,
+      "expected_rng_draws": 320024,
+      "every_sequential_rng_state_verified": true,
+      "every_binary64_division_bitwise_verified": true,
+      "binary64_divisions": 320024,
+      "cdf_vectors_bitwise_verified": 6,
+      "unscaled_sequential_binary64_cdf": true,
+      "record_initial_seeds": [
+        42,
+        2127
+      ],
+      "record_final_seeds": [
+        2127,
+        109042
+      ],
+      "record_seed_carry_verified": true,
+      "alu_characters_verified": 80006,
+      "alu_global_phase_verified": true,
+      "chunk_counts": [
+        2,
+        2,
+        4
+      ],
+      "maximum_chunk_characters": 65520,
+      "whole_output_reference_match": true,
+      "reference_match": true,
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+      "original_source_sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+      "transformation": "Replace raw chunk writes with serialization of the exact Packed characters; wrap unchanged Draw/Chars/Advance/Generate numerical expressions with diagnostics. Explicit float bytes preserve binary64 divisions/CDFs. Trace is never timed."
+    }
+  ],
+  "primitive_checks": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-0.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-0.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-0.input.txt",
+      "input_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "input_characters": 0,
+      "expected_lines": 0,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 2,
+      "sha256": "2e6d31a5983a91251bfae5aefa1c0a19d8ba3cf601d0e8a706b4cfa9661a6b8a",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-1.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-1.input.txt",
+      "input_sha256": "19581e27de7ced00ff1ce50b2047e7a567c76b1cbaebabe5ef03f7c3017bb5b7",
+      "input_characters": 1,
+      "expected_lines": 1,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 60,
+      "sha256": "6d5ac3f476348091b32e4743345bb3b62a4a31cc9b93dc584a63ca89ee521091",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-59.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-59.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-59.input.txt",
+      "input_sha256": "f338a7503dc7ed6cef3eb80fa0af1f5feaf4b6f02f249dd4b998f06d56e92758",
+      "input_characters": 59,
+      "expected_lines": 1,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 61,
+      "sha256": "68317919aa3c50b2150c9be8dacd483af16c7e7c539081ec04afa1da2c0826ed",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-60.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-60.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-60.input.txt",
+      "input_sha256": "70d5fafb2c9bc193a4d60e15dfb5cd2940b0fa522d425c69c7556e46ce837cde",
+      "input_characters": 60,
+      "expected_lines": 1,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 63,
+      "sha256": "902050944f9f2d385f0d05c53b313f339239097b72348ef45a6cd0831c621170",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-61.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-61.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-61.input.txt",
+      "input_sha256": "d8d79ed356900850f68cbc25b792880d1acc0062e938be4d6c8b7778735d51f8",
+      "input_characters": 61,
+      "expected_lines": 2,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 121,
+      "sha256": "dbe49f6865159c5833e3d1828b16cf6655bf605073127960995f18b84905ca5c",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-119.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-119.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-119.input.txt",
+      "input_sha256": "272aeb988147a15a52eaf4715fb1e61870095be48f9346fd3dc48ff413fb70d4",
+      "input_characters": 119,
+      "expected_lines": 2,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 122,
+      "sha256": "460ce92be0da69d36371ec67d83f71dcdae207f64b62397c9d8aa3a991aa0148",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-120.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-120.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-120.input.txt",
+      "input_sha256": "947590efdb8482667f9d331831bf9b142e146a6827088bee781326dab91fefb0",
+      "input_characters": 120,
+      "expected_lines": 2,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 124,
+      "sha256": "772d93285ddb2535e3d504098b23112e60867c6025da5a66efaec527a9991d4d",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-121.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-121.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-121.input.txt",
+      "input_sha256": "9ef608428ecb206fdb1f6d62b6dd4c0bf24870273028b4e6e86911dfb0b284a0",
+      "input_characters": 121,
+      "expected_lines": 3,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 66611,
+      "sha256": "0bde6719d70a91c31f4199431e6e3820d7fdb4cf12297aab1df8112e85d2f2a0",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65519.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65519.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65519.input.txt",
+      "input_sha256": "e7c9d5177de37b3633d57fa6b064064e51539b29c93d419ab02a7449b4524a90",
+      "input_characters": 65519,
+      "expected_lines": 1092,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 66612,
+      "sha256": "0e7756f62483d626b7f1b82b29ea744e344b9be0ec122f3852b68f5637efd99d",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65520.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65520.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65520.input.txt",
+      "input_sha256": "9742c7201d3e6757d5b173db969c6b8f9b33c6eb72937286502489a128402849",
+      "input_characters": 65520,
+      "expected_lines": 1092,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 66614,
+      "sha256": "46516f8508c4db5227bbde1e025f4a69f466547a4a23e61e359962f6d2df9978",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65521.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65521.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-65521.input.txt",
+      "input_sha256": "15337ffd8ef8a6cd1f4046ff1438db0ad07979dee6022414ee713c40ff678384",
+      "input_characters": 65521,
+      "expected_lines": 1093,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 133226,
+      "sha256": "5303f8e1057cdf030bda5a2ef55aa6886af5d897e38419b221a06d102e30a01f",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-131041.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-131041.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-131041.input.txt",
+      "input_sha256": "8645531f68f3a1ef8d9ad3975f09b32764347d9d88d9b2c6559230bb29971252",
+      "input_characters": 131041,
+      "expected_lines": 2185,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+      "source_sha256": "4ae12d3d4ff9c8c32c7944d633d829bdcbdf94026091eafedd928b6efbc07027",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 139,
+      "sha256": "243484c8ab318eb09b96426abe212ffb4a700a940c5a8408cda43824ff3b4992",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-unicode-61.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-unicode-61.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "generic-native-gather-LF-packing",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/wrap-unicode-61.input.txt",
+      "input_sha256": "02d5beee824a1a288043d784abe1b0424ba215662f2713897c6af952fe29bdeb",
+      "input_characters": 61,
+      "input_utf8_bytes": 137,
+      "unicode_scalar_width": true,
+      "expected_lines": 2,
+      "one_raw_write": true,
+      "reference_match": true,
+      "benchmark_rng_draws": 0
+    }
+  ],
+  "cdf_checks": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/all-CDF-IUB.ua",
+      "source_sha256": "164e4db87e80d3276b43154a0b0e2e5c77bc541848ec0013c742441a6ecd8c23",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/all-CDF-IUB.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 139968,
+      "sha256": "e917bb36399446c15599bca320af64b80a4ca5cc4c1bc3cebe0d35b9df8ca88e",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/all-CDF-IUB.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/all-CDF-IUB.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "exhaustive-unscaled-binary64-CDF-classification",
+      "integer_draw_values": 139968,
+      "reference_match": true,
+      "all_direct_division_values": true,
+      "validation_only": true,
+      "used_as_production_lookup_cache": false,
+      "benchmark_rng_draws": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/all-CDF-Human.ua",
+      "source_sha256": "5eed35256c53ddbf324f0d373262e56304824da3a3746d4e55e13213a8c1a950",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/all-CDF-Human.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 139968,
+      "sha256": "cb3ab11e64f9f1438dac184e7679b13f46631f7879710db0f467f8e37a1f8fce",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/all-CDF-Human.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/all-CDF-Human.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "exhaustive-unscaled-binary64-CDF-classification",
+      "integer_draw_values": 139968,
+      "reference_match": true,
+      "all_direct_division_values": true,
+      "validation_only": true,
+      "used_as_production_lookup_cache": false,
+      "benchmark_rng_draws": 0
+    }
+  ],
+  "exhaustive_cdf_checks_probe_only": true,
+  "exhaustive_cdf_states_per_distribution": 139968
+}

@@ -1,0 +1,69 @@
+{
+  "reason": "Root-approved pause between full attempts for reviewed preparation and explicit external-maintenance correction. No active benchmark attempt is interrupted.",
+  "requested_at": "2026-10-11T21:48:29.200600+00:00",
+  "coordinator_pid": 11148,
+  "benchmarks": [
+    "fasta"
+  ],
+  "lock_acquired_at": "2026-10-11T21:55:23.680270+00:00",
+  "snapshots": {
+    "r": {
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json",
+      "report_sha256": "9ec270ae15ac5d0b83c89c8c90bfd76f77bd22f12ad634b8a201cc674bed37fc",
+      "complete": true,
+      "keys": [
+        "fasta:fasta-r-compact",
+        "fasta:fasta-r-optimized",
+        "fasta:mech-control-for-r"
+      ],
+      "samples": {
+        "fasta:fasta-r-compact": [
+          75.532979459,
+          75.094284917,
+          75.618530583
+        ],
+        "fasta:fasta-r-optimized": [
+          64.146584541,
+          64.308243333,
+          64.1980395
+        ],
+        "fasta:mech-control-for-r": [
+          0.597269042,
+          0.572078,
+          0.5753585
+        ]
+      }
+    },
+    "uiua": {
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json",
+      "report_sha256": "17633dcde4f2d13ad99df915c246b8bd9e0266557e3975a5ec2591416d65b614",
+      "complete": true,
+      "keys": [
+        "fasta:fasta-uiua-compact",
+        "fasta:fasta-uiua-optimized",
+        "fasta:mech-control-for-uiua"
+      ],
+      "samples": {
+        "fasta:fasta-uiua-compact": [
+          206.495956917,
+          205.728915208,
+          206.173406459
+        ],
+        "fasta:fasta-uiua-optimized": [
+          26.602078792,
+          26.441521375,
+          26.57616675
+        ],
+        "fasta:mech-control-for-uiua": [
+          0.538748333,
+          0.581151833,
+          0.578600291
+        ]
+      }
+    }
+  },
+  "requested_benchmarks_complete": true,
+  "coordinator_command": "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python run.py --languages r,uiua --benchmarks mandelbrot,fasta,knucleotide --samples 3",
+  "signal": "SIGINT",
+  "finished_at": "2026-10-11T21:55:23.712005+00:00"
+}

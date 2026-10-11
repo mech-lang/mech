@@ -1,0 +1,137 @@
+{
+  "status": "pending-locked-runtime-validation",
+  "created_at": "2026-10-11T22:15:13.497637+00:00",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
+  "source_sha256": "5388b822fbd264f6c6f2f30029905c29e4fca909d5eaf23be1120fed4683374f",
+  "physical_loc": 14,
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+  "original_source_sha256": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e",
+  "original_loc": 11,
+  "additional_candidate": true,
+  "original_candidates_retained_selected": true,
+  "recurrence_arithmetic_preserved": true,
+  "coordinate_expressions_preserved": true,
+  "native_byte_packer_preserved": true,
+  "maximum_pixel_iterations": 50,
+  "full_n": 16000,
+  "every_requested_pixel": true,
+  "only_ordinary_escape_termination": true,
+  "analytic_interior_shortcut": false,
+  "host_helpers": false,
+  "native_benchmark_kernel": false,
+  "cache": false,
+  "pairwise_membership_matrix": false,
+  "storage": "One row of linear state/index/coordinate vectors and final bits.",
+  "arithmetic": "binary64",
+  "native_runtime_proof": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
+      "sha256": "5388b822fbd264f6c6f2f30029905c29e4fca909d5eaf23be1120fed4683374f",
+      "first_line": 1,
+      "last_line": 14,
+      "excerpt": "N  ← ⋕◇∘⊡1 &args\nCr ← -1.5 ×2÷N⇡N\n~M {R I Index Cx Cy Iter}\nAdvance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Index|M.Cx|M.Cy|+1M.Iter)\n~Selection {State Keep}\nSelected ← Selection ⊃(∘|⊚ ≤4+⊃(˙×M.R)(˙×M.I))\nPrune ← M ⊃(⊏⊃Selection.Keep(M.R Selection.State)|⊏⊃Selection.Keep(M.I Selection.State)|⊏⊃Selection.Keep(M.Index Selection.State)|⊏⊃Selection.Keep(M.Cx Selection.State)|M.Cy Selection.State|M.Iter Selection.State) Selected\nIterate ← Prune Advance\nBits ← ⍜⊏⋅1 ⊃M.Index(⋅↯N 0)\nPack ← ≡/+ ×⊙(¤⇌˜ⁿ2⇡8) ⬚0↯(⌈÷8 N)_8\nRow ← &fwa \"/dev/stdout\" Pack Bits ⍢(Iterate|×⊃(<50M.Iter)(>0⧻M.Index)) M (↯N 0) (↯N 0) (⇡N) Cr ⊙0\n&p \"P4\"\n&p $\"_ _\" N N\n≡Row -1 ×2÷N⇡N",
+      "conclusion": "All 14 application/helper lines are counted. Each exact recurrence updates active state; native Where/Select retain states, coordinates and original pixel identities; one final Under Select restores exact-width bits."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+      "sha256": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e",
+      "first_line": 1,
+      "last_line": 11,
+      "excerpt": "N  ← ⋕◇∘⊡1 &args\nCr ← -1.5 ×2÷N⇡N\n~M {R I Live Cx Cy Iter}\nAdvance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)\nMark    ← M ⊃(M.R|M.I|×⊃M.Live(≤4+⊃(˙×M.R)(˙×M.I))|M.Cx|M.Cy|M.Iter)\nIterate ← Mark Advance\nPack    ← ≡/+ ×⊙(¤⇌˜ⁿ2⇡8) ⬚0↯(⌈÷8 N)_8\nRow     ← &fwa \"/dev/stdout\" Pack M.Live ⍢(Iterate|×⊃(<50M.Iter)(/↥M.Live)) M (↯N 0) (↯N 0) (↯N 1) Cr ⊙0\n&p \"P4\"\n&p $\"_ _\" N N\n≡Row -1 ×2÷N⇡N",
+      "conclusion": "The qualified 11 LOC application and its existing actual full measurements remain retained and selected. The recurrence arithmetic, coordinates, byte packing, headers and row traversal are preserved by this additional candidate."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/parser/src/defs.rs",
+      "sha256": "a327aac533a20d1f092e1b82113084aa77aac07e499eed738033ab37c71821b0",
+      "first_line": 1201,
+      "last_line": 1226,
+      "excerpt": "    /// Get indices where array values are not equal to zero\n    ///\n    /// The most basic use is to convert a mask into a list of indices.\n    /// ex: ⊚ [1 0 0 1 0 1 1 0]\n    /// ex: ⊸⊚ =0⊸◿3 [1 0 2 9 3 8 3 4 6]\n    /// It also works for counts `greater than` 1.\n    /// ex: ⊚ 1_2_3\n    /// ex: ⊚ 1_4_2\n    /// [where] on a list is equivalent to `backward``keep``un``select`\n    /// ex:    ⊚ [0 1 0 0 2 0 1]\n    /// ex: ˜▽°⊏ [0 1 0 0 2 0 1]\n    ///\n    /// [un][where] will convert the indices back into a list of counts\n    /// ex: °⊚ [0 0 0 1 1 2 2 2 2 2 3]\n    /// The indices need not be in order\n    /// ex: °⊚ [0 1 2 2 0 3 2 1 2 0 2]\n    ///\n    /// [where] can be used on multidimensional arrays, and the result will always be rank-2\n    /// ex: ⊸⊚ [1_0_0 0_1_1 0_2_0]\n    /// The inverse works as well\n    /// ex: °⊚ [3_4 2_1 0_3]\n    ///\n    /// [where] on a scalar is equivalent to [where] on a singleton array of that scalar, and so creates a list of `0`s.\n    /// ex: ⊚3\n    /// ex: ⊚8\n    (1, Where, MonadicArray, (\"where\", '⊚')),",
+      "conclusion": "Where turns the ordinary zero/one inside mask into stable surviving row indices."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/monadic/mod.rs",
+      "sha256": "4bd7477b748092e2dc8419dde94135f6149b51abd319fb814b7fe636a915ff0c",
+      "first_line": 1837,
+      "last_line": 1883,
+      "excerpt": "\nimpl Value {\n    /// Get the indices `where` the value is nonzero\n    pub fn wher(&self, env: &Uiua) -> UiuaResult<Value> {\n        let counts =\n            self.as_natural_array(env, \"Argument to where must be an array of naturals\")?;\n        let total: usize = counts.data.iter().fold(0, |acc, &b| acc.saturating_add(b));\n        let mut val: Value = match self.rank() {\n            0 => {\n                validate_size::<u8>([total], env)?;\n                let data = eco_vec![0u8; total];\n                let mut arr = Array::new([total], data);\n                arr.meta.mark_sorted_down(true);\n                arr.into()\n            }\n            1 => {\n                validate_size::<f64>([total], env)?;\n                let mut data = EcoVec::with_capacity(total);\n                for (i, &b) in counts.data.iter().enumerate() {\n                    let i = i as f64;\n                    for _ in 0..b {\n                        data.push(i);\n                    }\n                }\n                Array::from(data).into()\n            }\n            _ => {\n                validate_size::<f64>([total, counts.rank()], env)?;\n                let mut data = EcoVec::with_capacity(total * counts.rank());\n                for (i, &b) in counts.data.iter().enumerate() {\n                    for _ in 0..b {\n                        let mut i = i;\n                        let start = data.len();\n                        for &d in counts.shape.iter().rev() {\n                            data.insert(start, (i % d) as f64);\n                            i /= d;\n                        }\n                    }\n                }\n                let shape = Shape::from([total, counts.rank()].as_ref());\n                Array::new(shape, data).into()\n            }\n        };\n        val.meta.mark_sorted_up(true);\n        val.validate();\n        Ok(val)\n    }",
+      "conclusion": "Native Where scans every mask entry and directly emits its surviving index vector; storage is proportional to selected entries, without a user-function callback per pixel."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/run_prim.rs",
+      "sha256": "fa6dcee8f5b3f77fc4c014a8dbcb756d9cb198c8d35a03c4c9007bfefefdc1e5",
+      "first_line": 137,
+      "last_line": 138,
+      "excerpt": "        Primitive::Select => env.dyadic_oo_env(Value::select)?,\n        Primitive::Where => env.monadic_ref_env(Value::wher)?,",
+      "conclusion": "Select and Where dispatch directly to the general native array implementations."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/structure.rs",
+      "sha256": "b011cfa4328e436551d00f248448ef215d5e604ff5e51ce0f91d6f1ae767c98d",
+      "first_line": 1138,
+      "last_line": 1145,
+      "excerpt": "    pub fn select(self, mut from: Self, env: &Uiua) -> UiuaResult<Self> {\n        from.match_fill(env.ctx());\n        let (indices_shape, indices_data) =\n            self.as_shaped_indices(env.ctx().is_scalar_filled(&from), env)?;\n        val_as_arr!(from, |a| {\n            let mut a = a;\n            a.select(indices_shape, &indices_data, env).map(Into::into)\n        })",
+      "conclusion": "Ordinary Select converts the complete selector and dispatches by array datatype."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/structure.rs",
+      "sha256": "b011cfa4328e436551d00f248448ef215d5e604ff5e51ce0f91d6f1ae767c98d",
+      "first_line": 1268,
+      "last_line": 1358,
+      "excerpt": "    fn select(\n        &mut self,\n        indices_shape: &[usize],\n        indices: &[isize],\n        env: &Uiua,\n    ) -> UiuaResult<Self> {\n        if indices_shape.len() > 1 {\n            let row_count = indices_shape[0];\n            let row_len = indices_shape[1..].iter().product();\n            if row_len == 0 {\n                let shape: Shape = indices_shape\n                    .iter()\n                    .chain(self.shape.iter().skip(1))\n                    .copied()\n                    .collect();\n                return Ok(Array::new(shape, CowSlice::new()));\n            }\n            validate_size::<T>(\n                (indices_shape.iter())\n                    .chain(self.shape.iter().skip(1))\n                    .copied(),\n                env,\n            )?;\n            let mut rows = Vec::with_capacity(row_count);\n            for indices_row in indices.chunks_exact(row_len) {\n                rows.push(self.select(&indices_shape[1..], indices_row, env)?);\n            }\n            let mut arr = Array::from_row_arrays(rows, env)?;\n            if let Some(label) = &self.meta.label {\n                arr.meta.label = Some(label.clone());\n            }\n            Ok(arr)\n        } else {\n            let fill = env.ctx().scalar_fill::<T>().map(|fv| fv.value);\n            let indices_sorted_up =\n                indices_shape.len() == 1 && indices.is_sorted() && indices.iter().all(|&i| i >= 0);\n            let indices_sorted_down = indices_shape.len() == 1\n                && indices.is_sorted_by(|&a, &b| a >= b)\n                && indices.iter().all(|&i| i >= 0);\n            let selected_sorted_up = self.meta.is_sorted_up();\n            let selected_sorted_down = self.meta.is_sorted_down();\n\n            let mut selected = CowSlice::with_capacity(self.row_len() * indices.len());\n            let row_len = self.row_len();\n            let row_count = self.row_count();\n            let map_keys = self\n                .is_map()\n                .then(|| {\n                    let indices_are_total = indices_are_total(indices, row_count);\n                    if !indices_are_total {\n                        return None;\n                    }\n                    let keys = self.meta.take_map_keys().unwrap().normalized();\n                    Some(val_as_arr!(keys, |keys| {\n                        let mut keys = keys;\n                        keys.select(indices_shape, indices, env).unwrap().into()\n                    }))\n                })\n                .flatten();\n            for &i in indices {\n                let i = if i >= 0 {\n                    let ui = i as usize;\n                    if ui >= row_count {\n                        match &fill {\n                            Ok(fill) => {\n                                selected.extend_repeat(fill, row_len);\n                                continue;\n                            }\n                            Err(e) => {\n                                return Err(env\n                                    .error(format!(\n                                        \"Index {i} is out of bounds of length {row_count}{e}\"\n                                    ))\n                                    .fill());\n                            }\n                        }\n                    }\n                    ui\n                } else {\n                    match &fill {\n                        Ok(fill) => {\n                            selected.extend_repeat(fill, row_len);\n                            continue;\n                        }\n                        Err(e) => {\n                            let pos_i = (row_count as isize + i) as usize;\n                            if pos_i >= row_count {\n                                return Err(env\n                                    .error(format!(\n                                        \"Index {i} is out of bounds of length {row_count}{e}\"\n                                    ))",
+      "conclusion": "Native selection gathers all supplied rows in order; each of four state/coordinate vectors is selected with the same stable index vector."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/parser/src/defs.rs",
+      "sha256": "a327aac533a20d1f092e1b82113084aa77aac07e499eed738033ab37c71821b0",
+      "first_line": 1480,
+      "last_line": 1494,
+      "excerpt": "    /// [under][select] can be used to modify, replace, insert, or delete the rows of an array.\n    /// ex: ⍜⊏(×10) 1_5 ⇡10\n    /// ex: ⍜⊏⋅π 1_5 ⇡10\n    /// ex: ⍜⊏⋅η_τ 1_5 ⇡10\n    /// ex: ⍜⊏≡⋅[] 1_5 ⇡10\n    /// ex: ⍜⊏≡⋅η_τ_π 1_5 ⇡10\n    /// [anti][by][select] or [under][select][pop] can be used to replace row(s) in a value.\n    /// ex: ⌝⊸⊏ 1_3 10_20 [1 2 3 4 5]\n    ///   : ⍜⊏◌ 1_3 [1 2 3 4 5] 10_20\n    ///\n    /// [anti][select] puts the rows of an array at their corresponding indices. This requires a [fill] value if not all indices are present.\n    /// ex: ⌝⊏ 3_1_2_0 \"abcd\"\n    /// ex: ⬚@-⌝⊏ 1_2_5 \"abc\"\n    /// ex: ⬚@.⌝⊏ [1_5 7_2] [\"ab\" \"cd\"]\n    (2, Select, DyadicArray, (\"select\", '⊏')),",
+      "conclusion": "Under Select supports replacing selected rows with a scalar; the documented generic operation writes ones at surviving original pixel indices."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/run_prim.rs",
+      "sha256": "fa6dcee8f5b3f77fc4c014a8dbcb756d9cb198c8d35a03c4c9007bfefefdc1e5",
+      "first_line": 919,
+      "last_line": 924,
+      "excerpt": "            ImplPrimitive::UndoSelect => {\n                let index = env.pop(1)?;\n                let into = env.pop(2)?;\n                let from = env.pop(3)?;\n                env.push(from.undo_select(index, into, env)?);\n            }",
+      "conclusion": "UndoSelect pops replacement, original selector and target then dispatches to the ordinary native indexed update."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/structure.rs",
+      "sha256": "b011cfa4328e436551d00f248448ef215d5e604ff5e51ce0f91d6f1ae767c98d",
+      "first_line": 1147,
+      "last_line": 1217,
+      "excerpt": "    pub(crate) fn undo_select(self, index: Self, into: Self, env: &Uiua) -> UiuaResult<Self> {\n        let mut from = self;\n        let (idx_shape, mut ind) =\n            index.as_shaped_indices(env.ctx().is_scalar_filled(&from), env)?;\n        let into_row_count = into.row_count();\n        // Sort indices\n        let mut sorted_indices: Vec<_> = ind.iter().copied().enumerate().collect();\n        sorted_indices.sort_unstable_by_key(|(_, index)| {\n            index_in_bounds(*index, into_row_count).then(|| normalize_index(*index, into_row_count))\n        });\n        // Remove rows that correspond to indices that are out of bounds\n        // This is because those values came from a fill\n        let mut idx_shape = Cow::Borrowed(idx_shape);\n        let reduced = ind.iter().any(|&i| !index_in_bounds(i, into_row_count));\n        if reduced {\n            if from.rank() == 0 {\n                return Ok(into);\n            }\n            let from_row_count = from.row_count();\n            let mut n = 0;\n            sorted_indices.reverse();\n            sorted_indices.retain(|&(i, j)| {\n                let keep = index_in_bounds(j, into_row_count) || i >= from_row_count;\n                if !keep {\n                    from.remove_row(i);\n                    n += 1;\n                }\n                keep\n            });\n            sorted_indices.reverse();\n            from.validate();\n            if idx_shape.is_empty() {\n                idx_shape = Cow::Owned(vec![n]);\n            } else {\n                idx_shape.to_mut()[0] -= n;\n            }\n        }\n        // Ensure there are no duplicate indices\n        let depth = idx_shape.len().saturating_sub(1);\n        let from_row_count = from.row_count();\n        if sorted_indices.windows(2).any(|win| {\n            let (ai, a) = win[0];\n            let (bi, b) = win[1];\n            if !index_in_bounds(a, into_row_count)\n                || !index_in_bounds(b, into_row_count)\n                || ai >= from_row_count\n                || bi >= from_row_count\n            {\n                return false;\n            }\n            let a = normalize_index(a, into_row_count);\n            let b = normalize_index(b, into_row_count);\n            a == b && from.depth_row(depth, ai) != from.depth_row(depth, bi)\n        }) {\n            return Err(env.error(\n                \"Cannot undo selection with duplicate \\\n                indices but different values\",\n            ));\n        }\n        // Update indices\n        if reduced {\n            sorted_indices.sort_unstable_by_key(|(i, _)| *i);\n            ind = sorted_indices.into_iter().map(|(_, i)| i).collect();\n        }\n        from.generic_bin_into(\n            into,\n            |a, b| a.undo_select(&idx_shape, &ind, b, env).map(Into::into),\n            |a, b| a.undo_select(&idx_shape, &ind, b, env).map(Into::into),\n            |a, b| a.undo_select(&idx_shape, &ind, b, env).map(Into::into),\n            |a, b| a.undo_select(&idx_shape, &ind, b, env).map(Into::into),\n            |a, b| a.undo_select(&idx_shape, &ind, b, env).map(Into::into),",
+      "conclusion": "UndoSelect validates the ordinary selector, handles duplicate semantics and dispatches the replacement and target by datatype."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/structure.rs",
+      "sha256": "b011cfa4328e436551d00f248448ef215d5e604ff5e51ce0f91d6f1ae767c98d",
+      "first_line": 1466,
+      "last_line": 1486,
+      "excerpt": "                }\n                let n: usize = into.shape[1..into.rank() - from.rank()].iter().product();\n                let row_len = from.element_count();\n                let data = into.data.as_mut_slice();\n                for &i in indices {\n                    let i = normalize_index(i, into_row_count);\n                    for j in 0..n {\n                        data[i * n * row_len + j * row_len..][..row_len]\n                            .clone_from_slice(&from.data);\n                    }\n                }\n            }\n            Ordering::Greater => {\n                // Replacing each of multiple rows with multiple rows\n                if from.row_count() != indices_row_count {\n                    return Err(env.error(format!(\n                        \"Attempted to undo selection, but \\\n                        the length of the selected array changed \\\n                        from {indices_row_count} to {}\",\n                        from.row_count()\n                    )));",
+      "conclusion": "The lower-rank scalar replacement path writes the repeated scalar directly at every supplied target index; no pixel-pair membership matrix is built."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/pervade.rs",
+      "sha256": "a160e6d1f592346f06ee620d8913c88213a84ca53bf198227a0699a79564f6b3",
+      "first_line": 64,
+      "last_line": 104,
+      "excerpt": "\npub(crate) fn pervade_dim(a: usize, b: usize) -> usize {\n    if a == 1 {\n        b\n    } else if b == 1 {\n        a\n    } else {\n        a.max(b)\n    }\n}\n\npub fn derive_new_shape(\n    ash: &Shape,\n    bsh: &Shape,\n    a_fill_sh: Result<&Shape, &'static str>,\n    b_fill_sh: Result<&Shape, &'static str>,\n) -> Result<Shape, String> {\n    let new_rank = ash.len().max(bsh.len());\n    let mut new_shape = Shape::with_capacity(new_rank);\n    for i in 0..new_rank {\n        let c = match (ash.get(i).copied(), bsh.get(i).copied()) {\n            (None, None) => unreachable!(),\n            (Some(a), None) => a,\n            (None, Some(b)) => b,\n            (Some(ad), Some(bd)) => {\n                if ad == bd || (ad == 1 && a_fill_sh.is_err()) || (bd == 1 && b_fill_sh.is_err()) {\n                    pervade_dim(ad, bd)\n                } else if ad < bd {\n                    match a_fill_sh {\n                        Ok(sh) if !ash.row_slice().ends_with(sh) => {\n                            return Err(format!(\n                                \"Fill shape {sh} cannot be used to fill array with shape {ash}\"\n                            ));\n                        }\n                        Ok(_) => ad.max(bd),\n                        Err(e) => {\n                            return Err(format!(\"Shapes {ash} and {bsh} are not compatible{e}\"));\n                        }\n                    }\n                } else {\n                    match b_fill_sh {",
+      "conclusion": "Binary64 array arithmetic and scalar broadcasting use the general pervasive implementation; arithmetic is unmodified."
+    }
+  ],
+  "expected_validation_counts": {
+    "passed": 20,
+    "baseline_checks_passed": 4,
+    "work_checks_passed": 6,
+    "prune_checks_passed": 8,
+    "scatter_checks_passed": 7,
+    "primitive_checks_passed": 14
+  },
+  "validation_status": "pending",
+  "validation_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/results/validation.json",
+  "validation_sha256": null,
+  "full_performance_runs": 0,
+  "measured_speedup": null
+}

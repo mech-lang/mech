@@ -1,0 +1,5 @@
+WAIT LOCK 1 mech-control-mandelbrot-for-apl-medium-v3
+RUN FULL 1 mech-control-mandelbrot-for-apl-medium-v3 timeout 14400
+SAMPLE FULL 1 mech-control-mandelbrot-for-apl-medium-v3 0.444783s
+WAIT LOCK 1 mandelbrot-apl-compact
+RUN FULL 1 mandelbrot-apl-compact timeout 14400

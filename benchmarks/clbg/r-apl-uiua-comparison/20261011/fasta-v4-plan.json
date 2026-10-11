@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "revision": "fasta-v4",
+  "approved_by_root": true,
+  "approval_condition": "Actual apply requires parent approval of this exact plan hash after source/validation reviews, saved originals3full trials, safe watcher exit of coordinator11148, independent helper review and short root postfreeze QA before full measurements.",
+  "reason": "Root-approved additive source-gap revision after the original R and Uiua FASTA sources complete3real canonical trials. Add R seed-independent affine-coefficient hoisting and Uiua bounded ALU/random-output batching using general arrays and IO. All original compact and optimized candidates remain selected with exact real timings; no measured superiority assumed. Preserve completed Mandelbrot data/order metadata, all execution-identical earlier sources/control identities and explicit root maintenance exclusion lineage. New candidates receive3fresh full trials and3interleaved unchanged Mech FASTA controls. All draws/directbinary64division/unscaledCDF/input/output remain complete; no period/outputcache, hostbenchmarkkernel, reduced workload or extrapolated score.",
+  "languages": {
+    "r": {
+      "additions": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/r-fasta-v2/manifest.json",
+          "sha256": "298b1df9935bf720e331c7d6c1aeb2673f415ec3de428c595477c7254450e0b2"
+        }
+      ],
+      "retire": {},
+      "fresh_controls": [
+        "fasta"
+      ],
+      "must_have_three_full_samples": [
+        "fasta:fasta-r-compact",
+        "fasta:fasta-r-optimized",
+        "fasta:mech-control-for-r"
+      ],
+      "must_have_saved_full_attempt": [
+        "fasta:fasta-r-compact",
+        "fasta:fasta-r-optimized",
+        "fasta:mech-control-for-r"
+      ]
+    },
+    "uiua": {
+      "additions": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/manifest.json",
+          "sha256": "90ce73ee8c9042f06be05a515075c5ba623e5bb386b4eedd2f7ce8a269c0d3e7"
+        }
+      ],
+      "retire": {},
+      "fresh_controls": [
+        "fasta"
+      ],
+      "must_have_three_full_samples": [
+        "fasta:fasta-uiua-compact",
+        "fasta:fasta-uiua-optimized",
+        "fasta:mech-control-for-uiua"
+      ],
+      "must_have_saved_full_attempt": [
+        "fasta:fasta-uiua-compact",
+        "fasta:fasta-uiua-optimized",
+        "fasta:mech-control-for-uiua"
+      ]
+    }
+  }
+}

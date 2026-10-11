@@ -44,3 +44,68 @@ WAIT LOCK 1 fasta-r-optimized
 RUN FULL 1 fasta-r-optimized timeout 14400
 SAMPLE FULL 1 fasta-r-optimized 64.146585s
 WAIT LOCK 1 mech-control-fasta-for-r
+RUN FULL 1 mech-control-fasta-for-r timeout 14400
+SAMPLE FULL 1 mech-control-fasta-for-r 0.597269s
+WAIT LOCK 1 fasta-r-compact
+RUN FULL 1 fasta-r-compact timeout 14400
+SAMPLE FULL 1 fasta-r-compact 75.532979s
+WAIT LOCK 1 mech-control-fasta-for-uiua
+RUN FULL 1 mech-control-fasta-for-uiua timeout 14400
+SAMPLE FULL 1 mech-control-fasta-for-uiua 0.538748s
+WAIT LOCK 1 fasta-uiua-compact
+RUN FULL 1 fasta-uiua-compact timeout 14400
+SAMPLE FULL 1 fasta-uiua-compact 206.495957s
+WAIT LOCK 1 fasta-uiua-optimized
+RUN FULL 1 fasta-uiua-optimized timeout 14400
+SAMPLE FULL 1 fasta-uiua-optimized 26.602079s
+WAIT LOCK 2 mech-control-fasta-for-r
+RUN FULL 2 mech-control-fasta-for-r timeout 14400
+SAMPLE FULL 2 mech-control-fasta-for-r 0.572078s
+WAIT LOCK 2 fasta-r-compact
+RUN FULL 2 fasta-r-compact timeout 14400
+SAMPLE FULL 2 fasta-r-compact 75.094285s
+WAIT LOCK 2 fasta-r-optimized
+RUN FULL 2 fasta-r-optimized timeout 14400
+SAMPLE FULL 2 fasta-r-optimized 64.308243s
+WAIT LOCK 2 fasta-uiua-optimized
+RUN FULL 2 fasta-uiua-optimized timeout 14400
+SAMPLE FULL 2 fasta-uiua-optimized 26.441521s
+WAIT LOCK 2 fasta-uiua-compact
+RUN FULL 2 fasta-uiua-compact timeout 14400
+SAMPLE FULL 2 fasta-uiua-compact 205.728915s
+WAIT LOCK 2 mech-control-fasta-for-uiua
+RUN FULL 2 mech-control-fasta-for-uiua timeout 14400
+SAMPLE FULL 2 mech-control-fasta-for-uiua 0.581152s
+WAIT LOCK 3 fasta-r-optimized
+RUN FULL 3 fasta-r-optimized timeout 14400
+SAMPLE FULL 3 fasta-r-optimized 64.198039s
+WAIT LOCK 3 mech-control-fasta-for-r
+RUN FULL 3 mech-control-fasta-for-r timeout 14400
+SAMPLE FULL 3 mech-control-fasta-for-r 0.575358s
+WAIT LOCK 3 fasta-r-compact
+RUN FULL 3 fasta-r-compact timeout 14400
+SAMPLE FULL 3 fasta-r-compact 75.618531s
+WAIT LOCK 3 mech-control-fasta-for-uiua
+RUN FULL 3 mech-control-fasta-for-uiua timeout 14400
+SAMPLE FULL 3 mech-control-fasta-for-uiua 0.578600s
+WAIT LOCK 3 fasta-uiua-optimized
+RUN FULL 3 fasta-uiua-optimized timeout 14400
+SAMPLE FULL 3 fasta-uiua-optimized 26.576167s
+WAIT LOCK 3 fasta-uiua-compact
+RUN FULL 3 fasta-uiua-compact timeout 14400
+SAMPLE FULL 3 fasta-uiua-compact 206.173406s
+WAIT LOCK 1 knucleotide-r-optimized
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 228, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 220, in main
+    for language,state in states.items():run_sample(language,state,bench,sample,args)
+                                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 173, in run_sample
+    fcntl.flock(lock,fcntl.LOCK_EX);compact.wait_for_environment(REQUIRED);state['guard'].verify()
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 8, in interrupted
+    def interrupted(signum,frame):raise KeyboardInterrupt('Benchmark harness received signal '+str(signum))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt: Benchmark harness received signal 2

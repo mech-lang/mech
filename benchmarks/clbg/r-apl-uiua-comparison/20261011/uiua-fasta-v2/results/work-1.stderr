@@ -1,0 +1,4 @@
+Warning: . duplicate is deprecated and will be removed in a future version, use ˙ self, ⊸ by, or ⟜∘ instead
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/results/instrumented.ua:20:21
+20 |   &p ⊂ "DRAW=" json .
+                         ─

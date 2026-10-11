@@ -1,6 +1,6 @@
 {
   "status": "partial",
-  "updated_at": "2026-10-11T21:35:45.413239+00:00",
+  "updated_at": "2026-10-11T22:15:53.419639+00:00",
   "comparisons": [
     {
       "language": "r",
@@ -531,25 +531,108 @@
     {
       "language": "r",
       "benchmark": "fasta",
-      "prepared_candidates": 2,
-      "admitted_candidates": 0,
-      "pending_candidates": [
-        {
-          "key": "fasta:fasta-r-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "fasta:fasta-r-optimized",
-          "valid_samples": 1,
-          "status": "partial"
-        }
-      ],
+      "prepared_candidates": 3,
+      "admitted_candidates": 3,
+      "pending_candidates": [],
       "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "fasta:fasta-r-affine-hoisted-optimized-v2",
+        "id": "fasta-r-affine-hoisted-optimized-v2",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/r-fasta-v2/sources/fasta.optimized.R",
+        "source_sha256": "a3d2c0a31e3c8205308d0f722585eaddd985520e5ec1f369237c7cf88800f331",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/r-fasta-v2/sources/fasta.optimized.R",
+          "{n}"
+        ],
+        "loc": 49,
+        "seconds": 5.5105635,
+        "samples_seconds": [
+          5.405909708,
+          5.5105635,
+          5.511199542
+        ],
+        "stdev_seconds": 0.06060633887797609,
+        "sample_validation": [
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 9.878907183552862,
+        "loc_x_mech": 1.1395348837209303,
+        "mech_seconds": 0.557811041,
+        "mech_samples_seconds": [
+          0.557811041,
+          0.553699167,
+          0.56895375
+        ],
+        "mech_loc": 43,
+        "control_key": "fasta:mech-control-for-r-fasta-v4",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "fasta:fasta-r-compact",
+        "id": "fasta-r-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/compact.R",
+        "source_sha256": "d41b0bea5e33702b20010125034ae5d5f8b3371826b32ea3f64bc3a55dae921c",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/compact.R",
+          "{n}"
+        ],
+        "loc": 24,
+        "seconds": 75.532979459,
+        "samples_seconds": [
+          75.532979459,
+          75.094284917,
+          75.618530583
+        ],
+        "stdev_seconds": 0.28124882646215627,
+        "sample_validation": [
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 135.40961706959115,
+        "loc_x_mech": 0.75,
+        "mech_seconds": 0.557811041,
+        "mech_samples_seconds": [
+          0.557811041,
+          0.553699167,
+          0.56895375
+        ],
+        "mech_loc": 32,
+        "control_key": "fasta:mech-control-for-r-fasta-v4",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "r",
@@ -1827,25 +1910,110 @@
     {
       "language": "uiua",
       "benchmark": "fasta",
-      "prepared_candidates": 2,
-      "admitted_candidates": 0,
-      "pending_candidates": [
-        {
-          "key": "fasta:fasta-uiua-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "fasta:fasta-uiua-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        }
-      ],
+      "prepared_candidates": 3,
+      "admitted_candidates": 3,
+      "pending_candidates": [],
       "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "fasta:fasta-uiua-batched-output-optimized-v2",
+        "id": "fasta-uiua-batched-output-optimized-v2",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+        "source_sha256": "552af2b9a71bad5dd79a7f8bf4f6f74ae408ee9226415d084463a5950d3ba4e7",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fasta-v2/sources/fast.ua",
+          "{n}"
+        ],
+        "loc": 34,
+        "seconds": 15.129726791,
+        "samples_seconds": [
+          15.08369175,
+          15.129726791,
+          15.132090667
+        ],
+        "stdev_seconds": 0.027286346025035813,
+        "sample_validation": [
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 27.249008173573145,
+        "loc_x_mech": 0.7906976744186046,
+        "mech_seconds": 0.555239541,
+        "mech_samples_seconds": [
+          0.555649542,
+          0.555239541,
+          0.555031375
+        ],
+        "mech_loc": 43,
+        "control_key": "fasta:mech-control-for-uiua-fasta-v4",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "fasta:fasta-uiua-compact",
+        "id": "fasta-uiua-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fasta/compact.ua",
+        "source_sha256": "fba046bc5d20288547051f1fa56a80d52217edd614ed0efbbabe6ef16353a626",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fasta/compact.ua",
+          "{n}"
+        ],
+        "loc": 22,
+        "seconds": 206.173406459,
+        "samples_seconds": [
+          206.495956917,
+          205.728915208,
+          206.173406459
+        ],
+        "stdev_seconds": 0.38513293235739277,
+        "sample_validation": [
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 371.3233500763953,
+        "loc_x_mech": 0.6875,
+        "mech_seconds": 0.555239541,
+        "mech_samples_seconds": [
+          0.555649542,
+          0.555239541,
+          0.555031375
+        ],
+        "mech_loc": 32,
+        "control_key": "fasta:mech-control-for-uiua-fasta-v4",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "uiua",
@@ -1949,19 +2117,9 @@
     "r": {
       "status": "partial",
       "prepared_benchmarks": 10,
-      "admitted_benchmarks": 5,
+      "admitted_benchmarks": 6,
       "failures": [],
       "pending": [
-        {
-          "key": "fasta:fasta-r-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "fasta:fasta-r-optimized",
-          "valid_samples": 1,
-          "status": "partial"
-        },
         {
           "key": "knucleotide:knucleotide-r-compact",
           "valid_samples": 0,
@@ -2139,21 +2297,11 @@
       ]
     },
     "uiua": {
-      "status": "running",
+      "status": "partial",
       "prepared_benchmarks": 10,
-      "admitted_benchmarks": 5,
+      "admitted_benchmarks": 6,
       "failures": [],
       "pending": [
-        {
-          "key": "fasta:fasta-uiua-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "fasta:fasta-uiua-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        },
         {
           "key": "knucleotide:knucleotide-uiua-compact-v3",
           "valid_samples": 0,
@@ -2203,9 +2351,9 @@
     }
   },
   "reports": {
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": "845748fc96914ec82ac4e0f2e217c9563adfeb9018e6c1079fb33fb767875ea1",
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": "70a0493ccb624b209b6836d7e2f8f3e8cc1b6913e8d83f7d4cf849eee9dc1726",
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": "a66abb22539e9ae9594c00258208003b7636422461bcdab5a8dba0f4b72034ee"
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": "cf9e4a2c3f30d7f164e096a3abe40f03538d62e2765dfe73e6e231a68adeaf13",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": "23a2fa135d0e3e01813865d51b7691affb4f8d9a6719749d8acaaff945fd900b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": "e9be8c03bdebee9a05e6dc936eed372715149ce21e853d7b40c320928918fa16"
   },
   "admission_rule": "At least three unchanged canonical full-workload, output-validated and environment-valid fresh-process samples for the candidate and its freshly measured Mech AOT control. Partial suites and failed candidates remain explicit. Planning pilots and extrapolations are never admitted.",
   "units": "Seconds; time_x_mech is candidate median / fresh Mech AOT median. LOC ratios compare fastest with Mech fastest LOC and smallest with Mech smallest LOC. Application code only; independent statements count separately."

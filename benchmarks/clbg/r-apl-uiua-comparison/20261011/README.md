@@ -197,11 +197,43 @@ so ordinary resumable full runs replace them. The unaffected 61.935690750 s R
 compact trial remains eligible. The correction and subsequent guard migrations
 retain exact immediate-prior-report lineage for every preserved attempt.
 
+The `fasta-v4` preparation is now applied after all original R and Uiua FASTA
+candidates and controls completed three full validated trials. The exact plan
+is `fasta-v4-plan.json`; the separately pinned `refreeze_fasta_v4.py` archives
+the prior manifests, reports, source audits and harness in
+`evidence/fasta-v4-before`. Every prior compact/optimized candidate stays
+selected with its exact measured samples. Completed Mandelbrot data and sample
+order metadata, unrelated controls and the explicit R maintenance exclusions
+are preserved. New FASTA controls require three freshly interleaved trials.
+
+The additive `r-fasta-v2` optimized source is 49 LOC and hoists only the
+seed-independent modular-affine coefficients for bounded chunks. Its 35 checks
+cover complete outputs, arbitrary affine seeds/moduli, block tails and all
+139,968 directly divided states against independently summed binary64 CDFs.
+`uiua-fasta-v2` is a 34 LOC bounded-output candidate; its 27 exact outputs,
+six complete draw/CDF/carry/ALU traces, 13 generic wrapping probes and two
+exhaustive CDF checks passed. Their READMEs retain source/validation recipes.
+Every helper line counts, every seed is produced from the incoming live state,
+all direct division and unscaled CDF work remains, and neither source caches
+an RNG period or benchmark output.
+
+Original-cohort FASTA medians are R optimized 64.198039500 s
+(111.579197× Mech) and compact 75.532979459 s (131.279853×); Uiua optimized
+26.576166750 s (45.931824×) and compact 206.173406459 s (356.331322×).
+These ratios refer to the explicitly archived original controls; the v4 summary
+now uses three newly measured controls for FASTA admission. Their sources remain
+selected: R compact/optimized are 24/44 LOC and Uiua are 22/24 LOC. All three new-candidate full trials passed the canonical 254,166,745-byte
+output hash. The R 49 LOC median is 5.510563500 s (9.878907× fresh Mech;
+1.139535× Mech fastest LOC), and the Uiua 34 LOC median is 15.129726791 s
+(27.249008× fresh Mech; 0.790698× Mech fastest LOC). Original sources and
+samples remain selected, so the summary chooses these faster sources from the
+measured pool while retaining 24 LOC R and 22 LOC Uiua as smallest.
+
 Next full stages, always guarded by the shared mutex, are:
 
 ```
-python3 run.py --languages r,uiua --benchmarks mandelbrot,fasta,knucleotide --samples 3
 python3 run.py --languages apl --benchmarks mandelbrot,fasta,knucleotide --samples 3
+python3 run.py --languages r,uiua --benchmarks knucleotide --samples 3
 python3 plan.py --languages apl,uiua
 python3 run.py --languages r,apl,uiua --benchmarks binarytrees,nbody,fannkuchredux --samples 3
 python3 summarize.py

@@ -1,0 +1,38 @@
+WAIT LOCK 1 mech-control-fasta-for-r-fasta-v4
+RUN FULL 1 mech-control-fasta-for-r-fasta-v4 timeout 14400
+SAMPLE FULL 1 mech-control-fasta-for-r-fasta-v4 0.557811s
+WAIT LOCK 1 fasta-r-affine-hoisted-optimized-v2
+RUN FULL 1 fasta-r-affine-hoisted-optimized-v2 timeout 14400
+SAMPLE FULL 1 fasta-r-affine-hoisted-optimized-v2 5.405910s
+WAIT LOCK 1 fasta-uiua-batched-output-optimized-v2
+RUN FULL 1 fasta-uiua-batched-output-optimized-v2 timeout 14400
+SAMPLE FULL 1 fasta-uiua-batched-output-optimized-v2 15.083692s
+WAIT LOCK 1 mech-control-fasta-for-uiua-fasta-v4
+RUN FULL 1 mech-control-fasta-for-uiua-fasta-v4 timeout 14400
+SAMPLE FULL 1 mech-control-fasta-for-uiua-fasta-v4 0.555650s
+WAIT LOCK 2 mech-control-fasta-for-r-fasta-v4
+RUN FULL 2 mech-control-fasta-for-r-fasta-v4 timeout 14400
+SAMPLE FULL 2 mech-control-fasta-for-r-fasta-v4 0.553699s
+WAIT LOCK 2 fasta-r-affine-hoisted-optimized-v2
+RUN FULL 2 fasta-r-affine-hoisted-optimized-v2 timeout 14400
+SAMPLE FULL 2 fasta-r-affine-hoisted-optimized-v2 5.510563s
+WAIT LOCK 2 fasta-uiua-batched-output-optimized-v2
+RUN FULL 2 fasta-uiua-batched-output-optimized-v2 timeout 14400
+SAMPLE FULL 2 fasta-uiua-batched-output-optimized-v2 15.129727s
+WAIT LOCK 2 mech-control-fasta-for-uiua-fasta-v4
+RUN FULL 2 mech-control-fasta-for-uiua-fasta-v4 timeout 14400
+SAMPLE FULL 2 mech-control-fasta-for-uiua-fasta-v4 0.555240s
+WAIT LOCK 3 fasta-r-affine-hoisted-optimized-v2
+RUN FULL 3 fasta-r-affine-hoisted-optimized-v2 timeout 14400
+SAMPLE FULL 3 fasta-r-affine-hoisted-optimized-v2 5.511200s
+WAIT LOCK 3 mech-control-fasta-for-r-fasta-v4
+RUN FULL 3 mech-control-fasta-for-r-fasta-v4 timeout 14400
+SAMPLE FULL 3 mech-control-fasta-for-r-fasta-v4 0.568954s
+WAIT LOCK 3 fasta-uiua-batched-output-optimized-v2
+RUN FULL 3 fasta-uiua-batched-output-optimized-v2 timeout 14400
+SAMPLE FULL 3 fasta-uiua-batched-output-optimized-v2 15.132091s
+WAIT LOCK 3 mech-control-fasta-for-uiua-fasta-v4
+RUN FULL 3 mech-control-fasta-for-uiua-fasta-v4 timeout 14400
+SAMPLE FULL 3 mech-control-fasta-for-uiua-fasta-v4 0.555031s
+REPORT r partial
+REPORT uiua partial

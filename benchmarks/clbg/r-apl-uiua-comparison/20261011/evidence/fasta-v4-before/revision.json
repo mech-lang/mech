@@ -1,0 +1,26 @@
+{
+  "revision": "fasta-v4",
+  "reason": "Root-approved additive source-gap revision after the original R and Uiua FASTA sources complete3real canonical trials. Add R seed-independent affine-coefficient hoisting and Uiua bounded ALU/random-output batching using general arrays and IO. All original compact and optimized candidates remain selected with exact real timings; no measured superiority assumed. Preserve completed Mandelbrot data/order metadata, all execution-identical earlier sources/control identities and explicit root maintenance exclusion lineage. New candidates receive3fresh full trials and3interleaved unchanged Mech FASTA controls. All draws/directbinary64division/unscaledCDF/input/output remain complete; no period/outputcache, hostbenchmarkkernel, reduced workload or extrapolated score.",
+  "created_at": "2026-10-11T21:55:50.400185+00:00",
+  "status": "complete",
+  "coordinator_pid_confirmed_exited": 11148,
+  "files": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/refreeze_fasta_v4.py": "48e4327c0fe77340791551bcef132045d0c2bd5a9c43b9328f3b84808734445d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/fasta-v4-plan.json": "db474e27b8377353527e6634ef3bd070b27d904b720044cb2c3e7d790accc87b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/summarize.py": "6ad2acc07fdb807b03b07922caabcdc9c4dee0cb41d44d43b7714c43581dfeae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/resume_after_guard_repair.py": "7f79472b83c775b788777faeefebbc1cb4193c3bd4788d9a9a06375215e3aad8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/r-manifest.json": "1b09b555db181b6b5576fb6c21238343ba3d07efe65558a6a75b525ffbbae42a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/source-audit-r.json": "dea42ebf1bf1ab73f85dfa80a6bd439e334c6176e02c85ba444d5bf0947aa109",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/timings-r.json": "9ec270ae15ac5d0b83c89c8c90bfd76f77bd22f12ad634b8a201cc674bed37fc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/uiua-manifest.json": "6c0b38577b3d8e3eed05fe2f07ffa883f78b95886f5fe4fc12881d02e7cf11df",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/source-audit-uiua.json": "96d5b09171fe578a61584395ad899db71ad02ac3a6924948640b8ef1465876c5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/fasta-v4-before/timings-uiua.json": "17633dcde4f2d13ad99df915c246b8bd9e0266557e3975a5ec2591416d65b614"
+  },
+  "finished_at": "2026-10-11T21:55:52.201658+00:00",
+  "current_audits": {
+    "r": "d76be20504617addb9efd5915bf7074877e727e3a49ccbd36585b4be5c763af3",
+    "uiua": "82b15648d0c49c6393a0eec1efb441f1ee11237ceae4a8f41ca854c0b7ee0860"
+  }
+}

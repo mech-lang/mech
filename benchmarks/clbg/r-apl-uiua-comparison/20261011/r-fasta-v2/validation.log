@@ -1,0 +1,36 @@
+PASS canonical 1 90 bytes
+PASS canonical 2 100 bytes
+PASS canonical 7 150 bytes
+PASS canonical 19 271 bytes
+PASS canonical 20 281 bytes
+PASS canonical 21 292 bytes
+PASS canonical 59 677 bytes
+PASS canonical 60 687 bytes
+PASS canonical 61 700 bytes
+PASS canonical 1000 10245 bytes
+PASS canonical 20000 203411 bytes
+PASS canonical 49151 499780 bytes
+PASS canonical 49152 499790 bytes
+PASS canonical 49153 499801 bytes
+PASS canonical 81919 832921 bytes
+PASS canonical 81920 832931 bytes
+PASS canonical 81921 832942 bytes
+PASS canonical 122879 1249347 bytes
+PASS canonical 122880 1249357 bytes
+PASS canonical 122881 1249370 bytes
+PASS affine 139968 0
+PASS affine 139968 1
+PASS affine 139968 2
+PASS affine 139968 3
+PASS affine 139968 7
+PASS affine 139968 60
+PASS affine 139968 61
+PASS affine 139968 257
+PASS affine 139968 1024
+PASS affine 97 129
+PASS affine 2 33
+PASS affine 100003 513
+PASS affine 65537 257
+PASS CDF 0 139968 draws
+PASS CDF 1 139968 draws
+MANIFEST /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/r-fasta-v2/manifest.json 298b1df9935bf720e331c7d6c1aeb2673f415ec3de428c595477c7254450e0b2
