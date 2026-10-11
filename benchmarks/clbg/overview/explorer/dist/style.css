@@ -49,6 +49,16 @@
 .global-statistics-note.inactive{visibility:hidden}
 .global-count{display:inline-block;min-width:2ch;font-variant-numeric:tabular-nums;text-align:right}
 .global-center{cursor:help;filter:drop-shadow(0 0 2px #151b21);pointer-events:stroke}
+.year-playback{display:flex;align-items:center;gap:9px;margin-left:auto}
+.year-playback output{min-width:4ch;color:var(--gold);font-variant-numeric:tabular-nums}
+.median-label{font-size:12px;font-weight:650;paint-order:stroke;stroke:#151b21;stroke-width:4px;pointer-events:none}
+.median-trail-point{cursor:help}
+#chart.median-focus [data-chart-language]{opacity:calc(var(--chart-opacity,1)*.13)}
+#chart.median-focus [data-sample=true]{opacity:.025}
+#chart.median-focus .chart-dimmed{opacity:calc(var(--chart-opacity,1)*.05)}
+#chart.median-focus [data-chart-language]:not(.chart-dimmed):is(.sample-highlighted,[data-hover-spread=true]){opacity:1}
+#chart.median-focus[data-highlight-language] [data-chart-language]:not(.chart-dimmed){opacity:var(--chart-opacity,1)}
+#chart.median-focus[data-highlight-language] .sample-highlighted{opacity:1}
 .plot-options label:has(input:disabled){opacity:.5;cursor:default}
 .plot-options .unavailable{visibility:hidden}
 /* Expanded phone filters wrap their headings inside equal-width columns. */

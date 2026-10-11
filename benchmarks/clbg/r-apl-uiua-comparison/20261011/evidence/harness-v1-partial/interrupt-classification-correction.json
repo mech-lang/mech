@@ -1,0 +1,7 @@
+{
+  "report": "results/timings-r.json",
+  "attempt": 6,
+  "original_archive_unchanged": true,
+  "corrected_classification": "infrastructure KeyboardInterrupt",
+  "reason": "SIGINT was caught and killed R group; empty str(KeyboardInterrupt()) caused a secondary validation error to overwrite the interruption type. Fixed and independently tested before refreeze."
+}

@@ -1,0 +1,34 @@
+
+configurable options:
+---------------------
+    ASSERT_LEVEL_WANTED=1 (default)
+    SECURITY_LEVEL_WANTED=0 (default)
+    APSERVER_PATH=/tmp/GNU-APL/APserver (default)
+    APSERVER_PORT=16366 (default)
+    APSERVER_TRANSPORT=0 (default)
+    CORE_COUNT_WANTED=-2  (= argv (--cc))
+    DYNAMIC_LOG_WANTED=no (default)
+    MAX_RANK_WANTED=8 (default)
+    RATIONAL_NUMBERS_WANTED=no (default)
+    SHORT_VALUE_LENGTH_WANTED=12, therefore:
+        sizeof(Value)       : 464 bytes
+        sizeof(Cell)        :  24 bytes
+        sizeof(Value header): 176 bytes
+
+    VALUE_CHECK_WANTED=no (default)
+    VALUE_HISTORY_WANTED=no (default)
+    VF_TRACING_WANTED=no (default)
+    VISIBLE_MARKERS_WANTED=no (default)
+
+how ./configure was (probably) called:
+--------------------------------------
+    ./configure  '--prefix=/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local' '--without-x' '--without-gtk3' '--without-sqlite3' '--without-postgresql' '--with-pcre=/opt/homebrew/opt/pcre2' 'CORE_COUNT_WANTED=argv' 'CXXFLAGS=-O3 -DNDEBUG -std=c++11' 'LDFLAGS=-L/opt/homebrew/opt/pcre2/lib' 'CPPFLAGS=-I/opt/homebrew/opt/pcre2/include'
+
+BUILDTAG:
+---------
+    Project:        GNU APL
+    Version / SVN:  2.0 / SVN: no-svnversion
+    Build Date:     2026-10-11 14:05:09 EDT
+    Build OS:       Darwin 25.2.0 arm64
+    config.status:  default ./configure options
+    Archive SVN:   no-svn

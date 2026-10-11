@@ -1,0 +1,8 @@
+{
+  "reason": "The coefficient Matrix binding cached all A coefficients once. Strict comparison requires recomputation inside every A and transpose product (40 products total). All prior spectralnorm validation applies only to these rejected hashes.",
+  "source_sha256": {
+    "compact": "71d924c09b65d1997e110d1dab3cdac178b622dac7bb4f73783283084d62b1e1",
+    "fast": "71d924c09b65d1997e110d1dab3cdac178b622dac7bb4f73783283084d62b1e1"
+  },
+  "eligible_for_timing": false
+}

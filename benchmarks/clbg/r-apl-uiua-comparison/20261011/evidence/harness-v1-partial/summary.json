@@ -1,0 +1,1224 @@
+{
+  "status": "partial",
+  "updated_at": "2026-10-11T19:01:25.862529+00:00",
+  "comparisons": [
+    {
+      "language": "r",
+      "benchmark": "regexredux",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [],
+      "failed_candidates": [
+        {
+          "key": "regexredux:regexredux-r-compact",
+          "failure": {
+            "error": "('regexredux', 22, '9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02')",
+            "error_type": "OutputValidationError",
+            "seconds": 1.6433715,
+            "exit_status": -9,
+            "attempt_number": 6,
+            "finished_at": "2026-10-11T19:00:24.511023+00:00",
+            "stdout_bytes": 22,
+            "stdout_sha256": "9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02",
+            "stderr": "",
+            "resource_violation": null
+          }
+        },
+        {
+          "key": "regexredux:regexredux-r-optimized",
+          "failure": {
+            "error": "('regexredux', 22, '9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02')",
+            "error_type": "OutputValidationError",
+            "seconds": 1.6433715,
+            "exit_status": -9,
+            "attempt_number": 6,
+            "finished_at": "2026-10-11T19:00:24.511023+00:00",
+            "stdout_bytes": 22,
+            "stdout_sha256": "9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02",
+            "stderr": "",
+            "resource_violation": null
+          }
+        }
+      ],
+      "control_admitted": true,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "revcomp",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "revcomp:revcomp-r-compact",
+          "valid_samples": 1,
+          "status": "partial"
+        },
+        {
+          "key": "revcomp:revcomp-r-optimized",
+          "valid_samples": 1,
+          "status": "partial"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "pidigits",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "pidigits:pidigits-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "pidigits:pidigits-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "spectralnorm",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "spectralnorm:spectralnorm-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "mandelbrot",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "mandelbrot:mandelbrot-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "fasta",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "fasta:fasta-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "knucleotide",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "knucleotide:knucleotide-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "binarytrees",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "binarytrees:binarytrees-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "nbody",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "nbody:nbody-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "r",
+      "benchmark": "fannkuchredux",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "fannkuchredux:fannkuchredux-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "regexredux",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [],
+      "failed_candidates": [
+        {
+          "key": "regexredux:regexredux-apl-compact",
+          "failure": {
+            "error": "('regexredux', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')",
+            "error_type": "OutputValidationError",
+            "seconds": 11.407284959,
+            "exit_status": 0,
+            "attempt_number": 1,
+            "finished_at": "2026-10-11T18:54:51.202081+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "WS FULL+\nReplace[1]  S\u2190\u2283Arg[0]\n              ^^\n\nWARNING: File pipe-to_client still open - closing it\n",
+            "resource_violation": null
+          }
+        },
+        {
+          "key": "regexredux:regexredux-apl-optimized",
+          "failure": {
+            "error": "('regexredux', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')",
+            "error_type": "OutputValidationError",
+            "seconds": 9.500716208,
+            "exit_status": 0,
+            "attempt_number": 3,
+            "finished_at": "2026-10-11T18:57:26.577558+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "WS FULL+\nReplace[1]  S\u2190\u2283Arg[0]\n              ^^\n\nWARNING: File pipe-to_client still open - closing it\n",
+            "resource_violation": null
+          }
+        }
+      ],
+      "control_admitted": true,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "revcomp",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [],
+      "failed_candidates": [
+        {
+          "key": "revcomp:revcomp-apl-compact",
+          "failure": {
+            "error": "('revcomp', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', (254166745, 'e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e'))",
+            "error_type": "OutputValidationError",
+            "seconds": 14.4157705,
+            "exit_status": 0,
+            "attempt_number": 6,
+            "finished_at": "2026-10-11T19:01:12.086669+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "WS FULL+\nRead[4]  Z\u2190Z,\u2395UCS B\n           ^ ^\n\nWARNING: File pipe-to_client still open - closing it\n",
+            "resource_violation": null
+          }
+        },
+        {
+          "key": "revcomp:revcomp-apl-optimized",
+          "failure": {
+            "error": "('revcomp', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', (254166745, 'e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e'))",
+            "error_type": "OutputValidationError",
+            "seconds": 12.941433708,
+            "exit_status": 0,
+            "attempt_number": 7,
+            "finished_at": "2026-10-11T19:01:25.271415+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "WS FULL+\nRead[4]  Z\u2190Z,\u2395UCS B\n           ^ ^\n\nWARNING: File pipe-to_client still open - closing it\n",
+            "resource_violation": null
+          }
+        }
+      ],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "pidigits",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "pidigits:pidigits-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "pidigits:pidigits-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "spectralnorm",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "spectralnorm:spectralnorm-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "mandelbrot",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "mandelbrot:mandelbrot-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "fasta",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "fasta:fasta-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "knucleotide",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "knucleotide:knucleotide-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "binarytrees",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "binarytrees:binarytrees-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "nbody",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "nbody:nbody-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "apl",
+      "benchmark": "fannkuchredux",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "fannkuchredux:fannkuchredux-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "regexredux",
+      "prepared_candidates": 2,
+      "admitted_candidates": 2,
+      "pending_candidates": [],
+      "failed_candidates": [],
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "regexredux:regexredux-uiua-compact",
+        "id": "regexredux-uiua-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/regexredux/compact.ua",
+        "source_sha256": "dc57b95038cfb33cf10360eac4dde3259f2d045ac42b38e56ed3ea2afef6fb9e",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/regexredux/compact.ua"
+        ],
+        "loc": 16,
+        "seconds": 6.217759875,
+        "samples_seconds": [
+          6.217759875,
+          6.134813917,
+          6.279049791
+        ],
+        "stdev_seconds": 0.07238838891743261,
+        "sample_validation": [
+          {
+            "bytes": 298,
+            "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+            "reference_match": true
+          },
+          {
+            "bytes": 298,
+            "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+            "reference_match": true
+          },
+          {
+            "bytes": 298,
+            "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 12.489379148469927,
+        "loc_x_mech": 0.6666666666666666,
+        "mech_seconds": 0.497843792,
+        "mech_samples_seconds": [
+          0.520802041,
+          0.497843792,
+          0.492754834
+        ],
+        "mech_loc": 24,
+        "control_key": "regexredux:mech-control-for-uiua",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "regexredux:regexredux-uiua-compact",
+        "id": "regexredux-uiua-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/regexredux/compact.ua",
+        "source_sha256": "dc57b95038cfb33cf10360eac4dde3259f2d045ac42b38e56ed3ea2afef6fb9e",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/regexredux/compact.ua"
+        ],
+        "loc": 16,
+        "seconds": 6.217759875,
+        "samples_seconds": [
+          6.217759875,
+          6.134813917,
+          6.279049791
+        ],
+        "stdev_seconds": 0.07238838891743261,
+        "sample_validation": [
+          {
+            "bytes": 298,
+            "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+            "reference_match": true
+          },
+          {
+            "bytes": 298,
+            "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+            "reference_match": true
+          },
+          {
+            "bytes": 298,
+            "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 12.489379148469927,
+        "loc_x_mech": 0.6666666666666666,
+        "mech_seconds": 0.497843792,
+        "mech_samples_seconds": [
+          0.520802041,
+          0.497843792,
+          0.492754834
+        ],
+        "mech_loc": 24,
+        "control_key": "regexredux:mech-control-for-uiua",
+        "timing_alias_of": null
+      }
+    },
+    {
+      "language": "uiua",
+      "benchmark": "revcomp",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "revcomp:revcomp-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "revcomp:revcomp-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "pidigits",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "pidigits:pidigits-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "pidigits:pidigits-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "spectralnorm",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "spectralnorm:spectralnorm-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "mandelbrot",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "mandelbrot:mandelbrot-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "fasta",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "fasta:fasta-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "knucleotide",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "knucleotide:knucleotide-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "binarytrees",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "binarytrees:binarytrees-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "nbody",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "nbody:nbody-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    },
+    {
+      "language": "uiua",
+      "benchmark": "fannkuchredux",
+      "prepared_candidates": 2,
+      "admitted_candidates": 0,
+      "pending_candidates": [
+        {
+          "key": "fannkuchredux:fannkuchredux-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ],
+      "failed_candidates": [],
+      "control_admitted": false,
+      "coverage": "pending",
+      "fastest": null,
+      "smallest": null
+    }
+  ],
+  "coverage": {
+    "r": {
+      "status": "running",
+      "prepared_benchmarks": 10,
+      "admitted_benchmarks": 0,
+      "failures": [
+        {
+          "key": "regexredux:regexredux-r-compact",
+          "failure": {
+            "error": "('regexredux', 22, '9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02')",
+            "error_type": "OutputValidationError",
+            "seconds": 1.6433715,
+            "exit_status": -9,
+            "attempt_number": 6,
+            "finished_at": "2026-10-11T19:00:24.511023+00:00",
+            "stdout_bytes": 22,
+            "stdout_sha256": "9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02",
+            "stderr": "",
+            "resource_violation": null
+          }
+        },
+        {
+          "key": "regexredux:regexredux-r-optimized",
+          "failure": {
+            "error": "('regexredux', 22, '9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02')",
+            "error_type": "OutputValidationError",
+            "seconds": 1.6433715,
+            "exit_status": -9,
+            "attempt_number": 6,
+            "finished_at": "2026-10-11T19:00:24.511023+00:00",
+            "stdout_bytes": 22,
+            "stdout_sha256": "9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02",
+            "stderr": "",
+            "resource_violation": null
+          }
+        }
+      ],
+      "pending": [
+        {
+          "key": "revcomp:revcomp-r-compact",
+          "valid_samples": 1,
+          "status": "partial"
+        },
+        {
+          "key": "revcomp:revcomp-r-optimized",
+          "valid_samples": 1,
+          "status": "partial"
+        },
+        {
+          "key": "pidigits:pidigits-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "pidigits:pidigits-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-r-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-r-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ]
+    },
+    "apl": {
+      "status": "running",
+      "prepared_benchmarks": 10,
+      "admitted_benchmarks": 0,
+      "failures": [
+        {
+          "key": "regexredux:regexredux-apl-compact",
+          "failure": {
+            "error": "('regexredux', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')",
+            "error_type": "OutputValidationError",
+            "seconds": 11.407284959,
+            "exit_status": 0,
+            "attempt_number": 1,
+            "finished_at": "2026-10-11T18:54:51.202081+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "WS FULL+\nReplace[1]  S\u2190\u2283Arg[0]\n              ^^\n\nWARNING: File pipe-to_client still open - closing it\n",
+            "resource_violation": null
+          }
+        },
+        {
+          "key": "regexredux:regexredux-apl-optimized",
+          "failure": {
+            "error": "('regexredux', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')",
+            "error_type": "OutputValidationError",
+            "seconds": 9.500716208,
+            "exit_status": 0,
+            "attempt_number": 3,
+            "finished_at": "2026-10-11T18:57:26.577558+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "WS FULL+\nReplace[1]  S\u2190\u2283Arg[0]\n              ^^\n\nWARNING: File pipe-to_client still open - closing it\n",
+            "resource_violation": null
+          }
+        },
+        {
+          "key": "revcomp:revcomp-apl-compact",
+          "failure": {
+            "error": "('revcomp', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', (254166745, 'e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e'))",
+            "error_type": "OutputValidationError",
+            "seconds": 14.4157705,
+            "exit_status": 0,
+            "attempt_number": 6,
+            "finished_at": "2026-10-11T19:01:12.086669+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "WS FULL+\nRead[4]  Z\u2190Z,\u2395UCS B\n           ^ ^\n\nWARNING: File pipe-to_client still open - closing it\n",
+            "resource_violation": null
+          }
+        },
+        {
+          "key": "revcomp:revcomp-apl-optimized",
+          "failure": {
+            "error": "('revcomp', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', (254166745, 'e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e'))",
+            "error_type": "OutputValidationError",
+            "seconds": 12.941433708,
+            "exit_status": 0,
+            "attempt_number": 7,
+            "finished_at": "2026-10-11T19:01:25.271415+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "WS FULL+\nRead[4]  Z\u2190Z,\u2395UCS B\n           ^ ^\n\nWARNING: File pipe-to_client still open - closing it\n",
+            "resource_violation": null
+          }
+        }
+      ],
+      "pending": [
+        {
+          "key": "pidigits:pidigits-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "pidigits:pidigits-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-apl-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-apl-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ]
+    },
+    "uiua": {
+      "status": "running",
+      "prepared_benchmarks": 10,
+      "admitted_benchmarks": 1,
+      "failures": [],
+      "pending": [
+        {
+          "key": "revcomp:revcomp-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "revcomp:revcomp-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "pidigits:pidigits-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "pidigits:pidigits-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "spectralnorm:spectralnorm-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fasta:fasta-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "binarytrees:binarytrees-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "nbody:nbody-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-uiua-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "fannkuchredux:fannkuchredux-uiua-optimized",
+          "valid_samples": 0,
+          "status": "pending"
+        }
+      ]
+    }
+  },
+  "reports": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": "0a2a10553b60fd1898e66eef9b30de13daadd8277de1455af57f4f70afe7a318",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": "0b1335dcaa09d3f1bae7c5c7999f059f059553b80cc7809c631cad39bfc28743",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": "cc4ff69ce95e15a8f1fdc44b1fafe609e0e08f8e9daf83c0f368359677e9f255"
+  },
+  "admission_rule": "At least three unchanged canonical full-workload, output-validated and environment-valid fresh-process samples for the candidate and its freshly measured Mech AOT control. Partial suites and failed candidates remain explicit. Planning pilots and extrapolations are never admitted.",
+  "units": "Seconds; time_x_mech is candidate median / fresh Mech AOT median. LOC ratios compare fastest with Mech fastest LOC and smallest with Mech smallest LOC. Application code only; independent statements count separately."
+}

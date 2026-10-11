@@ -20,10 +20,22 @@ export function globalStatistics(entries){
   return Object.fromEntries(['fast','small'].map(kind=>{
     const points=entries.map(entry=>entry[kind]);
     if(!points.length)return [kind,null];
-    return [kind,{n:points.length,average:{x:gm(points.map(p=>p.x)),y:gm(points.map(p=>p.y))},
-      median:{x:median(points.map(p=>p.x)),y:median(points.map(p=>p.y))},
-      spread:spread(points),spread2:spread(points,{sigma:2})}];
+    const midpoint={x:median(points.map(p=>p.x)),y:median(points.map(p=>p.y))};
+    // Covariance measures dispersion about the log-space mean. Translate its
+    // contours to the coordinate median without changing covariance or area.
+    const atMedian=region=>region&&({...region,center:midpoint,
+      boundary:region.boundary.map(p=>({x:p.x*midpoint.x/region.center.x,y:p.y*midpoint.y/region.center.y}))});
+    return [kind,{n:points.length,median:midpoint,
+      spread:atMedian(spread(points)),spread2:atMedian(spread(points,{sigma:2}))}];
   }));
+}
+export function medianHistory(data,selection){
+  const years=[...new Set(data.languages.filter(l=>selection.languages.has(l.key)).map(l=>l.release_year))].sort((a,b)=>a-b);
+  return years.map(year=>{
+    const eligible=new Set(languagesByYear(data.languages,{year}).filter(key=>selection.languages.has(key)));
+    const entries=comparison(data,{...selection,languages:eligible}).entries;
+    return {year,statistics:globalStatistics(entries)};
+  });
 }
 export const same=(a,b)=>a&&b&&Math.abs(a.x-b.x)<1e-10&&Math.abs(a.y-b.y)<1e-10;
 export function lineMetrics(fast,small){
@@ -104,20 +116,38 @@ export function chartDomain(data,{benchmarks,view='summary',focus='nbody',focusM
     for(const cohort of [...cohorts.values()])addCohort(cohort.filter(b=>available.includes(b)));
     addCohort(available);
   }
-  const points=[{x:1,y:1}];
+  let xUpper=1,yUpper=1;
+  const include=point=>{xUpper=Math.max(xUpper,point.x);yUpper=Math.max(yUpper,point.y);};
+  const includeAll=points=>{for(const point of points)include(point);};
   for(const cohort of cohorts.values()){
     const reference=comparison(data,{benchmarks:new Set(cohort.map(b=>b.key)),languages:new Set(languages.map(l=>l.key)),disabled:new Set()});
     for(const entry of reference.entries)for(const kind of ['fast','small']){
-      if(view!=='benchmark'&&focusMeans)points.push(entry[kind]);
+      if(view!=='benchmark'&&focusMeans)include(entry[kind]);
       else{
-        points.push(...entry.inputs.map(input=>input[kind]));
-        if(view!=='benchmark'&&entry.spread2[kind])points.push(...entry.spread2[kind].boundary);
+        includeAll(entry.inputs.map(input=>input[kind]));
+        if(view!=='benchmark'&&entry.spread2[kind])includeAll(entry.spread2[kind].boundary);
       }
     }
+  }
+  if(view==='benchmark'||!focusMeans){
+    // Fit the global overlay and every cumulative release-year contour even
+    // when they are hidden. Using the admitted cohort keeps year, language,
+    // profile and overlay toggles from changing this range. Means-focused
+    // views retain their compact endpoint range and intentionally crop SD.
+    const selection={benchmarks:new Set(requested.map(b=>b.key)),
+      languages:new Set(languages.map(l=>l.key)),disabled:new Set()};
+    const includeGlobal=statistics=>{
+      for(const kind of ['fast','small'])if(statistics[kind]){
+        include(statistics[kind].median);
+        if(statistics[kind].spread2)includeAll(statistics[kind].spread2.boundary);
+      }
+    };
+    includeGlobal(globalStatistics(comparison(data,selection).entries));
+    for(const item of medianHistory(data,selection))includeGlobal(item.statistics);
   }
   // Measured ratios have a fixed 1x baseline. Keep a little marker padding,
   // with 1x as the first tick, independently of covariance tails below 1x.
   const xMin=-.15,yMin=-.18;
-  return {xMin,xMax:Math.max(xMin+1.3,Math.log2(Math.max(...points.map(p=>p.x)))+.25),
-    yMin,yMax:Math.max(yMin+1.3,Math.log2(Math.max(...points.map(p=>p.y)))+.25)};
+  return {xMin,xMax:Math.max(xMin+1.3,Math.log2(xUpper)+.25),
+    yMin,yMax:Math.max(yMin+1.3,Math.log2(yUpper)+.25)};
 }

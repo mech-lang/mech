@@ -1,0 +1,4 @@
+{
+  "archived_at": "2026-10-11T19:00:29.305793+00:00",
+  "reason": "Controlled harness guard repair: SIGTERM cleanup, group-completion checks, logical plus resolved dynamic-library pins, imported nbody validator and R bundled native libraries. Prior samples unchanged and output/environment valid; preserve evidence and explicitly repin guard metadata before resume. No benchmark algorithm changes. Root interpreter not interrupted."
+}

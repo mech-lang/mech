@@ -1,0 +1,25 @@
+{
+  "status": "superseded-interpretation",
+  "language": "r",
+  "reason": "Initial every-recurrence interpretation was withdrawn: established work-audit/20261009 permits the q>r impossible-candidate guard, requiring both quotients for every actually tested candidate.",
+  "records": [
+    {
+      "benchmark": "pidigits",
+      "variant": "compact",
+      "source_sha256": "98372b5d6f4265ffa250640b2e52a7a88ef5748ab5555cdfb62786a390b554d6",
+      "archived_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/r-pidigits-extra-work-normalization/compact.R",
+      "reason": "Both extracts were performed for each actually tested candidate; the impossible-candidate guard is permitted.",
+      "full_performance_samples": 0,
+      "eligible_under_established_work_policy": true
+    },
+    {
+      "benchmark": "pidigits",
+      "variant": "optimized",
+      "source_sha256": "f13643bc0dee1d4744ab73cc20b68211dbc7ba0aeff460072d1bf349eff62822",
+      "archived_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/r-pidigits-extra-work-normalization/optimized.R",
+      "reason": "Both extracts were performed for each actually tested candidate; the impossible-candidate guard is permitted.",
+      "full_performance_samples": 0,
+      "eligible_under_established_work_policy": true
+    }
+  ]
+}

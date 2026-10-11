@@ -1,0 +1,4 @@
+PLANNING ONLY fannkuchredux:fannkuchredux-r-array-compact 9
+PLANNING ESTIMATE fannkuchredux:fannkuchredux-r-array-compact 0.781s observed; ~0.29h full (not a measured benchmark) 
+PLANNING ONLY fannkuchredux:fannkuchredux-r-array-batched 9
+PLANNING ESTIMATE fannkuchredux:fannkuchredux-r-array-batched 0.388s observed; ~0.14h full (not a measured benchmark) 

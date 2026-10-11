@@ -1,0 +1,3 @@
+language,benchmark,form,seconds,time_x_mech,loc,loc_x_mech,key,source
+uiua,regexredux,fastest,6.217759875,12.489379148469927,16,0.6666666666666666,regexredux:regexredux-uiua-compact,/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/regexredux/compact.ua
+uiua,regexredux,smallest,6.217759875,12.489379148469927,16,0.6666666666666666,regexredux:regexredux-uiua-compact,/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/regexredux/compact.ua

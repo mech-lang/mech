@@ -12,6 +12,9 @@ from zig_odin_roc_elm_data import add_zig_odin_roc_elm_languages
 from remaining_languages_data import add_remaining_languages
 from nbody_compiler_data import add_nbody_compiler_audit
 from d_data import add_d_language
+from r_apl_uiua_data import add_r_apl_uiua_languages
+from interpreter_integration_data import add_interpreter_integration_audit
+from pidigits_work_data import add_pidigits_work_audit
 
 APPLICATION = 'function-application-audit/20261009T171437Z/application-v3'
 ARRAY_TIMINGS = 'array-comparison/nbody-20261009/comparison-mech-compact.json'
@@ -472,6 +475,9 @@ def enrich_payload(root, data, array_audit_dir):
     add_remaining_languages(root,data,load,measured,add_file,sha)
     add_nbody_compiler_audit(root,data,load,measured,sha)
     add_d_language(root,data,load,measured,add_file,sha)
+    add_r_apl_uiua_languages(root,data,load,measured,add_file,sha)
+    add_interpreter_integration_audit(root,data,load,sha)
+    add_pidigits_work_audit(root,data,load,measured,sha)
 
     # Retain endpoint programs only, selecting from the current revisions.
     for b in data['benchmarks']:
@@ -489,6 +495,9 @@ def enrich_payload(root, data, array_audit_dir):
             p['y'] = p['seconds'] / b['baseline_seconds'] if p['seconds'] is not None else None
     retained = {k for b in data['benchmarks'] for g in b['groups'] for k in g['programs']}
     data['programs'] = {k:p for k,p in programs.items() if k in retained}
+    if 'interpreter_integration_audit' in data:
+        data['interpreter_integration_audit']['plotted_programs'] = sorted(
+            key for key in data['interpreter_integration_audit']['selected_programs'] if key in retained)
     retained_files = {f for p in data['programs'].values() for f in p['files']}
     data['files'] = {k:f for k,f in files.items() if k in retained_files}
 
@@ -513,13 +522,15 @@ def enrich_payload(root, data, array_audit_dir):
     data['schema_version'] = 3
     data['protocol']['measured'] = 'October 8–11, 2026'
     data['language_groups'] = [
-        dict(key='dynamic', label='Dynamic', languages=['python','ruby','perl','php','javascript','lua','luajit','julia','bqn','k','matlab','erlang','lisp','racket','smalltalk']),
-        dict(key='interpreted', label='Interpreted', languages=['python','ruby','perl','php','lua','bqn','k','mech-resident']),
-        dict(key='array', label='Array', languages=['mech','mech-jit','mech-resident','julia','bqn','k','futhark','matlab']),
-        dict(key='functional', label='Functional', languages=['haskell','ocaml','fsharp','fsharp-aot','futhark','mech','mech-jit','mech-resident','erlang','lisp','racket','roc','elm']),
+        dict(key='dynamic', label='Dynamic', languages=['python','ruby','perl','php','javascript','lua','luajit','julia','bqn','k','matlab','erlang','lisp','racket','smalltalk','r','apl','uiua']),
+        dict(key='interpreted', label='Interpreted', languages=['python','ruby','perl','php','lua','bqn','k','mech-resident','r','apl','uiua']),
+        dict(key='array', label='Array', languages=['mech','mech-jit','mech-resident','julia','bqn','k','futhark','matlab','r','apl','uiua']),
+        dict(key='functional', label='Functional', languages=['haskell','ocaml','fsharp','fsharp-aot','futhark','mech','mech-jit','mech-resident','erlang','lisp','racket','roc','elm','r','apl','uiua']),
         dict(key='aot', label='AOT', languages=['c','cpp','chapel','go','java','rust','mech','mojo','futhark','swift','haskell','ocaml','lisp','racket','zig','odin','roc','ada','pascal','fortran','csharp-aot','fsharp-aot','dart','d']),
         dict(key='jit', label='JIT', languages=['javascript','luajit','julia','mech-jit','matlab','erlang','elm','csharp','fsharp','dart-jit','smalltalk']),
     ]
+    for group in data['language_groups']:
+        group['languages']=[key for key in group['languages'] if any(l['key']==key for l in data['languages'])]
     data['array_languages'] = ['bqn', 'k', 'futhark']
     data['array_source_benchmarks'] = [b['key'] for b in data['benchmarks'] if any(
         any(g['language'] == language for g in b['groups']) for language in data['array_languages'])]

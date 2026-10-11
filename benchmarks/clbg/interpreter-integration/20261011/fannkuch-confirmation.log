@@ -1,0 +1,13 @@
+RUN 1 before
+SAMPLE 1 before 55.504479s
+RUN 1 after
+SAMPLE 1 after 59.300908s
+RUN 2 after
+SAMPLE 2 after 58.914256s
+RUN 2 before
+SAMPLE 2 before 56.117233s
+RUN 3 after
+SAMPLE 3 after 61.999651s
+RUN 3 before
+SAMPLE 3 before 60.096481s
+{"before_seconds": 56.117233208, "after_seconds": 59.300908042, "after_x_before": 1.0567325695156713}

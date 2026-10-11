@@ -1,0 +1,2847 @@
+{
+  "status": "prepared",
+  "language": "r",
+  "runtime": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+    "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+    "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+    "architecture": "aarch64-apple-darwin23",
+    "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+    "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+    "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+    "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+    }
+  },
+  "install_pins": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/r-install-pins.json",
+  "install_command": [
+    "python3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/install_r_runtime.py"
+  ],
+  "preparation_command": [
+    "python3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/prepare_r_sources.py"
+  ],
+  "validation_commands": [
+    [
+      "python3",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/validate_r.py"
+    ],
+    [
+      "python3",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/validate_r_adversarial.py"
+    ],
+    [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+      "--vanilla",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/audit_r_semantics.R",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011"
+    ]
+  ],
+  "programs": [
+    {
+      "id": "nbody-r-compact",
+      "key": "nbody:nbody-r-compact",
+      "benchmark": "nbody",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/nbody/compact.R",
+      "source_sha256": "f8fdbaa8a2f7977b8f082610b691160b01f9c6916ec796acfffe0b5318a5f5ff",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/nbody/compact.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/nbody/nbody_3.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/nbody/nbody_3.r",
+      "upstream_sha256": "d9e319df2798dbb880d5c66d140e68578e25e82dad5912d2c09ff5da3104d84e",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Locally authored matrix/vector adaptations of the archived canonical constants and Newtonian update. Compact uses all ten unique pair deltas; optimized performs all 25 directed differences with zero diagonal force.",
+        "Fixed nine-decimal energy output; canonical momentum offset, dt=0.01 and all requested timesteps. No native nbody kernel."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "binary64"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/nbody/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/nbody/compact.R",
+          "1000"
+        ],
+        "source_sha256": "f8fdbaa8a2f7977b8f082610b691160b01f9c6916ec796acfffe0b5318a5f5ff",
+        "returncode": 0,
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/nbody-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-0",
+          "n": 0,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-10000",
+          "n": 10000,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 19,
+      "physical_loc": 19,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 86400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "nbody-r-optimized",
+      "key": "nbody:nbody-r-optimized",
+      "benchmark": "nbody",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/nbody/optimized.R",
+      "source_sha256": "2c3969aa76d27160af75bcd4273cb4223de0d6b72282f190b4b5e7095fc76ed7",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/nbody/optimized.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/nbody/nbody_3.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/nbody/nbody_3.r",
+      "upstream_sha256": "d9e319df2798dbb880d5c66d140e68578e25e82dad5912d2c09ff5da3104d84e",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Locally authored matrix/vector adaptations of the archived canonical constants and Newtonian update. Compact uses all ten unique pair deltas; optimized performs all 25 directed differences with zero diagonal force.",
+        "Fixed nine-decimal energy output; canonical momentum offset, dt=0.01 and all requested timesteps. No native nbody kernel."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "binary64"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/nbody/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/nbody/optimized.R",
+          "1000"
+        ],
+        "source_sha256": "2c3969aa76d27160af75bcd4273cb4223de0d6b72282f190b4b5e7095fc76ed7",
+        "returncode": 0,
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/nbody-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "nbody",
+          "variant": "optimized",
+          "case": "independent-D-0",
+          "n": 0,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "optimized",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "optimized",
+          "case": "independent-D-10000",
+          "n": 10000,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 86400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "mandelbrot-r-compact",
+      "key": "mandelbrot:mandelbrot-r-compact",
+      "benchmark": "mandelbrot",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/compact.R",
+      "source_sha256": "940f96514d6dc5821ad429e34187d3f160085fc58dfdeb319d936f9bdccf8777",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/compact.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/mandelbrot/mandelbrot.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/mandelbrot/mandelbrot.r",
+      "upstream_sha256": "58d0ef859d550d8188eec3daf86fe6bb782f46c020ad6e065db66efc8f6a6f04",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Replace the old complex all-iteration source with explicit binary64 real/imaginary recurrence, exact P4 header and required bit padding.",
+        "Compact computes every lane through 50 iterations; optimized removes escaped lanes and maps row tasks over at most eight standard R fork workers, preserving all pixels and the complete recurrence."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "binary64"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/compact.R",
+          "200"
+        ],
+        "source_sha256": "940f96514d6dc5821ad429e34187d3f160085fc58dfdeb319d936f9bdccf8777",
+        "returncode": 0,
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/mandelbrot-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "mandelbrot",
+          "variant": "compact",
+          "case": "padding-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 8,
+          "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "compact",
+          "case": "padding-3",
+          "n": 3,
+          "input_sha256": null,
+          "bytes": 10,
+          "sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "compact",
+          "case": "padding-7",
+          "n": 7,
+          "input_sha256": null,
+          "bytes": 14,
+          "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "compact",
+          "case": "padding-9",
+          "n": 9,
+          "input_sha256": null,
+          "bytes": 25,
+          "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "compact",
+          "case": "padding-17",
+          "n": 17,
+          "input_sha256": null,
+          "bytes": 60,
+          "sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "compact",
+          "case": "padding-65",
+          "n": 65,
+          "input_sha256": null,
+          "bytes": 594,
+          "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "mandelbrot-r-optimized",
+      "key": "mandelbrot:mandelbrot-r-optimized",
+      "benchmark": "mandelbrot",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/optimized.R",
+      "source_sha256": "b914726708677fa4d24d8421bca7d2623efc11fd1c31eac5019d222379c0ec0f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/optimized.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/mandelbrot/mandelbrot.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/mandelbrot/mandelbrot.r",
+      "upstream_sha256": "58d0ef859d550d8188eec3daf86fe6bb782f46c020ad6e065db66efc8f6a6f04",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Replace the old complex all-iteration source with explicit binary64 real/imaginary recurrence, exact P4 header and required bit padding.",
+        "Compact computes every lane through 50 iterations; optimized removes escaped lanes and maps row tasks over at most eight standard R fork workers, preserving all pixels and the complete recurrence."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "binary64"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/optimized.R",
+          "200"
+        ],
+        "source_sha256": "b914726708677fa4d24d8421bca7d2623efc11fd1c31eac5019d222379c0ec0f",
+        "returncode": 0,
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/mandelbrot-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "mandelbrot",
+          "variant": "optimized",
+          "case": "padding-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 8,
+          "sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "optimized",
+          "case": "padding-3",
+          "n": 3,
+          "input_sha256": null,
+          "bytes": 10,
+          "sha256": "283b41658c4a4006825d9a3a188f42018305cdc5a19247921d2470c56121ee76",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "optimized",
+          "case": "padding-7",
+          "n": 7,
+          "input_sha256": null,
+          "bytes": 14,
+          "sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "optimized",
+          "case": "padding-9",
+          "n": 9,
+          "input_sha256": null,
+          "bytes": 25,
+          "sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "optimized",
+          "case": "padding-17",
+          "n": 17,
+          "input_sha256": null,
+          "bytes": 60,
+          "sha256": "11a01916753a7774492b5b818545d4d6dfaabcd93de1da2c4eb5dd3597fcaf79",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "mandelbrot",
+          "variant": "optimized",
+          "case": "padding-65",
+          "n": 65,
+          "input_sha256": null,
+          "bytes": 594,
+          "sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 27,
+      "physical_loc": 27,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 8
+    },
+    {
+      "id": "spectralnorm-r-compact",
+      "key": "spectralnorm:spectralnorm-r-compact",
+      "benchmark": "spectralnorm",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/compact.R",
+      "source_sha256": "0639c2f114b8ded953ab5dc32ba936917e40bd7adde1354205e10715333cb2dd",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/compact.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm.r",
+      "upstream_sha256": "9932eb153a22fefc81ef48b73741675328a13794ba06e59671e975c3aeed4cda",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Canonical implicit A and A-transpose multiplications with a numerator divided by each denominator every application; remove archived matrix memoization.",
+        "Compact vectorizes one output row; optimized bounds temporary denominator matrices to 128 rows. Ten full alternating A-transpose-A iterations and fixed nine-decimal output."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "binary64"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/compact.R",
+          "100"
+        ],
+        "source_sha256": "0639c2f114b8ded953ab5dc32ba936917e40bd7adde1354205e10715333cb2dd",
+        "returncode": 0,
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/spectralnorm-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "spectralnorm",
+          "variant": "compact",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 12,
+          "sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "spectralnorm",
+          "variant": "compact",
+          "case": "independent-D-2",
+          "n": 2,
+          "input_sha256": null,
+          "bytes": 12,
+          "sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "spectralnorm",
+          "variant": "compact",
+          "case": "independent-D-7",
+          "n": 7,
+          "input_sha256": null,
+          "bytes": 12,
+          "sha256": "b4e151e797c3627d7630290b0fedbd4a6f5baf398e9e620ac3074170939a6409",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "spectralnorm",
+          "variant": "compact",
+          "case": "independent-D-113",
+          "n": 113,
+          "input_sha256": null,
+          "bytes": 12,
+          "sha256": "84452def1bcdd8048d5adf721970a2bd0e4641b86e75d61892c7432a15401911",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "spectralnorm-r-optimized",
+      "key": "spectralnorm:spectralnorm-r-optimized",
+      "benchmark": "spectralnorm",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/optimized.R",
+      "source_sha256": "069c85ded830acebae323111ea04e969a6fe2f6abcdae15381dc69dba6bc9a00",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/optimized.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_alt_4.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_alt_4.r",
+      "upstream_sha256": "83c05fd69b46350f06e83bb6ffc6b9728d4b2af349511b4c796883835a762c05",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Canonical implicit A and A-transpose multiplications with a numerator divided by each denominator every application; remove archived matrix memoization.",
+        "Compact vectorizes one output row; optimized bounds temporary denominator matrices to 128 rows. Ten full alternating A-transpose-A iterations and fixed nine-decimal output."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "binary64"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/optimized.R",
+          "100"
+        ],
+        "source_sha256": "069c85ded830acebae323111ea04e969a6fe2f6abcdae15381dc69dba6bc9a00",
+        "returncode": 0,
+        "bytes": 12,
+        "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/spectralnorm-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "spectralnorm",
+          "variant": "optimized",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 12,
+          "sha256": "90ef14b959beca18ba75fbb936c693828ea88b6d5735c6a685559ee80601bd59",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "spectralnorm",
+          "variant": "optimized",
+          "case": "independent-D-2",
+          "n": 2,
+          "input_sha256": null,
+          "bytes": 12,
+          "sha256": "057ead07dbe9d60e50a916042eccaaa67142c9ba8bf863244bf9bc73ab499a36",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "spectralnorm",
+          "variant": "optimized",
+          "case": "independent-D-7",
+          "n": 7,
+          "input_sha256": null,
+          "bytes": 12,
+          "sha256": "b4e151e797c3627d7630290b0fedbd4a6f5baf398e9e620ac3074170939a6409",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "spectralnorm",
+          "variant": "optimized",
+          "case": "independent-D-113",
+          "n": 113,
+          "input_sha256": null,
+          "bytes": 12,
+          "sha256": "84452def1bcdd8048d5adf721970a2bd0e4641b86e75d61892c7432a15401911",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 21,
+      "physical_loc": 21,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "binarytrees-r-compact",
+      "key": "binarytrees:binarytrees-r-compact",
+      "benchmark": "binarytrees",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/compact.R",
+      "source_sha256": "441e3d954b41cc3c1356eba42eed13c1f4ee547b475303f5a822cfd3585493dc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/compact.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/binarytrees/binarytrees.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/binarytrees/binarytrees.r",
+      "upstream_sha256": "87d4e8c4d2eafcfbbc655f03b3e1698b861c80948ba2b816d8aabdfe7626423f",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Replace old item-valued positive/negative trees with the modern complete node-count workload. Every node, including each leaf, is a fresh R list.",
+        "Retain the long-lived tree until its final traversal. Compact sequential construction/check; optimized uses eight fresh standard R PSOCK workers for depth tasks, with all tree construction/check code visible in R."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/compact.R",
+          "10"
+        ],
+        "source_sha256": "441e3d954b41cc3c1356eba42eed13c1f4ee547b475303f5a822cfd3585493dc",
+        "returncode": 0,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/binarytrees-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "binarytrees",
+          "variant": "compact",
+          "case": "independent-D-4",
+          "n": 4,
+          "input_sha256": null,
+          "bytes": 143,
+          "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "binarytrees",
+          "variant": "compact",
+          "case": "independent-D-7",
+          "n": 7,
+          "input_sha256": null,
+          "bytes": 144,
+          "sha256": "3d9a43f3106a474d5f2891d8f02d74ae4bb12795becba68713091f2450c78dda",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 15,
+      "physical_loc": 15,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 86400,
+      "maximum_workers": 1,
+      "allocation_fixture": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv",
+        "sha256": "dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda",
+        "depth": 5,
+        "total_nodes": 63,
+        "unique_node_addresses": 63,
+        "leaf_allocation": true
+      }
+    },
+    {
+      "id": "binarytrees-r-optimized",
+      "key": "binarytrees:binarytrees-r-optimized",
+      "benchmark": "binarytrees",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/optimized.R",
+      "source_sha256": "b8ae857e270ab9dc85c816117d912005cd1a159aac2dfb38d565887701a05f66",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/optimized.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/binarytrees/binarytrees_2.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/binarytrees/binarytrees_2.r",
+      "upstream_sha256": "e3b26c6f08e3d0ffceaebb24c091fde3d731d07a2bd5047c8f205cbf697258f6",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Replace old item-valued positive/negative trees with the modern complete node-count workload. Every node, including each leaf, is a fresh R list.",
+        "Retain the long-lived tree until its final traversal. Compact sequential construction/check; optimized uses eight fresh standard R PSOCK workers for depth tasks, with all tree construction/check code visible in R."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/optimized.R",
+          "10"
+        ],
+        "source_sha256": "b8ae857e270ab9dc85c816117d912005cd1a159aac2dfb38d565887701a05f66",
+        "returncode": 0,
+        "bytes": 223,
+        "sha256": "b7f92c56b5d8aeb0a4d698842d1d87a57b4909865c3c84e5e10313e16663c3cb",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/binarytrees-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "binarytrees",
+          "variant": "optimized",
+          "case": "independent-D-4",
+          "n": 4,
+          "input_sha256": null,
+          "bytes": 143,
+          "sha256": "1e93372ab23c98137fc156de0f57f67fb53ced95d810e56cf784bd18f6c439fd",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "binarytrees",
+          "variant": "optimized",
+          "case": "independent-D-7",
+          "n": 7,
+          "input_sha256": null,
+          "bytes": 144,
+          "sha256": "3d9a43f3106a474d5f2891d8f02d74ae4bb12795becba68713091f2450c78dda",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 86400,
+      "maximum_workers": 8,
+      "allocation_fixture": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv",
+        "sha256": "dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda",
+        "depth": 5,
+        "total_nodes": 63,
+        "unique_node_addresses": 63,
+        "leaf_allocation": true
+      }
+    },
+    {
+      "id": "fasta-r-compact",
+      "key": "fasta:fasta-r-compact",
+      "benchmark": "fasta",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/compact.R",
+      "source_sha256": "d41b0bea5e33702b20010125034ae5d5f8b3371826b32ea3f64bc3a55dae921c",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/compact.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fasta/fasta_3.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fasta/fasta_3.r",
+      "upstream_sha256": "a91a7cb4694d18588ffc57f4604aac7f01aca7805a1f45f036e7db6e557c46ea",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Restore and retain direct seed/139968 binary64 division and unscaled sequential CDF probabilities; strict CDF threshold via generic findInterval. No period cache or integer-scaled thresholds.",
+        "Canonical ALU, 2n/3n/5n record sizes, headers, 60-column wrapping and sequential RNG state passed from IUB to Human. Optimized buffers whole-line blocks; every RNG update and draw is still performed."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "binary64"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/compact.R",
+          "1000"
+        ],
+        "source_sha256": "d41b0bea5e33702b20010125034ae5d5f8b3371826b32ea3f64bc3a55dae921c",
+        "returncode": 0,
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/fasta-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "fasta",
+          "variant": "compact",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 90,
+          "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fasta",
+          "variant": "compact",
+          "case": "independent-D-2",
+          "n": 2,
+          "input_sha256": null,
+          "bytes": 100,
+          "sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fasta",
+          "variant": "compact",
+          "case": "independent-D-61",
+          "n": 61,
+          "input_sha256": null,
+          "bytes": 700,
+          "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fasta",
+          "variant": "compact",
+          "case": "independent-D-20000",
+          "n": 20000,
+          "input_sha256": null,
+          "bytes": 203411,
+          "sha256": "0ce07366d3a3bf8dd9dd7b993c1d6490687a5bea1c7919bce5673d4349b491b7",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1,
+      "cdf_fixture": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv",
+        "sha256": "dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda",
+        "binary64_capability": "No extended long-double arithmetic",
+        "sequential_cdf_rounding_equal": true,
+        "rng_period_coverage_correctness_case": "n=20000, 160000 fresh random draws; entire RNG period covered without using any period cache."
+      }
+    },
+    {
+      "id": "fasta-r-optimized",
+      "key": "fasta:fasta-r-optimized",
+      "benchmark": "fasta",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/optimized.R",
+      "source_sha256": "76e98c50a407471805f215d29f4c5fcd99a3901e73e4f2f8216286df8d606b7e",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/optimized.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fasta/fasta_3.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fasta/fasta_3.r",
+      "upstream_sha256": "a91a7cb4694d18588ffc57f4604aac7f01aca7805a1f45f036e7db6e557c46ea",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Restore and retain direct seed/139968 binary64 division and unscaled sequential CDF probabilities; strict CDF threshold via generic findInterval. No period cache or integer-scaled thresholds.",
+        "Canonical ALU, 2n/3n/5n record sizes, headers, 60-column wrapping and sequential RNG state passed from IUB to Human. Optimized buffers whole-line blocks; every RNG update and draw is still performed."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "binary64"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/optimized.R",
+          "1000"
+        ],
+        "source_sha256": "76e98c50a407471805f215d29f4c5fcd99a3901e73e4f2f8216286df8d606b7e",
+        "returncode": 0,
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/fasta-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "fasta",
+          "variant": "optimized",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 90,
+          "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fasta",
+          "variant": "optimized",
+          "case": "independent-D-2",
+          "n": 2,
+          "input_sha256": null,
+          "bytes": 100,
+          "sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fasta",
+          "variant": "optimized",
+          "case": "independent-D-61",
+          "n": 61,
+          "input_sha256": null,
+          "bytes": 700,
+          "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fasta",
+          "variant": "optimized",
+          "case": "independent-D-20000",
+          "n": 20000,
+          "input_sha256": null,
+          "bytes": 203411,
+          "sha256": "0ce07366d3a3bf8dd9dd7b993c1d6490687a5bea1c7919bce5673d4349b491b7",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1,
+      "cdf_fixture": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv",
+        "sha256": "dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda",
+        "binary64_capability": "No extended long-double arithmetic",
+        "sequential_cdf_rounding_equal": true,
+        "rng_period_coverage_correctness_case": "n=20000, 160000 fresh random draws; entire RNG period covered without using any period cache."
+      }
+    },
+    {
+      "id": "knucleotide-r-compact",
+      "key": "knucleotide:knucleotide-r-compact",
+      "benchmark": "knucleotide",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R",
+      "source_sha256": "a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/knucleotide/knucleotide.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/knucleotide/knucleotide.r",
+      "upstream_sha256": "39ad75608092be0d7ebb1f36ba1656a7f1ffdf0f77206d37ff529305c605d321",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Read canonical stdin THREE record, tolerate comments/CRLF/case/irregular lines and stop at the next header.",
+        "Construct all seven complete growing frequency dictionaries at k=1,2,3,4,6,12,18, not only query counts. Compact merges bounded generic table histograms; optimized grows a generic match dictionary and tabulates every window.",
+        "Lexical tie ordering, exact frequency formatting, and empty maps for sequences shorter than each width."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R"
+        ],
+        "source_sha256": "a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1",
+        "returncode": 0,
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/knucleotide-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "knucleotide",
+          "variant": "compact",
+          "case": "lexical-ties-stop",
+          "n": null,
+          "input_sha256": "3c478df9cc1f6138a6aebe580b8a1c76fa9d5e256cc9f3c0773af0790e27d1c7",
+          "bytes": 163,
+          "sha256": "482cc9c4f0cda2c1c8be0300940ced9890c8bea7832a1829ab5d420cf233a75a",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "compact",
+          "case": "short-window",
+          "n": null,
+          "input_sha256": "f6a33da8af2572d58135fe4f83e4de1a3f3a5422bd2d637b999b54304fad81d4",
+          "bytes": 70,
+          "sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "compact",
+          "case": "empty-record",
+          "n": null,
+          "input_sha256": "d0cdd580b6ad80d6bc2d091cf29ead33f57e84938b100eabf2e579d6111751fc",
+          "bytes": 60,
+          "sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "compact",
+          "case": "missing-record",
+          "n": null,
+          "input_sha256": "3aa6eb8bf5be4f44a185cdef2d485e2d43b7645c7fa1d73f14804a61dce1fafa",
+          "bytes": 60,
+          "sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "compact",
+          "case": "mixed-case-comments-crlf",
+          "n": null,
+          "input_sha256": "6561ff2081ffe02f603ed8555df284f4364c33e710313f81cf6f239947c77ce0",
+          "bytes": 176,
+          "sha256": "04324f010a0d6307b059dc1ce2e4cba03d304f9fa9c24f505c672a1e0dc68d19",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "compact",
+          "case": "arbitrary-all-widths",
+          "n": null,
+          "input_sha256": "3c6aaef462648f1fc1d29ef6dacf593b2b974d84fc87936e41e1c7d114b577fa",
+          "bytes": 243,
+          "sha256": "07dced9cfcba5b70dcdeba37ca2ccc50eb045a6fa9fcdc6e7ef3a6075eec4bf9",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 27,
+      "physical_loc": 27,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1,
+      "complete_map_fixture": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv",
+        "sha256": "dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda",
+        "all_seven_maps_match_independent_python_reference": true
+      }
+    },
+    {
+      "id": "knucleotide-r-optimized",
+      "key": "knucleotide:knucleotide-r-optimized",
+      "benchmark": "knucleotide",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R",
+      "source_sha256": "e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/knucleotide/knucleotide.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/knucleotide/knucleotide.r",
+      "upstream_sha256": "39ad75608092be0d7ebb1f36ba1656a7f1ffdf0f77206d37ff529305c605d321",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Read canonical stdin THREE record, tolerate comments/CRLF/case/irregular lines and stop at the next header.",
+        "Construct all seven complete growing frequency dictionaries at k=1,2,3,4,6,12,18, not only query counts. Compact merges bounded generic table histograms; optimized grows a generic match dictionary and tabulates every window.",
+        "Lexical tie ordering, exact frequency formatting, and empty maps for sequences shorter than each width."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R"
+        ],
+        "source_sha256": "e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089",
+        "returncode": 0,
+        "bytes": 242,
+        "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/knucleotide-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "knucleotide",
+          "variant": "optimized",
+          "case": "lexical-ties-stop",
+          "n": null,
+          "input_sha256": "3c478df9cc1f6138a6aebe580b8a1c76fa9d5e256cc9f3c0773af0790e27d1c7",
+          "bytes": 163,
+          "sha256": "482cc9c4f0cda2c1c8be0300940ced9890c8bea7832a1829ab5d420cf233a75a",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "optimized",
+          "case": "short-window",
+          "n": null,
+          "input_sha256": "f6a33da8af2572d58135fe4f83e4de1a3f3a5422bd2d637b999b54304fad81d4",
+          "bytes": 70,
+          "sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "optimized",
+          "case": "empty-record",
+          "n": null,
+          "input_sha256": "d0cdd580b6ad80d6bc2d091cf29ead33f57e84938b100eabf2e579d6111751fc",
+          "bytes": 60,
+          "sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "optimized",
+          "case": "missing-record",
+          "n": null,
+          "input_sha256": "3aa6eb8bf5be4f44a185cdef2d485e2d43b7645c7fa1d73f14804a61dce1fafa",
+          "bytes": 60,
+          "sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "optimized",
+          "case": "mixed-case-comments-crlf",
+          "n": null,
+          "input_sha256": "6561ff2081ffe02f603ed8555df284f4364c33e710313f81cf6f239947c77ce0",
+          "bytes": 176,
+          "sha256": "04324f010a0d6307b059dc1ce2e4cba03d304f9fa9c24f505c672a1e0dc68d19",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "knucleotide",
+          "variant": "optimized",
+          "case": "arbitrary-all-widths",
+          "n": null,
+          "input_sha256": "3c6aaef462648f1fc1d29ef6dacf593b2b974d84fc87936e41e1c7d114b577fa",
+          "bytes": 243,
+          "sha256": "07dced9cfcba5b70dcdeba37ca2ccc50eb045a6fa9fcdc6e7ef3a6075eec4bf9",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 42,
+      "physical_loc": 42,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1,
+      "complete_map_fixture": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv",
+        "sha256": "dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda",
+        "all_seven_maps_match_independent_python_reference": true
+      }
+    },
+    {
+      "id": "revcomp-r-compact",
+      "key": "revcomp:revcomp-r-compact",
+      "benchmark": "revcomp",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/revcomp/compact.R",
+      "source_sha256": "69708b24abae780e6737ca121bebdad95ce4e39d8d0a34d6e457e036266d598d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/revcomp/compact.R"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/reversecomplement/reversecomplement.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/reversecomplement/reversecomplement.r",
+      "upstream_sha256": "db66d1e2dbfd12be3e8cb7282b920a23c47cf93df6ac6defb9a92809133a636c",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Correct the archived program, which only complemented individual lines: concatenate each complete record, reverse it, complement every IUB symbol, uppercase and rewrap at 60 columns.",
+        "Optimized reads from record ends in bounded raw-array blocks and applies an ordinary 256-byte translation table. All record data and transformations remain in R application source."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/revcomp/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/revcomp/compact.R"
+        ],
+        "source_sha256": "69708b24abae780e6737ca121bebdad95ce4e39d8d0a34d6e457e036266d598d",
+        "returncode": 0,
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/revcomp-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "revcomp",
+          "variant": "compact",
+          "case": "all-IUB-and-empty",
+          "n": null,
+          "input_sha256": "1781f4112557287ce334b78859542c1b8ea7f601d1521acfda69a724186aec88",
+          "bytes": 59,
+          "sha256": "1a34c4812f03f2df75b0c4ad2ec48a17724b83400cb9964a3ec64bbbe246085b",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "revcomp",
+          "variant": "compact",
+          "case": "crlf-comments",
+          "n": null,
+          "input_sha256": "38e648ca74a3d3bdacf0a18518b43e318190f2da7f175bac30d3036c83532e15",
+          "bytes": 22,
+          "sha256": "b2da7c0f1ffcc8ba81b168b53d499da9d3975a4717ffd3160c5201141557dfb6",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "revcomp",
+          "variant": "compact",
+          "case": "non-sixty-record",
+          "n": null,
+          "input_sha256": "02f5df711c628fd05f53f85aa0aad0eed7d49133a178a73c86a1ece1093e9ea4",
+          "bytes": 185,
+          "sha256": "e8dcfc47aeab28bfc917ee327883091607b212a1986f2823f7260d1111743d4e",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "revcomp-r-optimized",
+      "key": "revcomp:revcomp-r-optimized",
+      "benchmark": "revcomp",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/revcomp/optimized.R",
+      "source_sha256": "ceb0795b6c6f00dc4c6f360bfe126909fd522ae7a7d08399a37d4042cd01f47a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/revcomp/optimized.R"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/reversecomplement/reversecomplement_2.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/reversecomplement/reversecomplement_2.r",
+      "upstream_sha256": "a6fcd27e87bd84ce7e48d5673ffed1d4d75baec1ff670168408a806674d241c7",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Correct the archived program, which only complemented individual lines: concatenate each complete record, reverse it, complement every IUB symbol, uppercase and rewrap at 60 columns.",
+        "Optimized reads from record ends in bounded raw-array blocks and applies an ordinary 256-byte translation table. All record data and transformations remain in R application source."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/revcomp/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/revcomp/optimized.R"
+        ],
+        "source_sha256": "ceb0795b6c6f00dc4c6f360bfe126909fd522ae7a7d08399a37d4042cd01f47a",
+        "returncode": 0,
+        "bytes": 10245,
+        "sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/revcomp-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "revcomp",
+          "variant": "optimized",
+          "case": "all-IUB-and-empty",
+          "n": null,
+          "input_sha256": "1781f4112557287ce334b78859542c1b8ea7f601d1521acfda69a724186aec88",
+          "bytes": 59,
+          "sha256": "1a34c4812f03f2df75b0c4ad2ec48a17724b83400cb9964a3ec64bbbe246085b",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "revcomp",
+          "variant": "optimized",
+          "case": "crlf-comments",
+          "n": null,
+          "input_sha256": "38e648ca74a3d3bdacf0a18518b43e318190f2da7f175bac30d3036c83532e15",
+          "bytes": 22,
+          "sha256": "b2da7c0f1ffcc8ba81b168b53d499da9d3975a4717ffd3160c5201141557dfb6",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "revcomp",
+          "variant": "optimized",
+          "case": "non-sixty-record",
+          "n": null,
+          "input_sha256": "02f5df711c628fd05f53f85aa0aad0eed7d49133a178a73c86a1ece1093e9ea4",
+          "bytes": 185,
+          "sha256": "e8dcfc47aeab28bfc917ee327883091607b212a1986f2823f7260d1111743d4e",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "regexredux-r-compact",
+      "key": "regexredux:regexredux-r-compact",
+      "benchmark": "regexredux",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/regexredux/compact.R",
+      "source_sha256": "6887ba7f0b05a7c2a1fe1d73952448d6cca53354530b9933e2618b35a2eeee56",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/regexredux/compact.R"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/regexdna/regexdna.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/regexdna/regexdna.r",
+      "upstream_sha256": "fccf88d8da011833e76f62cb59d953d7f1dd69c6339fcf53e4f78be3b649a09c",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Update old regex-dna to all nine modern redux match counts and five ordered replacements, plus complete initial/cleaned/final lengths.",
+        "Base R PCRE byte regex operations, case-sensitive canonical patterns and correct zero/one/multiple match counting. Compact and optimized are the same source because the generic native regex operations already provide the optimized algorithm; measure once and use the result for both forms."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/regexredux/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/regexredux/compact.R"
+        ],
+        "source_sha256": "6887ba7f0b05a7c2a1fe1d73952448d6cca53354530b9933e2618b35a2eeee56",
+        "returncode": 0,
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/regexredux-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "regexredux",
+          "variant": "compact",
+          "case": "case-sensitive-and-all-replacements",
+          "n": null,
+          "input_sha256": "8a62556ef328e4acb3232c00cfbaac847d19af8cc31ee2a2835f3ecdb138c3f4",
+          "bytes": 254,
+          "sha256": "cab36666f9ebc62cafa303203e3f7031a7eabec7e1b44d00429773b72b153b53",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 9,
+      "physical_loc": 9,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1,
+      "equivalent_candidate_group": "regexredux-r-base-pcre",
+      "timing_alias_of": null
+    },
+    {
+      "id": "regexredux-r-optimized",
+      "key": "regexredux:regexredux-r-optimized",
+      "benchmark": "regexredux",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/regexredux/optimized.R",
+      "source_sha256": "6887ba7f0b05a7c2a1fe1d73952448d6cca53354530b9933e2618b35a2eeee56",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/regexredux/optimized.R"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/regexdna/regexdna.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/regexdna/regexdna.r",
+      "upstream_sha256": "fccf88d8da011833e76f62cb59d953d7f1dd69c6339fcf53e4f78be3b649a09c",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Update old regex-dna to all nine modern redux match counts and five ordered replacements, plus complete initial/cleaned/final lengths.",
+        "Base R PCRE byte regex operations, case-sensitive canonical patterns and correct zero/one/multiple match counting. Compact and optimized are the same source because the generic native regex operations already provide the optimized algorithm; measure once and use the result for both forms."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/regexredux/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/regexredux/optimized.R"
+        ],
+        "source_sha256": "6887ba7f0b05a7c2a1fe1d73952448d6cca53354530b9933e2618b35a2eeee56",
+        "returncode": 0,
+        "bytes": 262,
+        "sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/regexredux-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "regexredux",
+          "variant": "optimized",
+          "case": "case-sensitive-and-all-replacements",
+          "n": null,
+          "input_sha256": "8a62556ef328e4acb3232c00cfbaac847d19af8cc31ee2a2835f3ecdb138c3f4",
+          "bytes": 254,
+          "sha256": "cab36666f9ebc62cafa303203e3f7031a7eabec7e1b44d00429773b72b153b53",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 9,
+      "physical_loc": 9,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1,
+      "equivalent_candidate_group": "regexredux-r-base-pcre",
+      "timing_alias_of": "regexredux-r-compact"
+    },
+    {
+      "id": "fannkuchredux-r-compact",
+      "key": "fannkuchredux:fannkuchredux-r-compact",
+      "benchmark": "fannkuchredux",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fannkuchredux/compact.R",
+      "source_sha256": "be74c15e2fe327c05cacb617085dd41d602b52235c957bd2012182ed3a1b3b18",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fannkuchredux/compact.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fannkuch/fannkuchredux.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fannkuch/fannkuchredux.r",
+      "upstream_sha256": "a3e286c4362ce0da845241f29e093e70ee586dc8e2bdb3f411cee3190aee82a9",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Canonical complete permutation enumeration, prefix reversal counts, alternating signed checksum and maximal flip count; fix archived treatment of permutations beginning with 1.",
+        "Optimized partitions the exact factorial rank space over at most eight ordinary fork workers, independently initializes each factoradic range and evaluates every permutation. Reusable general prefix/reversal/rotation index vectors remove repeated range allocations and rev() dispatch, without caching permutations or flip results."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fannkuchredux/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fannkuchredux/compact.R",
+          "7"
+        ],
+        "source_sha256": "be74c15e2fe327c05cacb617085dd41d602b52235c957bd2012182ed3a1b3b18",
+        "returncode": 0,
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/fannkuchredux-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "compact",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 21,
+          "sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "compact",
+          "case": "signed-checksum-2",
+          "n": 2,
+          "input_sha256": null,
+          "bytes": 22,
+          "sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "compact",
+          "case": "independent-D-3",
+          "n": 3,
+          "input_sha256": null,
+          "bytes": 21,
+          "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "compact",
+          "case": "independent-D-4",
+          "n": 4,
+          "input_sha256": null,
+          "bytes": 21,
+          "sha256": "890d8d8d321817f27ab4b2d922865a014c08b4f5064b41eb070ad475c72c0553",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "compact",
+          "case": "independent-D-5",
+          "n": 5,
+          "input_sha256": null,
+          "bytes": 22,
+          "sha256": "e9a8b35247e69dddecaf5a1d4427d747d7690dee1f9366bd0f1a5617ee550578",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "compact",
+          "case": "independent-D-6",
+          "n": 6,
+          "input_sha256": null,
+          "bytes": 23,
+          "sha256": "8b3142d97484900e73159068876753e0072acee75e85f0187265281d089bb0de",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 86400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "fannkuchredux-r-optimized",
+      "key": "fannkuchredux:fannkuchredux-r-optimized",
+      "benchmark": "fannkuchredux",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fannkuchredux/optimized.R",
+      "source_sha256": "260657eac17db09d30a8437a508b29512b5adf114e3b67ea486b0ac6fcf2e002",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fannkuchredux/optimized.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fannkuch/fannkuchredux.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fannkuch/fannkuchredux.r",
+      "upstream_sha256": "a3e286c4362ce0da845241f29e093e70ee586dc8e2bdb3f411cee3190aee82a9",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Canonical complete permutation enumeration, prefix reversal counts, alternating signed checksum and maximal flip count; fix archived treatment of permutations beginning with 1.",
+        "Optimized partitions the exact factorial rank space over at most eight ordinary fork workers, independently initializes each factoradic range and evaluates every permutation. Reusable general prefix/reversal/rotation index vectors remove repeated range allocations and rev() dispatch, without caching permutations or flip results."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fannkuchredux/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fannkuchredux/optimized.R",
+          "7"
+        ],
+        "source_sha256": "260657eac17db09d30a8437a508b29512b5adf114e3b67ea486b0ac6fcf2e002",
+        "returncode": 0,
+        "bytes": 24,
+        "sha256": "2dc0a3cd4a547ba69389f97f3b447bd4d487fe6216c3cacd2f9bf8c908dc127f",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/fannkuchredux-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "optimized",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 21,
+          "sha256": "e7f542166d9723160df7a0642f70bd9adc5a2275a5d5684b86420d00d8e5a30a",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "optimized",
+          "case": "signed-checksum-2",
+          "n": 2,
+          "input_sha256": null,
+          "bytes": 22,
+          "sha256": "1056da674bb6ac2820a0d95b58eb146905291edd7019f1f5146db3c67596779a",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "optimized",
+          "case": "independent-D-3",
+          "n": 3,
+          "input_sha256": null,
+          "bytes": 21,
+          "sha256": "773fd4dac2ff800cc6f45e905bbdcc6ae1016192af8bd4ab802cd33740e3c6d3",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "optimized",
+          "case": "independent-D-4",
+          "n": 4,
+          "input_sha256": null,
+          "bytes": 21,
+          "sha256": "890d8d8d321817f27ab4b2d922865a014c08b4f5064b41eb070ad475c72c0553",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "optimized",
+          "case": "independent-D-5",
+          "n": 5,
+          "input_sha256": null,
+          "bytes": 22,
+          "sha256": "e9a8b35247e69dddecaf5a1d4427d747d7690dee1f9366bd0f1a5617ee550578",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "fannkuchredux",
+          "variant": "optimized",
+          "case": "independent-D-6",
+          "n": 6,
+          "input_sha256": null,
+          "bytes": 23,
+          "sha256": "8b3142d97484900e73159068876753e0072acee75e85f0187265281d089bb0de",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 50,
+      "physical_loc": 50,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 86400,
+      "maximum_workers": 8
+    },
+    {
+      "id": "pidigits-r-compact",
+      "key": "pidigits:pidigits-r-compact",
+      "benchmark": "pidigits",
+      "language": "r",
+      "variant": "compact",
+      "profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/pidigits/compact.R",
+      "source_sha256": "98372b5d6f4265ffa250640b2e52a7a88ef5748ab5555cdfb62786a390b554d6",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/pidigits/compact.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [
+        {
+          "name": "gmp",
+          "version": "0.7-5.1",
+          "kind": "ordinary general-purpose arbitrary-precision integer library",
+          "package_url": "https://cran.r-project.org/package=gmp",
+          "binary_archive_url": "https://cran.r-project.org/bin/macosx/sonoma-arm64/contrib/4.6/gmp_0.7-5.1.tgz",
+          "binary_archive_sha256": "2d25336051964d79379bbab539d1e8896d455a95f835be99618eea879a92a94b",
+          "source_archive_url": "https://cran.r-project.org/src/contrib/gmp_0.7-5.1.tar.gz",
+          "source_archive_sha256": "6e56d8373fd7a4148bac4ada5d3eee96f5033b76e5aaf1689db9ce7d9e3bdb69",
+          "installed_library": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp",
+          "pins": {
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp/libs/gmp.so": "a13798fcd23293985b3459a781ea5565b13228f57fd6dd7f2dd40f72b04906a8",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp/R/gmp.rdb": "c50c1c3b5be26734785ac5b03ccc147609a8baa0b32d4d73091a179aa3781807",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp/R/gmp.rdx": "9f089a4696c7f7e28037092792fc21359b2c988300c72f260f55d84db7b21939",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp/DESCRIPTION": "c4e0f3e569fcf4d585b72143032d58aeafa67284fec161df06bf40a312acb26b"
+          },
+          "pi_division_audit": "In gmp source bigintegerR.cc:240-260, generic binary arithmetic visits each vector lane; bigmod.cc:108-110 performs mpz_tdiv_q for each lane. The two-element optimized R extraction therefore does two quotient operations, not a remainder shortcut."
+        }
+      ],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/pidigits/pidigits.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/pidigits/pidigits.r",
+      "upstream_sha256": "aa29e45ac7bc27dde09de5f62adf1e064e30fd9a9822019d8e5f395047c89a55",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Use the ordinary CRAN GMP arbitrary-precision library in place of the archived in-source integer library; every benchmark loop and decision remains in R.",
+        "Perform both (3*num+acc)/den and (4*num+acc)/den quotients for every candidate attempt; replace the archived single-division remainder shortcut. Optimized generic two-lane vector division executes both quotients.",
+        "Exact ten-digit lines, tab/colon count, and blank padding for a final partial line."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "unbounded-integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/pidigits/compact.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/pidigits/compact.R",
+          "30"
+        ],
+        "source_sha256": "98372b5d6f4265ffa250640b2e52a7a88ef5748ab5555cdfb62786a390b554d6",
+        "returncode": 0,
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/pidigits-r-compact.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "pidigits",
+          "variant": "compact",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 14,
+          "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "pidigits",
+          "variant": "compact",
+          "case": "independent-D-9",
+          "n": 9,
+          "input_sha256": null,
+          "bytes": 14,
+          "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "pidigits",
+          "variant": "compact",
+          "case": "independent-D-11",
+          "n": 11,
+          "input_sha256": null,
+          "bytes": 30,
+          "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "pidigits",
+          "variant": "compact",
+          "case": "independent-D-37",
+          "n": 37,
+          "input_sha256": null,
+          "bytes": 60,
+          "sha256": "dffd26d285efb9cf3661eb1bf0a639e155292a2c70c27057cdceb034cbf9a102",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "pidigits",
+          "variant": "compact",
+          "case": "independent-D-101",
+          "n": 101,
+          "input_sha256": null,
+          "bytes": 167,
+          "sha256": "2dd83379073acaeea5b02f7896d9419b3c1eae247280c3beb635bc86c2724dba",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1
+    },
+    {
+      "id": "pidigits-r-optimized",
+      "key": "pidigits:pidigits-r-optimized",
+      "benchmark": "pidigits",
+      "language": "r",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/pidigits/optimized.R",
+      "source_sha256": "f13643bc0dee1d4744ab73cc20b68211dbc7ba0aeff460072d1bf349eff62822",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/pidigits/optimized.R",
+        "{n}"
+      ],
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+        "version": "Rscript (R) version 4.6.1 (2026-06-24)",
+        "architecture": "aarch64-apple-darwin23",
+        "distribution_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+        "distribution_sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+        "provenance": "Official CRAN R binary, relocated as a portable distribution by Posit r-builds",
+        "primary_runtime_documentation": "https://github.com/rstudio/r-builds/blob/main/macos/README.md",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin": "4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R": "674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib": "93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb": "390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb": "6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb": "cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313"
+        }
+      },
+      "runtime_sha256": "9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "library_support": [
+        {
+          "name": "gmp",
+          "version": "0.7-5.1",
+          "kind": "ordinary general-purpose arbitrary-precision integer library",
+          "package_url": "https://cran.r-project.org/package=gmp",
+          "binary_archive_url": "https://cran.r-project.org/bin/macosx/sonoma-arm64/contrib/4.6/gmp_0.7-5.1.tgz",
+          "binary_archive_sha256": "2d25336051964d79379bbab539d1e8896d455a95f835be99618eea879a92a94b",
+          "source_archive_url": "https://cran.r-project.org/src/contrib/gmp_0.7-5.1.tar.gz",
+          "source_archive_sha256": "6e56d8373fd7a4148bac4ada5d3eee96f5033b76e5aaf1689db9ce7d9e3bdb69",
+          "installed_library": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp",
+          "pins": {
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp/libs/gmp.so": "a13798fcd23293985b3459a781ea5565b13228f57fd6dd7f2dd40f72b04906a8",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp/R/gmp.rdb": "c50c1c3b5be26734785ac5b03ccc147609a8baa0b32d4d73091a179aa3781807",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp/R/gmp.rdx": "9f089a4696c7f7e28037092792fc21359b2c988300c72f260f55d84db7b21939",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library/gmp/DESCRIPTION": "c4e0f3e569fcf4d585b72143032d58aeafa67284fec161df06bf40a312acb26b"
+          },
+          "pi_division_audit": "In gmp source bigintegerR.cc:240-260, generic binary arithmetic visits each vector lane; bigmod.cc:108-110 performs mpz_tdiv_q for each lane. The two-element optimized R extraction therefore does two quotient operations, not a remainder shortcut."
+        }
+      ],
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/pidigits/pidigits.r",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/pidigits/pidigits.r",
+      "upstream_sha256": "aa29e45ac7bc27dde09de5f62adf1e064e30fd9a9822019d8e5f395047c89a55",
+      "upstream_revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+      "adaptations": [
+        "Use the ordinary CRAN GMP arbitrary-precision library in place of the archived in-source integer library; every benchmark loop and decision remains in R.",
+        "Perform both (3*num+acc)/den and (4*num+acc)/den quotients for every candidate attempt; replace the archived single-division remainder shortcut. Optimized generic two-lane vector division executes both quotients.",
+        "Exact ten-digit lines, tab/colon count, and blank padding for a final partial line."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Complete unchanged canonical workload in visible R application code; only ordinary general-purpose standard/package operations.",
+        "arithmetic": "unbounded-integer"
+      },
+      "small_validation": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/pidigits/optimized.R",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/pidigits/optimized.R",
+          "30"
+        ],
+        "source_sha256": "f13643bc0dee1d4744ab73cc20b68211dbc7ba0aeff460072d1bf349eff62822",
+        "returncode": 0,
+        "bytes": 45,
+        "sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/pidigits-r-optimized.small.stdout"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "pidigits",
+          "variant": "optimized",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 14,
+          "sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "pidigits",
+          "variant": "optimized",
+          "case": "independent-D-9",
+          "n": 9,
+          "input_sha256": null,
+          "bytes": 14,
+          "sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "pidigits",
+          "variant": "optimized",
+          "case": "independent-D-11",
+          "n": 11,
+          "input_sha256": null,
+          "bytes": 30,
+          "sha256": "3f56cea8613552803edb2a1c3e3fd88c5e38792cbdd6bba5079468c77d83dea0",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "pidigits",
+          "variant": "optimized",
+          "case": "independent-D-37",
+          "n": 37,
+          "input_sha256": null,
+          "bytes": 60,
+          "sha256": "dffd26d285efb9cf3661eb1bf0a639e155292a2c70c27057cdceb034cbf9a102",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "pidigits",
+          "variant": "optimized",
+          "case": "independent-D-101",
+          "n": 101,
+          "input_sha256": null,
+          "bytes": 167,
+          "sha256": "2dd83379073acaeea5b02f7896d9419b3c1eae247280c3beb635bc86c2724dba",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 27,
+      "physical_loc": 27,
+      "loc_expansions": [],
+      "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 14400,
+      "maximum_workers": 1
+    }
+  ],
+  "protocol": "No full timings have been run by this preparer. Root owns sequential guarded fresh-process measurements at unchanged workloads, with startup, libraries, workers and all output included. Source preparation/parsing/validation/hashing excluded.",
+  "timeout_advice": "Conservative upper ceilings, not timing estimates. GNU R bytecode is interpreted, so 50m nbody, 12! fannkuch and repeated complete tree allocation may require long wall time. Run full validation once under the shared RSS/worker guard before selecting performance candidates. Never extrapolate, replace the workload, or publish small-run results as full timings.",
+  "memory_advice": "Nucleotide maps use bounded chunks and sequential widths; full input is still retained as a string. Reverse-complement compact uses full-record character vectors. Tree optimized uses fresh PSOCK workers to avoid fork copies of the retained tree. At most eight language workers."
+}

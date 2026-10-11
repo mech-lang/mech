@@ -1,0 +1,65 @@
+{
+  "scope": "Read-only static inspection of the exact frozen before/after executables. Static instruction counts are not dynamic execution counts or proof of causation.",
+  "rows": {
+    "before": {
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "symbol": "<mech_gpu::control::resident::Machine>::call",
+      "address": "0x1000c7d4c",
+      "next_text_symbol_address": "0x1000caaf8",
+      "size_to_next_text_symbol": 11692,
+      "instruction_lines": 2923,
+      "static_sp_load_instructions": 199,
+      "static_sp_store_instructions": 65,
+      "disassembly_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/codegen-before-machine-call.txt",
+      "disassembly_sha256": "351fe50e65104876d823fd14f067f62a713a0b1ac82313f356544b2f68dd5a90",
+      "command": [
+        "/opt/homebrew/opt/llvm@22/bin/llvm-objdump",
+        "--disassemble",
+        "--demangle",
+        "--no-show-raw-insn",
+        "--start-address=4295785804",
+        "--stop-address=4295797496",
+        "benchmarks/clbg/interpreter-integration/20261011/.build/before"
+      ],
+      "static_stack_load_instructions": 265,
+      "static_stack_store_instructions": 93,
+      "stack_address_bases": [
+        "sp",
+        "x29"
+      ]
+    },
+    "after": {
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "symbol": "<mech_gpu::control::resident::Machine>::call",
+      "address": "0x100138c5c",
+      "next_text_symbol_address": "0x10013ba9c",
+      "size_to_next_text_symbol": 11840,
+      "instruction_lines": 2960,
+      "static_sp_load_instructions": 194,
+      "static_sp_store_instructions": 77,
+      "disassembly_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/codegen-after-machine-call.txt",
+      "disassembly_sha256": "c0a097b8f88f97a7501bc0c44c02d23bf9f44bc62470a0ac64e8c603cac0309f",
+      "command": [
+        "/opt/homebrew/opt/llvm@22/bin/llvm-objdump",
+        "--disassemble",
+        "--demangle",
+        "--no-show-raw-insn",
+        "--start-address=4296248412",
+        "--stop-address=4296260252",
+        "benchmarks/clbg/interpreter-integration/20261011/.build/after"
+      ],
+      "static_stack_load_instructions": 265,
+      "static_stack_store_instructions": 119,
+      "stack_address_bases": [
+        "sp",
+        "x29"
+      ]
+    }
+  },
+  "tools": {
+    "llvm-nm": "333b44b478ec90b2c4aca439c7c4812b9bfca03331b447eeb4da85a8faca18ea",
+    "llvm-objdump": "0f76cf7c856435f4d1394ded85fb711cbc058f3a6d013fa93d293bdc041e1c95"
+  }
+}

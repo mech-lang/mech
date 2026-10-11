@@ -1,0 +1,6 @@
+{
+  "source_url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+  "sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb",
+  "version": "R 4.6.1",
+  "upstream": "CRAN binary relocated by Posit"
+}

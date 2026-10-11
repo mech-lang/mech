@@ -1,0 +1,20 @@
+Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:31:1
+31 |   P ⊃(P.Q|P.R|P.T|P.A|P.B|P.D|+1P.K|P.Left|P.Digits|P.Written)
+     ──────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 54/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:33:1
+33 | EmitR       ← Small {⊃(P.R Attempt.State|Sub {⊃(P.A Attempt.State|P.R Attempt.State|Small {⊃(P.B Attempt.State|P.T Attempt.State|Attempt.Digit)})}|⋅10)}
+     ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 46/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:37:1
+37 | Flush       ← P ⊃(P.Q|P.R|P.T|P.A|P.B|P.D|P.K|P.Left|⋅""|P.Written) ⟜(PrintDigits)
+     ──────────────────────────────────────────────────────────────────────────────────
+Advice: Split this into multiple lines (heuristic: 72/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:42:1
+42 |   MaybeFlush P ⊃(P.Q Attempt.State|P.R Attempt.State|P.T Attempt.State|P.A Attempt.State|P.B Attempt.State|P.D Attempt.State|P.K Attempt.State|-1P.Left Attempt.State|EmitDigits|+1P.Written Attempt.State)
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

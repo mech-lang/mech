@@ -222,6 +222,24 @@
       "name": "D",
       "source": "https://forum.dlang.org/thread/dnhvoi%24dja%241%40digitaldaemon.com?page=6",
       "note": "First public DMD alpha release in December 2001, as recorded by Walter Bright. The LDC compiler version does not replace the language introduction year."
+    },
+    "r": {
+      "year": 1993,
+      "name": "R",
+      "source": "https://cran.r-project.org/doc/html/interface98-paper/paper_2.html",
+      "note": "Binary copies and public announcement in August 1993, as recorded by co-creator Ross Ihaka."
+    },
+    "apl": {
+      "year": 1966,
+      "name": "APL",
+      "source": "https://sigapl.org/APLChronology.php",
+      "note": "APL named and APL/360 implemented in 1966; excludes the earlier mathematical notation."
+    },
+    "uiua": {
+      "year": 2023,
+      "name": "Uiua",
+      "source": "https://github.com/uiua-lang/uiua/releases/tag/0.0.17",
+      "note": "Public runtime releases available in 2023; repository created in February 2023. Uses first public-release year, not interpreter version year."
     }
   }
 }

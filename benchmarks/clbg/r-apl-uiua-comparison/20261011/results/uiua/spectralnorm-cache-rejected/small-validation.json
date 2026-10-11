@@ -1,0 +1,36 @@
+{
+  "spectralnorm-uiua-compact": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/spectralnorm/compact.ua",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+      "run",
+      "--no-format",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/spectralnorm/compact.ua",
+      "100"
+    ],
+    "source_sha256": "71d924c09b65d1997e110d1dab3cdac178b622dac7bb4f73783283084d62b1e1",
+    "returncode": 0,
+    "bytes": 12,
+    "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+    "reference_match": true,
+    "stderr": "",
+    "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/uiua/spectralnorm-uiua-compact.small.stdout"
+  },
+  "spectralnorm-uiua-fast": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/spectralnorm/fast.ua",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+      "run",
+      "--no-format",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/spectralnorm/fast.ua",
+      "100"
+    ],
+    "source_sha256": "71d924c09b65d1997e110d1dab3cdac178b622dac7bb4f73783283084d62b1e1",
+    "returncode": 0,
+    "bytes": 12,
+    "sha256": "a95e11fa07f7b196ef488e73f67afbbbc16cf6a2c6de5f8d54ea49821fe604e6",
+    "reference_match": true,
+    "stderr": "",
+    "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/uiua/spectralnorm-uiua-fast.small.stdout"
+  }
+}

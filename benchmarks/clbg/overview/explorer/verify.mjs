@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import {comparison,spread,gm,chartDomain,lineMetrics,comparisonMetrics,languagesByYear,sharedBenchmarks,globalStatistics,median,languageFamilies} from './dist/math.mjs';
+import {comparison,spread,gm,chartDomain,lineMetrics,comparisonMetrics,languagesByYear,sharedBenchmarks,globalStatistics,median,languageFamilies,medianHistory} from './dist/math.mjs';
+import './verify_domain_fixtures.mjs';
 const data=JSON.parse(fs.readFileSync(new URL('./dist/data.json',import.meta.url)));
 
 // Older cohorts retain their original measured Mech control after the current
@@ -17,14 +18,15 @@ function historicalMeasurement(mech){
 
 const selection={benchmarks:new Set(data.benchmarks.map(b=>b.key)),languages:new Set(data.languages.map(l=>l.key)),disabled:new Set()};
 const years=JSON.parse(fs.readFileSync(new URL('./language-years.json',import.meta.url)));
+const newLanguageKeys=['r','apl','uiua'].filter(key=>data.languages.some(l=>l.key===key));
 assert.equal(data.provenance['language-years.json'],crypto.createHash('sha256').update(fs.readFileSync(new URL('./language-years.json',import.meta.url))).digest('hex'));
-assert.equal(new Set(data.languages.map(l=>l.release_name)).size,37);
+assert.equal(new Set(data.languages.map(l=>l.release_name)).size,37+newLanguageKeys.length);
 for(const l of data.languages){
   const record=years.languages[l.family??l.key];
   assert.equal(l.release_year,record.year);assert.equal(l.release_source,record.source);
   assert.equal(l.release_name,record.name);assert(l.release_note);
 }
-assert.deepEqual(new Set(languagesByYear(data.languages,{year:1972})),new Set(['fortran','pascal','c','smalltalk']));
+assert.deepEqual(new Set(languagesByYear(data.languages,{year:1972})),new Set(['fortran','pascal','c','smalltalk',...(newLanguageKeys.includes('apl')?['apl']:[])]));
 assert(languagesByYear(data.languages,{year:2014}).includes('swift'));
 assert(!languagesByYear(data.languages,{year:2014}).includes('futhark'));
 assert(languagesByYear(data.languages,{year:2017}).includes('futhark'));
@@ -39,16 +41,27 @@ assert.deepEqual(lineMetrics({x:2,y:3},{x:2,y:3}),{loc:2,fastest:3,slope:null,le
 assert.equal(lineMetrics({x:2,y:1},{x:2,y:4}).slope,-Infinity);
 assert.equal(lineMetrics({x:4,y:1},{x:1,y:1}).slope,0);
 const full=comparison(data,selection);
-assert.equal(full.entries.length,43);
-assert.equal(data.languages.length,43);
+assert.equal(full.entries.length,43+newLanguageKeys.length);
+assert.equal(data.languages.length,43+newLanguageKeys.length);
 const futharkMean=full.entries.find(e=>e.language.key==='futhark');
 assert.equal(futharkMean.inputs.length,9);
 assert.equal(futharkMean.coverage.selected,10);
 assert.deepEqual(futharkMean.coverage.missing.map(b=>b.key),['binarytrees']);
-assert(full.entries.filter(e=>!['futhark','matlab','lua'].includes(e.language.key)).every(e=>e.inputs.length===10));
+assert(full.entries.filter(e=>!['futhark','matlab','lua',...newLanguageKeys].includes(e.language.key)).every(e=>e.inputs.length===10));
+for(const key of newLanguageKeys){
+  const entry=full.entries.find(e=>e.language.key===key);
+  assert(entry.inputs.length>0&&entry.inputs.length<=10);
+  for(const input of entry.inputs)for(const profile of ['fast','small']){
+    assert(input[profile].samples.length>=3);
+    assert(input[profile].required_work_validated);
+    assert(input[profile].algorithm.strict);
+    assert.equal(input[profile].algorithm.native_benchmark_kernel,false);
+    assert(input[profile].full_output_validation.every(v=>v.reference_match));
+  }
+}
 const sharedKeys=sharedBenchmarks(data,selection).map(b=>b.key);
 const shared=comparison(data,{...selection,benchmarks:new Set(sharedKeys)});
-assert.equal(shared.entries.length,43);
+assert.equal(shared.entries.length,43+newLanguageKeys.length);
 assert(shared.entries.every(e=>e.inputs.length===sharedKeys.length));
 for(const entry of shared.entries)for(const profile of ['fast','small'])for(const axis of ['x','y'])assert.equal(entry[profile][axis],gm(entry.inputs.map(i=>i[profile][axis])));
 assert.deepEqual(data.languages.find(l=>l.key==='futhark').unsupported_benchmarks,['binarytrees']);
@@ -115,7 +128,7 @@ assert.equal(one.entries.find(e=>e.language.key==='bqn').inputs[0].small.loc,26)
 assert.equal(one.entries.find(e=>e.language.key==='bqn').inputs[0].fast.loc,39);
 assert.equal(one.entries.find(e=>e.language.key==='k').inputs[0].small.loc,36);
 assert.equal(data.programs[mech.small].loc,20);assert.equal(data.programs[mech.fast].loc,25);
-assert.equal(comparison(data,{...selection,benchmarks:new Set(['spectralnorm'])}).entries.length,43);
+assert.equal(comparison(data,{...selection,benchmarks:new Set(['spectralnorm'])}).entries.length,data.languages.filter(l=>l.timed_benchmarks.includes('spectralnorm')).length);
 const spectral=data.benchmarks.find(b=>b.key==='spectralnorm').groups.find(g=>g.language==='mech');
 assert.equal(data.programs[spectral.fast].loc,12);
 assert(data.files[data.programs[spectral.fast].files[0]].code.includes('coefficient(i<u64>, j<u64>)'));
@@ -224,7 +237,16 @@ for(const focusMeans of [true,false])for(const languages of [new Set(['mech']),n
 }
 assert(sampleDomain.xMax>domain.xMax,'Focus must tighten the full-suite LOC range');
 assert(sampleDomain.yMax>domain.yMax,'Focus must tighten the full-suite time range');
-const cohortReferences=[full,shared,...['pidigits','binarytrees'].map(missing=>comparison(data,{...selection,benchmarks:new Set(data.benchmarks.filter(b=>b.key!==missing).map(b=>b.key))}))];
+const coverageSets=new Map();
+const retainCoverage=keys=>{if(keys.size)coverageSets.set([...keys].sort().join(','),keys);};
+retainCoverage(selection.benchmarks);
+for(const language of data.languages){
+  const available=new Set(data.benchmarks.filter(benchmark=>benchmark.groups.some(group=>
+    group.language===language.key&&group.programs.some(key=>data.programs[key].seconds>0))).map(benchmark=>benchmark.key));
+  for(const existing of [...coverageSets.values()])retainCoverage(new Set([...existing].filter(key=>available.has(key))));
+  retainCoverage(available);
+}
+const cohortReferences=[...coverageSets.values()].map(benchmarks=>comparison(data,{...selection,benchmarks}));
 const cohortMeans=cohortReferences.flatMap(reference=>reference.entries.flatMap(entry=>[entry.fast,entry.small]));
 assert.equal(domain.xMax,Math.log2(Math.max(...cohortMeans.map(p=>p.x)))+.25,'Covariance tails must not override means-focused LOC bounds');
 assert.equal(domain.yMax,Math.log2(Math.max(...cohortMeans.map(p=>p.y)))+.25,'Covariance tails must not override means-focused time bounds');
@@ -239,11 +261,21 @@ assert(mechSampleDomain.yMax>mechDomain.yMax,'Focus also tightens Mech-view time
 const singleDomain=chartDomain(data,{...selection,view:'benchmark',focus:'nbody'});
 assert.deepEqual(chartDomain(data,{...selection,view:'benchmark',focus:'nbody',focusMeans:false}),singleDomain,'Focus does not affect single-benchmark bounds');
 const nbodyPrograms=nbody.groups.flatMap(group=>group.programs.map(key=>data.programs[key]));
+const globalEnvelopePoints=statistics=>['fast','small'].flatMap(kind=>statistics[kind]
+  ?[statistics[kind].median,...(statistics[kind].spread2?.boundary??[])]:[]);
+const singleSelection={...selection,benchmarks:new Set(['nbody'])};
+const singleEnvelopes=[globalStatistics(one.entries),...medianHistory(data,singleSelection).map(item=>item.statistics)]
+  .flatMap(globalEnvelopePoints);
+const singleRangePoints=[...nbodyPrograms,...singleEnvelopes];
 assert.equal(singleDomain.xMin,-.15);
 assert.equal(singleDomain.yMin,-.18);
-assert.equal(singleDomain.xMax,Math.max(1.15,Math.log2(Math.max(...nbodyPrograms.map(p=>p.x)))+.25));
-assert.equal(singleDomain.yMax,Math.max(1.12,Math.log2(Math.max(...nbodyPrograms.map(p=>p.y)))+.25));
+assert.equal(singleDomain.xMax,Math.max(1.15,Math.log2(Math.max(...singleRangePoints.map(p=>p.x)))+.25));
+assert.equal(singleDomain.yMax,Math.max(1.12,Math.log2(Math.max(...singleRangePoints.map(p=>p.y)))+.25));
 for(const point of nbodyPrograms)contains(singleDomain,point);
+for(const [options,bounds] of [[selection,sampleDomain],
+  [{...selection,languages:new Set(data.languages.filter(language=>language.family==='mech'||language.key==='mech').map(language=>language.key))},mechSampleDomain],
+  [singleSelection,singleDomain]])for(const item of medianHistory(data,options))
+    for(const point of globalEnvelopePoints(item.statistics))if(point.x>=1&&point.y>=1)contains(bounds,point);
 for(const reference of [full,shared])for(const entry of reference.entries)for(const input of entry.inputs){
   contains(sampleDomain,input.fast);contains(sampleDomain,input.small);
 }
@@ -278,8 +310,16 @@ assert(data.execution_mode_audit.aot_runtime_control.identical_native_object);
 assert(data.execution_mode_audit.optimization_changes);
 for(const benchmark of data.benchmarks)for(const key of ['mech-jit','mech-resident']){
   for(const program of benchmark.groups.find(g=>g.language===key).programs.map(k=>data.programs[k])){
-    assert.equal(program.report,data.execution_mode_audit.timing_report);
-    assert.equal(program.seconds,data.execution_mode_audit.optimization_changes[program.key].after_seconds);
+    const original=key==='mech-resident'&&data.interpreter_integration_audit?program.previous_measurement:program;
+    assert.equal(original.report,data.execution_mode_audit.timing_report);
+    assert.equal(original.seconds,data.execution_mode_audit.optimization_changes[program.key].after_seconds);
+    if(original!==program){
+      const audit=data.interpreter_integration_audit,change=audit.changes[program.key.replace(/:resident$/,'')];
+      assert.equal(program.report,audit.report);assert.equal(program.measurement_phase,'after');
+      assert.equal(program.seconds,change.after_seconds);
+      for(const field of ['key','benchmark','language','loc','physical_loc','loc_expansions','algorithm','files','timing_boundary'])assert.deepEqual(program[field],original[field]);
+      assert.equal(program.samples.length,audit.sample_count);
+    }
   }
 }
 const jitNbody=nbody.groups.find(g=>g.language==='mech-jit');
@@ -315,7 +355,7 @@ for(const benchmark of data.benchmarks){
 }
 console.log('Verified ten Swift workloads, three samples, source correction labels, LOC endpoints, compiler policy, AOT grouping, and 2014 release filtering.');
 
-assert.deepEqual(data.language_groups.find(g=>g.key==='functional').languages,['haskell','ocaml','fsharp','fsharp-aot','futhark','mech','mech-jit','mech-resident','erlang','lisp','racket','roc','elm']);
+assert.deepEqual(data.language_groups.find(g=>g.key==='functional').languages,['haskell','ocaml','fsharp','fsharp-aot','futhark','mech','mech-jit','mech-resident','erlang','lisp','racket','roc','elm',...newLanguageKeys]);
 assert.equal(data.functional_audit.published_sources,60);
 assert.equal(data.functional_audit.allocation_evidence.length,9);
 assert.equal(Object.keys(data.functional_audit.controls).length,10);
@@ -572,14 +612,14 @@ console.log('Verified all ten Zig/Odin/Roc/Elm workloads, 61 admitted sources an
 assert.equal(median([]),null);assert.equal(median([8,1,2]),2);assert.equal(median([8,1,2,4]),3);
 const fixture=[{fast:{x:1,y:1},small:{x:1,y:4}},{fast:{x:4,y:16},small:{x:4,y:16}}];
 const global=globalStatistics(fixture);
-assert.deepEqual(global.fast.average,{x:2,y:4});assert.deepEqual(global.fast.median,{x:2.5,y:8.5});
-assert.deepEqual(global.small.average,{x:2,y:Math.exp((Math.log(4)+Math.log(16))/2)});
+assert.equal('average' in global.fast,false);assert.deepEqual(global.fast.median,{x:2.5,y:8.5});
+assert.deepEqual(global.fast.spread.center,global.fast.median);
 assert.equal(global.fast.spread.covariance[0][0],2);assert.equal(global.fast.spread.covariance[1][1],8);assert.equal(global.fast.spread.covariance[0][1],4);
 assert.equal(global.fast.spread2.area,0);assert.equal(global.fast.n,2);
 assert.equal(globalStatistics([]).fast,null);assert.equal(globalStatistics(fixture.slice(0,1)).fast.spread,null);
-assert.deepEqual(globalStatistics(fixture.slice(0,1)).fast.average,fixture[0].fast);
+assert.deepEqual(globalStatistics(fixture.slice(0,1)).fast.median,fixture[0].fast);
 const familyGroups=languageFamilies(data.languages);
-assert.equal(familyGroups.length,37);
+assert.equal(familyGroups.length,37+newLanguageKeys.length);
 assert.deepEqual(familyGroups.find(f=>f.key==='mech').members.map(l=>l.variant_label),['AOT','JIT','Interpreted']);
 assert.deepEqual(familyGroups.find(f=>f.key==='lua').members.map(l=>l.key),['lua','luajit']);
 const lua=full.entries.find(e=>e.language.key==='lua');
@@ -588,13 +628,13 @@ assert.equal(data.benchmarks.find(b=>b.key==='pidigits').groups.some(g=>g.langua
 assert(data.language_groups.find(g=>g.key==='interpreted').languages.includes('lua'));
 assert(data.language_groups.find(g=>g.key==='jit').languages.includes('luajit'));
 const population=globalStatistics(full.entries);
-assert.equal(population.fast.n,43);
+assert.equal(population.fast.n,43+newLanguageKeys.length);
 for(const kind of ['fast','small']){
- assert.equal(population[kind].average.x,gm(full.entries.map(e=>e[kind].x)));
+ assert.equal(population[kind].median.x,median(full.entries.map(e=>e[kind].x)));
  assert.equal(population[kind].median.y,median(full.entries.map(e=>e[kind].y)));
  assert(Math.abs(population[kind].spread2.area-4*population[kind].spread.area)<1e-10);
 }
-console.log('Verified grouped execution variants, restored nine-test Lua coverage, and global geometric averages, coordinate medians and covariance.');
+console.log('Verified grouped execution variants, restored nine-test Lua coverage, and global coordinate medians and covariance.');
 
 const remaining=data.remaining_languages_audit;
 assert.equal(remaining.completed_samples,remaining.expected_samples);
@@ -660,3 +700,39 @@ assert(data.programs['nbody:pairwise-mass-tails'].native_flags.includes('--simpl
 assert(!data.programs['nbody:pairwise-mass-tails'].native_flags.includes('--share-scaled-products'));
 assert.equal(data.programs['nbody:nbody-zig-2-faithful'].seconds,1.006515291);
 console.log('Verified seven matched full-size n-body rounds, unchanged counted sources, selected general compiler flags, complete-state audit, and archived earlier cohort controls.');
+
+if(data.interpreter_integration_audit){
+  const audit=data.interpreter_integration_audit;
+  assert.equal(audit.status,'complete');assert(audit.sample_count>=3);
+  assert.equal(audit.completed_samples,audit.sources*2*audit.sample_count);
+  assert.equal(audit.code_path.direct_benchmark_dispatch_changed,false);
+  assert.equal(audit.code_path.benchmark_source_changes,false);
+  assert.equal(Object.keys(audit.changes).length,audit.sources);
+  assert(audit.verification_time_helpers.scope.includes('not pinned at execution time'));
+  assert.equal(audit.selected_phase,'after');assert.equal(audit.selected_samples,audit.sources*audit.sample_count);
+  assert.equal(audit.selected_programs.length,audit.sources);
+  assert.equal(audit.sources,15);assert.equal(audit.selected_samples,45);
+  assert.deepEqual(audit.plotted_programs,audit.selected_programs.filter(key=>data.programs[key]));
+  for(const key of audit.plotted_programs)assert(data.programs[key].previous_measurement.execution_record);
+  for(const key of audit.selected_programs.filter(key=>!data.programs[key]))
+    assert(!data.benchmarks.some(benchmark=>benchmark.groups.some(group=>group.programs.includes(key))),
+      'Superseded source profiles remain in the timing audit, not chart options');
+  if(audit.confirmation?.status==='complete'){
+    assert.equal(audit.confirmation.used_for_chart,false);assert.equal(audit.confirmation.sample_count,3);
+    assert(audit.confirmation.comparison.after_x_before>1);
+  }
+  if(audit.codegen_inspection){
+    assert.equal(audit.codegen_inspection.llvm_generated_code_changed,true);
+    assert.equal(audit.codegen_inspection.causal_attribution_proven,false);
+  }
+}
+if(data.pidigits_work_audit){
+  const audit=data.pidigits_work_audit;
+  assert.equal(audit.endpoint_count,60);assert.equal(audit.distinct_application_source_count,52);
+  assert.equal(audit.sample_count,3);
+  for(const key of audit.rejected){assert(!data.programs[key]);assert(data.exclusions.some(e=>e.key===key));}
+  const fixed=data.programs[audit.correction];
+  assert.equal(fixed.loc,49);assert(fixed.required_work_validated&&fixed.algorithm.strict);
+  assert.equal(fixed.seconds,audit.comparison.seconds);
+  assert.equal(fixed.mech_comparison.time_x_mech,audit.comparison.time_x_mech);
+}

@@ -1,0 +1,2966 @@
+
+/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/package-control:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000100138c5c <<mech_gpu::control::resident::Machine>::call>:
+100138c5c:     	stp	x28, x27, [sp, #-0x60]!
+100138c60:     	stp	x26, x25, [sp, #0x10]
+100138c64:     	stp	x24, x23, [sp, #0x20]
+100138c68:     	stp	x22, x21, [sp, #0x30]
+100138c6c:     	stp	x20, x19, [sp, #0x40]
+100138c70:     	stp	x29, x30, [sp, #0x50]
+100138c74:     	add	x29, sp, #0x50
+100138c78:     	sub	sp, sp, #0x260
+100138c7c:     	mov	x21, x0
+100138c80:     	ldr	x8, [x1, #0x38]
+100138c84:     	cmp	x8, #0x7f
+100138c88:     	b.ls	0x100138cc8 <<mech_gpu::control::resident::Machine>::call+0x6c>
+100138c8c:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+100138c90:     	mov	w0, #0x1f               ; =31
+100138c94:     	mov	w1, #0x1                ; =1
+100138c98:     	bl	0x100002a90 <__rustc::__rust_alloc>
+100138c9c:     	cbz	x0, 0x10013b528 <<mech_gpu::control::resident::Machine>::call+0x28cc>
+100138ca0:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+100138ca4:     	add	x8, x8, #0xdf5
+100138ca8:     	ldr	q0, [x8]
+100138cac:     	str	q0, [x0]
+100138cb0:     	ldur	q0, [x8, #0xf]
+100138cb4:     	stur	q0, [x0, #0xf]
+100138cb8:     	mov	w8, #0x1f               ; =31
+100138cbc:     	stp	x8, x0, [x21]
+100138cc0:     	str	x8, [x21, #0x10]
+100138cc4:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+100138cc8:     	mov	x20, x1
+100138ccc:     	stp	x7, x6, [sp, #0xd0]
+100138cd0:     	str	x3, [sp, #0xe8]
+100138cd4:     	ldr	x9, [x1, #0x18]
+100138cd8:     	ldr	x1, [x9, #0x10]
+100138cdc:     	cmp	x2, x1
+100138ce0:     	b.hs	0x10013b534 <<mech_gpu::control::resident::Machine>::call+0x28d8>
+100138ce4:     	mov	x23, x5
+100138ce8:     	mov	x19, x4
+100138cec:     	ldr	x9, [x9, #0x8]
+100138cf0:     	mov	w10, #0x60              ; =96
+100138cf4:     	madd	x9, x2, x10, x9
+100138cf8:     	ldr	x25, [x20, #0x30]
+100138cfc:     	str	x25, [sp, #0x100]
+100138d00:     	str	x9, [sp, #0xf0]
+100138d04:     	ldr	x24, [x9, #0x10]
+100138d08:     	add	x8, x8, #0x1
+100138d0c:     	ldr	x27, [x20, #0x10]
+100138d10:     	add	x1, x24, x25
+100138d14:     	cmp	x1, x27
+100138d18:     	stp	x1, x8, [x20, #0x30]
+100138d1c:     	csel	x26, x1, x27, hi
+100138d20:     	b.ls	0x100138d88 <<mech_gpu::control::resident::Machine>::call+0x12c>
+100138d24:     	sub	x22, x26, x27
+100138d28:     	ldr	x8, [x20]
+100138d2c:     	sub	x8, x8, x27
+100138d30:     	cmp	x22, x8
+100138d34:     	str	x21, [sp, #0xc8]
+100138d38:     	b.hi	0x10013b2b8 <<mech_gpu::control::resident::Machine>::call+0x265c>
+100138d3c:     	mov	x28, x27
+100138d40:     	ldr	x21, [x20, #0x8]
+100138d44:     	add	x0, x21, x27, lsl #3
+100138d48:     	cmp	x22, #0x2
+100138d4c:     	b.lo	0x100138d78 <<mech_gpu::control::resident::Machine>::call+0x11c>
+100138d50:     	mvn	x8, x27
+100138d54:     	add	x8, x26, x8
+100138d58:     	lsl	x1, x8, #3
+100138d5c:     	bl	0x10172f68c <dyld_stub_binder+0x10172f68c>
+100138d60:     	add	x8, x28, x26
+100138d64:     	sub	x9, x21, x27, lsl #3
+100138d68:     	add	x8, x9, x8, lsl #3
+100138d6c:     	sub	x0, x8, #0x8
+100138d70:     	add	x8, x22, x28
+100138d74:     	sub	x28, x8, #0x1
+100138d78:     	ldr	x21, [sp, #0xc8]
+100138d7c:     	str	xzr, [x0]
+100138d80:     	add	x26, x28, #0x1
+100138d84:     	ldr	x1, [x20, #0x30]
+100138d88:     	str	x26, [x20, #0x10]
+100138d8c:     	cmp	x1, x26
+100138d90:     	ccmp	x1, x25, #0x0, ls
+100138d94:     	b.lo	0x10013b18c <<mech_gpu::control::resident::Machine>::call+0x2530>
+100138d98:     	sub	x0, x1, x25
+100138d9c:     	cmp	x0, x24
+100138da0:     	b.ne	0x10013b1fc <<mech_gpu::control::resident::Machine>::call+0x25a0>
+100138da4:     	ldr	x8, [x20, #0x8]
+100138da8:     	ldr	x9, [sp, #0xf0]
+100138dac:     	ldr	x1, [x9, #0x8]
+100138db0:     	add	x0, x8, x25, lsl #3
+100138db4:     	mov	x25, x9
+100138db8:     	lsl	x2, x24, #3
+100138dbc:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+100138dc0:     	ldr	x26, [sp, #0xe8]
+100138dc4:     	cbz	x23, 0x100138e48 <<mech_gpu::control::resident::Machine>::call+0x1ec>
+100138dc8:     	mov	x12, #0x0               ; =0
+100138dcc:     	add	x9, x19, x23, lsl #3
+100138dd0:     	ldp	x11, x8, [x25, #0x20]
+100138dd4:     	mov	w10, #0x18              ; =24
+100138dd8:     	madd	x10, x8, x10, x11
+100138ddc:     	cbz	x12, 0x100138de8 <<mech_gpu::control::resident::Machine>::call+0x18c>
+100138de0:     	cmp	x12, x13
+100138de4:     	b.ne	0x100138e0c <<mech_gpu::control::resident::Machine>::call+0x1b0>
+100138de8:     	cmp	x11, x10
+100138dec:     	b.eq	0x100138e48 <<mech_gpu::control::resident::Machine>::call+0x1ec>
+100138df0:     	add	x8, x11, #0x18
+100138df4:     	ldr	x13, [x11, #0x10]
+100138df8:     	mov	x11, x8
+100138dfc:     	cbz	x13, 0x100138de8 <<mech_gpu::control::resident::Machine>::call+0x18c>
+100138e00:     	ldur	x12, [x8, #-0x10]
+100138e04:     	add	x13, x12, x13, lsl #3
+100138e08:     	mov	x11, x8
+100138e0c:     	ldr	x8, [x19], #0x8
+100138e10:     	ldr	x1, [x20, #0x10]
+100138e14:     	add	x0, x8, x26
+100138e18:     	cmp	x0, x1
+100138e1c:     	b.hs	0x10013b4cc <<mech_gpu::control::resident::Machine>::call+0x2870>
+100138e20:     	ldr	x8, [x12], #0x8
+100138e24:     	ldr	x14, [sp, #0x100]
+100138e28:     	add	x8, x14, x8
+100138e2c:     	cmp	x8, x1
+100138e30:     	b.hs	0x10013b4d8 <<mech_gpu::control::resident::Machine>::call+0x287c>
+100138e34:     	ldr	x14, [x20, #0x8]
+100138e38:     	ldr	x15, [x14, x0, lsl #3]
+100138e3c:     	str	x15, [x14, x8, lsl #3]
+100138e40:     	cmp	x19, x9
+100138e44:     	b.ne	0x100138ddc <<mech_gpu::control::resident::Machine>::call+0x180>
+100138e48:     	ldr	x8, [x25, #0x40]
+100138e4c:     	cbz	x8, 0x10013ab78 <<mech_gpu::control::resident::Machine>::call+0x1f1c>
+100138e50:     	ldr	x23, [x29, #0x10]
+100138e54:     	adrp	x0, 0x101e79000 <mech_engine::intrinsics::access::matrix::PURE_TERNARY_LOGICAL_ROWS_EXPLICIT_COLUMNS_CONTRACT+0x30>
+100138e58:     	add	x0, x0, #0xf30
+100138e5c:     	ldr	x8, [x0]
+100138e60:     	blr	x8
+100138e64:     	mov	x19, x0
+100138e68:     	mov	x24, #0x0               ; =0
+100138e6c:     	mov	w27, #0x18              ; =24
+100138e70:     	adrp	x8, 0x101879000 <_anon.b7c9c88f65bb5cbe40a8a1946747854b.962+0x1651>
+100138e74:     	ldr	q1, [x8, #0xc90]
+100138e78:     	mov	w8, #0x2                ; =2
+100138e7c:     	dup.2d	v0, x8
+100138e80:     	stp	q0, q1, [sp, #0xa0]
+100138e84:     	mov	w8, #0x4                ; =4
+100138e88:     	dup.2d	v1, x8
+100138e8c:     	mov	w8, #0x6                ; =6
+100138e90:     	dup.2d	v0, x8
+100138e94:     	stp	q0, q1, [sp, #0x80]
+100138e98:     	adrp	x8, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+100138e9c:     	add	x8, x8, #0xd78
+100138ea0:     	str	x8, [sp, #0x78]
+100138ea4:     	str	x0, [sp, #0xc0]
+100138ea8:     	b	0x100138eec <<mech_gpu::control::resident::Machine>::call+0x290>
+100138eac:     	ldp	x7, x2, [x24, #0x30]
+100138eb0:     	ldp	x4, x5, [x24, #0x10]
+100138eb4:     	ldr	x6, [x24, #0x28]
+100138eb8:     	ldr	x3, [sp, #0x100]
+100138ebc:     	str	x23, [sp]
+100138ec0:     	sub	x0, x29, #0xc0
+100138ec4:     	mov	x1, x20
+100138ec8:     	bl	0x100138c5c <<mech_gpu::control::resident::Machine>::call>
+100138ecc:     	ldur	x8, [x29, #-0xc0]
+100138ed0:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+100138ed4:     	cmp	x8, x9
+100138ed8:     	b.ne	0x10013ada4 <<mech_gpu::control::resident::Machine>::call+0x2148>
+100138edc:     	ldr	x24, [sp, #0xf8]
+100138ee0:     	ldr	x8, [x25, #0x40]
+100138ee4:     	cmp	x24, x8
+100138ee8:     	b.hs	0x10013ab78 <<mech_gpu::control::resident::Machine>::call+0x1f1c>
+100138eec:     	ldr	x8, [x25, #0x38]
+100138ef0:     	mov	x9, x24
+100138ef4:     	mov	w10, #0x70              ; =112
+100138ef8:     	madd	x24, x24, x10, x8
+100138efc:     	add	x9, x9, #0x1
+100138f00:     	str	x9, [sp, #0xf8]
+100138f04:     	ldr	x8, [x24]
+100138f08:     	sub	x9, x8, #0x2
+100138f0c:     	cmp	x8, #0x1
+100138f10:     	mov	w10, #0x10              ; =16
+100138f14:     	csel	x9, x9, x10, hi
+100138f18:     	adrp	x12, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+100138f1c:     	add	x12, x12, #0x946
+100138f20:     	adr	x10, 0x100138eac <<mech_gpu::control::resident::Machine>::call+0x250>
+100138f24:     	ldrh	w11, [x12, x9, lsl #1]
+100138f28:     	add	x10, x10, x11, lsl #2
+100138f2c:     	br	x10
+100138f30:     	ldr	x8, [x24, #0x8]
+100138f34:     	ldr	x9, [sp, #0x100]
+100138f38:     	ldr	x1, [x20, #0x10]
+100138f3c:     	add	x0, x9, x8
+100138f40:     	cmp	x0, x1
+100138f44:     	b.hs	0x10013b620 <<mech_gpu::control::resident::Machine>::call+0x29c4>
+100138f48:     	ldr	x8, [x24, #0x10]
+100138f4c:     	add	x8, x8, x9
+100138f50:     	cmp	x8, x1
+100138f54:     	b.hs	0x10013b644 <<mech_gpu::control::resident::Machine>::call+0x29e8>
+100138f58:     	ldr	x10, [x20, #0x8]
+100138f5c:     	ldr	x11, [x10, x0, lsl #3]
+100138f60:     	ldr	x8, [x10, x8, lsl #3]
+100138f64:     	ldrb	w12, [x24, #0x20]
+100138f68:     	fmov	d0, x11
+100138f6c:     	fmov	d1, x8
+100138f70:     	adrp	x15, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+100138f74:     	add	x15, x15, #0x970
+100138f78:     	adr	x13, 0x100138f88 <<mech_gpu::control::resident::Machine>::call+0x32c>
+100138f7c:     	ldrh	w14, [x15, x12, lsl #1]
+100138f80:     	add	x13, x13, x14, lsl #2
+100138f84:     	br	x13
+100138f88:     	add	x8, x8, x11
+100138f8c:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+100138f90:     	ldr	x8, [x24, #0x50]
+100138f94:     	ldr	x9, [sp, #0x100]
+100138f98:     	ldr	x19, [x20, #0x10]
+100138f9c:     	add	x0, x9, x8
+100138fa0:     	cmp	x0, x19
+100138fa4:     	b.hs	0x10013b604 <<mech_gpu::control::resident::Machine>::call+0x29a8>
+100138fa8:     	ldr	x8, [x24, #0x60]
+100138fac:     	add	x8, x8, x9
+100138fb0:     	cmp	x8, x19
+100138fb4:     	b.hs	0x10013b5b0 <<mech_gpu::control::resident::Machine>::call+0x2954>
+100138fb8:     	str	x21, [sp, #0xc8]
+100138fbc:     	ldr	x10, [x24, #0x68]
+100138fc0:     	add	x9, x10, x9
+100138fc4:     	cmp	x9, x19
+100138fc8:     	b.hs	0x10013b580 <<mech_gpu::control::resident::Machine>::call+0x2924>
+100138fcc:     	ldr	x26, [x20, #0x8]
+100138fd0:     	ldr	x9, [x26, x9, lsl #3]
+100138fd4:     	str	x9, [sp, #0x60]
+100138fd8:     	sub	x9, x9, #0x1
+100138fdc:     	cmp	x9, #0x100, lsl #12     ; =0x100000
+100138fe0:     	b.hs	0x10013ae7c <<mech_gpu::control::resident::Machine>::call+0x2220>
+100138fe4:     	str	x23, [sp, #0x70]
+100138fe8:     	ldr	x9, [x26, x0, lsl #3]
+100138fec:     	str	x9, [sp, #0x58]
+100138ff0:     	ldr	x8, [x26, x8, lsl #3]
+100138ff4:     	str	x8, [sp, #0x38]
+100138ff8:     	ldr	x8, [x20, #0x30]
+100138ffc:     	ldr	x23, [x24, #0x18]
+100139000:     	lsl	x21, x23, #1
+100139004:     	str	x8, [sp, #0xe0]
+100139008:     	add	x22, x21, x8
+10013900c:     	add	x9, x22, #0x1
+100139010:     	cmp	x9, x19
+100139014:     	csinc	x25, x19, x22, ls
+100139018:     	b.ls	0x100139080 <<mech_gpu::control::resident::Machine>::call+0x424>
+10013901c:     	sub	x10, x25, x19
+100139020:     	ldr	x8, [x20]
+100139024:     	sub	x8, x8, x19
+100139028:     	cmp	x10, x8
+10013902c:     	b.hi	0x10013ab18 <<mech_gpu::control::resident::Machine>::call+0x1ebc>
+100139030:     	mov	x28, x19
+100139034:     	add	x0, x26, x19, lsl #3
+100139038:     	cmp	x10, #0x2
+10013903c:     	b.lo	0x100139078 <<mech_gpu::control::resident::Machine>::call+0x41c>
+100139040:     	mvn	x8, x19
+100139044:     	add	x8, x25, x8
+100139048:     	lsl	x1, x8, #3
+10013904c:     	sub	x8, x25, x19
+100139050:     	str	x8, [sp, #0x68]
+100139054:     	bl	0x10172f68c <dyld_stub_binder+0x10172f68c>
+100139058:     	add	x9, x22, #0x1
+10013905c:     	add	x8, x28, x25
+100139060:     	sub	x8, x8, x19
+100139064:     	add	x8, x26, x8, lsl #3
+100139068:     	sub	x0, x8, #0x8
+10013906c:     	ldr	x8, [sp, #0x68]
+100139070:     	add	x8, x8, x28
+100139074:     	sub	x28, x8, #0x1
+100139078:     	str	xzr, [x0]
+10013907c:     	add	x25, x28, #0x1
+100139080:     	str	x25, [x20, #0x10]
+100139084:     	str	x9, [x20, #0x30]
+100139088:     	lsl	x28, x23, #3
+10013908c:     	stp	x22, x28, [sp, #0x48]
+100139090:     	cbz	x23, 0x10013a154 <<mech_gpu::control::resident::Machine>::call+0x14f8>
+100139094:     	ldr	x9, [x24, #0x10]
+100139098:     	mov	x10, x28
+10013909c:     	ldr	x0, [sp, #0xe0]
+1001390a0:     	ldr	x25, [sp, #0xf0]
+1001390a4:     	mov	w19, #0x8               ; =8
+1001390a8:     	mov	w22, #0x2               ; =2
+1001390ac:     	mov	w26, #0x4               ; =4
+1001390b0:     	ldr	x8, [x9], #0x8
+1001390b4:     	ldr	x11, [sp, #0x100]
+1001390b8:     	ldr	x1, [x20, #0x10]
+1001390bc:     	add	x8, x11, x8
+1001390c0:     	cmp	x8, x1
+1001390c4:     	b.hs	0x10013b454 <<mech_gpu::control::resident::Machine>::call+0x27f8>
+1001390c8:     	cmp	x0, x1
+1001390cc:     	b.hs	0x10013b464 <<mech_gpu::control::resident::Machine>::call+0x2808>
+1001390d0:     	ldr	x11, [x20, #0x8]
+1001390d4:     	ldr	x8, [x11, x8, lsl #3]
+1001390d8:     	str	x8, [x11, x0, lsl #3]
+1001390dc:     	add	x0, x0, #0x1
+1001390e0:     	subs	x10, x10, #0x8
+1001390e4:     	b.ne	0x1001390b0 <<mech_gpu::control::resident::Machine>::call+0x454>
+1001390e8:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+1001390ec:     	mov	x0, x28
+1001390f0:     	mov	w1, #0x8                ; =8
+1001390f4:     	bl	0x100002a90 <__rustc::__rust_alloc>
+1001390f8:     	cbz	x0, 0x10013b728 <<mech_gpu::control::resident::Machine>::call+0x2acc>
+1001390fc:     	mov	x12, x0
+100139100:     	cmp	x23, #0x8
+100139104:     	b.hs	0x10013a164 <<mech_gpu::control::resident::Machine>::call+0x1508>
+100139108:     	mov	x8, #0x0                ; =0
+10013910c:     	b	0x10013a1bc <<mech_gpu::control::resident::Machine>::call+0x1560>
+100139110:     	ldr	x25, [x24, #0x58]
+100139114:     	cmp	x25, #0xa
+100139118:     	b.hs	0x100139ec0 <<mech_gpu::control::resident::Machine>::call+0x1264>
+10013911c:     	cbnz	x25, 0x100139f08 <<mech_gpu::control::resident::Machine>::call+0x12ac>
+100139120:     	ldr	x8, [x24, #0x50]
+100139124:     	cbz	x8, 0x10013b7a8 <<mech_gpu::control::resident::Machine>::call+0x2b4c>
+100139128:     	ldr	x8, [x24, #0x48]
+10013912c:     	ldr	x8, [x8]
+100139130:     	ldr	x9, [sp, #0x100]
+100139134:     	ldr	x1, [x20, #0x10]
+100139138:     	add	x0, x9, x8
+10013913c:     	cmp	x0, x1
+100139140:     	ldr	x25, [sp, #0xf0]
+100139144:     	b.hs	0x10013b79c <<mech_gpu::control::resident::Machine>::call+0x2b40>
+100139148:     	ldr	x8, [x20, #0x8]
+10013914c:     	str	xzr, [x8, x0, lsl #3]
+100139150:     	ldr	x24, [sp, #0xf8]
+100139154:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+100139158:     	ldr	x24, [x24, #0x8]
+10013915c:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+100139160:     	ldr	x10, [x24, #0x48]
+100139164:     	ldr	x9, [sp, #0x100]
+100139168:     	ldr	x8, [x20, #0x10]
+10013916c:     	add	x0, x9, x10
+100139170:     	cmp	x0, x8
+100139174:     	b.hs	0x10013b5dc <<mech_gpu::control::resident::Machine>::call+0x2980>
+100139178:     	ldr	x13, [x20, #0x8]
+10013917c:     	ldr	x10, [x13, x0, lsl #3]
+100139180:     	ldr	x1, [x24, #0x28]
+100139184:     	cmp	x10, x1
+100139188:     	b.hi	0x10013ade4 <<mech_gpu::control::resident::Machine>::call+0x2188>
+10013918c:     	ldr	w11, [x24, #0x8]
+100139190:     	tbz	w11, #0x0, 0x1001391b4 <<mech_gpu::control::resident::Machine>::call+0x558>
+100139194:     	cbz	x10, 0x10013a2d4 <<mech_gpu::control::resident::Machine>::call+0x1678>
+100139198:     	ldr	x12, [x24, #0x10]
+10013919c:     	add	x0, x12, x9
+1001391a0:     	cmp	x0, x8
+1001391a4:     	b.hs	0x10013b750 <<mech_gpu::control::resident::Machine>::call+0x2af4>
+1001391a8:     	ldr	x8, [x13, x0, lsl #3]
+1001391ac:     	udiv	x9, x8, x10
+1001391b0:     	msub	x12, x9, x10, x8
+1001391b4:     	ldr	x8, [x24, #0x40]
+1001391b8:     	cbz	x8, 0x100138edc <<mech_gpu::control::resident::Machine>::call+0x280>
+1001391bc:     	mov	x13, #0x0               ; =0
+1001391c0:     	ldr	x14, [x24, #0x38]
+1001391c4:     	lsl	x15, x8, #3
+1001391c8:     	sub	x16, x10, #0x1
+1001391cc:     	mov	x0, x13
+1001391d0:     	cmp	x13, x10
+1001391d4:     	b.hs	0x1001391e8 <<mech_gpu::control::resident::Machine>::call+0x58c>
+1001391d8:     	mov	x0, x16
+1001391dc:     	cbz	w11, 0x1001391e8 <<mech_gpu::control::resident::Machine>::call+0x58c>
+1001391e0:     	udiv	x8, x12, x10
+1001391e4:     	msub	x0, x8, x10, x12
+1001391e8:     	cmp	x0, x1
+1001391ec:     	b.hs	0x10013b470 <<mech_gpu::control::resident::Machine>::call+0x2814>
+1001391f0:     	ldr	x8, [x24, #0x20]
+1001391f4:     	ldr	x17, [x8, x0, lsl #3]
+1001391f8:     	ldr	x9, [sp, #0x100]
+1001391fc:     	ldr	x8, [x20, #0x10]
+100139200:     	add	x0, x9, x17
+100139204:     	cmp	x0, x8
+100139208:     	b.hs	0x10013b490 <<mech_gpu::control::resident::Machine>::call+0x2834>
+10013920c:     	ldr	x17, [x14, x13, lsl #3]
+100139210:     	add	x9, x9, x17
+100139214:     	cmp	x9, x8
+100139218:     	b.hs	0x10013b47c <<mech_gpu::control::resident::Machine>::call+0x2820>
+10013921c:     	ldr	x8, [x20, #0x8]
+100139220:     	ldr	x17, [x8, x0, lsl #3]
+100139224:     	str	x17, [x8, x9, lsl #3]
+100139228:     	add	x12, x12, #0x1
+10013922c:     	sub	x16, x16, #0x1
+100139230:     	add	x13, x13, #0x1
+100139234:     	subs	x15, x15, #0x8
+100139238:     	b.ne	0x1001391cc <<mech_gpu::control::resident::Machine>::call+0x570>
+10013923c:     	b	0x100138edc <<mech_gpu::control::resident::Machine>::call+0x280>
+100139240:     	ldr	x8, [x24, #0x8]
+100139244:     	ldr	x9, [sp, #0x100]
+100139248:     	ldr	x1, [x20, #0x10]
+10013924c:     	add	x0, x9, x8
+100139250:     	cmp	x0, x1
+100139254:     	b.hs	0x10013b5ec <<mech_gpu::control::resident::Machine>::call+0x2990>
+100139258:     	ldr	x8, [x24, #0x10]
+10013925c:     	add	x8, x8, x9
+100139260:     	cmp	x8, x1
+100139264:     	b.hs	0x10013b5a0 <<mech_gpu::control::resident::Machine>::call+0x2944>
+100139268:     	ldr	x10, [x20, #0x8]
+10013926c:     	ldr	x11, [x10, x0, lsl #3]
+100139270:     	ldr	x8, [x10, x8, lsl #3]
+100139274:     	cmp	x11, x8
+100139278:     	b.lo	0x10013ad18 <<mech_gpu::control::resident::Machine>::call+0x20bc>
+10013927c:     	ldr	x8, [x24, #0x18]
+100139280:     	add	x0, x8, x9
+100139284:     	cmp	x0, x1
+100139288:     	b.hs	0x10013b678 <<mech_gpu::control::resident::Machine>::call+0x2a1c>
+10013928c:     	ldr	x8, [x10, x0, lsl #3]
+100139290:     	cmp	x11, x8
+100139294:     	b.hi	0x10013ad18 <<mech_gpu::control::resident::Machine>::call+0x20bc>
+100139298:     	ldr	x8, [x24, #0x20]
+10013929c:     	add	x0, x8, x9
+1001392a0:     	cmp	x0, x1
+1001392a4:     	b.hs	0x10013b6b8 <<mech_gpu::control::resident::Machine>::call+0x2a5c>
+1001392a8:     	str	x11, [x10, x0, lsl #3]
+1001392ac:     	ldr	x24, [sp, #0xf8]
+1001392b0:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+1001392b4:     	ldp	x1, x2, [x24, #0x10]
+1001392b8:     	ldrb	w8, [x19, #0x48]
+1001392bc:     	cmp	w8, #0x1
+1001392c0:     	b.eq	0x100139300 <<mech_gpu::control::resident::Machine>::call+0x6a4>
+1001392c4:     	cmp	w8, #0x2
+1001392c8:     	b.eq	0x10013ac5c <<mech_gpu::control::resident::Machine>::call+0x2000>
+1001392cc:     	mov	x0, x19
+1001392d0:     	mov	x19, x1
+1001392d4:     	adrp	x1, 0x10010d000 <std::sys::thread_local::native::eager::destroy::<core::cell::RefCell<core::option::Option<mech_gpu::control::bigint::Session>>>+0x138>
+1001392d8:     	add	x1, x1, #0x50
+1001392dc:     	mov	x22, x21
+1001392e0:     	mov	x21, x2
+1001392e4:     	bl	0x1016d0de8 <std::sys::thread_local::destructors::list::register>
+1001392e8:     	mov	x2, x21
+1001392ec:     	mov	x21, x22
+1001392f0:     	mov	x1, x19
+1001392f4:     	ldr	x19, [sp, #0xc0]
+1001392f8:     	mov	w8, #0x1                ; =1
+1001392fc:     	strb	w8, [x19, #0x48]
+100139300:     	ldr	x8, [x19]
+100139304:     	ldr	x24, [sp, #0xf8]
+100139308:     	cbnz	x8, 0x10013b344 <<mech_gpu::control::resident::Machine>::call+0x26e8>
+10013930c:     	mov	x8, #-0x1               ; =-1
+100139310:     	str	x8, [x19]
+100139314:     	ldr	x8, [x19, #0x8]
+100139318:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+10013931c:     	cmp	x8, x9
+100139320:     	b.eq	0x10013b044 <<mech_gpu::control::resident::Machine>::call+0x23e8>
+100139324:     	add	x0, x19, #0x8
+100139328:     	bl	0x1001341f8 <<mech_gpu::control::runtime::OutputSession>::write>
+10013932c:     	ldr	x8, [x19]
+100139330:     	add	x8, x8, #0x1
+100139334:     	str	x8, [x19]
+100139338:     	cbz	x0, 0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+10013933c:     	b	0x10013b048 <<mech_gpu::control::resident::Machine>::call+0x23ec>
+100139340:     	ldr	x8, [x24, #0x10]
+100139344:     	ldr	x9, [sp, #0x100]
+100139348:     	ldr	x1, [x20, #0x10]
+10013934c:     	add	x0, x9, x8
+100139350:     	cmp	x0, x1
+100139354:     	b.hs	0x10013b62c <<mech_gpu::control::resident::Machine>::call+0x29d0>
+100139358:     	ldr	x8, [x20, #0x8]
+10013935c:     	ldr	x10, [x8, x0, lsl #3]
+100139360:     	cbz	x10, 0x10013ae44 <<mech_gpu::control::resident::Machine>::call+0x21e8>
+100139364:     	ldr	x11, [x24, #0x8]
+100139368:     	add	x0, x11, x9
+10013936c:     	cmp	x0, x1
+100139370:     	b.hs	0x10013b684 <<mech_gpu::control::resident::Machine>::call+0x2a28>
+100139374:     	ldr	x11, [x20, #0x18]
+100139378:     	ldr	x13, [x11, #0x28]
+10013937c:     	ldr	x12, [x8, x0, lsl #3]
+100139380:     	cmp	x12, x13
+100139384:     	b.hs	0x10013af1c <<mech_gpu::control::resident::Machine>::call+0x22c0>
+100139388:     	sub	x10, x10, #0x1
+10013938c:     	ldr	x11, [x11, #0x20]
+100139390:     	madd	x11, x12, x27, x11
+100139394:     	ldr	x12, [x11, #0x10]
+100139398:     	cmp	x10, x12
+10013939c:     	b.hs	0x10013af6c <<mech_gpu::control::resident::Machine>::call+0x2310>
+1001393a0:     	ldr	x12, [x24, #0x18]
+1001393a4:     	add	x0, x12, x9
+1001393a8:     	cmp	x0, x1
+1001393ac:     	b.hs	0x10013b71c <<mech_gpu::control::resident::Machine>::call+0x2ac0>
+1001393b0:     	ldr	x9, [x11, #0x8]
+1001393b4:     	ldr	x9, [x9, x10, lsl #3]
+1001393b8:     	str	x9, [x8, x0, lsl #3]
+1001393bc:     	ldr	x24, [sp, #0xf8]
+1001393c0:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+1001393c4:     	ldr	x8, [x24, #0x8]
+1001393c8:     	ldr	x9, [sp, #0x100]
+1001393cc:     	ldr	x1, [x20, #0x10]
+1001393d0:     	add	x0, x9, x8
+1001393d4:     	cmp	x0, x1
+1001393d8:     	b.hs	0x10013b5f8 <<mech_gpu::control::resident::Machine>::call+0x299c>
+1001393dc:     	ldr	x8, [x20, #0x8]
+1001393e0:     	ldr	x8, [x8, x0, lsl #3]
+1001393e4:     	ldr	x24, [sp, #0xf8]
+1001393e8:     	cbnz	x8, 0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+1001393ec:     	b	0x10013ae10 <<mech_gpu::control::resident::Machine>::call+0x21b4>
+1001393f0:     	ldr	x8, [x24, #0x50]
+1001393f4:     	ldr	x9, [sp, #0x100]
+1001393f8:     	ldr	x1, [x20, #0x10]
+1001393fc:     	add	x0, x9, x8
+100139400:     	cmp	x0, x1
+100139404:     	b.hs	0x10013b614 <<mech_gpu::control::resident::Machine>::call+0x29b8>
+100139408:     	ldr	x8, [x20, #0x8]
+10013940c:     	ldr	x8, [x8, x0, lsl #3]
+100139410:     	cmp	x8, #0x0
+100139414:     	mov	w8, #0x8                ; =8
+100139418:     	mov	w9, #0x20               ; =32
+10013941c:     	csel	x8, x9, x8, eq
+100139420:     	add	x8, x24, x8
+100139424:     	ldr	x9, [x8, #0x10]
+100139428:     	ldr	x10, [x24, #0x48]
+10013942c:     	cmp	x10, x9
+100139430:     	csel	x9, x10, x9, lo
+100139434:     	cbz	x9, 0x100138edc <<mech_gpu::control::resident::Machine>::call+0x280>
+100139438:     	ldr	x10, [x8, #0x8]
+10013943c:     	ldr	x11, [x24, #0x40]
+100139440:     	ldr	x24, [sp, #0xf8]
+100139444:     	ldr	x12, [x10], #0x8
+100139448:     	ldr	x8, [sp, #0x100]
+10013944c:     	ldr	x1, [x20, #0x10]
+100139450:     	add	x0, x8, x12
+100139454:     	cmp	x0, x1
+100139458:     	b.hs	0x10013b41c <<mech_gpu::control::resident::Machine>::call+0x27c0>
+10013945c:     	ldr	x12, [x11], #0x8
+100139460:     	add	x8, x12, x8
+100139464:     	cmp	x8, x1
+100139468:     	b.hs	0x10013b438 <<mech_gpu::control::resident::Machine>::call+0x27dc>
+10013946c:     	ldr	x12, [x20, #0x8]
+100139470:     	ldr	x13, [x12, x0, lsl #3]
+100139474:     	str	x13, [x12, x8, lsl #3]
+100139478:     	subs	x9, x9, #0x1
+10013947c:     	b.ne	0x100139444 <<mech_gpu::control::resident::Machine>::call+0x7e8>
+100139480:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+100139484:     	ldr	x9, [x24, #0x20]
+100139488:     	ldr	x8, [sp, #0x100]
+10013948c:     	ldr	x1, [x20, #0x10]
+100139490:     	add	x0, x8, x9
+100139494:     	cmp	x0, x1
+100139498:     	b.hs	0x10013b654 <<mech_gpu::control::resident::Machine>::call+0x29f8>
+10013949c:     	ldr	x9, [x20, #0x8]
+1001394a0:     	ldr	x10, [x9, x0, lsl #3]
+1001394a4:     	cbz	x10, 0x10013ace4 <<mech_gpu::control::resident::Machine>::call+0x2088>
+1001394a8:     	sub	x10, x10, #0x1
+1001394ac:     	ldr	x11, [x24, #0x18]
+1001394b0:     	cmp	x10, x11
+1001394b4:     	b.hs	0x10013aefc <<mech_gpu::control::resident::Machine>::call+0x22a0>
+1001394b8:     	ldr	x11, [x24, #0x10]
+1001394bc:     	ldr	x10, [x11, x10, lsl #3]
+1001394c0:     	add	x0, x10, x8
+1001394c4:     	cmp	x0, x1
+1001394c8:     	b.hs	0x10013b6c4 <<mech_gpu::control::resident::Machine>::call+0x2a68>
+1001394cc:     	ldr	x10, [x24, #0x28]
+1001394d0:     	add	x8, x10, x8
+1001394d4:     	cmp	x8, x1
+1001394d8:     	b.hs	0x10013b6dc <<mech_gpu::control::resident::Machine>::call+0x2a80>
+1001394dc:     	ldr	x10, [x9, x0, lsl #3]
+1001394e0:     	str	x10, [x9, x8, lsl #3]
+1001394e4:     	ldr	x24, [sp, #0xf8]
+1001394e8:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+1001394ec:     	ldr	x9, [x20, #0x28]
+1001394f0:     	ldr	x8, [x24, #0x8]
+1001394f4:     	sub	x8, x8, #0x1
+1001394f8:     	cmp	x8, x9
+1001394fc:     	b.hs	0x10013adb8 <<mech_gpu::control::resident::Machine>::call+0x215c>
+100139500:     	ldr	x9, [x24, #0x10]
+100139504:     	ldr	x10, [sp, #0x100]
+100139508:     	ldr	x1, [x20, #0x10]
+10013950c:     	add	x0, x10, x9
+100139510:     	cmp	x0, x1
+100139514:     	b.hs	0x10013b690 <<mech_gpu::control::resident::Machine>::call+0x2a34>
+100139518:     	ldr	x9, [x20, #0x8]
+10013951c:     	ldr	x10, [x20, #0x20]
+100139520:     	ldr	x8, [x10, x8, lsl #3]
+100139524:     	b	0x10013a8a8 <<mech_gpu::control::resident::Machine>::call+0x1c4c>
+100139528:     	ldr	x8, [x24, #0x38]
+10013952c:     	ldr	x9, [sp, #0x100]
+100139530:     	ldr	x1, [x20, #0x10]
+100139534:     	add	x0, x9, x8
+100139538:     	cmp	x0, x1
+10013953c:     	b.hs	0x10013b638 <<mech_gpu::control::resident::Machine>::call+0x29dc>
+100139540:     	ldr	x10, [x20, #0x8]
+100139544:     	ldr	x8, [x10, x0, lsl #3]
+100139548:     	cbz	x8, 0x10013ace4 <<mech_gpu::control::resident::Machine>::call+0x2088>
+10013954c:     	sub	x8, x8, #0x1
+100139550:     	ldr	x11, [x24, #0x18]
+100139554:     	cmp	x8, x11
+100139558:     	b.hs	0x10013ad4c <<mech_gpu::control::resident::Machine>::call+0x20f0>
+10013955c:     	ldr	x12, [x24, #0x40]
+100139560:     	add	x0, x12, x9
+100139564:     	cmp	x0, x1
+100139568:     	b.hs	0x10013b6d0 <<mech_gpu::control::resident::Machine>::call+0x2a74>
+10013956c:     	ldr	x9, [x10, x0, lsl #3]
+100139570:     	cmp	x9, #0xff
+100139574:     	b.hi	0x10013ad4c <<mech_gpu::control::resident::Machine>::call+0x20f0>
+100139578:     	ldr	x9, [x24, #0x30]
+10013957c:     	cmp	x9, x11
+100139580:     	csel	x11, x9, x11, lo
+100139584:     	cbz	x9, 0x1001395d0 <<mech_gpu::control::resident::Machine>::call+0x974>
+100139588:     	ldr	x12, [x24, #0x10]
+10013958c:     	ldr	x13, [x24, #0x28]
+100139590:     	ldr	x9, [x12], #0x8
+100139594:     	ldr	x10, [sp, #0x100]
+100139598:     	ldr	x1, [x20, #0x10]
+10013959c:     	add	x9, x10, x9
+1001395a0:     	cmp	x9, x1
+1001395a4:     	b.hs	0x10013b4bc <<mech_gpu::control::resident::Machine>::call+0x2860>
+1001395a8:     	ldr	x14, [x13], #0x8
+1001395ac:     	add	x10, x14, x10
+1001395b0:     	cmp	x10, x1
+1001395b4:     	b.hs	0x10013b4ac <<mech_gpu::control::resident::Machine>::call+0x2850>
+1001395b8:     	ldr	x14, [x20, #0x8]
+1001395bc:     	ldr	x9, [x14, x9, lsl #3]
+1001395c0:     	str	x9, [x14, x10, lsl #3]
+1001395c4:     	subs	x11, x11, #0x1
+1001395c8:     	b.ne	0x100139590 <<mech_gpu::control::resident::Machine>::call+0x934>
+1001395cc:     	ldp	x10, x1, [x20, #0x8]
+1001395d0:     	cmp	x0, x1
+1001395d4:     	b.hs	0x10013b6ec <<mech_gpu::control::resident::Machine>::call+0x2a90>
+1001395d8:     	ldr	x9, [x24, #0x30]
+1001395dc:     	cmp	x8, x9
+1001395e0:     	b.hs	0x10013b708 <<mech_gpu::control::resident::Machine>::call+0x2aac>
+1001395e4:     	ldr	x9, [x24, #0x28]
+1001395e8:     	ldr	x8, [x9, x8, lsl #3]
+1001395ec:     	ldr	x9, [sp, #0x100]
+1001395f0:     	add	x8, x9, x8
+1001395f4:     	cmp	x8, x1
+1001395f8:     	b.hs	0x10013b6f8 <<mech_gpu::control::resident::Machine>::call+0x2a9c>
+1001395fc:     	ldr	x9, [x10, x0, lsl #3]
+100139600:     	str	x9, [x10, x8, lsl #3]
+100139604:     	ldr	x24, [sp, #0xf8]
+100139608:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+10013960c:     	ldr	x9, [x24, #0x50]
+100139610:     	ldr	x8, [sp, #0x100]
+100139614:     	ldr	x1, [x20, #0x10]
+100139618:     	add	x0, x8, x9
+10013961c:     	cmp	x0, x1
+100139620:     	b.hs	0x10013b5c4 <<mech_gpu::control::resident::Machine>::call+0x2968>
+100139624:     	ldr	x10, [x20, #0x8]
+100139628:     	ldr	x9, [x10, x0, lsl #3]
+10013962c:     	str	x9, [sp, #0x140]
+100139630:     	ldr	x11, [x24, #0x58]
+100139634:     	add	x0, x11, x8
+100139638:     	cmp	x0, x1
+10013963c:     	b.hs	0x10013b594 <<mech_gpu::control::resident::Machine>::call+0x2938>
+100139640:     	ldr	x11, [x10, x0, lsl #3]
+100139644:     	str	x11, [sp, #0x148]
+100139648:     	ldr	x12, [x24, #0x60]
+10013964c:     	add	x0, x12, x8
+100139650:     	cmp	x0, x1
+100139654:     	b.hs	0x10013b5d0 <<mech_gpu::control::resident::Machine>::call+0x2974>
+100139658:     	mov	x22, x21
+10013965c:     	ldr	x8, [x10, x0, lsl #3]
+100139660:     	str	x8, [sp, #0x150]
+100139664:     	cmp	x9, x11
+100139668:     	ccmp	x8, #0x0, #0x4, ls
+10013966c:     	b.eq	0x10013aec0 <<mech_gpu::control::resident::Machine>::call+0x2264>
+100139670:     	add	x19, x24, #0x68
+100139674:     	add	x21, x24, #0x38
+100139678:     	ldp	x8, x9, [x24, #0x10]
+10013967c:     	add	x9, x8, x9, lsl #3
+100139680:     	stp	x8, x9, [sp, #0x170]
+100139684:     	add	x8, sp, #0x100
+100139688:     	stp	x20, x8, [sp, #0x180]
+10013968c:     	add	x8, sp, #0x158
+100139690:     	add	x0, sp, #0x170
+100139694:     	bl	0x100037964 <<alloc::vec::Vec<u64> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<u64, core::iter::adapters::map::Map<core::slice::iter::Iter<usize>, <mech_gpu::control::resident::Machine>::call::{closure#15}>>>::from_iter>
+100139698:     	ldp	x9, x8, [sp, #0x140]
+10013969c:     	sub	x8, x8, x9
+1001396a0:     	ldr	x9, [sp, #0x150]
+1001396a4:     	udiv	x10, x8, x9
+1001396a8:     	msub	x8, x10, x9, x8
+1001396ac:     	ldr	x9, [x20, #0x28]
+1001396b0:     	cmp	x8, #0x0
+1001396b4:     	cinc	x8, x10, ne
+1001396b8:     	stp	xzr, x8, [x29, #-0x78]
+1001396bc:     	add	x8, sp, #0x140
+1001396c0:     	stur	x8, [x29, #-0xc0]
+1001396c4:     	add	x8, sp, #0x150
+1001396c8:     	stur	x8, [x29, #-0xb8]
+1001396cc:     	add	x8, sp, #0x148
+1001396d0:     	stur	x8, [x29, #-0xb0]
+1001396d4:     	add	x8, sp, #0x158
+1001396d8:     	stp	x8, x21, [x29, #-0xa8]
+1001396dc:     	ldur	q0, [x20, #0x18]
+1001396e0:     	sub	x8, x29, #0xe0
+1001396e4:     	stur	q0, [x8, #0x48]
+1001396e8:     	stp	x9, x19, [x29, #-0x88]
+1001396ec:     	sub	x0, x29, #0xc0
+1001396f0:     	bl	0x100067254 <<core::result::Result<alloc::vec::Vec<alloc::vec::Vec<u64>>, alloc::string::String> as rayon::iter::FromParallelIterator<core::result::Result<alloc::vec::Vec<u64>, alloc::string::String>>>::from_par_iter::<rayon::iter::map::Map<rayon::range::Iter<u64>, <mech_gpu::control::resident::Machine>::call::{closure#16}>>>
+1001396f4:     	ldur	x8, [x29, #-0xe0]
+1001396f8:     	sub	x9, x29, #0xe0
+1001396fc:     	ldur	q0, [x9, #0x8]
+100139700:     	stur	q0, [x29, #-0x100]
+100139704:     	ldur	x9, [x9, #0x18]
+100139708:     	stur	x9, [x29, #-0xf0]
+10013970c:     	cmp	x8, #0x1
+100139710:     	mov	x21, x22
+100139714:     	b.eq	0x10013af48 <<mech_gpu::control::resident::Machine>::call+0x22ec>
+100139718:     	mov	x22, x23
+10013971c:     	ldur	q0, [x29, #-0x100]
+100139720:     	str	q0, [sp, #0x190]
+100139724:     	ldur	x23, [x29, #-0xf0]
+100139728:     	str	x23, [sp, #0x1a0]
+10013972c:     	ldr	x10, [x24, #0x48]
+100139730:     	ldr	x19, [sp, #0x198]
+100139734:     	cbz	x10, 0x100139e48 <<mech_gpu::control::resident::Machine>::call+0x11ec>
+100139738:     	mov	x8, #0x0                ; =0
+10013973c:     	ldr	x9, [x24, #0x40]
+100139740:     	add	x10, x9, x10, lsl #3
+100139744:     	add	x11, x23, x23, lsl #1
+100139748:     	lsl	x11, x11, #3
+10013974c:     	b	0x10013975c <<mech_gpu::control::resident::Machine>::call+0xb00>
+100139750:     	add	x8, x8, #0x1
+100139754:     	cmp	x9, x10
+100139758:     	b.eq	0x100139e48 <<mech_gpu::control::resident::Machine>::call+0x11ec>
+10013975c:     	ldr	x12, [x9], #0x8
+100139760:     	ldr	x13, [sp, #0x100]
+100139764:     	ldr	x1, [x20, #0x10]
+100139768:     	add	x0, x13, x12
+10013976c:     	cmp	x0, x1
+100139770:     	b.hs	0x10013b4a0 <<mech_gpu::control::resident::Machine>::call+0x2844>
+100139774:     	ldr	x12, [x20, #0x8]
+100139778:     	str	xzr, [x12, x0, lsl #3]
+10013977c:     	cbz	x23, 0x100139750 <<mech_gpu::control::resident::Machine>::call+0xaf4>
+100139780:     	mov	x12, x11
+100139784:     	add	x13, x19, #0x10
+100139788:     	b	0x10013979c <<mech_gpu::control::resident::Machine>::call+0xb40>
+10013978c:     	str	x15, [x14, x0, lsl #3]
+100139790:     	add	x13, x13, #0x18
+100139794:     	subs	x12, x12, #0x18
+100139798:     	b.eq	0x100139750 <<mech_gpu::control::resident::Machine>::call+0xaf4>
+10013979c:     	ldr	x1, [x24, #0x30]
+1001397a0:     	cmp	x8, x1
+1001397a4:     	b.hs	0x10013b304 <<mech_gpu::control::resident::Machine>::call+0x26a8>
+1001397a8:     	ldr	x14, [x24, #0x28]
+1001397ac:     	madd	x14, x8, x27, x14
+1001397b0:     	ldr	x15, [x14, #0x10]
+1001397b4:     	cmp	x15, #0x3
+1001397b8:     	b.ne	0x1001397dc <<mech_gpu::control::resident::Machine>::call+0xb80>
+1001397bc:     	ldr	x14, [x14, #0x8]
+1001397c0:     	ldrh	w15, [x14]
+1001397c4:     	ldrb	w14, [x14, #0x2]
+1001397c8:     	mov	w16, #0x616d            ; =24941
+1001397cc:     	cmp	w15, w16
+1001397d0:     	mov	w15, #0x78              ; =120
+1001397d4:     	ccmp	w14, w15, #0x0, eq
+1001397d8:     	b.eq	0x100139814 <<mech_gpu::control::resident::Machine>::call+0xbb8>
+1001397dc:     	ldr	x1, [x20, #0x10]
+1001397e0:     	cmp	x0, x1
+1001397e4:     	b.hs	0x10013b334 <<mech_gpu::control::resident::Machine>::call+0x26d8>
+1001397e8:     	ldr	x14, [x13]
+1001397ec:     	cmp	x8, x14
+1001397f0:     	b.hs	0x10013b320 <<mech_gpu::control::resident::Machine>::call+0x26c4>
+1001397f4:     	ldur	x15, [x13, #-0x8]
+1001397f8:     	ldr	x14, [x20, #0x8]
+1001397fc:     	ldr	x16, [x14, x0, lsl #3]
+100139800:     	ldr	x15, [x15, x8, lsl #3]
+100139804:     	add	x15, x15, x16
+100139808:     	cmp	x0, x1
+10013980c:     	b.lo	0x10013978c <<mech_gpu::control::resident::Machine>::call+0xb30>
+100139810:     	b	0x10013b314 <<mech_gpu::control::resident::Machine>::call+0x26b8>
+100139814:     	ldr	x1, [x20, #0x10]
+100139818:     	cmp	x0, x1
+10013981c:     	b.hs	0x10013b398 <<mech_gpu::control::resident::Machine>::call+0x273c>
+100139820:     	ldr	x14, [x13]
+100139824:     	cmp	x8, x14
+100139828:     	b.hs	0x10013b3a4 <<mech_gpu::control::resident::Machine>::call+0x2748>
+10013982c:     	ldur	x15, [x13, #-0x8]
+100139830:     	ldr	x14, [x20, #0x8]
+100139834:     	ldr	x16, [x14, x0, lsl #3]
+100139838:     	ldr	x15, [x15, x8, lsl #3]
+10013983c:     	cmp	x15, x16
+100139840:     	csel	x15, x15, x16, hi
+100139844:     	cmp	x0, x1
+100139848:     	b.lo	0x10013978c <<mech_gpu::control::resident::Machine>::call+0xb30>
+10013984c:     	b	0x10013b314 <<mech_gpu::control::resident::Machine>::call+0x26b8>
+100139850:     	ldr	x8, [x24, #0x18]
+100139854:     	cbz	x8, 0x100138edc <<mech_gpu::control::resident::Machine>::call+0x280>
+100139858:     	ldr	x9, [x24, #0x10]
+10013985c:     	add	x10, x9, x8, lsl #4
+100139860:     	ldr	x24, [sp, #0xf8]
+100139864:     	ldr	x11, [x9]
+100139868:     	ldr	x8, [sp, #0x100]
+10013986c:     	ldr	x1, [x20, #0x10]
+100139870:     	add	x0, x8, x11
+100139874:     	cmp	x0, x1
+100139878:     	b.hs	0x10013b448 <<mech_gpu::control::resident::Machine>::call+0x27ec>
+10013987c:     	ldr	x11, [x9, #0x8]
+100139880:     	add	x8, x11, x8
+100139884:     	cmp	x8, x1
+100139888:     	b.hs	0x10013b428 <<mech_gpu::control::resident::Machine>::call+0x27cc>
+10013988c:     	ldr	x11, [x20, #0x8]
+100139890:     	ldr	x12, [x11, x0, lsl #3]
+100139894:     	str	x12, [x11, x8, lsl #3]
+100139898:     	add	x9, x9, #0x10
+10013989c:     	cmp	x9, x10
+1001398a0:     	b.ne	0x100139864 <<mech_gpu::control::resident::Machine>::call+0xc08>
+1001398a4:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+1001398a8:     	ldr	x8, [x24, #0x8]
+1001398ac:     	ldr	x9, [sp, #0x100]
+1001398b0:     	ldr	x1, [x20, #0x10]
+1001398b4:     	add	x0, x9, x8
+1001398b8:     	cmp	x0, x1
+1001398bc:     	b.hs	0x10013b660 <<mech_gpu::control::resident::Machine>::call+0x2a04>
+1001398c0:     	ldr	x8, [x20, #0x8]
+1001398c4:     	ldr	x8, [x8, x0, lsl #3]
+1001398c8:     	cbnz	x8, 0x100138edc <<mech_gpu::control::resident::Machine>::call+0x280>
+1001398cc:     	ldr	x24, [x24, #0x10]
+1001398d0:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+1001398d4:     	tbz	w8, #0x0, 0x100139f5c <<mech_gpu::control::resident::Machine>::call+0x1300>
+1001398d8:     	ldr	x8, [x24, #0x8]
+1001398dc:     	ldr	x9, [sp, #0x100]
+1001398e0:     	ldr	x1, [x20, #0x10]
+1001398e4:     	add	x0, x9, x8
+1001398e8:     	cmp	x0, x1
+1001398ec:     	b.hs	0x10013b734 <<mech_gpu::control::resident::Machine>::call+0x2ad8>
+1001398f0:     	add	x8, x24, #0x60
+1001398f4:     	ldr	x9, [x20, #0x8]
+1001398f8:     	ldr	x1, [x9, x0, lsl #3]
+1001398fc:     	add	x9, x24, #0x10
+100139900:     	add	x10, x24, #0x68
+100139904:     	add	x11, x24, #0x30
+100139908:     	ldr	x2, [x8]
+10013990c:     	add	x12, x24, #0x48
+100139910:     	stp	x8, x9, [x29, #-0xc0]
+100139914:     	stp	x20, x10, [x29, #-0xb0]
+100139918:     	add	x8, sp, #0x100
+10013991c:     	stp	x8, x11, [x29, #-0xa0]
+100139920:     	stur	x12, [x29, #-0x90]
+100139924:     	sub	x0, x29, #0xe0
+100139928:     	sub	x3, x29, #0xc0
+10013992c:     	bl	0x100132c78 <mech_gpu::control::runtime::with_arena_storage::<(), <mech_gpu::control::resident::Machine>::call::{closure#12}>>
+100139930:     	ldur	x8, [x29, #-0xe0]
+100139934:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+100139938:     	cmp	x8, x9
+10013993c:     	b.eq	0x100138edc <<mech_gpu::control::resident::Machine>::call+0x280>
+100139940:     	b	0x10013b030 <<mech_gpu::control::resident::Machine>::call+0x23d4>
+100139944:     	ldr	x19, [x24, #0x20]
+100139948:     	cmp	x19, #0x28
+10013994c:     	b.ne	0x100139fa4 <<mech_gpu::control::resident::Machine>::call+0x1348>
+100139950:     	mov	w8, #0x28               ; =40
+100139954:     	stur	x8, [x29, #-0x68]
+100139958:     	str	xzr, [sp, #0x158]
+10013995c:     	str	xzr, [sp, #0x190]
+100139960:     	stur	xzr, [x29, #-0x100]
+100139964:     	sub	x8, x29, #0x68
+100139968:     	stur	x8, [x29, #-0xc0]
+10013996c:     	add	x8, sp, #0x158
+100139970:     	stur	x8, [x29, #-0xb8]
+100139974:     	add	x8, sp, #0x190
+100139978:     	stur	x8, [x29, #-0xb0]
+10013997c:     	sub	x8, x29, #0x100
+100139980:     	stur	x8, [x29, #-0xa8]
+100139984:     	sub	x8, x29, #0xe0
+100139988:     	sub	x1, x29, #0xc0
+10013998c:     	adrp	x0, 0x101d64000 <_anon.ccae1f1a4bfd17ba382a31665da1168b.115+0x68>
+100139990:     	add	x0, x0, #0x368
+100139994:     	bl	0x1000895f0 <<std::thread::local::LocalKey<core::cell::RefCell<core::option::Option<mech_gpu::control::bigint::Session>>>>::with::<mech_gpu::control::bigint::apply::{closure#0}, core::result::Result<u64, alloc::string::String>>>
+100139998:     	ldur	x8, [x29, #-0xe0]
+10013999c:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+1001399a0:     	cmp	x8, x9
+1001399a4:     	b.ne	0x10013afc0 <<mech_gpu::control::resident::Machine>::call+0x2364>
+1001399a8:     	ldr	x19, [sp, #0xc0]
+1001399ac:     	ldr	x24, [sp, #0xf8]
+1001399b0:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+1001399b4:     	mov	w8, #0x1                ; =1
+1001399b8:     	stp	xzr, x8, [x29, #-0xe0]
+1001399bc:     	stur	xzr, [x29, #-0xd0]
+1001399c0:     	ldp	x26, x25, [x24, #0x10]
+1001399c4:     	ldr	x8, [x24, #0x30]
+1001399c8:     	cbz	x8, 0x10013a080 <<mech_gpu::control::resident::Machine>::call+0x1424>
+1001399cc:     	mov	x28, #0x0               ; =0
+1001399d0:     	ldr	x22, [x24, #0x28]
+1001399d4:     	add	x8, x22, x8, lsl #3
+1001399d8:     	str	x8, [sp, #0x60]
+1001399dc:     	mov	w8, #0x1                ; =1
+1001399e0:     	stp	x8, x23, [sp, #0x68]
+1001399e4:     	mov	x19, #0x0               ; =0
+1001399e8:     	ldr	x8, [x22], #0x8
+1001399ec:     	str	x8, [sp, #0xe0]
+1001399f0:     	b	0x1001399fc <<mech_gpu::control::resident::Machine>::call+0xda0>
+1001399f4:     	cmp	x19, x25
+1001399f8:     	b.hi	0x10013ac04 <<mech_gpu::control::resident::Machine>::call+0x1fa8>
+1001399fc:     	sub	x8, x25, x19
+100139a00:     	add	x9, x26, x19
+100139a04:     	cmp	x8, #0x10
+100139a08:     	b.hs	0x100139a40 <<mech_gpu::control::resident::Machine>::call+0xde4>
+100139a0c:     	mov	x1, #0x0                ; =0
+100139a10:     	cbz	x8, 0x100139a80 <<mech_gpu::control::resident::Machine>::call+0xe24>
+100139a14:     	ldrb	w10, [x9, x1]
+100139a18:     	cmp	w10, #0x7b
+100139a1c:     	b.eq	0x100139a90 <<mech_gpu::control::resident::Machine>::call+0xe34>
+100139a20:     	add	x1, x1, #0x1
+100139a24:     	cmp	x8, x1
+100139a28:     	b.ne	0x100139a14 <<mech_gpu::control::resident::Machine>::call+0xdb8>
+100139a2c:     	mov	x0, #0x0                ; =0
+100139a30:     	sub	x1, x25, x19
+100139a34:     	cmp	x0, #0x1
+100139a38:     	b.eq	0x100139a58 <<mech_gpu::control::resident::Machine>::call+0xdfc>
+100139a3c:     	b	0x10013ac04 <<mech_gpu::control::resident::Machine>::call+0x1fa8>
+100139a40:     	add	x1, x26, x19
+100139a44:     	sub	x2, x25, x19
+100139a48:     	mov	w0, #0x7b               ; =123
+100139a4c:     	bl	0x1016e9564 <core::slice::memchr::memchr_aligned>
+100139a50:     	cmp	x0, #0x1
+100139a54:     	b.ne	0x10013ac04 <<mech_gpu::control::resident::Machine>::call+0x1fa8>
+100139a58:     	add	x23, x1, x19
+100139a5c:     	subs	x24, x25, x23
+100139a60:     	add	x19, x23, #0x1
+100139a64:     	b.ls	0x1001399f4 <<mech_gpu::control::resident::Machine>::call+0xd98>
+100139a68:     	ldrb	w8, [x26, x23]
+100139a6c:     	cmp	x19, x25
+100139a70:     	b.hi	0x100139aa0 <<mech_gpu::control::resident::Machine>::call+0xe44>
+100139a74:     	cmp	w8, #0x7b
+100139a78:     	b.ne	0x1001399fc <<mech_gpu::control::resident::Machine>::call+0xda0>
+100139a7c:     	b	0x100139aa0 <<mech_gpu::control::resident::Machine>::call+0xe44>
+100139a80:     	mov	x0, #0x0                ; =0
+100139a84:     	cmp	x0, #0x1
+100139a88:     	b.eq	0x100139a58 <<mech_gpu::control::resident::Machine>::call+0xdfc>
+100139a8c:     	b	0x10013ac04 <<mech_gpu::control::resident::Machine>::call+0x1fa8>
+100139a90:     	mov	w0, #0x1                ; =1
+100139a94:     	cmp	x0, #0x1
+100139a98:     	b.eq	0x100139a58 <<mech_gpu::control::resident::Machine>::call+0xdfc>
+100139a9c:     	b	0x10013ac04 <<mech_gpu::control::resident::Machine>::call+0x1fa8>
+100139aa0:     	cmp	w8, #0x7b
+100139aa4:     	b.ne	0x10013ac04 <<mech_gpu::control::resident::Machine>::call+0x1fa8>
+100139aa8:     	ldur	x8, [x29, #-0xe0]
+100139aac:     	sub	x8, x8, x28
+100139ab0:     	cmp	x23, x8
+100139ab4:     	b.hi	0x100139dbc <<mech_gpu::control::resident::Machine>::call+0x1160>
+100139ab8:     	ldr	x19, [sp, #0xe0]
+100139abc:     	cbz	x23, 0x100139ad4 <<mech_gpu::control::resident::Machine>::call+0xe78>
+100139ac0:     	ldr	x8, [sp, #0x68]
+100139ac4:     	add	x0, x8, x28
+100139ac8:     	mov	x1, x26
+100139acc:     	mov	x2, x23
+100139ad0:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+100139ad4:     	add	x28, x28, x23
+100139ad8:     	stur	x28, [x29, #-0xd0]
+100139adc:     	ldr	x8, [sp, #0x100]
+100139ae0:     	ldr	x1, [x20, #0x10]
+100139ae4:     	add	x0, x8, x19
+100139ae8:     	cmp	x0, x1
+100139aec:     	b.hs	0x10013b78c <<mech_gpu::control::resident::Machine>::call+0x2b30>
+100139af0:     	add	x8, x26, x23
+100139af4:     	ldr	x9, [x20, #0x8]
+100139af8:     	ldr	x0, [x9, x0, lsl #3]
+100139afc:     	cbz	x23, 0x100139b0c <<mech_gpu::control::resident::Machine>::call+0xeb0>
+100139b00:     	ldrsb	w9, [x8]
+100139b04:     	cmn	w9, #0x41
+100139b08:     	b.le	0x10013b814 <<mech_gpu::control::resident::Machine>::call+0x2bb8>
+100139b0c:     	cmp	x24, #0x6
+100139b10:     	b.lo	0x100139b34 <<mech_gpu::control::resident::Machine>::call+0xed8>
+100139b14:     	ldr	w9, [x8]
+100139b18:     	ldrh	w10, [x8, #0x4]
+100139b1c:     	mov	w11, #0x3a7b            ; =14971
+100139b20:     	movk	w11, #0x3669, lsl #16
+100139b24:     	cmp	w9, w11
+100139b28:     	mov	w9, #0x7d34             ; =32052
+100139b2c:     	ccmp	w10, w9, #0x0, eq
+100139b30:     	b.eq	0x100139c28 <<mech_gpu::control::resident::Machine>::call+0xfcc>
+100139b34:     	cbz	x23, 0x100139b44 <<mech_gpu::control::resident::Machine>::call+0xee8>
+100139b38:     	ldrsb	w9, [x8]
+100139b3c:     	cmn	w9, #0x41
+100139b40:     	b.le	0x10013b820 <<mech_gpu::control::resident::Machine>::call+0x2bc4>
+100139b44:     	cmp	x24, #0x2
+100139b48:     	b.lo	0x10013b100 <<mech_gpu::control::resident::Machine>::call+0x24a4>
+100139b4c:     	ldrh	w8, [x8]
+100139b50:     	mov	w9, #0x7d7b             ; =32123
+100139b54:     	cmp	w8, w9
+100139b58:     	b.ne	0x10013b100 <<mech_gpu::control::resident::Machine>::call+0x24a4>
+100139b5c:     	sub	x1, x29, #0x100
+100139b60:     	mov	w2, #0x14               ; =20
+100139b64:     	bl	0x1016e7604 <<usize>::_fmt>
+100139b68:     	str	x0, [sp, #0x58]
+100139b6c:     	mov	x19, x1
+100139b70:     	sub	x8, x29, #0xc0
+100139b74:     	mov	x0, x1
+100139b78:     	mov	w1, #0x0                ; =0
+100139b7c:     	mov	w2, #0x1                ; =1
+100139b80:     	mov	w3, #0x1                ; =1
+100139b84:     	bl	0x10011ffdc <<alloc::raw_vec::RawVecInner>::try_allocate_in>
+100139b88:     	ldp	x8, x24, [x29, #-0xc0]
+100139b8c:     	cmp	x8, #0x1
+100139b90:     	b.eq	0x10013b380 <<mech_gpu::control::resident::Machine>::call+0x2724>
+100139b94:     	ldur	x0, [x29, #-0xb0]
+100139b98:     	str	x0, [sp, #0xe0]
+100139b9c:     	cbz	x19, 0x100139bd4 <<mech_gpu::control::resident::Machine>::call+0xf78>
+100139ba0:     	ldr	x1, [sp, #0x58]
+100139ba4:     	mov	x2, x19
+100139ba8:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+100139bac:     	ldur	x8, [x29, #-0xe0]
+100139bb0:     	sub	x8, x8, x28
+100139bb4:     	cmp	x19, x8
+100139bb8:     	b.hi	0x100139de4 <<mech_gpu::control::resident::Machine>::call+0x1188>
+100139bbc:     	ldur	x8, [x29, #-0xd8]
+100139bc0:     	str	x8, [sp, #0x68]
+100139bc4:     	add	x0, x8, x28
+100139bc8:     	ldr	x1, [sp, #0xe0]
+100139bcc:     	mov	x2, x19
+100139bd0:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+100139bd4:     	add	x8, x28, x19
+100139bd8:     	mov	x28, x8
+100139bdc:     	stur	x8, [x29, #-0xd0]
+100139be0:     	cbz	x24, 0x100139bf4 <<mech_gpu::control::resident::Machine>::call+0xf98>
+100139be4:     	ldr	x0, [sp, #0xe0]
+100139be8:     	mov	x1, x24
+100139bec:     	mov	w2, #0x1                ; =1
+100139bf0:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+100139bf4:     	adds	x23, x23, #0x2
+100139bf8:     	ldr	x19, [sp, #0xc0]
+100139bfc:     	b.eq	0x100139d94 <<mech_gpu::control::resident::Machine>::call+0x1138>
+100139c00:     	cmp	x23, x25
+100139c04:     	b.hs	0x100139c1c <<mech_gpu::control::resident::Machine>::call+0xfc0>
+100139c08:     	ldrsb	w8, [x26, x23]
+100139c0c:     	cmn	w8, #0x40
+100139c10:     	b.lt	0x10013b82c <<mech_gpu::control::resident::Machine>::call+0x2bd0>
+100139c14:     	mov	x8, x23
+100139c18:     	b	0x100139d98 <<mech_gpu::control::resident::Machine>::call+0x113c>
+100139c1c:     	mov	x8, x25
+100139c20:     	b.eq	0x100139d98 <<mech_gpu::control::resident::Machine>::call+0x113c>
+100139c24:     	b	0x10013b82c <<mech_gpu::control::resident::Machine>::call+0x2bd0>
+100139c28:     	str	x22, [sp, #0x50]
+100139c2c:     	mov	x19, x0
+100139c30:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+100139c34:     	str	x19, [sp, #0x48]
+100139c38:     	tbnz	x19, #0x3f, 0x100139c78 <<mech_gpu::control::resident::Machine>::call+0x101c>
+100139c3c:     	mov	w0, #0x13               ; =19
+100139c40:     	mov	w1, #0x1                ; =1
+100139c44:     	bl	0x100002a90 <__rustc::__rust_alloc>
+100139c48:     	mov	w19, #0x13              ; =19
+100139c4c:     	mov	w22, #0x1               ; =1
+100139c50:     	cbz	x0, 0x10013b388 <<mech_gpu::control::resident::Machine>::call+0x272c>
+100139c54:     	mov	x24, x0
+100139c58:     	str	xzr, [sp, #0x58]
+100139c5c:     	mov	w8, #0x13               ; =19
+100139c60:     	stp	x8, x0, [x29, #-0xc0]
+100139c64:     	mov	w8, #0x13               ; =19
+100139c68:     	str	x8, [sp, #0xe0]
+100139c6c:     	stur	xzr, [x29, #-0xb0]
+100139c70:     	ldr	x0, [sp, #0x48]
+100139c74:     	b	0x100139cc0 <<mech_gpu::control::resident::Machine>::call+0x1064>
+100139c78:     	mov	w0, #0x14               ; =20
+100139c7c:     	mov	w1, #0x1                ; =1
+100139c80:     	bl	0x100002a90 <__rustc::__rust_alloc>
+100139c84:     	mov	w19, #0x14              ; =20
+100139c88:     	mov	w22, #0x1               ; =1
+100139c8c:     	cbz	x0, 0x10013b388 <<mech_gpu::control::resident::Machine>::call+0x272c>
+100139c90:     	mov	x24, x0
+100139c94:     	mov	w8, #0x14               ; =20
+100139c98:     	stp	x8, x0, [x29, #-0xc0]
+100139c9c:     	mov	w8, #0x2d               ; =45
+100139ca0:     	strb	w8, [x0]
+100139ca4:     	ldr	x0, [sp, #0x48]
+100139ca8:     	neg	x0, x0
+100139cac:     	mov	w8, #0x14               ; =20
+100139cb0:     	str	x8, [sp, #0xe0]
+100139cb4:     	mov	w8, #0x1                ; =1
+100139cb8:     	str	x8, [sp, #0x58]
+100139cbc:     	stur	x22, [x29, #-0xb0]
+100139cc0:     	sub	x1, x29, #0x100
+100139cc4:     	mov	w2, #0x13               ; =19
+100139cc8:     	bl	0x1016e7604 <<usize>::_fmt>
+100139ccc:     	str	x0, [sp, #0x48]
+100139cd0:     	ldr	x22, [sp, #0x50]
+100139cd4:     	mov	x19, x1
+100139cd8:     	ldr	x8, [sp, #0xe0]
+100139cdc:     	ldr	x9, [sp, #0x58]
+100139ce0:     	sub	x8, x8, x9
+100139ce4:     	cmp	x1, x8
+100139ce8:     	b.hi	0x100139e04 <<mech_gpu::control::resident::Machine>::call+0x11a8>
+100139cec:     	ldr	x8, [sp, #0x58]
+100139cf0:     	cbz	x19, 0x100139d18 <<mech_gpu::control::resident::Machine>::call+0x10bc>
+100139cf4:     	add	x0, x24, x8
+100139cf8:     	ldr	x1, [sp, #0x48]
+100139cfc:     	mov	x2, x19
+100139d00:     	mov	x24, x8
+100139d04:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+100139d08:     	ldur	x8, [x29, #-0xc0]
+100139d0c:     	str	x8, [sp, #0xe0]
+100139d10:     	mov	x8, x24
+100139d14:     	ldur	x24, [x29, #-0xb8]
+100139d18:     	str	x24, [sp, #0x58]
+100139d1c:     	add	x19, x8, x19
+100139d20:     	ldur	x8, [x29, #-0xe0]
+100139d24:     	sub	x8, x8, x28
+100139d28:     	cmp	x19, x8
+100139d2c:     	b.hi	0x100139e24 <<mech_gpu::control::resident::Machine>::call+0x11c8>
+100139d30:     	ldur	x24, [x29, #-0xd0]
+100139d34:     	cbz	x19, 0x100139d50 <<mech_gpu::control::resident::Machine>::call+0x10f4>
+100139d38:     	ldur	x8, [x29, #-0xd8]
+100139d3c:     	str	x8, [sp, #0x68]
+100139d40:     	add	x0, x8, x24
+100139d44:     	ldr	x1, [sp, #0x58]
+100139d48:     	mov	x2, x19
+100139d4c:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+100139d50:     	add	x8, x24, x19
+100139d54:     	mov	x28, x8
+100139d58:     	stur	x8, [x29, #-0xd0]
+100139d5c:     	ldr	x1, [sp, #0xe0]
+100139d60:     	cbz	x1, 0x100139d70 <<mech_gpu::control::resident::Machine>::call+0x1114>
+100139d64:     	ldr	x0, [sp, #0x58]
+100139d68:     	mov	w2, #0x1                ; =1
+100139d6c:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+100139d70:     	adds	x23, x23, #0x6
+100139d74:     	ldr	x19, [sp, #0xc0]
+100139d78:     	b.eq	0x100139d94 <<mech_gpu::control::resident::Machine>::call+0x1138>
+100139d7c:     	cmp	x23, x25
+100139d80:     	b.hs	0x100139db0 <<mech_gpu::control::resident::Machine>::call+0x1154>
+100139d84:     	ldrsb	w8, [x26, x23]
+100139d88:     	cmn	w8, #0x40
+100139d8c:     	b.ge	0x100139c14 <<mech_gpu::control::resident::Machine>::call+0xfb8>
+100139d90:     	b	0x10013b0e0 <<mech_gpu::control::resident::Machine>::call+0x2484>
+100139d94:     	mov	x8, #0x0                ; =0
+100139d98:     	sub	x25, x25, x8
+100139d9c:     	add	x26, x26, x8
+100139da0:     	ldr	x8, [sp, #0x60]
+100139da4:     	cmp	x22, x8
+100139da8:     	b.ne	0x1001399e4 <<mech_gpu::control::resident::Machine>::call+0xd88>
+100139dac:     	b	0x10013aad4 <<mech_gpu::control::resident::Machine>::call+0x1e78>
+100139db0:     	mov	x8, x25
+100139db4:     	b.ne	0x10013b0e0 <<mech_gpu::control::resident::Machine>::call+0x2484>
+100139db8:     	b	0x100139d98 <<mech_gpu::control::resident::Machine>::call+0x113c>
+100139dbc:     	sub	x0, x29, #0xe0
+100139dc0:     	mov	x1, x28
+100139dc4:     	mov	x2, x23
+100139dc8:     	mov	w3, #0x1                ; =1
+100139dcc:     	mov	w4, #0x1                ; =1
+100139dd0:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+100139dd4:     	ldp	x8, x28, [x29, #-0xd8]
+100139dd8:     	str	x8, [sp, #0x68]
+100139ddc:     	ldr	x19, [sp, #0xe0]
+100139de0:     	b	0x100139ac0 <<mech_gpu::control::resident::Machine>::call+0xe64>
+100139de4:     	sub	x0, x29, #0xe0
+100139de8:     	mov	x1, x28
+100139dec:     	mov	x2, x19
+100139df0:     	mov	w3, #0x1                ; =1
+100139df4:     	mov	w4, #0x1                ; =1
+100139df8:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+100139dfc:     	ldur	x28, [x29, #-0xd0]
+100139e00:     	b	0x100139bbc <<mech_gpu::control::resident::Machine>::call+0xf60>
+100139e04:     	sub	x0, x29, #0xc0
+100139e08:     	ldr	x1, [sp, #0x58]
+100139e0c:     	mov	x2, x19
+100139e10:     	mov	w3, #0x1                ; =1
+100139e14:     	mov	w4, #0x1                ; =1
+100139e18:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+100139e1c:     	ldp	x24, x8, [x29, #-0xb8]
+100139e20:     	b	0x100139cf4 <<mech_gpu::control::resident::Machine>::call+0x1098>
+100139e24:     	sub	x0, x29, #0xe0
+100139e28:     	mov	x1, x28
+100139e2c:     	mov	x2, x19
+100139e30:     	mov	w3, #0x1                ; =1
+100139e34:     	mov	w4, #0x1                ; =1
+100139e38:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+100139e3c:     	ldur	x24, [x29, #-0xd0]
+100139e40:     	ldr	x22, [sp, #0x50]
+100139e44:     	b	0x100139d38 <<mech_gpu::control::resident::Machine>::call+0x10dc>
+100139e48:     	cbz	x23, 0x100139e7c <<mech_gpu::control::resident::Machine>::call+0x1220>
+100139e4c:     	add	x24, x19, #0x8
+100139e50:     	b	0x100139e60 <<mech_gpu::control::resident::Machine>::call+0x1204>
+100139e54:     	add	x24, x24, #0x18
+100139e58:     	subs	x23, x23, #0x1
+100139e5c:     	b.eq	0x100139e7c <<mech_gpu::control::resident::Machine>::call+0x1220>
+100139e60:     	ldur	x8, [x24, #-0x8]
+100139e64:     	cbz	x8, 0x100139e54 <<mech_gpu::control::resident::Machine>::call+0x11f8>
+100139e68:     	ldr	x0, [x24]
+100139e6c:     	lsl	x1, x8, #3
+100139e70:     	mov	w2, #0x8                ; =8
+100139e74:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+100139e78:     	b	0x100139e54 <<mech_gpu::control::resident::Machine>::call+0x11f8>
+100139e7c:     	ldr	x8, [sp, #0x190]
+100139e80:     	cbz	x8, 0x100139e98 <<mech_gpu::control::resident::Machine>::call+0x123c>
+100139e84:     	add	x8, x8, x8, lsl #1
+100139e88:     	lsl	x1, x8, #3
+100139e8c:     	mov	x0, x19
+100139e90:     	mov	w2, #0x8                ; =8
+100139e94:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+100139e98:     	ldr	x8, [sp, #0x158]
+100139e9c:     	mov	x23, x22
+100139ea0:     	ldr	x24, [sp, #0xf8]
+100139ea4:     	cbz	x8, 0x100139eb8 <<mech_gpu::control::resident::Machine>::call+0x125c>
+100139ea8:     	ldr	x0, [sp, #0x160]
+100139eac:     	lsl	x1, x8, #3
+100139eb0:     	mov	w2, #0x8                ; =8
+100139eb4:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+100139eb8:     	ldr	x19, [sp, #0xc0]
+100139ebc:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+100139ec0:     	cmp	x25, #0x22
+100139ec4:     	b.hs	0x100139f08 <<mech_gpu::control::resident::Machine>::call+0x12ac>
+100139ec8:     	ldr	x11, [x24, #0x38]
+100139ecc:     	cbz	x11, 0x10013a478 <<mech_gpu::control::resident::Machine>::call+0x181c>
+100139ed0:     	ldr	x10, [x24, #0x30]
+100139ed4:     	ldr	x1, [x20, #0x10]
+100139ed8:     	ldr	x12, [sp, #0x100]
+100139edc:     	ldr	x8, [x10]
+100139ee0:     	add	x0, x8, x12
+100139ee4:     	cmp	x0, x1
+100139ee8:     	b.hs	0x10013b7fc <<mech_gpu::control::resident::Machine>::call+0x2ba0>
+100139eec:     	ldr	x13, [x20, #0x8]
+100139ef0:     	ldr	x8, [x13, x0, lsl #3]
+100139ef4:     	cmp	x11, #0x1
+100139ef8:     	b.ne	0x10013a7f0 <<mech_gpu::control::resident::Machine>::call+0x1b94>
+100139efc:     	mov	x9, #0x0                ; =0
+100139f00:     	mov	x10, #0x0               ; =0
+100139f04:     	b	0x10013a828 <<mech_gpu::control::resident::Machine>::call+0x1bcc>
+100139f08:     	cbz	x23, 0x10013af8c <<mech_gpu::control::resident::Machine>::call+0x2330>
+100139f0c:     	ldr	x28, [x23, #0x38]
+100139f10:     	ldr	x8, [x24, #0x60]
+100139f14:     	cmp	x28, x8
+100139f18:     	b.ne	0x10013aca0 <<mech_gpu::control::resident::Machine>::call+0x2044>
+100139f1c:     	mov	x22, x23
+100139f20:     	add	x8, x24, #0x8
+100139f24:     	ldr	x10, [x23]
+100139f28:     	ldr	x9, [x8]
+100139f2c:     	cmp	x10, x9
+100139f30:     	b.ne	0x10013aca0 <<mech_gpu::control::resident::Machine>::call+0x2044>
+100139f34:     	mov	x9, x22
+100139f38:     	cmp	x10, #0xa
+100139f3c:     	b.ne	0x10013a028 <<mech_gpu::control::resident::Machine>::call+0x13cc>
+100139f40:     	ldr	x9, [x9, #0x8]
+100139f44:     	ldr	x8, [x8, #0x8]
+100139f48:     	ldr	x10, [x9]
+100139f4c:     	ldr	x11, [x8]
+100139f50:     	cmp	x10, x11
+100139f54:     	b.eq	0x100139f38 <<mech_gpu::control::resident::Machine>::call+0x12dc>
+100139f58:     	b	0x10013aca0 <<mech_gpu::control::resident::Machine>::call+0x2044>
+100139f5c:     	cbz	x23, 0x10013afd4 <<mech_gpu::control::resident::Machine>::call+0x2378>
+100139f60:     	ldr	x19, [x23, #0x30]
+100139f64:     	ldr	x2, [x24, #0x68]
+100139f68:     	ldp	x4, x5, [x24, #0x38]
+100139f6c:     	ldp	x6, x7, [x24, #0x50]
+100139f70:     	ldr	x3, [sp, #0x100]
+100139f74:     	str	x23, [sp]
+100139f78:     	add	x0, sp, #0x128
+100139f7c:     	mov	x1, x20
+100139f80:     	bl	0x100138c5c <<mech_gpu::control::resident::Machine>::call>
+100139f84:     	str	x19, [x23, #0x30]
+100139f88:     	ldr	x19, [sp, #0xc0]
+100139f8c:     	ldr	x8, [sp, #0x128]
+100139f90:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+100139f94:     	cmp	x8, x9
+100139f98:     	ldr	x24, [sp, #0xf8]
+100139f9c:     	b.eq	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+100139fa0:     	b	0x10013b07c <<mech_gpu::control::resident::Machine>::call+0x2420>
+100139fa4:     	mov	x22, x23
+100139fa8:     	ldp	x8, x9, [x24, #0x10]
+100139fac:     	add	x9, x8, x9, lsl #3
+100139fb0:     	stp	x8, x9, [sp, #0x108]
+100139fb4:     	add	x8, sp, #0x100
+100139fb8:     	stp	x20, x8, [sp, #0x118]
+100139fbc:     	sub	x8, x29, #0x100
+100139fc0:     	add	x0, sp, #0x108
+100139fc4:     	bl	0x10003786c <<alloc::vec::Vec<u64> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<u64, core::iter::adapters::map::Map<core::slice::iter::Iter<usize>, <mech_gpu::control::resident::Machine>::call::{closure#11}>>>::from_iter>
+100139fc8:     	ldp	x23, x8, [x29, #-0xf8]
+100139fcc:     	cmp	x19, #0x29
+100139fd0:     	cset	w9, eq
+100139fd4:     	strb	w9, [sp, #0x190]
+100139fd8:     	stp	x23, x8, [x29, #-0xc0]
+100139fdc:     	add	x8, sp, #0x190
+100139fe0:     	stur	x8, [x29, #-0xb0]
+100139fe4:     	sub	x8, x29, #0xe0
+100139fe8:     	sub	x1, x29, #0xc0
+100139fec:     	adrp	x0, 0x101d64000 <_anon.ccae1f1a4bfd17ba382a31665da1168b.115+0x68>
+100139ff0:     	add	x0, x0, #0x368
+100139ff4:     	bl	0x1000892b8 <<std::thread::local::LocalKey<core::cell::RefCell<core::option::Option<mech_gpu::control::bigint::Session>>>>::with::<mech_gpu::control::bigint::frame_roots::{closure#0}, core::result::Result<(), alloc::string::String>>>
+100139ff8:     	ldur	x8, [x29, #-0xe0]
+100139ffc:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+10013a000:     	cmp	x8, x9
+10013a004:     	ldr	x19, [sp, #0xc0]
+10013a008:     	ldr	x24, [sp, #0xf8]
+10013a00c:     	b.ne	0x10013b00c <<mech_gpu::control::resident::Machine>::call+0x23b0>
+10013a010:     	ldur	x8, [x29, #-0x100]
+10013a014:     	cbz	x8, 0x10013a14c <<mech_gpu::control::resident::Machine>::call+0x14f0>
+10013a018:     	lsl	x1, x8, #3
+10013a01c:     	mov	x0, x23
+10013a020:     	mov	w2, #0x8                ; =8
+10013a024:     	b	0x10013a148 <<mech_gpu::control::resident::Machine>::call+0x14ec>
+10013a028:     	cmp	x10, #0x5
+10013a02c:     	b.eq	0x10013a2e4 <<mech_gpu::control::resident::Machine>::call+0x1688>
+10013a030:     	cmp	x10, #0x9
+10013a034:     	b.eq	0x10013a2f8 <<mech_gpu::control::resident::Machine>::call+0x169c>
+10013a038:     	cmp	x10, #0x8
+10013a03c:     	b.ne	0x10013a318 <<mech_gpu::control::resident::Machine>::call+0x16bc>
+10013a040:     	ldr	x26, [x9, #0x18]
+10013a044:     	ldr	x10, [x8, #0x18]
+10013a048:     	cmp	x26, x10
+10013a04c:     	b.ne	0x10013aca0 <<mech_gpu::control::resident::Machine>::call+0x2044>
+10013a050:     	cbz	x26, 0x10013a318 <<mech_gpu::control::resident::Machine>::call+0x16bc>
+10013a054:     	ldr	x19, [x8, #0x10]
+10013a058:     	ldr	x23, [x9, #0x10]
+10013a05c:     	mov	x0, x23
+10013a060:     	mov	x1, x19
+10013a064:     	bl	0x10012ef0c <<mech_engine::native_sequence::control::Kind as core::cmp::PartialEq>::eq>
+10013a068:     	tbz	w0, #0x0, 0x10013aca0 <<mech_gpu::control::resident::Machine>::call+0x2044>
+10013a06c:     	add	x19, x19, #0x20
+10013a070:     	add	x23, x23, #0x20
+10013a074:     	subs	x26, x26, #0x1
+10013a078:     	b.ne	0x10013a05c <<mech_gpu::control::resident::Machine>::call+0x1400>
+10013a07c:     	b	0x10013a318 <<mech_gpu::control::resident::Machine>::call+0x16bc>
+10013a080:     	mov	x28, #0x0               ; =0
+10013a084:     	mov	x22, x23
+10013a088:     	sub	x8, x8, x28
+10013a08c:     	cmp	x25, x8
+10013a090:     	ldr	x24, [sp, #0xf8]
+10013a094:     	b.hi	0x10013aaf0 <<mech_gpu::control::resident::Machine>::call+0x1e94>
+10013a098:     	ldur	x23, [x29, #-0xd8]
+10013a09c:     	cbz	x25, 0x10013a0b0 <<mech_gpu::control::resident::Machine>::call+0x1454>
+10013a0a0:     	add	x0, x23, x28
+10013a0a4:     	mov	x1, x26
+10013a0a8:     	mov	x2, x25
+10013a0ac:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+10013a0b0:     	add	x2, x28, x25
+10013a0b4:     	stur	x2, [x29, #-0xd0]
+10013a0b8:     	ldrb	w8, [x19, #0x48]
+10013a0bc:     	cmp	w8, #0x1
+10013a0c0:     	b.eq	0x10013a0f8 <<mech_gpu::control::resident::Machine>::call+0x149c>
+10013a0c4:     	cmp	w8, #0x2
+10013a0c8:     	b.eq	0x10013ac90 <<mech_gpu::control::resident::Machine>::call+0x2034>
+10013a0cc:     	mov	x19, x2
+10013a0d0:     	ldr	x0, [sp, #0xc0]
+10013a0d4:     	adrp	x1, 0x10010d000 <std::sys::thread_local::native::eager::destroy::<core::cell::RefCell<core::option::Option<mech_gpu::control::bigint::Session>>>+0x138>
+10013a0d8:     	add	x1, x1, #0x50
+10013a0dc:     	bl	0x1016d0de8 <std::sys::thread_local::destructors::list::register>
+10013a0e0:     	ldr	x8, [sp, #0xc0]
+10013a0e4:     	mov	w9, #0x1                ; =1
+10013a0e8:     	strb	w9, [x8, #0x48]
+10013a0ec:     	mov	x2, x19
+10013a0f0:     	mov	x19, x8
+10013a0f4:     	ldr	x24, [sp, #0xf8]
+10013a0f8:     	ldr	x8, [x19]
+10013a0fc:     	ldp	x26, x25, [sp, #0xe8]
+10013a100:     	cbnz	x8, 0x10013b350 <<mech_gpu::control::resident::Machine>::call+0x26f4>
+10013a104:     	mov	x8, #-0x1               ; =-1
+10013a108:     	str	x8, [x19]
+10013a10c:     	ldr	x8, [x19, #0x8]
+10013a110:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+10013a114:     	cmp	x8, x9
+10013a118:     	b.eq	0x10013b14c <<mech_gpu::control::resident::Machine>::call+0x24f0>
+10013a11c:     	add	x0, x19, #0x8
+10013a120:     	mov	x1, x23
+10013a124:     	bl	0x1001341f8 <<mech_gpu::control::runtime::OutputSession>::write>
+10013a128:     	ldr	x8, [x19]
+10013a12c:     	add	x8, x8, #0x1
+10013a130:     	str	x8, [x19]
+10013a134:     	cbnz	x0, 0x10013b150 <<mech_gpu::control::resident::Machine>::call+0x24f4>
+10013a138:     	ldur	x1, [x29, #-0xe0]
+10013a13c:     	cbz	x1, 0x10013a14c <<mech_gpu::control::resident::Machine>::call+0x14f0>
+10013a140:     	mov	x0, x23
+10013a144:     	mov	w2, #0x1                ; =1
+10013a148:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013a14c:     	mov	x23, x22
+10013a150:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+10013a154:     	mov	x26, #0x0               ; =0
+10013a158:     	mov	w22, #0x8               ; =8
+10013a15c:     	ldr	x25, [sp, #0xf0]
+10013a160:     	b	0x10013a1d4 <<mech_gpu::control::resident::Machine>::call+0x1578>
+10013a164:     	and	x8, x23, #0xffffffffffffff8
+10013a168:     	add	x9, x12, #0x20
+10013a16c:     	and	x10, x23, #0xffffffffffffff8
+10013a170:     	ldr	q0, [sp, #0xb0]
+10013a174:     	mov	w11, #0x6               ; =6
+10013a178:     	dup.2d	v1, x22
+10013a17c:     	add.2d	v1, v0, v1
+10013a180:     	dup.2d	v2, x26
+10013a184:     	add.2d	v2, v0, v2
+10013a188:     	dup.2d	v3, x11
+10013a18c:     	add.2d	v3, v0, v3
+10013a190:     	stp	q0, q1, [x9, #-0x20]
+10013a194:     	stp	q2, q3, [x9], #0x40
+10013a198:     	dup.2d	v1, x19
+10013a19c:     	add.2d	v0, v0, v1
+10013a1a0:     	subs	x10, x10, #0x8
+10013a1a4:     	b.ne	0x10013a178 <<mech_gpu::control::resident::Machine>::call+0x151c>
+10013a1a8:     	cmp	x23, x8
+10013a1ac:     	b.ne	0x10013a1bc <<mech_gpu::control::resident::Machine>::call+0x1560>
+10013a1b0:     	mov	x26, x23
+10013a1b4:     	mov	x22, x12
+10013a1b8:     	b	0x10013a1d4 <<mech_gpu::control::resident::Machine>::call+0x1578>
+10013a1bc:     	mov	x22, x12
+10013a1c0:     	str	x8, [x22, x8, lsl #3]
+10013a1c4:     	add	x8, x8, #0x1
+10013a1c8:     	cmp	x23, x8
+10013a1cc:     	b.ne	0x10013a1c0 <<mech_gpu::control::resident::Machine>::call+0x1564>
+10013a1d0:     	mov	x26, x23
+10013a1d4:     	mov	x0, #0x0                ; =0
+10013a1d8:     	orr	x19, x21, #0x1
+10013a1dc:     	subs	x8, x19, x23
+10013a1e0:     	csel	x8, xzr, x8, lo
+10013a1e4:     	lsl	x28, x8, #3
+10013a1e8:     	lsr	x8, x8, #60
+10013a1ec:     	cbnz	x8, 0x10013ac68 <<mech_gpu::control::resident::Machine>::call+0x200c>
+10013a1f0:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013a1f4:     	mov	x0, x28
+10013a1f8:     	mov	w1, #0x8                ; =8
+10013a1fc:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013a200:     	mov	x8, x0
+10013a204:     	mov	w0, #0x8                ; =8
+10013a208:     	str	x8, [sp, #0x68]
+10013a20c:     	cbz	x8, 0x10013ac68 <<mech_gpu::control::resident::Machine>::call+0x200c>
+10013a210:     	stp	x28, x26, [sp, #0x28]
+10013a214:     	str	x22, [sp, #0x40]
+10013a218:     	cmp	x23, #0x7
+10013a21c:     	b.hs	0x10013a234 <<mech_gpu::control::resident::Machine>::call+0x15d8>
+10013a220:     	mov	x26, #0x0               ; =0
+10013a224:     	mov	x8, x23
+10013a228:     	ldr	x9, [sp, #0x68]
+10013a22c:     	ldr	x28, [sp, #0x50]
+10013a230:     	b	0x10013a294 <<mech_gpu::control::resident::Machine>::call+0x1638>
+10013a234:     	add	x9, x23, #0x1
+10013a238:     	and	x26, x9, #0x1ffffffffffffff8
+10013a23c:     	add	x8, x23, x26
+10013a240:     	dup.2d	v0, x23
+10013a244:     	ldp	q4, q1, [sp, #0xa0]
+10013a248:     	add.2d	v0, v0, v1
+10013a24c:     	ldr	x10, [sp, #0x68]
+10013a250:     	add	x10, x10, #0x20
+10013a254:     	and	x11, x9, #0x1ffffffffffffff8
+10013a258:     	mov	w12, #0x8               ; =8
+10013a25c:     	ldp	q6, q5, [sp, #0x80]
+10013a260:     	ldr	x28, [sp, #0x50]
+10013a264:     	add.2d	v1, v0, v4
+10013a268:     	add.2d	v2, v0, v5
+10013a26c:     	add.2d	v3, v0, v6
+10013a270:     	stp	q0, q1, [x10, #-0x20]
+10013a274:     	stp	q2, q3, [x10], #0x40
+10013a278:     	dup.2d	v1, x12
+10013a27c:     	add.2d	v0, v0, v1
+10013a280:     	subs	x11, x11, #0x8
+10013a284:     	b.ne	0x10013a264 <<mech_gpu::control::resident::Machine>::call+0x1608>
+10013a288:     	cmp	x9, x26
+10013a28c:     	ldr	x9, [sp, #0x68]
+10013a290:     	b.eq	0x10013a2a8 <<mech_gpu::control::resident::Machine>::call+0x164c>
+10013a294:     	str	x8, [x9, x26, lsl #3]
+10013a298:     	add	x8, x8, #0x1
+10013a29c:     	add	x26, x26, #0x1
+10013a2a0:     	cmp	x19, x8
+10013a2a4:     	b.ne	0x10013a294 <<mech_gpu::control::resident::Machine>::call+0x1638>
+10013a2a8:     	ldr	x22, [x24, #0x30]
+10013a2ac:     	ldr	x8, [sp, #0x60]
+10013a2b0:     	adds	x19, x22, x8
+10013a2b4:     	b.mi	0x10013ac74 <<mech_gpu::control::resident::Machine>::call+0x2018>
+10013a2b8:     	cbz	x19, 0x10013a488 <<mech_gpu::control::resident::Machine>::call+0x182c>
+10013a2bc:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013a2c0:     	mov	x0, x19
+10013a2c4:     	mov	w1, #0x1                ; =1
+10013a2c8:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013a2cc:     	cbnz	x0, 0x10013a48c <<mech_gpu::control::resident::Machine>::call+0x1830>
+10013a2d0:     	b	0x10013b808 <<mech_gpu::control::resident::Machine>::call+0x2bac>
+10013a2d4:     	mov	x12, #0x0               ; =0
+10013a2d8:     	ldr	x8, [x24, #0x40]
+10013a2dc:     	cbnz	x8, 0x1001391bc <<mech_gpu::control::resident::Machine>::call+0x560>
+10013a2e0:     	b	0x100138edc <<mech_gpu::control::resident::Machine>::call+0x280>
+10013a2e4:     	ldr	x9, [x9, #0x8]
+10013a2e8:     	ldr	x8, [x8, #0x8]
+10013a2ec:     	cmp	x9, x8
+10013a2f0:     	b.eq	0x10013a318 <<mech_gpu::control::resident::Machine>::call+0x16bc>
+10013a2f4:     	b	0x10013aca0 <<mech_gpu::control::resident::Machine>::call+0x2044>
+10013a2f8:     	ldr	x2, [x9, #0x18]
+10013a2fc:     	ldr	x10, [x8, #0x18]
+10013a300:     	cmp	x2, x10
+10013a304:     	b.ne	0x10013aca0 <<mech_gpu::control::resident::Machine>::call+0x2044>
+10013a308:     	ldr	x1, [x8, #0x10]
+10013a30c:     	ldr	x0, [x9, #0x10]
+10013a310:     	bl	0x100111430 <<(alloc::string::String, mech_engine::native_sequence::control::Kind) as core::slice::cmp::SlicePartialEq<(alloc::string::String, mech_engine::native_sequence::control::Kind)>>::equal_same_length>
+10013a314:     	tbz	w0, #0x0, 0x10013aca0 <<mech_gpu::control::resident::Machine>::call+0x2044>
+10013a318:     	cmp	x25, #0x1
+10013a31c:     	b.ne	0x10013a3d4 <<mech_gpu::control::resident::Machine>::call+0x1778>
+10013a320:     	ldr	x8, [x22, #0x30]
+10013a324:     	umulh	x9, x8, x28
+10013a328:     	cmp	xzr, x9
+10013a32c:     	ldp	x26, x25, [sp, #0xe8]
+10013a330:     	b.ne	0x10013b360 <<mech_gpu::control::resident::Machine>::call+0x2704>
+10013a334:     	mov	x23, x22
+10013a338:     	mul	x0, x8, x28
+10013a33c:     	ldr	x9, [x22, #0x28]
+10013a340:     	add	x10, x0, x28
+10013a344:     	cmp	x10, x9
+10013a348:     	ldr	x19, [sp, #0xc0]
+10013a34c:     	b.hi	0x10013b1d4 <<mech_gpu::control::resident::Machine>::call+0x2578>
+10013a350:     	ldr	x10, [x24, #0x38]
+10013a354:     	cbz	x10, 0x10013a3a4 <<mech_gpu::control::resident::Machine>::call+0x1748>
+10013a358:     	ldr	x9, [x24, #0x30]
+10013a35c:     	lsl	x10, x10, #3
+10013a360:     	ldr	x8, [x9], #0x8
+10013a364:     	ldr	x11, [sp, #0x100]
+10013a368:     	ldr	x1, [x20, #0x10]
+10013a36c:     	add	x8, x11, x8
+10013a370:     	cmp	x8, x1
+10013a374:     	b.hs	0x10013b564 <<mech_gpu::control::resident::Machine>::call+0x2908>
+10013a378:     	ldr	x1, [x23, #0x28]
+10013a37c:     	cmp	x0, x1
+10013a380:     	b.hs	0x10013b574 <<mech_gpu::control::resident::Machine>::call+0x2918>
+10013a384:     	ldr	x11, [x20, #0x8]
+10013a388:     	ldr	x8, [x11, x8, lsl #3]
+10013a38c:     	ldr	x11, [x23, #0x20]
+10013a390:     	str	x8, [x11, x0, lsl #3]
+10013a394:     	add	x0, x0, #0x1
+10013a398:     	subs	x10, x10, #0x8
+10013a39c:     	b.ne	0x10013a360 <<mech_gpu::control::resident::Machine>::call+0x1704>
+10013a3a0:     	ldr	x8, [x23, #0x30]
+10013a3a4:     	add	x8, x8, #0x1
+10013a3a8:     	str	x8, [x23, #0x30]
+10013a3ac:     	ldr	x9, [x24, #0x50]
+10013a3b0:     	cbz	x9, 0x10013b7e8 <<mech_gpu::control::resident::Machine>::call+0x2b8c>
+10013a3b4:     	ldr	x9, [x24, #0x48]
+10013a3b8:     	ldr	x9, [x9]
+10013a3bc:     	ldr	x10, [sp, #0x100]
+10013a3c0:     	ldr	x1, [x20, #0x10]
+10013a3c4:     	add	x0, x10, x9
+10013a3c8:     	cmp	x0, x1
+10013a3cc:     	b.lo	0x10013a8a4 <<mech_gpu::control::resident::Machine>::call+0x1c48>
+10013a3d0:     	b	0x10013b7dc <<mech_gpu::control::resident::Machine>::call+0x2b80>
+10013a3d4:     	ldr	x8, [x24, #0x38]
+10013a3d8:     	ldp	x26, x25, [sp, #0xe8]
+10013a3dc:     	cbz	x8, 0x10013b7c8 <<mech_gpu::control::resident::Machine>::call+0x2b6c>
+10013a3e0:     	ldr	x8, [x24, #0x30]
+10013a3e4:     	ldr	x8, [x8]
+10013a3e8:     	ldr	x9, [sp, #0x100]
+10013a3ec:     	ldr	x1, [x20, #0x10]
+10013a3f0:     	add	x0, x9, x8
+10013a3f4:     	cmp	x0, x1
+10013a3f8:     	ldr	x19, [sp, #0xc0]
+10013a3fc:     	b.hs	0x10013b7bc <<mech_gpu::control::resident::Machine>::call+0x2b60>
+10013a400:     	mov	x23, x22
+10013a404:     	ldr	x8, [x20, #0x8]
+10013a408:     	ldr	x8, [x8, x0, lsl #3]
+10013a40c:     	subs	x8, x8, #0x1
+10013a410:     	ldr	x9, [x22, #0x30]
+10013a414:     	ccmp	x8, x9, #0x2, hs
+10013a418:     	b.hs	0x10013b1a0 <<mech_gpu::control::resident::Machine>::call+0x2544>
+10013a41c:     	ldr	x10, [x24, #0x50]
+10013a420:     	cbz	x10, 0x100138edc <<mech_gpu::control::resident::Machine>::call+0x280>
+10013a424:     	ldr	x9, [x24, #0x48]
+10013a428:     	lsl	x10, x10, #3
+10013a42c:     	mul	x0, x8, x28
+10013a430:     	ldr	x24, [sp, #0xf8]
+10013a434:     	ldr	x1, [x23, #0x28]
+10013a438:     	cmp	x0, x1
+10013a43c:     	b.hs	0x10013b558 <<mech_gpu::control::resident::Machine>::call+0x28fc>
+10013a440:     	ldr	x8, [x9], #0x8
+10013a444:     	ldr	x11, [sp, #0x100]
+10013a448:     	ldr	x1, [x20, #0x10]
+10013a44c:     	add	x8, x11, x8
+10013a450:     	cmp	x8, x1
+10013a454:     	b.hs	0x10013b548 <<mech_gpu::control::resident::Machine>::call+0x28ec>
+10013a458:     	ldr	x11, [x20, #0x8]
+10013a45c:     	ldr	x12, [x23, #0x20]
+10013a460:     	ldr	x12, [x12, x0, lsl #3]
+10013a464:     	str	x12, [x11, x8, lsl #3]
+10013a468:     	add	x0, x0, #0x1
+10013a46c:     	subs	x10, x10, #0x8
+10013a470:     	b.ne	0x10013a434 <<mech_gpu::control::resident::Machine>::call+0x17d8>
+10013a474:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+10013a478:     	mov	x9, #0x0                ; =0
+10013a47c:     	mov	x8, #0x0                ; =0
+10013a480:     	mov	x10, #0x0               ; =0
+10013a484:     	b	0x10013a828 <<mech_gpu::control::resident::Machine>::call+0x1bcc>
+10013a488:     	mov	w0, #0x1                ; =1
+10013a48c:     	str	x0, [sp, #0x8]
+10013a490:     	stp	x19, x0, [x29, #-0xe0]
+10013a494:     	stur	xzr, [x29, #-0xd0]
+10013a498:     	ldr	x8, [sp, #0x58]
+10013a49c:     	cbz	x8, 0x10013a6bc <<mech_gpu::control::resident::Machine>::call+0x1a60>
+10013a4a0:     	stp	x22, xzr, [sp, #0x18]
+10013a4a4:     	mov	x21, #0x0               ; =0
+10013a4a8:     	ldr	x8, [sp, #0xe0]
+10013a4ac:     	lsl	x19, x8, #3
+10013a4b0:     	add	x8, x23, x8
+10013a4b4:     	str	x8, [sp, #0x10]
+10013a4b8:     	add	x25, x19, x28
+10013a4bc:     	ldr	x2, [x24, #0x58]
+10013a4c0:     	ldp	x6, x8, [sp, #0x68]
+10013a4c4:     	str	x8, [sp]
+10013a4c8:     	sub	x0, x29, #0xc0
+10013a4cc:     	mov	x1, x20
+10013a4d0:     	ldr	x3, [sp, #0xe0]
+10013a4d4:     	ldr	x4, [sp, #0x40]
+10013a4d8:     	mov	x5, x23
+10013a4dc:     	mov	x7, x26
+10013a4e0:     	bl	0x100138c5c <<mech_gpu::control::resident::Machine>::call>
+10013a4e4:     	ldur	x8, [x29, #-0xc0]
+10013a4e8:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+10013a4ec:     	cmp	x8, x9
+10013a4f0:     	b.ne	0x10013b094 <<mech_gpu::control::resident::Machine>::call+0x2438>
+10013a4f4:     	ldr	x1, [x20, #0x10]
+10013a4f8:     	ldr	x9, [sp, #0x48]
+10013a4fc:     	cmp	x9, x1
+10013a500:     	b.hs	0x10013b740 <<mech_gpu::control::resident::Machine>::call+0x2ae4>
+10013a504:     	ldr	x8, [x20, #0x8]
+10013a508:     	ldr	x28, [x8, x9, lsl #3]
+10013a50c:     	cmp	x28, #0xff
+10013a510:     	b.hi	0x10013b0a8 <<mech_gpu::control::resident::Machine>::call+0x244c>
+10013a514:     	ldur	x22, [x29, #-0xd0]
+10013a518:     	ldur	x8, [x29, #-0xe0]
+10013a51c:     	cmp	x22, x8
+10013a520:     	b.ne	0x10013a52c <<mech_gpu::control::resident::Machine>::call+0x18d0>
+10013a524:     	sub	x0, x29, #0xe0
+10013a528:     	bl	0x10172ee24 <<alloc::raw_vec::RawVec<u8>>::grow_one>
+10013a52c:     	ldur	x8, [x29, #-0xd8]
+10013a530:     	strb	w28, [x8, x22]
+10013a534:     	add	x8, x22, #0x1
+10013a538:     	stur	x8, [x29, #-0xd0]
+10013a53c:     	ldp	x11, x22, [sp, #0x10]
+10013a540:     	ldr	x28, [sp, #0x20]
+10013a544:     	cbz	x23, 0x10013a58c <<mech_gpu::control::resident::Machine>::call+0x1930>
+10013a548:     	mov	x8, #0x0                ; =0
+10013a54c:     	ldr	x1, [x20, #0x10]
+10013a550:     	add	x9, x11, x8
+10013a554:     	cmp	x9, x1
+10013a558:     	b.hs	0x10013b4e8 <<mech_gpu::control::resident::Machine>::call+0x288c>
+10013a55c:     	ldr	x9, [sp, #0xe0]
+10013a560:     	add	x9, x9, x8
+10013a564:     	cmp	x9, x1
+10013a568:     	b.hs	0x10013b508 <<mech_gpu::control::resident::Machine>::call+0x28ac>
+10013a56c:     	ldr	x9, [x20, #0x8]
+10013a570:     	add	x10, x9, x25
+10013a574:     	ldr	x10, [x10, x8, lsl #3]
+10013a578:     	add	x9, x9, x19
+10013a57c:     	str	x10, [x9, x8, lsl #3]
+10013a580:     	add	x8, x8, #0x1
+10013a584:     	cmp	x23, x8
+10013a588:     	b.ne	0x10013a54c <<mech_gpu::control::resident::Machine>::call+0x18f0>
+10013a58c:     	add	x28, x28, #0x1
+10013a590:     	ldr	x8, [sp, #0x38]
+10013a594:     	cbz	x8, 0x10013a5e4 <<mech_gpu::control::resident::Machine>::call+0x1988>
+10013a598:     	cmp	x28, x8
+10013a59c:     	b.ne	0x10013a5e4 <<mech_gpu::control::resident::Machine>::call+0x1988>
+10013a5a0:     	ldr	x28, [x24, #0x28]
+10013a5a4:     	ldur	x1, [x29, #-0xd0]
+10013a5a8:     	ldur	x8, [x29, #-0xe0]
+10013a5ac:     	sub	x8, x8, x1
+10013a5b0:     	cmp	x22, x8
+10013a5b4:     	b.hi	0x10013a69c <<mech_gpu::control::resident::Machine>::call+0x1a40>
+10013a5b8:     	cbz	x22, 0x10013a5d4 <<mech_gpu::control::resident::Machine>::call+0x1978>
+10013a5bc:     	ldur	x8, [x29, #-0xd8]
+10013a5c0:     	add	x0, x8, x1
+10013a5c4:     	mov	x1, x28
+10013a5c8:     	mov	x2, x22
+10013a5cc:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+10013a5d0:     	ldur	x1, [x29, #-0xd0]
+10013a5d4:     	mov	x28, #0x0               ; =0
+10013a5d8:     	add	x2, x1, x22
+10013a5dc:     	stur	x2, [x29, #-0xd0]
+10013a5e0:     	b	0x10013a5e8 <<mech_gpu::control::resident::Machine>::call+0x198c>
+10013a5e4:     	ldur	x2, [x29, #-0xd0]
+10013a5e8:     	ldr	x8, [sp, #0x60]
+10013a5ec:     	cmp	x2, x8
+10013a5f0:     	b.hs	0x10013a5fc <<mech_gpu::control::resident::Machine>::call+0x19a0>
+10013a5f4:     	str	x28, [sp, #0x20]
+10013a5f8:     	b	0x10013a688 <<mech_gpu::control::resident::Machine>::call+0x1a2c>
+10013a5fc:     	ldur	x1, [x29, #-0xd8]
+10013a600:     	ldr	x22, [sp, #0xc0]
+10013a604:     	ldrb	w8, [x22, #0x48]
+10013a608:     	cmp	w8, #0x1
+10013a60c:     	b.eq	0x10013a644 <<mech_gpu::control::resident::Machine>::call+0x19e8>
+10013a610:     	cmp	w8, #0x2
+10013a614:     	b.eq	0x10013acd4 <<mech_gpu::control::resident::Machine>::call+0x2078>
+10013a618:     	str	x1, [sp, #0x20]
+10013a61c:     	str	x2, [sp, #0x50]
+10013a620:     	ldr	x0, [sp, #0xc0]
+10013a624:     	adrp	x1, 0x10010d000 <std::sys::thread_local::native::eager::destroy::<core::cell::RefCell<core::option::Option<mech_gpu::control::bigint::Session>>>+0x138>
+10013a628:     	add	x1, x1, #0x50
+10013a62c:     	bl	0x1016d0de8 <std::sys::thread_local::destructors::list::register>
+10013a630:     	ldr	x22, [sp, #0xc0]
+10013a634:     	mov	w8, #0x1                ; =1
+10013a638:     	strb	w8, [x22, #0x48]
+10013a63c:     	ldr	x2, [sp, #0x50]
+10013a640:     	ldr	x1, [sp, #0x20]
+10013a644:     	ldr	x8, [x22]
+10013a648:     	cbnz	x8, 0x10013b3b8 <<mech_gpu::control::resident::Machine>::call+0x275c>
+10013a64c:     	mov	x8, #-0x1               ; =-1
+10013a650:     	str	x8, [x22]
+10013a654:     	ldr	x8, [x22, #0x8]
+10013a658:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+10013a65c:     	cmp	x8, x9
+10013a660:     	b.eq	0x10013b1f4 <<mech_gpu::control::resident::Machine>::call+0x2598>
+10013a664:     	add	x0, x22, #0x8
+10013a668:     	bl	0x1001341f8 <<mech_gpu::control::runtime::OutputSession>::write>
+10013a66c:     	ldr	x8, [x22]
+10013a670:     	add	x8, x8, #0x1
+10013a674:     	str	x8, [x22]
+10013a678:     	cbnz	x0, 0x10013b230 <<mech_gpu::control::resident::Machine>::call+0x25d4>
+10013a67c:     	str	x28, [sp, #0x20]
+10013a680:     	mov	x2, #0x0                ; =0
+10013a684:     	stur	xzr, [x29, #-0xd0]
+10013a688:     	add	x21, x21, #0x1
+10013a68c:     	ldr	x8, [sp, #0x58]
+10013a690:     	cmp	x21, x8
+10013a694:     	b.ne	0x10013a4bc <<mech_gpu::control::resident::Machine>::call+0x1860>
+10013a698:     	b	0x10013aa0c <<mech_gpu::control::resident::Machine>::call+0x1db0>
+10013a69c:     	sub	x0, x29, #0xe0
+10013a6a0:     	mov	x2, x22
+10013a6a4:     	mov	w3, #0x1                ; =1
+10013a6a8:     	mov	w4, #0x1                ; =1
+10013a6ac:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+10013a6b0:     	ldur	x1, [x29, #-0xd0]
+10013a6b4:     	ldr	x22, [sp, #0x18]
+10013a6b8:     	b	0x10013a5bc <<mech_gpu::control::resident::Machine>::call+0x1960>
+10013a6bc:     	mov	x2, #0x0                ; =0
+10013a6c0:     	ldr	x26, [sp, #0xe8]
+10013a6c4:     	ldr	x19, [sp, #0xc0]
+10013a6c8:     	ldur	x1, [x29, #-0xd8]
+10013a6cc:     	ldrb	w8, [x19, #0x48]
+10013a6d0:     	cmp	w8, #0x1
+10013a6d4:     	ldr	x23, [sp, #0x70]
+10013a6d8:     	b.eq	0x10013a71c <<mech_gpu::control::resident::Machine>::call+0x1ac0>
+10013a6dc:     	cmp	w8, #0x2
+10013a6e0:     	b.eq	0x10013ad80 <<mech_gpu::control::resident::Machine>::call+0x2124>
+10013a6e4:     	mov	x21, x2
+10013a6e8:     	mov	x19, x1
+10013a6ec:     	ldr	x0, [sp, #0xc0]
+10013a6f0:     	adrp	x1, 0x10010d000 <std::sys::thread_local::native::eager::destroy::<core::cell::RefCell<core::option::Option<mech_gpu::control::bigint::Session>>>+0x138>
+10013a6f4:     	add	x1, x1, #0x50
+10013a6f8:     	bl	0x1016d0de8 <std::sys::thread_local::destructors::list::register>
+10013a6fc:     	ldr	x8, [sp, #0xc0]
+10013a700:     	mov	w9, #0x1                ; =1
+10013a704:     	strb	w9, [x8, #0x48]
+10013a708:     	mov	x1, x19
+10013a70c:     	mov	x19, x8
+10013a710:     	ldp	x26, x25, [sp, #0xe8]
+10013a714:     	ldr	x23, [sp, #0x70]
+10013a718:     	mov	x2, x21
+10013a71c:     	ldr	x8, [x19]
+10013a720:     	cbnz	x8, 0x10013b404 <<mech_gpu::control::resident::Machine>::call+0x27a8>
+10013a724:     	mov	x8, #-0x1               ; =-1
+10013a728:     	str	x8, [x19]
+10013a72c:     	ldr	x8, [x19, #0x8]
+10013a730:     	mov	x9, #-0x8000000000000000 ; =-9223372036854775808
+10013a734:     	cmp	x8, x9
+10013a738:     	b.eq	0x10013b22c <<mech_gpu::control::resident::Machine>::call+0x25d0>
+10013a73c:     	add	x0, x19, #0x8
+10013a740:     	bl	0x1001341f8 <<mech_gpu::control::runtime::OutputSession>::write>
+10013a744:     	ldr	x8, [x19]
+10013a748:     	add	x8, x8, #0x1
+10013a74c:     	str	x8, [x19]
+10013a750:     	cbnz	x0, 0x10013b230 <<mech_gpu::control::resident::Machine>::call+0x25d4>
+10013a754:     	ldr	x9, [x24, #0x48]
+10013a758:     	cbz	x9, 0x10013a7a0 <<mech_gpu::control::resident::Machine>::call+0x1b44>
+10013a75c:     	ldr	x8, [x24, #0x40]
+10013a760:     	lsl	x9, x9, #3
+10013a764:     	ldr	x13, [sp, #0xe0]
+10013a768:     	ldr	x1, [x20, #0x10]
+10013a76c:     	cmp	x13, x1
+10013a770:     	b.hs	0x10013b69c <<mech_gpu::control::resident::Machine>::call+0x2a40>
+10013a774:     	ldr	x10, [x8], #0x8
+10013a778:     	ldr	x11, [sp, #0x100]
+10013a77c:     	add	x10, x11, x10
+10013a780:     	cmp	x10, x1
+10013a784:     	b.hs	0x10013b6a4 <<mech_gpu::control::resident::Machine>::call+0x2a48>
+10013a788:     	ldr	x11, [x20, #0x8]
+10013a78c:     	ldr	x12, [x11, x13, lsl #3]
+10013a790:     	str	x12, [x11, x10, lsl #3]
+10013a794:     	add	x13, x13, #0x1
+10013a798:     	subs	x9, x9, #0x8
+10013a79c:     	b.ne	0x10013a768 <<mech_gpu::control::resident::Machine>::call+0x1b0c>
+10013a7a0:     	ldr	x8, [sp, #0xe0]
+10013a7a4:     	str	x8, [x20, #0x30]
+10013a7a8:     	ldur	x1, [x29, #-0xe0]
+10013a7ac:     	cbz	x1, 0x10013a7bc <<mech_gpu::control::resident::Machine>::call+0x1b60>
+10013a7b0:     	ldur	x0, [x29, #-0xd8]
+10013a7b4:     	mov	w2, #0x1                ; =1
+10013a7b8:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013a7bc:     	ldr	x0, [sp, #0x68]
+10013a7c0:     	ldr	x1, [sp, #0x28]
+10013a7c4:     	mov	w2, #0x8                ; =8
+10013a7c8:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013a7cc:     	ldr	x24, [sp, #0xf8]
+10013a7d0:     	ldr	x8, [sp, #0x30]
+10013a7d4:     	ldr	x21, [sp, #0xc8]
+10013a7d8:     	cbz	x8, 0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+10013a7dc:     	lsl	x1, x8, #3
+10013a7e0:     	ldr	x0, [sp, #0x40]
+10013a7e4:     	mov	w2, #0x8                ; =8
+10013a7e8:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013a7ec:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+10013a7f0:     	ldr	x9, [x10, #0x8]
+10013a7f4:     	add	x0, x9, x12
+10013a7f8:     	cmp	x0, x1
+10013a7fc:     	b.hs	0x10013b838 <<mech_gpu::control::resident::Machine>::call+0x2bdc>
+10013a800:     	ldr	x9, [x13, x0, lsl #3]
+10013a804:     	cmp	x11, #0x3
+10013a808:     	b.hs	0x10013a814 <<mech_gpu::control::resident::Machine>::call+0x1bb8>
+10013a80c:     	mov	x10, #0x0               ; =0
+10013a810:     	b	0x10013a828 <<mech_gpu::control::resident::Machine>::call+0x1bcc>
+10013a814:     	ldr	x10, [x10, #0x10]
+10013a818:     	add	x0, x10, x12
+10013a81c:     	cmp	x0, x1
+10013a820:     	b.hs	0x10013b88c <<mech_gpu::control::resident::Machine>::call+0x2c30>
+10013a824:     	ldr	x10, [x13, x0, lsl #3]
+10013a828:     	stur	x25, [x29, #-0x68]
+10013a82c:     	str	x8, [sp, #0x158]
+10013a830:     	str	x9, [sp, #0x190]
+10013a834:     	stur	x10, [x29, #-0x100]
+10013a838:     	sub	x8, x29, #0x68
+10013a83c:     	stur	x8, [x29, #-0xc0]
+10013a840:     	add	x8, sp, #0x158
+10013a844:     	stur	x8, [x29, #-0xb8]
+10013a848:     	add	x8, sp, #0x190
+10013a84c:     	stur	x8, [x29, #-0xb0]
+10013a850:     	sub	x8, x29, #0x100
+10013a854:     	stur	x8, [x29, #-0xa8]
+10013a858:     	sub	x8, x29, #0xe0
+10013a85c:     	sub	x1, x29, #0xc0
+10013a860:     	adrp	x0, 0x101d64000 <_anon.ccae1f1a4bfd17ba382a31665da1168b.115+0x68>
+10013a864:     	add	x0, x0, #0x368
+10013a868:     	bl	0x1000895f0 <<std::thread::local::LocalKey<core::cell::RefCell<core::option::Option<mech_gpu::control::bigint::Session>>>>::with::<mech_gpu::control::bigint::apply::{closure#0}, core::result::Result<u64, alloc::string::String>>>
+10013a86c:     	ldp	x9, x8, [x29, #-0xe0]
+10013a870:     	mov	x10, #-0x8000000000000000 ; =-9223372036854775808
+10013a874:     	cmp	x9, x10
+10013a878:     	b.ne	0x10013b13c <<mech_gpu::control::resident::Machine>::call+0x24e0>
+10013a87c:     	ldr	x9, [x24, #0x50]
+10013a880:     	cbz	x9, 0x10013b760 <<mech_gpu::control::resident::Machine>::call+0x2b04>
+10013a884:     	ldr	x9, [x24, #0x48]
+10013a888:     	ldr	x9, [x9]
+10013a88c:     	ldr	x10, [sp, #0x100]
+10013a890:     	ldr	x1, [x20, #0x10]
+10013a894:     	add	x0, x10, x9
+10013a898:     	cmp	x0, x1
+10013a89c:     	ldr	x25, [sp, #0xf0]
+10013a8a0:     	b.hs	0x10013b774 <<mech_gpu::control::resident::Machine>::call+0x2b18>
+10013a8a4:     	ldr	x9, [x20, #0x8]
+10013a8a8:     	str	x8, [x9, x0, lsl #3]
+10013a8ac:     	ldr	x24, [sp, #0xf8]
+10013a8b0:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+10013a8b4:     	fmul	d0, d0, d1
+10013a8b8:     	fmov	x8, d0
+10013a8bc:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a8c0:     	fadd	d0, d0, d1
+10013a8c4:     	fmov	x8, d0
+10013a8c8:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a8cc:     	and	x8, x8, x11
+10013a8d0:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a8d4:     	cbz	x8, 0x10013b3e4 <<mech_gpu::control::resident::Machine>::call+0x2788>
+10013a8d8:     	udiv	x12, x11, x8
+10013a8dc:     	msub	x8, x12, x8, x11
+10013a8e0:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a8e4:     	orr	x8, x8, x11
+10013a8e8:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a8ec:     	cmp	x11, x8
+10013a8f0:     	cset	w8, hi
+10013a8f4:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a8f8:     	lsr	x12, x8, #32
+10013a8fc:     	cbnz	x12, 0x10013b20c <<mech_gpu::control::resident::Machine>::call+0x25b0>
+10013a900:     	cmp	x8, #0x40
+10013a904:     	b.hs	0x10013b20c <<mech_gpu::control::resident::Machine>::call+0x25b0>
+10013a908:     	lsl	x8, x11, x8
+10013a90c:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a910:     	ucvtf	d0, x11
+10013a914:     	fmov	x8, d0
+10013a918:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a91c:     	mul	x8, x8, x11
+10013a920:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a924:     	fsub	d0, d0, d1
+10013a928:     	fmov	x8, d0
+10013a92c:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a930:     	cbz	x8, 0x10013b3e4 <<mech_gpu::control::resident::Machine>::call+0x2788>
+10013a934:     	udiv	x8, x11, x8
+10013a938:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a93c:     	cmp	x11, x8
+10013a940:     	cset	w8, lo
+10013a944:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a948:     	sub	x8, x11, x8
+10013a94c:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a950:     	fdiv	d0, d0, d1
+10013a954:     	fmov	x8, d0
+10013a958:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a95c:     	fcmp	d0, d1
+10013a960:     	cset	w8, mi
+10013a964:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a968:     	cmp	x11, x8
+10013a96c:     	cset	w8, eq
+10013a970:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a974:     	fcmp	d0, d1
+10013a978:     	cset	w8, ls
+10013a97c:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a980:     	cmp	x8, x11
+10013a984:     	csel	x8, x8, x11, hi
+10013a988:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a98c:     	cmp	x11, x8
+10013a990:     	cset	w8, ne
+10013a994:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a998:     	fcmp	d0, d1
+10013a99c:     	cset	w8, eq
+10013a9a0:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a9a4:     	cmp	x11, x8
+10013a9a8:     	cset	w8, hs
+10013a9ac:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a9b0:     	cmp	x11, x8
+10013a9b4:     	cset	w8, ls
+10013a9b8:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a9bc:     	fcmp	d0, d1
+10013a9c0:     	cset	w8, gt
+10013a9c4:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a9c8:     	fcmp	d0, d1
+10013a9cc:     	cset	w8, ne
+10013a9d0:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a9d4:     	fcmp	d0, d1
+10013a9d8:     	cset	w8, ge
+10013a9dc:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a9e0:     	cmp	x11, #0x14
+10013a9e4:     	b.hi	0x10013b2e4 <<mech_gpu::control::resident::Machine>::call+0x2688>
+10013a9e8:     	cmp	x11, #0x2
+10013a9ec:     	b.hs	0x10013a9f8 <<mech_gpu::control::resident::Machine>::call+0x1d9c>
+10013a9f0:     	mov	w8, #0x1                ; =1
+10013a9f4:     	b	0x10013aab8 <<mech_gpu::control::resident::Machine>::call+0x1e5c>
+10013a9f8:     	cmp	x11, #0x2
+10013a9fc:     	b.ne	0x10013aa64 <<mech_gpu::control::resident::Machine>::call+0x1e08>
+10013aa00:     	mov	w12, #0x1               ; =1
+10013aa04:     	mov	w8, #0x1                ; =1
+10013aa08:     	b	0x10013aaa4 <<mech_gpu::control::resident::Machine>::call+0x1e48>
+10013aa0c:     	ldp	x26, x25, [sp, #0xe8]
+10013aa10:     	ldr	x8, [sp, #0x38]
+10013aa14:     	cbz	x8, 0x10013a6c4 <<mech_gpu::control::resident::Machine>::call+0x1a68>
+10013aa18:     	ldr	x19, [sp, #0xc0]
+10013aa1c:     	ldr	x8, [sp, #0x20]
+10013aa20:     	cbz	x8, 0x10013a6c8 <<mech_gpu::control::resident::Machine>::call+0x1a6c>
+10013aa24:     	ldr	x23, [x24, #0x28]
+10013aa28:     	ldur	x8, [x29, #-0xe0]
+10013aa2c:     	sub	x8, x8, x2
+10013aa30:     	ldr	x22, [sp, #0x18]
+10013aa34:     	cmp	x22, x8
+10013aa38:     	b.hi	0x10013ab4c <<mech_gpu::control::resident::Machine>::call+0x1ef0>
+10013aa3c:     	cbz	x22, 0x10013aa58 <<mech_gpu::control::resident::Machine>::call+0x1dfc>
+10013aa40:     	ldur	x8, [x29, #-0xd8]
+10013aa44:     	add	x0, x8, x2
+10013aa48:     	mov	x1, x23
+10013aa4c:     	mov	x2, x22
+10013aa50:     	bl	0x10172f7dc <dyld_stub_binder+0x10172f7dc>
+10013aa54:     	ldur	x2, [x29, #-0xd0]
+10013aa58:     	add	x2, x2, x22
+10013aa5c:     	stur	x2, [x29, #-0xd0]
+10013aa60:     	b	0x10013a6c8 <<mech_gpu::control::resident::Machine>::call+0x1a6c>
+10013aa64:     	sub	x13, x11, #0x1
+10013aa68:     	and	x14, x13, #0xfffffffffffffffe
+10013aa6c:     	orr	x8, x13, #0x1
+10013aa70:     	neg	x12, x14
+10013aa74:     	mov	w15, #0x1               ; =1
+10013aa78:     	mov	w16, #0x1               ; =1
+10013aa7c:     	mov	w17, #0x1               ; =1
+10013aa80:     	mul	x16, x15, x16
+10013aa84:     	madd	x17, x17, x15, x17
+10013aa88:     	add	x15, x15, #0x2
+10013aa8c:     	add	x0, x12, x15
+10013aa90:     	cmp	x0, #0x1
+10013aa94:     	b.ne	0x10013aa80 <<mech_gpu::control::resident::Machine>::call+0x1e24>
+10013aa98:     	mul	x12, x17, x16
+10013aa9c:     	cmp	x13, x14
+10013aaa0:     	b.eq	0x10013aab4 <<mech_gpu::control::resident::Machine>::call+0x1e58>
+10013aaa4:     	mul	x12, x8, x12
+10013aaa8:     	add	x8, x8, #0x1
+10013aaac:     	cmp	x11, x8
+10013aab0:     	b.ne	0x10013aaa4 <<mech_gpu::control::resident::Machine>::call+0x1e48>
+10013aab4:     	mul	x8, x12, x11
+10013aab8:     	ldr	x11, [x24, #0x18]
+10013aabc:     	add	x0, x11, x9
+10013aac0:     	cmp	x0, x1
+10013aac4:     	b.hs	0x10013b66c <<mech_gpu::control::resident::Machine>::call+0x2a10>
+10013aac8:     	str	x8, [x10, x0, lsl #3]
+10013aacc:     	ldr	x24, [sp, #0xf8]
+10013aad0:     	b	0x100138ee0 <<mech_gpu::control::resident::Machine>::call+0x284>
+10013aad4:     	ldur	x8, [x29, #-0xe0]
+10013aad8:     	ldr	x23, [sp, #0x70]
+10013aadc:     	mov	x22, x23
+10013aae0:     	sub	x8, x8, x28
+10013aae4:     	cmp	x25, x8
+10013aae8:     	ldr	x24, [sp, #0xf8]
+10013aaec:     	b.ls	0x10013a098 <<mech_gpu::control::resident::Machine>::call+0x143c>
+10013aaf0:     	sub	x0, x29, #0xe0
+10013aaf4:     	mov	x1, x28
+10013aaf8:     	mov	x2, x25
+10013aafc:     	mov	w3, #0x1                ; =1
+10013ab00:     	mov	w4, #0x1                ; =1
+10013ab04:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+10013ab08:     	ldp	x23, x28, [x29, #-0xd8]
+10013ab0c:     	ldr	x19, [sp, #0xc0]
+10013ab10:     	ldr	x24, [sp, #0xf8]
+10013ab14:     	b	0x10013a0a0 <<mech_gpu::control::resident::Machine>::call+0x1444>
+10013ab18:     	sub	x2, x25, x19
+10013ab1c:     	mov	x0, x20
+10013ab20:     	mov	x1, x19
+10013ab24:     	mov	w3, #0x8                ; =8
+10013ab28:     	mov	w4, #0x8                ; =8
+10013ab2c:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+10013ab30:     	sub	x10, x25, x19
+10013ab34:     	add	x9, x22, #0x1
+10013ab38:     	ldp	x26, x28, [x20, #0x8]
+10013ab3c:     	add	x0, x26, x28, lsl #3
+10013ab40:     	cmp	x10, #0x2
+10013ab44:     	b.hs	0x100139040 <<mech_gpu::control::resident::Machine>::call+0x3e4>
+10013ab48:     	b	0x100139078 <<mech_gpu::control::resident::Machine>::call+0x41c>
+10013ab4c:     	sub	x0, x29, #0xe0
+10013ab50:     	mov	x1, x2
+10013ab54:     	mov	x2, x22
+10013ab58:     	mov	w3, #0x1                ; =1
+10013ab5c:     	mov	w4, #0x1                ; =1
+10013ab60:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+10013ab64:     	ldur	x2, [x29, #-0xd0]
+10013ab68:     	ldp	x26, x25, [sp, #0xe8]
+10013ab6c:     	ldr	x19, [sp, #0xc0]
+10013ab70:     	ldr	x22, [sp, #0x18]
+10013ab74:     	b	0x10013aa40 <<mech_gpu::control::resident::Machine>::call+0x1de4>
+10013ab78:     	ldr	x8, [x25, #0x58]
+10013ab7c:     	ldp	x9, x13, [sp, #0xd0]
+10013ab80:     	cmp	x9, x8
+10013ab84:     	csel	x9, x9, x8, lo
+10013ab88:     	cbz	x9, 0x10013abcc <<mech_gpu::control::resident::Machine>::call+0x1f70>
+10013ab8c:     	ldr	x10, [x25, #0x50]
+10013ab90:     	ldr	x8, [x10], #0x8
+10013ab94:     	ldr	x11, [sp, #0x100]
+10013ab98:     	ldr	x1, [x20, #0x10]
+10013ab9c:     	add	x0, x11, x8
+10013aba0:     	cmp	x0, x1
+10013aba4:     	b.hs	0x10013b3d8 <<mech_gpu::control::resident::Machine>::call+0x277c>
+10013aba8:     	ldr	x8, [x13], #0x8
+10013abac:     	add	x8, x8, x26
+10013abb0:     	cmp	x8, x1
+10013abb4:     	b.hs	0x10013b3c8 <<mech_gpu::control::resident::Machine>::call+0x276c>
+10013abb8:     	ldr	x11, [x20, #0x8]
+10013abbc:     	ldr	x12, [x11, x0, lsl #3]
+10013abc0:     	str	x12, [x11, x8, lsl #3]
+10013abc4:     	subs	x9, x9, #0x1
+10013abc8:     	b.ne	0x10013ab90 <<mech_gpu::control::resident::Machine>::call+0x1f34>
+10013abcc:     	ldr	x8, [sp, #0x100]
+10013abd0:     	ldr	x9, [x20, #0x38]
+10013abd4:     	sub	x9, x9, #0x1
+10013abd8:     	stp	x8, x9, [x20, #0x30]
+10013abdc:     	mov	x8, #-0x8000000000000000 ; =-9223372036854775808
+10013abe0:     	str	x8, [x21]
+10013abe4:     	add	sp, sp, #0x260
+10013abe8:     	ldp	x29, x30, [sp, #0x50]
+10013abec:     	ldp	x20, x19, [sp, #0x40]
+10013abf0:     	ldp	x22, x21, [sp, #0x30]
+10013abf4:     	ldp	x24, x23, [sp, #0x20]
+10013abf8:     	ldp	x26, x25, [sp, #0x10]
+10013abfc:     	ldp	x28, x27, [sp], #0x60
+10013ac00:     	ret
+10013ac04:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013ac08:     	mov	w19, #0xf               ; =15
+10013ac0c:     	mov	w22, #0x1               ; =1
+10013ac10:     	mov	w0, #0xf                ; =15
+10013ac14:     	mov	w1, #0x1                ; =1
+10013ac18:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013ac1c:     	cbz	x0, 0x10013b388 <<mech_gpu::control::resident::Machine>::call+0x272c>
+10013ac20:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013ac24:     	add	x8, x8, #0xd86
+10013ac28:     	ldr	x9, [x8]
+10013ac2c:     	str	x9, [x0]
+10013ac30:     	ldur	x8, [x8, #0x7]
+10013ac34:     	stur	x8, [x0, #0x7]
+10013ac38:     	mov	w8, #0xf                ; =15
+10013ac3c:     	stp	x8, x0, [x21]
+10013ac40:     	str	x8, [x21, #0x10]
+10013ac44:     	ldur	x1, [x29, #-0xe0]
+10013ac48:     	cbz	x1, 0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013ac4c:     	ldur	x0, [x29, #-0xd8]
+10013ac50:     	mov	w2, #0x1                ; =1
+10013ac54:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013ac58:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013ac5c:     	adrp	x0, 0x101d5e000 <_anon.d08918ac0db31084bedaf27ceef6a0c3.94+0x3b8>
+10013ac60:     	add	x0, x0, #0x8e0
+10013ac64:     	bl	0x10172e9c8 <std::thread::local::panic_access_error>
+10013ac68:     	mov	x1, x28
+10013ac6c:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013ac70:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013ac74:     	mov	x0, #0x0                ; =0
+10013ac78:     	ldr	x1, [sp, #0x8]
+10013ac7c:     	ldr	x22, [sp, #0x40]
+10013ac80:     	ldp	x20, x26, [sp, #0x28]
+10013ac84:     	ldr	x21, [sp, #0x68]
+10013ac88:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013ac8c:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013ac90:     	adrp	x0, 0x101d5e000 <_anon.d08918ac0db31084bedaf27ceef6a0c3.94+0x3b8>
+10013ac94:     	add	x0, x0, #0x8e0
+10013ac98:     	bl	0x10172e9c8 <std::thread::local::panic_access_error>
+10013ac9c:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013aca0:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013aca4:     	mov	w0, #0x19               ; =25
+10013aca8:     	mov	w1, #0x1                ; =1
+10013acac:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013acb0:     	cbz	x0, 0x10013b780 <<mech_gpu::control::resident::Machine>::call+0x2b24>
+10013acb4:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013acb8:     	add	x8, x8, #0xd59
+10013acbc:     	ldr	q0, [x8]
+10013acc0:     	str	q0, [x0]
+10013acc4:     	ldur	q0, [x8, #0x9]
+10013acc8:     	stur	q0, [x0, #0x9]
+10013accc:     	mov	w8, #0x19               ; =25
+10013acd0:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013acd4:     	adrp	x0, 0x101d5e000 <_anon.d08918ac0db31084bedaf27ceef6a0c3.94+0x3b8>
+10013acd8:     	add	x0, x0, #0x8e0
+10013acdc:     	bl	0x10172e9c8 <std::thread::local::panic_access_error>
+10013ace0:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013ace4:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013ace8:     	mov	w0, #0x12               ; =18
+10013acec:     	mov	w1, #0x1                ; =1
+10013acf0:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013acf4:     	cbz	x0, 0x10013b850 <<mech_gpu::control::resident::Machine>::call+0x2bf4>
+10013acf8:     	mov	w8, #0x7865             ; =30821
+10013acfc:     	strh	w8, [x0, #0x10]
+10013ad00:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013ad04:     	add	x8, x8, #0xc5f
+10013ad08:     	ldr	q0, [x8]
+10013ad0c:     	str	q0, [x0]
+10013ad10:     	mov	w8, #0x12               ; =18
+10013ad14:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013ad18:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013ad1c:     	mov	w0, #0x1c               ; =28
+10013ad20:     	mov	w1, #0x1                ; =1
+10013ad24:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013ad28:     	cbz	x0, 0x10013b868 <<mech_gpu::control::resident::Machine>::call+0x2c0c>
+10013ad2c:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013ad30:     	add	x8, x8, #0xc28
+10013ad34:     	ldr	q0, [x8]
+10013ad38:     	str	q0, [x0]
+10013ad3c:     	ldur	q0, [x8, #0xc]
+10013ad40:     	stur	q0, [x0, #0xc]
+10013ad44:     	mov	w8, #0x1c               ; =28
+10013ad48:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013ad4c:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013ad50:     	mov	w0, #0x1d               ; =29
+10013ad54:     	mov	w1, #0x1                ; =1
+10013ad58:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013ad5c:     	cbz	x0, 0x10013b874 <<mech_gpu::control::resident::Machine>::call+0x2c18>
+10013ad60:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013ad64:     	add	x8, x8, #0xcc9
+10013ad68:     	ldr	q0, [x8]
+10013ad6c:     	str	q0, [x0]
+10013ad70:     	ldur	q0, [x8, #0xd]
+10013ad74:     	stur	q0, [x0, #0xd]
+10013ad78:     	mov	w8, #0x1d               ; =29
+10013ad7c:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013ad80:     	adrp	x0, 0x101d5e000 <_anon.d08918ac0db31084bedaf27ceef6a0c3.94+0x3b8>
+10013ad84:     	add	x0, x0, #0x8e0
+10013ad88:     	ldr	x22, [sp, #0x40]
+10013ad8c:     	ldr	x26, [sp, #0x30]
+10013ad90:     	bl	0x10172e9c8 <std::thread::local::panic_access_error>
+10013ad94:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013ad98:     	sub	x8, x29, #0xc0
+10013ad9c:     	add	x0, x24, #0x8
+10013ada0:     	bl	0x1016e1f08 <<alloc::string::String as core::clone::Clone>::clone>
+10013ada4:     	ldur	q0, [x29, #-0xc0]
+10013ada8:     	str	q0, [x21]
+10013adac:     	ldur	x8, [x29, #-0xb0]
+10013adb0:     	str	x8, [x21, #0x10]
+10013adb4:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013adb8:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013adbc:     	mov	w0, #0x10               ; =16
+10013adc0:     	mov	w1, #0x1                ; =1
+10013adc4:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013adc8:     	cbz	x0, 0x10013b8b0 <<mech_gpu::control::resident::Machine>::call+0x2c54>
+10013adcc:     	adrp	x8, 0x101881000 <_anon.2c09dcdca9c49da8a59da57759c8b9e1.296+0x159>
+10013add0:     	add	x8, x8, #0xc0
+10013add4:     	ldr	q0, [x8]
+10013add8:     	str	q0, [x0]
+10013addc:     	mov	w8, #0x10               ; =16
+10013ade0:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013ade4:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013ade8:     	mov	w0, #0x14               ; =20
+10013adec:     	mov	w1, #0x1                ; =1
+10013adf0:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013adf4:     	cbz	x0, 0x10013b844 <<mech_gpu::control::resident::Machine>::call+0x2be8>
+10013adf8:     	mov	w8, #0x6e75             ; =28277
+10013adfc:     	movk	w8, #0x7364, lsl #16
+10013ae00:     	str	w8, [x0, #0x10]
+10013ae04:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013ae08:     	add	x8, x8, #0xce6
+10013ae0c:     	b	0x10013affc <<mech_gpu::control::resident::Machine>::call+0x23a0>
+10013ae10:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013ae14:     	mov	w0, #0x1b               ; =27
+10013ae18:     	mov	w1, #0x1                ; =1
+10013ae1c:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013ae20:     	cbz	x0, 0x10013b8a4 <<mech_gpu::control::resident::Machine>::call+0x2c48>
+10013ae24:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013ae28:     	add	x8, x8, #0xc44
+10013ae2c:     	ldr	q0, [x8]
+10013ae30:     	str	q0, [x0]
+10013ae34:     	ldur	q0, [x8, #0xb]
+10013ae38:     	stur	q0, [x0, #0xb]
+10013ae3c:     	mov	w8, #0x1b               ; =27
+10013ae40:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013ae44:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013ae48:     	mov	w0, #0x13               ; =19
+10013ae4c:     	mov	w1, #0x1                ; =1
+10013ae50:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013ae54:     	cbz	x0, 0x10013b85c <<mech_gpu::control::resident::Machine>::call+0x2c00>
+10013ae58:     	mov	w8, #0x646e             ; =25710
+10013ae5c:     	movk	w8, #0x7865, lsl #16
+10013ae60:     	stur	w8, [x0, #0xf]
+10013ae64:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013ae68:     	add	x8, x8, #0xc89
+10013ae6c:     	ldr	q0, [x8]
+10013ae70:     	str	q0, [x0]
+10013ae74:     	mov	w8, #0x13               ; =19
+10013ae78:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013ae7c:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013ae80:     	mov	w0, #0x13               ; =19
+10013ae84:     	mov	w1, #0x1                ; =1
+10013ae88:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013ae8c:     	cbz	x0, 0x10013b85c <<mech_gpu::control::resident::Machine>::call+0x2c00>
+10013ae90:     	mov	w8, #0x6666             ; =26214
+10013ae94:     	movk	w8, #0x7265, lsl #16
+10013ae98:     	stur	w8, [x0, #0xf]
+10013ae9c:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013aea0:     	add	x8, x8, #0xdb4
+10013aea4:     	ldr	q0, [x8]
+10013aea8:     	str	q0, [x0]
+10013aeac:     	mov	w8, #0x13               ; =19
+10013aeb0:     	ldr	x9, [sp, #0xc8]
+10013aeb4:     	stp	x8, x0, [x9]
+10013aeb8:     	str	x8, [x9, #0x10]
+10013aebc:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013aec0:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013aec4:     	mov	w0, #0x16               ; =22
+10013aec8:     	mov	w1, #0x1                ; =1
+10013aecc:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013aed0:     	cbz	x0, 0x10013b8bc <<mech_gpu::control::resident::Machine>::call+0x2c60>
+10013aed4:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013aed8:     	add	x8, x8, #0xddf
+10013aedc:     	ldr	q0, [x8]
+10013aee0:     	str	q0, [x0]
+10013aee4:     	ldur	x8, [x8, #0xe]
+10013aee8:     	stur	x8, [x0, #0xe]
+10013aeec:     	mov	w8, #0x16               ; =22
+10013aef0:     	stp	x8, x0, [x22]
+10013aef4:     	str	x8, [x22, #0x10]
+10013aef8:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013aefc:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013af00:     	mov	w0, #0x18               ; =24
+10013af04:     	mov	w1, #0x1                ; =1
+10013af08:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013af0c:     	cbz	x0, 0x10013b880 <<mech_gpu::control::resident::Machine>::call+0x2c24>
+10013af10:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013af14:     	add	x8, x8, #0xc71
+10013af18:     	b	0x10013afa8 <<mech_gpu::control::resident::Machine>::call+0x234c>
+10013af1c:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013af20:     	mov	w0, #0x14               ; =20
+10013af24:     	mov	w1, #0x1                ; =1
+10013af28:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013af2c:     	cbz	x0, 0x10013b844 <<mech_gpu::control::resident::Machine>::call+0x2be8>
+10013af30:     	mov	w8, #0x646e             ; =25710
+10013af34:     	movk	w8, #0x656c, lsl #16
+10013af38:     	str	w8, [x0, #0x10]
+10013af3c:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013af40:     	add	x8, x8, #0xc9c
+10013af44:     	b	0x10013affc <<mech_gpu::control::resident::Machine>::call+0x23a0>
+10013af48:     	ldur	q0, [x29, #-0x100]
+10013af4c:     	str	q0, [x21]
+10013af50:     	ldur	x8, [x29, #-0xf0]
+10013af54:     	str	x8, [x21, #0x10]
+10013af58:     	ldr	x8, [sp, #0x158]
+10013af5c:     	cbz	x8, 0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013af60:     	ldr	x0, [sp, #0x160]
+10013af64:     	lsl	x1, x8, #3
+10013af68:     	b	0x10013b2ac <<mech_gpu::control::resident::Machine>::call+0x2650>
+10013af6c:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013af70:     	mov	w0, #0x19               ; =25
+10013af74:     	mov	w1, #0x1                ; =1
+10013af78:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013af7c:     	cbz	x0, 0x10013b780 <<mech_gpu::control::resident::Machine>::call+0x2b24>
+10013af80:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013af84:     	add	x8, x8, #0xcb0
+10013af88:     	b	0x10013acbc <<mech_gpu::control::resident::Machine>::call+0x2060>
+10013af8c:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013af90:     	mov	w0, #0x18               ; =24
+10013af94:     	mov	w1, #0x1                ; =1
+10013af98:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013af9c:     	cbz	x0, 0x10013b880 <<mech_gpu::control::resident::Machine>::call+0x2c24>
+10013afa0:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013afa4:     	add	x8, x8, #0xcfa
+10013afa8:     	ldr	q0, [x8]
+10013afac:     	str	q0, [x0]
+10013afb0:     	ldr	x8, [x8, #0x10]
+10013afb4:     	str	x8, [x0, #0x10]
+10013afb8:     	mov	w8, #0x18               ; =24
+10013afbc:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013afc0:     	sub	x9, x29, #0xe0
+10013afc4:     	ldur	q0, [x9, #0x8]
+10013afc8:     	str	x8, [x21]
+10013afcc:     	stur	q0, [x21, #0x8]
+10013afd0:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013afd4:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013afd8:     	mov	w0, #0x14               ; =20
+10013afdc:     	mov	w1, #0x1                ; =1
+10013afe0:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013afe4:     	cbz	x0, 0x10013b844 <<mech_gpu::control::resident::Machine>::call+0x2be8>
+10013afe8:     	mov	w8, #0x6572             ; =25970
+10013afec:     	movk	w8, #0x616e, lsl #16
+10013aff0:     	str	w8, [x0, #0x10]
+10013aff4:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013aff8:     	add	x8, x8, #0xd72
+10013affc:     	ldr	q0, [x8]
+10013b000:     	str	q0, [x0]
+10013b004:     	mov	w8, #0x14               ; =20
+10013b008:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013b00c:     	ldur	q0, [x29, #-0xe0]
+10013b010:     	str	q0, [x21]
+10013b014:     	ldur	x8, [x29, #-0xd0]
+10013b018:     	str	x8, [x21, #0x10]
+10013b01c:     	ldur	x8, [x29, #-0x100]
+10013b020:     	cbz	x8, 0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013b024:     	lsl	x1, x8, #3
+10013b028:     	mov	x0, x23
+10013b02c:     	b	0x10013b2ac <<mech_gpu::control::resident::Machine>::call+0x2650>
+10013b030:     	ldur	q0, [x29, #-0xe0]
+10013b034:     	str	q0, [x21]
+10013b038:     	ldur	x8, [x29, #-0xd0]
+10013b03c:     	str	x8, [x21, #0x10]
+10013b040:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013b044:     	str	xzr, [x19]
+10013b048:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b04c:     	mov	w0, #0xd                ; =13
+10013b050:     	mov	w1, #0x1                ; =1
+10013b054:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b058:     	cbz	x0, 0x10013b898 <<mech_gpu::control::resident::Machine>::call+0x2c3c>
+10013b05c:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b060:     	add	x8, x8, #0xda7
+10013b064:     	ldr	x9, [x8]
+10013b068:     	str	x9, [x0]
+10013b06c:     	ldur	x8, [x8, #0x5]
+10013b070:     	stur	x8, [x0, #0x5]
+10013b074:     	mov	w8, #0xd                ; =13
+10013b078:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013b07c:     	add	x8, sp, #0x29
+10013b080:     	ldur	q0, [x8, #0xff]
+10013b084:     	str	q0, [x21]
+10013b088:     	ldr	x8, [sp, #0x138]
+10013b08c:     	str	x8, [x21, #0x10]
+10013b090:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013b094:     	ldur	q0, [x29, #-0xc0]
+10013b098:     	ldr	x9, [sp, #0xc8]
+10013b09c:     	str	q0, [x9]
+10013b0a0:     	ldur	x8, [x29, #-0xb0]
+10013b0a4:     	b	0x10013b26c <<mech_gpu::control::resident::Machine>::call+0x2610>
+10013b0a8:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b0ac:     	mov	w19, #0x15              ; =21
+10013b0b0:     	mov	w0, #0x15               ; =21
+10013b0b4:     	mov	w1, #0x1                ; =1
+10013b0b8:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b0bc:     	cbz	x0, 0x10013b8c8 <<mech_gpu::control::resident::Machine>::call+0x2c6c>
+10013b0c0:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b0c4:     	add	x8, x8, #0xdc7
+10013b0c8:     	ldr	q0, [x8]
+10013b0cc:     	str	q0, [x0]
+10013b0d0:     	ldur	x8, [x8, #0xd]
+10013b0d4:     	stur	x8, [x0, #0xd]
+10013b0d8:     	mov	w8, #0x15               ; =21
+10013b0dc:     	b	0x10013b264 <<mech_gpu::control::resident::Machine>::call+0x2608>
+10013b0e0:     	adrp	x4, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b0e4:     	add	x4, x4, #0xd18
+10013b0e8:     	mov	x0, x26
+10013b0ec:     	mov	x1, x25
+10013b0f0:     	mov	x2, x23
+10013b0f4:     	mov	x3, x25
+10013b0f8:     	bl	0x10172f040 <core::str::slice_error_fail>
+10013b0fc:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013b100:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b104:     	mov	w19, #0x12              ; =18
+10013b108:     	mov	w22, #0x1               ; =1
+10013b10c:     	mov	w0, #0x12               ; =18
+10013b110:     	mov	w1, #0x1                ; =1
+10013b114:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b118:     	cbz	x0, 0x10013b388 <<mech_gpu::control::resident::Machine>::call+0x272c>
+10013b11c:     	mov	w8, #0x7461             ; =29793
+10013b120:     	strh	w8, [x0, #0x10]
+10013b124:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b128:     	add	x8, x8, #0xd95
+10013b12c:     	ldr	q0, [x8]
+10013b130:     	str	q0, [x0]
+10013b134:     	mov	w8, #0x12               ; =18
+10013b138:     	b	0x10013ac3c <<mech_gpu::control::resident::Machine>::call+0x1fe0>
+10013b13c:     	ldur	x10, [x29, #-0xd0]
+10013b140:     	stp	x9, x8, [x21]
+10013b144:     	str	x10, [x21, #0x10]
+10013b148:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013b14c:     	str	xzr, [x19]
+10013b150:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b154:     	mov	w19, #0xd               ; =13
+10013b158:     	mov	w22, #0x1               ; =1
+10013b15c:     	mov	w0, #0xd                ; =13
+10013b160:     	mov	w1, #0x1                ; =1
+10013b164:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b168:     	cbz	x0, 0x10013b388 <<mech_gpu::control::resident::Machine>::call+0x272c>
+10013b16c:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b170:     	add	x8, x8, #0xda7
+10013b174:     	ldr	x9, [x8]
+10013b178:     	str	x9, [x0]
+10013b17c:     	ldur	x8, [x8, #0x5]
+10013b180:     	stur	x8, [x0, #0x5]
+10013b184:     	mov	w8, #0xd                ; =13
+10013b188:     	b	0x10013ac3c <<mech_gpu::control::resident::Machine>::call+0x1fe0>
+10013b18c:     	adrp	x3, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b190:     	add	x3, x3, #0xf40
+10013b194:     	mov	x0, x25
+10013b198:     	mov	x2, x26
+10013b19c:     	bl	0x10172f32c <core::slice::index::slice_index_fail>
+10013b1a0:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b1a4:     	mov	w0, #0x11               ; =17
+10013b1a8:     	mov	w1, #0x1                ; =1
+10013b1ac:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b1b0:     	cbz	x0, 0x10013b8d8 <<mech_gpu::control::resident::Machine>::call+0x2c7c>
+10013b1b4:     	mov	w8, #0x65               ; =101
+10013b1b8:     	strb	w8, [x0, #0x10]
+10013b1bc:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b1c0:     	add	x8, x8, #0xd48
+10013b1c4:     	ldr	q0, [x8]
+10013b1c8:     	str	q0, [x0]
+10013b1cc:     	mov	w8, #0x11               ; =17
+10013b1d0:     	b	0x100138cbc <<mech_gpu::control::resident::Machine>::call+0x60>
+10013b1d4:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b1d8:     	mov	w0, #0x19               ; =25
+10013b1dc:     	mov	w1, #0x1                ; =1
+10013b1e0:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b1e4:     	cbz	x0, 0x10013b780 <<mech_gpu::control::resident::Machine>::call+0x2b24>
+10013b1e8:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b1ec:     	add	x8, x8, #0xd12
+10013b1f0:     	b	0x10013acbc <<mech_gpu::control::resident::Machine>::call+0x2060>
+10013b1f4:     	str	xzr, [x22]
+10013b1f8:     	b	0x10013b230 <<mech_gpu::control::resident::Machine>::call+0x25d4>
+10013b1fc:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b200:     	add	x2, x2, #0x838
+10013b204:     	mov	x1, x24
+10013b208:     	bl	0x10172f438 <core::slice::copy_from_slice_impl::len_mismatch_fail>
+10013b20c:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b210:     	mov	w0, #0xd                ; =13
+10013b214:     	mov	w1, #0x1                ; =1
+10013b218:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b21c:     	cbz	x0, 0x10013b898 <<mech_gpu::control::resident::Machine>::call+0x2c3c>
+10013b220:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b224:     	add	x8, x8, #0xb70
+10013b228:     	b	0x10013b064 <<mech_gpu::control::resident::Machine>::call+0x2408>
+10013b22c:     	str	xzr, [x19]
+10013b230:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b234:     	mov	w19, #0xd               ; =13
+10013b238:     	mov	w0, #0xd                ; =13
+10013b23c:     	mov	w1, #0x1                ; =1
+10013b240:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b244:     	cbz	x0, 0x10013b8c8 <<mech_gpu::control::resident::Machine>::call+0x2c6c>
+10013b248:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b24c:     	add	x8, x8, #0xda7
+10013b250:     	ldr	x9, [x8]
+10013b254:     	str	x9, [x0]
+10013b258:     	ldur	x8, [x8, #0x5]
+10013b25c:     	stur	x8, [x0, #0x5]
+10013b260:     	mov	w8, #0xd                ; =13
+10013b264:     	ldr	x9, [sp, #0xc8]
+10013b268:     	stp	x8, x0, [x9]
+10013b26c:     	str	x8, [x9, #0x10]
+10013b270:     	ldr	x19, [sp, #0x40]
+10013b274:     	ldr	x20, [sp, #0x30]
+10013b278:     	ldur	x1, [x29, #-0xe0]
+10013b27c:     	ldr	x21, [sp, #0x68]
+10013b280:     	cbz	x1, 0x10013b290 <<mech_gpu::control::resident::Machine>::call+0x2634>
+10013b284:     	ldur	x0, [x29, #-0xd8]
+10013b288:     	mov	w2, #0x1                ; =1
+10013b28c:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013b290:     	mov	x0, x21
+10013b294:     	ldr	x1, [sp, #0x28]
+10013b298:     	mov	w2, #0x8                ; =8
+10013b29c:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013b2a0:     	cbz	x20, 0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013b2a4:     	lsl	x1, x20, #3
+10013b2a8:     	mov	x0, x19
+10013b2ac:     	mov	w2, #0x8                ; =8
+10013b2b0:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013b2b4:     	b	0x10013abe4 <<mech_gpu::control::resident::Machine>::call+0x1f88>
+10013b2b8:     	sub	x2, x26, x27
+10013b2bc:     	mov	x0, x20
+10013b2c0:     	mov	x1, x27
+10013b2c4:     	mov	w3, #0x8                ; =8
+10013b2c8:     	mov	w4, #0x8                ; =8
+10013b2cc:     	bl	0x1016f9da4 <<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>>
+10013b2d0:     	ldp	x21, x28, [x20, #0x8]
+10013b2d4:     	add	x0, x21, x28, lsl #3
+10013b2d8:     	cmp	x22, #0x2
+10013b2dc:     	b.hs	0x100138d50 <<mech_gpu::control::resident::Machine>::call+0xf4>
+10013b2e0:     	b	0x100138d78 <<mech_gpu::control::resident::Machine>::call+0x11c>
+10013b2e4:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b2e8:     	mov	w0, #0x1b               ; =27
+10013b2ec:     	mov	w1, #0x1                ; =1
+10013b2f0:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b2f4:     	cbz	x0, 0x10013b8a4 <<mech_gpu::control::resident::Machine>::call+0x2c48>
+10013b2f8:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b2fc:     	add	x8, x8, #0xc0d
+10013b300:     	b	0x10013ae2c <<mech_gpu::control::resident::Machine>::call+0x21d0>
+10013b304:     	mov	x0, x8
+10013b308:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b30c:     	add	x2, x2, #0xe80
+10013b310:     	b	0x10013b33c <<mech_gpu::control::resident::Machine>::call+0x26e0>
+10013b314:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b318:     	add	x2, x2, #0xef8
+10013b31c:     	b	0x10013b33c <<mech_gpu::control::resident::Machine>::call+0x26e0>
+10013b320:     	mov	x0, x8
+10013b324:     	mov	x1, x14
+10013b328:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b32c:     	add	x2, x2, #0xeb0
+10013b330:     	b	0x10013b33c <<mech_gpu::control::resident::Machine>::call+0x26e0>
+10013b334:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b338:     	add	x2, x2, #0xe98
+10013b33c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b340:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013b344:     	adrp	x0, 0x101d5e000 <_anon.d08918ac0db31084bedaf27ceef6a0c3.94+0x3b8>
+10013b348:     	add	x0, x0, #0xeb0
+10013b34c:     	bl	0x10172f04c <core::cell::panic_already_borrowed>
+10013b350:     	adrp	x0, 0x101d5e000 <_anon.d08918ac0db31084bedaf27ceef6a0c3.94+0x3b8>
+10013b354:     	add	x0, x0, #0xeb0
+10013b358:     	bl	0x10172f04c <core::cell::panic_already_borrowed>
+10013b35c:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013b360:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b364:     	mov	w0, #0x1d               ; =29
+10013b368:     	mov	w1, #0x1                ; =1
+10013b36c:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b370:     	cbz	x0, 0x10013b874 <<mech_gpu::control::resident::Machine>::call+0x2c18>
+10013b374:     	adrp	x8, 0x101880000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.368+0x87e>
+10013b378:     	add	x8, x8, #0xd2b
+10013b37c:     	b	0x10013ad68 <<mech_gpu::control::resident::Machine>::call+0x210c>
+10013b380:     	ldur	x19, [x29, #-0xb0]
+10013b384:     	mov	x22, x24
+10013b388:     	mov	x0, x22
+10013b38c:     	mov	x1, x19
+10013b390:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b394:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013b398:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b39c:     	add	x2, x2, #0xec8
+10013b3a0:     	b	0x10013b33c <<mech_gpu::control::resident::Machine>::call+0x26e0>
+10013b3a4:     	mov	x0, x8
+10013b3a8:     	mov	x1, x14
+10013b3ac:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b3b0:     	add	x2, x2, #0xee0
+10013b3b4:     	b	0x10013b33c <<mech_gpu::control::resident::Machine>::call+0x26e0>
+10013b3b8:     	adrp	x0, 0x101d5e000 <_anon.d08918ac0db31084bedaf27ceef6a0c3.94+0x3b8>
+10013b3bc:     	add	x0, x0, #0xeb0
+10013b3c0:     	bl	0x10172f04c <core::cell::panic_already_borrowed>
+10013b3c4:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013b3c8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b3cc:     	add	x2, x2, #0x868
+10013b3d0:     	mov	x0, x8
+10013b3d4:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b3d8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b3dc:     	add	x2, x2, #0x850
+10013b3e0:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b3e4:     	bl	0x100002aa0 <__rustc::__rust_no_alloc_shim_is_unstable_v2>
+10013b3e8:     	mov	w0, #0x10               ; =16
+10013b3ec:     	mov	w1, #0x1                ; =1
+10013b3f0:     	bl	0x100002a90 <__rustc::__rust_alloc>
+10013b3f4:     	cbz	x0, 0x10013b8b0 <<mech_gpu::control::resident::Machine>::call+0x2c54>
+10013b3f8:     	adrp	x8, 0x10187f000 <_anon.ccae1f1a4bfd17ba382a31665da1168b.190+0x217>
+10013b3fc:     	add	x8, x8, #0x110
+10013b400:     	b	0x10013add4 <<mech_gpu::control::resident::Machine>::call+0x2178>
+10013b404:     	adrp	x0, 0x101d5e000 <_anon.d08918ac0db31084bedaf27ceef6a0c3.94+0x3b8>
+10013b408:     	add	x0, x0, #0xeb0
+10013b40c:     	ldr	x22, [sp, #0x40]
+10013b410:     	ldr	x26, [sp, #0x30]
+10013b414:     	bl	0x10172f04c <core::cell::panic_already_borrowed>
+10013b418:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013b41c:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b420:     	add	x2, x2, #0x910
+10013b424:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b428:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b42c:     	add	x2, x2, #0x8e0
+10013b430:     	mov	x0, x8
+10013b434:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b438:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b43c:     	add	x2, x2, #0x928
+10013b440:     	mov	x0, x8
+10013b444:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b448:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b44c:     	add	x2, x2, #0x8c8
+10013b450:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b454:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b458:     	add	x2, x2, #0xdf0
+10013b45c:     	mov	x0, x8
+10013b460:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b464:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b468:     	add	x2, x2, #0xe08
+10013b46c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b470:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b474:     	add	x2, x2, #0xb20
+10013b478:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b47c:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b480:     	add	x2, x2, #0xb50
+10013b484:     	mov	x0, x9
+10013b488:     	mov	x1, x8
+10013b48c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b490:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b494:     	add	x2, x2, #0xb38
+10013b498:     	mov	x1, x8
+10013b49c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b4a0:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b4a4:     	add	x2, x2, #0xe68
+10013b4a8:     	b	0x10013b33c <<mech_gpu::control::resident::Machine>::call+0x26e0>
+10013b4ac:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b4b0:     	add	x2, x2, #0xaf0
+10013b4b4:     	mov	x0, x10
+10013b4b8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b4bc:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b4c0:     	add	x2, x2, #0xad8
+10013b4c4:     	mov	x0, x9
+10013b4c8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b4cc:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b4d0:     	add	x2, x2, #0xf10
+10013b4d4:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b4d8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b4dc:     	add	x2, x2, #0xf28
+10013b4e0:     	mov	x0, x8
+10013b4e4:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b4e8:     	ldr	x9, [sp, #0xe0]
+10013b4ec:     	add	x9, x23, x9
+10013b4f0:     	add	x8, x9, x8
+10013b4f4:     	str	x8, [sp, #0x48]
+10013b4f8:     	adrp	x8, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b4fc:     	add	x8, x8, #0xdc0
+10013b500:     	str	x8, [sp, #0x78]
+10013b504:     	b	0x10013b518 <<mech_gpu::control::resident::Machine>::call+0x28bc>
+10013b508:     	adrp	x8, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b50c:     	add	x8, x8, #0xdd8
+10013b510:     	str	x8, [sp, #0x78]
+10013b514:     	str	x9, [sp, #0x48]
+10013b518:     	ldr	x0, [sp, #0x48]
+10013b51c:     	ldr	x2, [sp, #0x78]
+10013b520:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b524:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013b528:     	mov	w0, #0x1                ; =1
+10013b52c:     	mov	w1, #0x1f               ; =31
+10013b530:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b534:     	adrp	x8, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b538:     	add	x8, x8, #0x820
+10013b53c:     	mov	x0, x2
+10013b540:     	mov	x2, x8
+10013b544:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b548:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b54c:     	add	x2, x2, #0xc58
+10013b550:     	mov	x0, x8
+10013b554:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b558:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b55c:     	add	x2, x2, #0xc40
+10013b560:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b564:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b568:     	add	x2, x2, #0xbe0
+10013b56c:     	mov	x0, x8
+10013b570:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b574:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b578:     	add	x2, x2, #0xbf8
+10013b57c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b580:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b584:     	add	x2, x2, #0xd60
+10013b588:     	mov	x0, x9
+10013b58c:     	mov	x1, x19
+10013b590:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b594:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b598:     	add	x2, x2, #0xe38
+10013b59c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b5a0:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b5a4:     	add	x2, x2, #0x970
+10013b5a8:     	mov	x0, x8
+10013b5ac:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b5b0:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b5b4:     	add	x2, x2, #0xd48
+10013b5b8:     	mov	x0, x8
+10013b5bc:     	mov	x1, x19
+10013b5c0:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b5c4:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b5c8:     	add	x2, x2, #0xe20
+10013b5cc:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b5d0:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b5d4:     	add	x2, x2, #0xe50
+10013b5d8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b5dc:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b5e0:     	add	x2, x2, #0xb08
+10013b5e4:     	mov	x1, x8
+10013b5e8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b5ec:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b5f0:     	add	x2, x2, #0x958
+10013b5f4:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b5f8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b5fc:     	add	x2, x2, #0x9b8
+10013b600:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b604:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b608:     	add	x2, x2, #0xd30
+10013b60c:     	mov	x1, x19
+10013b610:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b614:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b618:     	add	x2, x2, #0x8f8
+10013b61c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b620:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b624:     	add	x2, x2, #0x880
+10013b628:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b62c:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b630:     	add	x2, x2, #0xa18
+10013b634:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b638:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b63c:     	add	x2, x2, #0xa60
+10013b640:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b644:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b648:     	add	x2, x2, #0x898
+10013b64c:     	mov	x0, x8
+10013b650:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b654:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b658:     	add	x2, x2, #0x9d0
+10013b65c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b660:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b664:     	add	x2, x2, #0xb68
+10013b668:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b66c:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b670:     	add	x2, x2, #0x8b0
+10013b674:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b678:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b67c:     	add	x2, x2, #0x988
+10013b680:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b684:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b688:     	add	x2, x2, #0xa30
+10013b68c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b690:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b694:     	add	x2, x2, #0x940
+10013b698:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b69c:     	str	x13, [sp, #0x48]
+10013b6a0:     	b	0x10013b518 <<mech_gpu::control::resident::Machine>::call+0x28bc>
+10013b6a4:     	str	x10, [sp, #0x48]
+10013b6a8:     	adrp	x8, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b6ac:     	add	x8, x8, #0xd90
+10013b6b0:     	str	x8, [sp, #0x78]
+10013b6b4:     	b	0x10013b518 <<mech_gpu::control::resident::Machine>::call+0x28bc>
+10013b6b8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b6bc:     	add	x2, x2, #0x9a0
+10013b6c0:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b6c4:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b6c8:     	add	x2, x2, #0x9e8
+10013b6cc:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b6d0:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b6d4:     	add	x2, x2, #0xa78
+10013b6d8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b6dc:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b6e0:     	add	x2, x2, #0xa00
+10013b6e4:     	mov	x0, x8
+10013b6e8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b6ec:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b6f0:     	add	x2, x2, #0xa90
+10013b6f4:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b6f8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b6fc:     	add	x2, x2, #0xac0
+10013b700:     	mov	x0, x8
+10013b704:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b708:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b70c:     	add	x2, x2, #0xaa8
+10013b710:     	mov	x0, x8
+10013b714:     	mov	x1, x9
+10013b718:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b71c:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b720:     	add	x2, x2, #0xa48
+10013b724:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b728:     	mov	w0, #0x8                ; =8
+10013b72c:     	mov	x1, x28
+10013b730:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b734:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b738:     	add	x2, x2, #0xca0
+10013b73c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b740:     	adrp	x8, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b744:     	add	x8, x8, #0xda8
+10013b748:     	str	x8, [sp, #0x78]
+10013b74c:     	b	0x10013b518 <<mech_gpu::control::resident::Machine>::call+0x28bc>
+10013b750:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b754:     	add	x2, x2, #0x230
+10013b758:     	mov	x1, x8
+10013b75c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b760:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b764:     	add	x2, x2, #0xc70
+10013b768:     	mov	x0, #0x0                ; =0
+10013b76c:     	mov	x1, #0x0                ; =0
+10013b770:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b774:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b778:     	add	x2, x2, #0xc88
+10013b77c:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b780:     	mov	w0, #0x1                ; =1
+10013b784:     	mov	w1, #0x19               ; =25
+10013b788:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b78c:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b790:     	add	x2, x2, #0xcb8
+10013b794:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b798:     	b	0x10013b8d4 <<mech_gpu::control::resident::Machine>::call+0x2c78>
+10013b79c:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b7a0:     	add	x2, x2, #0xb98
+10013b7a4:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b7a8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b7ac:     	add	x2, x2, #0xb80
+10013b7b0:     	mov	x0, #0x0                ; =0
+10013b7b4:     	mov	x1, #0x0                ; =0
+10013b7b8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b7bc:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b7c0:     	add	x2, x2, #0xc28
+10013b7c4:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b7c8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b7cc:     	add	x2, x2, #0xc10
+10013b7d0:     	mov	x0, #0x0                ; =0
+10013b7d4:     	mov	x1, #0x0                ; =0
+10013b7d8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b7dc:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b7e0:     	add	x2, x2, #0xbc8
+10013b7e4:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b7e8:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b7ec:     	add	x2, x2, #0xbb0
+10013b7f0:     	mov	x0, #0x0                ; =0
+10013b7f4:     	mov	x1, #0x0                ; =0
+10013b7f8:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b7fc:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b800:     	add	x2, x2, #0x248
+10013b804:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b808:     	str	x19, [sp, #0x8]
+10013b80c:     	mov	w0, #0x1                ; =1
+10013b810:     	b	0x10013ac78 <<mech_gpu::control::resident::Machine>::call+0x201c>
+10013b814:     	adrp	x4, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b818:     	add	x4, x4, #0xcd0
+10013b81c:     	b	0x10013b0e8 <<mech_gpu::control::resident::Machine>::call+0x248c>
+10013b820:     	adrp	x4, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b824:     	add	x4, x4, #0xce8
+10013b828:     	b	0x10013b0e8 <<mech_gpu::control::resident::Machine>::call+0x248c>
+10013b82c:     	adrp	x4, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b830:     	add	x4, x4, #0xd00
+10013b834:     	b	0x10013b0e8 <<mech_gpu::control::resident::Machine>::call+0x248c>
+10013b838:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b83c:     	add	x2, x2, #0x260
+10013b840:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b844:     	mov	w0, #0x1                ; =1
+10013b848:     	mov	w1, #0x14               ; =20
+10013b84c:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b850:     	mov	w0, #0x1                ; =1
+10013b854:     	mov	w1, #0x12               ; =18
+10013b858:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b85c:     	mov	w0, #0x1                ; =1
+10013b860:     	mov	w1, #0x13               ; =19
+10013b864:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b868:     	mov	w0, #0x1                ; =1
+10013b86c:     	mov	w1, #0x1c               ; =28
+10013b870:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b874:     	mov	w0, #0x1                ; =1
+10013b878:     	mov	w1, #0x1d               ; =29
+10013b87c:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b880:     	mov	w0, #0x1                ; =1
+10013b884:     	mov	w1, #0x18               ; =24
+10013b888:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b88c:     	adrp	x2, 0x101d65000 <_anon.6d35baa41a1928bf798ce0e29a8b678b.367+0x4f0>
+10013b890:     	add	x2, x2, #0x278
+10013b894:     	bl	0x10172f178 <core::panicking::panic_bounds_check>
+10013b898:     	mov	w0, #0x1                ; =1
+10013b89c:     	mov	w1, #0xd                ; =13
+10013b8a0:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b8a4:     	mov	w0, #0x1                ; =1
+10013b8a8:     	mov	w1, #0x1b               ; =27
+10013b8ac:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b8b0:     	mov	w0, #0x1                ; =1
+10013b8b4:     	mov	w1, #0x10               ; =16
+10013b8b8:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b8bc:     	mov	w0, #0x1                ; =1
+10013b8c0:     	mov	w1, #0x16               ; =22
+10013b8c4:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b8c8:     	mov	w0, #0x1                ; =1
+10013b8cc:     	mov	x1, x19
+10013b8d0:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b8d4:     	brk	#0x1
+10013b8d8:     	mov	w0, #0x1                ; =1
+10013b8dc:     	mov	w1, #0x11               ; =17
+10013b8e0:     	bl	0x10172ef28 <alloc::raw_vec::handle_error>
+10013b8e4:     	mov	x19, x0
+10013b8e8:     	ldr	x0, [sp, #0xe0]
+10013b8ec:     	mov	x1, x24
+10013b8f0:     	b	0x10013b924 <<mech_gpu::control::resident::Machine>::call+0x2cc8>
+10013b8f4:     	b	0x10013b9fc <<mech_gpu::control::resident::Machine>::call+0x2da0>
+10013b8f8:     	mov	x19, x0
+10013b8fc:     	ldr	x8, [sp, #0xe0]
+10013b900:     	cbz	x8, 0x10013ba40 <<mech_gpu::control::resident::Machine>::call+0x2de4>
+10013b904:     	ldr	x0, [sp, #0x58]
+10013b908:     	ldr	x1, [sp, #0xe0]
+10013b90c:     	b	0x10013b924 <<mech_gpu::control::resident::Machine>::call+0x2cc8>
+10013b910:     	b	0x10013ba3c <<mech_gpu::control::resident::Machine>::call+0x2de0>
+10013b914:     	mov	x19, x0
+10013b918:     	ldur	x1, [x29, #-0xc0]
+10013b91c:     	cbz	x1, 0x10013ba40 <<mech_gpu::control::resident::Machine>::call+0x2de4>
+10013b920:     	ldur	x0, [x29, #-0xb8]
+10013b924:     	mov	w2, #0x1                ; =1
+10013b928:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013b92c:     	b	0x10013ba40 <<mech_gpu::control::resident::Machine>::call+0x2de4>
+10013b930:     	mov	x9, x19
+10013b934:     	mov	x19, x0
+10013b938:     	ldr	x8, [x9]
+10013b93c:     	add	x8, x8, #0x1
+10013b940:     	str	x8, [x9]
+10013b944:     	b	0x10013ba00 <<mech_gpu::control::resident::Machine>::call+0x2da4>
+10013b948:     	mov	x19, x0
+10013b94c:     	ldr	x8, [x22]
+10013b950:     	add	x8, x8, #0x1
+10013b954:     	str	x8, [x22]
+10013b958:     	b	0x10013ba00 <<mech_gpu::control::resident::Machine>::call+0x2da4>
+10013b95c:     	b	0x10013ba3c <<mech_gpu::control::resident::Machine>::call+0x2de0>
+10013b960:     	mov	x9, x19
+10013b964:     	mov	x19, x0
+10013b968:     	ldr	x8, [x9]
+10013b96c:     	add	x8, x8, #0x1
+10013b970:     	str	x8, [x9]
+10013b974:     	b	0x10013ba40 <<mech_gpu::control::resident::Machine>::call+0x2de4>
+10013b978:     	mov	x9, x19
+10013b97c:     	ldr	x8, [x9]
+10013b980:     	add	x8, x8, #0x1
+10013b984:     	str	x8, [x9]
+10013b988:     	bl	0x10172f50c <dyld_stub_binder+0x10172f50c>
+10013b98c:     	mov	x19, x0
+10013b990:     	ldur	x8, [x29, #-0x100]
+10013b994:     	cbz	x8, 0x10013ba94 <<mech_gpu::control::resident::Machine>::call+0x2e38>
+10013b998:     	lsl	x1, x8, #3
+10013b99c:     	mov	x0, x23
+10013b9a0:     	mov	w2, #0x8                ; =8
+10013b9a4:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013b9a8:     	mov	x0, x19
+10013b9ac:     	bl	0x10172f50c <dyld_stub_binder+0x10172f50c>
+10013b9b0:     	b	0x10013b9fc <<mech_gpu::control::resident::Machine>::call+0x2da0>
+10013b9b4:     	mov	x19, x0
+10013b9b8:     	b	0x10013b9d0 <<mech_gpu::control::resident::Machine>::call+0x2d74>
+10013b9bc:     	b	0x10013ba3c <<mech_gpu::control::resident::Machine>::call+0x2de0>
+10013b9c0:     	b	0x10013b9fc <<mech_gpu::control::resident::Machine>::call+0x2da0>
+10013b9c4:     	mov	x19, x0
+10013b9c8:     	add	x0, sp, #0x190
+10013b9cc:     	bl	0x100130a70 <core::ptr::drop_in_place::<alloc::vec::Vec<alloc::vec::Vec<usize>>>>
+10013b9d0:     	ldr	x8, [sp, #0x158]
+10013b9d4:     	cbz	x8, 0x10013ba94 <<mech_gpu::control::resident::Machine>::call+0x2e38>
+10013b9d8:     	ldr	x0, [sp, #0x160]
+10013b9dc:     	lsl	x1, x8, #3
+10013b9e0:     	mov	w2, #0x8                ; =8
+10013b9e4:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013b9e8:     	mov	x0, x19
+10013b9ec:     	bl	0x10172f50c <dyld_stub_binder+0x10172f50c>
+10013b9f0:     	b	0x10013ba3c <<mech_gpu::control::resident::Machine>::call+0x2de0>
+10013b9f4:     	mov	x19, x0
+10013b9f8:     	b	0x10013ba08 <<mech_gpu::control::resident::Machine>::call+0x2dac>
+10013b9fc:     	mov	x19, x0
+10013ba00:     	ldr	x22, [sp, #0x40]
+10013ba04:     	ldr	x26, [sp, #0x30]
+10013ba08:     	ldr	x20, [sp, #0x28]
+10013ba0c:     	ldr	x21, [sp, #0x68]
+10013ba10:     	ldur	x1, [x29, #-0xe0]
+10013ba14:     	cbz	x1, 0x10013ba60 <<mech_gpu::control::resident::Machine>::call+0x2e04>
+10013ba18:     	ldur	x0, [x29, #-0xd8]
+10013ba1c:     	mov	w2, #0x1                ; =1
+10013ba20:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013ba24:     	mov	x0, x21
+10013ba28:     	mov	x1, x20
+10013ba2c:     	mov	w2, #0x8                ; =8
+10013ba30:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013ba34:     	cbnz	x26, 0x10013ba74 <<mech_gpu::control::resident::Machine>::call+0x2e18>
+10013ba38:     	b	0x10013ba94 <<mech_gpu::control::resident::Machine>::call+0x2e38>
+10013ba3c:     	mov	x19, x0
+10013ba40:     	ldur	x1, [x29, #-0xe0]
+10013ba44:     	cbz	x1, 0x10013ba94 <<mech_gpu::control::resident::Machine>::call+0x2e38>
+10013ba48:     	ldur	x0, [x29, #-0xd8]
+10013ba4c:     	mov	w2, #0x1                ; =1
+10013ba50:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013ba54:     	mov	x0, x19
+10013ba58:     	bl	0x10172f50c <dyld_stub_binder+0x10172f50c>
+10013ba5c:     	mov	x19, x0
+10013ba60:     	mov	x0, x21
+10013ba64:     	mov	x1, x20
+10013ba68:     	mov	w2, #0x8                ; =8
+10013ba6c:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013ba70:     	cbz	x26, 0x10013ba94 <<mech_gpu::control::resident::Machine>::call+0x2e38>
+10013ba74:     	lsl	x1, x26, #3
+10013ba78:     	mov	x0, x22
+10013ba7c:     	mov	w2, #0x8                ; =8
+10013ba80:     	bl	0x100002a94 <__rustc::__rust_dealloc>
+10013ba84:     	mov	x0, x19
+10013ba88:     	bl	0x10172f50c <dyld_stub_binder+0x10172f50c>
+10013ba8c:     	mov	x19, x0
+10013ba90:     	cbnz	x26, 0x10013ba74 <<mech_gpu::control::resident::Machine>::call+0x2e18>
+10013ba94:     	mov	x0, x19
+10013ba98:     	bl	0x10172f50c <dyld_stub_binder+0x10172f50c>

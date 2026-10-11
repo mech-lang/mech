@@ -1,0 +1,233 @@
+{
+  "status": "passed-small-adversarial-and-source-audit",
+  "all_20_small_cases_pass": true,
+  "all_80_adversarial_cases_pass": true,
+  "runtime": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+    "sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+    "version": "Uiua 0.19.1",
+    "architecture": "aarch64-apple-darwin",
+    "distribution_url": "https://github.com/uiua-lang/uiua/releases/download/0.19.1/uiua-bin-aarch64-apple-darwin.zip",
+    "distribution_sha256": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+    "provenance": "Official Uiua ARM64 macOS release binary; not a locally compiled substitute.",
+    "source_url": "https://github.com/uiua-lang/uiua/archive/refs/tags/0.19.1.tar.gz",
+    "source_archive_sha256": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+    "release_metadata": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json",
+    "primary_runtime_documentation": "https://www.uiua.org/docs",
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/runtime.zip": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/source.tar.gz": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json": "e5d8b92153fc797a25bdecdcf5b324044889bbe68a0620d33dad1308f8a83749",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/Cargo.lock": "739f67e7b39a61a3035fe91663b5f9736df82f7a33af2a318abc54cd54591754",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4.crate": "ef5eeffa816451f3a6a4cce9cd796e3e5ba6018638d3ce5cc7f87b73bababf60"
+    },
+    "host_os": "26.2",
+    "system_library_policy": "macOS platform libraries are supplied by the recorded host OS; no additional non-system runtime dylib is linked by Uiua."
+  },
+  "library": {
+    "name": "GMP",
+    "version": "6.3.0",
+    "kind": "Ordinary general-purpose arbitrary-precision integer library with a generic FFI adapter.",
+    "package_url": "https://gmplib.org/",
+    "installed_library": "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib",
+    "support_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/uiua/gmp.c",
+    "support_library": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/uiua-support/libgmp-uiua.dylib",
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/uiua/gmp.c": "54dc4654b680304e14ffb3e169125fee5ccfdd2df32bda1ffae4bc441c3efa74",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/uiua-support/libgmp-uiua.dylib": "af67f224f2c107584f3ce2cc4e1c09bfa45bda1d21edb60b324921c9acf09507",
+      "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9",
+      "/opt/homebrew/opt/gmp/include/gmp.h": "ba08e6d76e0945a858d6e3384eb1fbc1b8100799052cf4ab5c10befe6ee99ebc",
+      "/opt/homebrew/opt/gmp/INSTALL_RECEIPT.json": "fdddc984892f1d70cf1dc43691394896435f79ffffb78e3eba97796a46c11d9b"
+    },
+    "exported_operations": [
+      "new",
+      "free",
+      "set",
+      "copy",
+      "add",
+      "sub",
+      "mul",
+      "mul-small",
+      "floor-div",
+      "compare",
+      "get"
+    ],
+    "benchmark_specific_kernel": false,
+    "division_audit": "ui_big_floor_div is exactly a generic mpz_fdiv_q call. ExtractThree and ExtractFour each invoke Div separately for every Candidates attempt; spigot control, state updates, acceptance and output remain counted Uiua source."
+  },
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/compact.ua": "7033ff55e2283daee196e7c29174346e4d024daa1759ec2368e0275a32cf63f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/fast.ua": "7033ff55e2283daee196e7c29174346e4d024daa1759ec2368e0275a32cf63f0",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua": "6ffb3994276ac5da50bcb52761509e0e689a820b6543d62425ce271cb96cc2fb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/fast.ua": "3f3f1a02e405e93ac2e3e90298d45e1a34d6ab21714b96ab2bb3b779c62dcd57",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/spectralnorm/compact.ua": "71d924c09b65d1997e110d1dab3cdac178b622dac7bb4f73783283084d62b1e1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/spectralnorm/fast.ua": "71d924c09b65d1997e110d1dab3cdac178b622dac7bb4f73783283084d62b1e1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/binarytrees/compact.ua": "1fa04992eb6cc1d917b30a96af486f03b4de266fb169b88e7ae8602e85fd3887",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/binarytrees/fast.ua": "1fa04992eb6cc1d917b30a96af486f03b4de266fb169b88e7ae8602e85fd3887",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fasta/compact.ua": "fba046bc5d20288547051f1fa56a80d52217edd614ed0efbbabe6ef16353a626",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fasta/fast.ua": "f0dd51cda0e6dbae84afd0e95d7c4ceeb4aaac6d3892824a413926ab54c5cf05",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/knucleotide/compact.ua": "365c378828d4e5204c4236afe87ee8a5505990039fbf519e19f975eee4edb8ca",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/knucleotide/fast.ua": "365c378828d4e5204c4236afe87ee8a5505990039fbf519e19f975eee4edb8ca",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/revcomp/compact.ua": "707af71b00f4d8c8853326d5ee5b237c3fb7c6df8192a2129eb9fb74685b7607",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/revcomp/fast.ua": "62f7d39f115c255826b1a771ea68670903e639cf80699fff5aff5def4fd1cc2e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/regexredux/compact.ua": "dc57b95038cfb33cf10360eac4dde3259f2d045ac42b38e56ed3ea2afef6fb9e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/regexredux/fast.ua": "dc57b95038cfb33cf10360eac4dde3259f2d045ac42b38e56ed3ea2afef6fb9e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/compact.ua": "5e7ecea90ba47a00cd42508f027e00a03bec13bd6e8cf00ff0cd7088b10902c5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/fast.ua": "3727af922300cbd313ae64b4bbcb29c4ed92a6ad967291f36e19daca84ecc9a3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua": "f62e41833adfb713529afca4eb8d60eee52c7df5a38e7f3858ac73e756585148",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/fast.ua": "f62e41833adfb713529afca4eb8d60eee52c7df5a38e7f3858ac73e756585148"
+  },
+  "source_loc": {
+    "nbody-uiua-compact": 21,
+    "nbody-uiua-optimized": 21,
+    "mandelbrot-uiua-compact": 11,
+    "mandelbrot-uiua-optimized": 11,
+    "spectralnorm-uiua-compact": 10,
+    "spectralnorm-uiua-optimized": 10,
+    "binarytrees-uiua-compact": 15,
+    "binarytrees-uiua-optimized": 15,
+    "fasta-uiua-compact": 22,
+    "fasta-uiua-optimized": 24,
+    "knucleotide-uiua-compact": 19,
+    "knucleotide-uiua-optimized": 19,
+    "revcomp-uiua-compact": 11,
+    "revcomp-uiua-optimized": 11,
+    "regexredux-uiua-compact": 16,
+    "regexredux-uiua-optimized": 16,
+    "fannkuchredux-uiua-compact": 20,
+    "fannkuchredux-uiua-optimized": 21,
+    "pidigits-uiua-compact": 46,
+    "pidigits-uiua-optimized": 46
+  },
+  "binarytrees": {
+    "method": "Pinned runtime source proof; no substitute tree kernel or benchmark instrumentation.",
+    "status": "passed-source-audit",
+    "fresh_node_allocation": true,
+    "fresh_leaf_allocation": true,
+    "retained_long_lived_tree": true,
+    "proof_scope": "Each constructor produces a new nonempty three-element boxed-node buffer. Child trees are recursively constructed by separate calls and then referenced from parent boxes. Allocator addresses may be reused after a short-lived tree is freed; they cannot be shared by simultaneously live node buffers. Empty leaf child sentinels may be shared, while each leaf node buffer is fresh.",
+    "proof": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/binarytrees/compact.ua",
+        "sha256": "1fa04992eb6cc1d917b30a96af486f03b4de266fb169b88e7ae8602e85fd3887",
+        "first_line": 1,
+        "last_line": 15,
+        "excerpt": "N \u2190 \u21a56 \u22d5\u25c7\u2218\u22a11 &args\n~Tree {Id Left Right}\nLeaf   \u2190 Tree \u2283(\u22a3|\u22c5[]|\u22c5[])\nBuild  \u2190 |1 \u2a2c(Tree \u2283(\u22a3|Build \u2283[-1\u22a2|\u00d72\u22a3]|Build \u2283[-1\u22a2|+1\u00d72\u22a3])|Leaf) \u22b8(=0\u22a2)\nCheck  \u2190 |1 \u2a2c(+1+\u2283(Check Tree.Left)(Check Tree.Right)|\u22c51) \u22b8(=0\u29fbTree.Left)\nTreeAt \u2190 Build \u229f\u22991\n&p $\"stretch tree of depth _\\t check: _\" \u27dc(Check TreeAt) +1N\nLong       \u2190 TreeAt N\nDepths     \u2190 +4\u00d72\u21e1+1\u230a\u00f72 -4N\nIteration  \u2190 +\u2283(Check TreeAt)(\u22c5\u2218)\nIterations \u2190 \u02dc\u207f2-\u2299(+4N)\nSumChecks  \u2190 \u2227Iteration \u2283(\u21af\u2283Iterations\u2218|\u22c50)\nBatch      \u2190 &p $\"_\\t trees of depth _\\t check: _\" \u2283(Iterations|\u2218|SumChecks)\n\u2261Batch Depths\n&p $\"long lived tree of depth _\\t check: _\" N Check Long",
+        "conclusion": "Build makes two independent recursive calls, each at depth-1; Leaf also calls Tree. Long is constructed before all short-lived batches and traversed afterward. Iteration calls Check TreeAt anew for every element of the requested iteration vector; no tree or check formula is substituted."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/compile/data.rs",
+        "sha256": "06d917d50f58c3d450580a45c0574d7094921d7534b9b468f78f8af4db9ec7ad",
+        "first_line": 383,
+        "last_line": 419,
+        "excerpt": "        // Make constructor\n        let constructor_args: usize = fields\n            .iter()\n            .map(|f| f.init.as_ref().map(|sn| sn.sig.args()).unwrap_or(1))\n            .sum();\n        let mut con_node = if has_fields {\n            let mut field_nodes = EcoVec::with_capacity(fields.len());\n            for field in &fields {\n                let mut arg = if let Some(sn) = &field.init {\n                    sn.clone()\n                } else {\n                    self.code_meta\n                        .global_references\n                        .insert(field.name_span.clone(), field.global_index);\n                    SigNode::new(Signature::new(1, 1), Node::empty())\n                };\n                if boxed {\n                    arg.node.push(Node::Label(field.name.clone(), span));\n                } else if data.variant {\n                    arg.node.push(Node::TrackCaller(\n                        Node::ImplPrim(ImplPrimitive::ValidateNonBoxedVariant, field.span)\n                            .sig_node()\n                            .unwrap()\n                            .into(),\n                    ));\n                }\n                field_nodes.push(arg);\n            }\n            Node::Array {\n                len: fields.len(),\n                inner: Node::Mod(Primitive::Bracket, field_nodes, span).into(),\n                boxed,\n                allow_ext: true,\n                prim: None,\n                span,\n            }\n        } else {",
+        "conclusion": "The three-field boxed Tree data constructor is a callable Node::Array, with one field argument for each of Id, Left and Right."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/run.rs",
+        "sha256": "59c7f1bc01f8deb72e3320ad83701d41e37e9b50ca69230220c134f58a6009db",
+        "first_line": 962,
+        "last_line": 986,
+        "excerpt": "        &mut self,\n        len: usize,\n        inner: Node,\n        boxed: bool,\n        allow_ext: bool,\n    ) -> UiuaResult {\n        self.without_fill(|env| env.exec(inner))?;\n        let start = self.require_height(len)?;\n        let values = self.rt.stack.drain(start..).rev();\n        let values: Vec<Value> = if boxed {\n            values.map(Boxed).map(Value::from).collect()\n        } else {\n            values.collect()\n        };\n        let val = if values.is_empty() && boxed {\n            Array::<Boxed>::default().into()\n        } else {\n            let elems: usize = values.iter().map(|v| v.shape.elements()).sum();\n            let elem_size = values.first().map_or(size_of::<f64>(), Value::elem_size);\n            validate_size_impl(elem_size, [elems]).map_err(|e| self.error(e))?;\n            Value::from_row_values_impl(values, self.ctx(), allow_ext)?\n        };\n        self.push(val);\n        Ok(())\n    }",
+        "conclusion": "Every runtime constructor invocation drains its field values and creates fresh scalar boxes, then assembles the fields into an array."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/array.rs",
+        "sha256": "2265145e6847bd4c038083941892b5957150580f36cbd834c860f9ff87e13d45",
+        "first_line": 517,
+        "last_line": 521,
+        "excerpt": "impl<T: ArrayValue> Array<T> {\n    /// Create a scalar array\n    pub fn scalar(data: T) -> Self {\n        Self::new(Shape::SCALAR, cowslice![data])\n    }",
+        "conclusion": "Each scalar box is a fresh one-element cowslice, not an interned or memoized node."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/combine.rs",
+        "sha256": "38394f765dddbcb0e7f3d4cb8b5f1280d67dacfc7ad02355ee4992fb0f0f7a51",
+        "first_line": 1287,
+        "last_line": 1291,
+        "excerpt": "            Value::Box(_) => {\n                row_values = values.into_iter();\n                row_values.next().unwrap()\n            }\n            #[cfg(feature = \"ga\")]",
+        "conclusion": "A boxed array starts with the first freshly created scalar box."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/combine.rs",
+        "sha256": "38394f765dddbcb0e7f3d4cb8b5f1280d67dacfc7ad02355ee4992fb0f0f7a51",
+        "first_line": 1352,
+        "last_line": 1365,
+        "excerpt": "        // Validate size and reserve space\n        let total_elements = validate_size_impl(\n            value.elem_size(),\n            value.shape.iter().copied().chain([to_reserve]),\n        )\n        .map_err(|e| ctx.error(e))?;\n        value.reserve_min(total_elements);\n\n        // Combine the arrays\n        if allow_ext {\n            for d in max_shape.iter().take(max_shape.len() - value.rank()).rev() {\n                value.reshape_scalar(Ok(*d as isize), true, ctx)?;\n            }\n        }",
+        "conclusion": "The freshly created first box buffer reserves capacity for all three fields before fields are appended."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/dyadic/combine.rs",
+        "sha256": "38394f765dddbcb0e7f3d4cb8b5f1280d67dacfc7ad02355ee4992fb0f0f7a51",
+        "first_line": 1405,
+        "last_line": 1415,
+        "excerpt": "                }\n                a.into()\n            }\n            Value::Box(mut a) => {\n                for val in row_values {\n                    match val {\n                        Value::Box(b) => a.append(b, allow_ext, ctx)?,\n                        val => a.append(val.box_depth(a.rank()), allow_ext, ctx)?,\n                    }\n                }\n                a.into()",
+        "conclusion": "The other boxed fields are appended to that new buffer; the node is a three-element Array<Boxed>."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/cowslice.rs",
+        "sha256": "94e527ed2b03c7d4d29691020bc94ed92b2e3e298bd70c84d49e033f8560ae57",
+        "first_line": 13,
+        "last_line": 31,
+        "excerpt": "use serde::*;\n\nmacro_rules! cowslice {\n    ($($tt:tt)*) => {\n        $crate::cowslice::CowSlice::from(::ecow::eco_vec![$($tt)*])\n    }\n}\n\npub(crate) use cowslice;\nuse ecow::EcoVec;\n\nuse crate::context::FillValue;\n\n/// The backing buffer for Uiua's arrays' data\n///\n/// `CowSlice`s are reference-counted buffers that also have associated start and end indices.\n/// This allows them to be split into chunks without copying the data.\npub struct CowSlice<T> {\n    data: EcoVec<T>,",
+        "conclusion": "cowslice! constructs an ecow vector; node data are reference-counted buffers."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4/src/vec.rs",
+        "sha256": "6ae07f87bf764478346a572a23b2705f0bedefeb9a41a37154fad5d9549d82cb",
+        "first_line": 120,
+        "last_line": 134,
+        "excerpt": "    /// Create a new, empty vector with at least the specified capacity.\n    #[inline]\n    pub fn with_capacity(capacity: usize) -> Self {\n        let mut vec = Self::new();\n        if capacity > 0 {\n            unsafe {\n                // Safety:\n                // - The reference count starts at 1.\n                // - The capacity starts at 0 and the target capacity is checked\n                //   to be `> 0`.\n                vec.grow(capacity);\n            }\n        }\n        vec\n    }",
+        "conclusion": "A nonempty ecow buffer allocates storage through grow, beginning with a fresh empty vector."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4/src/vec.rs",
+        "sha256": "6ae07f87bf764478346a572a23b2705f0bedefeb9a41a37154fad5d9549d82cb",
+        "first_line": 531,
+        "last_line": 556,
+        "excerpt": "    ///\n    /// May only be called if:\n    /// - the reference count is `1`, and\n    /// - `target > capacity` (i.e., this methods grows, it doesn't shrink).\n    unsafe fn grow(&mut self, mut target: usize) {\n        debug_assert!(self.is_unique());\n        debug_assert!(target > self.capacity());\n\n        // Maintain the `capacity <= isize::MAX` invariant.\n        if target > isize::MAX as usize {\n            capacity_overflow();\n        }\n\n        // Directly go to maximum capacity for ZSTs.\n        if mem::size_of::<T>() == 0 {\n            target = isize::MAX as usize;\n        }\n\n        let layout = Self::layout(target);\n        let allocation = if !self.is_allocated() {\n            // Safety:\n            // The layout has non-zero size because `target > 0`.\n            alloc::alloc::alloc(layout)\n        } else {\n            // Safety:\n            // - `self.ptr` was allocated before (just checked)",
+        "conclusion": "grow on a new vector invokes alloc::alloc::alloc with a nonzero layout, proving separate simultaneously live backing allocations."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/run.rs",
+        "sha256": "59c7f1bc01f8deb72e3320ad83701d41e37e9b50ca69230220c134f58a6009db",
+        "first_line": 576,
+        "last_line": 592,
+        "excerpt": "            Node::BindGlobal { span, index } => {\n                let local = LocalIndex {\n                    index,\n                    public: false,\n                };\n                let Some(mut value) = self.rt.stack.pop() else {\n                    return Err(self.error_with_span(\n                        self.get_span(span),\n                        \"No values on the stack for binding. \\\n                        This is a bug in the interpreter\",\n                    ));\n                };\n                value.try_shrink();\n                // Binding is a constant\n                self.asm\n                    .bind_const(local, Some(value), span, BindingMeta::default());\n                Ok(())",
+        "conclusion": "The evaluated Long tree is stored in the global binding table as an owned constant; later short-lived iterations cannot release this reference."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/run.rs",
+        "sha256": "59c7f1bc01f8deb72e3320ad83701d41e37e9b50ca69230220c134f58a6009db",
+        "first_line": 511,
+        "last_line": 536,
+        "excerpt": "            Node::CallGlobal(index, _) => {\n                let binding = self.asm.bindings.get(index).ok_or_else(|| {\n                    self.error(\n                        \"Called out-of-bounds binding. \\\n                        This is a bug in the interpreter.\",\n                    )\n                })?;\n                match binding.kind.clone() {\n                    BindingKind::Const(Some(val)) => {\n                        self.rt.stack.push(val);\n                        Ok(())\n                    }\n                    BindingKind::Const(None) => {\n                        if let Some(node) = self.rt.unevaluated_constants.remove(&index) {\n                            (|| -> UiuaResult {\n                                self.exec(node)?;\n                                let val = self.pop(\"constant\")?;\n                                self.push(val.clone());\n                                self.asm.bindings.make_mut()[index].kind =\n                                    BindingKind::Const(Some(val));\n                                Ok(())\n                            })()\n                        } else {\n                            Err(self.error(\n                                \"Called unbound constant. \\\n                                This is a bug in the interpreter.\",",
+        "conclusion": "Reading Long clones its stored value without replacing or dropping the original global binding."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4/src/vec.rs",
+        "sha256": "6ae07f87bf764478346a572a23b2705f0bedefeb9a41a37154fad5d9549d82cb",
+        "first_line": 782,
+        "last_line": 814,
+        "excerpt": "impl<T: Clone> Clone for EcoVec<T> {\n    #[inline]\n    fn clone(&self) -> Self {\n        // If the vector has a backing allocation, bump the ref-count.\n        if let Some(header) = self.header() {\n            // See Arc's clone impl for details about memory ordering.\n            let prev = header.refs.fetch_add(1, Relaxed);\n\n            // See Arc's clone impl details about guarding against incredibly degenerate programs\n            if prev > isize::MAX as usize {\n                ref_count_overflow(self.ptr, self.len);\n            }\n        }\n\n        Self { ptr: self.ptr, len: self.len, phantom: PhantomData }\n    }\n}\n\nimpl<T> Drop for EcoVec<T> {\n    fn drop(&mut self) {\n        // Drop our ref-count. If there was more than one vector before\n        // (including this one), we shouldn't deallocate. Nothing to do if there\n        // is no header and thus no backing allocation. See Arc's drop impl for\n        // details about memory ordering.\n        if self\n            .header()\n            .map_or(true, |header| header.refs.fetch_sub(1, Release) != 1)\n        {\n            return;\n        }\n\n        // See Arc's drop impl for details.\n        atomic::fence(Acquire);",
+        "conclusion": "Cloning buffers retains references; buffers are released only when the final reference is dropped. Long and its child buffers remain live through all batches."
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/compile/pre_eval.rs",
+        "sha256": "d7c3b4070813ae7a60d3263d598a7e06c8fd6184501571ccdc3fe7ba8bad9054",
+        "first_line": 11,
+        "last_line": 25,
+        "excerpt": "/// The mode that dictates how much code to pre-evaluate at compile time\n#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]\npub enum PreEvalMode {\n    /// Does not evalute pure constants and expressions at comptime, but still evaluates `comptime`\n    Lazy,\n    /// Pre-evaluate each line, but not multiple lines together\n    Line,\n    /// The normal mode. Tries to evaluate pure, time-bounded constants and expressions at comptime\n    #[default]\n    Normal,\n    /// Evaluate as much as possible at compile time, even impure expressions\n    ///\n    /// Recursive functions and certain system functions are not evaluated\n    Lsp,\n}",
+        "conclusion": "Runtime recursive tree construction is not compiler pre-evaluated into a cached subtree."
+      }
+    ],
+    "limitation": "No runtime address trace was collected. The distinct-node and retention findings follow the exact pinned constructor, allocation and ownership implementations."
+  },
+  "pidigits": "ui_big_floor_div is exactly a generic mpz_fdiv_q call. ExtractThree and ExtractFour each invoke Div separately for every Candidates attempt; spigot control, state updates, acceptance and output remain counted Uiua source.",
+  "full_performance_runs": 0,
+  "metadata_support_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/prepare_uiua_manifest.py": "9c548137f9c2a57aaeb806407d14a3591d1d58df33cfcd36d6c5345c86e5dcd1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/validate_uiua.py": "f62add763f7fa03bf38b8a4ee724255aca51e22359896b048cad3d8e4dfe14f6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/validate_uiua_adversarial.py": "ee8ab220f6776a48f3fa71cb7d39b55fc44a6386017cbf81955328443d4616ec"
+  }
+}

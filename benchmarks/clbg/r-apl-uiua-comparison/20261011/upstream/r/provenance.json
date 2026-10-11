@@ -1,0 +1,288 @@
+{
+  "repository": "https://github.com/reactorlabs/RBenchmarking",
+  "revision": "a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89",
+  "files": [
+    {
+      "upstream_path": "Benchmarks/shootout/binarytrees/binarytrees.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/binarytrees/binarytrees.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/binarytrees/binarytrees.r",
+      "sha256": "87d4e8c4d2eafcfbbc655f03b3e1698b861c80948ba2b816d8aabdfe7626423f"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/binarytrees/binarytrees_2.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/binarytrees/binarytrees_2.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/binarytrees/binarytrees_2.r",
+      "sha256": "e3b26c6f08e3d0ffceaebb24c091fde3d731d07a2bd5047c8f205cbf697258f6"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/binarytrees/binarytrees_2_strict.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/binarytrees/binarytrees_2_strict.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/binarytrees/binarytrees_2_strict.r",
+      "sha256": "acfe5380f0ee6c077a621e65e146e98938e107a1d77233454e3e3214e61ded96"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/binarytrees/binarytrees_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/binarytrees/binarytrees_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/binarytrees/binarytrees_naive.r",
+      "sha256": "ea617d4f9b8aad49d6ac3092e9c1c2ad8c941d631e840d6b68ee9c13665b0fcb"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fannkuch/fannkuchredux.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fannkuch/fannkuchredux.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fannkuch/fannkuchredux.r",
+      "sha256": "a3e286c4362ce0da845241f29e093e70ee586dc8e2bdb3f411cee3190aee82a9"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fannkuch/fannkuchredux_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fannkuch/fannkuchredux_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fannkuch/fannkuchredux_naive.r",
+      "sha256": "4eb54fccf942c0b3eb9f788abe566da221a335b4c70bf277250bb9ec7415b5c2"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fasta/fasta.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fasta/fasta.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fasta/fasta.r",
+      "sha256": "0fdf8b8720361576870515326e92f069428e5b864e396e1a730ca2aa8e58a017"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fasta/fasta_2.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fasta/fasta_2.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fasta/fasta_2.r",
+      "sha256": "332d6f25b18550fe4183dae07446833e78f9bf73d10fbc35b1d1d7ab571c0e3f"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fasta/fasta_3.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fasta/fasta_3.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fasta/fasta_3.r",
+      "sha256": "a91a7cb4694d18588ffc57f4604aac7f01aca7805a1f45f036e7db6e557c46ea"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fasta/fasta_3_strict.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fasta/fasta_3_strict.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fasta/fasta_3_strict.r",
+      "sha256": "953082a06c1971205d4dd5ce34250858439b22949a4c013c9eb722f6a25a962d"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fasta/fasta_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fasta/fasta_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fasta/fasta_naive.r",
+      "sha256": "f6c6d624582c49f096dceb0bdd438680592c417d34cec9e0673e5b164b1d0c48"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fasta/fasta_naive_2.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fasta/fasta_naive_2.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fasta/fasta_naive_2.r",
+      "sha256": "0bc77d90e64ee75d9c9cceb932a383306a77c8b1bd44d23499231c7d0d47ba63"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fastaredux/fastaredux.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fastaredux/fastaredux.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fastaredux/fastaredux.r",
+      "sha256": "2fe21db68d3e3990d6c8759558e332518a848b9a7c79c9e3b3d6edba124edfc0"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fastaredux/fastaredux_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fastaredux/fastaredux_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fastaredux/fastaredux_naive.r",
+      "sha256": "c77cf3fd01b6b37bbe6b1895e368d88cf4aaae87c351aac44ea74e1223f473aa"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/fastaredux/fastaredux_naive_strict.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/fastaredux/fastaredux_naive_strict.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/fastaredux/fastaredux_naive_strict.r",
+      "sha256": "69355666a343275c7878f6d6b0d5d01dcf13f6a6a331674d0a32b21ccc998a33"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/harness.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/harness.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/harness.r",
+      "sha256": "f829f86fdeddec00ccd68755eca0df4c41d6bc559ce15abd0d9341005dc7e6ee"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/knucleotide/knucleotide.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/knucleotide/knucleotide.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/knucleotide/knucleotide.r",
+      "sha256": "39ad75608092be0d7ebb1f36ba1656a7f1ffdf0f77206d37ff529305c605d321"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/knucleotide/knucleotide_brute.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/knucleotide/knucleotide_brute.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/knucleotide/knucleotide_brute.r",
+      "sha256": "869edf839d6548a0d48902b21529313d7bff31d0b6e7d01b239dc243cbb0be22"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/knucleotide/knucleotide_brute_2.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/knucleotide/knucleotide_brute_2.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/knucleotide/knucleotide_brute_2.r",
+      "sha256": "37fcb903d307f9a564d961c9016ad92434c5bb215d9efe548f020e727a7f6f76"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/knucleotide/knucleotide_brute_3.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/knucleotide/knucleotide_brute_3.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/knucleotide/knucleotide_brute_3.r",
+      "sha256": "b612251170d2a2a0707955cb49512382ec9f96c6be9bf6c700ad1beeee310dab"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/knucleotide/knucleotide_brute_strict.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/knucleotide/knucleotide_brute_strict.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/knucleotide/knucleotide_brute_strict.r",
+      "sha256": "0203d79a7953d5823569f42465ef7e1fda1d0eb2d2eff328cea2e7430ec36344"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/mandelbrot/mandelbrot.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/mandelbrot/mandelbrot.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/mandelbrot/mandelbrot.r",
+      "sha256": "58d0ef859d550d8188eec3daf86fe6bb782f46c020ad6e065db66efc8f6a6f04"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/mandelbrot/mandelbrot_ascii.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/mandelbrot/mandelbrot_ascii.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/mandelbrot/mandelbrot_ascii.r",
+      "sha256": "b510f3e137dd29a2f9578caa8e9a69da9ba16e7efe94c4268cdaff238743b425"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/mandelbrot/mandelbrot_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/mandelbrot/mandelbrot_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/mandelbrot/mandelbrot_naive.r",
+      "sha256": "b543d8de029962cabfe058c60169caf7c5f933fbb8c52eb3220c0b2ce5a25ab8"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/mandelbrot/mandelbrot_naive_ascii.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/mandelbrot/mandelbrot_naive_ascii.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/mandelbrot/mandelbrot_naive_ascii.r",
+      "sha256": "b10ea84453df057a3d7522a1efa2e4319945dfb3a1724a0e9f4c176d73803c73"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/mandelbrot/mandelbrot_noout.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/mandelbrot/mandelbrot_noout.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/mandelbrot/mandelbrot_noout.r",
+      "sha256": "6da96de98d35ff112845ea121c8b983ec096e47d02ed0b6a876fd03a26f6e6cc"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/mandelbrot/mandelbrot_noout_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/mandelbrot/mandelbrot_noout_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/mandelbrot/mandelbrot_noout_naive.r",
+      "sha256": "b059da49a71f082101bd9ffaad1ad24ddc604791c288921791c2ea1d8b854ad7"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/nbody/nbody.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/nbody/nbody.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/nbody/nbody.r",
+      "sha256": "27040c901ca9ddc214b49a642c8387735c541a3e79dcd539cb6afa7631d6a5f0"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/nbody/nbody_2.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/nbody/nbody_2.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/nbody/nbody_2.r",
+      "sha256": "2b865454faba1410a4795f7a0b0ff38bee2775a65ac78745eae9366cc6d35b28"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/nbody/nbody_3.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/nbody/nbody_3.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/nbody/nbody_3.r",
+      "sha256": "d9e319df2798dbb880d5c66d140e68578e25e82dad5912d2c09ff5da3104d84e"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/nbody/nbody_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/nbody/nbody_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/nbody/nbody_naive.r",
+      "sha256": "0901403dbb7db9694273e146c62986b6184b60e49f88c27808a459c2f8af4c37"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/nbody/nbody_naive_2.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/nbody/nbody_naive_2.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/nbody/nbody_naive_2.r",
+      "sha256": "eddfb67519be05b3109a2dc890e28713eaa3a55a9636b7542c01159e0626a88e"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/pidigits/pidigits.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/pidigits/pidigits.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/pidigits/pidigits.r",
+      "sha256": "aa29e45ac7bc27dde09de5f62adf1e064e30fd9a9822019d8e5f395047c89a55"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/pidigits/pidigits_strict.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/pidigits/pidigits_strict.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/pidigits/pidigits_strict.r",
+      "sha256": "e5f542a98d4b95d454a89cc6ff27cc60a1d86c472d53423e0a1e48784992dc16"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/regexdna/regexdna.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/regexdna/regexdna.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/regexdna/regexdna.r",
+      "sha256": "fccf88d8da011833e76f62cb59d953d7f1dd69c6339fcf53e4f78be3b649a09c"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/reversecomplement/reversecomplement.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/reversecomplement/reversecomplement.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/reversecomplement/reversecomplement.r",
+      "sha256": "db66d1e2dbfd12be3e8cb7282b920a23c47cf93df6ac6defb9a92809133a636c"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/reversecomplement/reversecomplement_2.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/reversecomplement/reversecomplement_2.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/reversecomplement/reversecomplement_2.r",
+      "sha256": "a6fcd27e87bd84ce7e48d5673ffed1d4d75baec1ff670168408a806674d241c7"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/reversecomplement/reversecomplement_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/reversecomplement/reversecomplement_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/reversecomplement/reversecomplement_naive.r",
+      "sha256": "f1c4c6066a14908a86a729cef817c8d7b1fb80e3398777fe7fff2c9b83e15daa"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm.r",
+      "sha256": "9932eb153a22fefc81ef48b73741675328a13794ba06e59671e975c3aeed4cda"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm_alt.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_alt.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_alt.r",
+      "sha256": "09059fd18e9ecbdd09363641e3deeaea0126932c467563231d72224efce5d3a0"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm_alt_2.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_alt_2.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_alt_2.r",
+      "sha256": "c78faf22b18c578b0dacd3648c97fa24dd235926b4feac8b4303c6d6a549c3b7"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm_alt_3.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_alt_3.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_alt_3.r",
+      "sha256": "2027d324f4769bce115860885bb0bdb5fc1c6b80411bd299a24aae0a8cc572ac"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm_alt_3_strict.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_alt_3_strict.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_alt_3_strict.r",
+      "sha256": "6e38732b7c7857579befd8ce13f90bef9e39674c9b40d6cec5a748e3fcb14c9b"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm_alt_4.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_alt_4.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_alt_4.r",
+      "sha256": "83c05fd69b46350f06e83bb6ffc6b9728d4b2af349511b4c796883835a762c05"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm_math.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_math.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_math.r",
+      "sha256": "8ca5081044d1a4be3493a78f472dc76890b11b061bb1d93369de944159abd94f"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm_naive.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_naive.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_naive.r",
+      "sha256": "77295182a6f9b93647fff0b4b43fad4ae695bdadbc7cad230db9c8d1c75f77a2"
+    },
+    {
+      "upstream_path": "Benchmarks/shootout/spectralnorm/spectralnorm_strict.r",
+      "source_url": "https://raw.githubusercontent.com/reactorlabs/RBenchmarking/a92447b37a03e96f8da1e18eb3cd8ab3b46fbf89/Benchmarks/shootout/spectralnorm/spectralnorm_strict.r",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/r/spectralnorm/spectralnorm_strict.r",
+      "sha256": "dbc729615ae97209280c1d860af26cedd57f71d6698ed5c061e3c52e6c74812a"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "reason": "Root-approved pause between full samples for queued QA and additive native-array candidates. No active sample is interrupted.",
+  "requested_at": "2026-10-11T20:15:04.583855+00:00",
+  "coordinator_pid": 82445,
+  "previous_child_pid": 89570,
+  "lock_acquired_at": "2026-10-11T20:29:23.888143+00:00",
+  "previous_child_gone": true,
+  "preserved_attempt": {
+    "key": "spectralnorm:spectralnorm-uiua-compact",
+    "id": "spectralnorm-uiua-compact",
+    "benchmark": "spectralnorm",
+    "language": "uiua",
+    "source_sha256": "8392ccc8bcaee0191f215ec78073c8ecbabbd8932dd5e41338f71c18c7205270",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+      "run",
+      "--no-format",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/spectralnorm/compact.ua",
+      "5500"
+    ],
+    "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+    "runtime_environment": {
+      "LC_ALL": "C",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua\", \"run\", \"--no-format\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"8392ccc8bcaee0191f215ec78073c8ecbabbd8932dd5e41338f71c18c7205270\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4.crate\": \"ef5eeffa816451f3a6a4cce9cd796e3e5ba6018638d3ce5cc7f87b73bababf60\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json\": \"e5d8b92153fc797a25bdecdcf5b324044889bbe68a0620d33dad1308f8a83749\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/runtime.zip\": \"38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/source.tar.gz\": \"264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua\": \"096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/Cargo.lock\": \"739f67e7b39a61a3035fe91663b5f9736df82f7a33af2a318abc54cd54591754\"}}",
+    "started_at": "2026-10-11T19:50:45.234870+00:00",
+    "workload_n": 5500,
+    "full_workload": true,
+    "timeout_seconds": 14400,
+    "maximum_rss_mib": 10240,
+    "power_at_start": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "seconds": 2307.811771667,
+    "exit_status": 0,
+    "remaining_group_members": [],
+    "competing_compilers": [],
+    "power_changes": [],
+    "power_at_end": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "monitor_errors": [],
+    "peak_process_group_rss_kib": 8956256,
+    "resource_violation": null,
+    "resource_monitor_errors": [],
+    "stderr": "",
+    "stdout_bytes": 12,
+    "stdout_sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+    "validation": {
+      "bytes": 12,
+      "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+      "reference_match": true
+    },
+    "finished_at": "2026-10-11T20:29:13.234583+00:00",
+    "valid_environment": true,
+    "sample": 1,
+    "attempt_number": 22
+  },
+  "report_sha256": "7ba5092d5609e1b0db6040d8beeae4312bede88431467f48fde15fb47982fb6b",
+  "coordinator_command": "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python run.py --languages r,apl,uiua --benchmarks regexredux,revcomp,pidigits,spectralnorm --samples 3",
+  "signal": "SIGINT",
+  "coordinator_present_after_pause": false,
+  "finished_at": "2026-10-11T20:29:24.011067+00:00"
+}

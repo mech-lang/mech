@@ -1,0 +1,12 @@
+PLANNING ONLY nbody:nbody-r-compact 100000
+PLANNING ESTIMATE nbody:nbody-r-compact 0.636s observed; ~0.09h full (not a measured benchmark) 
+PLANNING ONLY nbody:nbody-r-optimized 100000
+PLANNING ESTIMATE nbody:nbody-r-optimized 1.004s observed; ~0.14h full (not a measured benchmark) 
+PLANNING ONLY binarytrees:binarytrees-r-compact 14
+PLANNING ESTIMATE binarytrees:binarytrees-r-compact 1.430s observed; ~0.05h full (not a measured benchmark) 
+PLANNING ONLY binarytrees:binarytrees-r-optimized 14
+PLANNING ESTIMATE binarytrees:binarytrees-r-optimized 0.988s observed; ~0.04h full (not a measured benchmark) 
+PLANNING ONLY fannkuchredux:fannkuchredux-r-compact 9
+PLANNING ESTIMATE fannkuchredux:fannkuchredux-r-compact 2.847s observed; ~1.04h full (not a measured benchmark) 
+PLANNING ONLY fannkuchredux:fannkuchredux-r-optimized 9
+PLANNING ESTIMATE fannkuchredux:fannkuchredux-r-optimized 0.445s observed; ~0.16h full (not a measured benchmark) 

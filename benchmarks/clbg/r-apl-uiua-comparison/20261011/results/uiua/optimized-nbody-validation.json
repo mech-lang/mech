@@ -1,0 +1,103 @@
+{
+  "status": "passed-canonical-and-independent-small",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/fast.ua",
+  "source_sha256": "23ec8f0e838dec6602c743ae2e6b92c2a7788ab4ce5ad112d5f2a79b377ee0ec",
+  "runtime": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+  "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+  "change": "Advance computes NewVelocity once; generic fork extracts Pos and NewVelocity, generic by keeps velocity while dip-scaled velocity updates positions. Compact source unchanged; no force, dt, step-count, energy or precision changes.",
+  "normalized_loc": 21,
+  "results": [
+    {
+      "case": "canonical-small",
+      "n": 1000,
+      "reference_match": true,
+      "returncode": 0,
+      "stdout_sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "bytes": 26,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/fast.ua",
+        "1000"
+      ]
+    },
+    {
+      "case": "independent-D-0",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/fast.ua",
+        "0"
+      ],
+      "reference_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact",
+        "0"
+      ],
+      "reference_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_compact.d",
+      "reference_source_sha256": "1ef30891371c778d3a01e693d686ec7cbda248e352766d858e5cca32dfcfeea0",
+      "reference_match": true,
+      "returncode": 0,
+      "reference_returncode": 0,
+      "stdout": "-0.169075164\n-0.169075164\n",
+      "stdout_sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+      "reference_stdout_sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+      "bytes": 26,
+      "stderr": ""
+    },
+    {
+      "case": "independent-D-1",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/fast.ua",
+        "1"
+      ],
+      "reference_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact",
+        "1"
+      ],
+      "reference_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_compact.d",
+      "reference_source_sha256": "1ef30891371c778d3a01e693d686ec7cbda248e352766d858e5cca32dfcfeea0",
+      "reference_match": true,
+      "returncode": 0,
+      "reference_returncode": 0,
+      "stdout": "-0.169075164\n-0.169074954\n",
+      "stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+      "reference_stdout_sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+      "bytes": 26,
+      "stderr": ""
+    },
+    {
+      "case": "independent-D-10000",
+      "n": 10000,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/fast.ua",
+        "10000"
+      ],
+      "reference_command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/numerical/nbody_compact",
+        "10000"
+      ],
+      "reference_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/numerical/nbody_compact.d",
+      "reference_source_sha256": "1ef30891371c778d3a01e693d686ec7cbda248e352766d858e5cca32dfcfeea0",
+      "reference_match": true,
+      "returncode": 0,
+      "reference_returncode": 0,
+      "stdout": "-0.169075164\n-0.169016441\n",
+      "stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648",
+      "reference_stdout_sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648",
+      "bytes": 26,
+      "stderr": ""
+    }
+  ],
+  "full_benchmarks_run": 0,
+  "timing_lock": "/tmp/mech-clbg-timing.lock"
+}

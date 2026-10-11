@@ -1,0 +1,232 @@
+knucleotide compact lexical-ties-stop PASS 
+knucleotide fast lexical-ties-stop PASS 
+knucleotide compact short-window PASS 
+knucleotide fast short-window PASS 
+knucleotide compact empty-record PASS 
+knucleotide fast empty-record PASS 
+knucleotide compact missing-record PASS 
+knucleotide fast missing-record PASS 
+knucleotide compact mixed-case-comments-crlf PASS 
+knucleotide fast mixed-case-comments-crlf PASS 
+knucleotide compact arbitrary-all-widths PASS 
+knucleotide fast arbitrary-all-widths PASS 
+revcomp compact all-IUB-and-empty PASS 
+revcomp fast all-IUB-and-empty PASS 
+revcomp compact crlf-comments PASS 
+revcomp fast crlf-comments PASS 
+revcomp compact non-sixty-record PASS 
+revcomp fast non-sixty-record PASS 
+fasta compact independent-D-1 PASS 
+fasta fast independent-D-1 PASS 
+fasta compact independent-D-2 PASS 
+fasta fast independent-D-2 PASS 
+fasta compact independent-D-61 PASS 
+fasta fast independent-D-61 PASS 
+fasta compact independent-D-20000 PASS 
+fasta fast independent-D-20000 PASS 
+pidigits compact independent-D-1 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiu
+pidigits fast independent-D-1 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/fast.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-c
+pidigits compact independent-D-9 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiu
+pidigits fast independent-D-9 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/fast.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-c
+pidigits compact independent-D-11 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiu
+pidigits fast independent-D-11 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/fast.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-c
+pidigits compact independent-D-37 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiu
+pidigits fast independent-D-37 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/fast.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-c
+pidigits compact independent-D-101 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/compact.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiu
+pidigits fast independent-D-101 PASS Style: Split this into multiple lines (heuristic: 41/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/pidigits/fast.ua:23:1
+23 | GrowR      ← Small {⊃(P.R|Add {⊃(P.A|Small {⊃(P.B|P.Q|⋅2)}|P.R)}|+1×2P.K)}
+     ──────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 44/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-c
+fannkuchredux compact independent-D-1 PASS Style: Split this into multiple lines (heuristic: 50/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/compact.ua:16:1
+16 |   F ⊃(+1F.Index Run.State|+⊃(×⊃(˜ⁿ¯1 F.Index Run.State)Run.Count)(F.Checksum Run.State)|↥⊃Run.Count(F.Maximum Run.State))
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+fannkuchredux fast independent-D-1 PASS Advice: Split this into multiple lines (heuristic: 61/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/fast.ua:18:1
+18 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+fannkuchredux compact signed-checksum-2 PASS Style: Split this into multiple lines (heuristic: 50/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/compact.ua:16:1
+16 |   F ⊃(+1F.Index Run.State|+⊃(×⊃(˜ⁿ¯1 F.Index Run.State)Run.Count)(F.Checksum Run.State)|↥⊃Run.Count(F.Maximum Run.State))
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+fannkuchredux fast signed-checksum-2 PASS Advice: Split this into multiple lines (heuristic: 61/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/fast.ua:18:1
+18 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+fannkuchredux compact independent-D-3 PASS Style: Split this into multiple lines (heuristic: 50/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/compact.ua:16:1
+16 |   F ⊃(+1F.Index Run.State|+⊃(×⊃(˜ⁿ¯1 F.Index Run.State)Run.Count)(F.Checksum Run.State)|↥⊃Run.Count(F.Maximum Run.State))
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+fannkuchredux fast independent-D-3 PASS Advice: Split this into multiple lines (heuristic: 61/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/fast.ua:18:1
+18 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+fannkuchredux compact independent-D-4 PASS Style: Split this into multiple lines (heuristic: 50/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/compact.ua:16:1
+16 |   F ⊃(+1F.Index Run.State|+⊃(×⊃(˜ⁿ¯1 F.Index Run.State)Run.Count)(F.Checksum Run.State)|↥⊃Run.Count(F.Maximum Run.State))
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+fannkuchredux fast independent-D-4 PASS Advice: Split this into multiple lines (heuristic: 61/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/fast.ua:18:1
+18 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+fannkuchredux compact independent-D-5 PASS Style: Split this into multiple lines (heuristic: 50/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/compact.ua:16:1
+16 |   F ⊃(+1F.Index Run.State|+⊃(×⊃(˜ⁿ¯1 F.Index Run.State)Run.Count)(F.Checksum Run.State)|↥⊃Run.Count(F.Maximum Run.State))
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+fannkuchredux fast independent-D-5 PASS Advice: Split this into multiple lines (heuristic: 61/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/fast.ua:18:1
+18 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+fannkuchredux compact independent-D-6 PASS Style: Split this into multiple lines (heuristic: 50/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/compact.ua:16:1
+16 |   F ⊃(+1F.Index Run.State|+⊃(×⊃(˜ⁿ¯1 F.Index Run.State)Run.Count)(F.Checksum Run.State)|↥⊃Run.Count(F.Maximum Run.State))
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+fannkuchredux fast independent-D-6 PASS Advice: Split this into multiple lines (heuristic: 61/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/fast.ua:18:1
+18 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+spectralnorm compact independent-D-1 PASS 
+spectralnorm fast independent-D-1 PASS 
+spectralnorm compact independent-D-2 PASS 
+spectralnorm fast independent-D-2 PASS 
+spectralnorm compact independent-D-7 PASS 
+spectralnorm fast independent-D-7 PASS 
+spectralnorm compact independent-D-113 PASS 
+spectralnorm fast independent-D-113 PASS 
+nbody compact independent-D-0 PASS 
+nbody fast independent-D-0 PASS 
+nbody compact independent-D-1 PASS 
+nbody fast independent-D-1 PASS 
+nbody compact independent-D-10000 PASS 
+nbody fast independent-D-10000 PASS 
+binarytrees compact independent-D-4 PASS 
+binarytrees fast independent-D-4 PASS 
+binarytrees compact independent-D-7 PASS 
+binarytrees fast independent-D-7 PASS 
+regexredux compact case-sensitive-and-all-replacements PASS 
+regexredux fast case-sensitive-and-all-replacements PASS 
+mandelbrot compact padding-1 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benc
+mandelbrot fast padding-1 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/fast.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchma
+mandelbrot compact padding-3 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benc
+mandelbrot fast padding-3 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/fast.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchma
+mandelbrot compact padding-7 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benc
+mandelbrot fast padding-7 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/fast.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchma
+mandelbrot compact padding-9 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benc
+mandelbrot fast padding-9 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/fast.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchma
+mandelbrot compact padding-17 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benc
+mandelbrot fast padding-17 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/fast.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchma
+mandelbrot compact padding-65 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benc
+mandelbrot fast padding-65 PASS Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/fast.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchma

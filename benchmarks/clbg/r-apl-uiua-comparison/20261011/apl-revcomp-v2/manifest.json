@@ -1,0 +1,376 @@
+{
+  "schema_version": 1,
+  "status": "prepared-validated-pending-guarded-full-timing",
+  "created_at": "2026-10-11T19:42:59.254747+00:00",
+  "language": "apl",
+  "programs": [
+    {
+      "id": "revcomp-apl-v2-compact",
+      "key": "revcomp:revcomp-apl-v2-compact",
+      "benchmark": "revcomp",
+      "language": "apl",
+      "variant": "compact",
+      "profile": "compact",
+      "role": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.compact.apl",
+      "source_sha256": "611f8f040cd5893993d5d43830ff4c7e74c0c3bf1cc6b8f4832f616de7400d38",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.compact.apl"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+          "/bin/sh": "e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5",
+          "/usr/bin/mktemp": "88d41a6a0579465977181c6448528af3664107000277f25b140ae4508f57ef70",
+          "/bin/rm": "8b08a94de146a7fcbe5229de1521e40e11df9cc7c5c5901d97f4c64ba9420f9a",
+          "/bin/rmdir": "1268c2977130c3261f1908903a1a25de987263da49cc0ea51b58d20ae2371942"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [
+        {
+          "name": "General private scratch-path launcher",
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+          "source_sha256": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+          "binary": null,
+          "build_command": [],
+          "pins": {
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+            "/bin/sh": "e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5",
+            "/usr/bin/mktemp": "88d41a6a0579465977181c6448528af3664107000277f25b140ae4508f57ef70",
+            "/bin/rm": "8b08a94de146a7fcbe5229de1521e40e11df9cc7c5c5901d97f4c64ba9420f9a",
+            "/bin/rmdir": "1268c2977130c3261f1908903a1a25de987263da49cc0ea51b58d20ae2371942"
+          },
+          "native_benchmark_kernel": false,
+          "operations": [
+            "Create unique private temporary directory",
+            "Pass scratch pathname to interpreter",
+            "Remove scratch file and directory on exit"
+          ],
+          "reason": "Standard process/file I/O only. The launcher does not read benchmark input, parse records, select or transform sequence bytes, reverse data, calculate offsets, wrap output, or implement any benchmark algorithm.",
+          "provenance": [
+            "GNU APL2.0 Quad_FIO.cc ordinary fopen/fread/fwrite/ftell/fseek bindings",
+            "macOS standard mktemp(1), rm(1), rmdir(1) and sh(1)"
+          ],
+          "documentation": "https://www.gnu.org/software/apl/apl.html",
+          "api_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Quad_FIO.cc"
+        }
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "source_provenance": "Newly authored counted APL bounded-memory canonical implementation. The original cross-language reference and failed APL sources are retained.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/revcomp.reference.d",
+      "upstream_sha256": "26ab20ca43fc24ce57ebb852690ea7c30f7fba97aaeeff3c84c3416c03811fb9",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Standard scratch-path launcher creates one private path and cleans it up; all algorithm and offsets remain counted APL.",
+        "Spool one current record through ordinary GNUAPL \u2395FIO fopen/fwrite, with no whole-input or whole-sequence APL array.",
+        "Actually read every stored sequence byte in bounded slices from the end, apply the full upper/lower IUPAC mapping and reverse each slice in APL.",
+        "Write complete headers and 60-column sequence output; normalize CRLF and skip semicolon comment lines, including across input chunk boundaries.",
+        "Compact uses standard fgets fragments and records header/comment/line state."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All record parsing, comment handling, sequence spooling, backward slice offsets, full IUPAC complement lookup, actual reversal, header preservation and 60-column complete output remain counted APL. Support provides only ordinary temporary-path lifecycle; no native transformation or benchmark kernel.",
+        "maximum_input_chunk": 262143,
+        "maximum_reverse_chunk": 245760,
+        "bounded_memory": "All APL input/transform/output arrays are bounded by chunk size. The largest individual record occupies an ordinary temporary disk file; no entire input, line, header or sequence is retained in APL memory."
+      },
+      "loc": 51,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "benchmark": "revcomp",
+        "variant": "compact",
+        "case": "canonical-small",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.compact.apl"
+        ],
+        "n": null,
+        "input_bytes": 10245,
+        "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "stdout_bytes": 10245,
+        "stdout_sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "expected_bytes": 10245,
+        "expected_stdout_sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "returncode": 0,
+        "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+        "validation_seconds": 0.06947649992071092,
+        "reference_match": true,
+        "passed": true
+      },
+      "adversarial_validation_status": "all-v2-cases-passed",
+      "adversarial_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/results/validation.json",
+        "sha256": "f9635c903b7cde95c591cf1c8339c236626ea8f48f835258c57c9432dbc33e49",
+        "cases_per_variant": 22,
+        "passed": true
+      },
+      "normalized_loc": 51,
+      "physical_loc": 51,
+      "loc_expansions": [],
+      "supersedes_keys": [
+        "revcomp:revcomp-apl-compact"
+      ],
+      "supersedes_source_sha256": "52463205b37b824f91d52d0dd3acc124b27416b596afd6980b1056a9c23ba03f",
+      "measurement_status": "prepared-not-fully-timed",
+      "eligible_for_chart": false,
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": []
+    },
+    {
+      "id": "revcomp-apl-v2-optimized",
+      "key": "revcomp:revcomp-apl-v2-optimized",
+      "benchmark": "revcomp",
+      "language": "apl",
+      "variant": "optimized",
+      "profile": "optimized",
+      "role": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.optimized.apl",
+      "source_sha256": "a4fcaa32c69f215bc07a9d1794bd72ceb764bd47059dfd4ec9490b0a8ab4d991",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.optimized.apl"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+          "/bin/sh": "e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5",
+          "/usr/bin/mktemp": "88d41a6a0579465977181c6448528af3664107000277f25b140ae4508f57ef70",
+          "/bin/rm": "8b08a94de146a7fcbe5229de1521e40e11df9cc7c5c5901d97f4c64ba9420f9a",
+          "/bin/rmdir": "1268c2977130c3261f1908903a1a25de987263da49cc0ea51b58d20ae2371942"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [
+        {
+          "name": "General private scratch-path launcher",
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+          "source_sha256": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+          "binary": null,
+          "build_command": [],
+          "pins": {
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+            "/bin/sh": "e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5",
+            "/usr/bin/mktemp": "88d41a6a0579465977181c6448528af3664107000277f25b140ae4508f57ef70",
+            "/bin/rm": "8b08a94de146a7fcbe5229de1521e40e11df9cc7c5c5901d97f4c64ba9420f9a",
+            "/bin/rmdir": "1268c2977130c3261f1908903a1a25de987263da49cc0ea51b58d20ae2371942"
+          },
+          "native_benchmark_kernel": false,
+          "operations": [
+            "Create unique private temporary directory",
+            "Pass scratch pathname to interpreter",
+            "Remove scratch file and directory on exit"
+          ],
+          "reason": "Standard process/file I/O only. The launcher does not read benchmark input, parse records, select or transform sequence bytes, reverse data, calculate offsets, wrap output, or implement any benchmark algorithm.",
+          "provenance": [
+            "GNU APL2.0 Quad_FIO.cc ordinary fopen/fread/fwrite/ftell/fseek bindings",
+            "macOS standard mktemp(1), rm(1), rmdir(1) and sh(1)"
+          ],
+          "documentation": "https://www.gnu.org/software/apl/apl.html",
+          "api_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Quad_FIO.cc"
+        }
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/revcomp.html",
+      "source_provenance": "Newly authored counted APL bounded-memory canonical implementation. The original cross-language reference and failed APL sources are retained.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/revcomp.reference.d",
+      "upstream_sha256": "26ab20ca43fc24ce57ebb852690ea7c30f7fba97aaeeff3c84c3416c03811fb9",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Standard scratch-path launcher creates one private path and cleans it up; all algorithm and offsets remain counted APL.",
+        "Spool one current record through ordinary GNUAPL \u2395FIO fopen/fwrite, with no whole-input or whole-sequence APL array.",
+        "Actually read every stored sequence byte in bounded slices from the end, apply the full upper/lower IUPAC mapping and reverse each slice in APL.",
+        "Write complete headers and 60-column sequence output; normalize CRLF and skip semicolon comment lines, including across input chunk boundaries.",
+        "Optimized uses 245,760-byte fread chunks; general regex boundary positions and bounded APL slices replace per-line input dispatch."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All record parsing, comment handling, sequence spooling, backward slice offsets, full IUPAC complement lookup, actual reversal, header preservation and 60-column complete output remain counted APL. Support provides only ordinary temporary-path lifecycle; no native transformation or benchmark kernel.",
+        "maximum_input_chunk": 245760,
+        "maximum_reverse_chunk": 245760,
+        "bounded_memory": "All APL input/transform/output arrays are bounded by chunk size. The largest individual record occupies an ordinary temporary disk file; no entire input, line, header or sequence is retained in APL memory."
+      },
+      "loc": 71,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "benchmark": "revcomp",
+        "variant": "optimized",
+        "case": "canonical-small",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.optimized.apl"
+        ],
+        "n": null,
+        "input_bytes": 10245,
+        "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "stdout_bytes": 10245,
+        "stdout_sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "expected_bytes": 10245,
+        "expected_stdout_sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+        "returncode": 0,
+        "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+        "validation_seconds": 0.06720587506424636,
+        "reference_match": true,
+        "passed": true
+      },
+      "adversarial_validation_status": "all-v2-cases-passed",
+      "adversarial_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/results/validation.json",
+        "sha256": "f9635c903b7cde95c591cf1c8339c236626ea8f48f835258c57c9432dbc33e49",
+        "cases_per_variant": 22,
+        "passed": true
+      },
+      "normalized_loc": 71,
+      "physical_loc": 71,
+      "loc_expansions": [],
+      "supersedes_keys": [
+        "revcomp:revcomp-apl-optimized"
+      ],
+      "supersedes_source_sha256": "3164ce4f3d425d83226130bc64443a2f592113dcd1a948251836027ee5cba70b",
+      "measurement_status": "prepared-not-fully-timed",
+      "eligible_for_chart": false,
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": []
+    }
+  ],
+  "native_support": {
+    "name": "General private scratch-path launcher",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+    "source_sha256": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+    "binary": null,
+    "build_command": [],
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+      "/bin/sh": "e4d71aa95be0725c351e9d1d273d35ccdb0a8bdb31a57927c8738431b89788f5",
+      "/usr/bin/mktemp": "88d41a6a0579465977181c6448528af3664107000277f25b140ae4508f57ef70",
+      "/bin/rm": "8b08a94de146a7fcbe5229de1521e40e11df9cc7c5c5901d97f4c64ba9420f9a",
+      "/bin/rmdir": "1268c2977130c3261f1908903a1a25de987263da49cc0ea51b58d20ae2371942"
+    },
+    "native_benchmark_kernel": false,
+    "operations": [
+      "Create unique private temporary directory",
+      "Pass scratch pathname to interpreter",
+      "Remove scratch file and directory on exit"
+    ],
+    "reason": "Standard process/file I/O only. The launcher does not read benchmark input, parse records, select or transform sequence bytes, reverse data, calculate offsets, wrap output, or implement any benchmark algorithm.",
+    "provenance": [
+      "GNU APL2.0 Quad_FIO.cc ordinary fopen/fread/fwrite/ftell/fseek bindings",
+      "macOS standard mktemp(1), rm(1), rmdir(1) and sh(1)"
+    ],
+    "documentation": "https://www.gnu.org/software/apl/apl.html",
+    "api_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Quad_FIO.cc"
+  },
+  "preserved_v1": {
+    "sources": [
+      {
+        "key": "revcomp:revcomp-apl-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/revcomp.compact.apl",
+        "source_sha256": "52463205b37b824f91d52d0dd3acc124b27416b596afd6980b1056a9c23ba03f"
+      },
+      {
+        "key": "revcomp:revcomp-apl-optimized",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/revcomp.optimized.apl",
+        "source_sha256": "3164ce4f3d425d83226130bc64443a2f592113dcd1a948251836027ee5cba70b"
+      }
+    ],
+    "failures": "Retained by the parent in the active frozen cohort and evidence archives; no old source or report edited."
+  },
+  "validation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/results/validation.json",
+    "sha256": "f9635c903b7cde95c591cf1c8339c236626ea8f48f835258c57c9432dbc33e49",
+    "passed": true,
+    "checks": 44
+  },
+  "capacity_review": {
+    "runtime_changed": false,
+    "full_input_bytes": 254166745,
+    "diagnosis": "The full input alone needs approximately4GiB in GNUAPL16-byte array cells, above its macOS workspace fallback before whole-record copies.",
+    "correction": "Replace whole-input/whole-record arrays with application-owned bounded streaming and ordinary seekable temporary-file storage.",
+    "code_evidence": [
+      "Quad_FIO.cc:2427\u20132546 (standard fopen/fread/fwrite/fseek)",
+      "Quad_FIO.cc:1633\u20131637 (standard ftell)",
+      "Quad_WA.cc:172\u2013187 (macOS /proc fallback)",
+      "Value.cc:196\u2013215 (workspace check)"
+    ],
+    "guards": "Unchanged parent memory/power/workload/output/timing guards. No full-size run has been performed by this preparation."
+  }
+}

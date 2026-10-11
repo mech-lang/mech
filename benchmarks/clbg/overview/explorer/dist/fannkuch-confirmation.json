@@ -1,0 +1,228 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-11T19:27:57.629760+00:00",
+  "sample_count": 3,
+  "power_profile": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "workload_n": 12,
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/baseline.json": "a6ca47c7be028d86dd9f7e78ba36afda6afeaeb83f1a711b83441dbd5ff79437",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/timings.json": "88aa48fc3dc53d57347819602026788d3ee8c5144680da4e927d1e7a62913820",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/confirm_fannkuch.py": "998fa2b466a2f38e07e48d5bfca20c243c0de26c3e20cddb5a6fc9951afa23f6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/execution-modes/20261010-final/run.py": "41dbe63f527cd0dbea773de7d02a1ad381e60784ddcb30d583ba7748a378bbc3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/compact/run.py": "6926e288a7b9b59b030c9226227df967aa1d92b3e395789467706e2241d987ae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/nbody/run.py": "e907f71b3fdf8fc6f65adc76aab6dfc424811875388c14f0eb2f31e14e9cffcf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/execution.rs": "b1de0e3e3bb3cfbe626f023a4e6ddc9f98883285d6f3d7c10d775453844e943e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/fused_f64/resident.rs": "ead9028913cef1d380a938642c66aeab39b18a206a82b176d65ca5ff9841ef97",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/control/resident.rs": "a0d13e4dae0e13531d80d9830cafad77a807dabc20443fbbe12a7e60d9fa55e1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/sequence/resident.rs": "b398b17c7e7e7f55d631477f36140b58e30241b7be249c896203187eebd2754d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu/src/batched/array_cpu.rs": "2b59de41bcf4f622ccb642cfad44074036e2a4e5c63211af8c56575227aa2a5f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/driver/Cargo.toml": "176987b99f4e54778c2e6a52e455bd252ca759c1e0ba693b2ef096ea697c600e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/driver/Cargo.lock": "7a8830b3e93cd1eae386532cb4313d45a1d4b172f7c1be9ec3338a33f9a6b565",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4"
+  },
+  "programs": {
+    "before": {
+      "source_key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "loc": 39,
+      "physical_loc": 39,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fannkuchredux:mech-fannkuch-default:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        55.504479375,
+        56.117233208,
+        60.096480833
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 55.504479375,
+          "wall_seconds": 55.9399195,
+          "prepare_seconds": 0.179570208,
+          "kernel_seconds": 55.504479375,
+          "validation": {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "seconds": 56.117233208,
+          "wall_seconds": 56.287732958,
+          "prepare_seconds": 0.156706209,
+          "kernel_seconds": 56.117233208,
+          "validation": {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "seconds": 60.096480833,
+          "wall_seconds": 60.268256,
+          "prepare_seconds": 0.156140625,
+          "kernel_seconds": 60.096480833,
+          "validation": {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        }
+      ],
+      "median_seconds": 56.117233208,
+      "sample_stdev_seconds": 2.4932026362090465
+    },
+    "after": {
+      "source_key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "loc": 39,
+      "physical_loc": 39,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fannkuchredux:mech-fannkuch-default:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        59.300908042,
+        58.91425625,
+        61.9996515
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 59.300908042,
+          "wall_seconds": 59.472525875,
+          "prepare_seconds": 0.156329791,
+          "kernel_seconds": 59.300908042,
+          "validation": {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "seconds": 58.91425625,
+          "wall_seconds": 59.084786958,
+          "prepare_seconds": 0.156338667,
+          "kernel_seconds": 58.91425625,
+          "validation": {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        },
+        {
+          "seconds": 61.9996515,
+          "wall_seconds": 62.165477209,
+          "prepare_seconds": 0.155992209,
+          "kernel_seconds": 61.9996515,
+          "validation": {
+            "bytes": 29,
+            "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+            "reference_match": true
+          },
+          "competing_compilers": [],
+          "power_changes": []
+        }
+      ],
+      "median_seconds": 59.300908042,
+      "sample_stdev_seconds": 1.6808916140487828
+    }
+  },
+  "orders": [
+    [
+      "before",
+      "after"
+    ],
+    [
+      "after",
+      "before"
+    ],
+    [
+      "after",
+      "before"
+    ]
+  ],
+  "discarded": [],
+  "protocol": "Independent three-round matched randomized confirmation, same pinned before/after binaries and default source/arguments. Canonical n=12, complete output, fresh loaded interpretation with IO included and preparation excluded. Shared timing mutex, AC power, Low Power Mode off, <=8 workers. No earlier sample reused.",
+  "finished_at": "2026-10-11T19:41:16.473587+00:00",
+  "comparison": {
+    "before_seconds": 56.117233208,
+    "after_seconds": 59.300908042,
+    "after_x_before": 1.0567325695156713
+  }
+}

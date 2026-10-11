@@ -1,0 +1,36 @@
+{
+  "command": [
+    "/usr/bin/clang++",
+    "-O3",
+    "-std=c++11",
+    "-dynamiclib",
+    "-fPIC",
+    "-undefined",
+    "dynamic_lookup",
+    "-DHAVE_CONFIG_H",
+    "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0",
+    "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src",
+    "-I/opt/homebrew/opt/pcre2/include",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/support/regex-count.cpp",
+    "-L/opt/homebrew/opt/pcre2/lib",
+    "-lpcre2-32",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-count-v3-apl.dylib"
+  ],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": "In file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/support/regex-count.cpp:5:\nIn file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Native_interface.hh:59:\nIn file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Workspace.hh:34:\nIn file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Quad_FIO.hh:32:\nIn file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/UserPreferences.hh:30:\n/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Parallel.hh:48:2: warning: \"CORE_COUNT_WANTED configured, but pthread_setaffinity_np() missing\" [-W#warnings]\n#warning \"CORE_COUNT_WANTED configured, but pthread_setaffinity_np() missing\"\n ^\n1 warning generated.\n",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/support/regex-count.cpp",
+  "source_sha256": "a5b93049a40976778e396a1852cee31d99259235bc7bbd41612142a3181625b3",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-count-v3-apl.dylib",
+  "binary_sha256": "a458279aad75b4c98a0aca34aa0f898c1aac6d097bd1140abb020ff66df4f919",
+  "compiler": {
+    "path": "/usr/bin/clang++",
+    "sha256": "3e7d30871a9740446f33a907b14d28f10ebe6d4e1c146a4c0788308f573a6609",
+    "version": "Apple clang version 15.0.0 (clang-1500.3.9.4)\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+  },
+  "pcre_header": {
+    "path": "/opt/homebrew/opt/pcre2/include/pcre2.h",
+    "sha256": "19756397bb6c402d43f74ba827c55acd26c21d078eead9ed5d49f582e4c506d8"
+  }
+}

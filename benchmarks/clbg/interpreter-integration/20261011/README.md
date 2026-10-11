@@ -4,7 +4,7 @@ The incoming fixed-shape f32 batch executor was integrated with input-view compa
 
 All 15 source profiles were measured before and after, three canonical full-workload samples per phase: 90 valid complete-output runs on Apple M3, AC power, Low Power Mode off, sequential under the shared timing mutex. Loaded interpreter execution includes input, computation, formatting, output and flush. Preparation and whole-process time are retained separately.
 
-The table compares medians; ×Mech AOT uses the existing published fastest AOT endpoint, measured in its own cohort. It is a descriptive cross-cohort comparison. The fresh before/after ratios are the matched comparison; fluctuations are not credited to the uncalled f32 executor. Existing published interpreted endpoint timings are preserved.
+The table compares medians; ×Mech AOT uses the existing published fastest AOT endpoint, measured in its own cohort. It is a descriptive cross-cohort comparison. The fresh before/after ratios are the matched comparison. The explorer uses the complete post-integration cohort for all 15 interpreted candidates and preserves each prior measurement in its audit; it does not select whichever cohort is faster.
 
 | Program | LOC | Before (s) | After (s) | After / before | After / Mech AOT |
 |---|---:|---:|---:|---:|---:|
@@ -23,6 +23,16 @@ The table compares medians; ×Mech AOT uses the existing published fastest AOT e
 | regexredux:mech-regex-final-reuse-signed | 24 | 0.475689 | 0.480343 | 1.010× | 0.981× |
 | pidigits:mech-pi-final-advance-signed | 38 | 0.307906 | 0.308233 | 1.001× | 1.027× |
 | pidigits:mech-pi-final-compact-signed | 35 | 0.404718 | 0.404442 | 0.999× | 1.347× |
+
+## Confirmed fannkuch signal
+
+The default fannkuch form slowed by 5.93% in the main matched cohort. An independent three-round randomized confirmation used the same frozen before/after binaries and unchanged source at the full n=12 workload. Every sample passed the complete output check. Its medians were **56.117233 s before and 59.300908 s after: 1.056733×, or 5.67% longer**. Neither confirmation samples nor faster historical measurements replace the main post-integration cohort.
+
+The new f32 executor is uncalled on these workloads, but adding it can still change compilation of used functions. Read-only disassembly of the exact binaries shows the unchanged control interpreter's `Machine::call` growing from 11,692 to 11,840 bytes. Static stack loads using SP or the frame pointer remain 265; stack-store instructions rise from 93 to 119. These include cold branches and are not dynamic spill counts. LLVM's different codegen-unit partition and wrapper inlining make a code-generation explanation plausible, but the measurements and disassembly do not establish a specific cause.
+
+A same-package control rebuilt the current code with the original driver package and executable names. Cargo reused all 169 unchanged library archives, and canonical n=7 output passed. Its `Machine::call` body is byte-identical to the pinned after binary, at the same address. Driver package identity therefore does not explain this body change. The [control report](package-control.json) and [reproduction script](package_identity_control.py) retain the build, source and library pins. The [after reference](codegen-package-control-after-reference-machine-call.txt) and [same-package control](codegen-package-control-control-machine-call.txt) disassemblies are retained alongside the report. This was a static control, not another performance sample.
+
+Evidence: [confirmation report](fannkuch-confirmation.json), [confirmation runner](confirm_fannkuch.py), [static inspection](codegen-inspection.json), and the [before](codegen-before-machine-call.txt) / [after](codegen-after-machine-call.txt) disassemblies. The timing cohorts should not be described as performance-neutral solely because the new executor is uncalled.
 
 ## Provenance limitations
 

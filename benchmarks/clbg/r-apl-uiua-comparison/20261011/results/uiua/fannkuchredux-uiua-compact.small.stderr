@@ -1,0 +1,4 @@
+Style: Split this into multiple lines (heuristic: 50/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/fannkuchredux/compact.ua:16:1
+16 |   F ⊃(+1F.Index Run.State|+⊃(×⊃(˜ⁿ¯1 F.Index Run.State)Run.Count)(F.Checksum Run.State)|↥⊃Run.Count(F.Maximum Run.State))
+     ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

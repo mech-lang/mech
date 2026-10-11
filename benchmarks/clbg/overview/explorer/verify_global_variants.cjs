@@ -43,13 +43,13 @@ async function checkGlobalMarkers(page){
       await page.locator('#show-global').check();await settle(page);
       assert.deepEqual(await domain(page),original);
       assert.deepEqual(await chartBox(page),originalBox,'Global toggle does not move or resize the chart');
-      assert.equal(await page.locator('.global-spread').count(),4);assert.equal(await page.locator('.global-center').count(),4);
+      assert.equal(await page.locator('.global-spread').count(),4);assert.equal(await page.locator('.global-center').count(),2);
       const population=await checkGlobalMarkers(page);assert.equal(population.fast.n,runtimeCount);
       assert.equal(await page.locator('.global-spread[data-global-sigma="1"]').count(),2);
       assert.equal(await page.locator('.global-spread[data-global-sigma="2"]').count(),2);
       await page.locator('#small-profile').uncheck();
       assert.equal(await page.locator('[data-global-profile="small"]').count(),0);
-      assert.equal(await page.locator('.global-center').count(),2);assert.deepEqual(await domain(page),original);
+      assert.equal(await page.locator('.global-center').count(),1);assert.deepEqual(await domain(page),original);
       await page.locator('#small-profile').check();
       await page.locator('input[data-language="mech-jit"]').uncheck();
       assert.equal(await page.locator('input[data-family="mech"]').evaluate(i=>i.indeterminate),true);
@@ -75,8 +75,8 @@ async function checkGlobalMarkers(page){
       assert.equal(await page.evaluate(()=>document.activeElement.dataset.language),'lua','Child checkbox retains keyboard focus');
       assert.equal(await page.locator('input[data-family="lua"]').evaluate(i=>i.indeterminate),true);
       assert.equal((await globals(page)).fast.n,1);assert.equal(await page.locator('.global-spread').count(),0);
-      assert.equal(await page.locator('.global-center').count(),4);
-      assert.deepEqual((await globals(page)).fast.average,(await globals(page)).fast.median);
+      assert.equal(await page.locator('.global-center').count(),2);
+      assert.equal('average' in (await globals(page)).fast,false);
       await click(page,'#all-languages');
       await page.evaluate(()=>window.benchmarkExplorer.setReleaseYear(2023));
       assert.equal((await globals(page)).fast.n,data.languages.filter(language=>language.release_year<=2023).length);
@@ -109,7 +109,7 @@ async function checkGlobalMarkers(page){
       assert.equal((await globals(page)).fast.n,3);
       await page.locator('#show-samples').uncheck();
       assert.equal(await page.locator('.endpoint[data-program]').count(),0,'Mech benchmark endpoints follow Samples visibility');
-      assert.equal(await page.locator('.mean-mark').count(),6);assert.equal(await page.locator('.global-center').count(),4);
+      assert.equal(await page.locator('.mean-mark').count(),6);assert.equal(await page.locator('.global-center').count(),2);
       assert.equal(await page.locator('#focus-means-option').isVisible(),false);
       await click(page,'#reset');
       assert.equal((await selection(page)).global,false);assert.equal((await selection(page)).samples,true);

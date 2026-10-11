@@ -1,0 +1,10 @@
+# The complete redux operations use ordinary PCRE regular expressions in base R.
+text <- readChar(file("stdin","rb"),1000000000L,useBytes=TRUE)
+initial <- nchar(text,type="bytes")
+text <- gsub(">[^\n]*\n|\n","",text,perl=TRUE,useBytes=TRUE)
+cleaned <- nchar(text,type="bytes")
+for (pattern in c("agggtaaa|tttaccct","[cgt]gggtaaa|tttaccc[acg]","a[act]ggtaaa|tttacc[agt]t","ag[act]gtaaa|tttac[agt]ct","agg[act]taaa|ttta[agt]cct","aggg[acg]aaa|ttt[cgt]ccct","agggt[cgt]aa|tt[acg]accct","agggta[cgt]a|t[acg]taccct","agggtaa[cgt]|[acg]ttaccct")) cat(sprintf("%s %d\n",pattern,sum(gregexpr(pattern,text,perl=TRUE,useBytes=TRUE)[[1L]] > 0L)))
+patterns <- c("tHa[Nt]","aND|caN|Ha[DS]|WaS","a[NSt]|BY","<[^>]*>","\\|[^|][^|]*\\|")
+replacements <- c("<4>","<3>","<2>","|","-")
+for (i in seq_along(patterns)) text <- gsub(patterns[i],replacements[i],text,perl=TRUE,useBytes=TRUE)
+cat(sprintf("\n%d\n%d\n%d\n",initial,cleaned,nchar(text,type="bytes")))

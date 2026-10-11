@@ -1,0 +1,8 @@
+Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/mandelbrot/compact.ua:5:1
+5 | Mark    ← M ⊃(M.R|M.I|×⊃M.Live(≤4+⊃(˙×M.R)(˙×M.I))|M.Cx|M.Cy|M.Iter)
+    ────────────────────────────────────────────────────────────────────

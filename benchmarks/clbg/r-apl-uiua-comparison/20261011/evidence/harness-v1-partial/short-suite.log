@@ -1,0 +1,71 @@
+WAIT LOCK 1 mech-control-regexredux-for-r
+RUN FULL 1 mech-control-regexredux-for-r timeout 14400
+SAMPLE FULL 1 mech-control-regexredux-for-r 0.499609s
+WAIT LOCK 1 regexredux-r-compact
+RUN FULL 1 regexredux-r-compact timeout 14400
+SAMPLE FULL 1 regexredux-r-compact 10.062119s
+WAIT LOCK 1 regexredux-apl-compact
+RUN FULL 1 regexredux-apl-compact timeout 14400
+FULL FAILURE regexredux-apl-compact 11.407285s ('regexredux', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
+WAIT LOCK 1 mech-control-regexredux-for-apl
+RUN FULL 1 mech-control-regexredux-for-apl timeout 14400
+SAMPLE FULL 1 mech-control-regexredux-for-apl 0.534739s
+WAIT LOCK 1 regexredux-apl-optimized
+RUN FULL 1 regexredux-apl-optimized timeout 14400
+FULL FAILURE regexredux-apl-optimized 9.500716s ('regexredux', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
+WAIT LOCK 1 regexredux-uiua-compact
+RUN FULL 1 regexredux-uiua-compact timeout 14400
+SAMPLE FULL 1 regexredux-uiua-compact 6.217760s
+WAIT LOCK 1 mech-control-regexredux-for-uiua
+RUN FULL 1 mech-control-regexredux-for-uiua timeout 14400
+SAMPLE FULL 1 mech-control-regexredux-for-uiua 0.520802s
+WAIT LOCK 2 mech-control-regexredux-for-r
+RUN FULL 2 mech-control-regexredux-for-r timeout 14400
+SAMPLE FULL 2 mech-control-regexredux-for-r 0.491576s
+WAIT LOCK 2 regexredux-r-compact
+RUN FULL 2 regexredux-r-compact timeout 14400
+SAMPLE FULL 2 regexredux-r-compact 10.083745s
+WAIT LOCK 2 mech-control-regexredux-for-apl
+RUN FULL 2 mech-control-regexredux-for-apl timeout 14400
+SAMPLE FULL 2 mech-control-regexredux-for-apl 0.496734s
+WAIT LOCK 2 mech-control-regexredux-for-uiua
+RUN FULL 2 mech-control-regexredux-for-uiua timeout 14400
+SAMPLE FULL 2 mech-control-regexredux-for-uiua 0.497844s
+WAIT LOCK 2 regexredux-uiua-compact
+RUN FULL 2 regexredux-uiua-compact timeout 14400
+SAMPLE FULL 2 regexredux-uiua-compact 6.134814s
+WAIT LOCK 3 mech-control-regexredux-for-r
+RUN FULL 3 mech-control-regexredux-for-r timeout 14400
+SAMPLE FULL 3 mech-control-regexredux-for-r 0.491864s
+WAIT LOCK 3 regexredux-r-compact
+RUN FULL 3 regexredux-r-compact timeout 14400
+FULL FAILURE regexredux-r-compact 1.643371s ('regexredux', 22, '9381e3db3b1c0be0f8222143f7848a25022d2c40595402bb11b2b20fc3dd6e02')
+WAIT LOCK 3 mech-control-regexredux-for-apl
+RUN FULL 3 mech-control-regexredux-for-apl timeout 14400
+SAMPLE FULL 3 mech-control-regexredux-for-apl 0.490785s
+WAIT LOCK 3 mech-control-regexredux-for-uiua
+RUN FULL 3 mech-control-regexredux-for-uiua timeout 14400
+SAMPLE FULL 3 mech-control-regexredux-for-uiua 0.492755s
+WAIT LOCK 3 regexredux-uiua-compact
+RUN FULL 3 regexredux-uiua-compact timeout 14400
+SAMPLE FULL 3 regexredux-uiua-compact 6.279050s
+WAIT LOCK 1 mech-control-revcomp-for-r
+RUN FULL 1 mech-control-revcomp-for-r timeout 14400
+SAMPLE FULL 1 mech-control-revcomp-for-r 0.206970s
+WAIT LOCK 1 revcomp-r-compact
+RUN FULL 1 revcomp-r-compact timeout 14400
+SAMPLE FULL 1 revcomp-r-compact 17.820052s
+WAIT LOCK 1 revcomp-r-optimized
+RUN FULL 1 revcomp-r-optimized timeout 14400
+SAMPLE FULL 1 revcomp-r-optimized 5.739113s
+WAIT LOCK 1 revcomp-apl-compact
+RUN FULL 1 revcomp-apl-compact timeout 14400
+FULL FAILURE revcomp-apl-compact 14.415771s ('revcomp', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', (254166745, 'e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e'))
+WAIT LOCK 1 revcomp-apl-optimized
+RUN FULL 1 revcomp-apl-optimized timeout 14400
+FULL FAILURE revcomp-apl-optimized 12.941434s ('revcomp', 0, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', (254166745, 'e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e'))
+WAIT LOCK 1 mech-control-revcomp-for-apl
+RUN FULL 1 mech-control-revcomp-for-apl timeout 14400
+SAMPLE FULL 1 mech-control-revcomp-for-apl 0.150987s
+WAIT LOCK 1 revcomp-uiua-optimized
+RUN FULL 1 revcomp-uiua-optimized timeout 14400

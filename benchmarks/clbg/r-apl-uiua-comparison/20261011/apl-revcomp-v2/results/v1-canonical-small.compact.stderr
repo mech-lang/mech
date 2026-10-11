@@ -1,0 +1,6 @@
+INDEX ERROR+
+Run[9]  →(';'≠Line[0])/12
+              ^       ^
+
+WARNING: File /var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T//gnu-apl-scratch.rCqB25mD/data still open - closing it
+WARNING: File pipe-to_client still open - closing it

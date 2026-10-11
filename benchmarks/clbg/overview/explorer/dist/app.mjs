@@ -1,14 +1,15 @@
-import {comparison,same,sharedBenchmarks,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies} from './math.mjs';
+import {comparison,same,sharedBenchmarks,chartDomain,comparisonMetrics,languagesByYear,globalStatistics,languageFamilies,medianHistory} from './math.mjs';
 
 const $=selector=>document.querySelector(selector);
 const svgNS='http://www.w3.org/2000/svg';
 let data,model;
 const state={benchmarks:new Set(),languages:new Set(),disabled:new Set(),ellipses:new Set(['mech']),
-  view:'summary',focus:'nbody',fast:true,small:true,samples:true,focusMeans:true,global:false,collapsedFamilies:new Set(),releaseYear:null,
+  view:'summary',focus:'nbody',fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true,playing:false,collapsedFamilies:new Set(),releaseYear:null,
   detail:{language:'mech',benchmark:'nbody',kind:'fast',program:null,aggregate:false,file:0}};
 const colors={};
 const domains=new Map();
 let currentDomain=null;
+let playbackTimer=null,historyCache={key:null,series:[]};
 const tableSort={comparison:{key:null,direction:1},timings:{key:'run',direction:1},implementations:{key:null,direction:1}};
 const esc=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ratio=n=>`${n.toFixed(2)}×`;
@@ -31,10 +32,33 @@ const yearBounds=()=>({min:Math.min(...data.languages.map(l=>l.release_year)),ma
 const releaseYears=()=>[...new Set(data.languages.map(l=>l.release_year))].sort((a,b)=>a-b);
 const yearKeys=()=>new Set(languagesByYear(data.languages,{year:state.releaseYear}));
 const effectiveLanguages=()=>{const allowed=yearKeys();return new Set([...state.languages].filter(key=>allowed.has(key)));};
-function setReleaseYear(year){
+function pauseYears(){clearTimeout(playbackTimer);playbackTimer=null;state.playing=false;}
+function setReleaseYear(year,{playback=false}={}){
   const {min,max}=yearBounds();
   if(!Number.isInteger(year)||year<min||year>max)throw new Error('Invalid language release year filter.');
+  if(!playback)pauseYears();
   state.releaseYear=releaseYears().filter(y=>y<=year).at(-1);update();
+}
+function playYears(){
+  if(state.playing){pauseYears();renderYears();return;}
+  state.playing=true;state.global=true;
+  const years=releaseYears();
+  if(state.releaseYear===years.at(-1))state.releaseYear=years[0];
+  update();
+  const advance=()=>{
+    const next=years[years.indexOf(state.releaseYear)+1];
+    if(next==null){pauseYears();renderYears();return;}
+    setReleaseYear(next,{playback:true});
+    playbackTimer=setTimeout(advance,850);
+  };
+  playbackTimer=setTimeout(advance,850);
+}
+function currentHistory(){
+  const selection={benchmarks:state.view==='benchmark'?new Set(state.benchmarks.has(state.focus)?[state.focus]:[]):state.benchmarks,
+    languages:state.view==='mech'?new Set(mechKeys().filter(key=>state.languages.has(key))):state.languages,disabled:state.disabled};
+  const key=JSON.stringify(Object.fromEntries(Object.entries(selection).map(([k,v])=>[k,[...v].sort()])));
+  if(historyCache.key!==key)historyCache={key,series:medianHistory(data,selection)};
+  return historyCache.series.filter(item=>item.year<=state.releaseYear);
 }
 function renderYears(){
   const years=releaseYears(),eligible=effectiveLanguages();
@@ -43,6 +67,9 @@ function renderYears(){
   $('#release-year-value').textContent=state.releaseYear;
   $('#release-year-min').textContent=years[0];$('#release-year-max').textContent=years.at(-1);
   $('#release-year-status').textContent=`${eligible.size} of ${state.languages.size} enabled entries released by ${state.releaseYear}.`;
+  $('#playback-year').textContent=state.releaseYear;
+  $('#play-years').textContent=state.playing?'Pause years':'Play years';
+  $('#play-years').setAttribute('aria-pressed',String(state.playing));
 }
 function colorKeyStyle(key){
   const color=colors[key],style=language(key).line_style;
@@ -97,7 +124,7 @@ function darkColor(hex){
 }
 function allSelection(){const enabled=effectiveLanguages();return {benchmarks:state.benchmarks,languages:state.view==='mech'?new Set(mechKeys().filter(key=>enabled.has(key))):enabled,disabled:state.disabled};}
 function update(){
-  if(!state.samples)state.focusMeans=true;
+  if(state.view!=='benchmark'&&!state.samples)state.focusMeans=true;
   model=comparison(data,allSelection());
   renderYears();renderControls();renderChart();renderTable();
   if($('#inspector').open)renderInspector();
@@ -113,10 +140,23 @@ function update(){
   for(const button of document.querySelectorAll('[data-view]'))button.setAttribute('aria-pressed',button.dataset.view===state.view);
   $('#focused-benchmark').hidden=state.view!=='benchmark';
   $('#focused-benchmark').value=state.focus;
-  $('#focus-means').disabled=state.view==='benchmark'||!state.samples;
-  $('#focus-means-option').classList.toggle('unavailable',!state.samples);
-  $('#focus-means-option').setAttribute('aria-hidden',!state.samples);
-  for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-samples','samples'],['focus-means','focusMeans'],['show-global','global']])$('#'+id).checked=state[key];
+  renderPlotOptions();
+  for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-samples','samples'],['focus-means','focusMeans'],['show-global','global'],['show-median-trail','trail']])$('#'+id).checked=state[key];
+}
+function renderPlotOptions(){
+  const single=state.view==='benchmark',samples=$('#show-samples'),focus=$('#focus-means'),option=$('#focus-means-option');
+  const samplesNote=single?'Benchmark view always shows the per-language endpoints. Samples applies in Geometric means and Mech views.':'Show the individual benchmark inputs behind the geometric means.';
+  const focusNote=single?'Benchmark view fits axes to its endpoints and global covariance contours. Focus on means applies in Geometric means and Mech views.':'Fit axes to geometric-mean endpoints. Uncheck to fit benchmark samples and covariance contours while Samples is enabled.';
+  samples.disabled=single;
+  focus.disabled=single||!state.samples;
+  samples.closest('label').title=samplesNote;
+  option.title=focusNote;
+  for(const [input,note] of [[samples,samplesNote],[focus,focusNote]]){
+    input.title=note;
+    input.setAttribute('aria-description',note);
+  }
+  option.classList.toggle('unavailable',!single&&!state.samples);
+  option.setAttribute('aria-hidden',!single&&!state.samples);
 }
 function renderControls(){
   const allowed=yearKeys(),enabled=effectiveLanguages();
@@ -179,6 +219,7 @@ function tooltip(event,description){
 }
 function renderChart(){
   const svg=$('#chart');svg.replaceChildren();
+  svg.classList.toggle('median-focus',state.global);
   delete svg.dataset.highlightLanguage;svg.onpointerleave=null;$('#tooltip').hidden=true;
   const entries=currentEntries(),isMech=state.view==='mech',single=state.view==='benchmark';
   $('#chart-title').textContent=single?benchmark(state.focus).title:isMech?'Mech across selected benchmarks':`${state.benchmarks.size} selected benchmark${state.benchmarks.size===1?'':'s'}`;
@@ -195,7 +236,7 @@ function renderChart(){
   const globalNote=$('#global-statistics-note');
   globalNote.classList.toggle('inactive',!state.global||empty);
   globalNote.setAttribute('aria-hidden',!state.global||empty);
-  globalNote.innerHTML=`Global: <span style="color:#edf3f6;opacity:${state.fast?1:.4}">Fastest</span> / <span style="color:#f6c04e;opacity:${state.small?1:.4}">Fewest LOC</span> · + geometric average · ◇ median · 1σ / 2σ covariance · visible variants: <span class="global-count">${entries.length}</span>`;
+  globalNote.innerHTML=`Global median: <span style="color:#edf3f6;opacity:${state.fast?1:.4}">Fastest</span> / <span style="color:#f6c04e;opacity:${state.small?1:.4}">Fewest LOC</span> · 1σ / 2σ covariance · <span class="global-count">${entries.length}</span> visible variants${state.trail?' · trail by release year':''}`;
   const shapes=[];
   if(!single)for(const sigma of [2,1])for(const entry of entries)if(state.ellipses.has(entry.language.key))for(const kind of visibleKinds){
     const region=(sigma===2?entry.spread2:entry.spread)[kind];if(region)shapes.push({entry,kind,region,sigma});
@@ -354,14 +395,30 @@ function renderChart(){
     if(single||isMech&&state.samples)for(const input of entry.inputs)pair(entry,input.fast,input.small,{benchmarkKey:input.benchmark.key,label:isMech?`${input.benchmark.title} · ${entry.language.execution??'AOT'}`:chartName(entry.language.key)});
     if(!single)pair(entry,entry.fast,entry.small,{mean:true,label:isMech?'Geometric mean':meanChartName(entry)});
   }
-  if(state.global)for(const kind of visibleKinds)for(const statistic of ['average','median']){
-    const point=global[kind][statistic],x=X(point.x),y=Y(point.y),size=statistic==='average'?7:5;
-    const name=`Global ${kind==='fast'?'fastest':'fewest LOC'} ${statistic==='average'?'geometric average':'median'}`;
+  if(state.global&&state.trail)for(const kind of visibleKinds){
+    const history=currentHistory().filter(item=>item.statistics[kind]);
+    const color=kind==='fast'?'#edf3f6':'#f6c04e';
+    node('path',{d:history.map((item,i)=>{const p=item.statistics[kind].median;return `${i?'L':'M'}${X(p.x)},${Y(p.y)}`;}).join(' '),
+      class:'median-trail','data-global-profile':kind,fill:'none',stroke:color,'stroke-width':2,'stroke-opacity':.75,
+      'stroke-dasharray':kind==='small'?'5 4':null},plot);
+    for(const item of history){
+      const p=item.statistics[kind].median;
+      const mark=node('circle',{cx:X(p.x),cy:Y(p.y),r:2.8,fill:color,class:'median-trail-point',
+        'data-global-profile':kind,'data-year':item.year,'data-ratio-x':p.x,'data-ratio-y':p.y},plot);
+      const description=`${item.year} · global ${kind==='fast'?'fastest':'fewest LOC'} median\n${ratio(p.x)} LOC · ${ratio(p.y)} time\n${item.statistics[kind].n} visible execution variants`;
+      mark.addEventListener('pointerenter',event=>{clearHover();tooltip(event,description);});
+      mark.addEventListener('pointermove',event=>tooltip(event,description));mark.addEventListener('pointerleave',clearHover);
+    }
+  }
+  if(state.global)for(const kind of visibleKinds){
+    const statistic='median',point=global[kind].median,x=X(point.x),y=Y(point.y),size=8;
+    const name=`Global ${kind==='fast'?'fastest':'fewest LOC'} median`;
     const description=`${name}\n${ratio(point.x)} LOC · ${ratio(point.y)} time\n${global[kind].n} visible execution variants, equal weight`;
-    const mark=node('path',{d:statistic==='average'?`M${x-size},${y}h${2*size}M${x},${y-size}v${2*size}`:`M${x},${y-size}l${size},${size}l${-size},${size}l${-size},${-size}Z`,
+    const mark=node('path',{d:`M${x},${y-size}l${size},${size}l${-size},${size}l${-size},${-size}Z`,
       class:'global-center','data-global-profile':kind,'data-global-statistic':statistic,
-      'data-ratio-x':point.x,'data-ratio-y':point.y,fill:statistic==='median'?'#151b21':'none',
-      stroke:kind==='fast'?'#edf3f6':'#f6c04e','stroke-width':2.2,tabindex:0,role:'img','aria-label':description.replaceAll('\n',', ')},plot);
+      'data-ratio-x':point.x,'data-ratio-y':point.y,fill:kind==='fast'?'#edf3f6':'#f6c04e',
+      stroke:'#151b21','stroke-width':2,tabindex:0,role:'img','aria-label':description.replaceAll('\n',', ')},plot);
+    text(plot,`${kind==='fast'?'Fastest':'Fewest LOC'} median`,x+12,y-12,{class:'median-label',fill:kind==='fast'?'#edf3f6':'#f6c04e'});
     labelObstacles.push({x:x-size-3,y:y-size-3,width:2*size+6,height:2*size+6});
     mark.addEventListener('pointerenter',event=>{clearHover();tooltip(event,description);});
     mark.addEventListener('pointermove',event=>tooltip(event,description));mark.addEventListener('pointerleave',clearHover);
@@ -466,10 +523,11 @@ function renderInspector(){
   $('#download-source').onclick=event=>{event.preventDefault();const url=URL.createObjectURL(new Blob([file.code],{type:'text/plain'}));const link=document.createElement('a');link.href=url;link.download=file.name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 }
 function reset(){
+  pauseYears();
   state.benchmarks=new Set(data.benchmarks.map(b=>b.key));state.languages=new Set(data.languages.map(l=>l.key));
   state.disabled.clear();state.ellipses=new Set(['mech']);state.view='summary';state.focus='nbody';
   state.collapsedFamilies.clear();
-  Object.assign(state,{fast:true,small:true,samples:true,focusMeans:true,global:false,releaseYear:yearBounds().max});update();
+  Object.assign(state,{fast:true,small:true,samples:true,focusMeans:true,global:false,trail:true,releaseYear:yearBounds().max});update();
 }
 function registerTools(){
   if(!document.modelContext?.registerTool)return;
@@ -508,11 +566,13 @@ async function start(){
   $('#no-languages').onclick=()=>{state.languages.clear();update();};
   $('#only-mech').onclick=()=>{state.languages=new Set(mechKeys());update();};
   $('#release-year').oninput=event=>setReleaseYear(releaseYears()[Number(event.target.value)]);
+  $('#play-years').onclick=playYears;
+  addEventListener('pagehide',pauseYears,{once:true});
   $('#reset').onclick=reset;
   $('#compare-shared').onclick=()=>{state.benchmarks=new Set(sharedBenchmarks(data,allSelection()).map(b=>b.key));state.view='summary';update();};
   $('#close-inspector').onclick=closeInspector;
   $('#focused-benchmark').onchange=event=>{state.focus=event.target.value;update();};
-  for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-samples','samples'],['focus-means','focusMeans'],['show-global','global']])$('#'+id).onchange=event=>{if(event.target.disabled)return;state[key]=event.target.checked;update();};
+  for(const [id,key] of [['fast-profile','fast'],['small-profile','small'],['show-samples','samples'],['focus-means','focusMeans'],['show-global','global'],['show-median-trail','trail']])$('#'+id).onchange=event=>{if(event.target.disabled)return;state[key]=event.target.checked;update();};
   document.addEventListener('click',event=>{
     const disclosure=event.target.closest('[data-toggle-family]');if(disclosure){
       const key=disclosure.dataset.toggleFamily;state.collapsedFamilies.has(key)?state.collapsedFamilies.delete(key):state.collapsedFamilies.add(key);
@@ -553,7 +613,8 @@ async function start(){
   });
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('#inspector').open)closeInspector();});
   new ResizeObserver(()=>requestAnimationFrame(renderChart)).observe($('#chart-wrap'));
-  window.benchmarkExplorer={getSelection:()=>({benchmarks:[...state.benchmarks],languages:[...effectiveLanguages()],selectedLanguages:[...state.languages],releaseYear:state.releaseYear,ellipses:[...state.ellipses],disabled:[...state.disabled],view:state.view,samples:state.samples,focusMeans:state.focusMeans,global:state.global}),
+  window.benchmarkExplorer={getSelection:()=>({benchmarks:[...state.benchmarks],languages:[...effectiveLanguages()],selectedLanguages:[...state.languages],releaseYear:state.releaseYear,ellipses:[...state.ellipses],disabled:[...state.disabled],view:state.view,samples:state.samples,focusMeans:state.focusMeans,global:state.global,trail:state.trail,playing:state.playing}),
+    getMedianHistory:currentHistory,
     getGlobalStatistics:()=>globalStatistics(currentEntries()),
     getDomains:()=>({...currentDomain}),
     getSummary:()=>model.entries.map(e=>({language:e.language.key,fast:e.fast,small:e.small,n:e.inputs.length,selected:e.coverage.selected,missing:e.coverage.missing.map(b=>b.key),metrics:comparisonMetrics(e)})),setReleaseYear,inspectProgram:key=>{const program=data.programs[key];if(!program)throw new Error('Unknown program.');openPoint({language:program.language,benchmark:program.benchmark,program:key});}};

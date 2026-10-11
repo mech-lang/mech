@@ -1,0 +1,41 @@
+{
+  "passed": false,
+  "rows": [
+    {
+      "benchmark": "revcomp",
+      "variant": "compact",
+      "case": "canonical-small",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.compact.apl"
+      ],
+      "n": null,
+      "input_bytes": 10245,
+      "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "stdout_bytes": 5161,
+      "stdout_sha256": "31f3ecf723283a71019ee4e4be3b86e5a4d776bec845189a8d3230dd8699c14a",
+      "expected_bytes": 10245,
+      "expected_stdout_sha256": "549dcdcc7df2685145e6cbdfd682469bd9c12ff1beec93c270f8ba447acd4855",
+      "returncode": 0,
+      "stderr": "INDEX ERROR+\nRun[9]  \u2192(';'\u2260Line[0])/12\n              ^       ^\n\nWARNING: File /var/folders/m2/dzwv83md69n8qlq2nvg0tr8c0000gn/T//gnu-apl-scratch.rCqB25mD/data still open - closing it\nWARNING: File pipe-to_client still open - closing it\n",
+      "validation_seconds": 0.4053973340196535,
+      "reference_match": false,
+      "passed": false
+    }
+  ],
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh": "fd4934b85b86ae16f4b8ab6cac8961f9e5857273cea22f086c4d47e11546beb6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.compact.apl": "0f522b20d8c01c6832c4455f895c1a6cc02cb4ccf2bab759d4152613e18c5c7c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.optimized.apl": "5a871cd636c0078bfa56300dd60f0e96c53483b87939f9a9ef5f7aa324f1378b"
+  },
+  "boundary_lengths": [
+    245760,
+    262143
+  ],
+  "protocol": "Exact complete-output validation only; shared exclusive timing lock; no canonical full timings."
+}

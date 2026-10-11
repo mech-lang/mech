@@ -1,0 +1,171 @@
+WAIT LOCK 1 regexredux-apl-v2-compact
+RUN FULL 1 regexredux-apl-v2-compact timeout 14400
+SAMPLE FULL 1 regexredux-apl-v2-compact 139.882160s
+WAIT LOCK 1 regexredux-apl-v2-optimized
+RUN FULL 1 regexredux-apl-v2-optimized timeout 14400
+SAMPLE FULL 1 regexredux-apl-v2-optimized 139.577627s
+WAIT LOCK 2 regexredux-apl-v2-optimized
+RUN FULL 2 regexredux-apl-v2-optimized timeout 14400
+SAMPLE FULL 2 regexredux-apl-v2-optimized 144.167491s
+WAIT LOCK 2 regexredux-apl-v2-compact
+RUN FULL 2 regexredux-apl-v2-compact timeout 14400
+SAMPLE FULL 2 regexredux-apl-v2-compact 140.672954s
+WAIT LOCK 3 regexredux-r-compact
+RUN FULL 3 regexredux-r-compact timeout 14400
+SAMPLE FULL 3 regexredux-r-compact 10.066246s
+WAIT LOCK 3 regexredux-apl-v2-optimized
+RUN FULL 3 regexredux-apl-v2-optimized timeout 14400
+SAMPLE FULL 3 regexredux-apl-v2-optimized 139.909073s
+WAIT LOCK 3 regexredux-apl-v2-compact
+RUN FULL 3 regexredux-apl-v2-compact timeout 14400
+SAMPLE FULL 3 regexredux-apl-v2-compact 142.096248s
+WAIT LOCK 1 revcomp-uiua-optimized
+RUN FULL 1 revcomp-uiua-optimized timeout 14400
+SAMPLE FULL 1 revcomp-uiua-optimized 29.831939s
+WAIT LOCK 1 mech-control-revcomp-for-uiua
+RUN FULL 1 mech-control-revcomp-for-uiua timeout 14400
+SAMPLE FULL 1 mech-control-revcomp-for-uiua 0.153443s
+WAIT LOCK 1 revcomp-uiua-compact
+RUN FULL 1 revcomp-uiua-compact timeout 14400
+SAMPLE FULL 1 revcomp-uiua-compact 35.466952s
+WAIT LOCK 2 revcomp-r-optimized
+RUN FULL 2 revcomp-r-optimized timeout 14400
+SAMPLE FULL 2 revcomp-r-optimized 5.750128s
+WAIT LOCK 2 mech-control-revcomp-for-r
+RUN FULL 2 mech-control-revcomp-for-r timeout 14400
+SAMPLE FULL 2 mech-control-revcomp-for-r 0.156678s
+WAIT LOCK 2 revcomp-r-compact
+RUN FULL 2 revcomp-r-compact timeout 14400
+SAMPLE FULL 2 revcomp-r-compact 17.839725s
+WAIT LOCK 2 mech-control-revcomp-for-apl
+RUN FULL 2 mech-control-revcomp-for-apl timeout 14400
+SAMPLE FULL 2 mech-control-revcomp-for-apl 0.156640s
+WAIT LOCK 2 mech-control-revcomp-for-uiua
+RUN FULL 2 mech-control-revcomp-for-uiua timeout 14400
+SAMPLE FULL 2 mech-control-revcomp-for-uiua 0.152315s
+WAIT LOCK 2 revcomp-uiua-optimized
+RUN FULL 2 revcomp-uiua-optimized timeout 14400
+SAMPLE FULL 2 revcomp-uiua-optimized 29.428366s
+WAIT LOCK 2 revcomp-uiua-compact
+RUN FULL 2 revcomp-uiua-compact timeout 14400
+SAMPLE FULL 2 revcomp-uiua-compact 34.217148s
+WAIT LOCK 3 revcomp-r-compact
+RUN FULL 3 revcomp-r-compact timeout 14400
+SAMPLE FULL 3 revcomp-r-compact 17.827648s
+WAIT LOCK 3 mech-control-revcomp-for-r
+RUN FULL 3 mech-control-revcomp-for-r timeout 14400
+SAMPLE FULL 3 mech-control-revcomp-for-r 0.152792s
+WAIT LOCK 3 revcomp-r-optimized
+RUN FULL 3 revcomp-r-optimized timeout 14400
+SAMPLE FULL 3 revcomp-r-optimized 5.864370s
+WAIT LOCK 3 mech-control-revcomp-for-apl
+RUN FULL 3 mech-control-revcomp-for-apl timeout 14400
+SAMPLE FULL 3 mech-control-revcomp-for-apl 0.146942s
+WAIT LOCK 3 revcomp-uiua-compact
+RUN FULL 3 revcomp-uiua-compact timeout 14400
+SAMPLE FULL 3 revcomp-uiua-compact 35.190461s
+WAIT LOCK 3 revcomp-uiua-optimized
+RUN FULL 3 revcomp-uiua-optimized timeout 14400
+SAMPLE FULL 3 revcomp-uiua-optimized 30.725008s
+WAIT LOCK 3 mech-control-revcomp-for-uiua
+RUN FULL 3 mech-control-revcomp-for-uiua timeout 14400
+SAMPLE FULL 3 mech-control-revcomp-for-uiua 0.154265s
+WAIT LOCK 1 mech-control-pidigits-for-r
+RUN FULL 1 mech-control-pidigits-for-r timeout 14400
+SAMPLE FULL 1 mech-control-pidigits-for-r 0.308960s
+WAIT LOCK 1 pidigits-r-compact
+RUN FULL 1 pidigits-r-compact timeout 14400
+SAMPLE FULL 1 pidigits-r-compact 25.705388s
+WAIT LOCK 1 pidigits-r-optimized
+RUN FULL 1 pidigits-r-optimized timeout 14400
+SAMPLE FULL 1 pidigits-r-optimized 20.359890s
+WAIT LOCK 1 mech-control-pidigits-for-apl
+RUN FULL 1 mech-control-pidigits-for-apl timeout 14400
+SAMPLE FULL 1 mech-control-pidigits-for-apl 0.310769s
+WAIT LOCK 1 pidigits-apl-compact
+RUN FULL 1 pidigits-apl-compact timeout 14400
+SAMPLE FULL 1 pidigits-apl-compact 0.926524s
+WAIT LOCK 1 mech-control-pidigits-for-uiua
+RUN FULL 1 mech-control-pidigits-for-uiua timeout 14400
+SAMPLE FULL 1 mech-control-pidigits-for-uiua 0.305505s
+WAIT LOCK 1 pidigits-uiua-compact
+RUN FULL 1 pidigits-uiua-compact timeout 14400
+SAMPLE FULL 1 pidigits-uiua-compact 2.801859s
+WAIT LOCK 2 mech-control-pidigits-for-r
+RUN FULL 2 mech-control-pidigits-for-r timeout 14400
+SAMPLE FULL 2 mech-control-pidigits-for-r 0.304475s
+WAIT LOCK 2 pidigits-r-compact
+RUN FULL 2 pidigits-r-compact timeout 14400
+SAMPLE FULL 2 pidigits-r-compact 25.615744s
+WAIT LOCK 2 pidigits-r-optimized
+RUN FULL 2 pidigits-r-optimized timeout 14400
+SAMPLE FULL 2 pidigits-r-optimized 20.326719s
+WAIT LOCK 2 pidigits-apl-compact
+RUN FULL 2 pidigits-apl-compact timeout 14400
+SAMPLE FULL 2 pidigits-apl-compact 0.921194s
+WAIT LOCK 2 mech-control-pidigits-for-apl
+RUN FULL 2 mech-control-pidigits-for-apl timeout 14400
+SAMPLE FULL 2 mech-control-pidigits-for-apl 0.303909s
+WAIT LOCK 2 mech-control-pidigits-for-uiua
+RUN FULL 2 mech-control-pidigits-for-uiua timeout 14400
+SAMPLE FULL 2 mech-control-pidigits-for-uiua 0.301526s
+WAIT LOCK 2 pidigits-uiua-compact
+RUN FULL 2 pidigits-uiua-compact timeout 14400
+SAMPLE FULL 2 pidigits-uiua-compact 2.791858s
+WAIT LOCK 3 pidigits-r-optimized
+RUN FULL 3 pidigits-r-optimized timeout 14400
+SAMPLE FULL 3 pidigits-r-optimized 20.361126s
+WAIT LOCK 3 pidigits-r-compact
+RUN FULL 3 pidigits-r-compact timeout 14400
+SAMPLE FULL 3 pidigits-r-compact 25.516566s
+WAIT LOCK 3 mech-control-pidigits-for-r
+RUN FULL 3 mech-control-pidigits-for-r timeout 14400
+SAMPLE FULL 3 mech-control-pidigits-for-r 0.309065s
+WAIT LOCK 3 mech-control-pidigits-for-apl
+RUN FULL 3 mech-control-pidigits-for-apl timeout 14400
+SAMPLE FULL 3 mech-control-pidigits-for-apl 0.308502s
+WAIT LOCK 3 pidigits-apl-compact
+RUN FULL 3 pidigits-apl-compact timeout 14400
+SAMPLE FULL 3 pidigits-apl-compact 0.922194s
+WAIT LOCK 3 pidigits-uiua-compact
+RUN FULL 3 pidigits-uiua-compact timeout 14400
+SAMPLE FULL 3 pidigits-uiua-compact 2.786016s
+WAIT LOCK 3 mech-control-pidigits-for-uiua
+RUN FULL 3 mech-control-pidigits-for-uiua timeout 14400
+SAMPLE FULL 3 mech-control-pidigits-for-uiua 0.308137s
+WAIT LOCK 1 mech-control-spectralnorm-for-r
+RUN FULL 1 mech-control-spectralnorm-for-r timeout 14400
+SAMPLE FULL 1 mech-control-spectralnorm-for-r 0.104545s
+WAIT LOCK 1 spectralnorm-r-optimized
+RUN FULL 1 spectralnorm-r-optimized timeout 14400
+SAMPLE FULL 1 spectralnorm-r-optimized 8.011575s
+WAIT LOCK 1 spectralnorm-r-compact
+RUN FULL 1 spectralnorm-r-compact timeout 14400
+SAMPLE FULL 1 spectralnorm-r-compact 4.599241s
+WAIT LOCK 1 mech-control-spectralnorm-for-apl
+RUN FULL 1 mech-control-spectralnorm-for-apl timeout 14400
+SAMPLE FULL 1 mech-control-spectralnorm-for-apl 0.088518s
+WAIT LOCK 1 spectralnorm-apl-optimized
+RUN FULL 1 spectralnorm-apl-optimized timeout 14400
+SAMPLE FULL 1 spectralnorm-apl-optimized 73.943993s
+WAIT LOCK 1 spectralnorm-apl-compact
+RUN FULL 1 spectralnorm-apl-compact timeout 14400
+SAMPLE FULL 1 spectralnorm-apl-compact 95.462191s
+WAIT LOCK 1 spectralnorm-uiua-compact
+RUN FULL 1 spectralnorm-uiua-compact timeout 14400
+SAMPLE FULL 1 spectralnorm-uiua-compact 2307.811772s
+WAIT LOCK 1 mech-control-spectralnorm-for-uiua
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 228, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 220, in main
+    for language,state in states.items():run_sample(language,state,bench,sample,args)
+                                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 173, in run_sample
+    fcntl.flock(lock,fcntl.LOCK_EX);compact.wait_for_environment(REQUIRED);state['guard'].verify()
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 8, in interrupted
+    def interrupted(signum,frame):raise KeyboardInterrupt('Benchmark harness received signal '+str(signum))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt: Benchmark harness received signal 2

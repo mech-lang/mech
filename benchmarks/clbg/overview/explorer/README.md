@@ -291,7 +291,7 @@ the same source candidates; each selects its measured fastest and smallest
 endpoints independently. Gold solid, dashed, and dotted lines distinguish them.
 The initial execution-mode audit records forty semantic checks, fifteen unchanged
 AOT native objects, and old/rebuilt AOT timings collected in the same rounds.
-The current `20261010-final` cohort reruns all fifteen source candidates
+The `20261010-final` cohort reruns all fifteen source candidates
 in JIT and interpreted execution, with AOT controls in the same rounds. The
 k-nucleotide control is freshly linked with the updated counting runtime;
 other controls retain their original executables. It passes fifty-four semantic
@@ -305,17 +305,30 @@ retain checked-error semantics, tail lanes remain bounded, and sums keep their
 original order. Every coefficient is recomputed for each product. The counted
 program sources and timing boundaries are unchanged; prior timings stay archived.
 
+The current interpreted measurements use the complete canonical after cohort from
+the `20261011` interpreter integration audit: three validated full-workload runs
+for each of all fifteen candidates, selected before computing the fastest and
+smallest endpoints. The complete matched before/after audit retains ninety runs.
+Source identities, LOC, algorithms and files are unchanged, and every point
+archives its full prior measurements and source report. AOT and JIT measurements
+are unchanged. LLVM codegen partitioning and the generated control interpreter
+changed despite unchanged workload source and direct dispatch; the new f32
+executor being uncalled does not establish timing neutrality. Default fannkuch
+is 5.93% slower in the main cohort, with an independent three-round confirmation
+measuring 5.67% slower. Confirmation timings remain separate from chart samples,
+and static disassembly differences do not prove the cause of the slowdown.
+
 ## Global statistics and execution families
 
-**Global average & SD** toggles separate global fastest and fewest-LOC overlays
-in the summary, individual benchmark, and Mech charts. Plus marks denote
-geometric averages, diamonds denote ordinary coordinate medians, and contours
-show 1σ and 2σ sample covariance in log₂ coordinates. Each visible execution
-entry has equal weight; summary inputs are its benchmark geometric means,
-while individual-chart inputs are that benchmark's endpoints. Empty selections
-produce no statistics; one entry retains its centers with undefined covariance.
-The overlay retains the active fixed axes; tails can be clipped by the means
-range or 1× baseline. It does not alter the per-language table's covariance areas.
+**Global median & SD** highlights the coordinate median of each visible profile
+and fades per-language means and samples. Covariance remains the sample covariance
+in log₂ space; its 1σ and 2σ contours are translated to the median without changing
+shape or area. No whole-set average is plotted. Each execution variant has equal
+weight. The overlay and the cumulative release-year median trail work in every
+chart view. **Play years** runs through dataset release years; manual slider input
+pauses playback. View changes and current filters are retained, and axes and
+normalization baselines stay fixed as the graph builds up. Empty selections show
+no median; one entry has a median and no covariance.
 
 Alphabetically ordered language families have independently selectable children.
 Lua includes **Interpreted** and **LuaJIT**, and Mech includes **AOT**, **JIT**, and
@@ -433,3 +446,7 @@ ratios, family/group/year controls and fixed axes on desktop and phone.
 Evidence remains under `remaining-languages-comparison/20261011`.
 
 The 2026-10-11 n-body compiler audit remeasures Mech, C++, Chapel and Rust in seven matched full-size rounds. The unchanged 20-LOC Mech source selects general pressure-aware scheduling and gains 2.7%; the 25-LOC fast form keeps its existing code and options. Its fresh control timing is not called a speedup. All other sources and samples are preserved. `nbody_compiler_data.py` verifies compiler, source, binary, object, state and report pins before import. The methodology links provide the matched × Mech table and the complete work/compiler audit.
+
+The R/APL/Uiua importer accepts only independently audited canonical full-workload candidates with at least three complete validated samples and a qualifying fresh Mech AOT control. Partial suites retain explicit coverage; pending and failed tests contribute no estimates. Source/alias execution metadata, immutable attempts, summary hashes and control ratios are checked before admission.
+
+`pidigits_work_data.py` retires the one-extraction Node.js #2 source and imports its separately validated and measured two-extraction correction. `interpreter_integration_data.py` verifies the complete matched 90-run before/after audit and replaces all fifteen interpreted candidate measurements with its complete canonical after rows. It preserves the full prior measurements and source reports, pins independent confirmation and exact-binary disassembly evidence separately, and leaves AOT and JIT unchanged. Its main-cohort helper snapshots are explicitly verification-time provenance; inherited ambient environment was not fully captured.

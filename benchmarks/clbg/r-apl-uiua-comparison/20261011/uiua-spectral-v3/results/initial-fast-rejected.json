@@ -1,0 +1,5 @@
+{
+  "status": "rejected-before-admission",
+  "source_sha256": "86876a6595bb99088ee0e993f93d035e4c6dfb88a673d7477de3122fa53dddf1",
+  "reason": "Missing parentheses in the discarded-argument index branch made range consume a boxed Product record; no full measurement was admitted."
+}

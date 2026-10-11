@@ -1,0 +1,23 @@
+{
+  "runtime": {
+    "url": "https://github.com/uiua-lang/uiua/releases/download/0.19.1/uiua-bin-aarch64-apple-darwin.zip",
+    "sha256": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+    "executable_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c"
+  },
+  "runtime_source": {
+    "url": "https://codeload.github.com/uiua-lang/uiua/tar.gz/refs/tags/0.19.1",
+    "sha256": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6"
+  },
+  "ecow_source": {
+    "url": "https://static.crates.io/crates/ecow/ecow-0.2.4.crate",
+    "sha256": "ef5eeffa816451f3a6a4cce9cd796e3e5ba6018638d3ce5cc7f87b73bababf60"
+  },
+  "gmp": {
+    "version": "6.3.0",
+    "source_url": "https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz",
+    "source_sha256": "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898",
+    "installed_library": "/opt/homebrew/opt/gmp/lib/libgmp.10.dylib",
+    "installed_library_sha256": "571ffb9eb5b5110cda32f62197c1f039e5627d66524ba47bb0774eca184532b9",
+    "install_instruction": "Homebrew GMP 6.3.0 ARM64 macOS library at the recorded prefix; exact installed dylib hash is checked. The generic adapter rebuild is repinned after correctness validation."
+  }
+}

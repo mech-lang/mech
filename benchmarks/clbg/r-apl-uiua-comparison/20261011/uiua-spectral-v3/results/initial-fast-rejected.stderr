@@ -1,0 +1,8 @@
+Error: Range max should be a single integer or a list of integers, but it is boxes
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/fast.ua:8:37
+8 | TransposeCoefficients ← ÷⊙1 +1 ⍉+⊃(⋅⇡N)(⍉Triangle)
+                                        ─
+  in TransposeCoefficients at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/fast.ua:10:31
+  in TransposeBlock at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/fast.ua:12:32
+  in Transpose at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/fast.ua:13:25
+  in Step at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/fast.ua:14:26

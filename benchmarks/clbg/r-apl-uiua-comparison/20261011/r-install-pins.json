@@ -1,0 +1,14 @@
+{
+  "runtime": {
+    "url": "https://cdn.posit.co/r/macos/R-4.6.1-macos-arm64.tar.gz",
+    "sha256": "99e36a4fb66169d800d293bbab18e8c453b7a805bd082af54e06acd6dab266cb"
+  },
+  "gmp_binary": {
+    "url": "https://cran.r-project.org/bin/macosx/sonoma-arm64/contrib/4.6/gmp_0.7-5.1.tgz",
+    "sha256": "2d25336051964d79379bbab539d1e8896d455a95f835be99618eea879a92a94b"
+  },
+  "gmp_source": {
+    "url": "https://cran.r-project.org/src/contrib/gmp_0.7-5.1.tar.gz",
+    "sha256": "6e56d8373fd7a4148bac4ada5d3eee96f5033b76e5aaf1689db9ce7d9e3bdb69"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/usr/bin/clang++",
+    "-O3",
+    "-std=c++11",
+    "-dynamiclib",
+    "-fPIC",
+    "-undefined",
+    "dynamic_lookup",
+    "-DHAVE_CONFIG_H",
+    "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0",
+    "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src",
+    "-I/opt/homebrew/opt/pcre2/include",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp",
+    "-L/opt/homebrew/opt/pcre2/lib",
+    "-lpcre2-32",
+    "-o",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib"
+  ],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": "In file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp:4:\nIn file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Native_interface.hh:59:\nIn file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Workspace.hh:34:\nIn file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Quad_FIO.hh:32:\nIn file included from /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/UserPreferences.hh:30:\n/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/Parallel.hh:48:2: warning: \"CORE_COUNT_WANTED configured, but pthread_setaffinity_np() missing\" [-W#warnings]\n#warning \"CORE_COUNT_WANTED configured, but pthread_setaffinity_np() missing\"\n ^\n1 warning generated.\n",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp",
+  "source_sha256": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+  "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib",
+  "binary_sha256": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa"
+}

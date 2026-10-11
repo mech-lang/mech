@@ -1,0 +1,412 @@
+{
+  "schema_version": 1,
+  "status": "prepared-validated-pending-guarded-full-timing",
+  "created_at": "2026-10-11T19:11:34.577369+00:00",
+  "language": "apl",
+  "native_support": {
+    "name": "General GNU APL/PCRE2 literal global substitution binding",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp",
+    "source_sha256": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib",
+    "binary_sha256": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa",
+    "build_command": [
+      "/usr/bin/clang++",
+      "-O3",
+      "-std=c++11",
+      "-dynamiclib",
+      "-fPIC",
+      "-undefined",
+      "dynamic_lookup",
+      "-DHAVE_CONFIG_H",
+      "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0",
+      "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src",
+      "-I/opt/homebrew/opt/pcre2/include",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp",
+      "-L/opt/homebrew/opt/pcre2/lib",
+      "-lpcre2-32",
+      "-o",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib"
+    ],
+    "build_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/apl/regex-v2-build.json",
+    "build_report_sha256": "f3f55986fa41dc8919cb808526114742092d945d3851d6956762c8d802a4ed63",
+    "source_url": "https://www.gnu.org/software/apl/apl.html#Native-Functions",
+    "interface_template": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/native/template.hh",
+    "library_documentation": "https://www.pcre.org/current/doc/html/pcre2_substitute.html",
+    "operations": [
+      "Literal global regex substitution",
+      "Optional ordinary PCRE2 JIT compilation"
+    ],
+    "native_benchmark_kernel": false,
+    "reason": "Accepts arbitrary pattern/replacement/subject strings. The adapter invokes standard pcre2_substitute, handles output buffer capacity and converts Unicode strings. It has no benchmark patterns, no count loop, no benchmark sequence, no length-only shortcut, and no I/O.",
+    "memory_strategy": "The large subject is the direct APL right argument. C++ stores Unicode subject/output buffers; it does not allocate whole-length APL integer masks, prefix arrays, destination arrays or a per-match container. Only complete replacement text is returned. Arbitrary expanding replacements retry after PCRE2 reports required capacity.",
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa",
+      "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+    }
+  },
+  "programs": [
+    {
+      "id": "regexredux-apl-v2-compact",
+      "key": "regexredux:regexredux-apl-v2-compact",
+      "benchmark": "regexredux",
+      "language": "apl",
+      "variant": "compact",
+      "profile": "compact",
+      "role": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.compact.apl",
+      "source_sha256": "f7015adbf56f8e10598a81e081207b4281d0727ce79ad31c608ec2e2331aafdc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.compact.apl"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "interpreted-with-built-general-library",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [
+        {
+          "name": "General GNU APL/PCRE2 literal global substitution binding",
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp",
+          "source_sha256": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib",
+          "binary_sha256": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa",
+          "build_command": [
+            "/usr/bin/clang++",
+            "-O3",
+            "-std=c++11",
+            "-dynamiclib",
+            "-fPIC",
+            "-undefined",
+            "dynamic_lookup",
+            "-DHAVE_CONFIG_H",
+            "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0",
+            "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src",
+            "-I/opt/homebrew/opt/pcre2/include",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp",
+            "-L/opt/homebrew/opt/pcre2/lib",
+            "-lpcre2-32",
+            "-o",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib"
+          ],
+          "build_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/apl/regex-v2-build.json",
+          "build_report_sha256": "f3f55986fa41dc8919cb808526114742092d945d3851d6956762c8d802a4ed63",
+          "source_url": "https://www.gnu.org/software/apl/apl.html#Native-Functions",
+          "interface_template": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/native/template.hh",
+          "library_documentation": "https://www.pcre.org/current/doc/html/pcre2_substitute.html",
+          "operations": [
+            "Literal global regex substitution",
+            "Optional ordinary PCRE2 JIT compilation"
+          ],
+          "native_benchmark_kernel": false,
+          "reason": "Accepts arbitrary pattern/replacement/subject strings. The adapter invokes standard pcre2_substitute, handles output buffer capacity and converts Unicode strings. It has no benchmark patterns, no count loop, no benchmark sequence, no length-only shortcut, and no I/O.",
+          "memory_strategy": "The large subject is the direct APL right argument. C++ stores Unicode subject/output buffers; it does not allocate whole-length APL integer masks, prefix arrays, destination arrays or a per-match container. Only complete replacement text is returned. Arbitrary expanding replacements retry after PCRE2 reports required capacity.",
+          "pins": {
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa",
+            "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+          }
+        }
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "source_provenance": "New memory-efficient counted APL application, retaining the original canonical orchestration and nine GNU APL regex counts. General PCRE2 substitution binding is provided through the published GNU APL native-library interface.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/regexredux.reference.d",
+      "upstream_sha256": "f0f0377040a19a3c2b6225c888b9e7bc42e01f529746d3532e738234cb0d98e0",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Explicit GNU APL implementation with every application helper counted.",
+        "General output launcher preserves application fd 3 without byte transformation; interpreter diagnostics and its automatic exit newline go to stderr.",
+        "Avoid packing/disclosing the large subject: the general substitute interface receives it directly as the right argument.",
+        "Clear original Input after header/newline removal; retain only its scalar length.",
+        "Use actual general PCRE2 global literal substitution in place of per-match concatenation or full-length APL masks/prefix/scatter arrays.",
+        "The application still counts all nine case-sensitive regexes over the cleaned subject with GNU APL \u2395RE and performs all five substitutions sequentially on actual strings.",
+        "Normal PCRE2 matching."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All nine case-sensitive global regex counts and five sequential complete generic substitutions. Initial, cleaned and final lengths come from actual materialized strings. Application sequencing and all patterns remain counted APL; native support is only general library substitution."
+      },
+      "loc": 34,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "case": "canonical-small",
+        "variant": "compact",
+        "scope": "benchmark",
+        "passed": true,
+        "input_bytes": 10245,
+        "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "expected_stdout_sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.compact.apl"
+        ],
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.compact.apl",
+        "source_sha256": "f7015adbf56f8e10598a81e081207b4281d0727ce79ad31c608ec2e2331aafdc",
+        "returncode": 0,
+        "stdout": "agggtaaa|tttaccct 1\n[cgt]gggtaaa|tttaccc[acg] 0\na[act]ggtaaa|tttacc[agt]t 0\nag[act]gtaaa|tttac[agt]ct 0\nagg[act]taaa|ttta[agt]cct 1\naggg[acg]aaa|ttt[cgt]ccct 0\nagggt[cgt]aa|tt[acg]accct 0\nagggta[cgt]a|t[acg]taccct 0\nagggtaa[cgt]|[acg]ttaccct 2\n\n10245\n10000\n5262\n",
+        "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+        "stdout_bytes": 262,
+        "stdout_sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "adversarial_validation_status": "all-new-v2-cases-passed",
+      "adversarial_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/apl/regex-v2/validation.json",
+        "sha256": "6598e336a48ba9170a23fe16d0e9eb28c934fe77b7d733e5b7cd523e8f860cd7",
+        "benchmark_cases": 6,
+        "general_library_cases": 8,
+        "jit": false
+      },
+      "normalized_loc": 34,
+      "physical_loc": 34,
+      "loc_expansions": [],
+      "supersedes_keys": [
+        "regexredux:regexredux-apl-compact"
+      ],
+      "supersedes_source_sha256": "e016c644d6abb9bd4ecc1e54325a75aa05a92b75598e53435850bb1bb6803e11",
+      "measurement_status": "prepared-not-fully-timed",
+      "eligible_for_chart": false,
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": []
+    },
+    {
+      "id": "regexredux-apl-v2-optimized",
+      "key": "regexredux:regexredux-apl-v2-optimized",
+      "benchmark": "regexredux",
+      "language": "apl",
+      "variant": "optimized",
+      "profile": "optimized",
+      "role": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.optimized.apl",
+      "source_sha256": "51898ec4bc74d71629f55d197dba3966e184d60c643879089176c32d16913114",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.optimized.apl"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "interpreted-with-built-general-library",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [
+        {
+          "name": "General GNU APL/PCRE2 literal global substitution binding",
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp",
+          "source_sha256": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+          "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib",
+          "binary_sha256": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa",
+          "build_command": [
+            "/usr/bin/clang++",
+            "-O3",
+            "-std=c++11",
+            "-dynamiclib",
+            "-fPIC",
+            "-undefined",
+            "dynamic_lookup",
+            "-DHAVE_CONFIG_H",
+            "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0",
+            "-I/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src",
+            "-I/opt/homebrew/opt/pcre2/include",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp",
+            "-L/opt/homebrew/opt/pcre2/lib",
+            "-lpcre2-32",
+            "-o",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib"
+          ],
+          "build_report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/apl/regex-v2-build.json",
+          "build_report_sha256": "f3f55986fa41dc8919cb808526114742092d945d3851d6956762c8d802a4ed63",
+          "source_url": "https://www.gnu.org/software/apl/apl.html#Native-Functions",
+          "interface_template": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/apl-2.0/src/native/template.hh",
+          "library_documentation": "https://www.pcre.org/current/doc/html/pcre2_substitute.html",
+          "operations": [
+            "Literal global regex substitution",
+            "Optional ordinary PCRE2 JIT compilation"
+          ],
+          "native_benchmark_kernel": false,
+          "reason": "Accepts arbitrary pattern/replacement/subject strings. The adapter invokes standard pcre2_substitute, handles output buffer capacity and converts Unicode strings. It has no benchmark patterns, no count loop, no benchmark sequence, no length-only shortcut, and no I/O.",
+          "memory_strategy": "The large subject is the direct APL right argument. C++ stores Unicode subject/output buffers; it does not allocate whole-length APL integer masks, prefix arrays, destination arrays or a per-match container. Only complete replacement text is returned. Arbitrary expanding replacements retry after PCRE2 reports required capacity.",
+          "pins": {
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/support/apl/regex-native.cpp": "62465718d32efacfdf427c4c51e9169a533e202e453ace9c07011d475a180f92",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-apl.dylib": "81d7c9ea8ef7239112ac25a803fccaab97004ce706d2445889fb9559eb7387fa",
+            "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+          }
+        }
+      ],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/regexredux.html",
+      "source_provenance": "New memory-efficient counted APL application, retaining the original canonical orchestration and nine GNU APL regex counts. General PCRE2 substitution binding is provided through the published GNU APL native-library interface.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/regexredux.reference.d",
+      "upstream_sha256": "f0f0377040a19a3c2b6225c888b9e7bc42e01f529746d3532e738234cb0d98e0",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Explicit GNU APL implementation with every application helper counted.",
+        "General output launcher preserves application fd 3 without byte transformation; interpreter diagnostics and its automatic exit newline go to stderr.",
+        "Avoid packing/disclosing the large subject: the general substitute interface receives it directly as the right argument.",
+        "Clear original Input after header/newline removal; retain only its scalar length.",
+        "Use actual general PCRE2 global literal substitution in place of per-match concatenation or full-length APL masks/prefix/scatter arrays.",
+        "The application still counts all nine case-sensitive regexes over the cleaned subject with GNU APL \u2395RE and performs all five substitutions sequentially on actual strings.",
+        "Ordinary PCRE2 JIT is requested for substitution; matching falls back if JIT is unavailable."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "All nine case-sensitive global regex counts and five sequential complete generic substitutions. Initial, cleaned and final lengths come from actual materialized strings. Application sequencing and all patterns remain counted APL; native support is only general library substitution."
+      },
+      "loc": 34,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "case": "canonical-small",
+        "variant": "optimized",
+        "scope": "benchmark",
+        "passed": true,
+        "input_bytes": 10245,
+        "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "expected_stdout_sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.optimized.apl"
+        ],
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.optimized.apl",
+        "source_sha256": "51898ec4bc74d71629f55d197dba3966e184d60c643879089176c32d16913114",
+        "returncode": 0,
+        "stdout": "agggtaaa|tttaccct 1\n[cgt]gggtaaa|tttaccc[acg] 0\na[act]ggtaaa|tttacc[agt]t 0\nag[act]gtaaa|tttac[agt]ct 0\nagg[act]taaa|ttta[agt]cct 1\naggg[acg]aaa|ttt[cgt]ccct 0\nagggt[cgt]aa|tt[acg]accct 0\nagggta[cgt]a|t[acg]taccct 0\nagggtaa[cgt]|[acg]ttaccct 2\n\n10245\n10000\n5262\n",
+        "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+        "stdout_bytes": 262,
+        "stdout_sha256": "9f417691b946e86f2a86df4340c17f8b5c7bd5f977df525072c66c89b8a656f1",
+        "reference_match": true
+      },
+      "adversarial_validation_status": "all-new-v2-cases-passed",
+      "adversarial_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/apl/regex-v2/validation.json",
+        "sha256": "6598e336a48ba9170a23fe16d0e9eb28c934fe77b7d733e5b7cd523e8f860cd7",
+        "benchmark_cases": 6,
+        "general_library_cases": 8,
+        "jit": true
+      },
+      "normalized_loc": 34,
+      "physical_loc": 34,
+      "loc_expansions": [],
+      "supersedes_keys": [
+        "regexredux:regexredux-apl-optimized"
+      ],
+      "supersedes_source_sha256": "dddcece53682a3f8aae9a0f9502b4d81f5ca74dab67f7ab7ed5978eecb70b4c2",
+      "measurement_status": "prepared-not-fully-timed",
+      "eligible_for_chart": false,
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": []
+    }
+  ],
+  "preserved_v1": {
+    "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-manifest.json",
+    "sha256": "84095c881231b3a76b182e050a691c1f79327498496686a92dfcf3927feba853",
+    "sources": [
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/regexredux.compact.apl",
+        "sha256": "e016c644d6abb9bd4ecc1e54325a75aa05a92b75598e53435850bb1bb6803e11"
+      },
+      {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/regexredux.optimized.apl",
+        "sha256": "dddcece53682a3f8aae9a0f9502b4d81f5ca74dab67f7ab7ed5978eecb70b4c2"
+      }
+    ],
+    "failed_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/harness-v1-partial"
+  },
+  "validation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/apl/regex-v2/validation.json",
+    "sha256": "6598e336a48ba9170a23fe16d0e9eb28c934fe77b7d733e5b7cd523e8f860cd7",
+    "passed": true
+  },
+  "capacity_review": {
+    "runtime_changed": false,
+    "diagnosis": "GNU APL uses /proc/meminfo and falls back to approximately 3 GiB on macOS; WA_scale defaults to 90%. The previous nested subject argument and whole-length array temporaries exceed this logical workspace threshold.",
+    "code_evidence": [
+      "Quad_WA.cc:172\u2013187",
+      "Value.cc:196\u2013215",
+      "Workspace.cc:128\u2013141",
+      "Bif_F12_PARTITION_PICK.cc:44\u201355,269\u2013318",
+      "Value.hh:745\u2013769"
+    ],
+    "documented_mem_option": "GNU APL --mem requires readable Linux /proc memory/overcommit controls and is unavailable on this macOS runtime.",
+    "decision": "Retain the unchanged runtime and safety guards. Remove application copies and whole-length APL replacement temporaries instead of increasing the memory limit. Full-size acceptance still requires the parent RSS/workspace guards and exact complete output.",
+    "remaining_general_runtime_gap": "A portable macOS available-memory estimator would remove the Linux-only fallback, but is not required or applied by these v2 sources."
+  }
+}
