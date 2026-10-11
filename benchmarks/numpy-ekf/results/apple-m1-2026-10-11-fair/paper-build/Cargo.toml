@@ -1,0 +1,40 @@
+[package]
+name = "numpy-ekf-paper-driver"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+
+[[bin]]
+name = "numpy-ekf-paper-driver"
+path = "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/paper-driver/src/main.rs"
+
+[[bin]]
+name = "numpy-ekf-resident-probe"
+path = "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/paper-driver/resident-probe/main.rs"
+
+[dependencies]
+mech-core = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/src/core", default-features = false, features = ["f32", "f64", "matrixd", "vectord", "row_vectord", "tuple"] }
+mech-engine = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/src/engine", default-features = false, features = ["compiler", "resident-artifact", "f32", "f64", "matrixd", "vectord", "row_vectord", "tuple", "record", "table", "enum", "atom", "variables", "variable_assign", "kind_annotation", "access", "assign", "convert"] }
+mech-runtime = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/src/runtime", default-features = false, features = ["compiler", "compute", "f32", "f64", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_assign", "kind_annotation", "access", "assign", "convert"] }
+mech-stdlib = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/src/stdlib", default-features = false, features = ["compiler", "native-plan", "f32", "f64", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_define", "access", "assign", "convert", "matrix_horzcat", "matrix_vertcat", "math_add", "math_sub", "math_mul", "math_div", "math_neg", "math_sin", "math_cos", "math_atan2", "matrix_dot", "matrix_matmul", "matrix_transpose"] }
+mech-syntax = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/src/syntax", default-features = false, features = ["compiler", "program", "formatter", "f32", "f64", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_assign", "kind_annotation"] }
+mech-gpu = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/hosts/gpu", default-features = false, features = ["jit", "aot"] }
+serde_json = "1.0"
+
+[patch.crates-io]
+mech-combinatorics = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/combinatorics" }
+mech-compare = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/compare" }
+mech-logic = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/logic" }
+mech-math = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/math" }
+mech-matrix = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/matrix" }
+mech-range = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/range" }
+mech-set = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/set" }
+mech-stats = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/stats" }
+mech-string = { path = "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source/machines/string" }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+debug = false

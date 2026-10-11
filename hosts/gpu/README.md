@@ -36,6 +36,16 @@ implementations for tests and benchmarks. The shipping mixed-application
 compiler currently emits the elementwise kernel form, not the fixed-shape form
 those prototypes require, so they are not stable v0.4 application backends.
 
+Fixed-shape `cpu-simd` sessions use component-major batch storage and interpret
+each operation across a cache-sized tile of independent instances. The array
+executor predecodes operands, reuses temporary columns, and fuses short
+sum-of-products loops without changing the source equations. Input updates are
+atomic, and a failed integrity check rejects the entire candidate batch.
+`FixedShapeKernel::prepare_array_cpu` exposes this executor directly;
+`prepare_array_cpu_with_tile` permits an explicit tile-size limit. The older
+`prepare_simd_cpu` API is retained as a four-instance-at-a-time control.
+
+
 The current product scope is one configured compute host, one executable
 region, fixed-shape `f32` values, persistent state, declaration defaults, live
 input updates, requested output readback, and integrity rejection before

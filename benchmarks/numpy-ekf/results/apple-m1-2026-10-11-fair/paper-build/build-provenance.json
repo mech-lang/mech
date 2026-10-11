@@ -1,0 +1,21 @@
+{
+  "revision": "0d85319d60c460cdecb81e03c181d62ecfe1ef39",
+  "source": "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/source",
+  "manifest": "/private/tmp/mech-numpy-paper-0d85319d.3Kc2g7/build/Cargo.toml",
+  "archive_command": [
+    "git",
+    "archive",
+    "0d85319d60c460cdecb81e03c181d62ecfe1ef39",
+    "Cargo.toml",
+    "Cargo.lock",
+    ".cargo",
+    "src",
+    "machines",
+    "hosts/gpu",
+    "tests/fixtures/resident-ekf"
+  ],
+  "driver_source": "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/paper-driver/src/main.rs",
+  "resident_probe_source": "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/paper-driver/resident-probe/main.rs",
+  "fixture": "/Users/coreymontella/mech-lang/mech/benchmarks/numpy-ekf/mech-driver/ekf-numerical.mec",
+  "manifest_sha256": "7e3d745d60acca1ba7a1dc47537327fddf2cbceb5c547a836ee07111bd83521a"
+}

@@ -1,0 +1,40 @@
+[package]
+name = "numpy-ekf-paper-driver"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+
+[[bin]]
+name = "numpy-ekf-paper-driver"
+path = "@DRIVER_SOURCE@"
+
+[[bin]]
+name = "numpy-ekf-resident-probe"
+path = "@RESIDENT_SOURCE@"
+
+[dependencies]
+mech-core = { path = "@MECH_SOURCE@/src/core", default-features = false, features = ["f32", "f64", "matrixd", "vectord", "row_vectord", "tuple"] }
+mech-engine = { path = "@MECH_SOURCE@/src/engine", default-features = false, features = ["compiler", "resident-artifact", "f32", "f64", "matrixd", "vectord", "row_vectord", "tuple", "record", "table", "enum", "atom", "variables", "variable_assign", "kind_annotation", "access", "assign", "convert"] }
+mech-runtime = { path = "@MECH_SOURCE@/src/runtime", default-features = false, features = ["compiler", "compute", "f32", "f64", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_assign", "kind_annotation", "access", "assign", "convert"] }
+mech-stdlib = { path = "@MECH_SOURCE@/src/stdlib", default-features = false, features = ["compiler", "native-plan", "f32", "f64", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_define", "access", "assign", "convert", "matrix_horzcat", "matrix_vertcat", "math_add", "math_sub", "math_mul", "math_div", "math_neg", "math_sin", "math_cos", "math_atan2", "matrix_dot", "matrix_matmul", "matrix_transpose"] }
+mech-syntax = { path = "@MECH_SOURCE@/src/syntax", default-features = false, features = ["compiler", "program", "formatter", "f32", "f64", "matrixd", "vectord", "row_vectord", "tuple", "variables", "variable_assign", "kind_annotation"] }
+mech-gpu = { path = "@MECH_SOURCE@/hosts/gpu", default-features = false, features = ["jit", "aot"] }
+serde_json = "1.0"
+
+[patch.crates-io]
+mech-combinatorics = { path = "@MECH_SOURCE@/machines/combinatorics" }
+mech-compare = { path = "@MECH_SOURCE@/machines/compare" }
+mech-logic = { path = "@MECH_SOURCE@/machines/logic" }
+mech-math = { path = "@MECH_SOURCE@/machines/math" }
+mech-matrix = { path = "@MECH_SOURCE@/machines/matrix" }
+mech-range = { path = "@MECH_SOURCE@/machines/range" }
+mech-set = { path = "@MECH_SOURCE@/machines/set" }
+mech-stats = { path = "@MECH_SOURCE@/machines/stats" }
+mech-string = { path = "@MECH_SOURCE@/machines/string" }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+debug = false
