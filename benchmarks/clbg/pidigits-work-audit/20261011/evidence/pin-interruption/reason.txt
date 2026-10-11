@@ -1,0 +1,1 @@
+Independent read-only source-review evidence refresh changed audit.json during a full process. Pin guard stopped the run after two prior successful samples; no endpoint qualified. The partial report and rejected in-flight attempt are retained, but no sample was reused. Restarted all samples with frozen metadata. Application source, runtime and execution command did not change.

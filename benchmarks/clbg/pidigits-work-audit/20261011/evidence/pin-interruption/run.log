@@ -1,0 +1,16 @@
+RUN 1 pidigits:pidigits-node-2-two-extracts
+SAMPLE 1 pidigits:pidigits-node-2-two-extracts 5.914904s
+RUN 1 pidigits:mech-control-for-r
+SAMPLE 1 pidigits:mech-control-for-r 0.315030s
+RUN 2 pidigits:pidigits-node-2-two-extracts
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/run.py", line 94, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/run.py", line 86, in main
+    print('RUN',sample+1,key,flush=True);result=execute(row);verify()
+                                                             ^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/run.py", line 67, in verify
+    for file,digest in pins.items():assert sha(file)==digest,file
+                                           ^^^^^^^^^^^^^^^^^
+AssertionError: /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/audit.json

@@ -1,0 +1,3286 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-11T18:57:15.852592+00:00",
+  "benchmark": "pidigits",
+  "status": "corrected_source_validated_pending_full_timing",
+  "timing_policy": "No previous sample may be reused for the corrected source. Parent must perform three guarded full process runs; all other accepted endpoint measurements remain unchanged.",
+  "established_policy": {
+    "local_protocol": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/README.md",
+    "lines": [
+      34,
+      35
+    ],
+    "local_audit": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/audit.json",
+    "rule": "Both actual exact extract(3) and extract(4) divisions for every tested candidate. A preliminary impossible-candidate guard is permitted, including the pinned published Rust #4 q>r guard.",
+    "clarification": "This rule does not require both divisions for every recurrence iteration. Existing Mech advance and the original R early guard are permitted. Sources that perform both divisions on every iteration do additional work and are still valid.",
+    "official_description": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/pidigits.html",
+    "official_quote": "Do both extract(3) and extract(4). Don't optimize away the work.",
+    "paper": "https://www.cs.ox.ac.uk/jeremy.gibbons/publications/spigot.pdf",
+    "paper_note": "The canonical unbounded stream uses LFT endpoint floors at 3 and 4 to decide safety. The paper also discusses later optimizations and other algorithms; the benchmark requires its specified single-thread stream and both extracts."
+  },
+  "snapshot": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/website-pidigits-snapshot.json",
+    "sha256": "bade816f0b4b72d16c9001876bce1c34f43331647f18955ab213f33cb10bf176",
+    "website_sha256": "87a396cc6567c88cf366aa7fd9b66a9da9353444fc7702d82ca53ba95cc7f8bd"
+  },
+  "endpoint_count": 60,
+  "distinct_application_source_count": 52,
+  "classifications": [
+    {
+      "key": "pidigits:pidigits-gcc-1",
+      "id": "pidigits-gcc-1",
+      "language": "c",
+      "source": "pidigits/upstream/pidigits-gcc-1.c",
+      "source_sha256": "f719dddd30aad201aa3ce385b80d48ef3befce29b22c3a12a5aa7e7d743f948e",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-gcc-1",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 14,
+          "code": "ui extract_digit(ui nth) {"
+        },
+        {
+          "line": 18,
+          "code": "   mpz_tdiv_q(tmp1, tmp2, den);"
+        },
+        {
+          "line": 54,
+          "code": "      d = extract_digit(3);"
+        },
+        {
+          "line": 55,
+          "code": "      if (d != extract_digit(4))"
+        }
+      ],
+      "existing_loc": 45,
+      "report": "remaining-conformance/signed-division-confirmation.json",
+      "source_report": "remaining-conformance/signed-division-confirmation.json"
+    },
+    {
+      "key": "pidigits:pidigits-chapel-2",
+      "id": "pidigits-chapel-2",
+      "language": "chapel",
+      "source": "pidigits/upstream/pidigits-chapel-2.chpl",
+      "source_sha256": "2e4772c1be21857bea5d5ed52db6fed9191101becff27292007aedf0a9c19b95",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-chapel-2",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 12,
+          "code": "config const n = 50;         // Compute n digits of pi, 50 by default"
+        },
+        {
+          "line": 39,
+          "code": "      const d = extractDigit(3);"
+        },
+        {
+          "line": 40,
+          "code": "      if d == extractDigit(4) {"
+        },
+        {
+          "line": 57,
+          "code": "  proc extractDigit(nth) {"
+        },
+        {
+          "line": 60,
+          "code": "    div(tmp1, tmp2, denom);"
+        }
+      ],
+      "existing_loc": 47,
+      "report": "remaining-conformance/signed-division-confirmation.json",
+      "source_report": "remaining-conformance/signed-division-confirmation.json"
+    },
+    {
+      "key": "pidigits:pidigits-gpp-4",
+      "id": "pidigits-gpp-4",
+      "language": "cpp",
+      "source": "pidigits/upstream/pidigits-gpp-4.cpp",
+      "source_sha256": "e9ea172b053a24a2fc804a0232af6b242b1fbfedc143500a66355446bb251d98",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-gpp-4",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 24,
+          "code": "        t = (2 * k + 1) * t;"
+        },
+        {
+          "line": 28,
+          "code": "    unsigned extract(unsigned x) const {"
+        },
+        {
+          "line": 31,
+          "code": "        tmp1 = tmp0 / t;"
+        },
+        {
+          "line": 54,
+          "code": "            auto digit = lft.extract(3);"
+        },
+        {
+          "line": 55,
+          "code": "            if (digit == lft.extract(4)) {"
+        }
+      ],
+      "existing_loc": 50,
+      "report": "remaining-conformance/signed-division-confirmation.json",
+      "source_report": "remaining-conformance/signed-division-confirmation.json"
+    },
+    {
+      "key": "pidigits:pidigits-gpp-5",
+      "id": "pidigits-gpp-5",
+      "language": "cpp",
+      "source": "pidigits/upstream/pidigits-gpp-5.cpp",
+      "source_sha256": "19f5486a8f52883e43f773b2ed13edc058ea3075c8c25d03f20e3d2923ace642",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-gpp-5",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 48,
+          "code": "  void tdiv_q(Mpz const& a, Mpz const& b) noexcept {"
+        },
+        {
+          "line": 49,
+          "code": "    __gmpz_tdiv_q(&mpz_, &a.mpz_, &b.mpz_);"
+        },
+        {
+          "line": 84,
+          "code": "  ulong extract(Context& ctx, ulong x) const noexcept {  // NOLINT"
+        },
+        {
+          "line": 87,
+          "code": "    ctx.tmp2.tdiv_q(ctx.tmp1, t);"
+        },
+        {
+          "line": 111,
+          "code": "      auto digit = lft.extract(context, 3);"
+        },
+        {
+          "line": 112,
+          "code": "      if (digit == lft.extract(context, 4)) {"
+        }
+      ],
+      "existing_loc": 84,
+      "report": "remaining-conformance/signed-division-confirmation.json",
+      "source_report": "remaining-conformance/signed-division-confirmation.json"
+    },
+    {
+      "key": "pidigits:pidigits-go-4",
+      "id": "pidigits-go-4",
+      "language": "go",
+      "source": "pidigits/upstream/pidigits-go-4.go",
+      "source_sha256": "9ced7c622f0b4acb4ad8acaba72da4e54919bd75050c6678723e753cc55049e3",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-go-4",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 33,
+          "code": "func extract_digit(nth uint32) uint32 {"
+        },
+        {
+          "line": 36,
+          "code": "    C.mpz_tdiv_q(&tmp1[0], &tmp2[0], &den[0])"
+        },
+        {
+          "line": 94,
+          "code": "        d = extract_digit(3)"
+        },
+        {
+          "line": 95,
+          "code": "        if d != extract_digit(4) {"
+        }
+      ],
+      "existing_loc": 71,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-go-3",
+      "id": "pidigits-go-3",
+      "language": "go",
+      "source": "pidigits/upstream/pidigits-go-3.go",
+      "source_sha256": "a4ebc375e1192bd7e4bbe84340eeafff06e28bbb960e095352bd9458d9e86899",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-go-3",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 30,
+          "code": "func extract_digit(nth uint32) uint32 {"
+        },
+        {
+          "line": 33,
+          "code": "    C.mpz_tdiv_q(&tmp1[0], &tmp2[0], &den[0])"
+        },
+        {
+          "line": 84,
+          "code": "        d = extract_digit(3)"
+        },
+        {
+          "line": 85,
+          "code": "        if d != extract_digit(4) {"
+        }
+      ],
+      "existing_loc": 65,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-graalvmaot-1",
+      "id": "pidigits-graalvmaot-1",
+      "language": "java",
+      "source": "pidigits/upstream/pidigits-graalvmaot-1.java",
+      "source_sha256": "96c60aea2c4a7cf80c0d0f4e190ac92211ef539c3efd5b6a0f6b13e29f6708b0",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-graalvmaot-1",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 45,
+          "code": "      if (isSafe(y)){ "
+        },
+        {
+          "line": 53,
+          "code": "      return z.extract(3);"
+        },
+        {
+          "line": 56,
+          "code": "   public boolean isSafe(int digit){"
+        },
+        {
+          "line": 57,
+          "code": "      return digit == z.extract(4);"
+        },
+        {
+          "line": 78,
+          "code": "      this.t = BigInteger.valueOf(t);                  "
+        },
+        {
+          "line": 86,
+          "code": "      this.t = t;                  "
+        },
+        {
+          "line": 95,
+          "code": "      t = BigInteger.valueOf(2 * k + 1); "
+        },
+        {
+          "line": 99,
+          "code": "   public int extract(int j){"
+        },
+        {
+          "line": 103,
+          "code": "      return ( numerator.divide(denominator) ).intValue();                    "
+        },
+        {
+          "line": 110,
+          "code": "      this.t = BigInteger.valueOf(t); "
+        }
+      ],
+      "existing_loc": 97,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-julia-4",
+      "id": "pidigits-julia-4",
+      "language": "julia",
+      "source": "pidigits/upstream/pidigits-julia-4.jl",
+      "source_sha256": "0a8261dfa1c8798be1f25b6688cb0f4a4f8508e5679221ad299862b624cc4307",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-julia-4",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 19,
+          "code": "            (d,tmp1,tmp2) = extractDigit(3,numer,accum,denom,tmp1,tmp2)"
+        },
+        {
+          "line": 20,
+          "code": "            (d2,tmp1,tmp2) = extractDigit(4,numer,accum,denom,tmp1,tmp2)"
+        },
+        {
+          "line": 54,
+          "code": "function extractDigit(nth::Int64, numer::BigInt, accum::BigInt, denom::BigInt, tmp1::BigInt, tmp2::BigInt)"
+        },
+        {
+          "line": 57,
+          "code": "    (tmp1,_) = divrem(tmp2,denom)"
+        }
+      ],
+      "existing_loc": 52,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-julia-3",
+      "id": "pidigits-julia-3",
+      "language": "julia",
+      "source": "pidigits/upstream/pidigits-julia-3.jl",
+      "source_sha256": "d9552c519b2a965e9a092c3658460bf8c6e3402dbcd169a498bcff678014da04",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-julia-3",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 3,
+          "code": " https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 11,
+          "code": "using Base.GMP.MPZ: add_ui!, mul_ui!, add!, tdiv_q!"
+        },
+        {
+          "line": 27,
+          "code": "function extract!(q,r,t,tmp1,tmp2,n)"
+        },
+        {
+          "line": 30,
+          "code": "    tdiv_q!(tmp2,tmp1,t)"
+        },
+        {
+          "line": 53,
+          "code": "            digit = extract!(q,r,t,tmp1,tmp2,3)"
+        },
+        {
+          "line": 54,
+          "code": "            if digit == extract!(q,r,t,tmp1,tmp2,4)"
+        }
+      ],
+      "existing_loc": 58,
+      "report": "remaining-conformance/signed-division-confirmation.json",
+      "source_report": "remaining-conformance/signed-division-confirmation.json"
+    },
+    {
+      "key": "pidigits:mech-pi-final-compact-signed",
+      "id": "mech-pi-final-compact-signed",
+      "language": "mech",
+      "source": "pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "mech-pi-final-compact-signed",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "Extract(s<state>, j<u64>) = (digit<u64>) :="
+        },
+        {
+          "line": 3,
+          "code": "  product := bigint/multiply-u64-into(s.scratch, s.q, j)"
+        },
+        {
+          "line": 4,
+          "code": "  numerator := bigint/add-into(product, product, s.r)"
+        },
+        {
+          "line": 5,
+          "code": "  digit := bigint/floor-u64(numerator, s.t)."
+        },
+        {
+          "line": 6,
+          "code": "Label(count<u64>) => <u64> := io/print(\"\\t:{}\\n\", count)"
+        },
+        {
+          "line": 10,
+          "code": "  remainder := bigint/subtract-multiple-u64(s.r, s.t, digit)"
+        },
+        {
+          "line": 11,
+          "code": "  r := bigint/multiply-u64-into(remainder, remainder, 10)"
+        },
+        {
+          "line": 12,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, 10)"
+        },
+        {
+          "line": 13,
+          "code": "  output := io/print(\"{}\", digit)"
+        },
+        {
+          "line": 14,
+          "code": "  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)"
+        },
+        {
+          "line": 17,
+          "code": "  numerator := bigint/add-multiple-u64(s.r, s.q, 2)"
+        },
+        {
+          "line": 18,
+          "code": "  r := bigint/multiply-u64-into(numerator, numerator, 2 * s.k + 1)"
+        },
+        {
+          "line": 19,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, s.k)"
+        },
+        {
+          "line": 20,
+          "code": "  t := bigint/multiply-u64-into(s.t, s.t, 2 * s.k + 1)"
+        },
+        {
+          "line": 23,
+          "code": "  first := Extract(s, 3)"
+        },
+        {
+          "line": 24,
+          "code": "  second := Extract(s, 4)"
+        },
+        {
+          "line": 25,
+          "code": "  next := control/if(first == second, Produce, Consume, (s, first))."
+        },
+        {
+          "line": 28,
+          "code": "  output := io/print(\" \")"
+        },
+        {
+          "line": 31,
+          "code": "  column := control/while(number/mod(count, 10), NeedsSpace, Space)"
+        },
+        {
+          "line": 33,
+          "code": "initial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1), scratch: bigint/new(0)}"
+        },
+        {
+          "line": 34,
+          "code": "state := control/while(initial, More, Step)"
+        },
+        {
+          "line": 35,
+          "code": "finished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)"
+        }
+      ],
+      "existing_loc": 35,
+      "report": "function-application-audit/20261009T171437Z/application-v3/timings.json",
+      "source_report": "function-application-audit/20261009T171437Z/application-v3/builds.json"
+    },
+    {
+      "key": "pidigits:mech-pi-final-advance-signed",
+      "id": "mech-pi-final-advance-signed",
+      "language": "mech",
+      "source": "pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "mech-pi-final-advance-signed",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "Extract(s<state>, j<u64>) = (digit<u64>) :="
+        },
+        {
+          "line": 3,
+          "code": "  product := bigint/multiply-u64-into(s.scratch, s.q, j)"
+        },
+        {
+          "line": 4,
+          "code": "  numerator := bigint/add-into(product, product, s.r)"
+        },
+        {
+          "line": 5,
+          "code": "  digit := bigint/floor-u64(numerator, s.t)."
+        },
+        {
+          "line": 6,
+          "code": "Label(count<u64>) => <u64> := io/print(\"\\t:{}\\n\", count)"
+        },
+        {
+          "line": 10,
+          "code": "  remainder := bigint/subtract-multiple-u64(s.r, s.t, digit)"
+        },
+        {
+          "line": 11,
+          "code": "  r := bigint/multiply-u64-into(remainder, remainder, 10)"
+        },
+        {
+          "line": 12,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, 10)"
+        },
+        {
+          "line": 13,
+          "code": "  output := io/print(\"{}\", digit)"
+        },
+        {
+          "line": 14,
+          "code": "  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)"
+        },
+        {
+          "line": 17,
+          "code": "  numerator := bigint/add-multiple-u64(s.r, s.q, 2)"
+        },
+        {
+          "line": 18,
+          "code": "  r := bigint/multiply-u64-into(numerator, numerator, 2 * s.k + 1)"
+        },
+        {
+          "line": 19,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, s.k)"
+        },
+        {
+          "line": 20,
+          "code": "  t := bigint/multiply-u64-into(s.t, s.t, 2 * s.k + 1)"
+        },
+        {
+          "line": 22,
+          "code": "ExtractStep(s<state>) = (next<state>) :="
+        },
+        {
+          "line": 23,
+          "code": "  first := Extract(s, 3)"
+        },
+        {
+          "line": 24,
+          "code": "  second := Extract(s, 4)"
+        },
+        {
+          "line": 28,
+          "code": "  next := (bigint/less-equal(advanced.q, advanced.r) ? | true => ExtractStep(advanced) | * => advanced)."
+        },
+        {
+          "line": 31,
+          "code": "  output := io/print(\" \")"
+        },
+        {
+          "line": 34,
+          "code": "  column := control/while(number/mod(count, 10), NeedsSpace, Space)"
+        },
+        {
+          "line": 36,
+          "code": "initial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1), scratch: bigint/new(0)}"
+        },
+        {
+          "line": 37,
+          "code": "state := control/while(initial, More, Step)"
+        },
+        {
+          "line": 38,
+          "code": "finished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)"
+        }
+      ],
+      "existing_loc": 38,
+      "report": "additional-languages/20261009-full-suite/results/timings.json",
+      "source_report": "function-application-audit/20261009T171437Z/application-v3/builds.json"
+    },
+    {
+      "key": "pidigits:pidigits-rust-4",
+      "id": "pidigits-rust-4",
+      "language": "rust",
+      "source": "pidigits/upstream/pidigits-rust-4.rs",
+      "source_sha256": "fb6b33b1bf74612f8ce78d19e70f10f41650b02b72e4c73d2cb0480508fbef65",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-rust-4",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 45,
+          "code": "            let d = self.extract(3);"
+        },
+        {
+          "line": 46,
+          "code": "            if d != self.extract(4) {"
+        },
+        {
+          "line": 67,
+          "code": "    fn extract(&mut self, nth: u32) -> u8 {"
+        },
+        {
+          "line": 76,
+          "code": "        self.tmp1.assign(&self.tmp2 / &self.t);"
+        }
+      ],
+      "existing_loc": 97,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-rust-3",
+      "id": "pidigits-rust-3",
+      "language": "rust",
+      "source": "pidigits/upstream/pidigits-rust-3.rs",
+      "source_sha256": "1668f9258a1b81868a3d4b0d6a6e282af8f2b182d1d2281bf0bc85dfe4729a53",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-rust-3",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 57,
+          "code": "    fn extract_digit(&mut self, nth: c_ulong) -> c_ulong {"
+        },
+        {
+          "line": 60,
+          "code": "        self.tmp1.tdiv_q(&self.tmp2, &self.den);"
+        },
+        {
+          "line": 85,
+          "code": "            let d = self.extract_digit(3);"
+        },
+        {
+          "line": 86,
+          "code": "            if d != self.extract_digit(4) {"
+        },
+        {
+          "line": 102,
+          "code": "        unsafe { __gmpz_clear(&mut self.mpz) }"
+        },
+        {
+          "line": 107,
+          "code": "        unsafe {"
+        },
+        {
+          "line": 115,
+          "code": "        unsafe {"
+        },
+        {
+          "line": 121,
+          "code": "        unsafe {"
+        },
+        {
+          "line": 127,
+          "code": "        unsafe {"
+        },
+        {
+          "line": 133,
+          "code": "        unsafe {"
+        },
+        {
+          "line": 139,
+          "code": "        unsafe {"
+        },
+        {
+          "line": 144,
+          "code": "    pub fn tdiv_q(&mut self, a: &Mpz, b: &Mpz) {"
+        },
+        {
+          "line": 145,
+          "code": "        unsafe {"
+        },
+        {
+          "line": 146,
+          "code": "            __gmpz_tdiv_q(&mut self.mpz, &a.mpz, &b.mpz);"
+        },
+        {
+          "line": 150,
+          "code": "        unsafe { __gmpz_get_ui(&self.mpz) }"
+        },
+        {
+          "line": 156,
+          "code": "        unsafe { __gmpz_cmp(&self.mpz, &other.mpz) == 0 }"
+        },
+        {
+          "line": 161,
+          "code": "        let cmp = unsafe { __gmpz_cmp(&self.mpz, &other.mpz) };"
+        },
+        {
+          "line": 198,
+          "code": "    fn __gmpz_tdiv_q(q: mpz_ptr, n: mpz_srcptr, d: mpz_srcptr);"
+        }
+      ],
+      "existing_loc": 175,
+      "report": "remaining-conformance/signed-division-confirmation.json",
+      "source_report": "remaining-conformance/signed-division-confirmation.json"
+    },
+    {
+      "key": "pidigits:pidigits-python3-3",
+      "id": "pidigits-python3-3",
+      "language": "python",
+      "source": "pidigits/upstream/pidigits-python3-3.py",
+      "source_sha256": "4ac5b12b52aedd5c4cb794d1b685ecbd09e8f5a601f2d441e3b5f45fa316ed4b",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-python3-3",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 37,
+          "code": "def extract_Digit(nth):"
+        },
+        {
+          "line": 41,
+          "code": "    GMP.__gmpz_tdiv_q(byref(tmp1), byref(tmp2), byref(den))"
+        },
+        {
+          "line": 80,
+          "code": "        d=extract_Digit(3)"
+        },
+        {
+          "line": 81,
+          "code": "        if d!=extract_Digit(4):"
+        }
+      ],
+      "existing_loc": 52,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-python3-4",
+      "id": "pidigits-python3-4",
+      "language": "python",
+      "source": "pidigits/upstream/pidigits-python3-4.py",
+      "source_sha256": "cdfff9f6ad7154f1b7020ff7fae2027653cd113a4913074431a7e9af7f800795",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-python3-4",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 11,
+          "code": "def extract_Digit(nth):"
+        },
+        {
+          "line": 15,
+          "code": "    tmp1 = tmp2 // den"
+        },
+        {
+          "line": 58,
+          "code": "        d=extract_Digit(3)"
+        },
+        {
+          "line": 59,
+          "code": "        if d!=extract_Digit(4):"
+        }
+      ],
+      "existing_loc": 43,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-ruby-1",
+      "id": "pidigits-ruby-1",
+      "language": "ruby",
+      "source": "pidigits/upstream/pidigits-ruby-1.rb",
+      "source_sha256": "2e5a501cc569baf0590ffceba9906aa0deb8be8e6ca17ea5d3b2f32d237ce08f",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-ruby-1",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 15,
+          "code": "        @y = @z.extract(3) "
+        },
+        {
+          "line": 16,
+          "code": "        if safe? @y"
+        },
+        {
+          "line": 25,
+          "code": "    def safe?(digit)"
+        },
+        {
+          "line": 26,
+          "code": "        digit == @z.extract(4)"
+        },
+        {
+          "line": 49,
+          "code": "        @t = 2 * @k + 1"
+        },
+        {
+          "line": 53,
+          "code": "    def extract(j)"
+        },
+        {
+          "line": 54,
+          "code": "        (@q * j + @r) / (@s * j + @t)"
+        }
+      ],
+      "existing_loc": 69,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-perl-4",
+      "id": "pidigits-perl-4",
+      "language": "perl",
+      "source": "pidigits/upstream/pidigits-perl-4.pl",
+      "source_sha256": "abecc26005f5963e85e115c64262c87cc81f756613d340fbf6a5cdc450ccecc8",
+      "support_sources": [],
+      "classification": "permitted_interval_width_guard_two_exact_divisions",
+      "conforms": true,
+      "reviewed_as": "pidigits-perl-4",
+      "review_note": "The q>t guard rejects intervals of width q/t>1, whose endpoint floors cannot agree. Otherwise (3q+r)/t and (4q+r)/t are both actual integer divisions.",
+      "extraction_evidence": [
+        {
+          "line": 12,
+          "code": "my($z0, $z1, $z2) = map Math::GMP->new($_), 1,0,1;"
+        },
+        {
+          "line": 15,
+          "code": "    while ( $z0>$z2 or ( $d = ($f=$z0*3+$z1)/$z2 ) != ($f+$z0)/$z2 ) {"
+        },
+        {
+          "line": 17,
+          "code": "        $z1  = $f * ($z1+2*$z0);"
+        },
+        {
+          "line": 18,
+          "code": "        $z0 *= $k;"
+        },
+        {
+          "line": 21,
+          "code": "    $z0 *= 10;"
+        }
+      ],
+      "existing_loc": 15,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-lua-1-luajit",
+      "id": "pidigits-lua-1-luajit",
+      "language": "luajit",
+      "source": "pidigits/upstream/pidigits-lua-1.lua",
+      "source_sha256": "17afbb71f557f5fa3fdc4d0274b8377d7717e467017d4d322897327d12a0c125",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-lua-1-luajit",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 8,
+          "code": "local add, sub, mul, div = Lbn.add, Lbn.sub, Lbn.mul, Lbn.div"
+        },
+        {
+          "line": 13,
+          "code": "local function extractDigit(nth)"
+        },
+        {
+          "line": 16,
+          "code": "    tmp1 = div(tmp2, den)"
+        },
+        {
+          "line": 48,
+          "code": "        d = extractDigit(3)"
+        },
+        {
+          "line": 49,
+          "code": "        if d ~= extractDigit(4) then goto continue end"
+        }
+      ],
+      "existing_loc": 45,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-node-2",
+      "id": "pidigits-node-2",
+      "language": "javascript",
+      "source": "pidigits/upstream/pidigits-node-2.js",
+      "source_sha256": "8a1f6ac615c7333627543be995663d888b3f9e4189eda5ef2c0fae618710d942",
+      "support_sources": [],
+      "classification": "nonconformant_one_quotient_remainder_test",
+      "conforms": false,
+      "reviewed_as": "pidigits-node-2",
+      "review_note": "Computes t=(3q+r)/tden once; m%tden+q<tden substitutes a remainder predicate for the required second quotient. The predicate is numerically equivalent but omits an actual arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 26,
+          "code": "  let t = 0n;"
+        },
+        {
+          "line": 27,
+          "code": "  let u = 1n;"
+        },
+        {
+          "line": 32,
+          "code": "    t = n << 1n;"
+        },
+        {
+          "line": 40,
+          "code": "      t = m / d;"
+        },
+        {
+          "line": 41,
+          "code": "      u = m % d + n;"
+        }
+      ],
+      "existing_loc": 47,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:pidigits-php-5",
+      "id": "pidigits-php-5",
+      "language": "php",
+      "source": "pidigits/upstream/pidigits-php-5.php",
+      "source_sha256": "2d5ff862651002a0f74dbe5e00401528aad314009b9b7d41cc9c52d538c51b11",
+      "support_sources": [],
+      "classification": "equivalent_endpoint_numerator_state_two_exact_divisions",
+      "conforms": true,
+      "reviewed_as": "pidigits-php-5",
+      "review_note": "Two actual arbitrary-precision quotients use endpoint numerators n1=4q+r and n2=3q+r. This is a change of basis for the same sequential LFT spigot, not a different pi algorithm.",
+      "extraction_evidence": [
+        {
+          "line": 3,
+          "code": "   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 25,
+          "code": "   $u = gmp_div_q($n1, $d);"
+        },
+        {
+          "line": 37,
+          "code": "      $u = gmp_mul($d, gmp_mul(-10, $u));"
+        },
+        {
+          "line": 45,
+          "code": "      $u = gmp_mul($n1, $k2 - 1);"
+        },
+        {
+          "line": 49,
+          "code": "      $u = gmp_mul($n2, $k + 2);"
+        }
+      ],
+      "existing_loc": 42,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json"
+    },
+    {
+      "key": "pidigits:array-bqn-faithful",
+      "id": "array-bqn-faithful",
+      "language": "bqn",
+      "source": "array-comparison/all-20261009/sources/pidigits.bqn",
+      "source_sha256": "1c5f861102122ffab59f27cd6cef72cf0ba38dd3f8e17275e53c67dc5b054eb7",
+      "support_sources": [
+        {
+          "path": "array-comparison/all-20261009/stdlib/standard.bqn",
+          "sha256": "06d9fac57b6ded281284cee43b949df39e6158432fd14b3937f43fb273944b12"
+        },
+        {
+          "path": "array-comparison/all-20261009/stdlib/native.c",
+          "sha256": "3246275bfd0148b9dfa874907bda1f3142612142ab6cf1b17a70da9c19ce4187"
+        }
+      ],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "array-bqn-faithful",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "std \u2190 \u2022Import \"../stdlib/standard.bqn\""
+        },
+        {
+          "line": 11,
+          "code": "Extract \u2190 {std.ZMul \u27e8a,q,\ud835\udd69\u27e9 \u22c4 std.ZAdd \u27e8a,a,r\u27e9 \u22c4 std.ZDiv \u27e8b,a,t\u27e9 \u22c4 std.ZUI b}"
+        },
+        {
+          "line": 20,
+          "code": "  d \u2190 Extract 3"
+        },
+        {
+          "line": 21,
+          "code": "  {\ud835\udd4a unused: d\u2260Extract 4? @;"
+        }
+      ],
+      "existing_loc": 41,
+      "report": "array-comparison/all-20261009/results/faithful-timings.json",
+      "source_report": "array-comparison/all-20261009/source-audit.json"
+    },
+    {
+      "key": "pidigits:array-k-faithful",
+      "id": "array-k-faithful",
+      "language": "k",
+      "source": "array-comparison/all-20261009/sources/pidigits.growler.k",
+      "source_sha256": "4c703cb97e540f1a2289194323885c35b339b4e08f4e47eaa37f8cb6ce0a1899",
+      "support_sources": [
+        {
+          "path": "array-comparison/all-20261009/stdlib/standard.k",
+          "sha256": "5cae2f96a6e8feeeb253a3c03ab7838e539b60bba9d574938e7488b0e6d51601"
+        },
+        {
+          "path": "array-comparison/all-20261009/stdlib/native.c",
+          "sha256": "3246275bfd0148b9dfa874907bda1f3142612142ab6cf1b17a70da9c19ce4187"
+        }
+      ],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "array-k-faithful",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 1,
+          "code": "\\l /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/all-20261009/stdlib/standard.k"
+        },
+        {
+          "line": 2,
+          "code": "/ Same sequential LFT spigot, using only generic GMP arithmetic."
+        },
+        {
+          "line": 11,
+          "code": "extract:{"
+        },
+        {
+          "line": 29,
+          "code": " $[zcmp[q;r]>0;();{[d]$[d=extract 4;emit d;()]}extract 3]"
+        },
+        {
+          "line": 31,
+          "code": "done: {n>#digits}step/0"
+        }
+      ],
+      "existing_loc": 35,
+      "report": "array-comparison/all-20261009/results/faithful-timings.json",
+      "source_report": "array-comparison/all-20261009/source-audit.json"
+    },
+    {
+      "key": "pidigits:mojo-pidigits-compact",
+      "id": "mojo-pidigits-compact",
+      "language": "mojo",
+      "source": "additional-languages/20261009-full-suite/sources/pidigits-compact.mojo",
+      "source_sha256": "3a2fdb84c0f1d7951e7d1af2f1ec501faeb6e26958afd75a31d6cfb651ec9623",
+      "support_sources": [
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/common.mojo",
+          "sha256": "7138aab40685a0e2d053bcded452f0d90b5b39f6658647930b31bae14ad3c5d6"
+        },
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/integer.mojo",
+          "sha256": "0137eef4dfeb3ecc4064417b21e914571a988ed1d29effa6cc2a957b4fc4e8ec"
+        },
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/native.c",
+          "sha256": "e5c39f5ccc4544a0e5454af1edbd64c8e82381f80b6770d2e6d8eb03f463712a"
+        },
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/khash.h",
+          "sha256": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074"
+        }
+      ],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "mojo-pidigits-compact",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 9,
+          "code": "    var t = BigInt(1)"
+        },
+        {
+          "line": 17,
+          "code": "        t = t * (2 * k + 1)"
+        },
+        {
+          "line": 20,
+          "code": "        var d = ((q * 3 + r) // t).to_int()"
+        },
+        {
+          "line": 21,
+          "code": "        if d != ((q * 4 + r) // t).to_int():"
+        }
+      ],
+      "existing_loc": 30,
+      "report": "additional-languages/20261009-full-suite/results/timings.json",
+      "source_report": "additional-languages/20261009-full-suite/source-audit.json"
+    },
+    {
+      "key": "pidigits:mojo-pidigits-optimized",
+      "id": "mojo-pidigits-optimized",
+      "language": "mojo",
+      "source": "additional-languages/20261009-full-suite/sources/pidigits-optimized.mojo",
+      "source_sha256": "e4eb0b14ca785a93db6ca7c959c9bd61c3600dda715a573d2cb0ab0145b4426d",
+      "support_sources": [
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/common.mojo",
+          "sha256": "7138aab40685a0e2d053bcded452f0d90b5b39f6658647930b31bae14ad3c5d6"
+        },
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/integer.mojo",
+          "sha256": "0137eef4dfeb3ecc4064417b21e914571a988ed1d29effa6cc2a957b4fc4e8ec"
+        },
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/native.c",
+          "sha256": "e5c39f5ccc4544a0e5454af1edbd64c8e82381f80b6770d2e6d8eb03f463712a"
+        },
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/khash.h",
+          "sha256": "4582c7fd4b98f61339ce677bb1daa7a45a53075b112a494a335525c4bda72074"
+        }
+      ],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "mojo-pidigits-optimized",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "from integer import integer, close, add, subtract, multiply, quotient, small, compare, multiply_add"
+        },
+        {
+          "line": 5,
+          "code": "def extract(q: UInt64, r: UInt64, t: UInt64, scratch: UInt64, j: UInt64) -> UInt64:"
+        },
+        {
+          "line": 7,
+          "code": "    quotient(scratch, scratch, t)"
+        },
+        {
+          "line": 14,
+          "code": "    var t = integer(1)"
+        },
+        {
+          "line": 27,
+          "code": "        var d = extract(q, r, t, scratch, 3)"
+        },
+        {
+          "line": 28,
+          "code": "        if d != extract(q, r, t, scratch, 4):"
+        }
+      ],
+      "existing_loc": 43,
+      "report": "additional-languages/20261009-full-suite/results/timings.json",
+      "source_report": "additional-languages/20261009-full-suite/source-audit.json"
+    },
+    {
+      "key": "pidigits:futhark-pidigits-optimized",
+      "id": "futhark-pidigits-optimized",
+      "language": "futhark",
+      "source": "additional-languages/20261009-full-suite/sources/pidigits-optimized.fut",
+      "source_sha256": "724e938fc9837346d2721f28119aafd3e783815b0f857d48b144d1731ae3e363",
+      "support_sources": [
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/common.fut",
+          "sha256": "56b559f220977ddb2dfe2b6c4b847081fbba71bb181e9aaa5fac58cedbb3342d"
+        },
+        {
+          "path": "additional-languages/20261009-full-suite/adapters/futhark.c",
+          "sha256": "0014598c2062c35c3e0ad2b527e8ce6f359dead2ab2b558bfd9c10b5828ebad9"
+        },
+        {
+          "path": "additional-languages/20261009-full-suite/stdlib/bigint-fast.fut",
+          "sha256": "7b13bc13bd760401d46db9dfb209c5ccb252b403de288dcc7dd3061a1e07708a"
+        }
+      ],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "futhark-pidigits-optimized",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 1,
+          "code": "import \"../stdlib/common\""
+        },
+        {
+          "line": 2,
+          "code": "import \"../stdlib/bigint-fast\""
+        },
+        {
+          "line": 11,
+          "code": "        let t = multiply_small t odd"
+        },
+        {
+          "line": 13,
+          "code": "           else let d = to_i64 (quotient (add (multiply_small q 3) r) t)"
+        },
+        {
+          "line": 14,
+          "code": "                let e = to_i64 (quotient (add (multiply_small q 4) r) t)"
+        },
+        {
+          "line": 20,
+          "code": "  in loop text = \"\" for line < (n+9)/10 do"
+        }
+      ],
+      "existing_loc": 23,
+      "report": "additional-languages/20261009-full-suite/results/timings.json",
+      "source_report": "additional-languages/20261009-full-suite/source-audit.json"
+    },
+    {
+      "key": "pidigits:mech-pi-final-advance-signed:jit",
+      "id": "mech-pi-final-advance-signed:jit",
+      "language": "mech-jit",
+      "source": "pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "mech-pi-final-advance-signed",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "Extract(s<state>, j<u64>) = (digit<u64>) :="
+        },
+        {
+          "line": 3,
+          "code": "  product := bigint/multiply-u64-into(s.scratch, s.q, j)"
+        },
+        {
+          "line": 4,
+          "code": "  numerator := bigint/add-into(product, product, s.r)"
+        },
+        {
+          "line": 5,
+          "code": "  digit := bigint/floor-u64(numerator, s.t)."
+        },
+        {
+          "line": 6,
+          "code": "Label(count<u64>) => <u64> := io/print(\"\\t:{}\\n\", count)"
+        },
+        {
+          "line": 10,
+          "code": "  remainder := bigint/subtract-multiple-u64(s.r, s.t, digit)"
+        },
+        {
+          "line": 11,
+          "code": "  r := bigint/multiply-u64-into(remainder, remainder, 10)"
+        },
+        {
+          "line": 12,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, 10)"
+        },
+        {
+          "line": 13,
+          "code": "  output := io/print(\"{}\", digit)"
+        },
+        {
+          "line": 14,
+          "code": "  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)"
+        },
+        {
+          "line": 17,
+          "code": "  numerator := bigint/add-multiple-u64(s.r, s.q, 2)"
+        },
+        {
+          "line": 18,
+          "code": "  r := bigint/multiply-u64-into(numerator, numerator, 2 * s.k + 1)"
+        },
+        {
+          "line": 19,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, s.k)"
+        },
+        {
+          "line": 20,
+          "code": "  t := bigint/multiply-u64-into(s.t, s.t, 2 * s.k + 1)"
+        },
+        {
+          "line": 22,
+          "code": "ExtractStep(s<state>) = (next<state>) :="
+        },
+        {
+          "line": 23,
+          "code": "  first := Extract(s, 3)"
+        },
+        {
+          "line": 24,
+          "code": "  second := Extract(s, 4)"
+        },
+        {
+          "line": 28,
+          "code": "  next := (bigint/less-equal(advanced.q, advanced.r) ? | true => ExtractStep(advanced) | * => advanced)."
+        },
+        {
+          "line": 31,
+          "code": "  output := io/print(\" \")"
+        },
+        {
+          "line": 34,
+          "code": "  column := control/while(number/mod(count, 10), NeedsSpace, Space)"
+        },
+        {
+          "line": 36,
+          "code": "initial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1), scratch: bigint/new(0)}"
+        },
+        {
+          "line": 37,
+          "code": "state := control/while(initial, More, Step)"
+        },
+        {
+          "line": 38,
+          "code": "finished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)"
+        }
+      ],
+      "existing_loc": 38,
+      "report": "execution-modes/20261010-final/timings.json",
+      "source_report": "execution-modes/20261010/builds.json"
+    },
+    {
+      "key": "pidigits:mech-pi-final-advance-signed:resident",
+      "id": "mech-pi-final-advance-signed:resident",
+      "language": "mech-resident",
+      "source": "pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "mech-pi-final-advance-signed",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "Extract(s<state>, j<u64>) = (digit<u64>) :="
+        },
+        {
+          "line": 3,
+          "code": "  product := bigint/multiply-u64-into(s.scratch, s.q, j)"
+        },
+        {
+          "line": 4,
+          "code": "  numerator := bigint/add-into(product, product, s.r)"
+        },
+        {
+          "line": 5,
+          "code": "  digit := bigint/floor-u64(numerator, s.t)."
+        },
+        {
+          "line": 6,
+          "code": "Label(count<u64>) => <u64> := io/print(\"\\t:{}\\n\", count)"
+        },
+        {
+          "line": 10,
+          "code": "  remainder := bigint/subtract-multiple-u64(s.r, s.t, digit)"
+        },
+        {
+          "line": 11,
+          "code": "  r := bigint/multiply-u64-into(remainder, remainder, 10)"
+        },
+        {
+          "line": 12,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, 10)"
+        },
+        {
+          "line": 13,
+          "code": "  output := io/print(\"{}\", digit)"
+        },
+        {
+          "line": 14,
+          "code": "  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)"
+        },
+        {
+          "line": 17,
+          "code": "  numerator := bigint/add-multiple-u64(s.r, s.q, 2)"
+        },
+        {
+          "line": 18,
+          "code": "  r := bigint/multiply-u64-into(numerator, numerator, 2 * s.k + 1)"
+        },
+        {
+          "line": 19,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, s.k)"
+        },
+        {
+          "line": 20,
+          "code": "  t := bigint/multiply-u64-into(s.t, s.t, 2 * s.k + 1)"
+        },
+        {
+          "line": 22,
+          "code": "ExtractStep(s<state>) = (next<state>) :="
+        },
+        {
+          "line": 23,
+          "code": "  first := Extract(s, 3)"
+        },
+        {
+          "line": 24,
+          "code": "  second := Extract(s, 4)"
+        },
+        {
+          "line": 28,
+          "code": "  next := (bigint/less-equal(advanced.q, advanced.r) ? | true => ExtractStep(advanced) | * => advanced)."
+        },
+        {
+          "line": 31,
+          "code": "  output := io/print(\" \")"
+        },
+        {
+          "line": 34,
+          "code": "  column := control/while(number/mod(count, 10), NeedsSpace, Space)"
+        },
+        {
+          "line": 36,
+          "code": "initial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1), scratch: bigint/new(0)}"
+        },
+        {
+          "line": 37,
+          "code": "state := control/while(initial, More, Step)"
+        },
+        {
+          "line": 38,
+          "code": "finished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)"
+        }
+      ],
+      "existing_loc": 38,
+      "report": "execution-modes/20261010-final/timings.json",
+      "source_report": "execution-modes/20261010/builds.json"
+    },
+    {
+      "key": "pidigits:mech-pi-final-compact-signed:jit",
+      "id": "mech-pi-final-compact-signed:jit",
+      "language": "mech-jit",
+      "source": "pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "mech-pi-final-compact-signed",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "Extract(s<state>, j<u64>) = (digit<u64>) :="
+        },
+        {
+          "line": 3,
+          "code": "  product := bigint/multiply-u64-into(s.scratch, s.q, j)"
+        },
+        {
+          "line": 4,
+          "code": "  numerator := bigint/add-into(product, product, s.r)"
+        },
+        {
+          "line": 5,
+          "code": "  digit := bigint/floor-u64(numerator, s.t)."
+        },
+        {
+          "line": 6,
+          "code": "Label(count<u64>) => <u64> := io/print(\"\\t:{}\\n\", count)"
+        },
+        {
+          "line": 10,
+          "code": "  remainder := bigint/subtract-multiple-u64(s.r, s.t, digit)"
+        },
+        {
+          "line": 11,
+          "code": "  r := bigint/multiply-u64-into(remainder, remainder, 10)"
+        },
+        {
+          "line": 12,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, 10)"
+        },
+        {
+          "line": 13,
+          "code": "  output := io/print(\"{}\", digit)"
+        },
+        {
+          "line": 14,
+          "code": "  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)"
+        },
+        {
+          "line": 17,
+          "code": "  numerator := bigint/add-multiple-u64(s.r, s.q, 2)"
+        },
+        {
+          "line": 18,
+          "code": "  r := bigint/multiply-u64-into(numerator, numerator, 2 * s.k + 1)"
+        },
+        {
+          "line": 19,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, s.k)"
+        },
+        {
+          "line": 20,
+          "code": "  t := bigint/multiply-u64-into(s.t, s.t, 2 * s.k + 1)"
+        },
+        {
+          "line": 23,
+          "code": "  first := Extract(s, 3)"
+        },
+        {
+          "line": 24,
+          "code": "  second := Extract(s, 4)"
+        },
+        {
+          "line": 25,
+          "code": "  next := control/if(first == second, Produce, Consume, (s, first))."
+        },
+        {
+          "line": 28,
+          "code": "  output := io/print(\" \")"
+        },
+        {
+          "line": 31,
+          "code": "  column := control/while(number/mod(count, 10), NeedsSpace, Space)"
+        },
+        {
+          "line": 33,
+          "code": "initial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1), scratch: bigint/new(0)}"
+        },
+        {
+          "line": 34,
+          "code": "state := control/while(initial, More, Step)"
+        },
+        {
+          "line": 35,
+          "code": "finished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)"
+        }
+      ],
+      "existing_loc": 35,
+      "report": "execution-modes/20261010-final/timings.json",
+      "source_report": "execution-modes/20261010/builds.json"
+    },
+    {
+      "key": "pidigits:mech-pi-final-compact-signed:resident",
+      "id": "mech-pi-final-compact-signed:resident",
+      "language": "mech-resident",
+      "source": "pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "mech-pi-final-compact-signed",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "Extract(s<state>, j<u64>) = (digit<u64>) :="
+        },
+        {
+          "line": 3,
+          "code": "  product := bigint/multiply-u64-into(s.scratch, s.q, j)"
+        },
+        {
+          "line": 4,
+          "code": "  numerator := bigint/add-into(product, product, s.r)"
+        },
+        {
+          "line": 5,
+          "code": "  digit := bigint/floor-u64(numerator, s.t)."
+        },
+        {
+          "line": 6,
+          "code": "Label(count<u64>) => <u64> := io/print(\"\\t:{}\\n\", count)"
+        },
+        {
+          "line": 10,
+          "code": "  remainder := bigint/subtract-multiple-u64(s.r, s.t, digit)"
+        },
+        {
+          "line": 11,
+          "code": "  r := bigint/multiply-u64-into(remainder, remainder, 10)"
+        },
+        {
+          "line": 12,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, 10)"
+        },
+        {
+          "line": 13,
+          "code": "  output := io/print(\"{}\", digit)"
+        },
+        {
+          "line": 14,
+          "code": "  label := control/if(number/mod(s.count + 1, 10) == 0, Label, NoLabel, s.count + 1)"
+        },
+        {
+          "line": 17,
+          "code": "  numerator := bigint/add-multiple-u64(s.r, s.q, 2)"
+        },
+        {
+          "line": 18,
+          "code": "  r := bigint/multiply-u64-into(numerator, numerator, 2 * s.k + 1)"
+        },
+        {
+          "line": 19,
+          "code": "  q := bigint/multiply-u64-into(s.q, s.q, s.k)"
+        },
+        {
+          "line": 20,
+          "code": "  t := bigint/multiply-u64-into(s.t, s.t, 2 * s.k + 1)"
+        },
+        {
+          "line": 23,
+          "code": "  first := Extract(s, 3)"
+        },
+        {
+          "line": 24,
+          "code": "  second := Extract(s, 4)"
+        },
+        {
+          "line": 25,
+          "code": "  next := control/if(first == second, Produce, Consume, (s, first))."
+        },
+        {
+          "line": 28,
+          "code": "  output := io/print(\" \")"
+        },
+        {
+          "line": 31,
+          "code": "  column := control/while(number/mod(count, 10), NeedsSpace, Space)"
+        },
+        {
+          "line": 33,
+          "code": "initial := {k: 1, count: 0, n: io/argument-u64(1), q: bigint/new(1), r: bigint/new(0), t: bigint/new(1), scratch: bigint/new(0)}"
+        },
+        {
+          "line": 34,
+          "code": "state := control/while(initial, More, Step)"
+        },
+        {
+          "line": 35,
+          "code": "finished := control/if(number/mod(state.count, 10) != 0, Finish, NoLabel, state.count)"
+        }
+      ],
+      "existing_loc": 35,
+      "report": "execution-modes/20261010-final/timings.json",
+      "source_report": "execution-modes/20261010/builds.json"
+    },
+    {
+      "key": "pidigits:pidigits-swift-2",
+      "id": "pidigits-swift-2",
+      "language": "swift",
+      "source": "swift-comparison/20261010/sources/pidigits-swift-2.swift",
+      "source_sha256": "1900605f666ecbce7087abdb8e0d7cb690ce0b1a30653f3812bd995e39caf8d7",
+      "support_sources": [
+        {
+          "path": "swift-comparison/20261010/support/gmp/module.modulemap",
+          "sha256": "6c0550452025470f73b5e94146ce441843db80c625d0762f2565ceaf06cf0487"
+        }
+      ],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-swift-2",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 18,
+          "code": "let tmp1 = UnsafeMutablePointer<mpz_t>.allocate(capacity: 1)"
+        },
+        {
+          "line": 19,
+          "code": "let tmp2 = UnsafeMutablePointer<mpz_t>.allocate(capacity: 1)"
+        },
+        {
+          "line": 20,
+          "code": "let acc = UnsafeMutablePointer<mpz_t>.allocate(capacity: 1)"
+        },
+        {
+          "line": 21,
+          "code": "let den = UnsafeMutablePointer<mpz_t>.allocate(capacity: 1)"
+        },
+        {
+          "line": 22,
+          "code": "let num = UnsafeMutablePointer<mpz_t>.allocate(capacity: 1)"
+        },
+        {
+          "line": 45,
+          "code": "func extractDigit(_ n: UInt) -> UInt {"
+        },
+        {
+          "line": 48,
+          "code": "    __gmpz_tdiv_q(tmp1, tmp2, den)"
+        },
+        {
+          "line": 79,
+          "code": "\td = extractDigit(3)"
+        },
+        {
+          "line": 80,
+          "code": "\td4 = extractDigit(4)"
+        }
+      ],
+      "existing_loc": 72,
+      "report": "swift-comparison/20261010/results/timings.json",
+      "source_report": "swift-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-ghc-6",
+      "id": "pidigits-ghc-6",
+      "language": "haskell",
+      "source": "functional-comparison/20261010/sources/pidigits-ghc-6.hs",
+      "source_sha256": "91fae8b100e9873a978882102e652c60d51db566757ecd501a9c4690f2481324",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-ghc-6",
+      "review_note": "Lazy evaluation skips both quotients on the permitted n>a guard; when a candidate is tested, both 3$t and 4$t use the actual div helper.",
+      "extraction_evidence": [
+        {
+          "line": 21,
+          "code": " j # s | n>a || q/=r = k # t"
+        },
+        {
+          "line": 23,
+          "code": "  where k = j+1; t@(n,a,d)=k&s; q=3$t; r=4$t -- two calls to extractDigit"
+        },
+        {
+          "line": 24,
+          "code": " c$(n,a,d) = (c*n+a)`div`d -- extractDigit"
+        }
+      ],
+      "existing_loc": 18,
+      "report": "functional-comparison/20261010/results/timings.json",
+      "source_report": "functional-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-ghc-3",
+      "id": "pidigits-ghc-3",
+      "language": "haskell",
+      "source": "functional-comparison/20261010/sources/pidigits-ghc-3.hs",
+      "source_sha256": "d6ed647dc1582d56c2119f2c11ebe45657673fb387479d779af88a66474f94af",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-ghc-3",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 18,
+          "code": "flr  x           (F q r s t) = (q*x + r) `div` (s*x + t)"
+        },
+        {
+          "line": 21,
+          "code": "str z (x:xs) | y == flr 4 z = y : str (comp (F 10 (-10*y) 0 1) z) (x:xs)  "
+        },
+        {
+          "line": 22,
+          "code": "             | otherwise    =     str (comp z x) xs     where y = flr 3 z"
+        }
+      ],
+      "existing_loc": 11,
+      "report": "functional-comparison/20261010/results/timings.json",
+      "source_report": "functional-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-ocaml-5",
+      "id": "pidigits-ocaml-5",
+      "language": "ocaml",
+      "source": "functional-comparison/20261010/sources/pidigits-ocaml-5.ml",
+      "source_sha256": "98109e6b36285d941dd7d8adbdb2dae6a6d752ea9cd40fa02372810b6b721cc4",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-ocaml-5",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 16,
+          "code": "let extract (num,den,acc) nth = Z.((nth * num + acc) / den |> to_int)"
+        },
+        {
+          "line": 18,
+          "code": "let next z = extract z big_3"
+        },
+        {
+          "line": 20,
+          "code": "let safe z n = extract z big_4 = n"
+        },
+        {
+          "line": 38,
+          "code": "  if safe z d then"
+        }
+      ],
+      "existing_loc": 32,
+      "report": "functional-comparison/20261010/results/timings.json",
+      "source_report": "functional-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-ocaml-7",
+      "id": "pidigits-ocaml-7",
+      "language": "ocaml",
+      "source": "functional-comparison/20261010/sources/pidigits-ocaml-7.ml",
+      "source_sha256": "7e4d3ef208238b07a6dd68ef4c24bd35aa2fd1d2e4904bb4c3d343782204a404",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-ocaml-7",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 8,
+          "code": "let extract_digit ="
+        },
+        {
+          "line": 16,
+          "code": "    Mpz.tdiv_q tmp1 tmp2 den;"
+        },
+        {
+          "line": 17,
+          "code": "    Mpz.get_int tmp1 (* (nth * num + acc) / den |> to_int *)"
+        },
+        {
+          "line": 38,
+          "code": "  let d = extract_digit z 3 in"
+        },
+        {
+          "line": 39,
+          "code": "  if extract_digit z 4 = d"
+        }
+      ],
+      "existing_loc": 48,
+      "report": "functional-comparison/20261010/results/timings.json",
+      "source_report": "functional-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:matlab-compact",
+      "id": "matlab-compact",
+      "language": "matlab",
+      "source": "matlab-comparison/20261010/sources/pidigits_compact.m",
+      "source_sha256": "292c4aad088d3f2e8084e46bf20b0352e493f1cb4ba9a8d9998bc326a071d6dd",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "matlab-compact",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "% https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/"
+        },
+        {
+          "line": 7,
+          "code": "t = q;"
+        },
+        {
+          "line": 12,
+          "code": "    a = q.multiply(big(3)).add(r).divide(t);"
+        },
+        {
+          "line": 13,
+          "code": "    b = q.multiply(big(4)).add(r).divide(t);"
+        },
+        {
+          "line": 26,
+          "code": "        t = t.multiply(big(2*k+1));"
+        }
+      ],
+      "existing_loc": 30,
+      "report": "matlab-comparison/20261010/exports/20261010T192801960763Z/timings.json",
+      "source_report": "matlab-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:matlab-optimized",
+      "id": "matlab-optimized",
+      "language": "matlab",
+      "source": "matlab-comparison/20261010/sources/pidigits_optimized.m",
+      "source_sha256": "ee5d6b95aeed42d4eee74e255a1c06aed04eecd731f14a9f90f762c89f4daf63",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "matlab-optimized",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "% https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/"
+        },
+        {
+          "line": 7,
+          "code": "t = q;"
+        },
+        {
+          "line": 15,
+          "code": "    a = q.multiply(three).add(r).divide(t);"
+        },
+        {
+          "line": 16,
+          "code": "    b = q.multiply(four).add(r).divide(t);"
+        },
+        {
+          "line": 30,
+          "code": "        t = t.multiply(odd);"
+        }
+      ],
+      "existing_loc": 31,
+      "report": "matlab-comparison/20261010/exports/20261010T192801960763Z/timings.json",
+      "source_report": "matlab-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-erlang-2",
+      "id": "pidigits-erlang-2",
+      "language": "erlang",
+      "source": "erlang-comparison/20261010/sources/pidigits-erlang-2.erl",
+      "source_sha256": "015899cd3d1691016a43ee541f839b15b3040ebc2dbbea0a0b0e7bbe84804ea9",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-erlang-2",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "% https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 10,
+          "code": "-export([main/1])."
+        },
+        {
+          "line": 20,
+          "code": "next({Q, R, T}) -> (Q*3 + R) div T."
+        },
+        {
+          "line": 22,
+          "code": "safe({Q, R, T}, N) -> N == (Q*4 + R) div T."
+        },
+        {
+          "line": 28,
+          "code": "    case safe(Z, Y) of"
+        }
+      ],
+      "existing_loc": 33,
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "source_report": "erlang-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-erlang-3",
+      "id": "pidigits-erlang-3",
+      "language": "erlang",
+      "source": "erlang-comparison/20261010/sources/pidigits-erlang-3.erl",
+      "source_sha256": "3310461c73c004633339c749b906365dce5b298f55064826d37f92ce2d4aaa6c",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-erlang-3",
+      "review_note": "The shared 3q+r numerator is reused, but both (3q+r)/t and ((3q+r)+q)/t remain actual arbitrary-precision divisions.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "% https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 13,
+          "code": "-export([main/1])."
+        },
+        {
+          "line": 27,
+          "code": "    Y = Q3R div T,"
+        },
+        {
+          "line": 28,
+          "code": "    Safe = Y == (Q3R + Q) div T,"
+        },
+        {
+          "line": 29,
+          "code": "    case Safe of"
+        }
+      ],
+      "existing_loc": 43,
+      "report": "erlang-comparison/20261010/results/timings.json",
+      "source_report": "erlang-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-racket-1",
+      "id": "pidigits-racket-1",
+      "language": "racket",
+      "source": "lisp-racket-comparison/20261010/sources/pidigits-racket-1.rkt",
+      "source_sha256": "834572babe37e41ab77a4819658792f370797f83eb75d5d6951cde3b6545bc65",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-racket-1",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 4,
+          "code": ";; https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 9,
+          "code": "(require racket/cmdline)"
+        },
+        {
+          "line": 11,
+          "code": "(define (floor_ev q r s t x)"
+        },
+        {
+          "line": 12,
+          "code": "  (quotient (+ (* q x) r) (+ (* s x) t)))"
+        },
+        {
+          "line": 20,
+          "code": "(define (next q r s t) (floor_ev q r s t 3))"
+        },
+        {
+          "line": 21,
+          "code": "(define (safe? q r s t n) (= n (floor_ev q r s t 4)))"
+        },
+        {
+          "line": 28,
+          "code": "        (if (safe? q r s t y)"
+        }
+      ],
+      "existing_loc": 33,
+      "report": "lisp-racket-comparison/20261010/results/timings.json",
+      "source_report": "lisp-racket-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-sbcl-3-faithful",
+      "id": "pidigits-sbcl-3-faithful",
+      "language": "lisp",
+      "source": "lisp-racket-comparison/20261010/sources/pidigits-sbcl-3-faithful.lisp",
+      "source_sha256": "1e1d1a602c7c045047865d0535083aa98c261b8a3043b363be43c1dc7ed9c15d",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-sbcl-3-faithful",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": ";; https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 8,
+          "code": "(declaim (optimize (speed 3) (debug 0) (space 0) (safety 0)))"
+        },
+        {
+          "line": 15,
+          "code": "(defun extract-digit (nth)"
+        },
+        {
+          "line": 17,
+          "code": "  (the fixnum (floor (+ (* num nth) acc) den)))"
+        },
+        {
+          "line": 43,
+          "code": "    (setf d (extract-digit 3))"
+        },
+        {
+          "line": 44,
+          "code": "    (when (/= d (extract-digit 4))"
+        }
+      ],
+      "existing_loc": 41,
+      "report": "lisp-racket-comparison/20261010/results/timings.json",
+      "source_report": "lisp-racket-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-racket-2-faithful",
+      "id": "pidigits-racket-2-faithful",
+      "language": "racket",
+      "source": "lisp-racket-comparison/20261010/sources/pidigits-racket-2-faithful.rkt",
+      "source_sha256": "327a318cecc4faf5d3c6d1a12e633b3c48359d8e39ec3b4798c987e89f61177a",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-racket-2-faithful",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 4,
+          "code": ";; https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 9,
+          "code": "(require racket/cmdline"
+        },
+        {
+          "line": 10,
+          "code": "         (for-syntax racket/base)"
+        },
+        {
+          "line": 11,
+          "code": "         ffi/unsafe)"
+        },
+        {
+          "line": 14,
+          "code": "(define libgmp (ffi-lib \"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\"))"
+        },
+        {
+          "line": 27,
+          "code": "(defgmp fdiv_q    _mpz-pointer _mpz-pointer _mpz-pointer -> _void)"
+        },
+        {
+          "line": 45,
+          "code": "    (syntax-case* expr (= += -= + * / < >) sym=?"
+        },
+        {
+          "line": 50,
+          "code": "      [(x = y / z)  #'(fdiv_q x y z)]"
+        },
+        {
+          "line": 66,
+          "code": "  (define (extract-digit n)"
+        },
+        {
+          "line": 67,
+          "code": "    (gmp _r = _x0 * n, _r = _r + _x1, _r = _r / _x2, get _r))"
+        },
+        {
+          "line": 79,
+          "code": "    (let ([d (extract-digit 3)])"
+        },
+        {
+          "line": 80,
+          "code": "        (if (not (= d (extract-digit 4)))"
+        }
+      ],
+      "existing_loc": 87,
+      "report": "lisp-racket-comparison/20261010/results/timings.json",
+      "source_report": "lisp-racket-comparison/20261010/source-audit.json"
+    },
+    {
+      "key": "pidigits:pidigits-roc-idiomatic",
+      "id": "pidigits-roc-idiomatic",
+      "language": "roc",
+      "source": "zig-odin-roc-elm-comparison/20261010/sources/pidigits-roc-idiomatic.roc",
+      "source_sha256": "90f9e6263c342c81898c1692d394b4d9b58a1060c61baf7c56d6fe303781d51b",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-roc-idiomatic",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "    pf: platform \"https://github.com/roc-lang/basic-cli/releases/download/0.20.0/X73hGh05nNTkDHU06FHC0YfFaQB1pimX7gncRcao5mU.tar.br\","
+        },
+        {
+          "line": 26,
+          "code": "        if value < base then big(Bool.false,[value]) else big(Bool.false,[value%base,value//base])"
+        },
+        {
+          "line": 43,
+          "code": "        add_digits(a,b,index+1,sum//base,List.append(output,sum%base))"
+        },
+        {
+          "line": 63,
+          "code": "            multiply_digits(digits,factor,index,carry//Num.to_u128(base),List.append(output,Num.to_u64(carry%Num.to_u128(base))))"
+        },
+        {
+          "line": 67,
+          "code": "        multiply_digits(digits,factor,index+1,product//Num.to_u128(base),List.append(output,digit))"
+        },
+        {
+          "line": 76,
+          "code": "    List.concat(List.repeat(0u64,bits//32),multiplied.digits)"
+        },
+        {
+          "line": 77,
+          "code": "power_bit = |bits| List.append(List.repeat(0u64,bits//32),Num.shift_left_by(1u64,Num.to_u8(bits%32)))"
+        },
+        {
+          "line": 78,
+          "code": "divide_abs = |remainder,divisor,quotient|"
+        },
+        {
+          "line": 79,
+          "code": "    if compare_abs(remainder,divisor) == LT then (quotient,remainder) else"
+        },
+        {
+          "line": 85,
+          "code": "        updated = add_abs(quotient,power_bit(bits))"
+        },
+        {
+          "line": 86,
+          "code": "        divide_abs(next,divisor,updated)"
+        },
+        {
+          "line": 87,
+          "code": "big_floor : Big, Big -> Big"
+        },
+        {
+          "line": 88,
+          "code": "big_floor = |a,b|"
+        },
+        {
+          "line": 90,
+          "code": "        (quotient,remainder) = divide_abs(a.digits,b.digits,[])"
+        },
+        {
+          "line": 92,
+          "code": "        rounded = if negative && !List.is_empty(remainder) then add_abs(quotient,[1u64]) else quotient"
+        },
+        {
+          "line": 94,
+          "code": "extract = |factor,q,r,t| big_floor(big_add(big_mul(q,factor),r),t)"
+        },
+        {
+          "line": 97,
+          "code": "        first = extract(3,q,r,t)"
+        },
+        {
+          "line": 98,
+          "code": "        second = extract(4,q,r,t)"
+        }
+      ],
+      "existing_loc": 120,
+      "report": "zig-odin-roc-elm-comparison/20261010/results/timings-complete.json",
+      "source_report": "zig-odin-roc-elm-comparison/20261010/source-audit-complete.json"
+    },
+    {
+      "key": "pidigits:pidigits-odin-gmp",
+      "id": "pidigits-odin-gmp",
+      "language": "odin",
+      "source": "zig-odin-roc-elm-comparison/20261010/sources/pidigits-odin-gmp.odin",
+      "source_sha256": "376714974cc38e30b3eadb87afe6a642d814a9ac588339b10c7a5cced8501f5f",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-odin-gmp",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 15,
+          "code": "    fdiv_q :: proc(x,a,b: ^Integer) ---"
+        },
+        {
+          "line": 39,
+          "code": "        fdiv_q(first,a,t)"
+        },
+        {
+          "line": 42,
+          "code": "        fdiv_q(second,b,t)"
+        }
+      ],
+      "existing_loc": 67,
+      "report": "zig-odin-roc-elm-comparison/20261010/results/timings-complete.json",
+      "source_report": "zig-odin-roc-elm-comparison/20261010/source-audit-complete.json"
+    },
+    {
+      "key": "pidigits:pidigits-zig-gmp",
+      "id": "pidigits-zig-gmp",
+      "language": "zig",
+      "source": "zig-odin-roc-elm-comparison/20261010/sources/pidigits-zig-gmp.zig",
+      "source_sha256": "5a95d65236c8be8cfb4c1c52cc3a344b655e7631e133697d96aabb55bd38f490",
+      "support_sources": [],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-zig-gmp",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 9,
+          "code": "extern \"c\" fn __gmpz_fdiv_q(*Integer, *const Integer, *const Integer) void;"
+        },
+        {
+          "line": 25,
+          "code": "    const t = &values[2];"
+        },
+        {
+          "line": 38,
+          "code": "        __gmpz_fdiv_q(first, a, t);"
+        },
+        {
+          "line": 41,
+          "code": "        __gmpz_fdiv_q(second, b, t);"
+        }
+      ],
+      "existing_loc": 66,
+      "report": "zig-odin-roc-elm-comparison/20261010/results/timings-complete.json",
+      "source_report": "zig-odin-roc-elm-comparison/20261010/source-audit-complete.json"
+    },
+    {
+      "key": "pidigits:pidigits-elm-optimized",
+      "id": "pidigits-elm-optimized",
+      "language": "elm",
+      "source": "zig-odin-roc-elm-comparison/20261010/sources/elm/PidigitsOptimized.elm",
+      "source_sha256": "b9db701646c807614836f0d3f31ac4be1fe638a0c22f4d4505f8e66678b99ebd",
+      "support_sources": [
+        {
+          "path": "zig-odin-roc-elm-comparison/20261010/support/elm-runner.cjs",
+          "sha256": "e8775fd5c317dd4e8fa12ad84099259d35fe53a2d92299e69fd4795e9e938330"
+        },
+        {
+          "path": "zig-odin-roc-elm-comparison/20261010/sources/elm/elm.json",
+          "sha256": "90f96ba31a5dc721a3dfd4571d478cded9779069df3dc14064047b43f6e6fbc1"
+        }
+      ],
+      "classification": "two_exact_extracts_for_each_tested_candidate",
+      "conforms": true,
+      "reviewed_as": "pidigits-elm-optimized",
+      "review_note": "The canonical sequential LFT stream compares actual exact arbitrary-precision endpoint quotients for 3 and 4; no one-quotient substitute is used.",
+      "extraction_evidence": [
+        {
+          "line": 14,
+          "code": "z n = I.fromSafeInt n"
+        },
+        {
+          "line": 15,
+          "code": "extract a q r t ="
+        },
+        {
+          "line": 20,
+          "code": "            first = extract 3 q r t"
+        },
+        {
+          "line": 21,
+          "code": "            second = extract 4 q r t"
+        }
+      ],
+      "existing_loc": 44,
+      "report": "zig-odin-roc-elm-comparison/20261010/results/timings-complete.json",
+      "source_report": "zig-odin-roc-elm-comparison/20261010/source-audit-complete.json"
+    },
+    {
+      "key": "pidigits:pidigits-csharpcore-6-arm64-faithful-jit",
+      "id": "pidigits-csharpcore-6-arm64-faithful-jit",
+      "language": "csharp",
+      "source": "remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-6-arm64-faithful.cs",
+      "source_sha256": "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-csharpcore-6-arm64-faithful-jit",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 11,
+          "code": "unsafe class Program"
+        },
+        {
+          "line": 33,
+          "code": "        char* builder = stackalloc char[((n + 9) / 10) * (14 + args[0].Length)];"
+        },
+        {
+          "line": 65,
+          "code": "                digit = ExtractDigit(3, &temp1, &temp2, "
+        },
+        {
+          "line": 68,
+          "code": "            while (digit != ExtractDigit(4, &temp1, &temp2, "
+        },
+        {
+          "line": 121,
+          "code": "    private static int ExtractDigit(int nth, mpz_t* temp1, mpz_t* temp2, "
+        },
+        {
+          "line": 129,
+          "code": "        GmpBindings.mpz_tdiv_q(temp1, temp2, denominator);"
+        },
+        {
+          "line": 145,
+          "code": "internal static unsafe class GmpBindings"
+        },
+        {
+          "line": 149,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_init\")]"
+        },
+        {
+          "line": 152,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_clear\")]"
+        },
+        {
+          "line": 155,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_add\")]"
+        },
+        {
+          "line": 159,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_addmul_ui\")]"
+        },
+        {
+          "line": 163,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_cmp\")]"
+        },
+        {
+          "line": 167,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_get_ui\")]"
+        },
+        {
+          "line": 170,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_init_set_ui\")]"
+        },
+        {
+          "line": 174,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_mul_ui\")]"
+        },
+        {
+          "line": 178,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_submul_ui\")]"
+        },
+        {
+          "line": 182,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_tdiv_q\")]"
+        },
+        {
+          "line": 183,
+          "code": "    internal extern static void mpz_tdiv_q("
+        },
+        {
+          "line": 184,
+          "code": "            mpz_t* quotient, mpz_t* dividend, mpz_t* divisor);"
+        }
+      ],
+      "existing_loc": 119,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-csharpcore-7-jit",
+      "id": "pidigits-csharpcore-7-jit",
+      "language": "csharp",
+      "source": "remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-7.cs",
+      "source_sha256": "a8e114e5b22bea6aa9e373960b09e1eb42eaf20836d921e6591803194a381413",
+      "support_sources": [],
+      "classification": "equivalent_endpoint_numerator_state_two_exact_divisions",
+      "conforms": true,
+      "reviewed_as": "pidigits-csharpcore-7-jit",
+      "review_note": "Two actual arbitrary-precision quotients use endpoint numerators n1=4q+r and n2=3q+r. This is a change of basis for the same sequential LFT spigot, not a different pi algorithm.",
+      "extraction_evidence": [
+        {
+          "line": 1,
+          "code": "\ufeff// The Computer Language Benchmarks Game"
+        },
+        {
+          "line": 46,
+          "code": "            var u = new BigInteger();"
+        },
+        {
+          "line": 53,
+          "code": "                u = BigInteger.Divide(n1, d);"
+        },
+        {
+          "line": 54,
+          "code": "                v = BigInteger.Divide(n2, d);"
+        },
+        {
+          "line": 61,
+          "code": "                    u = BigInteger.Multiply(u, -10);"
+        },
+        {
+          "line": 62,
+          "code": "                    u = BigInteger.Multiply(u, d);"
+        },
+        {
+          "line": 72,
+          "code": "                    u = BigInteger.Multiply(n1, k2 - 1);"
+        },
+        {
+          "line": 76,
+          "code": "                    u = BigInteger.Multiply(n2, k + 2);"
+        }
+      ],
+      "existing_loc": 62,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-fsharpcore-6-arm64-faithful-jit",
+      "id": "pidigits-fsharpcore-6-arm64-faithful-jit",
+      "language": "fsharp",
+      "source": "remaining-languages-comparison/20261011/sources/fsharp/pidigits-fsharpcore-6-arm64-faithful.fs",
+      "source_sha256": "54d63497939574cee5c4b9e8ca2ff2d7f24da671eb0478c0b04263e069bd091d",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-fsharpcore-6-arm64-faithful-jit",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 15,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_init\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 18,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_init_set_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 21,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_mul_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 24,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_add\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 27,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_tdiv_q\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 28,
+          "code": "extern void private mpzTdivQ(MPZ& _dest, MPZ& _src, MPZ& _src2)"
+        },
+        {
+          "line": 30,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_get_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 33,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_submul_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 36,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_addmul_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 39,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_cmp\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 53,
+          "code": "    let extractDigit nth ="
+        },
+        {
+          "line": 56,
+          "code": "        mpzTdivQ(&tmp1, &tmp2, &den)"
+        },
+        {
+          "line": 91,
+          "code": "            let d = extractDigit 3UL"
+        },
+        {
+          "line": 92,
+          "code": "            if d = extractDigit 4UL then"
+        }
+      ],
+      "existing_loc": 80,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-csharpcore-6-arm64-faithful-aot",
+      "id": "pidigits-csharpcore-6-arm64-faithful-aot",
+      "language": "csharp-aot",
+      "source": "remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-6-arm64-faithful.cs",
+      "source_sha256": "a5e9734cd31f06a454ac4d2ed11bb249e8be236ea84eead9cf4677d8fe99679c",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-csharpcore-6-arm64-faithful-jit",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 11,
+          "code": "unsafe class Program"
+        },
+        {
+          "line": 33,
+          "code": "        char* builder = stackalloc char[((n + 9) / 10) * (14 + args[0].Length)];"
+        },
+        {
+          "line": 65,
+          "code": "                digit = ExtractDigit(3, &temp1, &temp2, "
+        },
+        {
+          "line": 68,
+          "code": "            while (digit != ExtractDigit(4, &temp1, &temp2, "
+        },
+        {
+          "line": 121,
+          "code": "    private static int ExtractDigit(int nth, mpz_t* temp1, mpz_t* temp2, "
+        },
+        {
+          "line": 129,
+          "code": "        GmpBindings.mpz_tdiv_q(temp1, temp2, denominator);"
+        },
+        {
+          "line": 145,
+          "code": "internal static unsafe class GmpBindings"
+        },
+        {
+          "line": 149,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_init\")]"
+        },
+        {
+          "line": 152,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_clear\")]"
+        },
+        {
+          "line": 155,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_add\")]"
+        },
+        {
+          "line": 159,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_addmul_ui\")]"
+        },
+        {
+          "line": 163,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_cmp\")]"
+        },
+        {
+          "line": 167,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_get_ui\")]"
+        },
+        {
+          "line": 170,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_init_set_ui\")]"
+        },
+        {
+          "line": 174,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_mul_ui\")]"
+        },
+        {
+          "line": 178,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_submul_ui\")]"
+        },
+        {
+          "line": 182,
+          "code": "    [DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\", EntryPoint = \"__gmpz_tdiv_q\")]"
+        },
+        {
+          "line": 183,
+          "code": "    internal extern static void mpz_tdiv_q("
+        },
+        {
+          "line": 184,
+          "code": "            mpz_t* quotient, mpz_t* dividend, mpz_t* divisor);"
+        }
+      ],
+      "existing_loc": 119,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-csharpcore-7-aot",
+      "id": "pidigits-csharpcore-7-aot",
+      "language": "csharp-aot",
+      "source": "remaining-languages-comparison/20261011/sources/csharp/pidigits-csharpcore-7.cs",
+      "source_sha256": "a8e114e5b22bea6aa9e373960b09e1eb42eaf20836d921e6591803194a381413",
+      "support_sources": [],
+      "classification": "equivalent_endpoint_numerator_state_two_exact_divisions",
+      "conforms": true,
+      "reviewed_as": "pidigits-csharpcore-7-jit",
+      "review_note": "Two actual arbitrary-precision quotients use endpoint numerators n1=4q+r and n2=3q+r. This is a change of basis for the same sequential LFT spigot, not a different pi algorithm.",
+      "extraction_evidence": [
+        {
+          "line": 1,
+          "code": "\ufeff// The Computer Language Benchmarks Game"
+        },
+        {
+          "line": 46,
+          "code": "            var u = new BigInteger();"
+        },
+        {
+          "line": 53,
+          "code": "                u = BigInteger.Divide(n1, d);"
+        },
+        {
+          "line": 54,
+          "code": "                v = BigInteger.Divide(n2, d);"
+        },
+        {
+          "line": 61,
+          "code": "                    u = BigInteger.Multiply(u, -10);"
+        },
+        {
+          "line": 62,
+          "code": "                    u = BigInteger.Multiply(u, d);"
+        },
+        {
+          "line": 72,
+          "code": "                    u = BigInteger.Multiply(n1, k2 - 1);"
+        },
+        {
+          "line": 76,
+          "code": "                    u = BigInteger.Multiply(n2, k + 2);"
+        }
+      ],
+      "existing_loc": 62,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-fsharpcore-6-arm64-faithful-aot",
+      "id": "pidigits-fsharpcore-6-arm64-faithful-aot",
+      "language": "fsharp-aot",
+      "source": "remaining-languages-comparison/20261011/sources/fsharp/pidigits-fsharpcore-6-arm64-faithful.fs",
+      "source_sha256": "54d63497939574cee5c4b9e8ca2ff2d7f24da671eb0478c0b04263e069bd091d",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-fsharpcore-6-arm64-faithful-jit",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 15,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_init\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 18,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_init_set_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 21,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_mul_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 24,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_add\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 27,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_tdiv_q\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 28,
+          "code": "extern void private mpzTdivQ(MPZ& _dest, MPZ& _src, MPZ& _src2)"
+        },
+        {
+          "line": 30,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_get_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 33,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_submul_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 36,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_addmul_ui\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 39,
+          "code": "[<DllImport(\"/opt/homebrew/opt/gmp/lib/libgmp.10.dylib\",EntryPoint=\"__gmpz_cmp\",ExactSpelling=true)>]"
+        },
+        {
+          "line": 53,
+          "code": "    let extractDigit nth ="
+        },
+        {
+          "line": 56,
+          "code": "        mpzTdivQ(&tmp1, &tmp2, &den)"
+        },
+        {
+          "line": 91,
+          "code": "            let d = extractDigit 3UL"
+        },
+        {
+          "line": 92,
+          "code": "            if d = extractDigit 4UL then"
+        }
+      ],
+      "existing_loc": 80,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-gnat-2",
+      "id": "pidigits-gnat-2",
+      "language": "ada",
+      "source": "remaining-languages-comparison/20261011/sources/ada/pidigits-gnat-2.adb",
+      "source_sha256": "0b3d2bdd6e8486b1a901a81941eb661cad6e140d920ce50fd0a91561dd62ca6d",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-gnat-2",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 49,
+          "code": "    procedure mpz_tdiv_q (Dest: out mpz_t; Src1, Src2: in mpz_t) with Inline=>True;"
+        },
+        {
+          "line": 50,
+          "code": "    pragma Import(C, mpz_tdiv_q, \"__gmpz_tdiv_q\");"
+        },
+        {
+          "line": 71,
+          "code": "  function Extract(X: Interfaces.C.Unsigned_long) return Interfaces.C.unsigned with Inline=>True;"
+        },
+        {
+          "line": 72,
+          "code": "  function Extract(X: Interfaces.C.Unsigned_long) return Interfaces.C.unsigned is"
+        },
+        {
+          "line": 76,
+          "code": "    mpz_tdiv_q(Tmp1, Tmp2, Den);"
+        },
+        {
+          "line": 78,
+          "code": "  end Extract;"
+        },
+        {
+          "line": 128,
+          "code": "      D := Extract(3);"
+        },
+        {
+          "line": 129,
+          "code": "      D4 := Extract(4);"
+        },
+        {
+          "line": 130,
+          "code": "      if D /= D4 then "
+        },
+        {
+          "line": 142,
+          "code": "    if I rem 10 /= 0 then"
+        }
+      ],
+      "existing_loc": 112,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-fpascal-3",
+      "id": "pidigits-fpascal-3",
+      "language": "pascal",
+      "source": "remaining-languages-comparison/20261011/sources/pascal/pidigits-fpascal-3.pas",
+      "source_sha256": "57a43ec532a6bbdc0d1bebe3d94560f8a9566d6a5b70485302f8dddb81ec7594",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-fpascal-3",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "  https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 19,
+          "code": "Function ExtractDigit(nth: LongWord): LongWord; inline;"
+        },
+        {
+          "line": 24,
+          "code": "    mpz_tdiv_q(tmp1, tmp2, den);"
+        },
+        {
+          "line": 26,
+          "code": "    ExtractDigit := mpz_get_ui(tmp1)"
+        },
+        {
+          "line": 64,
+          "code": "    d := ExtractDigit(3);"
+        },
+        {
+          "line": 65,
+          "code": "    d4 := ExtractDigit(4);"
+        }
+      ],
+      "existing_loc": 55,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-fortran-4",
+      "id": "pidigits-fortran-4",
+      "language": "fortran",
+      "source": "remaining-languages-comparison/20261011/sources/fortran/pidigits-fortran-4.f90",
+      "source_sha256": "53468cf617ab77aa79dd83b3958ca2a7e5461ddb4a184b2bf43fc6b6ee407d36",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-fortran-4",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "! https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 78,
+          "code": "     ! void mpz_tdiv_q (mpz_t rop, mpz_t op1, mpz_t op2)     "
+        },
+        {
+          "line": 79,
+          "code": "     subroutine mpz_tdiv_q(op1, op2, op3) bind(C, name='__gmpz_tdiv_q')"
+        },
+        {
+          "line": 84,
+          "code": "     end subroutine mpz_tdiv_q"
+        },
+        {
+          "line": 115,
+          "code": "        d = extract_digit(3_c_long)"
+        },
+        {
+          "line": 116,
+          "code": "        if (d /= extract_digit(4_c_long)) cycle"
+        },
+        {
+          "line": 122,
+          "code": "            write(*, '(i0.10, a, i0)') intout, achar(9)//':', i"
+        },
+        {
+          "line": 131,
+          "code": "    if (j /= 0) then"
+        },
+        {
+          "line": 134,
+          "code": "        write(*, '(2a, i0)') adjustl(strout), achar(9)//':', i"
+        },
+        {
+          "line": 138,
+          "code": "    integer function extract_digit(nth)"
+        },
+        {
+          "line": 143,
+          "code": "        call mpz_tdiv_q(tmp1, tmp2, den)"
+        },
+        {
+          "line": 144,
+          "code": "        extract_digit = mpz_get_ui(tmp1)"
+        },
+        {
+          "line": 146,
+          "code": "    end function extract_digit"
+        }
+      ],
+      "existing_loc": 121,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-dart-2",
+      "id": "pidigits-dart-2",
+      "language": "dart",
+      "source": "remaining-languages-comparison/20261011/sources/dart/pidigits-dart-2.dart",
+      "source_sha256": "a7c014da189a420ee39ff265f75d2238c201e31efa61101a255a29ba6c8403f3",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-dart-2",
+      "review_note": "The current counted source is already corrected: t=m~/d; u=(m+n)~/d; equality compares the two actual quotients. The published one-extract form is not the current endpoint.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 29,
+          "code": "  var t = BigInt.zero;"
+        },
+        {
+          "line": 30,
+          "code": "  var u = BigInt.one;"
+        },
+        {
+          "line": 35,
+          "code": "    t = n << 1;"
+        },
+        {
+          "line": 43,
+          "code": "      t = m ~/ d;"
+        },
+        {
+          "line": 44,
+          "code": "      u = (m + n) ~/ d;"
+        },
+        {
+          "line": 46,
+          "code": "      if (t == u) {"
+        }
+      ],
+      "existing_loc": 53,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-dart-jit-2",
+      "id": "pidigits-dart-jit-2",
+      "language": "dart-jit",
+      "source": "remaining-languages-comparison/20261011/sources/dart/pidigits-dart-2.dart",
+      "source_sha256": "a7c014da189a420ee39ff265f75d2238c201e31efa61101a255a29ba6c8403f3",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-dart-2",
+      "review_note": "The current counted source is already corrected: t=m~/d; u=(m+n)~/d; equality compares the two actual quotients. The published one-extract form is not the current endpoint.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 29,
+          "code": "  var t = BigInt.zero;"
+        },
+        {
+          "line": 30,
+          "code": "  var u = BigInt.one;"
+        },
+        {
+          "line": 35,
+          "code": "    t = n << 1;"
+        },
+        {
+          "line": 43,
+          "code": "      t = m ~/ d;"
+        },
+        {
+          "line": 44,
+          "code": "      u = (m + n) ~/ d;"
+        },
+        {
+          "line": 46,
+          "code": "      if (t == u) {"
+        }
+      ],
+      "existing_loc": 53,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-smalltalk-published-1",
+      "id": "pidigits-smalltalk-published-1",
+      "language": "smalltalk",
+      "source": "remaining-languages-comparison/20261011/sources/smalltalk/pidigits-smalltalk-published-1.st",
+      "source_sha256": "243615734d946dbb8534cfdb20c6ac951942ae02ffdba0cf364e4e52220a364c",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-smalltalk-published-1",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 3,
+          "code": "    https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 59,
+          "code": "extract"
+        },
+        {
+          "line": 63,
+          "code": "    digit := tmp // denom."
+        },
+        {
+          "line": 64,
+          "code": "    digit = ((tmp + numer) // denom) ifFalse: [^nil]."
+        },
+        {
+          "line": 87,
+          "code": "    [ self step. (digit := self extract) isNil ] whileTrue."
+        }
+      ],
+      "existing_loc": 75,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:pidigits-smalltalk-compact",
+      "id": "pidigits-smalltalk-compact",
+      "language": "smalltalk",
+      "source": "remaining-languages-comparison/20261011/sources/smalltalk/pidigits-smalltalk-compact.st",
+      "source_sha256": "8dc7a19d622c659ee77eed3aab147e4d9a30ea208c9599372b6c2f17f21166ca",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "pidigits-smalltalk-compact",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 23,
+          "code": "            digit := (q * 3 + r) // t."
+        },
+        {
+          "line": 24,
+          "code": "            digit = ((q * 4 + r) // t) ifTrue: ["
+        }
+      ],
+      "existing_loc": 35,
+      "report": "remaining-languages-comparison/20261011/results/native-timings-v2.json",
+      "source_report": "remaining-languages-comparison/20261011/source-audit-v2.json"
+    },
+    {
+      "key": "pidigits:d-compact",
+      "id": "d-compact",
+      "language": "d",
+      "source": "d-comparison/20261011/sources/pidigits/compact.d",
+      "source_sha256": "e2a99730b9893a03bb3d9962b3e1bc3ff432e1142ddd854b88def9eb26ff74c6",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "d-compact",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 18,
+          "code": "        auto digit = (num * 3 + acc) / den;"
+        },
+        {
+          "line": 19,
+          "code": "        auto next = (num * 4 + acc) / den;"
+        }
+      ],
+      "existing_loc": 29,
+      "report": "d-comparison/20261011/results/timings.json",
+      "source_report": "d-comparison/20261011/source-audit.json"
+    },
+    {
+      "key": "pidigits:d-fast",
+      "id": "d-fast",
+      "language": "d",
+      "source": "d-comparison/20261011/sources/pidigits/fast.d",
+      "source_sha256": "adad16c89fa4163f68c2fc3242d9f73b100ef4a441a42468b8d987bc38549b4a",
+      "support_sources": [],
+      "classification": "permitted_guard_two_exact_extracts",
+      "conforms": true,
+      "reviewed_as": "d-fast",
+      "review_note": "A preliminary impossible-candidate guard may skip a test. Every candidate actually tested computes both endpoint extracts using exact arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 22,
+          "code": "    void __gmpz_tdiv_q(ref Z, ref Z, ref Z);"
+        },
+        {
+          "line": 30,
+          "code": "    Z num, acc, den, tmp, div;"
+        },
+        {
+          "line": 31,
+          "code": "    foreach (p; [&num, &acc, &den, &tmp, &div])"
+        },
+        {
+          "line": 33,
+          "code": "    scope (exit) foreach (p; [&num, &acc, &den, &tmp, &div])"
+        },
+        {
+          "line": 37,
+          "code": "    ulong extract(ulong x)"
+        },
+        {
+          "line": 40,
+          "code": "        __gmpz_add(div, tmp, acc);"
+        },
+        {
+          "line": 41,
+          "code": "        __gmpz_tdiv_q(tmp, div, den);"
+        },
+        {
+          "line": 54,
+          "code": "        auto digit = extract(3);"
+        },
+        {
+          "line": 55,
+          "code": "        if (digit != extract(4))"
+        }
+      ],
+      "existing_loc": 63,
+      "report": "d-comparison/20261011/results/timings.json",
+      "source_report": "d-comparison/20261011/source-audit.json"
+    }
+  ],
+  "rejected_endpoints": [
+    {
+      "key": "pidigits:pidigits-node-2",
+      "id": "pidigits-node-2",
+      "language": "javascript",
+      "source": "pidigits/upstream/pidigits-node-2.js",
+      "source_sha256": "8a1f6ac615c7333627543be995663d888b3f9e4189eda5ef2c0fae618710d942",
+      "support_sources": [],
+      "classification": "nonconformant_one_quotient_remainder_test",
+      "conforms": false,
+      "reviewed_as": "pidigits-node-2",
+      "review_note": "Computes t=(3q+r)/tden once; m%tden+q<tden substitutes a remainder predicate for the required second quotient. The predicate is numerically equivalent but omits an actual arbitrary-precision division.",
+      "extraction_evidence": [
+        {
+          "line": 2,
+          "code": "   https://salsa.debian.org/benchmarksgame-team/benchmarksgame/"
+        },
+        {
+          "line": 26,
+          "code": "  let t = 0n;"
+        },
+        {
+          "line": 27,
+          "code": "  let u = 1n;"
+        },
+        {
+          "line": 32,
+          "code": "    t = n << 1n;"
+        },
+        {
+          "line": 40,
+          "code": "      t = m / d;"
+        },
+        {
+          "line": 41,
+          "code": "      u = m % d + n;"
+        }
+      ],
+      "existing_loc": 47,
+      "report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "source_report": "pidigits/results/apple-m3-ac-normal-20261009.json",
+      "retired_samples_seconds": [
+        5.90403425,
+        5.897554625,
+        5.882287292
+      ],
+      "retired_median_seconds": 5.897554625
+    }
+  ],
+  "numerator_basis_proof": "n1=4q+r, n2=3q+r, d=t, hence q=n1-n2 and r=4n2-3n1. The consume updates n1=(2k-1)n1+2n2, n2=(k-1)n1+(k+2)n2, d=(2k+1)d produce the same q=kq and r=(2q+r)(2k+1). Digit production updates each numerator by 10n-10digit*d. Both endpoint quotients remain real divisions.",
+  "corrections": [
+    {
+      "key": "pidigits:pidigits-node-2-two-extracts",
+      "id": "pidigits-node-2-two-extracts",
+      "benchmark": "pidigits",
+      "language": "javascript",
+      "roles": [
+        "compact",
+        "optimized"
+      ],
+      "replaces_keys": [
+        "pidigits:pidigits-node-2"
+      ],
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/sources/pidigits-node-2-two-extracts.js",
+      "source_sha256": "ee3fc53d842622faa6d8bab55a6ed307282fa41190245dfaa6dd8c2ffad8fff0",
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/program/pidigits-node-2.html",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/upstream/pidigits-node-2.js",
+      "upstream_sha256": "8a1f6ac615c7333627543be995663d888b3f9e4189eda5ef2c0fae618710d942",
+      "loc": 49,
+      "normalized_loc": 49,
+      "physical_loc": 49,
+      "loc_metric": "statement-normalized",
+      "loc_expansions": [],
+      "loc_policy": "Nonblank/noncomment source lines. Both independent declarations formerly packed with commas are expanded physically; branch alternatives of a single ternary expression count once.",
+      "adaptations": [
+        "Replace the one-quotient remainder predicate with the actual second exact BigInt division: u=(m+n)/d, then t===u.",
+        "Split the independent var res/count and let i/ns declarations onto separate physical lines. Output and recurrence are otherwise unchanged."
+      ],
+      "command": [
+        "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/sources/pidigits-node-2-two-extracts.js",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg",
+      "runtime_environment": {},
+      "runtime": {
+        "path": "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "sha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+        "version": "v24.19.0"
+      },
+      "build_command": null,
+      "full_n": 10000,
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical sequential unbounded LFT spigot, permitted a>n impossible-candidate guard, both true endpoint divisions for every tested candidate, complete output and padding."
+      },
+      "validation_status": "six_small_byte_exact_checks_passed",
+      "timing_status": "unmeasured",
+      "samples_seconds": [],
+      "small_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/results/small-validation.json",
+        "sha256": "6310a51293f2a1544cf9d286754df5cbc431d938bf009b253316c716f4615d48",
+        "n": [
+          1,
+          9,
+          10,
+          27,
+          30,
+          101
+        ],
+        "passed": true
+      }
+    }
+  ],
+  "separate_r_fasta_review": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/fasta/optimized.R",
+    "sha256": "1ed7d6a3768b596598d892fc265a6edd25174b65ef9510684e0bd3f03972b458",
+    "conforms": true,
+    "findings": "Hillis-Steele modular affine scan composes every output seed from the live incoming seed. Integer products and sums are below 2^35, exactly representable in binary64. All draws use seed/139968 and the original unscaled binary64 CDF. The last seed carries across chunks and from IUB into Human. No RNG period or output cache is used."
+  }
+}

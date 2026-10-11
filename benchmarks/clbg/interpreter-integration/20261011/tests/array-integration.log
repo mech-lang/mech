@@ -1,0 +1,22 @@
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 3.38s
+     Running tests/batched_array_cpu.rs (/tmp/mech-execution-modes-target/release/deps/batched_array_cpu-03209a97192d2f8b)
+
+running 14 tests
+test a_constant_final_state_needs_no_live_input_or_previous_state ... ok
+test explicitly_unchecked_execution_publishes_values_that_fail_declared_rules ... ok
+test atan2_preserves_quadrants_axes_and_signed_zero ... ok
+test multi_turn_rejection_keeps_the_last_accepted_turn ... ok
+test fault_selection_uses_instance_before_constraint_order ... ok
+test malformed_input_updates_and_zero_turns_do_not_change_the_session ... ok
+test sine_cosine_pairing_honors_operand_versions_and_updated_inputs ... ok
+test registered_simd_factory_preserves_the_compute_session_contract ... ok
+test two_and_four_term_contractions_keep_mixed_sign_accumulation_order ... ok
+test rejected_late_instance_rolls_back_the_whole_batch_and_can_recover ... ok
+test elementwise_math_and_boolean_predicates_match_scalar_values ... ok
+test tiling_preserves_tail_lanes_and_state_updates ... ok
+test rectangular_matrix_recurrence_matches_existing_cpu_backends ... ok
+test checked_and_unchecked_ekf_match_after_a_hundred_changing_input_turns ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.07s
+

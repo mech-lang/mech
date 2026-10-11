@@ -76,13 +76,24 @@ fn compile(
     input_names: &[&str],
     instances: usize,
 ) -> FixedShapeKernel {
-    let tree = mech_syntax::parse(source).expect("test source must parse");
+    let document = mech_runtime::SourceDocument::parse_resolved(
+        "test://batched-array-cpu",
+        mech_syntax::document::Revision(0),
+        source,
+        mech_syntax::document::ParseConfig::default(),
+    )
+    .expect("test source must parse");
+    assert!(
+        document.is_strictly_clean(),
+        "{:?}",
+        document.snapshot().diagnostics
+    );
     let artifact = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .unwrap()
-        .compile_tree_artifact_with_inputs(
-            &tree,
+        .compile_document_artifact_with_inputs(
+            &document,
             &planning_inputs,
             &input_names
                 .iter()
@@ -726,6 +737,8 @@ fn malformed_input_updates_and_zero_turns_do_not_change_the_session() {
     ));
     let mut array = program.prepare_array_cpu(&inputs).unwrap();
     let initial = array.state().clone();
+    let initial_inputs = program.prepare_cpu(&inputs).unwrap().input_values().clone();
+    assert_eq!(array.input_values(), &initial_inputs);
     assert_eq!(
         array.dispatch_turns(0),
         Err(BatchedExecutionError::ZeroTurns)
@@ -749,10 +762,23 @@ fn malformed_input_updates_and_zero_turns_do_not_change_the_session() {
         array.update_inputs(&BTreeMap::from([("unknown".to_owned(), vec![1.0])])),
         Err(BatchedExecutionError::MissingInput(_))
     ));
+    assert_eq!(array.input_values(), &initial_inputs);
     array.dispatch_turns(1).unwrap();
     let mut scalar = program.prepare_cpu(&inputs).unwrap();
     scalar.dispatch_turns(1).unwrap();
     assert_states_close(scalar.state(), array.state());
+    let updated = BTreeMap::from([
+        ("input".to_owned(), vec![2.0, 20.0, 200.0]),
+        ("scale".to_owned(), vec![0.75]),
+    ]);
+    array.update_inputs(&updated).unwrap();
+    let expected_inputs = program
+        .prepare_cpu(&updated)
+        .unwrap()
+        .input_values()
+        .clone();
+    assert_eq!(array.input_values(), &expected_inputs);
+    assert_ne!(array.input_values(), &initial_inputs);
 }
 
 #[test]
@@ -760,11 +786,37 @@ fn a_constant_final_state_needs_no_live_input_or_previous_state() {
     let source = r#"
 constant publication @compute
 -------------------------------------------------------------------------------
+input := source-input
 ~result := [0f32; 0f32]
-result = [2f32; -3f32]
+result = [input; input]
 result
 "#;
-    let program = compile(source, BTreeMap::new(), &[], 17);
+    let template = compile(
+        source,
+        BTreeMap::from([("source-input".to_owned(), RuntimeHostInputValue::F32(0.0))]),
+        &["input"],
+        17,
+    );
+    let compute = template.compute_program();
+    let mut storage = compute.fixed_shape_storage().unwrap().clone();
+    storage.inputs = Vec::new().into_boxed_slice();
+    for publication in &mut storage.publications {
+        publication.value = [2.0, -3.0].map(ScalarOperand::Constant).into();
+    }
+    storage.states[0].update = [2.0, -3.0].map(ScalarOperand::Constant).into();
+    let constant = ComputeProgram::new(
+        compute.interface().clone(),
+        compute.plan().clone(),
+        ComputeKernel::FixedShape(FixedShapeIr {
+            register_count: match compute.kernel() {
+                ComputeKernel::FixedShape(ir) => ir.register_count,
+                _ => unreachable!(),
+            },
+            instructions: Vec::new().into_boxed_slice(),
+        }),
+    )
+    .with_fixed_shape_storage(storage);
+    let program = FixedShapeKernel::from_compute_program(&constant).unwrap();
     let mut array = program.prepare_array_cpu(&BTreeMap::new()).unwrap();
     array.dispatch_turns(3).unwrap();
     let slot = program.state_layout().next().unwrap().0;

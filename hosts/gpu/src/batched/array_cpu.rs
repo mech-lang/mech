@@ -100,6 +100,7 @@ pub struct BatchedArrayCpuSession {
     next_state: Vec<ArrayBuffer>,
     registers: Vec<f32x4>,
     snapshot: OnceCell<BTreeMap<CellSlotId, Vec<f32>>>,
+    input_snapshot: OnceCell<BTreeMap<CellSlotId, Vec<f32>>>,
     faults: BatchedFaultRecorder,
 }
 
@@ -177,6 +178,7 @@ impl FixedShapeKernel {
             next_state,
             registers,
             snapshot: OnceCell::new(),
+            input_snapshot: OnceCell::new(),
             faults: BatchedFaultRecorder::default(),
         })
     }
@@ -210,6 +212,7 @@ impl BatchedArrayCpuSession {
         for (index, values) in staged {
             self.inputs[index].values = values;
         }
+        self.input_snapshot.take();
         Ok(())
     }
 
@@ -299,26 +302,35 @@ impl BatchedArrayCpuSession {
     }
 
     pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
-        self.snapshot.get_or_init(|| {
-            self.state
-                .iter()
-                .map(|state| {
-                    let mut values = vec![0.0; state.components * self.program.instances as usize];
-                    for component in 0..state.components {
-                        for group in 0..self.groups {
-                            let vector = state.values[component * self.groups + group].to_array();
-                            for (lane, value) in vector.into_iter().enumerate() {
-                                let instance = group * SIMD_LANES + lane;
-                                if instance < self.program.instances as usize {
-                                    values[instance * state.components + component] = value;
-                                }
+        self.snapshot.get_or_init(|| self.materialize(&self.state))
+    }
+
+    /// Canonical inputs for integrity and publication checks; cached until a
+    /// successfully validated atomic update changes the component-major data.
+    pub fn input_values(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        self.input_snapshot
+            .get_or_init(|| self.materialize(&self.inputs))
+    }
+
+    fn materialize(&self, buffers: &[ArrayBuffer]) -> BTreeMap<CellSlotId, Vec<f32>> {
+        buffers
+            .iter()
+            .map(|state| {
+                let mut values = vec![0.0; state.components * self.program.instances as usize];
+                for component in 0..state.components {
+                    for group in 0..self.groups {
+                        let vector = state.values[component * self.groups + group].to_array();
+                        for (lane, value) in vector.into_iter().enumerate() {
+                            let instance = group * SIMD_LANES + lane;
+                            if instance < self.program.instances as usize {
+                                values[instance * state.components + component] = value;
                             }
                         }
                     }
-                    (state.slot, values)
-                })
-                .collect()
-        })
+                }
+                (state.slot, values)
+            })
+            .collect()
     }
 
     pub const fn tile_instances(&self) -> usize {
@@ -1000,6 +1012,11 @@ impl ArrayInstruction {
                 BinaryOperation::Subtract => binary!(*left, *right, |a, b| a - b),
                 BinaryOperation::Multiply => binary!(*left, *right, |a, b| a * b),
                 BinaryOperation::Divide => binary!(*left, *right, |a, b| a / b),
+                BinaryOperation::Remainder => binary!(*left, *right, |a: f32x4, b: f32x4| {
+                    let a = a.to_array();
+                    let b = b.to_array();
+                    f32x4::from(core::array::from_fn(|lane| a[lane] % b[lane]))
+                }),
             },
             ArrayOperation::Unary(operation, input) => match operation {
                 UnaryOperation::Sin => unary!(*input, f32x4::sin),
@@ -1170,5 +1187,30 @@ fn array_predicate_mask(
                 LogicOperation::Not => !left,
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+
+    #[test]
+    fn array_remainder_preserves_signed_zero_and_zero_divisor_semantics() {
+        let instruction = ArrayInstruction {
+            output: 2,
+            operation: ArrayOperation::Binary(BinaryOperation::Remainder, 0, 1),
+        };
+        let mut columns = [
+            f32x4::from([5.5, -5.5, -0.0, 1.0]),
+            f32x4::from([2.0, 2.0, 2.0, 0.0]),
+            f32x4::ZERO,
+        ];
+        instruction.execute(&mut columns, 1, 1);
+        let actual = columns[2].to_array();
+        assert_eq!(
+            actual[..3].iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            [1.5f32, -1.5f32, -0.0f32].map(f32::to_bits)
+        );
+        assert!(actual[3].is_nan());
     }
 }

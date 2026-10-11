@@ -1,0 +1,181 @@
+RUN 1 revcomp:mech-revcomp-optimized:before
+SAMPLE 1 revcomp:mech-revcomp-optimized:before 0.288842s
+RUN 1 revcomp:mech-revcomp-optimized:after
+SAMPLE 1 revcomp:mech-revcomp-optimized:after 0.237210s
+RUN 2 revcomp:mech-revcomp-optimized:after
+SAMPLE 2 revcomp:mech-revcomp-optimized:after 0.220872s
+RUN 2 revcomp:mech-revcomp-optimized:before
+SAMPLE 2 revcomp:mech-revcomp-optimized:before 0.226524s
+RUN 3 revcomp:mech-revcomp-optimized:before
+SAMPLE 3 revcomp:mech-revcomp-optimized:before 0.232491s
+RUN 3 revcomp:mech-revcomp-optimized:after
+SAMPLE 3 revcomp:mech-revcomp-optimized:after 0.218611s
+RUN 1 regexredux:mech-regex-final-reuse-signed:after
+SAMPLE 1 regexredux:mech-regex-final-reuse-signed:after 0.483305s
+RUN 1 regexredux:mech-regex-final-reuse-signed:before
+SAMPLE 1 regexredux:mech-regex-final-reuse-signed:before 0.475689s
+RUN 2 regexredux:mech-regex-final-reuse-signed:after
+SAMPLE 2 regexredux:mech-regex-final-reuse-signed:after 0.480343s
+RUN 2 regexredux:mech-regex-final-reuse-signed:before
+SAMPLE 2 regexredux:mech-regex-final-reuse-signed:before 0.477707s
+RUN 3 regexredux:mech-regex-final-reuse-signed:after
+SAMPLE 3 regexredux:mech-regex-final-reuse-signed:after 0.474200s
+RUN 3 regexredux:mech-regex-final-reuse-signed:before
+SAMPLE 3 regexredux:mech-regex-final-reuse-signed:before 0.475519s
+RUN 1 knucleotide:mech-compact-final-std1-simd0-p4:after
+SAMPLE 1 knucleotide:mech-compact-final-std1-simd0-p4:after 0.586075s
+RUN 1 knucleotide:mech-compact-final-std1-simd0-p4:before
+SAMPLE 1 knucleotide:mech-compact-final-std1-simd0-p4:before 0.588295s
+RUN 2 knucleotide:mech-compact-final-std1-simd0-p4:before
+SAMPLE 2 knucleotide:mech-compact-final-std1-simd0-p4:before 0.600608s
+RUN 2 knucleotide:mech-compact-final-std1-simd0-p4:after
+SAMPLE 2 knucleotide:mech-compact-final-std1-simd0-p4:after 0.614336s
+RUN 3 knucleotide:mech-compact-final-std1-simd0-p4:before
+SAMPLE 3 knucleotide:mech-compact-final-std1-simd0-p4:before 0.608459s
+RUN 3 knucleotide:mech-compact-final-std1-simd0-p4:after
+SAMPLE 3 knucleotide:mech-compact-final-std1-simd0-p4:after 0.590323s
+RUN 1 pidigits:mech-pi-final-compact-signed:before
+SAMPLE 1 pidigits:mech-pi-final-compact-signed:before 0.404792s
+RUN 1 pidigits:mech-pi-final-advance-signed:before
+SAMPLE 1 pidigits:mech-pi-final-advance-signed:before 0.311092s
+RUN 1 pidigits:mech-pi-final-advance-signed:after
+SAMPLE 1 pidigits:mech-pi-final-advance-signed:after 0.308233s
+RUN 1 pidigits:mech-pi-final-compact-signed:after
+SAMPLE 1 pidigits:mech-pi-final-compact-signed:after 0.404506s
+RUN 2 pidigits:mech-pi-final-compact-signed:after
+SAMPLE 2 pidigits:mech-pi-final-compact-signed:after 0.403249s
+RUN 2 pidigits:mech-pi-final-compact-signed:before
+SAMPLE 2 pidigits:mech-pi-final-compact-signed:before 0.404718s
+RUN 2 pidigits:mech-pi-final-advance-signed:after
+SAMPLE 2 pidigits:mech-pi-final-advance-signed:after 0.308546s
+RUN 2 pidigits:mech-pi-final-advance-signed:before
+SAMPLE 2 pidigits:mech-pi-final-advance-signed:before 0.307069s
+RUN 3 pidigits:mech-pi-final-compact-signed:before
+SAMPLE 3 pidigits:mech-pi-final-compact-signed:before 0.402354s
+RUN 3 pidigits:mech-pi-final-compact-signed:after
+SAMPLE 3 pidigits:mech-pi-final-compact-signed:after 0.404442s
+RUN 3 pidigits:mech-pi-final-advance-signed:before
+SAMPLE 3 pidigits:mech-pi-final-advance-signed:before 0.307906s
+RUN 3 pidigits:mech-pi-final-advance-signed:after
+SAMPLE 3 pidigits:mech-pi-final-advance-signed:after 0.307611s
+RUN 1 nbody:compact-baseline:after
+SAMPLE 1 nbody:compact-baseline:after 16.139011s
+RUN 1 nbody:compact-baseline:before
+SAMPLE 1 nbody:compact-baseline:before 16.157657s
+RUN 1 nbody:pairwise-mass-tails:before
+SAMPLE 1 nbody:pairwise-mass-tails:before 15.703864s
+RUN 1 nbody:pairwise-mass-tails:after
+SAMPLE 1 nbody:pairwise-mass-tails:after 15.769531s
+RUN 2 nbody:pairwise-mass-tails:after
+SAMPLE 2 nbody:pairwise-mass-tails:after 15.939567s
+RUN 2 nbody:compact-baseline:after
+SAMPLE 2 nbody:compact-baseline:after 16.092371s
+RUN 2 nbody:compact-baseline:before
+SAMPLE 2 nbody:compact-baseline:before 16.115387s
+RUN 2 nbody:pairwise-mass-tails:before
+SAMPLE 2 nbody:pairwise-mass-tails:before 15.774921s
+RUN 3 nbody:pairwise-mass-tails:before
+SAMPLE 3 nbody:pairwise-mass-tails:before 15.738515s
+RUN 3 nbody:compact-baseline:after
+SAMPLE 3 nbody:compact-baseline:after 16.134761s
+RUN 3 nbody:compact-baseline:before
+SAMPLE 3 nbody:compact-baseline:before 16.182603s
+RUN 3 nbody:pairwise-mass-tails:after
+SAMPLE 3 nbody:pairwise-mass-tails:after 15.746134s
+RUN 1 mandelbrot:mech-program-simd-loop-fma:before
+SAMPLE 1 mandelbrot:mech-program-simd-loop-fma:before 10.611774s
+RUN 1 mandelbrot:mech-program-compact:after
+SAMPLE 1 mandelbrot:mech-program-compact:after 48.584964s
+RUN 1 mandelbrot:mech-program-simd-loop-fma:after
+SAMPLE 1 mandelbrot:mech-program-simd-loop-fma:after 11.457962s
+RUN 1 mandelbrot:mech-program-compact:before
+SAMPLE 1 mandelbrot:mech-program-compact:before 51.937095s
+RUN 2 mandelbrot:mech-program-compact:before
+SAMPLE 2 mandelbrot:mech-program-compact:before 51.051870s
+RUN 2 mandelbrot:mech-program-simd-loop-fma:after
+SAMPLE 2 mandelbrot:mech-program-simd-loop-fma:after 11.567850s
+RUN 2 mandelbrot:mech-program-compact:after
+SAMPLE 2 mandelbrot:mech-program-compact:after 51.859935s
+RUN 2 mandelbrot:mech-program-simd-loop-fma:before
+SAMPLE 2 mandelbrot:mech-program-simd-loop-fma:before 11.814035s
+RUN 3 mandelbrot:mech-program-compact:after
+SAMPLE 3 mandelbrot:mech-program-compact:after 51.431613s
+RUN 3 mandelbrot:mech-program-simd-loop-fma:before
+SAMPLE 3 mandelbrot:mech-program-simd-loop-fma:before 12.254407s
+RUN 3 mandelbrot:mech-program-simd-loop-fma:after
+SAMPLE 3 mandelbrot:mech-program-simd-loop-fma:after 11.638214s
+RUN 3 mandelbrot:mech-program-compact:before
+SAMPLE 3 mandelbrot:mech-program-compact:before 59.559209s
+RUN 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before
+SAMPLE 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before 0.520627s
+RUN 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after
+SAMPLE 1 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after 0.497019s
+RUN 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after
+SAMPLE 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after 0.528906s
+RUN 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before
+SAMPLE 2 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before 0.487126s
+RUN 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after
+SAMPLE 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after 0.484433s
+RUN 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before
+SAMPLE 3 spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before 0.479361s
+RUN 1 binarytrees:mech-binarytrees-parallel:after
+SAMPLE 1 binarytrees:mech-binarytrees-parallel:after 10.304381s
+RUN 1 binarytrees:mech-binarytrees-parallel:before
+SAMPLE 1 binarytrees:mech-binarytrees-parallel:before 10.832516s
+RUN 2 binarytrees:mech-binarytrees-parallel:before
+SAMPLE 2 binarytrees:mech-binarytrees-parallel:before 10.445468s
+RUN 2 binarytrees:mech-binarytrees-parallel:after
+SAMPLE 2 binarytrees:mech-binarytrees-parallel:after 10.280542s
+RUN 3 binarytrees:mech-binarytrees-parallel:before
+SAMPLE 3 binarytrees:mech-binarytrees-parallel:before 10.400937s
+RUN 3 binarytrees:mech-binarytrees-parallel:after
+SAMPLE 3 binarytrees:mech-binarytrees-parallel:after 10.448400s
+RUN 1 fasta:mech-fasta-final-expanded-v2:before
+SAMPLE 1 fasta:mech-fasta-final-expanded-v2:before 18.903546s
+RUN 1 fasta:mech-fasta-final-compact-v2:before
+SAMPLE 1 fasta:mech-fasta-final-compact-v2:before 22.293861s
+RUN 1 fasta:mech-fasta-final-expanded-v2:after
+SAMPLE 1 fasta:mech-fasta-final-expanded-v2:after 18.804582s
+RUN 1 fasta:mech-fasta-final-compact-v2:after
+SAMPLE 1 fasta:mech-fasta-final-compact-v2:after 22.879436s
+RUN 2 fasta:mech-fasta-final-expanded-v2:after
+SAMPLE 2 fasta:mech-fasta-final-expanded-v2:after 18.826077s
+RUN 2 fasta:mech-fasta-final-compact-v2:before
+SAMPLE 2 fasta:mech-fasta-final-compact-v2:before 22.225662s
+RUN 2 fasta:mech-fasta-final-compact-v2:after
+SAMPLE 2 fasta:mech-fasta-final-compact-v2:after 22.896111s
+RUN 2 fasta:mech-fasta-final-expanded-v2:before
+SAMPLE 2 fasta:mech-fasta-final-expanded-v2:before 18.752425s
+RUN 3 fasta:mech-fasta-final-compact-v2:after
+SAMPLE 3 fasta:mech-fasta-final-compact-v2:after 22.896034s
+RUN 3 fasta:mech-fasta-final-expanded-v2:before
+SAMPLE 3 fasta:mech-fasta-final-expanded-v2:before 18.851154s
+RUN 3 fasta:mech-fasta-final-compact-v2:before
+SAMPLE 3 fasta:mech-fasta-final-compact-v2:before 22.320533s
+RUN 3 fasta:mech-fasta-final-expanded-v2:after
+SAMPLE 3 fasta:mech-fasta-final-expanded-v2:after 18.808041s
+RUN 1 fannkuchredux:mech-fannkuch-even:before
+SAMPLE 1 fannkuchredux:mech-fannkuch-even:before 74.924634s
+RUN 1 fannkuchredux:mech-fannkuch-even:after
+SAMPLE 1 fannkuchredux:mech-fannkuch-even:after 78.848709s
+RUN 1 fannkuchredux:mech-fannkuch-default:after
+SAMPLE 1 fannkuchredux:mech-fannkuch-default:after 64.304455s
+RUN 1 fannkuchredux:mech-fannkuch-default:before
+SAMPLE 1 fannkuchredux:mech-fannkuch-default:before 60.545819s
+RUN 2 fannkuchredux:mech-fannkuch-default:after
+SAMPLE 2 fannkuchredux:mech-fannkuch-default:after 65.290988s
+RUN 2 fannkuchredux:mech-fannkuch-even:before
+SAMPLE 2 fannkuchredux:mech-fannkuch-even:before 80.358808s
+RUN 2 fannkuchredux:mech-fannkuch-default:before
+SAMPLE 2 fannkuchredux:mech-fannkuch-default:before 63.133240s
+RUN 2 fannkuchredux:mech-fannkuch-even:after
+SAMPLE 2 fannkuchredux:mech-fannkuch-even:after 80.875309s
+RUN 3 fannkuchredux:mech-fannkuch-default:before
+SAMPLE 3 fannkuchredux:mech-fannkuch-default:before 60.702544s
+RUN 3 fannkuchredux:mech-fannkuch-even:before
+SAMPLE 3 fannkuchredux:mech-fannkuch-even:before 80.573861s
+RUN 3 fannkuchredux:mech-fannkuch-even:after
+SAMPLE 3 fannkuchredux:mech-fannkuch-even:after 79.539164s
+RUN 3 fannkuchredux:mech-fannkuch-default:after
+SAMPLE 3 fannkuchredux:mech-fannkuch-default:after 64.153271s
+REPORT complete

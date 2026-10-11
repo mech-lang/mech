@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-11T19:02:13.142455+00:00",
+  "purpose": "Small correctness checks, not performance measurements.",
+  "lock": "/tmp/mech-clbg-timing.lock",
+  "source_sha256": "ee3fc53d842622faa6d8bab55a6ed307282fa41190245dfaa6dd8c2ffad8fff0",
+  "upstream_sha256": "8a1f6ac615c7333627543be995663d888b3f9e4189eda5ef2c0fae618710d942",
+  "runtime": {
+    "path": "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "sha256": "27db838bb204ef7c21df2931f5656e4c8fb32e6e947f363a402b49714d32b5b1",
+    "version": "v24.19.0"
+  },
+  "reference": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/sources/pidigits/fast.d",
+    "source_sha256": "adad16c89fa4163f68c2fc3242d9f73b100ef4a441a42468b8d987bc38549b4a",
+    "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+    "binary_sha256": "3a21ed99dc9c1d395c911fcdb10bcb6e56f6812165aeede9198ee1c746b53548"
+  },
+  "cases": [
+    {
+      "n": 1,
+      "passed": true,
+      "corrected": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/sources/pidigits-node-2-two-extracts.js",
+          "1"
+        ],
+        "returncode": 0,
+        "stdout": "3         \t:1\n",
+        "stdout_bytes": 14,
+        "stdout_sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "upstream": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/upstream/pidigits-node-2.js",
+          "1"
+        ],
+        "returncode": 0,
+        "stdout": "3         \t:1\n",
+        "stdout_bytes": 14,
+        "stdout_sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "independent_reference": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+          "1"
+        ],
+        "returncode": 0,
+        "stdout": "3         \t:1\n",
+        "stdout_bytes": 14,
+        "stdout_sha256": "596c1871af06291c3271a166e1060607abffd68b8dce42308a009847de2c9f40",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "n": 9,
+      "passed": true,
+      "corrected": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/sources/pidigits-node-2-two-extracts.js",
+          "9"
+        ],
+        "returncode": 0,
+        "stdout": "314159265 \t:9\n",
+        "stdout_bytes": 14,
+        "stdout_sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "upstream": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/upstream/pidigits-node-2.js",
+          "9"
+        ],
+        "returncode": 0,
+        "stdout": "314159265 \t:9\n",
+        "stdout_bytes": 14,
+        "stdout_sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "independent_reference": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+          "9"
+        ],
+        "returncode": 0,
+        "stdout": "314159265 \t:9\n",
+        "stdout_bytes": 14,
+        "stdout_sha256": "3e53fc2b63dd136ac6da30bd2e75569a8c0ebbe57ee829ce3ef14abc97cd5d95",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "n": 10,
+      "passed": true,
+      "corrected": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/sources/pidigits-node-2-two-extracts.js",
+          "10"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n",
+        "stdout_bytes": 15,
+        "stdout_sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "upstream": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/upstream/pidigits-node-2.js",
+          "10"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n",
+        "stdout_bytes": 15,
+        "stdout_sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "independent_reference": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+          "10"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n",
+        "stdout_bytes": 15,
+        "stdout_sha256": "7ea0f183877af01484fe7164276fe2c7cf22e64b513401f44078c86cea239773",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "n": 27,
+      "passed": true,
+      "corrected": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/sources/pidigits-node-2-two-extracts.js",
+          "27"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338   \t:27\n",
+        "stdout_bytes": 45,
+        "stdout_sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "upstream": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/upstream/pidigits-node-2.js",
+          "27"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338   \t:27\n",
+        "stdout_bytes": 45,
+        "stdout_sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "independent_reference": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+          "27"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338   \t:27\n",
+        "stdout_bytes": 45,
+        "stdout_sha256": "ab4264eca722a55e8a6458574e6e607450b978c5f95aedc426ae0615c48cbbba",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "n": 30,
+      "passed": true,
+      "corrected": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/sources/pidigits-node-2-two-extracts.js",
+          "30"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n",
+        "stdout_bytes": 45,
+        "stdout_sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "upstream": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/upstream/pidigits-node-2.js",
+          "30"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n",
+        "stdout_bytes": 45,
+        "stdout_sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "independent_reference": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+          "30"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n",
+        "stdout_bytes": 45,
+        "stdout_sha256": "dbf95cc20ad23ff1a385d30436f0c63b5ae7f41bb1003cf204f5e4888b74a39c",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "n": 101,
+      "passed": true,
+      "corrected": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/sources/pidigits-node-2-two-extracts.js",
+          "101"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9         \t:101\n",
+        "stdout_bytes": 167,
+        "stdout_sha256": "2dd83379073acaeea5b02f7896d9419b3c1eae247280c3beb635bc86c2724dba",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "upstream": {
+        "command": [
+          "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits-work-audit/20261011/upstream/pidigits-node-2.js",
+          "101"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9         \t:101\n",
+        "stdout_bytes": 167,
+        "stdout_sha256": "2dd83379073acaeea5b02f7896d9419b3c1eae247280c3beb635bc86c2724dba",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "independent_reference": {
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/build/pidigits-fast",
+          "101"
+        ],
+        "returncode": 0,
+        "stdout": "3141592653\t:10\n5897932384\t:20\n6264338327\t:30\n9502884197\t:40\n1693993751\t:50\n0582097494\t:60\n4592307816\t:70\n4062862089\t:80\n9862803482\t:90\n5342117067\t:100\n9         \t:101\n",
+        "stdout_bytes": 167,
+        "stdout_sha256": "2dd83379073acaeea5b02f7896d9419b3c1eae247280c3beb635bc86c2724dba",
+        "stderr": "",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "passed": true
+}

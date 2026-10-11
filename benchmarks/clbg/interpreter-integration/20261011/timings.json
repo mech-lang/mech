@@ -1,0 +1,2690 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-11T18:28:57.846436+00:00",
+  "sample_count": 3,
+  "baseline_sha256": "a6ca47c7be028d86dd9f7e78ba36afda6afeaeb83f1a711b83441dbd5ff79437",
+  "code_path_audit": {
+    "source_commit_before": "bf9d7f2b659af3ab79a1154b64252113496c5bd5",
+    "integrated_commit": "45c6837ab",
+    "new_executor": "hosts/gpu/src/batched/array_cpu.rs",
+    "new_value_type": "fixed-shape f32 batches",
+    "benchmark_dispatch": "hosts/gpu/src/execution.rs",
+    "benchmark_executors": [
+      "hosts/gpu/src/fused_f64/resident.rs",
+      "hosts/gpu/src/control/resident.rs",
+      "hosts/gpu/src/sequence/resident.rs"
+    ],
+    "benchmark_source_changes": false,
+    "direct_benchmark_dispatch_changed": false,
+    "note": "CLBG uses binary64 fixed graphs and variable-size collection/control executors. It does not prepare BatchedArrayCpuSession; the new f32 tile executor serves cpu-simd fixed-shape product batches."
+  },
+  "power_profile": {
+    "source": "AC Power",
+    "low_power_mode": 0
+  },
+  "workloads": {
+    "nbody": [
+      1000,
+      50000000
+    ],
+    "mandelbrot": [
+      200,
+      16000
+    ],
+    "knucleotide": [
+      1000,
+      25000000
+    ],
+    "spectralnorm": [
+      100,
+      5500
+    ],
+    "revcomp": [
+      1000,
+      25000000
+    ],
+    "fannkuchredux": [
+      7,
+      12
+    ],
+    "fasta": [
+      1000,
+      25000000
+    ],
+    "binarytrees": [
+      10,
+      21
+    ],
+    "regexredux": [
+      30,
+      5000000
+    ],
+    "pidigits": [
+      30,
+      10000
+    ]
+  },
+  "machine": "Apple M3",
+  "programs": {
+    "nbody:pairwise-mass-tails:before": {
+      "source_key": "nbody:pairwise-mass-tails",
+      "benchmark": "nbody",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "nbody:pairwise-mass-tails:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+        "resident",
+        "{n}",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "samples_seconds": [
+        15.703863709,
+        15.7749215,
+        15.738515334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 15.703863709,
+          "wall_seconds": 16.096567,
+          "prepare_seconds": 0.37993375,
+          "kernel_seconds": 15.703863709
+        },
+        {
+          "seconds": 15.7749215,
+          "wall_seconds": 16.167870375,
+          "prepare_seconds": 0.38010275,
+          "kernel_seconds": 15.7749215
+        },
+        {
+          "seconds": 15.738515334,
+          "wall_seconds": 16.130064833,
+          "prepare_seconds": 0.37887725,
+          "kernel_seconds": 15.738515334
+        }
+      ],
+      "median_seconds": 15.738515334,
+      "sample_stdev_seconds": 0.03553250554013826,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      }
+    },
+    "nbody:pairwise-mass-tails:after": {
+      "source_key": "nbody:pairwise-mass-tails",
+      "benchmark": "nbody",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+      "source_sha256": "5551286c12ced7541ba11eba6d4d9ae0036ff9c5d2431fda0c71dd12555cc6aa",
+      "loc": 25,
+      "physical_loc": 25,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "nbody:pairwise-mass-tails:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-pairwise.mec",
+        "resident",
+        "{n}",
+        "--fp-contract",
+        "--algebraic-powers",
+        "--pack-state-tails"
+      ],
+      "samples_seconds": [
+        15.769530917,
+        15.939567209,
+        15.746134333
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 15.769530917,
+          "wall_seconds": 16.16169475,
+          "prepare_seconds": 0.380699,
+          "kernel_seconds": 15.769530917
+        },
+        {
+          "seconds": 15.939567209,
+          "wall_seconds": 16.335301208,
+          "prepare_seconds": 0.38661575,
+          "kernel_seconds": 15.939567209
+        },
+        {
+          "seconds": 15.746134333,
+          "wall_seconds": 16.137557667,
+          "prepare_seconds": 0.378951084,
+          "kernel_seconds": 15.746134333
+        }
+      ],
+      "median_seconds": 15.769530917,
+      "sample_stdev_seconds": 0.10557463257305158,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      }
+    },
+    "nbody:compact-baseline:before": {
+      "source_key": "nbody:compact-baseline",
+      "benchmark": "nbody",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "nbody:compact-baseline:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+        "resident",
+        "{n}",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "samples_seconds": [
+        16.15765675,
+        16.115387,
+        16.182603375
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 16.15765675,
+          "wall_seconds": 16.436665667,
+          "prepare_seconds": 0.26486275,
+          "kernel_seconds": 16.15765675
+        },
+        {
+          "seconds": 16.115387,
+          "wall_seconds": 16.388917125,
+          "prepare_seconds": 0.261009208,
+          "kernel_seconds": 16.115387
+        },
+        {
+          "seconds": 16.182603375,
+          "wall_seconds": 16.456138583,
+          "prepare_seconds": 0.261337541,
+          "kernel_seconds": 16.182603375
+        }
+      ],
+      "median_seconds": 16.15765675,
+      "sample_stdev_seconds": 0.0339781962737234,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      }
+    },
+    "nbody:compact-baseline:after": {
+      "source_key": "nbody:compact-baseline",
+      "benchmark": "nbody",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+      "source_sha256": "f6a7f25aefb9341bd75daf4cef6f5e53b3b6a9e87b773153e00d1d30b131b175",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "nbody:compact-baseline:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/array-comparison/nbody-20261009/sources/nbody-matrix-short.mec",
+        "resident",
+        "{n}",
+        "--fp-contract",
+        "--algebraic-powers"
+      ],
+      "samples_seconds": [
+        16.139011458,
+        16.092370792,
+        16.134761292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        },
+        {
+          "bytes": 26,
+          "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+          "reference_match": true,
+          "energies": [
+            -0.169075164,
+            -0.169059907
+          ],
+          "tolerance": 1e-08
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 16.139011458,
+          "wall_seconds": 16.416917834,
+          "prepare_seconds": 0.265770625,
+          "kernel_seconds": 16.139011458
+        },
+        {
+          "seconds": 16.092370792,
+          "wall_seconds": 16.364633708,
+          "prepare_seconds": 0.259741208,
+          "kernel_seconds": 16.092370792
+        },
+        {
+          "seconds": 16.134761292,
+          "wall_seconds": 16.407462875,
+          "prepare_seconds": 0.26153675,
+          "kernel_seconds": 16.134761292
+        }
+      ],
+      "median_seconds": 16.134761292,
+      "sample_stdev_seconds": 0.02578878996192247,
+      "full_validation": {
+        "bytes": 26,
+        "sha256": "3e6c9ef9d26cfe312a4cd8e1b81b3f671b88fbce84de543e8c23c206a942504d",
+        "reference_match": true,
+        "energies": [
+          -0.169075164,
+          -0.169059907
+        ],
+        "tolerance": 1e-08
+      }
+    },
+    "mandelbrot:mech-program-simd-loop-fma:before": {
+      "source_key": "mandelbrot:mech-program-simd-loop-fma",
+      "benchmark": "mandelbrot",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "mandelbrot:mech-program-simd-loop-fma:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+        "resident",
+        "{n}",
+        "--fp-contract-loop"
+      ],
+      "samples_seconds": [
+        10.611773834,
+        11.814034583,
+        12.254406833
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 10.611773834,
+          "wall_seconds": 10.947480292,
+          "prepare_seconds": 0.322738833,
+          "kernel_seconds": 10.611773834
+        },
+        {
+          "seconds": 11.814034583,
+          "wall_seconds": 12.1567085,
+          "prepare_seconds": 0.329436042,
+          "kernel_seconds": 11.814034583
+        },
+        {
+          "seconds": 12.254406833,
+          "wall_seconds": 12.591321,
+          "prepare_seconds": 0.324971125,
+          "kernel_seconds": 12.254406833
+        }
+      ],
+      "median_seconds": 11.814034583,
+      "sample_stdev_seconds": 0.8502550398321519,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      }
+    },
+    "mandelbrot:mech-program-simd-loop-fma:after": {
+      "source_key": "mandelbrot:mech-program-simd-loop-fma",
+      "benchmark": "mandelbrot",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "loc": 29,
+      "physical_loc": 29,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "mandelbrot:mech-program-simd-loop-fma:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-program.mec",
+        "resident",
+        "{n}",
+        "--fp-contract-loop"
+      ],
+      "samples_seconds": [
+        11.457961792,
+        11.56785,
+        11.638214334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 11.457961792,
+          "wall_seconds": 11.794796,
+          "prepare_seconds": 0.324662083,
+          "kernel_seconds": 11.457961792
+        },
+        {
+          "seconds": 11.56785,
+          "wall_seconds": 11.904965792,
+          "prepare_seconds": 0.323814125,
+          "kernel_seconds": 11.56785
+        },
+        {
+          "seconds": 11.638214334,
+          "wall_seconds": 11.977615208,
+          "prepare_seconds": 0.327680583,
+          "kernel_seconds": 11.638214334
+        }
+      ],
+      "median_seconds": 11.56785,
+      "sample_stdev_seconds": 0.09084559854883491,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      }
+    },
+    "mandelbrot:mech-program-compact:before": {
+      "source_key": "mandelbrot:mech-program-compact",
+      "benchmark": "mandelbrot",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "mandelbrot:mech-program-compact:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+        "resident",
+        "{n}",
+        "--scalar"
+      ],
+      "samples_seconds": [
+        51.937094708000004,
+        51.051869666,
+        59.55920875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 51.937094708000004,
+          "wall_seconds": 52.038666333,
+          "prepare_seconds": 0.090219917,
+          "kernel_seconds": 51.937094708000004
+        },
+        {
+          "seconds": 51.051869666,
+          "wall_seconds": 51.153973042,
+          "prepare_seconds": 0.090906959,
+          "kernel_seconds": 51.051869666
+        },
+        {
+          "seconds": 59.55920875,
+          "wall_seconds": 59.663461625,
+          "prepare_seconds": 0.090246416,
+          "kernel_seconds": 59.55920875
+        }
+      ],
+      "median_seconds": 51.937094708000004,
+      "sample_stdev_seconds": 4.677161962386868,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      }
+    },
+    "mandelbrot:mech-program-compact:after": {
+      "source_key": "mandelbrot:mech-program-compact",
+      "benchmark": "mandelbrot",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "loc": 20,
+      "physical_loc": 20,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "mandelbrot:mech-program-compact:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/mandelbrot-compact-program.mec",
+        "resident",
+        "{n}",
+        "--scalar"
+      ],
+      "samples_seconds": [
+        48.584964042,
+        51.859934709,
+        51.431613416
+      ],
+      "sample_validation": [
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        },
+        {
+          "bytes": 32000015,
+          "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 48.584964042,
+          "wall_seconds": 48.686990792,
+          "prepare_seconds": 0.089533208,
+          "kernel_seconds": 48.584964042
+        },
+        {
+          "seconds": 51.859934709,
+          "wall_seconds": 51.960327334,
+          "prepare_seconds": 0.08938275,
+          "kernel_seconds": 51.859934709
+        },
+        {
+          "seconds": 51.431613416,
+          "wall_seconds": 51.534613209,
+          "prepare_seconds": 0.089725,
+          "kernel_seconds": 51.431613416
+        }
+      ],
+      "median_seconds": 51.431613416,
+      "sample_stdev_seconds": 1.780089167159994,
+      "full_validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      }
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4:before": {
+      "source_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "benchmark": "knucleotide",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "loc": 17,
+      "physical_loc": 17,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "resident"
+      ],
+      "samples_seconds": [
+        0.588295042,
+        0.600608,
+        0.60845925
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.588295042,
+          "wall_seconds": 0.6760195,
+          "prepare_seconds": 0.077024166,
+          "kernel_seconds": 0.588295042
+        },
+        {
+          "seconds": 0.600608,
+          "wall_seconds": 0.691122375,
+          "prepare_seconds": 0.077600416,
+          "kernel_seconds": 0.600608
+        },
+        {
+          "seconds": 0.60845925,
+          "wall_seconds": 0.699010916,
+          "prepare_seconds": 0.077753,
+          "kernel_seconds": 0.60845925
+        }
+      ],
+      "median_seconds": 0.600608,
+      "sample_stdev_seconds": 0.010164040744535984,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      }
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4:after": {
+      "source_key": "knucleotide:mech-compact-final-std1-simd0-p4",
+      "benchmark": "knucleotide",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "loc": 17,
+      "physical_loc": 17,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "knucleotide:mech-compact-final-std1-simd0-p4:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/knucleotide/knucleotide-compact.mec",
+        "resident"
+      ],
+      "samples_seconds": [
+        0.586074667,
+        0.61433625,
+        0.590323334
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.586074667,
+          "wall_seconds": 0.672142291,
+          "prepare_seconds": 0.074728458,
+          "kernel_seconds": 0.586074667
+        },
+        {
+          "seconds": 0.61433625,
+          "wall_seconds": 0.70690975,
+          "prepare_seconds": 0.078181083,
+          "kernel_seconds": 0.61433625
+        },
+        {
+          "seconds": 0.590323334,
+          "wall_seconds": 0.681523333,
+          "prepare_seconds": 0.078086083,
+          "kernel_seconds": 0.590323334
+        }
+      ],
+      "median_seconds": 0.590323334,
+      "sample_stdev_seconds": 0.015239140285056744,
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      }
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before": {
+      "source_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_NUMERIC_UNROLL": "4",
+        "MECH_NUMERIC_ROWS": "4",
+        "MECH_NUMERIC_INDUCTION": "0",
+        "MECH_ARRAY_GRAIN": "8",
+        "MECH_SEQUENCE_PARTITIONS": "8"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.520626917,
+        0.487126458,
+        0.479360708
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.520626917,
+          "wall_seconds": 0.648928167,
+          "prepare_seconds": 0.118514917,
+          "kernel_seconds": 0.520626917
+        },
+        {
+          "seconds": 0.487126458,
+          "wall_seconds": 0.613156583,
+          "prepare_seconds": 0.11711475,
+          "kernel_seconds": 0.487126458
+        },
+        {
+          "seconds": 0.479360708,
+          "wall_seconds": 0.606778458,
+          "prepare_seconds": 0.11629525,
+          "kernel_seconds": 0.479360708
+        }
+      ],
+      "median_seconds": 0.487126458,
+      "sample_stdev_seconds": 0.02192976528034008,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      }
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after": {
+      "source_key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8",
+      "benchmark": "spectralnorm",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+      "source_sha256": "eb5d5a828c795161f446aced3c71631591175df9b13d26257d0ea2de32e9c290",
+      "loc": 12,
+      "physical_loc": 12,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_NUMERIC_UNROLL": "4",
+        "MECH_NUMERIC_ROWS": "4",
+        "MECH_NUMERIC_INDUCTION": "0",
+        "MECH_ARRAY_GRAIN": "8",
+        "MECH_SEQUENCE_PARTITIONS": "8"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/work-audit/20261009/sources/spectralnorm-four-functions.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.497019083,
+        0.528906291,
+        0.484433208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        },
+        {
+          "bytes": 12,
+          "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.497019083,
+          "wall_seconds": 0.623824042,
+          "prepare_seconds": 0.116552833,
+          "kernel_seconds": 0.497019083
+        },
+        {
+          "seconds": 0.528906291,
+          "wall_seconds": 0.656734292,
+          "prepare_seconds": 0.116893625,
+          "kernel_seconds": 0.528906291
+        },
+        {
+          "seconds": 0.484433208,
+          "wall_seconds": 0.614923959,
+          "prepare_seconds": 0.117256625,
+          "kernel_seconds": 0.484433208
+        }
+      ],
+      "median_seconds": 0.497019083,
+      "sample_stdev_seconds": 0.02292398087547832,
+      "full_validation": {
+        "bytes": 12,
+        "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+        "reference_match": true
+      }
+    },
+    "revcomp:mech-revcomp-optimized:before": {
+      "source_key": "revcomp:mech-revcomp-optimized",
+      "benchmark": "revcomp",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "loc": 7,
+      "physical_loc": 7,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "revcomp:mech-revcomp-optimized:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+        "resident"
+      ],
+      "samples_seconds": [
+        0.288841833,
+        0.226524458,
+        0.232490625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.288841833,
+          "wall_seconds": 0.929997875,
+          "prepare_seconds": 0.049657542,
+          "kernel_seconds": 0.288841833
+        },
+        {
+          "seconds": 0.226524458,
+          "wall_seconds": 0.266118542,
+          "prepare_seconds": 0.026759375,
+          "kernel_seconds": 0.226524458
+        },
+        {
+          "seconds": 0.232490625,
+          "wall_seconds": 0.273510042,
+          "prepare_seconds": 0.027731584,
+          "kernel_seconds": 0.232490625
+        }
+      ],
+      "median_seconds": 0.232490625,
+      "sample_stdev_seconds": 0.0343863078822123,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      }
+    },
+    "revcomp:mech-revcomp-optimized:after": {
+      "source_key": "revcomp:mech-revcomp-optimized",
+      "benchmark": "revcomp",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+      "source_sha256": "7ca0b4ff377cc51f9104c4dd5c78a2db8c0bee5ec4690ab4f0685706fc46695d",
+      "loc": 7,
+      "physical_loc": 7,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "revcomp:mech-revcomp-optimized:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/revcomp/revcomp.mec",
+        "resident"
+      ],
+      "samples_seconds": [
+        0.237210125,
+        0.22087175,
+        0.21861075
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.237210125,
+          "wall_seconds": 0.839388917,
+          "prepare_seconds": 0.045928125,
+          "kernel_seconds": 0.237210125
+        },
+        {
+          "seconds": 0.22087175,
+          "wall_seconds": 0.259461291,
+          "prepare_seconds": 0.026751459,
+          "kernel_seconds": 0.22087175
+        },
+        {
+          "seconds": 0.21861075,
+          "wall_seconds": 0.257213666,
+          "prepare_seconds": 0.026348542,
+          "kernel_seconds": 0.21861075
+        }
+      ],
+      "median_seconds": 0.22087175,
+      "sample_stdev_seconds": 0.01014882069529304,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+        "reference_match": true
+      }
+    },
+    "fannkuchredux:mech-fannkuch-even:before": {
+      "source_key": "fannkuchredux:mech-fannkuch-even",
+      "benchmark": "fannkuchredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "loc": 59,
+      "physical_loc": 59,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fannkuchredux:mech-fannkuch-even:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        74.924634292,
+        80.358808208,
+        80.573861292
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 74.924634292,
+          "wall_seconds": 75.184886708,
+          "prepare_seconds": 0.248274583,
+          "kernel_seconds": 74.924634292
+        },
+        {
+          "seconds": 80.358808208,
+          "wall_seconds": 80.620975,
+          "prepare_seconds": 0.250305583,
+          "kernel_seconds": 80.358808208
+        },
+        {
+          "seconds": 80.573861292,
+          "wall_seconds": 80.837007875,
+          "prepare_seconds": 0.251191625,
+          "kernel_seconds": 80.573861292
+        }
+      ],
+      "median_seconds": 80.358808208,
+      "sample_stdev_seconds": 3.20130857816513,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      }
+    },
+    "fannkuchredux:mech-fannkuch-even:after": {
+      "source_key": "fannkuchredux:mech-fannkuch-even",
+      "benchmark": "fannkuchredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+      "source_sha256": "b8a2ce6509db36487e42bb3ded0e054b4cde743e05cb05c94f8f3c6e45780ebe",
+      "loc": 59,
+      "physical_loc": 59,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fannkuchredux:mech-fannkuch-even:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux-even.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        78.848709208,
+        80.875308625,
+        79.539163875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 78.848709208,
+          "wall_seconds": 79.107461333,
+          "prepare_seconds": 0.248307834,
+          "kernel_seconds": 78.848709208
+        },
+        {
+          "seconds": 80.875308625,
+          "wall_seconds": 81.1390465,
+          "prepare_seconds": 0.254456958,
+          "kernel_seconds": 80.875308625
+        },
+        {
+          "seconds": 79.539163875,
+          "wall_seconds": 79.817310959,
+          "prepare_seconds": 0.261040667,
+          "kernel_seconds": 79.539163875
+        }
+      ],
+      "median_seconds": 79.539163875,
+      "sample_stdev_seconds": 1.0303005740332434,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      }
+    },
+    "fannkuchredux:mech-fannkuch-default:before": {
+      "source_key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "loc": 39,
+      "physical_loc": 39,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fannkuchredux:mech-fannkuch-default:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        60.545819125,
+        63.133240458,
+        60.702543958
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 60.545819125,
+          "wall_seconds": 60.716245208,
+          "prepare_seconds": 0.157664833,
+          "kernel_seconds": 60.545819125
+        },
+        {
+          "seconds": 63.133240458,
+          "wall_seconds": 63.299159792,
+          "prepare_seconds": 0.1550285,
+          "kernel_seconds": 63.133240458
+        },
+        {
+          "seconds": 60.702543958,
+          "wall_seconds": 60.8869895,
+          "prepare_seconds": 0.168031333,
+          "kernel_seconds": 60.702543958
+        }
+      ],
+      "median_seconds": 60.702543958,
+      "sample_stdev_seconds": 1.450723802271051,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      }
+    },
+    "fannkuchredux:mech-fannkuch-default:after": {
+      "source_key": "fannkuchredux:mech-fannkuch-default",
+      "benchmark": "fannkuchredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+      "source_sha256": "0a5bee0d62631abf4f200489ddf9044c9b238f0c2dcd6a074c60ec93c90fdb8f",
+      "loc": 39,
+      "physical_loc": 39,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fannkuchredux:mech-fannkuch-default:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fannkuchredux/fannkuchredux.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        64.30445525,
+        65.290987792,
+        64.153270542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        },
+        {
+          "bytes": 29,
+          "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 64.30445525,
+          "wall_seconds": 64.46596975,
+          "prepare_seconds": 0.155694916,
+          "kernel_seconds": 64.30445525
+        },
+        {
+          "seconds": 65.290987792,
+          "wall_seconds": 65.457794334,
+          "prepare_seconds": 0.154858833,
+          "kernel_seconds": 65.290987792
+        },
+        {
+          "seconds": 64.153270542,
+          "wall_seconds": 64.321988708,
+          "prepare_seconds": 0.155440708,
+          "kernel_seconds": 64.153270542
+        }
+      ],
+      "median_seconds": 64.30445525,
+      "sample_stdev_seconds": 0.6178597215800096,
+      "full_validation": {
+        "bytes": 29,
+        "sha256": "4265a65135c506a68d90d6474003fb9030b7ee244a06c046bd89b3932a28ce20",
+        "reference_match": true
+      }
+    },
+    "fasta:mech-fasta-final-expanded-v2:before": {
+      "source_key": "fasta:mech-fasta-final-expanded-v2",
+      "benchmark": "fasta",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "loc": 43,
+      "physical_loc": 43,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fasta:mech-fasta-final-expanded-v2:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        18.903545834,
+        18.752424875,
+        18.851154042
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 18.903545834,
+          "wall_seconds": 19.098387833,
+          "prepare_seconds": 0.1819875,
+          "kernel_seconds": 18.903545834
+        },
+        {
+          "seconds": 18.752424875,
+          "wall_seconds": 18.948829375,
+          "prepare_seconds": 0.185756083,
+          "kernel_seconds": 18.752424875
+        },
+        {
+          "seconds": 18.851154042,
+          "wall_seconds": 19.046382209,
+          "prepare_seconds": 0.182763292,
+          "kernel_seconds": 18.851154042
+        }
+      ],
+      "median_seconds": 18.851154042,
+      "sample_stdev_seconds": 0.07673535966181107,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      }
+    },
+    "fasta:mech-fasta-final-expanded-v2:after": {
+      "source_key": "fasta:mech-fasta-final-expanded-v2",
+      "benchmark": "fasta",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+      "source_sha256": "b98ea612ac4c7f93b266e00d799a254d1b17778fcb1584b10f9a39034f669602",
+      "loc": 43,
+      "physical_loc": 43,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fasta:mech-fasta-final-expanded-v2:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta-optimized.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        18.804581708,
+        18.826077084,
+        18.808040625
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 18.804581708,
+          "wall_seconds": 18.998299542,
+          "prepare_seconds": 0.181385959,
+          "kernel_seconds": 18.804581708
+        },
+        {
+          "seconds": 18.826077084,
+          "wall_seconds": 19.018802625,
+          "prepare_seconds": 0.180082583,
+          "kernel_seconds": 18.826077084
+        },
+        {
+          "seconds": 18.808040625,
+          "wall_seconds": 18.999082417,
+          "prepare_seconds": 0.180922667,
+          "kernel_seconds": 18.808040625
+        }
+      ],
+      "median_seconds": 18.808040625,
+      "sample_stdev_seconds": 0.011542162921603366,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      }
+    },
+    "fasta:mech-fasta-final-compact-v2:before": {
+      "source_key": "fasta:mech-fasta-final-compact-v2",
+      "benchmark": "fasta",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "loc": 32,
+      "physical_loc": 32,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fasta:mech-fasta-final-compact-v2:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        22.293860625,
+        22.225662375,
+        22.320533167
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 22.293860625,
+          "wall_seconds": 22.424321583,
+          "prepare_seconds": 0.118663375,
+          "kernel_seconds": 22.293860625
+        },
+        {
+          "seconds": 22.225662375,
+          "wall_seconds": 22.355364375,
+          "prepare_seconds": 0.11853925,
+          "kernel_seconds": 22.225662375
+        },
+        {
+          "seconds": 22.320533167,
+          "wall_seconds": 22.448602958,
+          "prepare_seconds": 0.117678666,
+          "kernel_seconds": 22.320533167
+        }
+      ],
+      "median_seconds": 22.293860625,
+      "sample_stdev_seconds": 0.048926633807692306,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      }
+    },
+    "fasta:mech-fasta-final-compact-v2:after": {
+      "source_key": "fasta:mech-fasta-final-compact-v2",
+      "benchmark": "fasta",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+      "source_sha256": "5a6e55ee20029db8ee3c818e08c40aa783d69cd8512c0063cfaf447a32baa066",
+      "loc": 32,
+      "physical_loc": 32,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_CONTROL_EXACT_FLOAT_COMPARE": "0",
+        "MECH_CONTROL_SCAN_CACHE": "1",
+        "MECH_CONTROL_SCAN_PIPELINE": "auto"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "fasta:mech-fasta-final-compact-v2:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/fasta/fasta.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        22.879435625,
+        22.8961115,
+        22.896034333
+      ],
+      "sample_validation": [
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        },
+        {
+          "bytes": 254166745,
+          "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 22.879435625,
+          "wall_seconds": 23.008236666,
+          "prepare_seconds": 0.117352667,
+          "kernel_seconds": 22.879435625
+        },
+        {
+          "seconds": 22.8961115,
+          "wall_seconds": 23.0262825,
+          "prepare_seconds": 0.117754042,
+          "kernel_seconds": 22.8961115
+        },
+        {
+          "seconds": 22.896034333,
+          "wall_seconds": 23.025346083,
+          "prepare_seconds": 0.117484083,
+          "kernel_seconds": 22.896034333
+        }
+      ],
+      "median_seconds": 22.896034333,
+      "sample_stdev_seconds": 0.00960562221679577,
+      "full_validation": {
+        "bytes": 254166745,
+        "sha256": "3fcf4f78104c8a65ef210fe1d469f4e473456c791225f2f1f9114f4986aa09fa",
+        "reference_match": true
+      }
+    },
+    "binarytrees:mech-binarytrees-parallel:before": {
+      "source_key": "binarytrees:mech-binarytrees-parallel",
+      "benchmark": "binarytrees",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "loc": 26,
+      "physical_loc": 26,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "binarytrees:mech-binarytrees-parallel:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        10.832515875,
+        10.445468167,
+        10.400937042
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 10.832515875,
+          "wall_seconds": 10.956767375,
+          "prepare_seconds": 0.114855541,
+          "kernel_seconds": 10.832515875
+        },
+        {
+          "seconds": 10.445468167,
+          "wall_seconds": 10.566174292,
+          "prepare_seconds": 0.106115916,
+          "kernel_seconds": 10.445468167
+        },
+        {
+          "seconds": 10.400937042,
+          "wall_seconds": 10.524397208,
+          "prepare_seconds": 0.113886208,
+          "kernel_seconds": 10.400937042
+        }
+      ],
+      "median_seconds": 10.445468167,
+      "sample_stdev_seconds": 0.23736372878470044,
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      }
+    },
+    "binarytrees:mech-binarytrees-parallel:after": {
+      "source_key": "binarytrees:mech-binarytrees-parallel",
+      "benchmark": "binarytrees",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "loc": 26,
+      "physical_loc": 26,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "binarytrees:mech-binarytrees-parallel:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/binarytrees/binarytrees-parallel.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        10.304381,
+        10.28054175,
+        10.448400333
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 10.304381,
+          "wall_seconds": 10.426450208,
+          "prepare_seconds": 0.105481209,
+          "kernel_seconds": 10.304381
+        },
+        {
+          "seconds": 10.28054175,
+          "wall_seconds": 10.403423458,
+          "prepare_seconds": 0.106180334,
+          "kernel_seconds": 10.28054175
+        },
+        {
+          "seconds": 10.448400333,
+          "wall_seconds": 10.568885042,
+          "prepare_seconds": 0.10538075,
+          "kernel_seconds": 10.448400333
+        }
+      ],
+      "median_seconds": 10.304381,
+      "sample_stdev_seconds": 0.09081701566437124,
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      }
+    },
+    "regexredux:mech-regex-final-reuse-signed:before": {
+      "source_key": "regexredux:mech-regex-final-reuse-signed",
+      "benchmark": "regexredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "regexredux:mech-regex-final-reuse-signed:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+        "resident"
+      ],
+      "samples_seconds": [
+        0.475688667,
+        0.477707,
+        0.47551875
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.475688667,
+          "wall_seconds": 0.559403958,
+          "prepare_seconds": 0.070874875,
+          "kernel_seconds": 0.475688667
+        },
+        {
+          "seconds": 0.477707,
+          "wall_seconds": 0.561583458,
+          "prepare_seconds": 0.072101208,
+          "kernel_seconds": 0.477707
+        },
+        {
+          "seconds": 0.47551875,
+          "wall_seconds": 0.556306084,
+          "prepare_seconds": 0.071103875,
+          "kernel_seconds": 0.47551875
+        }
+      ],
+      "median_seconds": 0.475688667,
+      "sample_stdev_seconds": 0.0012173042586166884,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      }
+    },
+    "regexredux:mech-regex-final-reuse-signed:after": {
+      "source_key": "regexredux:mech-regex-final-reuse-signed",
+      "benchmark": "regexredux",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+      "source_sha256": "69b4a43724aef3d161cae8ba29c683928027435b61bd0e270e9bd1d969a0741d",
+      "loc": 24,
+      "physical_loc": 24,
+      "loc_expansions": [],
+      "runtime_environment": {
+        "MECH_SEQUENCE_ASYNC": "1",
+        "MECH_SEQUENCE_BUFFER_REUSE": "1"
+      },
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "regexredux:mech-regex-final-reuse-signed:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/regexredux/regexredux.mec",
+        "resident"
+      ],
+      "samples_seconds": [
+        0.483305417,
+        0.48034275,
+        0.474200042
+      ],
+      "sample_validation": [
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        },
+        {
+          "bytes": 298,
+          "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.483305417,
+          "wall_seconds": 0.56628025,
+          "prepare_seconds": 0.070559458,
+          "kernel_seconds": 0.483305417
+        },
+        {
+          "seconds": 0.48034275,
+          "wall_seconds": 0.564831583,
+          "prepare_seconds": 0.071799541,
+          "kernel_seconds": 0.48034275
+        },
+        {
+          "seconds": 0.474200042,
+          "wall_seconds": 0.556798708,
+          "prepare_seconds": 0.072275833,
+          "kernel_seconds": 0.474200042
+        }
+      ],
+      "median_seconds": 0.48034275,
+      "sample_stdev_seconds": 0.004644317517439611,
+      "full_validation": {
+        "bytes": 298,
+        "sha256": "a37e6da1d43b332d5c0f4fc25b76090e9095d4c97c25f1a7186385e87706e4af",
+        "reference_match": true
+      }
+    },
+    "pidigits:mech-pi-final-advance-signed:before": {
+      "source_key": "pidigits:mech-pi-final-advance-signed",
+      "benchmark": "pidigits",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "loc": 38,
+      "physical_loc": 38,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "pidigits:mech-pi-final-advance-signed:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.311091583,
+        0.307069375,
+        0.307906083
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.311091583,
+          "wall_seconds": 0.460069792,
+          "prepare_seconds": 0.137279667,
+          "kernel_seconds": 0.311091583
+        },
+        {
+          "seconds": 0.307069375,
+          "wall_seconds": 0.4531405,
+          "prepare_seconds": 0.136434375,
+          "kernel_seconds": 0.307069375
+        },
+        {
+          "seconds": 0.307906083,
+          "wall_seconds": 0.456053667,
+          "prepare_seconds": 0.137217792,
+          "kernel_seconds": 0.307906083
+        }
+      ],
+      "median_seconds": 0.307906083,
+      "sample_stdev_seconds": 0.0021223276420999147,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      }
+    },
+    "pidigits:mech-pi-final-advance-signed:after": {
+      "source_key": "pidigits:mech-pi-final-advance-signed",
+      "benchmark": "pidigits",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+      "source_sha256": "7079dab9ee52637f5397547adac3a37cf73eda17c290ae5d6593ef45f93eeb8e",
+      "loc": 38,
+      "physical_loc": 38,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "pidigits:mech-pi-final-advance-signed:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits-advance.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.30823325,
+        0.30854625,
+        0.307611208
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.30823325,
+          "wall_seconds": 0.455939083,
+          "prepare_seconds": 0.137205458,
+          "kernel_seconds": 0.30823325
+        },
+        {
+          "seconds": 0.30854625,
+          "wall_seconds": 0.453652,
+          "prepare_seconds": 0.139370541,
+          "kernel_seconds": 0.30854625
+        },
+        {
+          "seconds": 0.307611208,
+          "wall_seconds": 0.459734167,
+          "prepare_seconds": 0.1385875,
+          "kernel_seconds": 0.307611208
+        }
+      ],
+      "median_seconds": 0.30823325,
+      "sample_stdev_seconds": 0.0004759567192382073,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      }
+    },
+    "pidigits:mech-pi-final-compact-signed:before": {
+      "source_key": "pidigits:mech-pi-final-compact-signed",
+      "benchmark": "pidigits",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "pidigits:mech-pi-final-compact-signed:before",
+      "phase": "before",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+      "binary_sha256": "14b8e48b5a18f2684b26bf4ba5e653d88c8eaabde2a7151f681d20c06dcef38a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/before",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.404791583,
+        0.404718,
+        0.402353542
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.404791583,
+          "wall_seconds": 0.542551875,
+          "prepare_seconds": 0.127600458,
+          "kernel_seconds": 0.404791583
+        },
+        {
+          "seconds": 0.404718,
+          "wall_seconds": 0.5429715,
+          "prepare_seconds": 0.128245083,
+          "kernel_seconds": 0.404718
+        },
+        {
+          "seconds": 0.402353542,
+          "wall_seconds": 0.539597417,
+          "prepare_seconds": 0.126307416,
+          "kernel_seconds": 0.402353542
+        }
+      ],
+      "median_seconds": 0.404718,
+      "sample_stdev_seconds": 0.001386850148678296,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      }
+    },
+    "pidigits:mech-pi-final-compact-signed:after": {
+      "source_key": "pidigits:mech-pi-final-compact-signed",
+      "benchmark": "pidigits",
+      "mode": "resident",
+      "language": "mech-resident",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+      "source_sha256": "db8b2e388e9fb395183a73c2390ad2ff6ef1842d69b28db5b5c1200a35bdd5c1",
+      "loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "runtime_environment": {},
+      "timing_boundary": "Loaded typed instruction interpreter. Timing starts after source loading, graph optimization and activation; includes input, standard-library operations, interpreted arithmetic/control, output formatting, writing and flush. Full process time and preparation time are retained separately. Fresh initial workload state for every sample; no output/workload caching.",
+      "key": "pidigits:mech-pi-final-compact-signed:after",
+      "phase": "after",
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+      "binary_sha256": "aa335bc1d8c2c103cc0d6581be3cbc021111f1d26b695c371e0bf8422fba84d4",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/interpreter-integration/20261011/.build/after",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/pidigits/pidigits.mec",
+        "resident",
+        "{n}"
+      ],
+      "samples_seconds": [
+        0.404505708,
+        0.403249167,
+        0.404441792
+      ],
+      "sample_validation": [
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        },
+        {
+          "bytes": 16893,
+          "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+          "reference_match": true
+        }
+      ],
+      "sample_details": [
+        {
+          "seconds": 0.404505708,
+          "wall_seconds": 0.539817084,
+          "prepare_seconds": 0.126087459,
+          "kernel_seconds": 0.404505708
+        },
+        {
+          "seconds": 0.403249167,
+          "wall_seconds": 0.539333208,
+          "prepare_seconds": 0.126434166,
+          "kernel_seconds": 0.403249167
+        },
+        {
+          "seconds": 0.404441792,
+          "wall_seconds": 0.544773375,
+          "prepare_seconds": 0.1292715,
+          "kernel_seconds": 0.404441792
+        }
+      ],
+      "median_seconds": 0.404441792,
+      "sample_stdev_seconds": 0.0007077352294893439,
+      "full_validation": {
+        "bytes": 16893,
+        "sha256": "bdfa7b6c756d96492f472f97aee9cc139bee954d271eacedfd7ace5d2875f06c",
+        "reference_match": true
+      }
+    }
+  },
+  "orders": {
+    "revcomp": [
+      [
+        "revcomp:mech-revcomp-optimized:before",
+        "revcomp:mech-revcomp-optimized:after"
+      ],
+      [
+        "revcomp:mech-revcomp-optimized:after",
+        "revcomp:mech-revcomp-optimized:before"
+      ],
+      [
+        "revcomp:mech-revcomp-optimized:before",
+        "revcomp:mech-revcomp-optimized:after"
+      ]
+    ],
+    "regexredux": [
+      [
+        "regexredux:mech-regex-final-reuse-signed:after",
+        "regexredux:mech-regex-final-reuse-signed:before"
+      ],
+      [
+        "regexredux:mech-regex-final-reuse-signed:after",
+        "regexredux:mech-regex-final-reuse-signed:before"
+      ],
+      [
+        "regexredux:mech-regex-final-reuse-signed:after",
+        "regexredux:mech-regex-final-reuse-signed:before"
+      ]
+    ],
+    "knucleotide": [
+      [
+        "knucleotide:mech-compact-final-std1-simd0-p4:after",
+        "knucleotide:mech-compact-final-std1-simd0-p4:before"
+      ],
+      [
+        "knucleotide:mech-compact-final-std1-simd0-p4:before",
+        "knucleotide:mech-compact-final-std1-simd0-p4:after"
+      ],
+      [
+        "knucleotide:mech-compact-final-std1-simd0-p4:before",
+        "knucleotide:mech-compact-final-std1-simd0-p4:after"
+      ]
+    ],
+    "pidigits": [
+      [
+        "pidigits:mech-pi-final-compact-signed:before",
+        "pidigits:mech-pi-final-advance-signed:before",
+        "pidigits:mech-pi-final-advance-signed:after",
+        "pidigits:mech-pi-final-compact-signed:after"
+      ],
+      [
+        "pidigits:mech-pi-final-compact-signed:after",
+        "pidigits:mech-pi-final-compact-signed:before",
+        "pidigits:mech-pi-final-advance-signed:after",
+        "pidigits:mech-pi-final-advance-signed:before"
+      ],
+      [
+        "pidigits:mech-pi-final-compact-signed:before",
+        "pidigits:mech-pi-final-compact-signed:after",
+        "pidigits:mech-pi-final-advance-signed:before",
+        "pidigits:mech-pi-final-advance-signed:after"
+      ]
+    ],
+    "nbody": [
+      [
+        "nbody:compact-baseline:after",
+        "nbody:compact-baseline:before",
+        "nbody:pairwise-mass-tails:before",
+        "nbody:pairwise-mass-tails:after"
+      ],
+      [
+        "nbody:pairwise-mass-tails:after",
+        "nbody:compact-baseline:after",
+        "nbody:compact-baseline:before",
+        "nbody:pairwise-mass-tails:before"
+      ],
+      [
+        "nbody:pairwise-mass-tails:before",
+        "nbody:compact-baseline:after",
+        "nbody:compact-baseline:before",
+        "nbody:pairwise-mass-tails:after"
+      ]
+    ],
+    "mandelbrot": [
+      [
+        "mandelbrot:mech-program-simd-loop-fma:before",
+        "mandelbrot:mech-program-compact:after",
+        "mandelbrot:mech-program-simd-loop-fma:after",
+        "mandelbrot:mech-program-compact:before"
+      ],
+      [
+        "mandelbrot:mech-program-compact:before",
+        "mandelbrot:mech-program-simd-loop-fma:after",
+        "mandelbrot:mech-program-compact:after",
+        "mandelbrot:mech-program-simd-loop-fma:before"
+      ],
+      [
+        "mandelbrot:mech-program-compact:after",
+        "mandelbrot:mech-program-simd-loop-fma:before",
+        "mandelbrot:mech-program-simd-loop-fma:after",
+        "mandelbrot:mech-program-compact:before"
+      ]
+    ],
+    "spectralnorm": [
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after"
+      ],
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before"
+      ],
+      [
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:after",
+        "spectralnorm:mech-integer-simd1-u4-r4-p8-g8:before"
+      ]
+    ],
+    "binarytrees": [
+      [
+        "binarytrees:mech-binarytrees-parallel:after",
+        "binarytrees:mech-binarytrees-parallel:before"
+      ],
+      [
+        "binarytrees:mech-binarytrees-parallel:before",
+        "binarytrees:mech-binarytrees-parallel:after"
+      ],
+      [
+        "binarytrees:mech-binarytrees-parallel:before",
+        "binarytrees:mech-binarytrees-parallel:after"
+      ]
+    ],
+    "fasta": [
+      [
+        "fasta:mech-fasta-final-expanded-v2:before",
+        "fasta:mech-fasta-final-compact-v2:before",
+        "fasta:mech-fasta-final-expanded-v2:after",
+        "fasta:mech-fasta-final-compact-v2:after"
+      ],
+      [
+        "fasta:mech-fasta-final-expanded-v2:after",
+        "fasta:mech-fasta-final-compact-v2:before",
+        "fasta:mech-fasta-final-compact-v2:after",
+        "fasta:mech-fasta-final-expanded-v2:before"
+      ],
+      [
+        "fasta:mech-fasta-final-compact-v2:after",
+        "fasta:mech-fasta-final-expanded-v2:before",
+        "fasta:mech-fasta-final-compact-v2:before",
+        "fasta:mech-fasta-final-expanded-v2:after"
+      ]
+    ],
+    "fannkuchredux": [
+      [
+        "fannkuchredux:mech-fannkuch-even:before",
+        "fannkuchredux:mech-fannkuch-even:after",
+        "fannkuchredux:mech-fannkuch-default:after",
+        "fannkuchredux:mech-fannkuch-default:before"
+      ],
+      [
+        "fannkuchredux:mech-fannkuch-default:after",
+        "fannkuchredux:mech-fannkuch-even:before",
+        "fannkuchredux:mech-fannkuch-default:before",
+        "fannkuchredux:mech-fannkuch-even:after"
+      ],
+      [
+        "fannkuchredux:mech-fannkuch-default:before",
+        "fannkuchredux:mech-fannkuch-even:before",
+        "fannkuchredux:mech-fannkuch-even:after",
+        "fannkuchredux:mech-fannkuch-default:after"
+      ]
+    ]
+  },
+  "completed_benchmarks": [
+    "revcomp",
+    "regexredux",
+    "knucleotide",
+    "pidigits",
+    "nbody",
+    "mandelbrot",
+    "spectralnorm",
+    "binarytrees",
+    "fasta",
+    "fannkuchredux"
+  ],
+  "discarded": [],
+  "protocol": "Three fresh loaded-interpreter runs per source and revision at canonical full workloads. Matched randomized sequential rounds, shared timing lock, AC power and Low Power Mode off. Full IO and flush are inside execution time; preparation and whole-process elapsed time retained separately. No source or workload changes.",
+  "changes": {
+    "nbody:pairwise-mass-tails": {
+      "benchmark": "nbody",
+      "loc": 25,
+      "before_seconds": 15.738515334,
+      "after_seconds": 15.769530917,
+      "after_over_before": 1.0019706803559163,
+      "before_stdev_seconds": 0.03553250554013826,
+      "after_stdev_seconds": 0.10557463257305158
+    },
+    "nbody:compact-baseline": {
+      "benchmark": "nbody",
+      "loc": 20,
+      "before_seconds": 16.15765675,
+      "after_seconds": 16.134761292,
+      "after_over_before": 0.9985829963865274,
+      "before_stdev_seconds": 0.0339781962737234,
+      "after_stdev_seconds": 0.02578878996192247
+    },
+    "mandelbrot:mech-program-simd-loop-fma": {
+      "benchmark": "mandelbrot",
+      "loc": 29,
+      "before_seconds": 11.814034583,
+      "after_seconds": 11.56785,
+      "after_over_before": 0.9791616842433954,
+      "before_stdev_seconds": 0.8502550398321519,
+      "after_stdev_seconds": 0.09084559854883491
+    },
+    "mandelbrot:mech-program-compact": {
+      "benchmark": "mandelbrot",
+      "loc": 20,
+      "before_seconds": 51.937094708000004,
+      "after_seconds": 51.431613416,
+      "after_over_before": 0.9902674322689415,
+      "before_stdev_seconds": 4.677161962386868,
+      "after_stdev_seconds": 1.780089167159994
+    },
+    "knucleotide:mech-compact-final-std1-simd0-p4": {
+      "benchmark": "knucleotide",
+      "loc": 17,
+      "before_seconds": 0.600608,
+      "after_seconds": 0.590323334,
+      "after_over_before": 0.9828762420746976,
+      "before_stdev_seconds": 0.010164040744535984,
+      "after_stdev_seconds": 0.015239140285056744
+    },
+    "spectralnorm:mech-integer-simd1-u4-r4-p8-g8": {
+      "benchmark": "spectralnorm",
+      "loc": 12,
+      "before_seconds": 0.487126458,
+      "after_seconds": 0.497019083,
+      "after_over_before": 1.0203081250002644,
+      "before_stdev_seconds": 0.02192976528034008,
+      "after_stdev_seconds": 0.02292398087547832
+    },
+    "revcomp:mech-revcomp-optimized": {
+      "benchmark": "revcomp",
+      "loc": 7,
+      "before_seconds": 0.232490625,
+      "after_seconds": 0.22087175,
+      "after_over_before": 0.9500243289379948,
+      "before_stdev_seconds": 0.0343863078822123,
+      "after_stdev_seconds": 0.01014882069529304
+    },
+    "fannkuchredux:mech-fannkuch-even": {
+      "benchmark": "fannkuchredux",
+      "loc": 59,
+      "before_seconds": 80.358808208,
+      "after_seconds": 79.539163875,
+      "after_over_before": 0.9898001930183131,
+      "before_stdev_seconds": 3.20130857816513,
+      "after_stdev_seconds": 1.0303005740332434
+    },
+    "fannkuchredux:mech-fannkuch-default": {
+      "benchmark": "fannkuchredux",
+      "loc": 39,
+      "before_seconds": 60.702543958,
+      "after_seconds": 64.30445525,
+      "after_over_before": 1.0593370731627354,
+      "before_stdev_seconds": 1.450723802271051,
+      "after_stdev_seconds": 0.6178597215800096
+    },
+    "fasta:mech-fasta-final-expanded-v2": {
+      "benchmark": "fasta",
+      "loc": 43,
+      "before_seconds": 18.851154042,
+      "after_seconds": 18.808040625,
+      "after_over_before": 0.9977129560925583,
+      "before_stdev_seconds": 0.07673535966181107,
+      "after_stdev_seconds": 0.011542162921603366
+    },
+    "fasta:mech-fasta-final-compact-v2": {
+      "benchmark": "fasta",
+      "loc": 32,
+      "before_seconds": 22.293860625,
+      "after_seconds": 22.896034333,
+      "after_over_before": 1.0270107415727148,
+      "before_stdev_seconds": 0.048926633807692306,
+      "after_stdev_seconds": 0.00960562221679577
+    },
+    "binarytrees:mech-binarytrees-parallel": {
+      "benchmark": "binarytrees",
+      "loc": 26,
+      "before_seconds": 10.445468167,
+      "after_seconds": 10.304381,
+      "after_over_before": 0.9864929781275164,
+      "before_stdev_seconds": 0.23736372878470044,
+      "after_stdev_seconds": 0.09081701566437124
+    },
+    "regexredux:mech-regex-final-reuse-signed": {
+      "benchmark": "regexredux",
+      "loc": 24,
+      "before_seconds": 0.475688667,
+      "after_seconds": 0.48034275,
+      "after_over_before": 1.0097838845506908,
+      "before_stdev_seconds": 0.0012173042586166884,
+      "after_stdev_seconds": 0.004644317517439611
+    },
+    "pidigits:mech-pi-final-advance-signed": {
+      "benchmark": "pidigits",
+      "loc": 38,
+      "before_seconds": 0.307906083,
+      "after_seconds": 0.30823325,
+      "after_over_before": 1.0010625545192624,
+      "before_stdev_seconds": 0.0021223276420999147,
+      "after_stdev_seconds": 0.0004759567192382073
+    },
+    "pidigits:mech-pi-final-compact-signed": {
+      "benchmark": "pidigits",
+      "loc": 35,
+      "before_seconds": 0.404718,
+      "after_seconds": 0.404441792,
+      "after_over_before": 0.999317529736755,
+      "before_stdev_seconds": 0.001386850148678296,
+      "after_stdev_seconds": 0.0007077352294893439
+    }
+  },
+  "finished_at": "2026-10-11T19:00:01.748986+00:00"
+}

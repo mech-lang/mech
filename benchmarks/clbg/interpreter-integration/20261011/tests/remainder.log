@@ -1,0 +1,9 @@
+   Compiling mech-gpu v0.3.5 (/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 8.97s
+     Running unittests src/lib.rs (/tmp/mech-execution-modes-target/release/deps/mech_gpu-13e64da6d72e7bc8)
+
+running 1 test
+test batched::array_cpu::integration_tests::array_remainder_preserves_signed_zero_and_zero_divisor_semantics ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.00s
+

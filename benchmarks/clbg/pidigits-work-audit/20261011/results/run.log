@@ -1,0 +1,13 @@
+RUN 1 pidigits:pidigits-node-2-two-extracts
+SAMPLE 1 pidigits:pidigits-node-2-two-extracts 5.757667s
+RUN 1 pidigits:mech-control-for-r
+SAMPLE 1 pidigits:mech-control-for-r 0.307031s
+RUN 2 pidigits:pidigits-node-2-two-extracts
+SAMPLE 2 pidigits:pidigits-node-2-two-extracts 5.911716s
+RUN 2 pidigits:mech-control-for-r
+SAMPLE 2 pidigits:mech-control-for-r 0.305562s
+RUN 3 pidigits:pidigits-node-2-two-extracts
+SAMPLE 3 pidigits:pidigits-node-2-two-extracts 5.922345s
+RUN 3 pidigits:mech-control-for-r
+SAMPLE 3 pidigits:mech-control-for-r 0.308986s
+{"seconds": 5.91171625, "time_x_mech": 19.254489246397153, "loc": 49, "loc_x_mech": 1.2894736842105263, "mech_seconds": 0.307030541, "mech_loc": 38}
