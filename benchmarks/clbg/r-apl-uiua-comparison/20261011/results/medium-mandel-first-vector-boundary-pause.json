@@ -1,0 +1,124 @@
+{
+  "reason": "Root-approved pause between full attempts for reviewed preparation and explicit external-maintenance correction. No active benchmark attempt is interrupted.",
+  "requested_at": "2026-10-11T21:17:50.383925+00:00",
+  "coordinator_pid": 2092,
+  "benchmarks": [
+    "mandelbrot"
+  ],
+  "after_first_persisted_full_attempt_key": "mandelbrot:mandelbrot-apl-optimized",
+  "lock_acquired_at": "2026-10-11T21:21:21.136262+00:00",
+  "snapshots": {
+    "r": {
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json",
+      "report_sha256": "b8fba547dbdc3a81f51b5674b46e6ba9ed6a67dda8c86bfb1cf0ef3ea34579ee",
+      "complete": false,
+      "keys": [
+        "mandelbrot:mandelbrot-r-compact",
+        "mandelbrot:mandelbrot-r-optimized",
+        "mandelbrot:mech-control-for-r"
+      ],
+      "samples": {
+        "mandelbrot:mandelbrot-r-compact": [
+          61.93569075
+        ],
+        "mandelbrot:mandelbrot-r-optimized": [
+          19.540994
+        ],
+        "mandelbrot:mech-control-for-r": [
+          0.459317292
+        ]
+      }
+    },
+    "apl": {
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json",
+      "report_sha256": "610be23722144831a6482296ee9819aafddd3886221c11ad67711475c7fc95db",
+      "complete": false,
+      "keys": [
+        "mandelbrot:mandelbrot-apl-compact",
+        "mandelbrot:mandelbrot-apl-optimized",
+        "mandelbrot:mech-control-for-apl"
+      ],
+      "samples": {
+        "mandelbrot:mandelbrot-apl-compact": [],
+        "mandelbrot:mandelbrot-apl-optimized": [
+          1540.850009166
+        ],
+        "mandelbrot:mech-control-for-apl": []
+      }
+    },
+    "uiua": {
+      "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json",
+      "report_sha256": "6833c003aa888f9678d651988ab385a058b527adbacb7aab1878faa426060d08",
+      "complete": false,
+      "keys": [
+        "mandelbrot:mandelbrot-uiua-compact",
+        "mandelbrot:mandelbrot-uiua-optimized",
+        "mandelbrot:mech-control-for-uiua"
+      ],
+      "samples": {
+        "mandelbrot:mandelbrot-uiua-compact": [],
+        "mandelbrot:mandelbrot-uiua-optimized": [],
+        "mandelbrot:mech-control-for-uiua": []
+      }
+    }
+  },
+  "requested_benchmarks_complete": false,
+  "persisted_boundary_attempt": {
+    "key": "mandelbrot:mandelbrot-apl-optimized",
+    "id": "mandelbrot-apl-optimized",
+    "benchmark": "mandelbrot",
+    "language": "apl",
+    "source_sha256": "e3c62726b4c552f810c9111d1ef181b7c93999250d805e1658b61d2415f3ff11",
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+      "--cc",
+      "8",
+      "-f",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.optimized.apl",
+      "--",
+      "16000"
+    ],
+    "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+    "runtime_environment": {
+      "LC_ALL": "C"
+    },
+    "execution_fingerprint": "{\"binary_sha256\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\", \"--cc\", \"8\", \"-f\", \"{source}\", \"--\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011\", \"environment\": {\"LC_ALL\": \"C\"}, \"source_sha256\": \"e3c62726b4c552f810c9111d1ef181b7c93999250d805e1658b61d2415f3ff11\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl\": \"ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh\": \"50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4\", \"/opt/homebrew/Cellar/pcre2/10.49/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\", \"/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib\": \"ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9\"}}",
+    "started_at": "2026-10-11T20:55:10.917868+00:00",
+    "workload_n": 16000,
+    "full_workload": true,
+    "timeout_seconds": 14400,
+    "maximum_rss_mib": 10240,
+    "power_at_start": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "seconds": 1540.850009166,
+    "exit_status": 0,
+    "remaining_group_members": [],
+    "competing_compilers": [],
+    "power_changes": [],
+    "power_at_end": {
+      "source": "AC Power",
+      "low_power_mode": 0
+    },
+    "monitor_errors": [],
+    "peak_process_group_rss_kib": 73664,
+    "resource_violation": null,
+    "resource_monitor_errors": [],
+    "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+    "stdout_bytes": 32000015,
+    "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+    "validation": {
+      "bytes": 32000015,
+      "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "reference_match": true
+    },
+    "finished_at": "2026-10-11T21:20:51.970690+00:00",
+    "valid_environment": true,
+    "sample": 1,
+    "attempt_number": 44
+  },
+  "coordinator_command": "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python run.py --languages r,apl,uiua --benchmarks mandelbrot,fasta --samples 3",
+  "signal": "SIGINT",
+  "finished_at": "2026-10-11T21:21:21.227913+00:00"
+}

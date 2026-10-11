@@ -1,0 +1,16 @@
+{
+  "status": "rejected-preparation",
+  "classified_at": "2026-10-11T21:24:53.565552+00:00",
+  "stage": "bounded-validation",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v2/sources/fasta.optimized.apl",
+  "source_sha256": "10ab8fec5924f24b0d64832629c2f067035a7427e5be45265f495d76ee9c6b4c",
+  "validator": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v2/validate.py",
+  "validator_sha256": "94bbc2ca32bf17a36f137cab9dd02453d616aa9f306e8c45263f91ff16d35080",
+  "log": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v2/results/validate.log",
+  "log_sha256": "1cbdc31b3202bbeba2a505e9a38cca7cbdc36e9a9f72a3b8a52b9c81540662c5",
+  "reason": "First canonical small validation returned GNU APL DOMAIN ERROR in Generate. No full attempt was run; this is not a full-workload timing failure.",
+  "replacement": "apl-fasta-v3/manifest.json",
+  "replacement_validation_passed": true,
+  "chart_eligible": false,
+  "original_frozen_source_unchanged": true
+}

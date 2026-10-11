@@ -1,0 +1,7 @@
+The two additive Mandelbrot candidates use stable active-pixel compression with ordinary APL arrays. Each pixel receives the original floating-point update until it escapes or reaches 50 updates. Escaped output positions stay false; survivors retain their coordinates through gathered indices. The compact candidate handles one row; the optimized candidate handles at most 16 rows. Full PBM output includes zero padding at odd widths and the final partial row block.
+
+All application/helper statements are counted separately. The compact candidate is 35 LOC and the optimized candidate is 37 LOC. Existing compact/optimized sources (33/34 LOC) remain unchanged. This runtime's macOS build disables numerical primitive parallelism, so `--cc 8` is a requested ceiling, not proof of eight active threads.
+
+Run `python3 apl-mandelbrot-v2/prepare_sources.py`, then `python3 apl-mandelbrot-v2/validate.py`. Validation acquires `/tmp/mech-clbg-timing.lock`, checks independent scalar PBM output at widths 1/2/7/8/9/15/16/17/31/32/33/63/65/129/200/257, and checks every pixel's exact iteration count through a diagnostic counter-only copy. The diagnostic copy is never a timed application. No full timing is performed by either script.
+
+`manifest.json` is written only after all checks pass. Admission occurs through a parent-approved additive guard revision at a stage boundary, with frozen originals and real trial evidence retained.

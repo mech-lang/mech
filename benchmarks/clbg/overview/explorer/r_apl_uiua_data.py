@@ -2,6 +2,7 @@
 import json
 import math
 import statistics
+from datetime import datetime
 from pathlib import Path
 
 COHORT = 'r-apl-uiua-comparison/20261011'
@@ -10,7 +11,7 @@ LANGUAGES = {
               runtime_policy='GNU R 4.6.1 · ARM64 · bytecode JIT enabled',
               color_source='https://github.com/github-linguist/linguist/blob/master/lib/linguist/languages.yml'),
     'apl': dict(label='APL (GNU APL)', color='#5a8164', execution='Interpreted',
-                runtime_policy='GNU APL 2.0 · native ARM64 interpreter',
+                runtime_policy='GNU APL 2.0 · native ARM64 interpreter · serial array primitives on macOS',
                 color_source='https://github.com/github-linguist/linguist/blob/master/lib/linguist/languages.yml'),
     'uiua': dict(label='Uiua', color='#947bec', execution='Interpreted',
                  runtime_policy='Uiua 0.19.1 · official native ARM64 interpreter',
@@ -22,6 +23,7 @@ LANGUAGES = {
 LEGACY_RUNNER_SHA256 = 'ff9d82e436472a4ad3b895c4aa4c3bc409d1c4b85bc504c69865df5854494a3a'
 LEGACY_SINGLE_PROCESS_BENCHMARKS = {'regexredux', 'revcomp'}
 LEGACY_INTERRUPT_CORRECTION_SHA256 = '02d033fa64c7446717661e4c5ba9fcc291bac6766fb9b039c13f101d54bbe98c'
+APPROVED_MAINTENANCE_EVENT_SHA256 = '5a4d7ea942b7785913233f5e4bc285d10fade6d73515a981d270650619961303'
 
 
 def _support_pins(value):
@@ -158,6 +160,45 @@ class _LegacyEvidence:
         migration_fields = {'attempt_number', 'prior_guard_revision_attempt_number'}
         before = {k: v for k, v in current.items() if k not in migration_fields}
         archived = {k: v for k, v in original.items() if k not in migration_fields}
+        if before != archived and current.get('post_measurement_exclusion'):
+            classification = revision['classification_correction']
+            assert revision['type'] == classification['type'] == 'post_measurement_exclusion'
+            assert classification['permitted_changed_attempt_fields'] == [
+                'error', 'error_type', 'post_measurement_exclusion']
+            assert classification['event_sha256'] == APPROVED_MAINTENANCE_EVENT_SHA256
+            event = self.snapshot(classification['event'], APPROVED_MAINTENANCE_EVENT_SHA256)
+            assert event['type'] == 'external-maintenance-overlap' and event['never_chart_eligible'] is True
+            assert event['preserve_original_automatic_environment'] is True
+            assert event['require_full_replacement_samples'] is True
+            assert original['attempt_number'] in classification['attempt_numbers']
+            assert not original.get('error') and not original.get('post_measurement_exclusion')
+            assert original['valid_environment'] is True and original['full_workload'] is True
+            assert original['validation']['reference_match'] is True
+            signatures = [row['signature'] for row in event['affected_attempts']
+                          if row['language'] == self.report['language']
+                          and all(original.get(key) == value for key, value in row['signature'].items())]
+            assert len(signatures) == 1, 'Excluded trial is not in the approved maintenance event'
+            window = event['conservative_window']
+            assert datetime.fromisoformat(original['started_at']) < datetime.fromisoformat(window['end'])
+            assert datetime.fromisoformat(original['finished_at']) > datetime.fromisoformat(window['start'])
+            assert classification['reason'] == event['reason']
+            assert current['error_type'] == 'PostMeasurementExclusion'
+            assert current['error'] == 'Post-measurement external-maintenance exclusion: ' + event['reason']
+            assert current['post_measurement_exclusion'] == dict(
+                event=classification['event'], event_sha256=APPROVED_MAINTENANCE_EVENT_SHA256,
+                reason=event['reason'], classified_at=classification['at'],
+                original_attempt_number=original['attempt_number'],
+                original_automatic_valid_environment=True, conservative_maintenance_window=window)
+            for field in classification['permitted_changed_attempt_fields']:
+                before.pop(field)
+            record = dict(type='post_measurement_exclusion', event=classification['event'],
+                event_sha256=APPROVED_MAINTENANCE_EVENT_SHA256, reason=event['reason'],
+                attempt_number=current['attempt_number'], original_attempt_number=original['attempt_number'],
+                original_seconds=original['seconds'], original_automatic_valid_environment=True,
+                prior_report=revision['prior_report'], prior_report_sha256=revision['prior_report_sha256'],
+                never_chart_eligible=True)
+            if record not in self.corrections:
+                self.corrections.append(record)
         if before != archived and current.get('infrastructure_interruption') is True:
             assert current.get('error') and original.get('error')
             assert current['error_type'] == 'KeyboardInterrupt'
@@ -210,7 +251,11 @@ class _LegacyEvidence:
             frozen = next(row for row in prior_audit['programs'] + prior_audit['controls']
                           if row['key'] == owner['key'])
             for field, value in frozen.items():
-                if field != 'measurement_status':
+                if field in ('samples_seconds', 'sample_validation', 'attempts'):
+                    # An ancestor's preparation can include empty timing slots;
+                    # exact archived attempts establish its measurements.
+                    assert value == [], ('Frozen audit contains measurements', key, field)
+                elif field != 'measurement_status':
                     assert old_row.get(field) == value, ('Old report differs from its frozen audit', key, field)
             self.equivalent(old_row, owner)
             for field in ('source', 'binary'):
@@ -277,6 +322,8 @@ def _sample_evidence(row, report, audit, legacy):
         assert attempt['command'] == expected_command
         assert attempt['full_workload'] is True and attempt['workload_n'] == full_n
         recorded = 'runtime_environment' in attempt and 'execution_fingerprint' in attempt
+        if attempt.get('post_measurement_exclusion'):
+            assert recorded and type(attempt.get('prior_guard_revision_attempt_number')) is int
         if recorded:
             assert attempt['runtime_environment'] == owner.get('runtime_environment', {})
             assert attempt['execution_fingerprint'] == _execution_fingerprint(owner)

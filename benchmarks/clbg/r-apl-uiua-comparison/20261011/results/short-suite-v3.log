@@ -1,0 +1,120 @@
+WAIT LOCK 1 regexredux-apl-v3-compact
+RUN FULL 1 regexredux-apl-v3-compact timeout 14400
+SAMPLE FULL 1 regexredux-apl-v3-compact 23.835025s
+WAIT LOCK 1 regexredux-apl-v3-optimized
+RUN FULL 1 regexredux-apl-v3-optimized timeout 14400
+SAMPLE FULL 1 regexredux-apl-v3-optimized 14.890297s
+WAIT LOCK 1 mech-control-regexredux-for-apl-additive-v3
+RUN FULL 1 mech-control-regexredux-for-apl-additive-v3 timeout 14400
+SAMPLE FULL 1 mech-control-regexredux-for-apl-additive-v3 0.497827s
+WAIT LOCK 2 regexredux-apl-v3-optimized
+RUN FULL 2 regexredux-apl-v3-optimized timeout 14400
+SAMPLE FULL 2 regexredux-apl-v3-optimized 14.449671s
+WAIT LOCK 2 mech-control-regexredux-for-apl-additive-v3
+RUN FULL 2 mech-control-regexredux-for-apl-additive-v3 timeout 14400
+SAMPLE FULL 2 mech-control-regexredux-for-apl-additive-v3 0.498356s
+WAIT LOCK 2 regexredux-apl-v3-compact
+RUN FULL 2 regexredux-apl-v3-compact timeout 14400
+SAMPLE FULL 2 regexredux-apl-v3-compact 21.658672s
+WAIT LOCK 3 regexredux-apl-v3-compact
+RUN FULL 3 regexredux-apl-v3-compact timeout 14400
+SAMPLE FULL 3 regexredux-apl-v3-compact 21.735448s
+WAIT LOCK 3 mech-control-regexredux-for-apl-additive-v3
+RUN FULL 3 mech-control-regexredux-for-apl-additive-v3 timeout 14400
+SAMPLE FULL 3 mech-control-regexredux-for-apl-additive-v3 0.496436s
+WAIT LOCK 3 regexredux-apl-v3-optimized
+RUN FULL 3 regexredux-apl-v3-optimized timeout 14400
+SAMPLE FULL 3 regexredux-apl-v3-optimized 14.440825s
+WAIT LOCK 1 mech-control-revcomp-for-apl-additive-v3
+RUN FULL 1 mech-control-revcomp-for-apl-additive-v3 timeout 14400
+SAMPLE FULL 1 mech-control-revcomp-for-apl-additive-v3 0.209358s
+WAIT LOCK 1 revcomp-apl-v2-optimized
+RUN FULL 1 revcomp-apl-v2-optimized timeout 14400
+SAMPLE FULL 1 revcomp-apl-v2-optimized 24.317230s
+WAIT LOCK 1 revcomp-apl-v2-compact
+RUN FULL 1 revcomp-apl-v2-compact timeout 14400
+SAMPLE FULL 1 revcomp-apl-v2-compact 39.929366s
+WAIT LOCK 2 revcomp-apl-v2-compact
+RUN FULL 2 revcomp-apl-v2-compact timeout 14400
+SAMPLE FULL 2 revcomp-apl-v2-compact 39.910570s
+WAIT LOCK 2 revcomp-apl-v2-optimized
+RUN FULL 2 revcomp-apl-v2-optimized timeout 14400
+SAMPLE FULL 2 revcomp-apl-v2-optimized 24.304837s
+WAIT LOCK 2 mech-control-revcomp-for-apl-additive-v3
+RUN FULL 2 mech-control-revcomp-for-apl-additive-v3 timeout 14400
+SAMPLE FULL 2 mech-control-revcomp-for-apl-additive-v3 0.149992s
+WAIT LOCK 3 revcomp-apl-v2-optimized
+RUN FULL 3 revcomp-apl-v2-optimized timeout 14400
+SAMPLE FULL 3 revcomp-apl-v2-optimized 24.307758s
+WAIT LOCK 3 mech-control-revcomp-for-apl-additive-v3
+RUN FULL 3 mech-control-revcomp-for-apl-additive-v3 timeout 14400
+SAMPLE FULL 3 mech-control-revcomp-for-apl-additive-v3 0.148504s
+WAIT LOCK 3 revcomp-apl-v2-compact
+RUN FULL 3 revcomp-apl-v2-compact timeout 14400
+SAMPLE FULL 3 revcomp-apl-v2-compact 39.902133s
+WAIT LOCK 1 spectralnorm-uiua-vectorized-compact9-v3
+RUN FULL 1 spectralnorm-uiua-vectorized-compact9-v3 timeout 14400
+SAMPLE FULL 1 spectralnorm-uiua-vectorized-compact9-v3 3.780071s
+WAIT LOCK 1 mech-control-spectralnorm-for-uiua-additive-v3
+RUN FULL 1 mech-control-spectralnorm-for-uiua-additive-v3 timeout 14400
+SAMPLE FULL 1 mech-control-spectralnorm-for-uiua-additive-v3 0.119889s
+WAIT LOCK 1 spectralnorm-uiua-vectorized-optimized-v3
+RUN FULL 1 spectralnorm-uiua-vectorized-optimized-v3 timeout 14400
+SAMPLE FULL 1 spectralnorm-uiua-vectorized-optimized-v3 3.531835s
+WAIT LOCK 2 spectralnorm-r-compact
+RUN FULL 2 spectralnorm-r-compact timeout 14400
+SAMPLE FULL 2 spectralnorm-r-compact 5.064833s
+WAIT LOCK 2 mech-control-spectralnorm-for-r
+RUN FULL 2 mech-control-spectralnorm-for-r timeout 14400
+SAMPLE FULL 2 mech-control-spectralnorm-for-r 0.086941s
+WAIT LOCK 2 spectralnorm-r-optimized
+RUN FULL 2 spectralnorm-r-optimized timeout 14400
+SAMPLE FULL 2 spectralnorm-r-optimized 8.094750s
+WAIT LOCK 2 spectralnorm-apl-compact
+RUN FULL 2 spectralnorm-apl-compact timeout 14400
+SAMPLE FULL 2 spectralnorm-apl-compact 95.638873s
+WAIT LOCK 2 mech-control-spectralnorm-for-apl
+RUN FULL 2 mech-control-spectralnorm-for-apl timeout 14400
+SAMPLE FULL 2 mech-control-spectralnorm-for-apl 0.087980s
+WAIT LOCK 2 spectralnorm-apl-optimized
+RUN FULL 2 spectralnorm-apl-optimized timeout 14400
+SAMPLE FULL 2 spectralnorm-apl-optimized 73.438057s
+WAIT LOCK 2 mech-control-spectralnorm-for-uiua-additive-v3
+RUN FULL 2 mech-control-spectralnorm-for-uiua-additive-v3 timeout 14400
+SAMPLE FULL 2 mech-control-spectralnorm-for-uiua-additive-v3 0.090275s
+WAIT LOCK 2 spectralnorm-uiua-vectorized-compact9-v3
+RUN FULL 2 spectralnorm-uiua-vectorized-compact9-v3 timeout 14400
+SAMPLE FULL 2 spectralnorm-uiua-vectorized-compact9-v3 3.746889s
+WAIT LOCK 2 spectralnorm-uiua-vectorized-optimized-v3
+RUN FULL 2 spectralnorm-uiua-vectorized-optimized-v3 timeout 14400
+SAMPLE FULL 2 spectralnorm-uiua-vectorized-optimized-v3 3.476325s
+WAIT LOCK 3 spectralnorm-r-optimized
+RUN FULL 3 spectralnorm-r-optimized timeout 14400
+SAMPLE FULL 3 spectralnorm-r-optimized 8.207292s
+WAIT LOCK 3 mech-control-spectralnorm-for-r
+RUN FULL 3 mech-control-spectralnorm-for-r timeout 14400
+SAMPLE FULL 3 mech-control-spectralnorm-for-r 0.088010s
+WAIT LOCK 3 spectralnorm-r-compact
+RUN FULL 3 spectralnorm-r-compact timeout 14400
+SAMPLE FULL 3 spectralnorm-r-compact 4.598180s
+WAIT LOCK 3 spectralnorm-apl-optimized
+RUN FULL 3 spectralnorm-apl-optimized timeout 14400
+SAMPLE FULL 3 spectralnorm-apl-optimized 74.172834s
+WAIT LOCK 3 mech-control-spectralnorm-for-apl
+RUN FULL 3 mech-control-spectralnorm-for-apl timeout 14400
+SAMPLE FULL 3 mech-control-spectralnorm-for-apl 0.090671s
+WAIT LOCK 3 spectralnorm-apl-compact
+RUN FULL 3 spectralnorm-apl-compact timeout 14400
+SAMPLE FULL 3 spectralnorm-apl-compact 95.745664s
+WAIT LOCK 3 mech-control-spectralnorm-for-uiua-additive-v3
+RUN FULL 3 mech-control-spectralnorm-for-uiua-additive-v3 timeout 14400
+SAMPLE FULL 3 mech-control-spectralnorm-for-uiua-additive-v3 0.094313s
+WAIT LOCK 3 spectralnorm-uiua-vectorized-optimized-v3
+RUN FULL 3 spectralnorm-uiua-vectorized-optimized-v3 timeout 14400
+SAMPLE FULL 3 spectralnorm-uiua-vectorized-optimized-v3 3.447562s
+WAIT LOCK 3 spectralnorm-uiua-vectorized-compact9-v3
+RUN FULL 3 spectralnorm-uiua-vectorized-compact9-v3 timeout 14400
+SAMPLE FULL 3 spectralnorm-uiua-vectorized-compact9-v3 4.079233s
+REPORT r partial
+REPORT apl partial
+REPORT uiua partial

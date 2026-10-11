@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "revision": "medium-v3",
+  "approved_by_root": true,
+  "approval_condition": "Actual apply requires parent review of this exact plan hash and parent confirmation of post-exclusion QA84710 exit; owning coordinator2092 must already have exited. Source/manifest approvals are recorded in the parent conversation.",
+  "reason": "Root-approved coherent additive revision at a safe exited timing stage. Admit independently validated APLactive-pixel Mandelbrot, seed-independent affine FASTA arrays and canonical nbody initial data; Uiua EOF-comment parsing, native fannkuch reversal/gather, native Mandelbrot packing and bitwise-equivalent canonical nbody array denominator. Correct APLmacOSserial primitive metadata without changing the runtime. Retain originals, preparations, successful and failed actual trials; preserve execution-identical samples and earlier controls. The separate root maintenance exclusion and its exact archive/lineage remain unchanged. Affected selected sources receive3fresh full trials and3interleaved unchanged Mech controls. No shortcuts, compressed-size score, reduced canonical workloads or extrapolated chart values.",
+  "languages": {
+    "apl": {
+      "additions": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/manifest.json",
+          "sha256": "fb24cae637e710eec7b2a3cc5a1cc9f30e43450683604b4efd78becfa4e89036"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/manifest.json",
+          "sha256": "46858a2ef2b9cf4eef1566b288fd2917e7dcd67328687f793af482e723c73577"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/apl-manifest.json",
+          "sha256": "369ec5559794f9a4732c07205fb41bac48940bbd932a5fee19fbacbd59101647"
+        }
+      ],
+      "retire": {
+        "mandelbrot:mandelbrot-apl-optimized": "Root-reviewed removal from active shortlist after one saved canonical trial1540.850009166s. Stable active-index candidates use ordinary arrays to avoid updates on escaped pixels; this original34LOCsource and real valid full trial remain historical. One trial is not a qualifying median and no program failure is invented. The original33LOCcompact remains selected.",
+        "fasta:fasta-apl-optimized": "Source-reviewed avoidable interpreted per-draw loop replaced by approved generic affine coefficient arrays. Original45LOCsource and passed small evidence remain retained; no full trial or measured failure is claimed. Original38LOCcompact stays selected as smallest.",
+        "nbody:nbody-apl-compact": "Canonical initial-data correction: original Jupiter z literal differs by2ULP. Replace with reversible one-literal canonical-v2 copy, same30LOCand algorithm. Original small-validation evidence retained; no full attempt or measured failure exists.",
+        "nbody:nbody-apl-optimized": "Canonical initial-data correction: original Jupiter z literal differs by2ULP. Replace with identical-execution canonical-v2 alias, same30LOCand algorithm. Original small-validation evidence retained; no full attempt or measured failure exists."
+      },
+      "fresh_controls": [
+        "nbody",
+        "mandelbrot",
+        "fasta"
+      ],
+      "must_have_saved_full_attempt": [
+        "mandelbrot:mandelbrot-apl-optimized"
+      ]
+    },
+    "uiua": {
+      "additions": [
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/manifest.json",
+          "sha256": "9ed7bb5adc5e10ef84c1011dbd7a94644e936678dcd963a95bc4b38b5c3b50da"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fannkuch-v2/manifest.json",
+          "sha256": "9eecf7553662eceefbf745ed83b01d7855287a3db3a309a2e830d4fcd4b2cc3e"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/manifest.json",
+          "sha256": "7ef4271311b62a7dda9c75403192b6b4f38e57c674321c636795872fabd9a8a0"
+        },
+        {
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/manifest.json",
+          "sha256": "e2f7d20d58f54ae16e47cd19ac7fdedf2cc2ef8eb5a82e2c573f18449a88d532"
+        }
+      ],
+      "retire": {
+        "nbody:nbody-uiua-compact": "Original Jupiter z literal differs by2ULP; replace with source-reviewed21LOCnative-array v3 based on validated canonical-v2 copies. Original sources and canonical-v2 preparation remain retained, without any original full attempt/failure claimed.",
+        "nbody:nbody-uiua-optimized": "Original Jupiter z literal differs by2ULP; replace with source-reviewed21LOCnative-array v3 based on validated canonical-v2 copies. Bitwise per-step comparisons preserve canonical-v2 algorithm; original sources and preparation remain retained, no full attempt/failure claimed.",
+        "knucleotide:knucleotide-uiua-compact": "General semicolon-comment-at-EOF correctness repair before any full knucleotide attempt. The approved19LOCv3 source retains all seven complete growing maps; original sources and six failing parser fixtures remain evidence, not fabricated canonical full failures.",
+        "knucleotide:knucleotide-uiua-optimized": "General semicolon-comment-at-EOF correctness repair before any full knucleotide attempt. Approved bounded27LOCv3 retains complete work; original source/preparation remains retained, no canonical full failure claimed.",
+        "knucleotide:knucleotide-uiua-native-group-optimized-v2": "General semicolon-comment-at-EOF correctness repair before any full knucleotide attempt. Approved native-group29LOCv3 retains complete work; original source/preparation remains retained, no canonical full failure claimed.",
+        "fannkuchredux:fannkuchredux-uiua-compact": "Proposed reviewed shortlist replacement by equally concise20LOCnative-index bounded-array compact candidate. Full canonical permutation/actual flip/rank-parity work remains application-driven and independently traced. Original scalar20LOCsource and preparation retained; no full time/failure/speed superiority claimed.",
+        "fannkuchredux:fannkuchredux-uiua-optimized": "Proposed reviewed shortlist replacement by21LOCnative-flat-gather candidate, eliminating per-cell switched user-function dispatch with general primitives. Original21LOCsource/preparation retained; no full time/failure/speed superiority claimed.",
+        "mandelbrot:mandelbrot-uiua-optimized": "Proposed reviewed shortlist replacement by equal11LOCnative packing source. The complete pixel recurrence and ordinary row escape condition are unchanged; general multiplication and native reduction pack all bits. Original11LOCsource and preparation retained; no full time/failure/speed superiority claimed.",
+        "mandelbrot:mandelbrot-uiua-compact": "Root-reviewed replacement by equally concise11LOCnative packing source, avoiding per-byte composite user-function interpretation while retaining the canonical pixel recurrence and ordinary escape tests. Original11LOCcompact source/preparation and its extra-iteration reference behavior remain retained; no full time, failure or measured superiority is claimed."
+      },
+      "fresh_controls": [
+        "nbody",
+        "mandelbrot",
+        "knucleotide",
+        "fannkuchredux"
+      ],
+      "must_have_saved_full_attempt": []
+    }
+  }
+}

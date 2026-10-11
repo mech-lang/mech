@@ -1,6 +1,6 @@
 {
   "status": "partial",
-  "updated_at": "2026-10-11T20:35:57.681920+00:00",
+  "updated_at": "2026-10-11T21:35:45.413239+00:00",
   "comparisons": [
     {
       "language": "r",
@@ -320,47 +320,213 @@
       "language": "r",
       "benchmark": "spectralnorm",
       "prepared_candidates": 2,
-      "admitted_candidates": 0,
-      "pending_candidates": [
-        {
-          "key": "spectralnorm:spectralnorm-r-compact",
-          "valid_samples": 1,
-          "status": "partial"
-        },
-        {
-          "key": "spectralnorm:spectralnorm-r-optimized",
-          "valid_samples": 1,
-          "status": "partial"
-        }
-      ],
+      "admitted_candidates": 2,
+      "pending_candidates": [],
       "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "spectralnorm:spectralnorm-r-compact",
+        "id": "spectralnorm-r-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/compact.R",
+        "source_sha256": "0639c2f114b8ded953ab5dc32ba936917e40bd7adde1354205e10715333cb2dd",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/compact.R",
+          "{n}"
+        ],
+        "loc": 12,
+        "seconds": 4.59924125,
+        "samples_seconds": [
+          4.59924125,
+          5.064832916,
+          4.598179542
+        ],
+        "stdev_seconds": 0.2691164859740472,
+        "sample_validation": [
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 52.258215969002684,
+        "loc_x_mech": 1.0,
+        "mech_seconds": 0.088009917,
+        "mech_samples_seconds": [
+          0.10454525,
+          0.08694075,
+          0.088009917
+        ],
+        "mech_loc": 12,
+        "control_key": "spectralnorm:mech-control-for-r",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "spectralnorm:spectralnorm-r-compact",
+        "id": "spectralnorm-r-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/compact.R",
+        "source_sha256": "0639c2f114b8ded953ab5dc32ba936917e40bd7adde1354205e10715333cb2dd",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/spectralnorm/compact.R",
+          "{n}"
+        ],
+        "loc": 12,
+        "seconds": 4.59924125,
+        "samples_seconds": [
+          4.59924125,
+          5.064832916,
+          4.598179542
+        ],
+        "stdev_seconds": 0.2691164859740472,
+        "sample_validation": [
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 52.258215969002684,
+        "loc_x_mech": 1.0,
+        "mech_seconds": 0.088009917,
+        "mech_samples_seconds": [
+          0.10454525,
+          0.08694075,
+          0.088009917
+        ],
+        "mech_loc": 12,
+        "control_key": "spectralnorm:mech-control-for-r",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "r",
       "benchmark": "mandelbrot",
       "prepared_candidates": 2,
-      "admitted_candidates": 0,
-      "pending_candidates": [
-        {
-          "key": "mandelbrot:mandelbrot-r-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "mandelbrot:mandelbrot-r-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        }
-      ],
+      "admitted_candidates": 2,
+      "pending_candidates": [],
       "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "mandelbrot:mandelbrot-r-optimized",
+        "id": "mandelbrot-r-optimized",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/optimized.R",
+        "source_sha256": "b914726708677fa4d24d8421bca7d2623efc11fd1c31eac5019d222379c0ec0f",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/optimized.R",
+          "{n}"
+        ],
+        "loc": 27,
+        "seconds": 19.736744834,
+        "samples_seconds": [
+          19.609497042,
+          19.736744834,
+          20.29300625
+        ],
+        "stdev_seconds": 0.36350231565516183,
+        "sample_validation": [
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 44.59727425311095,
+        "loc_x_mech": 0.9310344827586207,
+        "mech_seconds": 0.442554958,
+        "mech_samples_seconds": [
+          0.441297791,
+          0.445561792,
+          0.442554958
+        ],
+        "mech_loc": 29,
+        "control_key": "mandelbrot:mech-control-for-r",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "mandelbrot:mandelbrot-r-compact",
+        "id": "mandelbrot-r-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/compact.R",
+        "source_sha256": "940f96514d6dc5821ad429e34187d3f160085fc58dfdeb319d936f9bdccf8777",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/compact.R",
+          "{n}"
+        ],
+        "loc": 20,
+        "seconds": 61.800992458,
+        "samples_seconds": [
+          61.93569075,
+          61.702080417,
+          61.800992458
+        ],
+        "stdev_seconds": 0.11726111134762063,
+        "sample_validation": [
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 139.64591592712424,
+        "loc_x_mech": 1.0,
+        "mech_seconds": 0.442554958,
+        "mech_samples_seconds": [
+          0.441297791,
+          0.445561792,
+          0.442554958
+        ],
+        "mech_loc": 20,
+        "control_key": "mandelbrot:mech-control-for-r",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "r",
@@ -375,8 +541,8 @@
         },
         {
           "key": "fasta:fasta-r-optimized",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 1,
+          "status": "partial"
         }
       ],
       "failed_candidates": [],
@@ -480,8 +646,8 @@
     {
       "language": "apl",
       "benchmark": "regexredux",
-      "prepared_candidates": 4,
-      "admitted_candidates": 2,
+      "prepared_candidates": 6,
+      "admitted_candidates": 4,
       "pending_candidates": [],
       "failed_candidates": [
         {
@@ -506,7 +672,7 @@
             "error_type": "OutputValidationError",
             "seconds": 9.500716208,
             "exit_status": 0,
-            "attempt_number": 3,
+            "attempt_number": 2,
             "finished_at": "2026-10-11T18:57:26.577558+00:00",
             "stdout_bytes": 0,
             "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -518,25 +684,25 @@
       "control_admitted": true,
       "coverage": "partial-prepared-candidates",
       "fastest": {
-        "key": "regexredux:regexredux-apl-v2-optimized",
-        "id": "regexredux-apl-v2-optimized",
-        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.optimized.apl",
-        "source_sha256": "51898ec4bc74d71629f55d197dba3966e184d60c643879089176c32d16913114",
+        "key": "regexredux:regexredux-apl-v3-optimized",
+        "id": "regexredux-apl-v3-optimized",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/sources/regexredux.optimized.apl",
+        "source_sha256": "bfcfeb21c2753bb6217b26e2db1cff17eed762d9ade7d27077d523e2b27401d8",
         "command": [
           "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
           "--cc",
           "8",
           "-f",
-          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.optimized.apl"
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/sources/regexredux.optimized.apl"
         ],
-        "loc": 34,
-        "seconds": 139.909072708,
+        "loc": 33,
+        "seconds": 14.449671042,
         "samples_seconds": [
-          139.577627166,
-          144.167491459,
-          139.909072708
+          14.890297375,
+          14.449671042,
+          14.440824833
         ],
-        "stdev_seconds": 2.5596497362704462,
+        "stdev_seconds": 0.25698747918872056,
         "sample_validation": [
           {
             "bytes": 298,
@@ -554,38 +720,38 @@
             "reference_match": true
           }
         ],
-        "time_x_mech": 281.65798211036997,
-        "loc_x_mech": 1.4166666666666667,
-        "mech_seconds": 0.496733917,
+        "time_x_mech": 29.025489240328586,
+        "loc_x_mech": 1.375,
+        "mech_seconds": 0.497826959,
         "mech_samples_seconds": [
-          0.534738584,
-          0.496733917,
-          0.490785209
+          0.497826959,
+          0.498356125,
+          0.49643575
         ],
         "mech_loc": 24,
-        "control_key": "regexredux:mech-control-for-apl",
+        "control_key": "regexredux:mech-control-for-apl-additive-v3",
         "timing_alias_of": null
       },
       "smallest": {
-        "key": "regexredux:regexredux-apl-v2-optimized",
-        "id": "regexredux-apl-v2-optimized",
-        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.optimized.apl",
-        "source_sha256": "51898ec4bc74d71629f55d197dba3966e184d60c643879089176c32d16913114",
+        "key": "regexredux:regexredux-apl-v3-optimized",
+        "id": "regexredux-apl-v3-optimized",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/sources/regexredux.optimized.apl",
+        "source_sha256": "bfcfeb21c2753bb6217b26e2db1cff17eed762d9ade7d27077d523e2b27401d8",
         "command": [
           "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
           "--cc",
           "8",
           "-f",
-          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl-v2/regexredux.optimized.apl"
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/sources/regexredux.optimized.apl"
         ],
-        "loc": 34,
-        "seconds": 139.909072708,
+        "loc": 33,
+        "seconds": 14.449671042,
         "samples_seconds": [
-          139.577627166,
-          144.167491459,
-          139.909072708
+          14.890297375,
+          14.449671042,
+          14.440824833
         ],
-        "stdev_seconds": 2.5596497362704462,
+        "stdev_seconds": 0.25698747918872056,
         "sample_validation": [
           {
             "bytes": 298,
@@ -603,24 +769,24 @@
             "reference_match": true
           }
         ],
-        "time_x_mech": 281.65798211036997,
-        "loc_x_mech": 1.4166666666666667,
-        "mech_seconds": 0.496733917,
+        "time_x_mech": 29.025489240328586,
+        "loc_x_mech": 1.375,
+        "mech_seconds": 0.497826959,
         "mech_samples_seconds": [
-          0.534738584,
-          0.496733917,
-          0.490785209
+          0.497826959,
+          0.498356125,
+          0.49643575
         ],
         "mech_loc": 24,
-        "control_key": "regexredux:mech-control-for-apl",
+        "control_key": "regexredux:mech-control-for-apl-additive-v3",
         "timing_alias_of": null
       }
     },
     {
       "language": "apl",
       "benchmark": "revcomp",
-      "prepared_candidates": 2,
-      "admitted_candidates": 0,
+      "prepared_candidates": 4,
+      "admitted_candidates": 2,
       "pending_candidates": [],
       "failed_candidates": [
         {
@@ -630,7 +796,7 @@
             "error_type": "OutputValidationError",
             "seconds": 14.4157705,
             "exit_status": 0,
-            "attempt_number": 6,
+            "attempt_number": 3,
             "finished_at": "2026-10-11T19:01:12.086669+00:00",
             "stdout_bytes": 0,
             "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -645,7 +811,7 @@
             "error_type": "OutputValidationError",
             "seconds": 12.941433708,
             "exit_status": 0,
-            "attempt_number": 7,
+            "attempt_number": 4,
             "finished_at": "2026-10-11T19:01:25.271415+00:00",
             "stdout_bytes": 0,
             "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -655,9 +821,105 @@
         }
       ],
       "control_admitted": true,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "coverage": "partial-prepared-candidates",
+      "fastest": {
+        "key": "revcomp:revcomp-apl-v2-optimized",
+        "id": "revcomp-apl-v2-optimized",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.optimized.apl",
+        "source_sha256": "a4fcaa32c69f215bc07a9d1794bd72ceb764bd47059dfd4ec9490b0a8ab4d991",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.optimized.apl"
+        ],
+        "loc": 71,
+        "seconds": 24.307758125,
+        "samples_seconds": [
+          24.31723,
+          24.304836583,
+          24.307758125
+        ],
+        "stdev_seconds": 0.0064787937227184745,
+        "sample_validation": [
+          {
+            "bytes": 254166745,
+            "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 162.06067954769873,
+        "loc_x_mech": 10.142857142857142,
+        "mech_seconds": 0.149991708,
+        "mech_samples_seconds": [
+          0.209357542,
+          0.149991708,
+          0.148503667
+        ],
+        "mech_loc": 7,
+        "control_key": "revcomp:mech-control-for-apl-additive-v3",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "revcomp:revcomp-apl-v2-compact",
+        "id": "revcomp-apl-v2-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.compact.apl",
+        "source_sha256": "611f8f040cd5893993d5d43830ff4c7e74c0c3bf1cc6b8f4832f616de7400d38",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/run-apl-scratch.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-revcomp-v2/sources/revcomp.compact.apl"
+        ],
+        "loc": 51,
+        "seconds": 39.910569667,
+        "samples_seconds": [
+          39.929365666,
+          39.910569667,
+          39.902132833
+        ],
+        "stdev_seconds": 0.013940928589095184,
+        "sample_validation": [
+          {
+            "bytes": 254166745,
+            "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+            "reference_match": true
+          },
+          {
+            "bytes": 254166745,
+            "sha256": "e5730d4fd55c464f276e5c6062c80f46e0a735281de15d8c957e2731a9baf70e",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 266.0851736350652,
+        "loc_x_mech": 7.285714285714286,
+        "mech_seconds": 0.149991708,
+        "mech_samples_seconds": [
+          0.209357542,
+          0.149991708,
+          0.148503667
+        ],
+        "mech_loc": 7,
+        "control_key": "revcomp:mech-control-for-apl-additive-v3",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "apl",
@@ -775,29 +1037,118 @@
       "language": "apl",
       "benchmark": "spectralnorm",
       "prepared_candidates": 2,
-      "admitted_candidates": 0,
-      "pending_candidates": [
-        {
-          "key": "spectralnorm:spectralnorm-apl-compact",
-          "valid_samples": 1,
-          "status": "partial"
-        },
-        {
-          "key": "spectralnorm:spectralnorm-apl-optimized",
-          "valid_samples": 1,
-          "status": "partial"
-        }
-      ],
+      "admitted_candidates": 2,
+      "pending_candidates": [],
       "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "spectralnorm:spectralnorm-apl-optimized",
+        "id": "spectralnorm-apl-optimized",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/spectralnorm.optimized.apl",
+        "source_sha256": "34f1a097f3da19cf7b4435812c5f0256c21b6f0ae0c1982386361d114958f237",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/spectralnorm.optimized.apl",
+          "--",
+          "{n}"
+        ],
+        "loc": 29,
+        "seconds": 73.943992667,
+        "samples_seconds": [
+          73.943992667,
+          73.438056666,
+          74.172833667
+        ],
+        "stdev_seconds": 0.3759957184125581,
+        "sample_validation": [
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 835.3570140719554,
+        "loc_x_mech": 2.4166666666666665,
+        "mech_seconds": 0.088517833,
+        "mech_samples_seconds": [
+          0.088517833,
+          0.08798025,
+          0.090671167
+        ],
+        "mech_loc": 12,
+        "control_key": "spectralnorm:mech-control-for-apl",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "spectralnorm:spectralnorm-apl-compact",
+        "id": "spectralnorm-apl-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/spectralnorm.compact.apl",
+        "source_sha256": "138dac87e5b26e8fea7a1b637468d79225a89685ee98c08b3fc4f238f86c7d61",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/spectralnorm.compact.apl",
+          "--",
+          "{n}"
+        ],
+        "loc": 27,
+        "seconds": 95.638873042,
+        "samples_seconds": [
+          95.462191417,
+          95.638873042,
+          95.745663542
+        ],
+        "stdev_seconds": 0.14316485436662904,
+        "sample_validation": [
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 1080.447518885827,
+        "loc_x_mech": 2.25,
+        "mech_seconds": 0.088517833,
+        "mech_samples_seconds": [
+          0.088517833,
+          0.08798025,
+          0.090671167
+        ],
+        "mech_loc": 12,
+        "control_key": "spectralnorm:mech-control-for-apl",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "apl",
       "benchmark": "mandelbrot",
-      "prepared_candidates": 2,
+      "prepared_candidates": 3,
       "admitted_candidates": 0,
       "pending_candidates": [
         {
@@ -806,7 +1157,12 @@
           "status": "pending"
         },
         {
-          "key": "mandelbrot:mandelbrot-apl-optimized",
+          "key": "mandelbrot:mandelbrot-apl-active-v2-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-apl-active-v2-optimized",
           "valid_samples": 0,
           "status": "pending"
         }
@@ -829,7 +1185,7 @@
           "status": "pending"
         },
         {
-          "key": "fasta:fasta-apl-optimized",
+          "key": "fasta:fasta-apl-affine-hoisted-optimized-v3",
           "valid_samples": 0,
           "status": "pending"
         }
@@ -847,12 +1203,12 @@
       "admitted_candidates": 0,
       "pending_candidates": [
         {
-          "key": "knucleotide:knucleotide-apl-compact",
+          "key": "knucleotide:knucleotide-apl-v2-compact",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "knucleotide:knucleotide-apl-optimized",
+          "key": "knucleotide:knucleotide-apl-v2-optimized",
           "valid_samples": 0,
           "status": "pending"
         }
@@ -893,12 +1249,12 @@
       "admitted_candidates": 0,
       "pending_candidates": [
         {
-          "key": "nbody:nbody-apl-compact",
+          "key": "nbody:nbody-apl-compact-canonical-v2",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "nbody:nbody-apl-optimized",
+          "key": "nbody:nbody-apl-optimized-canonical-v2",
           "valid_samples": 0,
           "status": "pending"
         }
@@ -1256,47 +1612,217 @@
       "language": "uiua",
       "benchmark": "spectralnorm",
       "prepared_candidates": 2,
-      "admitted_candidates": 0,
-      "pending_candidates": [
-        {
-          "key": "spectralnorm:spectralnorm-uiua-compact",
-          "valid_samples": 1,
-          "status": "partial"
-        },
-        {
-          "key": "spectralnorm:spectralnorm-uiua-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        }
-      ],
+      "admitted_candidates": 2,
+      "pending_candidates": [],
       "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "spectralnorm:spectralnorm-uiua-vectorized-optimized-v3",
+        "id": "spectralnorm-uiua-vectorized-optimized-v3",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/fast.ua",
+        "source_sha256": "622f019150b668537f0cbcfb6dcd8322c3a32d9ce73fc648688231403c4d33a3",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/fast.ua",
+          "{n}"
+        ],
+        "loc": 17,
+        "seconds": 3.476325292,
+        "samples_seconds": [
+          3.531835041,
+          3.476325292,
+          3.447561875
+        ],
+        "stdev_seconds": 0.042838131182437705,
+        "sample_validation": [
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 36.85933571272223,
+        "loc_x_mech": 1.4166666666666667,
+        "mech_seconds": 0.094313292,
+        "mech_samples_seconds": [
+          0.119889083,
+          0.090275125,
+          0.094313292
+        ],
+        "mech_loc": 12,
+        "control_key": "spectralnorm:mech-control-for-uiua-additive-v3",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "spectralnorm:spectralnorm-uiua-vectorized-compact9-v3",
+        "id": "spectralnorm-uiua-vectorized-compact9-v3",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/compact9.ua",
+        "source_sha256": "6f715834b433fb85cb428e208a6140962d5e6ab770c424e4199da3063e4db9a3",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-spectral-v3/sources/compact9.ua",
+          "{n}"
+        ],
+        "loc": 9,
+        "seconds": 3.780071166,
+        "samples_seconds": [
+          3.780071166,
+          3.746889375,
+          4.079233459
+        ],
+        "stdev_seconds": 0.18305358913752773,
+        "sample_validation": [
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          },
+          {
+            "bytes": 12,
+            "sha256": "f9d5b5e3eb7657cf1bbba4cc856651864df9cd9fd9a6be9b9bc5fcbb67150deb",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 40.07994086347871,
+        "loc_x_mech": 0.75,
+        "mech_seconds": 0.094313292,
+        "mech_samples_seconds": [
+          0.119889083,
+          0.090275125,
+          0.094313292
+        ],
+        "mech_loc": 12,
+        "control_key": "spectralnorm:mech-control-for-uiua-additive-v3",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "uiua",
       "benchmark": "mandelbrot",
-      "prepared_candidates": 2,
-      "admitted_candidates": 0,
-      "pending_candidates": [
-        {
-          "key": "mandelbrot:mandelbrot-uiua-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "mandelbrot:mandelbrot-uiua-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        }
-      ],
+      "prepared_candidates": 1,
+      "admitted_candidates": 1,
+      "pending_candidates": [],
       "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "mandelbrot:mandelbrot-uiua-native-pack-optimized-v2",
+        "id": "mandelbrot-uiua-native-pack-optimized-v2",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+        "source_sha256": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+          "{n}"
+        ],
+        "loc": 11,
+        "seconds": 55.02129525,
+        "samples_seconds": [
+          55.02129525,
+          55.018210791,
+          55.047882083
+        ],
+        "stdev_seconds": 0.016313384817593805,
+        "sample_validation": [
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 124.1507273081353,
+        "loc_x_mech": 0.3793103448275862,
+        "mech_seconds": 0.443181417,
+        "mech_samples_seconds": [
+          0.442964083,
+          0.444092416,
+          0.443181417
+        ],
+        "mech_loc": 29,
+        "control_key": "mandelbrot:mech-control-for-uiua-medium-v3",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "mandelbrot:mandelbrot-uiua-native-pack-optimized-v2",
+        "id": "mandelbrot-uiua-native-pack-optimized-v2",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+        "source_sha256": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+          "{n}"
+        ],
+        "loc": 11,
+        "seconds": 55.02129525,
+        "samples_seconds": [
+          55.02129525,
+          55.018210791,
+          55.047882083
+        ],
+        "stdev_seconds": 0.016313384817593805,
+        "sample_validation": [
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          },
+          {
+            "bytes": 32000015,
+            "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 124.1507273081353,
+        "loc_x_mech": 0.55,
+        "mech_seconds": 0.443181417,
+        "mech_samples_seconds": [
+          0.442964083,
+          0.444092416,
+          0.443181417
+        ],
+        "mech_loc": 20,
+        "control_key": "mandelbrot:mech-control-for-uiua-medium-v3",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "uiua",
@@ -1324,16 +1850,21 @@
     {
       "language": "uiua",
       "benchmark": "knucleotide",
-      "prepared_candidates": 2,
+      "prepared_candidates": 3,
       "admitted_candidates": 0,
       "pending_candidates": [
         {
-          "key": "knucleotide:knucleotide-uiua-compact",
+          "key": "knucleotide:knucleotide-uiua-compact-v3",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "knucleotide:knucleotide-uiua-optimized",
+          "key": "knucleotide:knucleotide-uiua-bounded-optimized-v3",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-uiua-native-group-optimized-v3",
           "valid_samples": 0,
           "status": "pending"
         }
@@ -1374,12 +1905,12 @@
       "admitted_candidates": 0,
       "pending_candidates": [
         {
-          "key": "nbody:nbody-uiua-compact",
+          "key": "nbody:nbody-uiua-native-denominator-compact-v3",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "nbody:nbody-uiua-optimized",
+          "key": "nbody:nbody-uiua-native-denominator-optimized-v3",
           "valid_samples": 0,
           "status": "pending"
         }
@@ -1397,12 +1928,12 @@
       "admitted_candidates": 0,
       "pending_candidates": [
         {
-          "key": "fannkuchredux:fannkuchredux-uiua-compact",
+          "key": "fannkuchredux:fannkuchredux-uiua-native-indices-compact-v2",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "fannkuchredux:fannkuchredux-uiua-optimized",
+          "key": "fannkuchredux:fannkuchredux-uiua-native-flat-gather-optimized-v2",
           "valid_samples": 0,
           "status": "pending"
         }
@@ -1416,31 +1947,11 @@
   ],
   "coverage": {
     "r": {
-      "status": "running",
+      "status": "partial",
       "prepared_benchmarks": 10,
-      "admitted_benchmarks": 3,
+      "admitted_benchmarks": 5,
       "failures": [],
       "pending": [
-        {
-          "key": "spectralnorm:spectralnorm-r-compact",
-          "valid_samples": 1,
-          "status": "partial"
-        },
-        {
-          "key": "spectralnorm:spectralnorm-r-optimized",
-          "valid_samples": 1,
-          "status": "partial"
-        },
-        {
-          "key": "mandelbrot:mandelbrot-r-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "mandelbrot:mandelbrot-r-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        },
         {
           "key": "fasta:fasta-r-compact",
           "valid_samples": 0,
@@ -1448,8 +1959,8 @@
         },
         {
           "key": "fasta:fasta-r-optimized",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 1,
+          "status": "partial"
         },
         {
           "key": "knucleotide:knucleotide-r-compact",
@@ -1496,7 +2007,7 @@
     "apl": {
       "status": "running",
       "prepared_benchmarks": 10,
-      "admitted_benchmarks": 2,
+      "admitted_benchmarks": 4,
       "failures": [
         {
           "key": "regexredux:regexredux-apl-compact",
@@ -1520,7 +2031,7 @@
             "error_type": "OutputValidationError",
             "seconds": 9.500716208,
             "exit_status": 0,
-            "attempt_number": 3,
+            "attempt_number": 2,
             "finished_at": "2026-10-11T18:57:26.577558+00:00",
             "stdout_bytes": 0,
             "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1535,7 +2046,7 @@
             "error_type": "OutputValidationError",
             "seconds": 14.4157705,
             "exit_status": 0,
-            "attempt_number": 6,
+            "attempt_number": 3,
             "finished_at": "2026-10-11T19:01:12.086669+00:00",
             "stdout_bytes": 0,
             "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1550,7 +2061,7 @@
             "error_type": "OutputValidationError",
             "seconds": 12.941433708,
             "exit_status": 0,
-            "attempt_number": 7,
+            "attempt_number": 4,
             "finished_at": "2026-10-11T19:01:25.271415+00:00",
             "stdout_bytes": 0,
             "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1561,22 +2072,17 @@
       ],
       "pending": [
         {
-          "key": "spectralnorm:spectralnorm-apl-compact",
-          "valid_samples": 1,
-          "status": "partial"
-        },
-        {
-          "key": "spectralnorm:spectralnorm-apl-optimized",
-          "valid_samples": 1,
-          "status": "partial"
-        },
-        {
           "key": "mandelbrot:mandelbrot-apl-compact",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "mandelbrot:mandelbrot-apl-optimized",
+          "key": "mandelbrot:mandelbrot-apl-active-v2-compact",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "mandelbrot:mandelbrot-apl-active-v2-optimized",
           "valid_samples": 0,
           "status": "pending"
         },
@@ -1586,17 +2092,17 @@
           "status": "pending"
         },
         {
-          "key": "fasta:fasta-apl-optimized",
+          "key": "fasta:fasta-apl-affine-hoisted-optimized-v3",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "knucleotide:knucleotide-apl-compact",
+          "key": "knucleotide:knucleotide-apl-v2-compact",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "knucleotide:knucleotide-apl-optimized",
+          "key": "knucleotide:knucleotide-apl-v2-optimized",
           "valid_samples": 0,
           "status": "pending"
         },
@@ -1611,12 +2117,12 @@
           "status": "pending"
         },
         {
-          "key": "nbody:nbody-apl-compact",
+          "key": "nbody:nbody-apl-compact-canonical-v2",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "nbody:nbody-apl-optimized",
+          "key": "nbody:nbody-apl-optimized-canonical-v2",
           "valid_samples": 0,
           "status": "pending"
         },
@@ -1635,29 +2141,9 @@
     "uiua": {
       "status": "running",
       "prepared_benchmarks": 10,
-      "admitted_benchmarks": 3,
+      "admitted_benchmarks": 5,
       "failures": [],
       "pending": [
-        {
-          "key": "spectralnorm:spectralnorm-uiua-compact",
-          "valid_samples": 1,
-          "status": "partial"
-        },
-        {
-          "key": "spectralnorm:spectralnorm-uiua-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "mandelbrot:mandelbrot-uiua-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "mandelbrot:mandelbrot-uiua-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        },
         {
           "key": "fasta:fasta-uiua-compact",
           "valid_samples": 0,
@@ -1669,12 +2155,17 @@
           "status": "pending"
         },
         {
-          "key": "knucleotide:knucleotide-uiua-compact",
+          "key": "knucleotide:knucleotide-uiua-compact-v3",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "knucleotide:knucleotide-uiua-optimized",
+          "key": "knucleotide:knucleotide-uiua-bounded-optimized-v3",
+          "valid_samples": 0,
+          "status": "pending"
+        },
+        {
+          "key": "knucleotide:knucleotide-uiua-native-group-optimized-v3",
           "valid_samples": 0,
           "status": "pending"
         },
@@ -1689,22 +2180,22 @@
           "status": "pending"
         },
         {
-          "key": "nbody:nbody-uiua-compact",
+          "key": "nbody:nbody-uiua-native-denominator-compact-v3",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "nbody:nbody-uiua-optimized",
+          "key": "nbody:nbody-uiua-native-denominator-optimized-v3",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "fannkuchredux:fannkuchredux-uiua-compact",
+          "key": "fannkuchredux:fannkuchredux-uiua-native-indices-compact-v2",
           "valid_samples": 0,
           "status": "pending"
         },
         {
-          "key": "fannkuchredux:fannkuchredux-uiua-optimized",
+          "key": "fannkuchredux:fannkuchredux-uiua-native-flat-gather-optimized-v2",
           "valid_samples": 0,
           "status": "pending"
         }
@@ -1712,9 +2203,9 @@
     }
   },
   "reports": {
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": "96ecabdca8c7545453389f086d05d3c67e2160c7457bc114885f1672da3286ad",
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": "8b2cb811ca58da5fcdb7c480ffc524cf4b6f3b29b4e9669fbe8f9bd50dfd8aff",
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": "7ba5092d5609e1b0db6040d8beeae4312bede88431467f48fde15fb47982fb6b"
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": "845748fc96914ec82ac4e0f2e217c9563adfeb9018e6c1079fb33fb767875ea1",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": "70a0493ccb624b209b6836d7e2f8f3e8cc1b6913e8d83f7d4cf849eee9dc1726",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": "a66abb22539e9ae9594c00258208003b7636422461bcdab5a8dba0f4b72034ee"
   },
   "admission_rule": "At least three unchanged canonical full-workload, output-validated and environment-valid fresh-process samples for the candidate and its freshly measured Mech AOT control. Partial suites and failed candidates remain explicit. Planning pilots and extrapolations are never admitted.",
   "units": "Seconds; time_x_mech is candidate median / fresh Mech AOT median. LOC ratios compare fastest with Mech fastest LOC and smallest with Mech smallest LOC. Application code only; independent statements count separately."

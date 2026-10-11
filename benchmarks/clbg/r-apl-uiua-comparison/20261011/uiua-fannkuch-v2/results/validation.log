@@ -1,0 +1,27 @@
+Waiting for common mutex; no Uiua/reference probes before acquisition.
+Acquired common mutex for bounded validation.
+compact 1 OUTPUT PASS
+compact 2 OUTPUT PASS
+compact 3 OUTPUT PASS
+compact 4 OUTPUT PASS
+compact 5 OUTPUT PASS
+compact 6 OUTPUT PASS
+compact 7 OUTPUT PASS
+compact 8 OUTPUT PASS
+compact 2 WORK PASS 2 1
+compact 6 WORK PASS 720 2115
+compact 7 WORK PASS 5040 18508
+compact 8 WORK PASS 40320 180260
+fast 1 OUTPUT PASS
+fast 2 OUTPUT PASS
+fast 3 OUTPUT PASS
+fast 4 OUTPUT PASS
+fast 5 OUTPUT PASS
+fast 6 OUTPUT PASS
+fast 7 OUTPUT PASS
+fast 8 OUTPUT PASS
+fast 2 WORK PASS 2 1
+fast 6 WORK PASS 720 2115
+fast 7 WORK PASS 5040 18508
+fast 8 WORK PASS 40320 180260
+All checks passed: 16 outputs, 8 work traces, 9 primitive checks.

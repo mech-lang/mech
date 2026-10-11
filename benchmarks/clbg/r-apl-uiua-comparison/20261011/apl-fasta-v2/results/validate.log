@@ -1,0 +1,16 @@
+WAIT shared timing lock for APL FASTA validation
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v2/validate.py", line 133, in <module>
+    main()
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v2/validate.py", line 55, in main
+    command, result = execute(SOURCE, n, workers)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v2/validate.py", line 30, in execute
+    assert not re.search(rb'(?:DOMAIN|RANK|LENGTH|INDEX|SYNTAX|VALUE|WS FULL) ERROR', result.stderr), result.stderr.decode()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DOMAIN ERROR
+Generate[8]  Line←Letters[+/[0]CDF∘.≤R]
+                  ^      ^
+
+WARNING: File pipe-to_client still open - closing it
+

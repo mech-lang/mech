@@ -1,0 +1,46 @@
+WAIT LOCK 1 mech-control-mandelbrot-for-r
+RUN FULL 1 mech-control-mandelbrot-for-r timeout 14400
+SAMPLE FULL 1 mech-control-mandelbrot-for-r 0.441298s
+WAIT LOCK 1 mandelbrot-r-optimized
+RUN FULL 1 mandelbrot-r-optimized timeout 14400
+SAMPLE FULL 1 mandelbrot-r-optimized 19.609497s
+WAIT LOCK 1 mech-control-mandelbrot-for-uiua-medium-v3
+RUN FULL 1 mech-control-mandelbrot-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 1 mech-control-mandelbrot-for-uiua-medium-v3 0.442964s
+WAIT LOCK 1 mandelbrot-uiua-native-pack-optimized-v2
+RUN FULL 1 mandelbrot-uiua-native-pack-optimized-v2 timeout 14400
+SAMPLE FULL 1 mandelbrot-uiua-native-pack-optimized-v2 55.021295s
+WAIT LOCK 2 mech-control-mandelbrot-for-r
+RUN FULL 2 mech-control-mandelbrot-for-r timeout 14400
+SAMPLE FULL 2 mech-control-mandelbrot-for-r 0.445562s
+WAIT LOCK 2 mandelbrot-r-compact
+RUN FULL 2 mandelbrot-r-compact timeout 14400
+SAMPLE FULL 2 mandelbrot-r-compact 61.702080s
+WAIT LOCK 2 mandelbrot-r-optimized
+RUN FULL 2 mandelbrot-r-optimized timeout 14400
+SAMPLE FULL 2 mandelbrot-r-optimized 19.736745s
+WAIT LOCK 2 mech-control-mandelbrot-for-uiua-medium-v3
+RUN FULL 2 mech-control-mandelbrot-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 2 mech-control-mandelbrot-for-uiua-medium-v3 0.444092s
+WAIT LOCK 2 mandelbrot-uiua-native-pack-optimized-v2
+RUN FULL 2 mandelbrot-uiua-native-pack-optimized-v2 timeout 14400
+SAMPLE FULL 2 mandelbrot-uiua-native-pack-optimized-v2 55.018211s
+WAIT LOCK 3 mandelbrot-r-optimized
+RUN FULL 3 mandelbrot-r-optimized timeout 14400
+SAMPLE FULL 3 mandelbrot-r-optimized 20.293006s
+WAIT LOCK 3 mandelbrot-r-compact
+RUN FULL 3 mandelbrot-r-compact timeout 14400
+SAMPLE FULL 3 mandelbrot-r-compact 61.800992s
+WAIT LOCK 3 mech-control-mandelbrot-for-r
+RUN FULL 3 mech-control-mandelbrot-for-r timeout 14400
+SAMPLE FULL 3 mech-control-mandelbrot-for-r 0.442555s
+WAIT LOCK 3 mandelbrot-uiua-native-pack-optimized-v2
+RUN FULL 3 mandelbrot-uiua-native-pack-optimized-v2 timeout 14400
+SAMPLE FULL 3 mandelbrot-uiua-native-pack-optimized-v2 55.047882s
+WAIT LOCK 3 mech-control-mandelbrot-for-uiua-medium-v3
+RUN FULL 3 mech-control-mandelbrot-for-uiua-medium-v3 timeout 14400
+SAMPLE FULL 3 mech-control-mandelbrot-for-uiua-medium-v3 0.443181s
+WAIT LOCK 1 fasta-r-optimized
+RUN FULL 1 fasta-r-optimized timeout 14400
+SAMPLE FULL 1 fasta-r-optimized 64.146585s
+WAIT LOCK 1 mech-control-fasta-for-r

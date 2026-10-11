@@ -1,0 +1,7 @@
+PREVIEW apl 28 prepared; 26 selected
+PREVIEW uiua 24 prepared; 21 selected
+FROZEN apl 26 roles 22 distinct executions
+RESUMED apl preserved 34 executions; 42 role samples; retired 2
+FROZEN uiua 21 roles 18 distinct executions
+RESUMED uiua preserved 30 executions; 36 role samples; retired 0
+K-NUCLEOTIDE REVISION COMPLETE /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before

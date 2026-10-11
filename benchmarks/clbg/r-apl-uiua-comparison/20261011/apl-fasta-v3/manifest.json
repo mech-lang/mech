@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "status": "prepared-validated",
+  "language": "apl",
+  "programs": [
+    {
+      "id": "fasta-apl-affine-hoisted-optimized-v3",
+      "key": "fasta:fasta-apl-affine-hoisted-optimized-v3",
+      "benchmark": "fasta",
+      "language": "apl",
+      "variant": "optimized",
+      "profile": "optimized",
+      "role": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+      "source_sha256": "48002bf2a99dea328634775e7b26fcb2c57be38aa596e01675c671181548d43b",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/fasta.html",
+      "source_provenance": "Newly authored APL port of the canonical algorithm; no published APL Benchmarks Game candidate located in primary searches.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/fasta.reference.c",
+      "upstream_sha256": "b57f4f092850028f1c9bd8108b1f3267953010d558ede301866a4f36d2ac7b2a",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Use ordinary affine-prefix coefficient arrays once, then generate every chunk state with multiply/add/modulo for the current seed.",
+        "Retain complete bounded output, every RNG draw, binary64 division, cumulative thresholds and record-to-record state.",
+        "Count all local affine-function code; no native helper or new runtime module."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Every random state is materialized from general associative affine-prefix coefficients and the current seed in counted APL; every value is divided in binary64 before comparisons with the original unscaled CDF. No generator-period shortcut or output cache."
+      },
+      "loc": 55,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "case": "canonical-small",
+        "n": 1000,
+        "workers": 8,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+          "--",
+          "1000"
+        ],
+        "passed": true,
+        "reference_match": true,
+        "bytes": 10245,
+        "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+        "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+      },
+      "adversarial_validation_status": "passed",
+      "adversarial_validation": {
+        "passed": true,
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/validation.json",
+        "sha256": "b8f4b64e6c125ae247bef53a308d9c01c61f17f86505e0daba8acec33147c560",
+        "total_checks": 33
+      },
+      "normalized_loc": 55,
+      "physical_loc": 55,
+      "loc_expansions": [],
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": [],
+      "eligible_for_chart": false,
+      "measurement_status": "prepared-not-fully-timed",
+      "supersedes_keys": [
+        "fasta:fasta-apl-optimized"
+      ]
+    }
+  ],
+  "created_at": "2026-10-11T21:21:20.867396+00:00",
+  "validation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/validation.json",
+    "sha256": "b8f4b64e6c125ae247bef53a308d9c01c61f17f86505e0daba8acec33147c560",
+    "passed": true,
+    "total_checks": 33
+  },
+  "preserved_original": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fasta.optimized.apl",
+    "source_sha256": "985d033efa0010de9cd97a1096958b0a34d43c26e66f5b170b3941f206d5cd45",
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fasta.optimized.apl": "985d033efa0010de9cd97a1096958b0a34d43c26e66f5b170b3941f206d5cd45"
+    }
+  },
+  "policy": "Separate additive candidate. No full timings; do not mutate frozen inputs during measurements."
+}

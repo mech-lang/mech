@@ -1,0 +1,13 @@
+Waiting for common mutex; all reference/runtime probes occur after acquisition.
+Locked bounded full-state denominator validation.
+compact 0 OUTPUT + 30-LANE STATE PASS
+compact 1 OUTPUT + 30-LANE STATE PASS
+compact 2 OUTPUT + 30-LANE STATE PASS
+compact 7 OUTPUT + 30-LANE STATE PASS
+compact 1000 OUTPUT + 30-LANE STATE PASS
+fast 0 OUTPUT + 30-LANE STATE PASS
+fast 1 OUTPUT + 30-LANE STATE PASS
+fast 2 OUTPUT + 30-LANE STATE PASS
+fast 7 OUTPUT + 30-LANE STATE PASS
+fast 1000 OUTPUT + 30-LANE STATE PASS
+PASS 10 outputs 10 full-state comparisons 7 generic denominator probes

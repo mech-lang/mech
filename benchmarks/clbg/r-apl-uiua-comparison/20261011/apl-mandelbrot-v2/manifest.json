@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "status": "prepared-validated",
+  "language": "apl",
+  "created_at": "2026-10-11T21:22:38.745458+00:00",
+  "programs": [
+    {
+      "id": "mandelbrot-apl-active-v2-compact",
+      "key": "mandelbrot:mandelbrot-apl-active-v2-compact",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "variant": "compact",
+      "profile": "compact",
+      "role": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+      "source_sha256": "5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+        "--",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+      "source_provenance": "Newly authored APL port of the canonical algorithm; no published APL Benchmarks Game candidate located in primary searches.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/mandelbrot.reference.d",
+      "upstream_sha256": "2d45bf063b38b40f0cc012c474b2de09ed61529a5030924f16de53c0bc147b07",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Every pixel starts at z=0 and receives the canonical binary64 recurrence until its first squared magnitude>4 or all50 updates.",
+        "Maintain a stable vector of active pixel indices; gather coordinate arrays, compress z arrays by the escape mask after each actual update, and persist the final alive mask at original pixel positions.",
+        "Process one row at a time.",
+        "Pack the complete alive mask into PBM bytes in row order with zero padding for odd widths. All helpers/application statements count.",
+        "Requested --cc flag is an interpreter ceiling only. This pinned macOS GNU APL runtime has PARALLEL_ENABLED disabled and executes numerical primitives serially; no runtime build change."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ordinary APL stable compress, gather, scatter and arithmetic only; every surviving pixel is updated and tested in canonical order, escaped pixels never become alive again. No region/interior tests, symmetry, cached output, approximate math or benchmark host kernel.",
+        "active_pixel_compression": true,
+        "maximum_rows": 1,
+        "primitive_parallelism": "disabled-in-pinned-macos-build"
+      },
+      "loc": 35,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "variant": "compact",
+        "case": "canonical-small",
+        "n": 200,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+          "--",
+          "200"
+        ],
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+        "source_sha256": "5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43",
+        "returncode": 0,
+        "passed": true,
+        "reference_match": true,
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/compact-200.pbm",
+        "expected_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "work_trace": {
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+            "--cc",
+            "1",
+            "-f",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/mandelbrot.compact.trace.apl",
+            "--",
+            "200",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/compact-200.work"
+          ],
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/mandelbrot.compact.trace.apl",
+          "source_sha256": "92aecebf1d2d0c3703763798b5c11e4a9237a392cbf7f184e7cdd065e0eeb266",
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/compact-200.work",
+          "sha256": "40e5d54f60a7a3d9ddd8bbe2a26e634d20818ca40af898311d670a8722a5e18a",
+          "pixels": 40000,
+          "updates": 976575,
+          "reference_match": true
+        }
+      },
+      "adversarial_validation_status": "passed",
+      "adversarial_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/validation.json",
+        "sha256": "a9adc367fd3ad0f0962e14d7df4830ddac072c90f036b82207f0ffffdaa34fe1",
+        "passed": true,
+        "cases_per_variant": 16,
+        "per_pixel_work_trace": true
+      },
+      "normalized_loc": 35,
+      "physical_loc": 35,
+      "loc_expansions": [],
+      "measurement_status": "prepared-not-fully-timed",
+      "eligible_for_chart": false,
+      "supersedes_keys": [
+        "mandelbrot:mandelbrot-apl-compact"
+      ],
+      "supersedes_source_sha256": "ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb",
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": []
+    },
+    {
+      "id": "mandelbrot-apl-active-v2-optimized",
+      "key": "mandelbrot:mandelbrot-apl-active-v2-optimized",
+      "benchmark": "mandelbrot",
+      "language": "apl",
+      "variant": "optimized",
+      "profile": "optimized",
+      "role": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+      "source_sha256": "74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+        "--",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/mandelbrot.html",
+      "source_provenance": "Newly authored APL port of the canonical algorithm; no published APL Benchmarks Game candidate located in primary searches.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/mandelbrot.reference.d",
+      "upstream_sha256": "2d45bf063b38b40f0cc012c474b2de09ed61529a5030924f16de53c0bc147b07",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Every pixel starts at z=0 and receives the canonical binary64 recurrence until its first squared magnitude>4 or all50 updates.",
+        "Maintain a stable vector of active pixel indices; gather coordinate arrays, compress z arrays by the escape mask after each actual update, and persist the final alive mask at original pixel positions.",
+        "Process at most16rows at a time, including final partial row blocks.",
+        "Pack the complete alive mask into PBM bytes in row order with zero padding for odd widths. All helpers/application statements count.",
+        "Requested --cc flag is an interpreter ceiling only. This pinned macOS GNU APL runtime has PARALLEL_ENABLED disabled and executes numerical primitives serially; no runtime build change."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Ordinary APL stable compress, gather, scatter and arithmetic only; every surviving pixel is updated and tested in canonical order, escaped pixels never become alive again. No region/interior tests, symmetry, cached output, approximate math or benchmark host kernel.",
+        "active_pixel_compression": true,
+        "maximum_rows": 16,
+        "primitive_parallelism": "disabled-in-pinned-macos-build"
+      },
+      "loc": 37,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "variant": "optimized",
+        "case": "canonical-small",
+        "n": 200,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+          "--",
+          "200"
+        ],
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+        "source_sha256": "74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa",
+        "returncode": 0,
+        "passed": true,
+        "reference_match": true,
+        "bytes": 5011,
+        "sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/optimized-200.pbm",
+        "expected_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+        "work_trace": {
+          "command": [
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+            "--cc",
+            "8",
+            "-f",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/mandelbrot.optimized.trace.apl",
+            "--",
+            "200",
+            "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/optimized-200.work"
+          ],
+          "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/mandelbrot.optimized.trace.apl",
+          "source_sha256": "7eb9b66220df80528458d7d51dbd9292cb193d5b5de8e0c66c1c691b52281ea3",
+          "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/optimized-200.work",
+          "sha256": "22699e83d7f8c49fb3acf15eebcfd60cdb66819c2bc83ee2529f7fd0249f2042",
+          "pixels": 40000,
+          "updates": 976575,
+          "reference_match": true
+        }
+      },
+      "adversarial_validation_status": "passed",
+      "adversarial_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/validation.json",
+        "sha256": "a9adc367fd3ad0f0962e14d7df4830ddac072c90f036b82207f0ffffdaa34fe1",
+        "passed": true,
+        "cases_per_variant": 16,
+        "per_pixel_work_trace": true
+      },
+      "normalized_loc": 37,
+      "physical_loc": 37,
+      "loc_expansions": [],
+      "measurement_status": "prepared-not-fully-timed",
+      "eligible_for_chart": false,
+      "supersedes_keys": [
+        "mandelbrot:mandelbrot-apl-optimized"
+      ],
+      "supersedes_source_sha256": "e3c62726b4c552f810c9111d1ef181b7c93999250d805e1658b61d2415f3ff11",
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": []
+    }
+  ],
+  "runtime": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+    "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+    "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+    "architecture": "arm64-apple-darwin",
+    "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+    "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+    "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+    "build_flags": [
+      "--without-x",
+      "--without-gtk3",
+      "--without-sqlite3",
+      "--without-postgresql",
+      "--with-pcre=/opt/homebrew/opt/pcre2",
+      "CORE_COUNT_WANTED=argv",
+      "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+      "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+      "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+    ],
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+      "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+    }
+  },
+  "validation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/validation.json",
+    "sha256": "a9adc367fd3ad0f0962e14d7df4830ddac072c90f036b82207f0ffffdaa34fe1",
+    "passed": true,
+    "total_checks": 64
+  },
+  "preserved_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-manifest.json": "f66be574123726a2920b8d08730a0f746b9e39d3d0579cf095cd8dabf2e6d35f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl": "ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.optimized.apl": "e3c62726b4c552f810c9111d1ef181b7c93999250d805e1658b61d2415f3ff11"
+  },
+  "source_recipe": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/prepare_sources.py",
+    "sha256": "777936319b1f41cb0e6c4c8bab39b413eb039d0d19cc8cee51035cb75d7bd8b6"
+  },
+  "policy": "Additive counted candidates. Original frozen sources and real measurements remain unchanged; selection/full timing requires approved safe guard revision."
+}

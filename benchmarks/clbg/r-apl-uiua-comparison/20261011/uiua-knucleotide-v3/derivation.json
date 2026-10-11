@@ -1,0 +1,50 @@
+[
+  {
+    "profile": "compact",
+    "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/knucleotide/compact.ua",
+    "original_source_sha256": "365c378828d4e5204c4236afe87ee8a5505990039fbf519e19f975eee4edb8ca",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/compact.ua",
+    "source_sha256": "d49a150f0552d30bc12e5a7ebd9bf2ea358ceff5e4553d56b78744fec557c2eb",
+    "changed_lines": [
+      3,
+      4
+    ],
+    "old_regex": "\"(?m)^;[^\\n]*\\n|\\r|\\n\"",
+    "new_regex": "\"(?m)^;[^\\n]*(?:\\n|$)|\\r|\\n\"",
+    "old_record_regex": "\"(?m)^>THREE[^\\n]*\\n([^>]*)\"",
+    "new_record_regex": "\"(?m)^>THREE[^\\n]*\\n((?:[^>\\n][^\\n]*(?:\\n|$)|\\n)*)\"",
+    "physical_loc": 19
+  },
+  {
+    "profile": "bounded",
+    "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/knucleotide/fast.ua",
+    "original_source_sha256": "b3606cf00816ea8152bc2a05f1d1cd2a89bf689a60c75f106e2e279e6d9dad38",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/bounded.ua",
+    "source_sha256": "be3f21d43c56a8b4de2eb661552ff5c13d9390939e34a205c48a878fcbb155ff",
+    "changed_lines": [
+      3,
+      4
+    ],
+    "old_regex": "\"(?m)^;[^\\n]*\\n|\\r|\\n\"",
+    "new_regex": "\"(?m)^;[^\\n]*(?:\\n|$)|\\r|\\n\"",
+    "old_record_regex": "\"(?m)^>THREE[^\\n]*\\n([^>]*)\"",
+    "new_record_regex": "\"(?m)^>THREE[^\\n]*\\n((?:[^>\\n][^\\n]*(?:\\n|$)|\\n)*)\"",
+    "physical_loc": 27
+  },
+  {
+    "profile": "native-group",
+    "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+    "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/native-group.ua",
+    "source_sha256": "65afb1ed3299583c0ea1ea83224b5b9e0e954363c2d6bfde7bcf30e5f1b661c1",
+    "changed_lines": [
+      3,
+      4
+    ],
+    "old_regex": "\"(?m)^;[^\\n]*\\n|\\r|\\n\"",
+    "new_regex": "\"(?m)^;[^\\n]*(?:\\n|$)|\\r|\\n\"",
+    "old_record_regex": "\"(?m)^>THREE[^\\n]*\\n([^>]*)\"",
+    "new_record_regex": "\"(?m)^>THREE[^\\n]*\\n((?:[^>\\n][^\\n]*(?:\\n|$)|\\n)*)\"",
+    "physical_loc": 29
+  }
+]

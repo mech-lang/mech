@@ -1,0 +1,35 @@
+WAIT shared timing lock for APL FASTA validation
+PASS fasta-1-cc1 90
+PASS fasta-1-cc8 90
+PASS fasta-2-cc8 100
+PASS fasta-7-cc8 150
+PASS fasta-19-cc8 271
+PASS fasta-20-cc8 281
+PASS fasta-21-cc8 292
+PASS fasta-59-cc8 677
+PASS fasta-60-cc8 687
+PASS fasta-61-cc8 700
+PASS fasta-1000-cc1 10245
+PASS fasta-1000-cc8 10245
+PASS fasta-11999-cc8 122067
+PASS fasta-12000-cc8 122077
+PASS fasta-12001-cc8 122090
+PASS fasta-19999-cc8 203401
+PASS fasta-20000-cc8 203411
+PASS fasta-20001-cc1 203422
+PASS fasta-20001-cc8 203422
+PASS fasta-40003-cc8 406776
+PASS generic 139968 0
+PASS generic 139968 1
+PASS generic 139968 2
+PASS generic 139968 3
+PASS generic 139968 7
+PASS generic 139968 60
+PASS generic 139968 61
+PASS generic 139968 257
+PASS generic 139968 1024
+PASS generic 97 129
+PASS generic 2 33
+PASS generic 100003 513
+PASS generic 65537 257
+READY 55 LOC; 33 checks

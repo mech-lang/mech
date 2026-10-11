@@ -1,0 +1,7 @@
+PREVIEW apl 33 prepared; 27 selected
+PREVIEW uiua 32 prepared; 20 selected
+FROZEN apl 27 roles 23 distinct executions
+RESUMED apl preserved 29 executions; 42 role samples; retired 7
+FROZEN uiua 20 roles 17 distinct executions
+RESUMED uiua preserved 18 executions; 36 role samples; retired 13
+PREPARED REVISION COMPLETE /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before

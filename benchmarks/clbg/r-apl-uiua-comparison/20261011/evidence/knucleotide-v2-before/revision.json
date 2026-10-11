@@ -1,0 +1,25 @@
+{
+  "revision": "knucleotide-v2",
+  "reason": "Root-approved additive k-nucleotide preparation revision before medium full runs. All programs visit/count every input position and construct the seven full growing maps, with no generator-period shortcut. APL adds bounded streaming/batched application arrays and retires unmeasured whole-input boxed-array candidates on documented workspace risk; no full failure is invented. Uiua retains both prior source forms and adds its generic native-group optimized candidate for actual full measurements. Earlier control identities and execution-identical evidence remain intact.",
+  "created_at": "2026-10-11T20:52:08.778515+00:00",
+  "status": "complete",
+  "files": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/summarize.py": "6ad2acc07fdb807b03b07922caabcdc9c4dee0cb41d44d43b7714c43581dfeae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/resume_after_guard_repair.py": "7f79472b83c775b788777faeefebbc1cb4193c3bd4788d9a9a06375215e3aad8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/refreeze_additive.py": "45e6f3c2f850ce10acc4f9ca2c35923f394f6e7802622eb5b62fc3d61ea5962d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/refreeze_knucleotide.py": "65ce1b63cc1c404c4eec68c4d27cc74d693f4214c6caa300a6df4034a7878fa6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/apl-manifest.json": "052f2d8ba5f62bcb8566eb8d2da137339c2793bbf720fe558df65fbc5c6638ac",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/source-audit-apl.json": "d5f02b97b86ff7bf61b892ed7271d86d8a8b44d937d982cfba4cc4592b3a28fd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/timings-apl.json": "2d2b838046586bebc2ae4dcfe717e26c50df2d3df341ef99a880a9b335194826",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/uiua-manifest.json": "a20a4897745e13b36dd48ba6bb2994e34c712d26b4e9f401243148c6cb3f4c9f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/source-audit-uiua.json": "96b1676ceb35c8da512408dc018a94caf9e4e92533cfe3b098bffea1dcd7ed1f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/knucleotide-v2-before/timings-uiua.json": "099880e57f3d8eefe36c3d9728d010f5fcc548d6752bd193a74f1a8a7b3e3f99"
+  },
+  "finished_at": "2026-10-11T20:52:09.994318+00:00",
+  "current_audits": {
+    "apl": "229e3e88ccf65cc5fa21e7e5793146459b5e5f1b6804cd11c457df07df222aaf",
+    "uiua": "0fbe12fcdacec137abecd954ae8b57e758513722ec1b81f0f1afbb418eec3be9"
+  }
+}

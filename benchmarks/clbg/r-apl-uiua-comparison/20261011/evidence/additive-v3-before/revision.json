@@ -1,0 +1,24 @@
+{
+  "revision": "additive-v3",
+  "reason": "Root-approved additive standard-library/native-array preparation revision. APL adds generic PCRE2 count and bounded streaming reverse complement; Uiua selects faithful native-array spectral forms and retires scalar coefficient composition. Older sources, successful trials, failures, and guard evidence are retained. Affected benchmarks receive new control keys for three freshly interleaved unchanged Mech executions. Existing candidate evidence is preserved only for identical source, command, runtime, and support.",
+  "created_at": "2026-10-11T20:39:34.919641+00:00",
+  "status": "complete",
+  "files": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/summarize.py": "6ad2acc07fdb807b03b07922caabcdc9c4dee0cb41d44d43b7714c43581dfeae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/resume_after_guard_repair.py": "7f79472b83c775b788777faeefebbc1cb4193c3bd4788d9a9a06375215e3aad8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/refreeze_additive.py": "45e6f3c2f850ce10acc4f9ca2c35923f394f6e7802622eb5b62fc3d61ea5962d",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/apl-manifest.json": "b4092aa4882193624c27f8d929a180120dd3d436a9d4b049be2e21964f418826",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/source-audit-apl.json": "0ab5ef1820d8519dc263905cdcdbdf8fbb1cb7d98d2d1ab786cb691ae4953f09",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/timings-apl.json": "8b2cb811ca58da5fcdb7c480ffc524cf4b6f3b29b4e9669fbe8f9bd50dfd8aff",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/uiua-manifest.json": "d4a9f951dec7d953a859a71411e24b27b78e858b6bd6d7347778e318f97a8e5c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/source-audit-uiua.json": "7914e79b9682cdcc231931557ea8c36f8a49603b3604e1fcec4bc53221ffed14",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before/timings-uiua.json": "7ba5092d5609e1b0db6040d8beeae4312bede88431467f48fde15fb47982fb6b"
+  },
+  "finished_at": "2026-10-11T20:39:36.104178+00:00",
+  "current_audits": {
+    "apl": "d5f02b97b86ff7bf61b892ed7271d86d8a8b44d937d982cfba4cc4592b3a28fd",
+    "uiua": "96b1676ceb35c8da512408dc018a94caf9e4e92533cfe3b098bffea1dcd7ed1f"
+  }
+}

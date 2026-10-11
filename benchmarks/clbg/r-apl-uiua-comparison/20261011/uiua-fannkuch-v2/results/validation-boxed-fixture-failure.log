@@ -1,0 +1,39 @@
+Waiting for common mutex; no Uiua/reference probes before acquisition.
+Acquired common mutex for bounded validation.
+compact 1 OUTPUT PASS
+compact 2 OUTPUT PASS
+compact 3 OUTPUT PASS
+compact 4 OUTPUT PASS
+compact 5 OUTPUT PASS
+compact 6 OUTPUT PASS
+compact 7 OUTPUT PASS
+compact 8 OUTPUT PASS
+compact 2 WORK PASS 2 1
+compact 6 WORK PASS 720 2115
+compact 7 WORK PASS 5040 18508
+compact 8 WORK PASS 40320 180260
+fast 1 OUTPUT PASS
+fast 2 OUTPUT PASS
+fast 3 OUTPUT PASS
+fast 4 OUTPUT PASS
+fast 5 OUTPUT PASS
+fast 6 OUTPUT PASS
+fast 7 OUTPUT PASS
+fast 8 OUTPUT PASS
+fast 2 WORK PASS 2 1
+fast 6 WORK PASS 720 2115
+fast 7 WORK PASS 5040 18508
+fast 8 WORK PASS 40320 180260
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fannkuch-v2/validate.py", line 241, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fannkuch-v2/validate.py", line 225, in main
+    assert done.returncode == 0 and json.loads(done.stdout) == transformed, done.stderr.decode()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Error: Index must be an array of integers, not boxes
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fannkuch-v2/results/gather-1.ua:3:25
+3 | FlipPermutations ← ↯⊃△ (⊏⊃(♭+⊃(×N⇡⧻)(FlipIndices ≡⊢))♭)
+                            ─
+  in FlipPermutations at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fannkuch-v2/results/gather-1.ua:5:9
+

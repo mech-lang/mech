@@ -1,0 +1,27 @@
+WAIT LOCK 1 mech-control-mandelbrot-for-r
+RUN FULL 1 mech-control-mandelbrot-for-r timeout 14400
+SAMPLE FULL 1 mech-control-mandelbrot-for-r 0.459317s
+WAIT LOCK 1 mandelbrot-r-optimized
+RUN FULL 1 mandelbrot-r-optimized timeout 14400
+SAMPLE FULL 1 mandelbrot-r-optimized 19.540994s
+WAIT LOCK 1 mandelbrot-r-compact
+RUN FULL 1 mandelbrot-r-compact timeout 14400
+SAMPLE FULL 1 mandelbrot-r-compact 61.935691s
+WAIT LOCK 1 mandelbrot-apl-optimized
+RUN FULL 1 mandelbrot-apl-optimized timeout 14400
+SAMPLE FULL 1 mandelbrot-apl-optimized 1540.850009s
+WAIT LOCK 1 mech-control-mandelbrot-for-apl
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 228, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 220, in main
+    for language,state in states.items():run_sample(language,state,bench,sample,args)
+                                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 173, in run_sample
+    fcntl.flock(lock,fcntl.LOCK_EX);compact.wait_for_environment(REQUIRED);state['guard'].verify()
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 8, in interrupted
+    def interrupted(signum,frame):raise KeyboardInterrupt('Benchmark harness received signal '+str(signum))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt: Benchmark harness received signal 2

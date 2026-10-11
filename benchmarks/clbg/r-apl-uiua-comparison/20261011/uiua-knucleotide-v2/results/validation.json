@@ -1,0 +1,2325 @@
+{
+  "status": "passed",
+  "created_at": "2026-10-11T20:39:23.633824+00:00",
+  "scope": "Small/adversarial output and complete seven-map work checks only; no full workload timings.",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+  "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+  "runtime": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+  "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "validator": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/validate.py",
+  "validator_sha256": "ff42cfbd669c04ef7451e8c04f83dff327c11c162657618016ae92e7cd66ed9c",
+  "instrumented_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+  "instrumented_source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+  "instrumentation_transformation": "Retain every original expression; append trace-only prints for chunk width/start/count, grouped distinct keys and weight sum, then serialize every complete map separately. Traced sources are never timed.",
+  "cases": [
+    {
+      "case": "canonical-small",
+      "n": 1000,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/canonical-small.fasta",
+      "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "sequence_length": 5000,
+      "returncode": 0,
+      "expected": "T 31.520\nA 29.600\nC 19.480\nG 19.400\n\nAT 9.922\nTT 9.602\nTA 9.402\nAA 8.402\nGA 6.321\nTC 6.301\nTG 6.201\nGT 6.041\nCT 5.961\nAG 5.841\nCA 5.461\nAC 5.441\nCC 4.041\nCG 4.021\nGC 3.701\nGG 3.341\n\n54\tGGT\n24\tGGTA\n4\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "bytes": 242,
+      "sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/canonical-small.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/canonical-small.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "lexical-ties-stop",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/lexical-ties-stop.fasta",
+      "input_sha256": "3c478df9cc1f6138a6aebe580b8a1c76fa9d5e256cc9f3c0773af0790e27d1c7",
+      "sequence_length": 17,
+      "returncode": 0,
+      "expected": "A 29.412\nC 23.529\nG 23.529\nT 23.529\n\nAA 25.000\nCC 18.750\nGG 18.750\nTT 18.750\nAC 6.250\nCG 6.250\nGT 6.250\n\n1\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "482cc9c4f0cda2c1c8be0300940ced9890c8bea7832a1829ab5d420cf233a75a",
+      "bytes": 163,
+      "sha256": "482cc9c4f0cda2c1c8be0300940ced9890c8bea7832a1829ab5d420cf233a75a",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/lexical-ties-stop.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/lexical-ties-stop.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "short-window",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/short-window.fasta",
+      "input_sha256": "f6a33da8af2572d58135fe4f83e4de1a3f3a5422bd2d637b999b54304fad81d4",
+      "sequence_length": 1,
+      "returncode": 0,
+      "expected": "A 100.000\n\n\n0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "bytes": 70,
+      "sha256": "2f77c6365af9b12e590731f5b7f46f45d295fe12a59487dd0f2cd85ab84b15e4",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/short-window.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/short-window.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "empty-record",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/empty-record.fasta",
+      "input_sha256": "d0cdd580b6ad80d6bc2d091cf29ead33f57e84938b100eabf2e579d6111751fc",
+      "sequence_length": 0,
+      "returncode": 0,
+      "expected": "\n\n0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+      "bytes": 60,
+      "sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/empty-record.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/empty-record.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "missing-record",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/missing-record.fasta",
+      "input_sha256": "3aa6eb8bf5be4f44a185cdef2d485e2d43b7645c7fa1d73f14804a61dce1fafa",
+      "sequence_length": 0,
+      "returncode": 0,
+      "expected": "\n\n0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+      "bytes": 60,
+      "sha256": "8c9dbdafde27be96f0413a3be0497ccc04c7c54bbfcddf106b1fa39ed7a1682b",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/missing-record.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/missing-record.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "mixed-case-comments-crlf",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/mixed-case-comments-crlf.fasta",
+      "input_sha256": "6561ff2081ffe02f603ed8555df284f4364c33e710313f81cf6f239947c77ce0",
+      "sequence_length": 10,
+      "returncode": 0,
+      "expected": "T 40.000\nG 30.000\nA 20.000\nC 10.000\n\nGT 22.222\nAC 11.111\nAT 11.111\nCG 11.111\nGG 11.111\nTA 11.111\nTG 11.111\nTT 11.111\n\n1\tGGT\n1\tGGTA\n1\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "04324f010a0d6307b059dc1ce2e4cba03d304f9fa9c24f505c672a1e0dc68d19",
+      "bytes": 176,
+      "sha256": "04324f010a0d6307b059dc1ce2e4cba03d304f9fa9c24f505c672a1e0dc68d19",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/mixed-case-comments-crlf.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/mixed-case-comments-crlf.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "arbitrary-all-widths-growth",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/arbitrary-all-widths-growth.fasta",
+      "input_sha256": "632c6d1f3debf1fd2f9ba1ff7e1cd5d17114bfc0a58c1707ebf97aed31290085",
+      "sequence_length": 10021,
+      "returncode": 0,
+      "expected": "T 25.476\nA 25.167\nG 24.928\nC 24.429\n\nTT 6.806\nAA 6.467\nGG 6.417\nAT 6.407\nTC 6.357\nCA 6.317\nGA 6.317\nGT 6.248\nTG 6.238\nAC 6.198\nCG 6.178\nAG 6.098\nTA 6.068\nCT 6.008\nGC 5.948\nCC 5.928\n\n163\tGGT\n33\tGGTA\n2\tGGTATT\n1\tGGTATTTTAATT\n1\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "07dced9cfcba5b70dcdeba37ca2ccc50eb045a6fa9fcdc6e7ef3a6075eec4bf9",
+      "bytes": 243,
+      "sha256": "07dced9cfcba5b70dcdeba37ca2ccc50eb045a6fa9fcdc6e7ef3a6075eec4bf9",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/arbitrary-all-widths-growth.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/arbitrary-all-widths-growth.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "all-six-base-keys-collision-growth",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/all-six-base-keys-collision-growth.fasta",
+      "input_sha256": "4aa506eaaa89a73d3f9728b36b16080699cb76528f692ea28a0a6c90d5f64960",
+      "sequence_length": 4119,
+      "returncode": 0,
+      "expected": "A 25.103\nT 25.103\nG 24.933\nC 24.860\n\nAA 6.338\nTT 6.338\nTA 6.314\nAT 6.289\nAG 6.265\nGT 6.265\nGG 6.241\nAC 6.217\nCA 6.217\nCC 6.217\nCG 6.217\nCT 6.217\nGA 6.217\nGC 6.217\nTC 6.217\nTG 6.217\n\n65\tGGT\n17\tGGTA\n2\tGGTATT\n1\tGGTATTTTAATT\n1\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "5b08b5970a92bad70587bb9cf1d7b03286056031889277db50e6d335a157b616",
+      "bytes": 242,
+      "sha256": "5b08b5970a92bad70587bb9cf1d7b03286056031889277db50e6d335a157b616",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/all-six-base-keys-collision-growth.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/all-six-base-keys-collision-growth.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "chunk-boundary-65535",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65535.fasta",
+      "input_sha256": "15bda00f186be3e7d83c0535344a1cd66e600a60db8a9bd36fa0ceaacd4a70b8",
+      "sequence_length": 65535,
+      "returncode": 0,
+      "expected": "A 25.229\nT 25.002\nC 24.906\nG 24.863\n\nAA 6.365\nTA 6.363\nAT 6.319\nAG 6.296\nTT 6.279\nAC 6.250\nCA 6.250\nCC 6.250\nGA 6.250\nCG 6.212\nGC 6.211\nGT 6.211\nTC 6.195\nCT 6.194\nGG 6.191\nTG 6.165\n\n1018\tGGT\n271\tGGTA\n31\tGGTATT\n15\tGGTATTTTAATT\n15\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "3a68875f56989341fe1ad4c63fb0cbd47a954edd7afa5be6626e87af1332ab5b",
+      "bytes": 248,
+      "sha256": "3a68875f56989341fe1ad4c63fb0cbd47a954edd7afa5be6626e87af1332ab5b",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65535.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65535.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "chunk-boundary-65536",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65536.fasta",
+      "input_sha256": "de107e5665c2b8286c8f4a8b98b1aa93b3b99066f2ed73555e63d047e01dc448",
+      "sequence_length": 65536,
+      "returncode": 0,
+      "expected": "A 25.229\nT 25.003\nC 24.905\nG 24.863\n\nAA 6.365\nTA 6.363\nAT 6.319\nAG 6.296\nTT 6.279\nAC 6.250\nCA 6.250\nCC 6.250\nGA 6.250\nCG 6.212\nGT 6.212\nGC 6.210\nTC 6.195\nCT 6.194\nGG 6.191\nTG 6.165\n\n1018\tGGT\n271\tGGTA\n31\tGGTATT\n15\tGGTATTTTAATT\n15\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "6b9f50925207d2905beb06984e2dc9f7306478e057d024c5df5b69190a4f48a5",
+      "bytes": 248,
+      "sha256": "6b9f50925207d2905beb06984e2dc9f7306478e057d024c5df5b69190a4f48a5",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65536.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65536.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "chunk-boundary-65537",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65537.fasta",
+      "input_sha256": "184cf6a92b0ae85e1658a938a3933cda0cec4ca9e5c705870de7ba06c7a3eef9",
+      "sequence_length": 65537,
+      "returncode": 0,
+      "expected": "A 25.228\nT 25.003\nC 24.907\nG 24.862\n\nAA 6.364\nTA 6.363\nAT 6.319\nAG 6.296\nTT 6.279\nAC 6.250\nCA 6.250\nCC 6.250\nGA 6.250\nCG 6.212\nGT 6.212\nGC 6.210\nTC 6.197\nCT 6.194\nGG 6.190\nTG 6.165\n\n1018\tGGT\n271\tGGTA\n31\tGGTATT\n15\tGGTATTTTAATT\n15\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "7724d56a4835567de7c6021c868b4fc00d9c49a7299ee2ca28605e60e8ebe533",
+      "bytes": 248,
+      "sha256": "7724d56a4835567de7c6021c868b4fc00d9c49a7299ee2ca28605e60e8ebe533",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65537.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65537.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "chunk-boundary-65553",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65553.fasta",
+      "input_sha256": "27c1334560a645232c010e28132310ab27beea54c5faf3e3c954c89fe8b8d8c3",
+      "sequence_length": 65553,
+      "returncode": 0,
+      "expected": "A 25.222\nT 25.001\nC 24.908\nG 24.868\n\nAA 6.363\nTA 6.361\nAT 6.317\nAG 6.294\nTT 6.279\nAC 6.248\nCA 6.248\nCC 6.248\nGA 6.248\nCG 6.215\nGC 6.215\nGT 6.210\nTC 6.197\nCT 6.195\nGG 6.195\nTG 6.165\n\n1018\tGGT\n271\tGGTA\n31\tGGTATT\n15\tGGTATTTTAATT\n15\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "ca894e618b763ea9743f8b71d69a798bbb721bc575f83a6b85ff7e0d39454ca1",
+      "bytes": 248,
+      "sha256": "ca894e618b763ea9743f8b71d69a798bbb721bc575f83a6b85ff7e0d39454ca1",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65553.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65553.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "chunk-boundary-65554",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65554.fasta",
+      "input_sha256": "b576f128c983ad49e54ba7b51574e7b9d5ce3ade3f8f40443f8f529da185cea8",
+      "sequence_length": 65554,
+      "returncode": 0,
+      "expected": "A 25.222\nT 25.002\nC 24.908\nG 24.868\n\nAA 6.363\nTA 6.361\nAT 6.317\nAG 6.294\nTT 6.279\nAC 6.248\nCA 6.248\nCC 6.248\nGA 6.248\nCG 6.215\nGC 6.215\nGT 6.210\nCT 6.197\nTC 6.197\nGG 6.195\nTG 6.164\n\n1018\tGGT\n271\tGGTA\n31\tGGTATT\n15\tGGTATTTTAATT\n15\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "7e8f665764cbb258a8e3a3e5c32a112a0b6ea74e4e7bcef3f439eee84bec0fe7",
+      "bytes": 248,
+      "sha256": "7e8f665764cbb258a8e3a3e5c32a112a0b6ea74e4e7bcef3f439eee84bec0fe7",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65554.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65554.stderr",
+      "stderr": "",
+      "reference_match": true
+    },
+    {
+      "case": "chunk-boundary-131091",
+      "n": null,
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+      "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-131091.fasta",
+      "input_sha256": "6b0edba8a6d5fb2a52db3043c11d2b4ab68b8a39c69443e257f46dbaf624c315",
+      "sequence_length": 131091,
+      "returncode": 0,
+      "expected": "A 25.233\nT 25.050\nG 24.886\nC 24.832\n\nAA 6.367\nTA 6.367\nAT 6.320\nTT 6.306\nAG 6.296\nAC 6.249\nCA 6.249\nGA 6.249\nGT 6.235\nGG 6.212\nCC 6.203\nCG 6.190\nGC 6.190\nTC 6.190\nCT 6.189\nTG 6.188\n\n2052\tGGT\n543\tGGTA\n63\tGGTATT\n31\tGGTATTTTAATT\n31\tGGTATTTTAATTTATAGT\n",
+      "expected_sha256": "66eb7102bea792352489fbdd602eef11ed1dbabb715647093145e9b22270c192",
+      "bytes": 248,
+      "sha256": "66eb7102bea792352489fbdd602eef11ed1dbabb715647093145e9b22270c192",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-131091.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-131091.stderr",
+      "stderr": "",
+      "reference_match": true
+    }
+  ],
+  "instrumentation": [
+    {
+      "case": "canonical-small",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/canonical-small.fasta",
+      "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 5000,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          5000
+        ],
+        [
+          2,
+          0,
+          4999
+        ],
+        [
+          3,
+          0,
+          4998
+        ],
+        [
+          4,
+          0,
+          4997
+        ],
+        [
+          6,
+          0,
+          4995
+        ],
+        [
+          12,
+          0,
+          4989
+        ],
+        [
+          18,
+          0,
+          4983
+        ]
+      ],
+      "maximum_chunk_starts": 5000,
+      "grouped_weight_sums": [
+        5000,
+        4999,
+        4998,
+        4997,
+        4995,
+        4989,
+        4983
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        2659,
+        4988,
+        4983
+      ],
+      "total_windows_by_width": {
+        "1": 5000,
+        "2": 4999,
+        "3": 4998,
+        "4": 4997,
+        "6": 4995,
+        "12": 4989,
+        "18": 4983
+      },
+      "expected_windows_by_width": {
+        "1": 5000,
+        "2": 4999,
+        "3": 4998,
+        "4": 4997,
+        "6": 4995,
+        "12": 4989,
+        "18": 4983
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        2659,
+        4988,
+        4983
+      ],
+      "complete_map_totals": [
+        5000,
+        4999,
+        4998,
+        4997,
+        4995,
+        4989,
+        4983
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/canonical-small.work.stdout",
+      "stdout_sha256": "9dae04e6d0792df3dad1c34da678b5b742c82465d69048cf1a44a89033aeb52b",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/canonical-small.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "lexical-ties-stop",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/lexical-ties-stop.fasta",
+      "input_sha256": "3c478df9cc1f6138a6aebe580b8a1c76fa9d5e256cc9f3c0773af0790e27d1c7",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 17,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          17
+        ],
+        [
+          2,
+          0,
+          16
+        ],
+        [
+          3,
+          0,
+          15
+        ],
+        [
+          4,
+          0,
+          14
+        ],
+        [
+          6,
+          0,
+          12
+        ],
+        [
+          12,
+          0,
+          6
+        ]
+      ],
+      "maximum_chunk_starts": 17,
+      "grouped_weight_sums": [
+        17,
+        16,
+        15,
+        14,
+        12,
+        6
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        7,
+        10,
+        13,
+        12,
+        6
+      ],
+      "total_windows_by_width": {
+        "1": 17,
+        "2": 16,
+        "3": 15,
+        "4": 14,
+        "6": 12,
+        "12": 6,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 17,
+        "2": 16,
+        "3": 15,
+        "4": 14,
+        "6": 12,
+        "12": 6,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        4,
+        7,
+        10,
+        13,
+        12,
+        6,
+        0
+      ],
+      "complete_map_totals": [
+        17,
+        16,
+        15,
+        14,
+        12,
+        6,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/lexical-ties-stop.work.stdout",
+      "stdout_sha256": "9998e3dbcb9193426d3ab82ec00b60c7a5f48215bd57228a3da199a67fd793c0",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/lexical-ties-stop.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "short-window",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/short-window.fasta",
+      "input_sha256": "f6a33da8af2572d58135fe4f83e4de1a3f3a5422bd2d637b999b54304fad81d4",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 1,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      "maximum_chunk_starts": 1,
+      "grouped_weight_sums": [
+        1
+      ],
+      "distinct_keys_merged_per_chunk": [
+        1
+      ],
+      "total_windows_by_width": {
+        "1": 1,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 1,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_map_totals": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/short-window.work.stdout",
+      "stdout_sha256": "90abe9ef96fc8b7f39ee1d59c38b4cfc6788b77e915498bc24b7542559f511df",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/short-window.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "empty-record",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/empty-record.fasta",
+      "input_sha256": "d0cdd580b6ad80d6bc2d091cf29ead33f57e84938b100eabf2e579d6111751fc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 0,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [],
+      "maximum_chunk_starts": 0,
+      "grouped_weight_sums": [],
+      "distinct_keys_merged_per_chunk": [],
+      "total_windows_by_width": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_map_totals": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/empty-record.work.stdout",
+      "stdout_sha256": "20ffdeb1f52aab356d2642b2409fa42a81935f881572bdaeb91c759e5a61ac4d",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/empty-record.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "missing-record",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/missing-record.fasta",
+      "input_sha256": "3aa6eb8bf5be4f44a185cdef2d485e2d43b7645c7fa1d73f14804a61dce1fafa",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 0,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [],
+      "maximum_chunk_starts": 0,
+      "grouped_weight_sums": [],
+      "distinct_keys_merged_per_chunk": [],
+      "total_windows_by_width": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_map_totals": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/missing-record.work.stdout",
+      "stdout_sha256": "20ffdeb1f52aab356d2642b2409fa42a81935f881572bdaeb91c759e5a61ac4d",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/missing-record.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "mixed-case-comments-crlf",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/mixed-case-comments-crlf.fasta",
+      "input_sha256": "6561ff2081ffe02f603ed8555df284f4364c33e710313f81cf6f239947c77ce0",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 10,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          10
+        ],
+        [
+          2,
+          0,
+          9
+        ],
+        [
+          3,
+          0,
+          8
+        ],
+        [
+          4,
+          0,
+          7
+        ],
+        [
+          6,
+          0,
+          5
+        ]
+      ],
+      "maximum_chunk_starts": 10,
+      "grouped_weight_sums": [
+        10,
+        9,
+        8,
+        7,
+        5
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        8,
+        8,
+        7,
+        5
+      ],
+      "total_windows_by_width": {
+        "1": 10,
+        "2": 9,
+        "3": 8,
+        "4": 7,
+        "6": 5,
+        "12": 0,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 10,
+        "2": 9,
+        "3": 8,
+        "4": 7,
+        "6": 5,
+        "12": 0,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        4,
+        8,
+        8,
+        7,
+        5,
+        0,
+        0
+      ],
+      "complete_map_totals": [
+        10,
+        9,
+        8,
+        7,
+        5,
+        0,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/mixed-case-comments-crlf.work.stdout",
+      "stdout_sha256": "f3e64b45fef32e225819c56c90dcf196f9743a4490096346e3af851edf3083af",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/mixed-case-comments-crlf.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "arbitrary-all-widths-growth",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/arbitrary-all-widths-growth.fasta",
+      "input_sha256": "632c6d1f3debf1fd2f9ba1ff7e1cd5d17114bfc0a58c1707ebf97aed31290085",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 10021,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          10021
+        ],
+        [
+          2,
+          0,
+          10020
+        ],
+        [
+          3,
+          0,
+          10019
+        ],
+        [
+          4,
+          0,
+          10018
+        ],
+        [
+          6,
+          0,
+          10016
+        ],
+        [
+          12,
+          0,
+          10010
+        ],
+        [
+          18,
+          0,
+          10004
+        ]
+      ],
+      "maximum_chunk_starts": 10021,
+      "grouped_weight_sums": [
+        10021,
+        10020,
+        10019,
+        10018,
+        10016,
+        10010,
+        10004
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        3739,
+        10007,
+        10004
+      ],
+      "total_windows_by_width": {
+        "1": 10021,
+        "2": 10020,
+        "3": 10019,
+        "4": 10018,
+        "6": 10016,
+        "12": 10010,
+        "18": 10004
+      },
+      "expected_windows_by_width": {
+        "1": 10021,
+        "2": 10020,
+        "3": 10019,
+        "4": 10018,
+        "6": 10016,
+        "12": 10010,
+        "18": 10004
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        3739,
+        10007,
+        10004
+      ],
+      "complete_map_totals": [
+        10021,
+        10020,
+        10019,
+        10018,
+        10016,
+        10010,
+        10004
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/arbitrary-all-widths-growth.work.stdout",
+      "stdout_sha256": "eaaf8b83af1c2ba379a6419395d884e2b7e9c0ee74b989ee93ddc2163b4d3597",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/arbitrary-all-widths-growth.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "all-six-base-keys-collision-growth",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/all-six-base-keys-collision-growth.fasta",
+      "input_sha256": "4aa506eaaa89a73d3f9728b36b16080699cb76528f692ea28a0a6c90d5f64960",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 4119,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          4119
+        ],
+        [
+          2,
+          0,
+          4118
+        ],
+        [
+          3,
+          0,
+          4117
+        ],
+        [
+          4,
+          0,
+          4116
+        ],
+        [
+          6,
+          0,
+          4114
+        ],
+        [
+          12,
+          0,
+          4108
+        ],
+        [
+          18,
+          0,
+          4102
+        ]
+      ],
+      "maximum_chunk_starts": 4119,
+      "grouped_weight_sums": [
+        4119,
+        4118,
+        4117,
+        4116,
+        4114,
+        4108,
+        4102
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4108,
+        4102
+      ],
+      "total_windows_by_width": {
+        "1": 4119,
+        "2": 4118,
+        "3": 4117,
+        "4": 4116,
+        "6": 4114,
+        "12": 4108,
+        "18": 4102
+      },
+      "expected_windows_by_width": {
+        "1": 4119,
+        "2": 4118,
+        "3": 4117,
+        "4": 4116,
+        "6": 4114,
+        "12": 4108,
+        "18": 4102
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4108,
+        4102
+      ],
+      "complete_map_totals": [
+        4119,
+        4118,
+        4117,
+        4116,
+        4114,
+        4108,
+        4102
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/all-six-base-keys-collision-growth.work.stdout",
+      "stdout_sha256": "39fa7e45464bc593af3463bb52f8a4101aadabccd4b6f4377523b115e13a22db",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/all-six-base-keys-collision-growth.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65535",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65535.fasta",
+      "input_sha256": "15bda00f186be3e7d83c0535344a1cd66e600a60db8a9bd36fa0ceaacd4a70b8",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65535,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65535
+        ],
+        [
+          2,
+          0,
+          65534
+        ],
+        [
+          3,
+          0,
+          65533
+        ],
+        [
+          4,
+          0,
+          65532
+        ],
+        [
+          6,
+          0,
+          65530
+        ],
+        [
+          12,
+          0,
+          65524
+        ],
+        [
+          18,
+          0,
+          65518
+        ]
+      ],
+      "maximum_chunk_starts": 65535,
+      "grouped_weight_sums": [
+        65535,
+        65534,
+        65533,
+        65532,
+        65530,
+        65524,
+        65518
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "total_windows_by_width": {
+        "1": 65535,
+        "2": 65534,
+        "3": 65533,
+        "4": 65532,
+        "6": 65530,
+        "12": 65524,
+        "18": 65518
+      },
+      "expected_windows_by_width": {
+        "1": 65535,
+        "2": 65534,
+        "3": 65533,
+        "4": 65532,
+        "6": 65530,
+        "12": 65524,
+        "18": 65518
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65535,
+        65534,
+        65533,
+        65532,
+        65530,
+        65524,
+        65518
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65535.work.stdout",
+      "stdout_sha256": "779d6291cd5bb5fbdb9598f45c8f335fdb61d50e1b07fba4fde6c97d6bee6e89",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65535.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65536",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65536.fasta",
+      "input_sha256": "de107e5665c2b8286c8f4a8b98b1aa93b3b99066f2ed73555e63d047e01dc448",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65536,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          2,
+          0,
+          65535
+        ],
+        [
+          3,
+          0,
+          65534
+        ],
+        [
+          4,
+          0,
+          65533
+        ],
+        [
+          6,
+          0,
+          65531
+        ],
+        [
+          12,
+          0,
+          65525
+        ],
+        [
+          18,
+          0,
+          65519
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        65535,
+        65534,
+        65533,
+        65531,
+        65525,
+        65519
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "total_windows_by_width": {
+        "1": 65536,
+        "2": 65535,
+        "3": 65534,
+        "4": 65533,
+        "6": 65531,
+        "12": 65525,
+        "18": 65519
+      },
+      "expected_windows_by_width": {
+        "1": 65536,
+        "2": 65535,
+        "3": 65534,
+        "4": 65533,
+        "6": 65531,
+        "12": 65525,
+        "18": 65519
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65536,
+        65535,
+        65534,
+        65533,
+        65531,
+        65525,
+        65519
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65536.work.stdout",
+      "stdout_sha256": "ac144e81413a3a73122565a3d248f16606ddb6fffe734ddacc47abc6bb83f8c3",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65536.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65537",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65537.fasta",
+      "input_sha256": "184cf6a92b0ae85e1658a938a3933cda0cec4ca9e5c705870de7ba06c7a3eef9",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65537,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          1,
+          65536,
+          1
+        ],
+        [
+          2,
+          0,
+          65536
+        ],
+        [
+          3,
+          0,
+          65535
+        ],
+        [
+          4,
+          0,
+          65534
+        ],
+        [
+          6,
+          0,
+          65532
+        ],
+        [
+          12,
+          0,
+          65526
+        ],
+        [
+          18,
+          0,
+          65520
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        1,
+        65536,
+        65535,
+        65534,
+        65532,
+        65526,
+        65520
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        1,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "total_windows_by_width": {
+        "1": 65537,
+        "2": 65536,
+        "3": 65535,
+        "4": 65534,
+        "6": 65532,
+        "12": 65526,
+        "18": 65520
+      },
+      "expected_windows_by_width": {
+        "1": 65537,
+        "2": 65536,
+        "3": 65535,
+        "4": 65534,
+        "6": 65532,
+        "12": 65526,
+        "18": 65520
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65537,
+        65536,
+        65535,
+        65534,
+        65532,
+        65526,
+        65520
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65537.work.stdout",
+      "stdout_sha256": "08c0fd37e86e86eb5686abb7743597ac92dd1e7a8b8d208f477351a3a50bed29",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65537.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65553",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65553.fasta",
+      "input_sha256": "27c1334560a645232c010e28132310ab27beea54c5faf3e3c954c89fe8b8d8c3",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65553,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          1,
+          65536,
+          17
+        ],
+        [
+          2,
+          0,
+          65536
+        ],
+        [
+          2,
+          65536,
+          16
+        ],
+        [
+          3,
+          0,
+          65536
+        ],
+        [
+          3,
+          65536,
+          15
+        ],
+        [
+          4,
+          0,
+          65536
+        ],
+        [
+          4,
+          65536,
+          14
+        ],
+        [
+          6,
+          0,
+          65536
+        ],
+        [
+          6,
+          65536,
+          12
+        ],
+        [
+          12,
+          0,
+          65536
+        ],
+        [
+          12,
+          65536,
+          6
+        ],
+        [
+          18,
+          0,
+          65536
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        17,
+        65536,
+        16,
+        65536,
+        15,
+        65536,
+        14,
+        65536,
+        12,
+        65536,
+        6,
+        65536
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        3,
+        16,
+        7,
+        64,
+        10,
+        256,
+        12,
+        4096,
+        12,
+        4119,
+        6,
+        4119
+      ],
+      "total_windows_by_width": {
+        "1": 65553,
+        "2": 65552,
+        "3": 65551,
+        "4": 65550,
+        "6": 65548,
+        "12": 65542,
+        "18": 65536
+      },
+      "expected_windows_by_width": {
+        "1": 65553,
+        "2": 65552,
+        "3": 65551,
+        "4": 65550,
+        "6": 65548,
+        "12": 65542,
+        "18": 65536
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65553,
+        65552,
+        65551,
+        65550,
+        65548,
+        65542,
+        65536
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65553.work.stdout",
+      "stdout_sha256": "adf6f256269c144dbcebc45bb7a24f956131ee9d1fed9767afc0968c9ea67a31",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65553.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65554",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65554.fasta",
+      "input_sha256": "b576f128c983ad49e54ba7b51574e7b9d5ce3ade3f8f40443f8f529da185cea8",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65554,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          1,
+          65536,
+          18
+        ],
+        [
+          2,
+          0,
+          65536
+        ],
+        [
+          2,
+          65536,
+          17
+        ],
+        [
+          3,
+          0,
+          65536
+        ],
+        [
+          3,
+          65536,
+          16
+        ],
+        [
+          4,
+          0,
+          65536
+        ],
+        [
+          4,
+          65536,
+          15
+        ],
+        [
+          6,
+          0,
+          65536
+        ],
+        [
+          6,
+          65536,
+          13
+        ],
+        [
+          12,
+          0,
+          65536
+        ],
+        [
+          12,
+          65536,
+          7
+        ],
+        [
+          18,
+          0,
+          65536
+        ],
+        [
+          18,
+          65536,
+          1
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        18,
+        65536,
+        17,
+        65536,
+        16,
+        65536,
+        15,
+        65536,
+        13,
+        65536,
+        7,
+        65536,
+        1
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        3,
+        16,
+        7,
+        64,
+        10,
+        256,
+        12,
+        4096,
+        13,
+        4119,
+        7,
+        4119,
+        1
+      ],
+      "total_windows_by_width": {
+        "1": 65554,
+        "2": 65553,
+        "3": 65552,
+        "4": 65551,
+        "6": 65549,
+        "12": 65543,
+        "18": 65537
+      },
+      "expected_windows_by_width": {
+        "1": 65554,
+        "2": 65553,
+        "3": 65552,
+        "4": 65551,
+        "6": 65549,
+        "12": 65543,
+        "18": 65537
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65554,
+        65553,
+        65552,
+        65551,
+        65549,
+        65543,
+        65537
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65554.work.stdout",
+      "stdout_sha256": "f520326229949397ab688f1381aff8772b04d7eb55ebf885868151378c2cf05b",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65554.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-131091",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-131091.fasta",
+      "input_sha256": "6b0edba8a6d5fb2a52db3043c11d2b4ab68b8a39c69443e257f46dbaf624c315",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 131091,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          1,
+          65536,
+          65536
+        ],
+        [
+          1,
+          131072,
+          19
+        ],
+        [
+          2,
+          0,
+          65536
+        ],
+        [
+          2,
+          65536,
+          65536
+        ],
+        [
+          2,
+          131072,
+          18
+        ],
+        [
+          3,
+          0,
+          65536
+        ],
+        [
+          3,
+          65536,
+          65536
+        ],
+        [
+          3,
+          131072,
+          17
+        ],
+        [
+          4,
+          0,
+          65536
+        ],
+        [
+          4,
+          65536,
+          65536
+        ],
+        [
+          4,
+          131072,
+          16
+        ],
+        [
+          6,
+          0,
+          65536
+        ],
+        [
+          6,
+          65536,
+          65536
+        ],
+        [
+          6,
+          131072,
+          14
+        ],
+        [
+          12,
+          0,
+          65536
+        ],
+        [
+          12,
+          65536,
+          65536
+        ],
+        [
+          12,
+          131072,
+          8
+        ],
+        [
+          18,
+          0,
+          65536
+        ],
+        [
+          18,
+          65536,
+          65536
+        ],
+        [
+          18,
+          131072,
+          2
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        65536,
+        19,
+        65536,
+        65536,
+        18,
+        65536,
+        65536,
+        17,
+        65536,
+        65536,
+        16,
+        65536,
+        65536,
+        14,
+        65536,
+        65536,
+        8,
+        65536,
+        65536,
+        2
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        4,
+        3,
+        16,
+        16,
+        8,
+        64,
+        64,
+        11,
+        256,
+        256,
+        13,
+        4096,
+        4096,
+        14,
+        4119,
+        4119,
+        8,
+        4119,
+        4119,
+        2
+      ],
+      "total_windows_by_width": {
+        "1": 131091,
+        "2": 131090,
+        "3": 131089,
+        "4": 131088,
+        "6": 131086,
+        "12": 131080,
+        "18": 131074
+      },
+      "expected_windows_by_width": {
+        "1": 131091,
+        "2": 131090,
+        "3": 131089,
+        "4": 131088,
+        "6": 131086,
+        "12": 131080,
+        "18": 131074
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        131091,
+        131090,
+        131089,
+        131088,
+        131086,
+        131080,
+        131074
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-131091.work.stdout",
+      "stdout_sha256": "59439102e31835b02163af3f876f69fdd17232d8d88547a0f3e207d3cb726eca",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-131091.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    }
+  ],
+  "finished_at": "2026-10-11T20:39:26.174646+00:00",
+  "passed": 14,
+  "work_checks_passed": 14
+}

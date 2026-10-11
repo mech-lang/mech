@@ -1,0 +1,12 @@
+Style: Split this into multiple lines (heuristic: 60/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua:4:1
+4 | Advance ← M ⊃(+⊃M.Cx(-⊃(˙×M.I)(˙×M.R))|+⊃M.Cy(×2×⊃M.R M.I)|M.Live|M.Cx|M.Cy|+1M.Iter)
+    ─────────────────────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 47/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua:5:1
+5 | Mark    ← M ⊃(M.R|M.I|×⊃M.Live(≤4+⊃(˙×M.R)(˙×M.I))|M.Cx|M.Cy|M.Iter)
+    ────────────────────────────────────────────────────────────────────
+Style: Split this into multiple lines (heuristic: 42/40) 🤨
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua:8:1
+8 | Row     ← &fwa "/dev/stdout" Pack M.Live ⍢(Iterate|×⊃(<50M.Iter)(/↥M.Live)) M (↯N 0) (↯N 0) (↯N 1) Cr ⊙0
+    ────────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,1999 @@
+{
+  "status": "passed-source-audit",
+  "created_at": "2026-10-11T20:41:59.210216+00:00",
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/sources/fast.ua",
+  "source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+  "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+  "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/knucleotide/fast.ua",
+  "original_source_sha256": "b3606cf00816ea8152bc2a05f1d1cd2a89bf689a60c75f106e2e279e6d9dad38",
+  "transformation": "Retain the original bounded chunk parser/loop/formatting; replace each window-level map increment with native class/first/length and a weighted generic merge per distinct chunk key.",
+  "widths": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    12,
+    18
+  ],
+  "maximum_chunk_starts": 65536,
+  "chunk_partition": "WindowCount=max(0,L-width+1); Start begins at 0; ChunkSize=min(65536,WindowCount-Start). ChunkText contains ChunkSize+width-1 characters beginning at Start. Identity stencil emits exactly ChunkSize overlapping windows. Advance adds ChunkSize to Start and carries the complete Counts map.",
+  "weighted_merge": "ClassCounts produces every distinct complete key and its native group length. Each Weighted entry adds Weight to get(Key,Counts), with missing values filled by zero, then inserts the sum into the same complete growing map.",
+  "native_benchmark_kernel": false,
+  "host_helpers": false,
+  "input_period_assumptions": false,
+  "fixed_bucket_tables": false,
+  "query_only_maps": false,
+  "complete_growing_maps": 7,
+  "full_sequence_length": 125000000,
+  "full_total_windows": 874999961,
+  "full_windows_by_width": {
+    "1": 125000000,
+    "2": 124999999,
+    "3": 124999998,
+    "4": 124999997,
+    "6": 124999995,
+    "12": 124999989,
+    "18": 124999983
+  },
+  "numeric_policy": "Counts remain exact binary64 integers below 2^53; canonical full counts are at most 125000000. Classification compares complete character-array keys.",
+  "native_runtime_proof": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/stencil.rs",
+      "sha256": "96faf1e36d0179cde5eff5b3d266c49b1023b1ac2bf757e275e8e0b93f9fe742",
+      "first_line": 149,
+      "last_line": 157,
+      "excerpt": "    // Initialize action\n    let mut action: WindowAction<T> = match &f.node {\n        Node::Prim(Primitive::Identity, _) => {\n            let size = validate_size::<T>(\n                (shape_prefix.iter().copied()).chain(window_shape.iter().copied()),\n                env,\n            )?;\n            WindowAction::Id(EcoVec::with_capacity(size), None)\n        }",
+      "conclusion": "Direct identity stencil selects the ordinary native array window path."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/stencil.rs",
+      "sha256": "96faf1e36d0179cde5eff5b3d266c49b1023b1ac2bf757e275e8e0b93f9fe742",
+      "first_line": 210,
+      "last_line": 232,
+      "excerpt": "            // General case\n            let row_len = arr.row_len();\n            let win_count = arr\n                .row_count()\n                .saturating_sub(dim.size.saturating_sub(dim.stride))\n                / dim.stride;\n            match action {\n                WindowAction::Id(mut data, f) => {\n                    for i in 0..win_count {\n                        data.extend_from_slice(\n                            &arr.data[dim.start..][i * dim.stride * row_len..]\n                                [..dim.size * row_len],\n                        );\n                    }\n                    let mut new_shape = arr.shape;\n                    new_shape[0] = dim.size;\n                    new_shape.prepend(win_count);\n                    let mut val: Value = Array::new(new_shape, data).into();\n                    if let Some((f, d)) = f {\n                        val = f(val, dims.len() + d, env)?;\n                    }\n                    env.push(val);\n                    return Ok(());",
+      "conclusion": "The native identity stencil copies every overlapping window into the bounded chunk array."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/monadic/mod.rs",
+      "sha256": "4bd7477b748092e2dc8419dde94135f6149b51abd319fb814b7fe636a915ff0c",
+      "first_line": 1415,
+      "last_line": 1442,
+      "excerpt": "    pub fn classify(&self) -> Vec<usize> {\n        if self.shape.contains(&0) {\n            return vec![0; self.row_count()];\n        }\n        let mut classified = Vec::with_capacity(self.row_count());\n        if self.meta.is_sorted_up() || self.meta.is_sorted_down() {\n            let mut rows = self.row_slices().map(ArrayCmpSlice);\n            if let Some(mut prev) = rows.next() {\n                let mut curr_class = 0;\n                classified.push(curr_class);\n                for row in rows {\n                    if row != prev {\n                        curr_class += 1;\n                        prev = row;\n                    }\n                    classified.push(curr_class);\n                }\n            }\n            classified\n        } else {\n            let mut classes = HashMap::new();\n            for row in self.row_slices().map(ArrayCmpSlice) {\n                let new_class = classes.len();\n                let class = *classes.entry(row).or_insert(new_class);\n                classified.push(class);\n            }\n            classified\n        }",
+      "conclusion": "Ordinary classify visits every complete row, assigns exact classes via HashMap row equality, and returns one index per window; it does not call a Uiua function per window."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/groups.rs",
+      "sha256": "73f072b3f213ce052ccf0c86ff294c0506ee33223fc71b77b46c66da4a404e4a",
+      "first_line": 543,
+      "last_line": 565,
+      "excerpt": "pub fn group(f: SigNode, env: &mut Uiua) -> UiuaResult {\n    crate::profile_function!();\n    collapse_groups(\n        Primitive::Group,\n        f,\n        Value::group_groups,\n        Value::group_firsts,\n        Value::group_lasts,\n        |indices| {\n            let buckets = (indices.iter().max().copied().unwrap_or(-1) + 1).max(0) as usize;\n            let mut len_counts = HashMap::with_capacity(buckets);\n            for &index in indices {\n                if index >= 0 {\n                    *len_counts.entry(index.unsigned_abs()).or_insert(0) += 1;\n                }\n            }\n            let mut lens: EcoVec<f64> = eco_vec![0.0; buckets];\n            let slice = lens.make_mut();\n            for (index, len) in len_counts {\n                slice[index] = len as f64;\n            }\n            lens.into()\n        },",
+      "conclusion": "Group length increments an ordinary native count for every nonnegative class index."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/groups.rs",
+      "sha256": "73f072b3f213ce052ccf0c86ff294c0506ee33223fc71b77b46c66da4a404e4a",
+      "first_line": 810,
+      "last_line": 839,
+      "excerpt": "    // Optimizations\n    if indices.rank() == 1 && values.len() == 1 {\n        use Node::*;\n        use Primitive::*;\n        match &f.node {\n            Prim(First, _) => {\n                let xs = values.into_iter().next().unwrap();\n                let val = firsts(xs, &indices.data, env)?;\n                env.push(val);\n                return Ok(());\n            }\n            Prim(Last, _) => {\n                let xs = values.into_iter().next().unwrap();\n                let val = lasts(xs, &indices.data, env)?;\n                env.push(val);\n                return Ok(());\n            }\n            Prim(Len, _) => {\n                let xs = values.into_iter().next().unwrap();\n                if indices.row_count() != xs.row_count() {\n                    return Err(env.error(format!(\n                        \"Cannot {} array of shape {} with indices of shape {}\",\n                        prim.format(),\n                        xs.shape,\n                        indices.shape\n                    )));\n                }\n                env.push(lens(&indices.data));\n                return Ok(());\n            }",
+      "conclusion": "Primitive group First and Len dispatch directly to native firsts/lens rather than interpreting a function for every group."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/groups.rs",
+      "sha256": "73f072b3f213ce052ccf0c86ff294c0506ee33223fc71b77b46c66da4a404e4a",
+      "first_line": 607,
+      "last_line": 633,
+      "excerpt": "    fn group_firsts(self, indices: &[isize], env: &Uiua) -> UiuaResult<Self> {\n        let buckets = (indices.iter().copied().max().unwrap_or(-1) + 1).max(0) as usize;\n        if self.row_count() < buckets {\n            return Err(env.error(\"Cannot take first because a group was empty\"));\n        }\n        let row_len = self.row_len();\n        let mut encountered = HashSet::new();\n        let mut data = self.data.clone();\n        data.truncate(buckets * row_len);\n        let data_slice = data.as_mut_slice();\n        let mut shape = self.shape.clone();\n        if shape.is_empty() {\n            shape.prepend(buckets);\n        } else {\n            shape[0] = buckets;\n        }\n        for (&index, row) in indices.iter().zip(self.row_slices()) {\n            if index >= 0 && encountered.insert(index) {\n                let start = index.unsigned_abs() * row_len;\n                let end = start + row_len;\n                data_slice[start..end].clone_from_slice(row);\n            }\n        }\n        if encountered.len() != buckets {\n            return Err(env.error(\"Cannot take first because a group was empty\"));\n        }\n        Ok(Array::new(shape, data))",
+      "conclusion": "Native group first copies one entire window key per class in classification order."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/map.rs",
+      "sha256": "aafb4b350411a4c7a04a1bd97b0d5f2750e33c7e68395133e907df6337e0d67d",
+      "first_line": 274,
+      "last_line": 311,
+      "excerpt": "        let row_count = self.row_count();\n        let mut keys = self\n            .meta\n            .take_map_keys()\n            .ok_or_else(|| env.error(\"Value is not a map\"))?;\n        if keys.len != row_count {\n            return Err(env.error(format!(\n                \"Cannot insert into map with {} keys and {} value(s)\",\n                keys.len, row_count\n            )));\n        }\n        let curr_index = keys.get(&key);\n        let index = curr_index.unwrap_or(row_count);\n        keys.insert(key, index, env.ctx())?;\n        let value = coerce_values(self, value, \"insert\", \"value into map with\", \"values\")\n            .map_err(|e| env.error(e))?;\n        if curr_index.is_some() {\n            self.generic_bin_mut(\n                value,\n                |arr, value| Ok(arr.set_row(index, value)),\n                |arr, value| Ok(arr.set_row(index, value)),\n                |arr, value| Ok(arr.set_row(index, value)),\n                |arr, value| Ok(arr.set_row(index, value)),\n                |arr, value| Ok(arr.set_row(index, value)),\n                |a, b| {\n                    env.error(format!(\n                        \"Cannot insert {} value into map with {} values\",\n                        b.type_name(),\n                        a.type_name()\n                    ))\n                },\n            )?;\n        } else {\n            self.append(value, false, env.ctx())?;\n        }\n        self.meta.map_keys = Some(keys);\n        self.meta.take_sorted_flags();\n        self.validate();",
+      "conclusion": "Generic map insertion updates an existing count or appends a new value; all prior keys/values remain in the growing map."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/map.rs",
+      "sha256": "aafb4b350411a4c7a04a1bd97b0d5f2750e33c7e68395133e907df6337e0d67d",
+      "first_line": 447,
+      "last_line": 505,
+      "excerpt": "impl MapKeys {\n    fn capacity(&self) -> usize {\n        self.indices.len()\n    }\n    fn grow(&mut self) {\n        if self.capacity() == 0 || (self.len as f64 / self.capacity() as f64) > LOAD_FACTOR {\n            self.grow_to((self.capacity() * 2).max(1));\n        }\n    }\n    fn grow_to(&mut self, new_capacity: usize) {\n        {\n            if let Value::Byte(keys) = &self.keys {\n                self.keys = Value::Num(keys.convert_ref());\n            }\n        }\n        match &mut self.keys {\n            Value::Num(a) => Self::grow_impl(a, &mut self.indices, new_capacity),\n            Value::Complex(a) => Self::grow_impl(a, &mut self.indices, new_capacity),\n            Value::Char(a) => Self::grow_impl(a, &mut self.indices, new_capacity),\n            Value::Box(a) => Self::grow_impl(a, &mut self.indices, new_capacity),\n            Value::Byte(_) => unreachable!(),\n            #[cfg(feature = \"ga\")]\n            Value::Mv(a) => Self::grow_impl(a, &mut self.indices, new_capacity),\n        }\n    }\n    fn grow_impl<K>(keys: &mut Array<K>, indices: &mut Vec<usize>, new_capacity: usize)\n    where\n        K: MapItem + ArrayValue,\n    {\n        let key_row_len = keys.row_len();\n        let mut keys_shape = keys.shape.clone();\n        if let Some(len) = keys_shape.first_mut() {\n            *len = new_capacity;\n        } else if new_capacity > 1 {\n            keys_shape = new_capacity.into();\n        }\n        let old_keys = take(keys).into_rows();\n        let old_indices = take(indices);\n        *keys = Array::new(\n            keys_shape,\n            repeat_n(K::empty_cell(), new_capacity * key_row_len).collect::<EcoVec<_>>(),\n        );\n        *indices = vec![0; new_capacity];\n        let key_data = keys.data.as_mut_slice();\n        for (key, index) in old_keys.zip(old_indices) {\n            let start = hash_start(&key, new_capacity);\n            let mut key_index = start;\n            loop {\n                let cell_key =\n                    &mut key_data[key_index * key_row_len..(key_index + 1) * key_row_len];\n                if cell_key.is_empty() || cell_key[0].is_any_empty_cell() {\n                    cell_key.clone_from_slice(&key.data);\n                    indices[key_index] = index;\n                    break;\n                }\n                key_index = (key_index + 1) % new_capacity;\n            }\n        }\n    }",
+      "conclusion": "Generic map capacity grows at its load threshold; rehashing copies all prior keys, so completed chunk buffers are not retained by map keys."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/map.rs",
+      "sha256": "aafb4b350411a4c7a04a1bd97b0d5f2750e33c7e68395133e907df6337e0d67d",
+      "first_line": 506,
+      "last_line": 591,
+      "excerpt": "    fn insert(&mut self, key: Value, index: usize, ctx: Context) -> UiuaResult<Option<usize>> {\n        fn insert_impl<K>(\n            keys: &mut Array<K>,\n            indices: &mut [usize],\n            key: Array<K>,\n            index: usize,\n            len: &mut usize,\n            capacity: usize,\n        ) -> Result<Option<usize>, (Array<K>, usize)>\n        where\n            K: MapItem + ArrayValue,\n        {\n            let start = hash_start(&key, capacity);\n            let mut key_index = start;\n            let key_row_len = keys.row_len();\n            let key_data = keys.data.as_mut_slice();\n            loop {\n                let cell_key = &key_data[key_index * key_row_len..(key_index + 1) * key_row_len];\n                let present = if cell_key.is_empty() {\n                    *len == 1\n                } else if cell_key[0].is_any_empty_cell() {\n                    false\n                } else if cell_key[0].is_any_tombstone() {\n                    // Probe for the matching key\n                    let orig = key_index;\n                    loop {\n                        key_index = (key_index + 1) % capacity;\n                        if key_index == orig {\n                            break false;\n                        }\n                        let cell_key =\n                            &key_data[key_index * key_row_len..(key_index + 1) * key_row_len];\n                        if cell_key[0].is_any_tombstone() {\n                            continue;\n                        } else if cell_key[0].is_any_empty_cell() {\n                            key_index = orig;\n                            break false;\n                        } else if ArrayCmpSlice(cell_key) == ArrayCmpSlice(&key.data) {\n                            break true;\n                        } else {\n                            continue;\n                        }\n                    }\n                } else {\n                    true\n                };\n                let cell_key =\n                    &mut key_data[key_index * key_row_len..(key_index + 1) * key_row_len];\n                if !present || ArrayCmpSlice(cell_key) == ArrayCmpSlice(&key.data) {\n                    if !present {\n                        *len += 1;\n                    }\n                    cell_key.clone_from_slice(&key.data);\n                    let replaced = if present {\n                        Some(indices[key_index])\n                    } else {\n                        None\n                    };\n                    indices[key_index] = index;\n                    break Ok(replaced);\n                }\n                key_index = (key_index + 1) % capacity;\n                if key_index == start {\n                    break Err((key, index));\n                }\n            }\n        }\n        let key = coerce_values(&mut self.keys, key, \"insert\", \"key into map with\", \"keys\")\n            .map_err(|e| ctx.error(e))?;\n        if self.capacity() == 0 {\n            self.grow();\n        }\n        let capacity = self.capacity();\n        macro_rules! do_insert {\n            ($($k:ident),*) => {\n                match (&mut self.keys, key) {\n                    $((Value::$k(keys), Value::$k(key)) => {\n                        match insert_impl(keys, &mut self.indices, key, index, &mut self.len, capacity) {\n                            Ok(replaced) => replaced,\n                            Err((key, index)) => {\n                                self.grow();\n                                return self.insert(key.into(), index, ctx);\n                            }\n                        }\n                    })*\n                    _ => unreachable!(),",
+      "conclusion": "Generic map insertion probes colliding buckets, compares complete key rows, copies the key, and advances linearly until an equal or empty bucket is found."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/map.rs",
+      "sha256": "aafb4b350411a4c7a04a1bd97b0d5f2750e33c7e68395133e907df6337e0d67d",
+      "first_line": 593,
+      "last_line": 625,
+      "excerpt": "            }\n        }\n        let replaced = do_insert!(Num, Complex, Char, Box);\n        self.grow();\n        Ok(replaced)\n    }\n    fn get(&self, key: &Value) -> Option<usize> {\n        let mut key = key;\n        if self.keys.row_count() == 0 {\n            return None;\n        }\n        let boxed_key: Value;\n        if matches!(self.keys, Value::Box(_)) && !matches!(key, Value::Box(_)) {\n            boxed_key = Boxed(key.clone()).into();\n            key = &boxed_key;\n        }\n        let start = val_as_arr!(key, |a| hash_start(a, self.capacity()));\n        let mut key_index = start;\n        loop {\n            let row_key = self.keys.row(key_index);\n            if key.unpacked_ref() == row_key.unpacked_ref() {\n                return Some(self.indices[key_index]);\n            }\n            if row_key.is_any_empty_cell() {\n                return None;\n            }\n            key_index = (key_index + 1) % self.capacity();\n            if key_index == start {\n                break None;\n            }\n        }\n    }\n    fn remove(&mut self, key: Value, env: &Uiua) -> UiuaResult<Option<usize>> {",
+      "conclusion": "Generic map lookup probes with exact full-key equality, retaining correct counts across hash collisions."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/map.rs",
+      "sha256": "aafb4b350411a4c7a04a1bd97b0d5f2750e33c7e68395133e907df6337e0d67d",
+      "first_line": 887,
+      "last_line": 908,
+      "excerpt": "\n// NOTE: must_cast to f64 only works if f64 and u64 have same endianness.\n//       This is true of all currently supported platforms for rust,\n//       but may not be true in general. Swap out for f64::from_bits when\n//       the MSRV passes 1.83 to ensure correctness on all future platforms.\n\n// A NaN value used as empty, not the standard NaN.\npub const EMPTY_NAN: f64 = must_cast(0x7ff8_0000_0000_0000u64 | 0x0000_0000_0000_0001);\n// A NaN value used as a tombstone, not the standard NaN.\npub const TOMBSTONE_NAN: f64 = must_cast(0x7ff8_0000_0000_0000u64 | 0x0000_0000_0000_0002);\n// A character value used as empty\npub const EMPTY_CHAR: char = '\\u{2ffff}';\n// A character value used as a tombstone\npub const TOMBSTONE_CHAR: char = '\\u{2fffe}';\n\n#[track_caller]\nfn hash_start<T: ArrayValue>(arr: &Array<T>, capacity: usize) -> usize {\n    let mut hasher = DefaultHasher::new();\n    arr.hash(&mut hasher);\n    hasher.finish() as usize % capacity.max(1)\n}\n",
+      "conclusion": "The generic map uses a 0.75 load threshold and DefaultHasher over each full key, followed by modulo-capacity bucket selection."
+    }
+  ],
+  "instrumentation": [
+    {
+      "case": "canonical-small",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/canonical-small.fasta",
+      "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 5000,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          5000
+        ],
+        [
+          2,
+          0,
+          4999
+        ],
+        [
+          3,
+          0,
+          4998
+        ],
+        [
+          4,
+          0,
+          4997
+        ],
+        [
+          6,
+          0,
+          4995
+        ],
+        [
+          12,
+          0,
+          4989
+        ],
+        [
+          18,
+          0,
+          4983
+        ]
+      ],
+      "maximum_chunk_starts": 5000,
+      "grouped_weight_sums": [
+        5000,
+        4999,
+        4998,
+        4997,
+        4995,
+        4989,
+        4983
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        2659,
+        4988,
+        4983
+      ],
+      "total_windows_by_width": {
+        "1": 5000,
+        "2": 4999,
+        "3": 4998,
+        "4": 4997,
+        "6": 4995,
+        "12": 4989,
+        "18": 4983
+      },
+      "expected_windows_by_width": {
+        "1": 5000,
+        "2": 4999,
+        "3": 4998,
+        "4": 4997,
+        "6": 4995,
+        "12": 4989,
+        "18": 4983
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        2659,
+        4988,
+        4983
+      ],
+      "complete_map_totals": [
+        5000,
+        4999,
+        4998,
+        4997,
+        4995,
+        4989,
+        4983
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/canonical-small.work.stdout",
+      "stdout_sha256": "9dae04e6d0792df3dad1c34da678b5b742c82465d69048cf1a44a89033aeb52b",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/canonical-small.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "lexical-ties-stop",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/lexical-ties-stop.fasta",
+      "input_sha256": "3c478df9cc1f6138a6aebe580b8a1c76fa9d5e256cc9f3c0773af0790e27d1c7",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 17,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          17
+        ],
+        [
+          2,
+          0,
+          16
+        ],
+        [
+          3,
+          0,
+          15
+        ],
+        [
+          4,
+          0,
+          14
+        ],
+        [
+          6,
+          0,
+          12
+        ],
+        [
+          12,
+          0,
+          6
+        ]
+      ],
+      "maximum_chunk_starts": 17,
+      "grouped_weight_sums": [
+        17,
+        16,
+        15,
+        14,
+        12,
+        6
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        7,
+        10,
+        13,
+        12,
+        6
+      ],
+      "total_windows_by_width": {
+        "1": 17,
+        "2": 16,
+        "3": 15,
+        "4": 14,
+        "6": 12,
+        "12": 6,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 17,
+        "2": 16,
+        "3": 15,
+        "4": 14,
+        "6": 12,
+        "12": 6,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        4,
+        7,
+        10,
+        13,
+        12,
+        6,
+        0
+      ],
+      "complete_map_totals": [
+        17,
+        16,
+        15,
+        14,
+        12,
+        6,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/lexical-ties-stop.work.stdout",
+      "stdout_sha256": "9998e3dbcb9193426d3ab82ec00b60c7a5f48215bd57228a3da199a67fd793c0",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/lexical-ties-stop.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "short-window",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/short-window.fasta",
+      "input_sha256": "f6a33da8af2572d58135fe4f83e4de1a3f3a5422bd2d637b999b54304fad81d4",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 1,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      "maximum_chunk_starts": 1,
+      "grouped_weight_sums": [
+        1
+      ],
+      "distinct_keys_merged_per_chunk": [
+        1
+      ],
+      "total_windows_by_width": {
+        "1": 1,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 1,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_map_totals": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/short-window.work.stdout",
+      "stdout_sha256": "90abe9ef96fc8b7f39ee1d59c38b4cfc6788b77e915498bc24b7542559f511df",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/short-window.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "empty-record",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/empty-record.fasta",
+      "input_sha256": "d0cdd580b6ad80d6bc2d091cf29ead33f57e84938b100eabf2e579d6111751fc",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 0,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [],
+      "maximum_chunk_starts": 0,
+      "grouped_weight_sums": [],
+      "distinct_keys_merged_per_chunk": [],
+      "total_windows_by_width": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_map_totals": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/empty-record.work.stdout",
+      "stdout_sha256": "20ffdeb1f52aab356d2642b2409fa42a81935f881572bdaeb91c759e5a61ac4d",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/empty-record.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "missing-record",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/missing-record.fasta",
+      "input_sha256": "3aa6eb8bf5be4f44a185cdef2d485e2d43b7645c7fa1d73f14804a61dce1fafa",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 0,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [],
+      "maximum_chunk_starts": 0,
+      "grouped_weight_sums": [],
+      "distinct_keys_merged_per_chunk": [],
+      "total_windows_by_width": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "12": 0,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_map_totals": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/missing-record.work.stdout",
+      "stdout_sha256": "20ffdeb1f52aab356d2642b2409fa42a81935f881572bdaeb91c759e5a61ac4d",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/missing-record.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "mixed-case-comments-crlf",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/mixed-case-comments-crlf.fasta",
+      "input_sha256": "6561ff2081ffe02f603ed8555df284f4364c33e710313f81cf6f239947c77ce0",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 10,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          10
+        ],
+        [
+          2,
+          0,
+          9
+        ],
+        [
+          3,
+          0,
+          8
+        ],
+        [
+          4,
+          0,
+          7
+        ],
+        [
+          6,
+          0,
+          5
+        ]
+      ],
+      "maximum_chunk_starts": 10,
+      "grouped_weight_sums": [
+        10,
+        9,
+        8,
+        7,
+        5
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        8,
+        8,
+        7,
+        5
+      ],
+      "total_windows_by_width": {
+        "1": 10,
+        "2": 9,
+        "3": 8,
+        "4": 7,
+        "6": 5,
+        "12": 0,
+        "18": 0
+      },
+      "expected_windows_by_width": {
+        "1": 10,
+        "2": 9,
+        "3": 8,
+        "4": 7,
+        "6": 5,
+        "12": 0,
+        "18": 0
+      },
+      "complete_map_cardinalities": [
+        4,
+        8,
+        8,
+        7,
+        5,
+        0,
+        0
+      ],
+      "complete_map_totals": [
+        10,
+        9,
+        8,
+        7,
+        5,
+        0,
+        0
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/mixed-case-comments-crlf.work.stdout",
+      "stdout_sha256": "f3e64b45fef32e225819c56c90dcf196f9743a4490096346e3af851edf3083af",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/mixed-case-comments-crlf.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "arbitrary-all-widths-growth",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/arbitrary-all-widths-growth.fasta",
+      "input_sha256": "632c6d1f3debf1fd2f9ba1ff7e1cd5d17114bfc0a58c1707ebf97aed31290085",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 10021,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          10021
+        ],
+        [
+          2,
+          0,
+          10020
+        ],
+        [
+          3,
+          0,
+          10019
+        ],
+        [
+          4,
+          0,
+          10018
+        ],
+        [
+          6,
+          0,
+          10016
+        ],
+        [
+          12,
+          0,
+          10010
+        ],
+        [
+          18,
+          0,
+          10004
+        ]
+      ],
+      "maximum_chunk_starts": 10021,
+      "grouped_weight_sums": [
+        10021,
+        10020,
+        10019,
+        10018,
+        10016,
+        10010,
+        10004
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        3739,
+        10007,
+        10004
+      ],
+      "total_windows_by_width": {
+        "1": 10021,
+        "2": 10020,
+        "3": 10019,
+        "4": 10018,
+        "6": 10016,
+        "12": 10010,
+        "18": 10004
+      },
+      "expected_windows_by_width": {
+        "1": 10021,
+        "2": 10020,
+        "3": 10019,
+        "4": 10018,
+        "6": 10016,
+        "12": 10010,
+        "18": 10004
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        3739,
+        10007,
+        10004
+      ],
+      "complete_map_totals": [
+        10021,
+        10020,
+        10019,
+        10018,
+        10016,
+        10010,
+        10004
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/arbitrary-all-widths-growth.work.stdout",
+      "stdout_sha256": "eaaf8b83af1c2ba379a6419395d884e2b7e9c0ee74b989ee93ddc2163b4d3597",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/arbitrary-all-widths-growth.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "all-six-base-keys-collision-growth",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/all-six-base-keys-collision-growth.fasta",
+      "input_sha256": "4aa506eaaa89a73d3f9728b36b16080699cb76528f692ea28a0a6c90d5f64960",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 4119,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          4119
+        ],
+        [
+          2,
+          0,
+          4118
+        ],
+        [
+          3,
+          0,
+          4117
+        ],
+        [
+          4,
+          0,
+          4116
+        ],
+        [
+          6,
+          0,
+          4114
+        ],
+        [
+          12,
+          0,
+          4108
+        ],
+        [
+          18,
+          0,
+          4102
+        ]
+      ],
+      "maximum_chunk_starts": 4119,
+      "grouped_weight_sums": [
+        4119,
+        4118,
+        4117,
+        4116,
+        4114,
+        4108,
+        4102
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4108,
+        4102
+      ],
+      "total_windows_by_width": {
+        "1": 4119,
+        "2": 4118,
+        "3": 4117,
+        "4": 4116,
+        "6": 4114,
+        "12": 4108,
+        "18": 4102
+      },
+      "expected_windows_by_width": {
+        "1": 4119,
+        "2": 4118,
+        "3": 4117,
+        "4": 4116,
+        "6": 4114,
+        "12": 4108,
+        "18": 4102
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4108,
+        4102
+      ],
+      "complete_map_totals": [
+        4119,
+        4118,
+        4117,
+        4116,
+        4114,
+        4108,
+        4102
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/all-six-base-keys-collision-growth.work.stdout",
+      "stdout_sha256": "39fa7e45464bc593af3463bb52f8a4101aadabccd4b6f4377523b115e13a22db",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/all-six-base-keys-collision-growth.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65535",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65535.fasta",
+      "input_sha256": "15bda00f186be3e7d83c0535344a1cd66e600a60db8a9bd36fa0ceaacd4a70b8",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65535,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65535
+        ],
+        [
+          2,
+          0,
+          65534
+        ],
+        [
+          3,
+          0,
+          65533
+        ],
+        [
+          4,
+          0,
+          65532
+        ],
+        [
+          6,
+          0,
+          65530
+        ],
+        [
+          12,
+          0,
+          65524
+        ],
+        [
+          18,
+          0,
+          65518
+        ]
+      ],
+      "maximum_chunk_starts": 65535,
+      "grouped_weight_sums": [
+        65535,
+        65534,
+        65533,
+        65532,
+        65530,
+        65524,
+        65518
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "total_windows_by_width": {
+        "1": 65535,
+        "2": 65534,
+        "3": 65533,
+        "4": 65532,
+        "6": 65530,
+        "12": 65524,
+        "18": 65518
+      },
+      "expected_windows_by_width": {
+        "1": 65535,
+        "2": 65534,
+        "3": 65533,
+        "4": 65532,
+        "6": 65530,
+        "12": 65524,
+        "18": 65518
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65535,
+        65534,
+        65533,
+        65532,
+        65530,
+        65524,
+        65518
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65535.work.stdout",
+      "stdout_sha256": "779d6291cd5bb5fbdb9598f45c8f335fdb61d50e1b07fba4fde6c97d6bee6e89",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65535.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65536",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65536.fasta",
+      "input_sha256": "de107e5665c2b8286c8f4a8b98b1aa93b3b99066f2ed73555e63d047e01dc448",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65536,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          2,
+          0,
+          65535
+        ],
+        [
+          3,
+          0,
+          65534
+        ],
+        [
+          4,
+          0,
+          65533
+        ],
+        [
+          6,
+          0,
+          65531
+        ],
+        [
+          12,
+          0,
+          65525
+        ],
+        [
+          18,
+          0,
+          65519
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        65535,
+        65534,
+        65533,
+        65531,
+        65525,
+        65519
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "total_windows_by_width": {
+        "1": 65536,
+        "2": 65535,
+        "3": 65534,
+        "4": 65533,
+        "6": 65531,
+        "12": 65525,
+        "18": 65519
+      },
+      "expected_windows_by_width": {
+        "1": 65536,
+        "2": 65535,
+        "3": 65534,
+        "4": 65533,
+        "6": 65531,
+        "12": 65525,
+        "18": 65519
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65536,
+        65535,
+        65534,
+        65533,
+        65531,
+        65525,
+        65519
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65536.work.stdout",
+      "stdout_sha256": "ac144e81413a3a73122565a3d248f16606ddb6fffe734ddacc47abc6bb83f8c3",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65536.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65537",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65537.fasta",
+      "input_sha256": "184cf6a92b0ae85e1658a938a3933cda0cec4ca9e5c705870de7ba06c7a3eef9",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65537,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          1,
+          65536,
+          1
+        ],
+        [
+          2,
+          0,
+          65536
+        ],
+        [
+          3,
+          0,
+          65535
+        ],
+        [
+          4,
+          0,
+          65534
+        ],
+        [
+          6,
+          0,
+          65532
+        ],
+        [
+          12,
+          0,
+          65526
+        ],
+        [
+          18,
+          0,
+          65520
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        1,
+        65536,
+        65535,
+        65534,
+        65532,
+        65526,
+        65520
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        1,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "total_windows_by_width": {
+        "1": 65537,
+        "2": 65536,
+        "3": 65535,
+        "4": 65534,
+        "6": 65532,
+        "12": 65526,
+        "18": 65520
+      },
+      "expected_windows_by_width": {
+        "1": 65537,
+        "2": 65536,
+        "3": 65535,
+        "4": 65534,
+        "6": 65532,
+        "12": 65526,
+        "18": 65520
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65537,
+        65536,
+        65535,
+        65534,
+        65532,
+        65526,
+        65520
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65537.work.stdout",
+      "stdout_sha256": "08c0fd37e86e86eb5686abb7743597ac92dd1e7a8b8d208f477351a3a50bed29",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65537.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65553",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65553.fasta",
+      "input_sha256": "27c1334560a645232c010e28132310ab27beea54c5faf3e3c954c89fe8b8d8c3",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65553,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          1,
+          65536,
+          17
+        ],
+        [
+          2,
+          0,
+          65536
+        ],
+        [
+          2,
+          65536,
+          16
+        ],
+        [
+          3,
+          0,
+          65536
+        ],
+        [
+          3,
+          65536,
+          15
+        ],
+        [
+          4,
+          0,
+          65536
+        ],
+        [
+          4,
+          65536,
+          14
+        ],
+        [
+          6,
+          0,
+          65536
+        ],
+        [
+          6,
+          65536,
+          12
+        ],
+        [
+          12,
+          0,
+          65536
+        ],
+        [
+          12,
+          65536,
+          6
+        ],
+        [
+          18,
+          0,
+          65536
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        17,
+        65536,
+        16,
+        65536,
+        15,
+        65536,
+        14,
+        65536,
+        12,
+        65536,
+        6,
+        65536
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        3,
+        16,
+        7,
+        64,
+        10,
+        256,
+        12,
+        4096,
+        12,
+        4119,
+        6,
+        4119
+      ],
+      "total_windows_by_width": {
+        "1": 65553,
+        "2": 65552,
+        "3": 65551,
+        "4": 65550,
+        "6": 65548,
+        "12": 65542,
+        "18": 65536
+      },
+      "expected_windows_by_width": {
+        "1": 65553,
+        "2": 65552,
+        "3": 65551,
+        "4": 65550,
+        "6": 65548,
+        "12": 65542,
+        "18": 65536
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65553,
+        65552,
+        65551,
+        65550,
+        65548,
+        65542,
+        65536
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65553.work.stdout",
+      "stdout_sha256": "adf6f256269c144dbcebc45bb7a24f956131ee9d1fed9767afc0968c9ea67a31",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65553.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-65554",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-65554.fasta",
+      "input_sha256": "b576f128c983ad49e54ba7b51574e7b9d5ce3ade3f8f40443f8f529da185cea8",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 65554,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          1,
+          65536,
+          18
+        ],
+        [
+          2,
+          0,
+          65536
+        ],
+        [
+          2,
+          65536,
+          17
+        ],
+        [
+          3,
+          0,
+          65536
+        ],
+        [
+          3,
+          65536,
+          16
+        ],
+        [
+          4,
+          0,
+          65536
+        ],
+        [
+          4,
+          65536,
+          15
+        ],
+        [
+          6,
+          0,
+          65536
+        ],
+        [
+          6,
+          65536,
+          13
+        ],
+        [
+          12,
+          0,
+          65536
+        ],
+        [
+          12,
+          65536,
+          7
+        ],
+        [
+          18,
+          0,
+          65536
+        ],
+        [
+          18,
+          65536,
+          1
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        18,
+        65536,
+        17,
+        65536,
+        16,
+        65536,
+        15,
+        65536,
+        13,
+        65536,
+        7,
+        65536,
+        1
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        3,
+        16,
+        7,
+        64,
+        10,
+        256,
+        12,
+        4096,
+        13,
+        4119,
+        7,
+        4119,
+        1
+      ],
+      "total_windows_by_width": {
+        "1": 65554,
+        "2": 65553,
+        "3": 65552,
+        "4": 65551,
+        "6": 65549,
+        "12": 65543,
+        "18": 65537
+      },
+      "expected_windows_by_width": {
+        "1": 65554,
+        "2": 65553,
+        "3": 65552,
+        "4": 65551,
+        "6": 65549,
+        "12": 65543,
+        "18": 65537
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        65554,
+        65553,
+        65552,
+        65551,
+        65549,
+        65543,
+        65537
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65554.work.stdout",
+      "stdout_sha256": "f520326229949397ab688f1381aff8772b04d7eb55ebf885868151378c2cf05b",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-65554.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    },
+    {
+      "case": "chunk-boundary-131091",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/inputs/chunk-boundary-131091.fasta",
+      "input_sha256": "6b0edba8a6d5fb2a52db3043c11d2b4ab68b8a39c69443e257f46dbaf624c315",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/instrumented.ua",
+      "source_sha256": "659906c13126cdc2108dcb94d7ed64c2d62dc193cc878d3cb723275d1ddda8a2",
+      "original_source_sha256": "df9cea615b21bcae099dcf0228142eb494cdd90003cc73d00cc2689aabb753eb",
+      "sequence_length": 131091,
+      "widths": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12,
+        18
+      ],
+      "chunks": [
+        [
+          1,
+          0,
+          65536
+        ],
+        [
+          1,
+          65536,
+          65536
+        ],
+        [
+          1,
+          131072,
+          19
+        ],
+        [
+          2,
+          0,
+          65536
+        ],
+        [
+          2,
+          65536,
+          65536
+        ],
+        [
+          2,
+          131072,
+          18
+        ],
+        [
+          3,
+          0,
+          65536
+        ],
+        [
+          3,
+          65536,
+          65536
+        ],
+        [
+          3,
+          131072,
+          17
+        ],
+        [
+          4,
+          0,
+          65536
+        ],
+        [
+          4,
+          65536,
+          65536
+        ],
+        [
+          4,
+          131072,
+          16
+        ],
+        [
+          6,
+          0,
+          65536
+        ],
+        [
+          6,
+          65536,
+          65536
+        ],
+        [
+          6,
+          131072,
+          14
+        ],
+        [
+          12,
+          0,
+          65536
+        ],
+        [
+          12,
+          65536,
+          65536
+        ],
+        [
+          12,
+          131072,
+          8
+        ],
+        [
+          18,
+          0,
+          65536
+        ],
+        [
+          18,
+          65536,
+          65536
+        ],
+        [
+          18,
+          131072,
+          2
+        ]
+      ],
+      "maximum_chunk_starts": 65536,
+      "grouped_weight_sums": [
+        65536,
+        65536,
+        19,
+        65536,
+        65536,
+        18,
+        65536,
+        65536,
+        17,
+        65536,
+        65536,
+        16,
+        65536,
+        65536,
+        14,
+        65536,
+        65536,
+        8,
+        65536,
+        65536,
+        2
+      ],
+      "distinct_keys_merged_per_chunk": [
+        4,
+        4,
+        3,
+        16,
+        16,
+        8,
+        64,
+        64,
+        11,
+        256,
+        256,
+        13,
+        4096,
+        4096,
+        14,
+        4119,
+        4119,
+        8,
+        4119,
+        4119,
+        2
+      ],
+      "total_windows_by_width": {
+        "1": 131091,
+        "2": 131090,
+        "3": 131089,
+        "4": 131088,
+        "6": 131086,
+        "12": 131080,
+        "18": 131074
+      },
+      "expected_windows_by_width": {
+        "1": 131091,
+        "2": 131090,
+        "3": 131089,
+        "4": 131088,
+        "6": 131086,
+        "12": 131080,
+        "18": 131074
+      },
+      "complete_map_cardinalities": [
+        4,
+        16,
+        64,
+        256,
+        4096,
+        4119,
+        4119
+      ],
+      "complete_map_totals": [
+        131091,
+        131090,
+        131089,
+        131088,
+        131086,
+        131080,
+        131074
+      ],
+      "complete_seven_maps_match": true,
+      "every_window_once": true,
+      "weighted_merges_match": true,
+      "complete_output_match": true,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-131091.work.stdout",
+      "stdout_sha256": "59439102e31835b02163af3f876f69fdd17232d8d88547a0f3e207d3cb726eca",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/chunk-boundary-131091.work.stderr",
+      "stderr_sha256": "e94ea577d43c381d520148256428b49dc63845b3bf77dfe911bc6a659feef30c"
+    }
+  ],
+  "validation_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v2/results/validation.json",
+  "validation_sha256": "2521dfac9fd9cd001aa3190591438b01b2d58deb27368dc9e20983e807df6d68",
+  "collision_evidence": "Pinned native equality/linear-probe/growth code and exhaustive six-base/high-diversity full-map correctness fixtures. The official runtime exposes no native collision counter; observed collision counts are not claimed.",
+  "full_workload_measured": false
+}

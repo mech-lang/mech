@@ -1,0 +1,1159 @@
+{
+  "status": "passed-source-audit",
+  "created_at": "2026-10-11T21:24:28.603085+00:00",
+  "transformation": "Apply cube and square root to the complete denominator matrix, then native nested Rows Fix inserts the trailing singleton dimension.",
+  "transformations": [
+    {
+      "variant": "compact",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "original_source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/compact.ua",
+      "source_sha256": "76919fb2df86a83d659a8996a04455a2a451ab40bdf516e97bf9da414ca6689f",
+      "changed_lines": [
+        13
+      ],
+      "physical_loc": 21,
+      "old_expression": "(≡≡(¤√ⁿ3)+Diagonal Norm)",
+      "new_expression": "(≡≡¤ √ⁿ3+Diagonal Norm)",
+      "norm_unchanged": true
+    },
+    {
+      "variant": "fast",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "original_source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/fast.ua",
+      "source_sha256": "62c676844b0e65f13a8229c283cadf926effa83ac51694ce3c726873371e3ec8",
+      "changed_lines": [
+        13
+      ],
+      "physical_loc": 21,
+      "old_expression": "(≡≡(¤√ⁿ3)+Diagonal Norm)",
+      "new_expression": "(≡≡¤ √ⁿ3+Diagonal Norm)",
+      "norm_unchanged": true
+    }
+  ],
+  "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+  "canonical_baseline_manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/uiua-manifest.json",
+  "canonical_baseline_manifest_sha256": "19f829334137c71f022fbf696e5887b8e4e72c501fe3f798e3134e23b1e61ef8",
+  "norm_already_native_and_unchanged": true,
+  "reduction_order_unchanged": true,
+  "native_benchmark_kernel": false,
+  "host_helpers": false,
+  "input_specific_shortcuts": false,
+  "full_n": 50000000,
+  "bodies": 5,
+  "state_components": 30,
+  "dt": 0.01,
+  "directed_pair_array_shape": [
+    5,
+    5,
+    3
+  ],
+  "full_performance_runs": 0,
+  "work_policy": "Preserve every requested update over the same five bodies, directed pair matrix and diagonal treatment, using the same binary64 operations and reduction order.",
+  "proof_type": "Pinned parser/runtime source plus bounded complete-state and generic denominator checks; no dispatch counter or performance claim.",
+  "native_runtime_proof": [
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/parser/src/parse.rs",
+      "sha256": "7cc254dcbee38af981fd19ebc1f5eb0ea2b777d53e559ce5fb7837d4efd93e08",
+      "first_line": 1133,
+      "last_line": 1193,
+      "excerpt": "    fn modified(&mut self) -> Option<Sp<Word>> {\n        if self.too_deep() {\n            return None;\n        }\n        let (modifier, mod_span) = if let Some(prim) = Primitive::all()\n            .filter(|prim| prim.is_modifier())\n            .find_map(|prim| {\n                self.exact(prim.into())\n                    .or_else(|| prim.ascii().and_then(|simple| self.exact(simple.into())))\n                    .map(|span| span.sp(prim))\n            }) {\n            (Modifier::Primitive(prim.value), prim.span)\n        } else if let Some(prim) = Primitive::all()\n            .filter(|prim| prim.glyph().is_none())\n            .find_map(|prim| self.exact(PrimExclam(prim)).map(|span| span.sp(prim)))\n        {\n            (Modifier::Primitive(prim.value), prim.span)\n        } else {\n            let term = self.term()?;\n            match term.value {\n                Word::Ref(item, chained) => {\n                    if item.modifier_args() == 0 {\n                        return Some(term.span.sp(Word::Ref(item, chained)));\n                    }\n                    (Modifier::Ref(item), term.span)\n                }\n                Word::InlineMacro(mac) => (Modifier::Macro(mac), term.span),\n                _ => return Some(term),\n            }\n        };\n        self.spaces();\n        let mut subscript = None;\n        if let Some(n) = self.next_token_map(Token::as_subscript) {\n            subscript = Some(n);\n            self.spaces();\n        }\n        let mut args = Vec::new();\n        let margs = modifier.subscript_margs(subscript.as_ref().map(|s| &s.value));\n        for i in 0..margs {\n            loop {\n                args.extend(self.spaces());\n                if let Some(span) = self.exact(DoubleSemicolon.into()) {\n                    self.errors.push(span.sp(ParseError::SplitInModifier));\n                    continue;\n                }\n                if let Some(span) = self.exact(Semicolon.into()) {\n                    self.errors.push(span.sp(ParseError::FlipInModifier));\n                    continue;\n                }\n                break;\n            }\n            if let Some(arg) = self.strand() {\n                // Parse pack syntax\n                if let Word::Pack(_) = &arg.value\n                    && i == 0\n                {\n                    args.push(arg);\n                    break;\n                }\n                args.push(arg);\n            } else {",
+      "conclusion": "Modifiers consume their recursive strand operand. Unparenthesized nested Rows here binds only Fix; Norm already binds nested Rows to Reduce Add and leaves Self Mul on the whole array."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/zip.rs",
+      "sha256": "b95d3b57ce835dd92057ec3e5f90578ee1fdbd9cadcacb0130606e5ccf166985",
+      "first_line": 47,
+      "last_line": 81,
+      "excerpt": "fn prim_mon_fast_fn(prim: Primitive, span: usize) -> Option<ValueMonFn> {\n    use Primitive::*;\n    Some(match prim {\n        Not => spanned_mon_fn(span, |v, _, env| Value::not(v, env)),\n        Sign => spanned_mon_fn(span, |v, _, env| Value::sign(v, env)),\n        Neg => spanned_mon_fn(span, |v, _, env| Value::neg(v, env)),\n        Abs => spanned_mon_fn(span, |v, _, env| Value::abs(v, env)),\n        Sqrt => spanned_mon_fn(span, |v, _, env| Value::sqrt(v, env)),\n        Floor => spanned_mon_fn(span, |v, _, env| Value::floor(v, env)),\n        Ceil => spanned_mon_fn(span, |v, _, env| Value::ceil(v, env)),\n        Round => spanned_mon_fn(span, |v, _, env| Value::round(v, env)),\n        Deshape => spanned_mon_fn(span, |mut v, d, _| {\n            Value::deshape_depth(&mut v, d);\n            Ok(v)\n        }),\n        Transpose => spanned_mon_fn(span, |mut v, d, _| {\n            Value::transpose_depth(&mut v, d, 1);\n            Ok(v)\n        }),\n        Reverse => spanned_mon_fn(span, |mut v, d, _| {\n            Value::reverse_depth(&mut v, d);\n            Ok(v)\n        }),\n        Classify => spanned_mon_fn(span, |v, d, _| Ok(v.classify_depth(d))),\n        Fix => spanned_mon_fn(span, |mut v, d, _| {\n            v.fix_depth(d);\n            Ok(v)\n        }),\n        First => spanned_mon_fn(span, |v, d, env| v.first_depth(d, env)),\n        Last => spanned_mon_fn(span, |v, d, env| v.last_depth(d, env)),\n        Sort => spanned_mon_fn(span, |mut v, d, _| {\n            v.sort_up_depth(d);\n            Ok(v)\n        }),\n        _ => return None,",
+      "conclusion": "Fix is a recognized general monadic native array function, applying fix_depth at the requested depth."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/zip.rs",
+      "sha256": "b95d3b57ce835dd92057ec3e5f90578ee1fdbd9cadcacb0130606e5ccf166985",
+      "first_line": 150,
+      "last_line": 188,
+      "excerpt": "fn f_mon_fast_fn_impl(nodes: &[Node], deep: bool, env: &Uiua) -> Option<(ValueMonFn, usize)> {\n    use Primitive::*;\n    Some(match nodes {\n        [] => (Rc::new(|val, _, _| Ok(val)), 0),\n        // Box cannot be combined with other depth primives because\n        // it is often used to fix shape mismatches between rows.\n        // We handle it separately here.\n        &[Node::Prim(Box, span)] if !deep => {\n            (spanned_mon_fn(span, |v, d, _| Ok(v.box_depth(d).into())), 0)\n        }\n        &[Node::Prim(prim, span)] => {\n            let f = prim_mon_fast_fn(prim, span)?;\n            (f, 0)\n        }\n        &[Node::ImplPrim(prim, span)] => {\n            let f = impl_prim_mon_fast_fn(prim, span)?;\n            (f, 0)\n        }\n        [Node::CustomInverse(cust, _)] => {\n            return if let Ok(f) = cust.normal.as_ref() {\n                f_mon_fast_fn_impl(f.node.as_slice(), deep, env)\n            } else {\n                None\n            };\n        }\n        [Node::Mod(Rows, args, _)] => {\n            let (f, d) = f_mon_fast_fn(&args[0].node, env)?;\n            (f, d + 1)\n        }\n        [Node::Mod(Reduce, args, _)] if args[0].sig == (2, 1) => {\n            let args = args.clone();\n            let f = Rc::new(move |val, depth, env: &mut Uiua| -> UiuaResult<Value> {\n                env.push(val);\n                reduce::reduce(args.clone(), depth, env)?;\n                let val = env.pop(\"reduced function result\")?;\n                Ok(val)\n            });\n            (f, 0)\n        }",
+      "conclusion": "Nested Rows over a recognized function increments its depth instead of executing a user function for each row."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/zip.rs",
+      "sha256": "b95d3b57ce835dd92057ec3e5f90578ee1fdbd9cadcacb0130606e5ccf166985",
+      "first_line": 632,
+      "last_line": 662,
+      "excerpt": "pub fn rows1(f: SigNode, mut xs: Value, depth: usize, inv: bool, env: &mut Uiua) -> UiuaResult {\n    if !inv {\n        if let Some((f, mut d)) = f_mon_fast_fn(&f.node, env) {\n            d += depth;\n            let val = f(xs, d + 1, env)?;\n            env.push(val);\n            return Ok(());\n        } else if let Some((f, mut d)) = f_mon2_fast_fn(&f.node, env) {\n            d += depth;\n            let (xs, ys) = f(xs, d + 1, env)?;\n            env.push(ys);\n            env.push(xs);\n            return Ok(());\n        }\n    }\n    let outputs = f.sig.outputs();\n    let is_scalar = xs.rank() == 0;\n    let is_empty = outputs > 0 && xs.row_count() == 0;\n    let mut new_rows = multi_output(\n        outputs,\n        Vec::with_capacity(xs.row_count() + is_empty as usize),\n    );\n    let mut per_meta = xs.meta.take_per_meta();\n    if depth == 0 {\n        env.without_fill(|env| -> UiuaResult {\n            if is_empty && depth == 0 && push_empty_rows_value(&f, [&xs], inv, &mut per_meta, env) {\n                new_rows.clear();\n            } else {\n                for row in xs.into_rows() {\n                    env.push(row.unboxed_if(inv));\n                    env.exec(f.clone())?;",
+      "conclusion": "Rows dispatches recognized native functions once over the array; unmatched composite functions use the row-by-row env.exec fallback."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/monadic/mod.rs",
+      "sha256": "4bd7477b748092e2dc8419dde94135f6149b51abd319fb814b7fe636a915ff0c",
+      "first_line": 703,
+      "last_line": 712,
+      "excerpt": "    pub fn fix(&mut self) {\n        self.fix_depth(0);\n    }\n    pub(crate) fn fix_depth(&mut self, depth: usize) {\n        let depth = self.shape.fix_depth(depth);\n        if depth == 0\n            && let Some(keys) = self.meta.map_keys_mut()\n        {\n            keys.fix();\n        }",
+      "conclusion": "General depth-aware Fix changes the shape; the benchmark matrix has no map-key metadata."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/shape.rs",
+      "sha256": "74e61ae96f9ebe5c0699e597efe0910d19888cba0154d4a738708f1f5ccc8a0e",
+      "first_line": 108,
+      "last_line": 115,
+      "excerpt": "    /// Add a 1-length dimension to the front of the array's shape\n    pub fn fix(&mut self) {\n        self.fix_depth(0);\n    }\n    pub(crate) fn fix_depth(&mut self, depth: usize) -> usize {\n        let depth = depth.min(self.len());\n        self.insert(depth, 1);\n        depth",
+      "conclusion": "fix_depth inserts a singleton dimension at the requested depth, without copying numeric data."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/compile/optimize.rs",
+      "sha256": "11aeb1003b12c8ab457b805803230abf1cdce9728e078b15fae08d5ef3469b9b",
+      "first_line": 128,
+      "last_line": 130,
+      "excerpt": "    &((2, Pow), (Dup, Mul)),\n    &((3, Pow), (Dup, Dup, Mul, Mul)),\n    &((4, Pow), (Dup, Mul, Dup, Mul)),",
+      "conclusion": "The same ordinary power-three operation expands to Dup Dup Mul Mul in both placements."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/src/algorithm/encode.rs",
+      "sha256": "f7cb21162f3910f93e8f9384d1a0d746c6e23a93efa1be5f82a3e0d68f48a7e0",
+      "first_line": 348,
+      "last_line": 410,
+      "excerpt": "    pub fn encode_bytes(\n        &self,\n        mut data: Self,\n        side: Option<SubSide>,\n        env: &Uiua,\n    ) -> UiuaResult<Array<u8>> {\n        let format = self.as_string(env, \"Format must be a string\")?;\n        let format = format.as_str();\n        let elem_size = match format {\n            \"u8\" | \"i8\" => 1,\n            \"u16\" | \"i16\" => 2,\n            \"u32\" | \"i32\" => 4,\n            \"u64\" | \"i64\" => 8,\n            \"u128\" | \"i128\" => 16,\n            \"f32\" => 4,\n            \"f64\" => 8,\n            _ => return Err(env.error(format!(\"Invalid byte format: {format}\"))),\n        };\n        // Early return when a byte array can be reused\n        if let Value::Byte(mut arr) = data {\n            match format {\n                \"u8\" => return Ok(arr),\n                \"i8\" => {\n                    for i in arr.data.as_mut_slice() {\n                        *i = (*i).min(i8::MAX as u8);\n                    }\n                    return Ok(arr);\n                }\n                _ => data = arr.into(),\n            }\n        }\n        let mut bytes = CowSlice::from_elem(0, data.shape.elements() * elem_size);\n        let slice = bytes.as_mut_slice();\n        fn write<T: Copy, const N: usize>(src: &[T], dst: &mut [u8], f: impl Fn(T) -> [u8; N]) {\n            for (i, &src) in src.iter().enumerate() {\n                dst[i * N..][..N].copy_from_slice(&f(src));\n            }\n        }\n        macro_rules! write {\n            ($arr:expr, $ty:ty) => {\n                match side {\n                    None => write(&$arr.data, slice, |n| (n as $ty).to_ne_bytes()),\n                    Some(SubSide::Left) => write(&$arr.data, slice, |n| (n as $ty).to_le_bytes()),\n                    Some(SubSide::Right) => write(&$arr.data, slice, |n| (n as $ty).to_be_bytes()),\n                }\n            };\n        }\n        let mut shape = match data {\n            Value::Byte(arr) => {\n                match format {\n                    \"u8\" | \"i8\" => unreachable!(\"handled above\"),\n                    \"u16\" => write!(arr, u16),\n                    \"i16\" => write!(arr, i16),\n                    \"u32\" => write!(arr, u32),\n                    \"i32\" => write!(arr, i32),\n                    \"u64\" => write!(arr, u64),\n                    \"i64\" => write!(arr, i64),\n                    \"u128\" => write!(arr, u128),\n                    \"i128\" => write!(arr, i128),\n                    \"f32\" => write!(arr, f32),\n                    \"f64\" => write!(arr, f64),\n                    format => unreachable!(\"format {format} is not supported\"),\n                }",
+      "conclusion": "Diagnostic f64 byte encoding serializes explicit little-endian float bits; diagnostic mode is separate from production."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "first_line": 10,
+      "last_line": 15,
+      "excerpt": "Norm         ← ≡≡/+˙×\nDiagonal     ← ˙⊞= ⇡5\nUpper        ← ˙⊞> ⇡5\nAcceleration ← ≡/+ ÷⊃(≡≡(¤√ⁿ3)+Diagonal Norm)(×↯1_5_1 Masses) Differences\nNewVelocity  ← +⊃Vel(×0.01 Acceleration)\nAdvance      ← ≡⊂ ⊃(+⊃Pos(×0.01 NewVelocity))NewVelocity",
+      "conclusion": "Canonical v2 already uses native Norm; its denominator has the composite Rows body. All pair/diagonal/update operations are retained."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/compact.ua",
+      "sha256": "76919fb2df86a83d659a8996a04455a2a451ab40bdf516e97bf9da414ca6689f",
+      "first_line": 1,
+      "last_line": 21,
+      "excerpt": "N            ← ⋕◇∘⊡1 &args\nSolar        ← ×4˙×π\nMasses       ← ×Solar [1 0.0009547919384243266 0.0002858859806661308 0.00004366244043351563 0.000051513890204661145]\nPositions    ← [0_0_0 4.84143144246472090_¯1.1603200440274284_¯0.103622044471123109 8.34336671824458_4.124798564124305_¯0.4035234171143214 12.8943695621391310_¯15.111151401698631_¯0.22330757889265573 15.379697114850917_¯25.919314609987964_0.17925877295037118]\nVelocities   ← ×365.24 [0_0_0 0.001660076642744037_0.007699011184197404_¯0.0000690460016972063 ¯0.002767425107268624_0.004998528012349172_0.000023041729757376393 0.002964601375647616_0.00237847173959480950_¯0.000029658956854023756 0.0026806777249038932_0.001628241700382423_¯0.0000951592254519715870]\nInitial      ← ≡⊂ Positions ⊂¤(¯÷Solar/+×⍉¤Masses Velocities) ↘1 Velocities\nPos          ← ≡↙3\nVel          ← ≡↘3\nDifferences  ← ˙⊞- Pos\nNorm         ← ≡≡/+˙×\nDiagonal     ← ˙⊞= ⇡5\nUpper        ← ˙⊞> ⇡5\nAcceleration ← ≡/+ ÷⊃(≡≡¤ √ⁿ3+Diagonal Norm)(×↯1_5_1 Masses) Differences\nNewVelocity  ← +⊃Vel(×0.01 Acceleration)\nAdvance      ← ≡⊂ ⊃(+⊃Pos(×0.01 NewVelocity))NewVelocity\nPotential    ← /+♭ ×Upper ÷⊃(√+Diagonal Norm Differences)(⋅(˙⊞×Masses))\nEnergy       ← -⊃Potential(×0.5/+×Masses ≡/+˙×Vel)\nFixed        ← /◇⊂ {⊃(↘¯9|⋅\".\"|↙¯9)} ⬚@0↙¯10 °⋕ ⁅×1e9\nPrint        ← &p ⊂\"-\" Fixed ⌵ Energy\nPrint Initial\nPrint ⍥Advance N Initial",
+      "conclusion": "Runtime N controls every update. Only denominator placement differs from canonical v2; canonical constants, Norm, pair arrays, dt, energies and all steps remain unchanged."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "first_line": 10,
+      "last_line": 15,
+      "excerpt": "Norm         ← ≡≡/+˙×\nDiagonal     ← ˙⊞= ⇡5\nUpper        ← ˙⊞> ⇡5\nAcceleration ← ≡/+ ÷⊃(≡≡(¤√ⁿ3)+Diagonal Norm)(×↯1_5_1 Masses) Differences\nNewVelocity  ← +⊃Vel(×0.01 Acceleration)\nAdvance      ← ≡⊂ ⊸(+⊙(×0.01)) ⊃Pos NewVelocity",
+      "conclusion": "Canonical v2 already uses native Norm; its denominator has the composite Rows body. All pair/diagonal/update operations are retained."
+    },
+    {
+      "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/fast.ua",
+      "sha256": "62c676844b0e65f13a8229c283cadf926effa83ac51694ce3c726873371e3ec8",
+      "first_line": 1,
+      "last_line": 21,
+      "excerpt": "N            ← ⋕◇∘⊡1 &args\nSolar        ← ×4˙×π\nMasses       ← ×Solar [1 0.0009547919384243266 0.0002858859806661308 0.00004366244043351563 0.000051513890204661145]\nPositions    ← [0_0_0 4.84143144246472090_¯1.1603200440274284_¯0.103622044471123109 8.34336671824458_4.124798564124305_¯0.4035234171143214 12.8943695621391310_¯15.111151401698631_¯0.22330757889265573 15.379697114850917_¯25.919314609987964_0.17925877295037118]\nVelocities   ← ×365.24 [0_0_0 0.001660076642744037_0.007699011184197404_¯0.0000690460016972063 ¯0.002767425107268624_0.004998528012349172_0.000023041729757376393 0.002964601375647616_0.00237847173959480950_¯0.000029658956854023756 0.0026806777249038932_0.001628241700382423_¯0.0000951592254519715870]\nInitial      ← ≡⊂ Positions ⊂¤(¯÷Solar/+×⍉¤Masses Velocities) ↘1 Velocities\nPos          ← ≡↙3\nVel          ← ≡↘3\nDifferences  ← ˙⊞- Pos\nNorm         ← ≡≡/+˙×\nDiagonal     ← ˙⊞= ⇡5\nUpper        ← ˙⊞> ⇡5\nAcceleration ← ≡/+ ÷⊃(≡≡¤ √ⁿ3+Diagonal Norm)(×↯1_5_1 Masses) Differences\nNewVelocity  ← +⊃Vel(×0.01 Acceleration)\nAdvance      ← ≡⊂ ⊸(+⊙(×0.01)) ⊃Pos NewVelocity\nPotential    ← /+♭ ×Upper ÷⊃(√+Diagonal Norm Differences)(⋅(˙⊞×Masses))\nEnergy       ← -⊃Potential(×0.5/+×Masses ≡/+˙×Vel)\nFixed        ← /◇⊂ {⊃(↘¯9|⋅\".\"|↙¯9)} ⬚@0↙¯10 °⋕ ⁅×1e9\nPrint        ← &p ⊂\"-\" Fixed ⌵ Energy\nPrint Initial\nPrint ⍥Advance N Initial",
+      "conclusion": "Runtime N controls every update. Only denominator placement differs from canonical v2; canonical constants, Norm, pair arrays, dt, energies and all steps remain unchanged."
+    }
+  ],
+  "validation_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/validation.json",
+  "validation_sha256": "26cea9b287f0389e6f725692d888fde8c86674e963aa3c92652f9299928fc6a3",
+  "state_checks": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+      "source_sha256": "4b38c71606171efdf312296e2720faf5e82eda1f491ca8f370ee9dfe52d8eb2c",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 2401,
+      "sha256": "de0e6b472a9b81620193c83fea19e72b15de8151b515d16019518d5cf90d1463",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-0.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-0.stderr",
+      "stderr_sha256": "02312e7f9978c4843d93fe5170b103ad998322e7b68f7d7684cf6a78b7f3e3c8",
+      "variant": "compact",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/compact.ua",
+      "original_source_sha256": "76919fb2df86a83d659a8996a04455a2a451ab40bdf516e97bf9da414ca6689f",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "canonical_baseline_source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+        "source_sha256": "84582083fd359bdd92366bca1df5ded3ffcf05f12c059dd50da722244a4ec8fb",
+        "n": 0,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+          "0"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 2401,
+        "sha256": "de0e6b472a9b81620193c83fea19e72b15de8151b515d16019518d5cf90d1463",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-0.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-0.stderr",
+        "stderr_sha256": "ec6ac0cf8b7071917e10896c65528533f449c565fb0f377d432344d90a13d0d9"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 0,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": true,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 0.0,
+      "maximum_step_reference_absolute_error": 0.0,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+      "source_sha256": "4b38c71606171efdf312296e2720faf5e82eda1f491ca8f370ee9dfe52d8eb2c",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 3367,
+      "sha256": "190279a17804ec4f5f1eee9784d5b505bc257f6af198f8c0d766b0ebb5d3fc22",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-1.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-1.stderr",
+      "stderr_sha256": "02312e7f9978c4843d93fe5170b103ad998322e7b68f7d7684cf6a78b7f3e3c8",
+      "variant": "compact",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/compact.ua",
+      "original_source_sha256": "76919fb2df86a83d659a8996a04455a2a451ab40bdf516e97bf9da414ca6689f",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "canonical_baseline_source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+        "source_sha256": "84582083fd359bdd92366bca1df5ded3ffcf05f12c059dd50da722244a4ec8fb",
+        "n": 1,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+          "1"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 3367,
+        "sha256": "190279a17804ec4f5f1eee9784d5b505bc257f6af198f8c0d766b0ebb5d3fc22",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-1.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-1.stderr",
+        "stderr_sha256": "ec6ac0cf8b7071917e10896c65528533f449c565fb0f377d432344d90a13d0d9"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 1,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": false,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 1.1102230246251565e-16,
+      "maximum_step_reference_absolute_error": 1.1102230246251565e-16,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+      "source_sha256": "4b38c71606171efdf312296e2720faf5e82eda1f491ca8f370ee9dfe52d8eb2c",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+        "2"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 4247,
+      "sha256": "eb58c8559200320cc805e54eb82051a6b0158dc2e0d2bee2f8d0e93799032c53",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-2.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-2.stderr",
+      "stderr_sha256": "02312e7f9978c4843d93fe5170b103ad998322e7b68f7d7684cf6a78b7f3e3c8",
+      "variant": "compact",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/compact.ua",
+      "original_source_sha256": "76919fb2df86a83d659a8996a04455a2a451ab40bdf516e97bf9da414ca6689f",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "canonical_baseline_source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+        "source_sha256": "84582083fd359bdd92366bca1df5ded3ffcf05f12c059dd50da722244a4ec8fb",
+        "n": 2,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+          "2"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 4247,
+        "sha256": "eb58c8559200320cc805e54eb82051a6b0158dc2e0d2bee2f8d0e93799032c53",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-2.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-2.stderr",
+        "stderr_sha256": "ec6ac0cf8b7071917e10896c65528533f449c565fb0f377d432344d90a13d0d9"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 2,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": false,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 2.220446049250313e-16,
+      "maximum_step_reference_absolute_error": 2.220446049250313e-16,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+      "source_sha256": "4b38c71606171efdf312296e2720faf5e82eda1f491ca8f370ee9dfe52d8eb2c",
+      "n": 7,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+        "7"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 8592,
+      "sha256": "1bcc263753378ea533e86150ac7f862cba6c3abe8a5226c8eff8606c68eb2b2c",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-7.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-7.stderr",
+      "stderr_sha256": "02312e7f9978c4843d93fe5170b103ad998322e7b68f7d7684cf6a78b7f3e3c8",
+      "variant": "compact",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/compact.ua",
+      "original_source_sha256": "76919fb2df86a83d659a8996a04455a2a451ab40bdf516e97bf9da414ca6689f",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "canonical_baseline_source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+        "source_sha256": "84582083fd359bdd92366bca1df5ded3ffcf05f12c059dd50da722244a4ec8fb",
+        "n": 7,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+          "7"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 8592,
+        "sha256": "1bcc263753378ea533e86150ac7f862cba6c3abe8a5226c8eff8606c68eb2b2c",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-7.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-7.stderr",
+        "stderr_sha256": "ec6ac0cf8b7071917e10896c65528533f449c565fb0f377d432344d90a13d0d9"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 7,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": false,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 8.881784197001252e-16,
+      "maximum_step_reference_absolute_error": 8.881784197001252e-16,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+      "source_sha256": "4b38c71606171efdf312296e2720faf5e82eda1f491ca8f370ee9dfe52d8eb2c",
+      "n": 1000,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-trace.ua",
+        "1000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 867556,
+      "sha256": "749724f82c72a2103b55a318d18386149e52ca4a1fd546c41b3feb1543543024",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-1000.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-compact-state-1000.stderr",
+      "stderr_sha256": "02312e7f9978c4843d93fe5170b103ad998322e7b68f7d7684cf6a78b7f3e3c8",
+      "variant": "compact",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/compact.ua",
+      "original_source_sha256": "76919fb2df86a83d659a8996a04455a2a451ab40bdf516e97bf9da414ca6689f",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "canonical_baseline_source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+        "source_sha256": "84582083fd359bdd92366bca1df5ded3ffcf05f12c059dd50da722244a4ec8fb",
+        "n": 1000,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-trace.ua",
+          "1000"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 867556,
+        "sha256": "749724f82c72a2103b55a318d18386149e52ca4a1fd546c41b3feb1543543024",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-1000.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-compact-state-1000.stderr",
+        "stderr_sha256": "ec6ac0cf8b7071917e10896c65528533f449c565fb0f377d432344d90a13d0d9"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 1000,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": false,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 4.085620730620576e-14,
+      "maximum_step_reference_absolute_error": 4.085620730620576e-14,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+      "source_sha256": "c89dae0807f038441746e363d818578f0b3856f4577ebba0a2a2c66d2777c94f",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 2401,
+      "sha256": "de0e6b472a9b81620193c83fea19e72b15de8151b515d16019518d5cf90d1463",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-0.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-0.stderr",
+      "stderr_sha256": "13c2078f1073503f09f3bc2e24a09ae11dfcc89813b5da94543c0ab8edadf1e0",
+      "variant": "fast",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/fast.ua",
+      "original_source_sha256": "62c676844b0e65f13a8229c283cadf926effa83ac51694ce3c726873371e3ec8",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "canonical_baseline_source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+        "source_sha256": "90323957ed2f7b310c46d03380e38a24dd9a202cd0b4521b028cf10a32ec5572",
+        "n": 0,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+          "0"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 2401,
+        "sha256": "de0e6b472a9b81620193c83fea19e72b15de8151b515d16019518d5cf90d1463",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-0.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-0.stderr",
+        "stderr_sha256": "16fde39180f756205408046c7d8b8e84d4d4953fb94ac8ce9f866fe8622e4676"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 0,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": true,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 0.0,
+      "maximum_step_reference_absolute_error": 0.0,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+      "source_sha256": "c89dae0807f038441746e363d818578f0b3856f4577ebba0a2a2c66d2777c94f",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 3367,
+      "sha256": "190279a17804ec4f5f1eee9784d5b505bc257f6af198f8c0d766b0ebb5d3fc22",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-1.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-1.stderr",
+      "stderr_sha256": "13c2078f1073503f09f3bc2e24a09ae11dfcc89813b5da94543c0ab8edadf1e0",
+      "variant": "fast",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/fast.ua",
+      "original_source_sha256": "62c676844b0e65f13a8229c283cadf926effa83ac51694ce3c726873371e3ec8",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "canonical_baseline_source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+        "source_sha256": "90323957ed2f7b310c46d03380e38a24dd9a202cd0b4521b028cf10a32ec5572",
+        "n": 1,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+          "1"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 3367,
+        "sha256": "190279a17804ec4f5f1eee9784d5b505bc257f6af198f8c0d766b0ebb5d3fc22",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-1.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-1.stderr",
+        "stderr_sha256": "16fde39180f756205408046c7d8b8e84d4d4953fb94ac8ce9f866fe8622e4676"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 1,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": false,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 1.1102230246251565e-16,
+      "maximum_step_reference_absolute_error": 1.1102230246251565e-16,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+      "source_sha256": "c89dae0807f038441746e363d818578f0b3856f4577ebba0a2a2c66d2777c94f",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+        "2"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 4247,
+      "sha256": "eb58c8559200320cc805e54eb82051a6b0158dc2e0d2bee2f8d0e93799032c53",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-2.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-2.stderr",
+      "stderr_sha256": "13c2078f1073503f09f3bc2e24a09ae11dfcc89813b5da94543c0ab8edadf1e0",
+      "variant": "fast",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/fast.ua",
+      "original_source_sha256": "62c676844b0e65f13a8229c283cadf926effa83ac51694ce3c726873371e3ec8",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "canonical_baseline_source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+        "source_sha256": "90323957ed2f7b310c46d03380e38a24dd9a202cd0b4521b028cf10a32ec5572",
+        "n": 2,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+          "2"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 4247,
+        "sha256": "eb58c8559200320cc805e54eb82051a6b0158dc2e0d2bee2f8d0e93799032c53",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-2.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-2.stderr",
+        "stderr_sha256": "16fde39180f756205408046c7d8b8e84d4d4953fb94ac8ce9f866fe8622e4676"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 2,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": false,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 2.220446049250313e-16,
+      "maximum_step_reference_absolute_error": 2.220446049250313e-16,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+      "source_sha256": "c89dae0807f038441746e363d818578f0b3856f4577ebba0a2a2c66d2777c94f",
+      "n": 7,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+        "7"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 8592,
+      "sha256": "1bcc263753378ea533e86150ac7f862cba6c3abe8a5226c8eff8606c68eb2b2c",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-7.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-7.stderr",
+      "stderr_sha256": "13c2078f1073503f09f3bc2e24a09ae11dfcc89813b5da94543c0ab8edadf1e0",
+      "variant": "fast",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/fast.ua",
+      "original_source_sha256": "62c676844b0e65f13a8229c283cadf926effa83ac51694ce3c726873371e3ec8",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "canonical_baseline_source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+        "source_sha256": "90323957ed2f7b310c46d03380e38a24dd9a202cd0b4521b028cf10a32ec5572",
+        "n": 7,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+          "7"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 8592,
+        "sha256": "1bcc263753378ea533e86150ac7f862cba6c3abe8a5226c8eff8606c68eb2b2c",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-7.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-7.stderr",
+        "stderr_sha256": "16fde39180f756205408046c7d8b8e84d4d4953fb94ac8ce9f866fe8622e4676"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 7,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": false,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 8.881784197001252e-16,
+      "maximum_step_reference_absolute_error": 8.881784197001252e-16,
+      "reference_match": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+      "source_sha256": "c89dae0807f038441746e363d818578f0b3856f4577ebba0a2a2c66d2777c94f",
+      "n": 1000,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua",
+        "1000"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 867556,
+      "sha256": "749724f82c72a2103b55a318d18386149e52ca4a1fd546c41b3feb1543543024",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-1000.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-state-1000.stderr",
+      "stderr_sha256": "13c2078f1073503f09f3bc2e24a09ae11dfcc89813b5da94543c0ab8edadf1e0",
+      "variant": "fast",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/sources/fast.ua",
+      "original_source_sha256": "62c676844b0e65f13a8229c283cadf926effa83ac51694ce3c726873371e3ec8",
+      "canonical_baseline_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "canonical_baseline_source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "baseline_evidence": {
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+        "source_sha256": "90323957ed2f7b310c46d03380e38a24dd9a202cd0b4521b028cf10a32ec5572",
+        "n": 1000,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-trace.ua",
+          "1000"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "returncode": 0,
+        "bytes": 867556,
+        "sha256": "749724f82c72a2103b55a318d18386149e52ca4a1fd546c41b3feb1543543024",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-1000.stdout",
+        "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/original-fast-state-1000.stderr",
+        "stderr_sha256": "16fde39180f756205408046c7d8b8e84d4d4953fb94ac8ce9f866fe8622e4676"
+      },
+      "transformation": "Wrap each unchanged Advance result with explicit f64 little-endian byte reporting; report final state and raw constants. Experimental mode is diagnostic only.",
+      "bodies": 5,
+      "state_shape": [
+        5,
+        6
+      ],
+      "state_components": 30,
+      "verified_steps": 1000,
+      "final_state_bitwise_equal": true,
+      "every_step_bitwise_equal": true,
+      "canonical_raw_constants_bitwise_equal": true,
+      "canonical_initial_state_bitwise_equal": false,
+      "canonical_zero_jupiter_z_ulp_difference": 0,
+      "independent_pairwise_state_tolerance": 5e-11,
+      "maximum_final_reference_absolute_error": 4.085620730620576e-14,
+      "maximum_step_reference_absolute_error": 4.085620730620576e-14,
+      "reference_match": true
+    }
+  ],
+  "primitive_checks": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+      "source_sha256": "fd3e3c63edffef5012fdae4c016059adca92ef7f153cebf155fa6fbd3ebfa7d1",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 52,
+      "sha256": "ac7d99aec34c4602db6080d0819eed04f332e8bbcaaada02d2ea18d2a682e8b3",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-1x1.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-1x1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "native-pervasive-power-sqrt-depth-fix",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-1x1.input.json",
+      "input_sha256": "883ec0784520261ca940b2a36fe5ad1a1e85023a617c96b7d466f30a9cbc3b31",
+      "input_shape": [
+        1,
+        1
+      ],
+      "output_shape": [
+        1,
+        1,
+        1
+      ],
+      "same_values_and_order": true,
+      "reference_match": true,
+      "benchmark_steps": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+      "source_sha256": "fd3e3c63edffef5012fdae4c016059adca92ef7f153cebf155fa6fbd3ebfa7d1",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 264,
+      "sha256": "6f6d85845e0978938a7d5af7356a1b55277e45c200f6c0e8d43afaed919867b0",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-2x3.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-2x3.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "native-pervasive-power-sqrt-depth-fix",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-2x3.input.json",
+      "input_sha256": "9a1732ae0c425f12241042f1f57f16ed0eca2e5b9baa21fb9a2c2eb8fbb7fb9a",
+      "input_shape": [
+        2,
+        3
+      ],
+      "output_shape": [
+        2,
+        3,
+        1
+      ],
+      "same_values_and_order": true,
+      "reference_match": true,
+      "benchmark_steps": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+      "source_sha256": "fd3e3c63edffef5012fdae4c016059adca92ef7f153cebf155fa6fbd3ebfa7d1",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 266,
+      "sha256": "ef40a3c6830a04955f10c2c650ef29f77d504a422314c5af3e888a24829fdc67",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-3x2.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-3x2.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "native-pervasive-power-sqrt-depth-fix",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-3x2.input.json",
+      "input_sha256": "a93c2f1fcabe7ad5af333fd2f5a51c3df7d7c76736317d17d5cc73ed978d7b2f",
+      "input_shape": [
+        3,
+        2
+      ],
+      "output_shape": [
+        3,
+        2,
+        1
+      ],
+      "same_values_and_order": true,
+      "reference_match": true,
+      "benchmark_steps": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+      "source_sha256": "fd3e3c63edffef5012fdae4c016059adca92ef7f153cebf155fa6fbd3ebfa7d1",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 986,
+      "sha256": "1cb71136bd480a74a5a2b6ae4c71b906216f3bed6df3238ce19d6f6e5e6d2cf8",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-5x5.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-5x5.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "native-pervasive-power-sqrt-depth-fix",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-5x5.input.json",
+      "input_sha256": "e38685072a680cc27d5da6e670ebcaa62527acde1286d8dce6e2197369ba66cd",
+      "input_shape": [
+        5,
+        5
+      ],
+      "output_shape": [
+        5,
+        5,
+        1
+      ],
+      "same_values_and_order": true,
+      "reference_match": true,
+      "benchmark_steps": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+      "source_sha256": "fd3e3c63edffef5012fdae4c016059adca92ef7f153cebf155fa6fbd3ebfa7d1",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 1144,
+      "sha256": "2c959187749d74ab50f312fde704d46efc40323339b4eeaf2a63a5b58729e838",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-7x4.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-7x4.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "native-pervasive-power-sqrt-depth-fix",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-7x4.input.json",
+      "input_sha256": "43e5d054351337274d9b2b32edd637412835ba7ed2490fb26e6b5b27963be140",
+      "input_shape": [
+        7,
+        4
+      ],
+      "output_shape": [
+        7,
+        4,
+        1
+      ],
+      "same_values_and_order": true,
+      "reference_match": true,
+      "benchmark_steps": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+      "source_sha256": "fd3e3c63edffef5012fdae4c016059adca92ef7f153cebf155fa6fbd3ebfa7d1",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 304,
+      "sha256": "4df16a66eaec57caa9aa4b3bc6565326c237829b1f6ef9172ed6a0629102c79b",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-1x8.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-1x8.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "native-pervasive-power-sqrt-depth-fix",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-1x8.input.json",
+      "input_sha256": "e2a27de757a522cf5bfadffca967da96a472543dc00934f160d905cb77a63dd1",
+      "input_shape": [
+        1,
+        8
+      ],
+      "output_shape": [
+        1,
+        8,
+        1
+      ],
+      "same_values_and_order": true,
+      "reference_match": true,
+      "benchmark_steps": 0
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+      "source_sha256": "fd3e3c63edffef5012fdae4c016059adca92ef7f153cebf155fa6fbd3ebfa7d1",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-only.ua",
+        "0"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 376,
+      "sha256": "45bfe05e2b4087227c195c4e827864a509d28c48741780af79042a7af8f0b705",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-9x1.stdout",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-9x1.stderr",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "operation": "native-pervasive-power-sqrt-depth-fix",
+      "input_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/denominator-9x1.input.json",
+      "input_sha256": "a6fef7299e8a8a8e51c6cc24f3478e56b372d425190784dfd4448683d4bfa476",
+      "input_shape": [
+        9,
+        1
+      ],
+      "output_shape": [
+        9,
+        1,
+        1
+      ],
+      "same_values_and_order": true,
+      "reference_match": true,
+      "benchmark_steps": 0
+    }
+  ]
+}

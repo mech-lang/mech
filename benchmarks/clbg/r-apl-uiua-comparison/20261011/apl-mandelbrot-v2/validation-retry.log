@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/validate.py", line 175, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/validate.py", line 113, in main
+    trace_command, trace_output, trace_stderr = execute(trace_source, n, trace=trace_path,
+                                                ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        workers=1 if variant == 'compact' else 8)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/validate.py", line 63, in execute
+    assert not re.search(rb'(?:DOMAIN|RANK|LENGTH|INDEX|SYNTAX|VALUE|WS FULL) ERROR', stderr), stderr.decode(errors='replace')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: VALUE ERROR+
+      1/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/results/compact-1 work
+                                                                                                                                             ^
+
+WARNING: File pipe-to_client still open - closing it
+

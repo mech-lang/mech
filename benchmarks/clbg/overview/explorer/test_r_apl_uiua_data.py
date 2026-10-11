@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from r_apl_uiua_data import COHORT, _LegacyEvidence, _execution_fingerprint, _loc_metadata, add_r_apl_uiua_languages
+from r_apl_uiua_data import APPROVED_MAINTENANCE_EVENT_SHA256, COHORT, _LegacyEvidence, _execution_fingerprint, _loc_metadata, add_r_apl_uiua_languages
 
 
 def sha(path):
@@ -298,6 +298,24 @@ class ImporterTests(unittest.TestCase):
                 _loc_metadata(row)
 
     @unittest.skipUnless(os.environ.get('CLBG_COMMON_PREPARE'), 'Set CLBG_COMMON_PREPARE for pinned legacy runner fixtures')
+    def test_legacy_frozen_empty_measurement_slots_reconcile_exact_attempts(self):
+        fixture = self.fixture()
+        for row in fixture.audit['programs'] + fixture.audit['controls']:
+            row.update(samples_seconds=[], sample_validation=[], attempts=[])
+        archive = fixture.legacy_migrations()
+        fixture.commit()
+        original_hash = sha(archive / 'timings-r.json')
+        data = fixture.import_data()
+        point = data['programs']['regexredux:r-compact']
+        self.assertEqual(point['samples'], [4, 4.1, 4.2])
+        self.assertTrue(all(len(row['lineage']) == 2 for row in point['sample_execution_metadata']))
+        self.assertEqual(sha(archive / 'timings-r.json'), original_hash)
+        fixture.report['attempts'][0]['seconds'] += .01
+        fixture.commit()
+        with self.assertRaises(AssertionError):
+            fixture.import_data()
+
+    @unittest.skipUnless(os.environ.get('CLBG_COMMON_PREPARE'), 'Set CLBG_COMMON_PREPARE for pinned legacy runner fixtures')
     def test_exact_two_step_legacy_lineage_is_labelled_and_history_preserved(self):
         fixture = self.fixture()
         archive = fixture.legacy_migrations()
@@ -335,6 +353,51 @@ class ImporterTests(unittest.TestCase):
                     (archive / 'run.py').write_text('unapproved runner\n')
                 with self.assertRaises(AssertionError):
                     fixture.import_data()
+
+    @unittest.skipUnless(os.environ.get('CLBG_COMMON_PREPARE'), 'Set CLBG_COMMON_PREPARE for the pinned interruption correction')
+    def test_external_maintenance_exclusion_preserves_measurement_and_automatic_guard(self):
+        fixture = self.fixture()
+        original_event = Path(os.environ['CLBG_COMMON_PREPARE']).parent / 'evidence/external-maintenance/root-site-packaging-20261011.json'
+        event_path = fixture.file('maintenance-event.json', original_event.read_text())
+        self.assertEqual(sha(event_path), APPROVED_MAINTENANCE_EVENT_SHA256)
+        event = json.loads(event_path.read_text())
+        original = copy.deepcopy(event['affected_attempts'][1]['signature'])
+        original.update(attempt_number=36, language='r', full_workload=True,
+            valid_environment=True, validation=dict(reference_match=True),
+            monitor_errors=[], resource_monitor_errors=[], stdout_bytes=32000015)
+        classification = dict(type='post_measurement_exclusion', event=str(event_path),
+            event_sha256=sha(event_path), reason=event['reason'], attempt_numbers=[36],
+            at='2026-10-11T21:00:00+00:00',
+            permitted_changed_attempt_fields=['error', 'error_type', 'post_measurement_exclusion'])
+        revision = dict(type='post_measurement_exclusion', classification_correction=classification,
+            prior_report='pinned-prior-report.json', prior_report_sha256='c' * 64)
+        current = copy.deepcopy(original)
+        current.update(attempt_number=40, prior_guard_revision_attempt_number=36,
+            error='Post-measurement external-maintenance exclusion: ' + event['reason'],
+            error_type='PostMeasurementExclusion', post_measurement_exclusion=dict(
+                event=str(event_path), event_sha256=sha(event_path), reason=event['reason'],
+                classified_at=classification['at'], original_attempt_number=36,
+                original_automatic_valid_environment=True,
+                conservative_maintenance_window=event['conservative_window']))
+        provenance = {}
+        legacy = _LegacyEvidence(fixture.root, fixture.report, fixture.audit,
+            lambda name: (provenance.update({name: sha(fixture.root / name)}) or json.loads((fixture.root / name).read_text())),
+            sha, provenance)
+        legacy.exact_attempt(current, original, revision)
+        self.assertEqual(legacy.corrections[0]['original_seconds'], original['seconds'])
+        self.assertTrue(legacy.corrections[0]['never_chart_eligible'])
+        self.assertTrue(current['valid_environment'])
+        for field, value in [('seconds', original['seconds'] + .01),
+                             ('stdout_sha256', 'a' * 64), ('valid_environment', False),
+                             ('error_type', 'RuntimeError')]:
+            bad = copy.deepcopy(current)
+            bad[field] = value
+            with self.subTest(field=field), self.assertRaises(AssertionError):
+                legacy.exact_attempt(bad, original, revision)
+        bad_revision = copy.deepcopy(revision)
+        bad_revision['classification_correction']['event_sha256'] = 'a' * 64
+        with self.assertRaises(AssertionError):
+            legacy.exact_attempt(current, original, bad_revision)
 
     @unittest.skipUnless(os.environ.get('CLBG_COMMON_PREPARE'), 'Set CLBG_COMMON_PREPARE for the pinned interruption correction')
     def test_excluded_interruption_correction_requires_exact_original_fields(self):

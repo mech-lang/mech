@@ -1,0 +1,705 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "key": "nbody:nbody-apl-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "0"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+      "energies": [
+        -0.169075164,
+        -0.169075164
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907516382852447
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-compact-canonical-v2-0.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "1"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+      "energies": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907495402506748
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-compact-canonical-v2-1.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "2"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee",
+      "energies": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907474322097793
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-compact-canonical-v2-2.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 10,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "10"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5",
+      "energies": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.1690730217146998
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-compact-canonical-v2-10.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 100,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "100"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "bee50b76c2a73918000dab130c0a925ad28bd6678d7c85f5cc053a4615ccd66f",
+      "energies": [
+        -0.169075164,
+        -0.169050762
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16905076238240946
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-compact-canonical-v2-100.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 1000,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "1000"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16908760523460611
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-compact-canonical-v2-1000.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "0"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+      "energies": [
+        -0.169075164,
+        -0.169075164
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907516382852447
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-optimized-canonical-v2-0.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "1"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+      "energies": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907495402506748
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-optimized-canonical-v2-1.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "2"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee",
+      "energies": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907474322097793
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-optimized-canonical-v2-2.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 10,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "10"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5",
+      "energies": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.1690730217146998
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-optimized-canonical-v2-10.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 100,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "100"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "bee50b76c2a73918000dab130c0a925ad28bd6678d7c85f5cc053a4615ccd66f",
+      "energies": [
+        -0.169075164,
+        -0.169050762
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16905076238240946
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-optimized-canonical-v2-100.stdout"
+    },
+    {
+      "key": "nbody:nbody-apl-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "n": 1000,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "1000"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16908760523460611
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-optimized-canonical-v2-1000.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+        "0"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+      "energies": [
+        -0.169075164,
+        -0.169075164
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907516382852447
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-compact-canonical-v2-0.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+        "1"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+      "energies": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907495402506748
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-compact-canonical-v2-1.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+        "2"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee",
+      "energies": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907474322097793
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-compact-canonical-v2-2.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "n": 10,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+        "10"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5",
+      "energies": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.1690730217146998
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-compact-canonical-v2-10.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "n": 100,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+        "100"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "bee50b76c2a73918000dab130c0a925ad28bd6678d7c85f5cc053a4615ccd66f",
+      "energies": [
+        -0.169075164,
+        -0.169050762
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16905076238240946
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-compact-canonical-v2-100.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-compact-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "n": 1000,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+        "1000"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16908760523460611
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-compact-canonical-v2-1000.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "n": 0,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+        "0"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+      "energies": [
+        -0.169075164,
+        -0.169075164
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907516382852447
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-optimized-canonical-v2-0.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+        "1"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+      "energies": [
+        -0.169075164,
+        -0.169074954
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907495402506748
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-optimized-canonical-v2-1.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+        "2"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "00ec6101b633ed9827e030241c6e423e8e57068a51535ba1802270d77f95fbee",
+      "energies": [
+        -0.169075164,
+        -0.169074743
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16907474322097793
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-optimized-canonical-v2-2.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "n": 10,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+        "10"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "b185a8e2643eaaa1267075de26dd31ef64eae0949b7d4330bf0f0fdf03cc93c5",
+      "energies": [
+        -0.169075164,
+        -0.169073022
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.1690730217146998
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-optimized-canonical-v2-10.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "n": 100,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+        "100"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "bee50b76c2a73918000dab130c0a925ad28bd6678d7c85f5cc053a4615ccd66f",
+      "energies": [
+        -0.169075164,
+        -0.169050762
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16905076238240946
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-optimized-canonical-v2-100.stdout"
+    },
+    {
+      "key": "nbody:nbody-uiua-optimized-canonical-v2",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "n": 1000,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+        "1000"
+      ],
+      "returncode": 0,
+      "bytes": 26,
+      "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+      "energies": [
+        -0.169075164,
+        -0.169087605
+      ],
+      "reference_energies": [
+        -0.16907516382852447,
+        -0.16908760523460611
+      ],
+      "tolerance": 1e-08,
+      "reference_match": true,
+      "stderr": "",
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-optimized-canonical-v2-1000.stdout"
+    }
+  ],
+  "count": 24,
+  "canonical_jupiter_z": "-0.103622044471123109",
+  "canonical_workload_n": 50000000,
+  "full_attempts": 0
+}

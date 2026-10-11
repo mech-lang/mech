@@ -1,0 +1,4 @@
+Warning: . duplicate is deprecated and will be removed in a future version, use ˙ self, ⊸ by, or ⟜∘ instead
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-nbody-v3/results/candidate-fast-trace.ua:18:42
+18 |   &p ⊂ "STEP_BYTES=" json ♭ bytes⌞ "f64" .
+                                              ─

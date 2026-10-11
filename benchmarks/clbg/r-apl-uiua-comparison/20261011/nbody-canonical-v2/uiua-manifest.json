@@ -1,0 +1,430 @@
+{
+  "status": "prepared-validated",
+  "language": "uiua",
+  "created_at": "2026-10-11T20:58:00.602563+00:00",
+  "programs": [
+    {
+      "id": "nbody-uiua-compact-canonical-v2",
+      "key": "nbody:nbody-uiua-compact-canonical-v2",
+      "benchmark": "nbody",
+      "language": "uiua",
+      "variant": "compact",
+      "profile": "compact",
+      "source_profile": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+      "source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "input_mode": "argument",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "official-compiled-interpreter-runtime",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+        "version": "Uiua 0.19.1",
+        "architecture": "aarch64-apple-darwin",
+        "distribution_url": "https://github.com/uiua-lang/uiua/releases/download/0.19.1/uiua-bin-aarch64-apple-darwin.zip",
+        "distribution_sha256": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+        "provenance": "Official Uiua ARM64 macOS release binary; not a locally compiled substitute.",
+        "source_url": "https://github.com/uiua-lang/uiua/archive/refs/tags/0.19.1.tar.gz",
+        "source_archive_sha256": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+        "release_metadata": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json",
+        "primary_runtime_documentation": "https://www.uiua.org/docs",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/runtime.zip": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/source.tar.gz": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json": "e5d8b92153fc797a25bdecdcf5b324044889bbe68a0620d33dad1308f8a83749",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/Cargo.lock": "739f67e7b39a61a3035fe91663b5f9736df82f7a33af2a318abc54cd54591754",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4.crate": "ef5eeffa816451f3a6a4cce9cd796e3e5ba6018638d3ce5cc7f87b73bababf60"
+        },
+        "host_os": "26.2",
+        "system_library_policy": "macOS platform libraries are supplied by the recorded host OS; no additional non-system runtime dylib is linked by Uiua."
+      },
+      "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "library_support": [],
+      "pins": {
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/runtime.zip": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/source.tar.gz": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json": "e5d8b92153fc797a25bdecdcf5b324044889bbe68a0620d33dad1308f8a83749",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/Cargo.lock": "739f67e7b39a61a3035fe91663b5f9736df82f7a33af2a318abc54cd54591754",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4.crate": "ef5eeffa816451f3a6a4cce9cd796e3e5ba6018638d3ce5cc7f87b73bababf60"
+      },
+      "source_url": null,
+      "provenance": "Locally authored Uiua application source, pinned and visibly counted.",
+      "adaptations": [
+        "Canonical constants, momentum offset, binary64 pair forces, dt=0.01, all requested updates and two fixed nine-decimal energies; optimized computes NewVelocity once per step and retains that value for position/state assembly.",
+        "Use exact canonical Jupiter z initial coordinate -0.103622044471123109."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical constants, momentum offset, binary64 pair forces, dt=0.01, all requested updates and two fixed nine-decimal energies; optimized computes NewVelocity once per step and retains that value for position/state assembly.",
+        "arithmetic": "binary64"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-0",
+          "n": 0,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-10000",
+          "n": 10000,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": ""
+        }
+      ],
+      "loc": 21,
+      "physical_loc": 21,
+      "loc_expansions": [],
+      "loc_review": "Nonblank noncomment physical source lines; each independent binding expands to its own LOC. Tacit pipelines, branches, long literals and one data declaration remain one expression. No source packing discount.",
+      "execution_fingerprint": "86f75ad9d520485fbdb3180b4a69ad5457f73892bdfbb1b04c876953481ec9f0",
+      "execution_fingerprint_inputs": {
+        "source_sha256": "7033ff55e2283daee196e7c29174346e4d024daa1759ec2368e0275a32cf63f0",
+        "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "<source>",
+          "{n}"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "library_pins": {},
+        "input_mode": "argument"
+      },
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 86400,
+      "maximum_workers": 1,
+      "supersedes_keys": [
+        "nbody:nbody-uiua-compact"
+      ],
+      "supersedes_source_sha256": [
+        "7033ff55e2283daee196e7c29174346e4d024daa1759ec2368e0275a32cf63f0"
+      ],
+      "canonical_constant_correction": {
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/compact.ua",
+        "original_source_sha256": "7033ff55e2283daee196e7c29174346e4d024daa1759ec2368e0275a32cf63f0",
+        "old_literal": "\u00af0.10362204447112314",
+        "new_literal": "\u00af0.103622044471123109",
+        "old_binary64_hex": "bfba86f96c25ebf2",
+        "canonical_binary64_hex": "bfba86f96c25ebf0",
+        "only_literal_changed": true,
+        "original_full_attempts": 0,
+        "reason": "Two-ULP transcription correction to published canonical initial data; same application algorithm, work shape, runtime and LOC. Original small validated sources remain retained; no full failure is claimed."
+      },
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": [],
+      "small_validation": {
+        "key": "nbody:nbody-uiua-compact-canonical-v2",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+        "source_sha256": "ce4a4d559ea8e67eb5feb1474f41caa7e06c196c16ad637ab0fe67b0d7542b41",
+        "n": 1000,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/compact.ua",
+          "1000"
+        ],
+        "returncode": 0,
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "reference_energies": [
+          -0.16907516382852447,
+          -0.16908760523460611
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-compact-canonical-v2-1000.stdout"
+      }
+    },
+    {
+      "id": "nbody-uiua-optimized-canonical-v2",
+      "key": "nbody:nbody-uiua-optimized-canonical-v2",
+      "benchmark": "nbody",
+      "language": "uiua",
+      "variant": "optimized",
+      "profile": "optimized",
+      "source_profile": "fast",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+      "source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "input_mode": "argument",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "official-compiled-interpreter-runtime",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+        "version": "Uiua 0.19.1",
+        "architecture": "aarch64-apple-darwin",
+        "distribution_url": "https://github.com/uiua-lang/uiua/releases/download/0.19.1/uiua-bin-aarch64-apple-darwin.zip",
+        "distribution_sha256": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+        "provenance": "Official Uiua ARM64 macOS release binary; not a locally compiled substitute.",
+        "source_url": "https://github.com/uiua-lang/uiua/archive/refs/tags/0.19.1.tar.gz",
+        "source_archive_sha256": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+        "release_metadata": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json",
+        "primary_runtime_documentation": "https://www.uiua.org/docs",
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/runtime.zip": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/source.tar.gz": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json": "e5d8b92153fc797a25bdecdcf5b324044889bbe68a0620d33dad1308f8a83749",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/Cargo.lock": "739f67e7b39a61a3035fe91663b5f9736df82f7a33af2a318abc54cd54591754",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4.crate": "ef5eeffa816451f3a6a4cce9cd796e3e5ba6018638d3ce5cc7f87b73bababf60"
+        },
+        "host_os": "26.2",
+        "system_library_policy": "macOS platform libraries are supplied by the recorded host OS; no additional non-system runtime dylib is linked by Uiua."
+      },
+      "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "library_support": [],
+      "pins": {
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/runtime.zip": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/source.tar.gz": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json": "e5d8b92153fc797a25bdecdcf5b324044889bbe68a0620d33dad1308f8a83749",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/Cargo.lock": "739f67e7b39a61a3035fe91663b5f9736df82f7a33af2a318abc54cd54591754",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4.crate": "ef5eeffa816451f3a6a4cce9cd796e3e5ba6018638d3ce5cc7f87b73bababf60"
+      },
+      "source_url": null,
+      "provenance": "Locally authored Uiua application source, pinned and visibly counted.",
+      "adaptations": [
+        "Canonical constants, momentum offset, binary64 pair forces, dt=0.01, all requested updates and two fixed nine-decimal energies; optimized computes NewVelocity once per step and retains that value for position/state assembly.",
+        "Use exact canonical Jupiter z initial coordinate -0.103622044471123109."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Canonical constants, momentum offset, binary64 pair forces, dt=0.01, all requested updates and two fixed nine-decimal energies; optimized computes NewVelocity once per step and retains that value for position/state assembly.",
+        "arithmetic": "binary64"
+      },
+      "adversarial_validation": [
+        {
+          "benchmark": "nbody",
+          "variant": "fast",
+          "case": "independent-D-0",
+          "n": 0,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": "",
+          "source_sha256": "23ec8f0e838dec6602c743ae2e6b92c2a7788ab4ce5ad112d5f2a79b377ee0ec",
+          "validation_evidence_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/uiua/optimized-nbody-validation.json",
+          "validation_evidence_sha256": "32317dcc5f61a91f67fc299bcd33faab5520701de2018240d530f00e0cfb286e"
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "fast",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": "",
+          "source_sha256": "23ec8f0e838dec6602c743ae2e6b92c2a7788ab4ce5ad112d5f2a79b377ee0ec",
+          "validation_evidence_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/uiua/optimized-nbody-validation.json",
+          "validation_evidence_sha256": "32317dcc5f61a91f67fc299bcd33faab5520701de2018240d530f00e0cfb286e"
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "fast",
+          "case": "independent-D-10000",
+          "n": 10000,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "f4188900db92329603b17d928ada6fdbbf2c21f29c056e0e86df82d010d74648",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": "",
+          "source_sha256": "23ec8f0e838dec6602c743ae2e6b92c2a7788ab4ce5ad112d5f2a79b377ee0ec",
+          "validation_evidence_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/uiua/optimized-nbody-validation.json",
+          "validation_evidence_sha256": "32317dcc5f61a91f67fc299bcd33faab5520701de2018240d530f00e0cfb286e"
+        }
+      ],
+      "loc": 21,
+      "physical_loc": 21,
+      "loc_expansions": [],
+      "loc_review": "Nonblank noncomment physical source lines; each independent binding expands to its own LOC. Tacit pipelines, branches, long literals and one data declaration remain one expression. No source packing discount.",
+      "execution_fingerprint": "a797b5591cf9db66d583bf517ce21cee5ce9ca62a5c7f32048ddbf27821a60bf",
+      "execution_fingerprint_inputs": {
+        "source_sha256": "23ec8f0e838dec6602c743ae2e6b92c2a7788ab4ce5ad112d5f2a79b377ee0ec",
+        "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "<source>",
+          "{n}"
+        ],
+        "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+        "runtime_environment": {
+          "LC_ALL": "C",
+          "OMP_NUM_THREADS": "1",
+          "OPENBLAS_NUM_THREADS": "1",
+          "VECLIB_MAXIMUM_THREADS": "1"
+        },
+        "library_pins": {},
+        "input_mode": "argument"
+      },
+      "eligible_for_chart": false,
+      "measurement_status": "not-measured",
+      "recommended_timeout_seconds": 86400,
+      "maximum_workers": 1,
+      "supersedes_keys": [
+        "nbody:nbody-uiua-optimized"
+      ],
+      "supersedes_source_sha256": [
+        "23ec8f0e838dec6602c743ae2e6b92c2a7788ab4ce5ad112d5f2a79b377ee0ec"
+      ],
+      "canonical_constant_correction": {
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/uiua/nbody/fast.ua",
+        "original_source_sha256": "23ec8f0e838dec6602c743ae2e6b92c2a7788ab4ce5ad112d5f2a79b377ee0ec",
+        "old_literal": "\u00af0.10362204447112314",
+        "new_literal": "\u00af0.103622044471123109",
+        "old_binary64_hex": "bfba86f96c25ebf2",
+        "canonical_binary64_hex": "bfba86f96c25ebf0",
+        "only_literal_changed": true,
+        "original_full_attempts": 0,
+        "reason": "Two-ULP transcription correction to published canonical initial data; same application algorithm, work shape, runtime and LOC. Original small validated sources remain retained; no full failure is claimed."
+      },
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": [],
+      "small_validation": {
+        "key": "nbody:nbody-uiua-optimized-canonical-v2",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+        "source_sha256": "70017b830776a4299a715f189eabc3600385e7c729d7997d539c93f710ae509d",
+        "n": 1000,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/uiua/fast.ua",
+          "1000"
+        ],
+        "returncode": 0,
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "reference_energies": [
+          -0.16907516382852447,
+          -0.16908760523460611
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true,
+        "stderr": "",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/uiua/nbody-uiua-optimized-canonical-v2-1000.stdout"
+      }
+    }
+  ],
+  "runtime": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+    "sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+    "version": "Uiua 0.19.1",
+    "architecture": "aarch64-apple-darwin",
+    "distribution_url": "https://github.com/uiua-lang/uiua/releases/download/0.19.1/uiua-bin-aarch64-apple-darwin.zip",
+    "distribution_sha256": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+    "provenance": "Official Uiua ARM64 macOS release binary; not a locally compiled substitute.",
+    "source_url": "https://github.com/uiua-lang/uiua/archive/refs/tags/0.19.1.tar.gz",
+    "source_archive_sha256": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+    "release_metadata": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json",
+    "primary_runtime_documentation": "https://www.uiua.org/docs",
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/runtime.zip": "38e2f74488e605f18185d01c45ca05c0a84bf0ca141615f0aa95d409a41e2e19",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/source.tar.gz": "264e234ed4714dd72e9526b200a27f473710d0d3035d1ebbfe5397803d10fcc6",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/release.json": "e5d8b92153fc797a25bdecdcf5b324044889bbe68a0620d33dad1308f8a83749",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua-0.19.1/Cargo.lock": "739f67e7b39a61a3035fe91663b5f9736df82f7a33af2a318abc54cd54591754",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/ecow-0.2.4.crate": "ef5eeffa816451f3a6a4cce9cd796e3e5ba6018638d3ce5cc7f87b73bababf60"
+    },
+    "host_os": "26.2",
+    "system_library_policy": "macOS platform libraries are supplied by the recorded host OS; no additional non-system runtime dylib is linked by Uiua."
+  },
+  "parent_manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-manifest.json",
+  "parent_manifest_sha256": "f18f4d527002bcc5bd8890ac03477267c0a91a1b4f2401dbdccc98f3a4ed89bc",
+  "scope": "Additive canonical nbody initial-data correction only; no full timings.",
+  "preparation_command": [
+    "python3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/prepare.py"
+  ],
+  "validation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/validation.json",
+    "sha256": "9effd3d099c8dc5af10007afda3b46017611da8d6719248179ce424c89987ac2",
+    "checks": 12,
+    "passed": true
+  }
+}

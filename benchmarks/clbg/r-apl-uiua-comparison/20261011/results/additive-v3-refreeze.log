@@ -1,0 +1,7 @@
+PREVIEW apl 26 prepared roles; 26 selected roles; fresh controls ['regexredux', 'revcomp']
+PREVIEW uiua 23 prepared roles; 20 selected roles; fresh controls ['spectralnorm']
+FROZEN apl 26 roles 21 distinct executions
+RESUMED apl preserved 30 executions; 18 role samples; retired 2
+FROZEN uiua 20 roles 17 distinct executions
+RESUMED uiua preserved 27 executions; 27 role samples; retired 3
+ADDITIVE REVISION COMPLETE /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/additive-v3-before

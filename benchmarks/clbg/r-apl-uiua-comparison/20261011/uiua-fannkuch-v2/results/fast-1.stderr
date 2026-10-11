@@ -1,0 +1,4 @@
+Advice: Split this into multiple lines (heuristic: 61/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fannkuch-v2/sources/fast.ua:18:1
+18 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

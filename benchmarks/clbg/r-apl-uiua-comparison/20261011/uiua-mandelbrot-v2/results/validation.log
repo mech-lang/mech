@@ -1,0 +1,23 @@
+Waiting for common mutex; all reference/runtime probes occur after acquisition.
+Locked bounded bitmap/packing validation.
+1 OUTPUT PASS
+2 OUTPUT PASS
+3 OUTPUT PASS
+7 OUTPUT PASS
+8 OUTPUT PASS
+9 OUTPUT PASS
+15 OUTPUT PASS
+16 OUTPUT PASS
+17 OUTPUT PASS
+31 OUTPUT PASS
+33 OUTPUT PASS
+65 OUTPUT PASS
+129 OUTPUT PASS
+200 OUTPUT PASS
+257 OUTPUT PASS
+1 WORK PASS
+9 WORK PASS
+17 WORK PASS
+65 WORK PASS
+129 WORK PASS
+PASS 15 outputs 5 work traces 14 packing probes

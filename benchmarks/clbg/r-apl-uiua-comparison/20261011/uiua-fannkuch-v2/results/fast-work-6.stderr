@@ -1,0 +1,8 @@
+Advice: Split this into multiple lines (heuristic: 61/60) 😠
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fannkuch-v2/results/fast-instrumented.ua:25:1
+25 | Work         ← F ⊃(+⊃(F.Index Block.State)(⧻Block.Indices)|+⊃(F.Checksum Block.State)(/+×⊃(˜ⁿ¯1Block.Indices)Block.Counts)|↥⊃(F.Maximum Block.State)(/↥Block.Counts)) Candidate
+     ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Warning: . duplicate is deprecated and will be removed in a future version, use ˙ self, ⊸ by, or ⟜∘ instead
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-fannkuch-v2/results/fast-instrumented.ua:12:21
+12 |   &p ⊂ "STEP=" json .
+                         ─

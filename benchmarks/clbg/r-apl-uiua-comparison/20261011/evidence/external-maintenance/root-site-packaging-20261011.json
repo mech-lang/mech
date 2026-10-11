@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "type": "external-maintenance-overlap",
+  "created_at": "2026-10-11T21:04:29.226906+00:00",
+  "reason": "Root ran the Sites Git/package helper outside the shared benchmark mutex. Archive creation overlapped the first R optimized Mandelbrot trial. The first fresh Mech control is conservatively excluded because exact helper-start time was not captured.",
+  "conservative_window": {
+    "start": "2026-10-11T20:52:57.243577+00:00",
+    "end": "2026-10-11T20:54:04.942313+00:00"
+  },
+  "window_scope": "The lower bound is the prior completed locked QA log timestamp; it predates the helper. This is conservative, not a claim that CPU work ran for the entire interval.",
+  "observed_evidence": {
+    "site_source_commit": "be0bd4758828cb89ca08e24e5c81abab42b0aaf8",
+    "site_source_commit_utc": "2026-10-11T20:54:01+00:00",
+    "archive_path": "/tmp/mech-benchmark-explorer-r-apl-uiua-short-20261011.tar.gz",
+    "archive_created_utc": "2026-10-11T20:54:04.783336+00:00",
+    "archive_modified_utc": "2026-10-11T20:54:04.942313+00:00",
+    "archive_sha256": "7281ae4204673fe0d23a5ee5acfb3ffe969e74f807bf130f56d0c4b7feb91b04"
+  },
+  "affected_attempts": [
+    {
+      "language": "r",
+      "signature": {
+        "key": "mandelbrot:mech-control-for-r",
+        "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+        "sample": 1,
+        "started_at": "2026-10-11T20:53:48.166861+00:00",
+        "finished_at": "2026-10-11T20:53:48.829751+00:00",
+        "seconds": 0.459317292,
+        "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be"
+      }
+    },
+    {
+      "language": "r",
+      "signature": {
+        "key": "mandelbrot:mandelbrot-r-optimized",
+        "source_sha256": "b914726708677fa4d24d8421bca7d2623efc11fd1c31eac5019d222379c0ec0f",
+        "sample": 1,
+        "started_at": "2026-10-11T20:53:48.889621+00:00",
+        "finished_at": "2026-10-11T20:54:08.630493+00:00",
+        "seconds": 19.540994,
+        "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be"
+      }
+    }
+  ],
+  "preserve_original_automatic_environment": true,
+  "require_full_replacement_samples": true,
+  "never_chart_eligible": true
+}

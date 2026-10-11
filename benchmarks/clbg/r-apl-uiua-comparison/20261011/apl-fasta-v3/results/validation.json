@@ -1,0 +1,691 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "case": "fasta-1-cc1",
+      "n": 1,
+      "workers": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "1"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 90,
+      "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-1-cc8",
+      "n": 1,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "1"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 90,
+      "sha256": "bc2d94bbf4bc00febcf2923e99da45fae29b0739d79c642c4a63538a58bf124c",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-2-cc8",
+      "n": 2,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "2"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 100,
+      "sha256": "6a88bbb8e503afd1f389eff7440feceb134b1f525ccfdd93459a9043c5955ac0",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-7-cc8",
+      "n": 7,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "7"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 150,
+      "sha256": "bd709b1103b887e6db4c2a8d9a3a7b3e1ed716fdbe387afd4c8ffd85c2c23214",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-19-cc8",
+      "n": 19,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "19"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 271,
+      "sha256": "e75074d982baf30070a839b02eccba7819db23b2bd43b897e7670f0e59cd393d",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-20-cc8",
+      "n": 20,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "20"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 281,
+      "sha256": "435fc49ae0cd2a9c08e5dc36ab5cf1f0fb43e86f49c5927c96b8923d583db52a",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-21-cc8",
+      "n": 21,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "21"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 292,
+      "sha256": "f6bf15c835fc19ff1cff7e90459667bb7714bb5ea625df5c725ca505d6206819",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-59-cc8",
+      "n": 59,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "59"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 677,
+      "sha256": "00f6b60c806a18f105b90887951eb2755b9cffa0200dc7ca6aed10e35f7e7ecf",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-60-cc8",
+      "n": 60,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "60"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 687,
+      "sha256": "d4f1059c3c47b7de5d11ab3d78778ab3141c15555a91bfd6a56f2b9b10fe272b",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-61-cc8",
+      "n": 61,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "61"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 700,
+      "sha256": "2cc46407f201985a5d635236e4a016eec338b3b4a6f00149521043ddefe84926",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "canonical-small",
+      "n": 1000,
+      "workers": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "1000"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 10245,
+      "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "canonical-small",
+      "n": 1000,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "1000"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 10245,
+      "sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-11999-cc8",
+      "n": 11999,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "11999"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 122067,
+      "sha256": "4ddb4c2c2cbbd6c979736377a6f83ea70cf408e441d275b2996bf4bb8f6e9c8b",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-12000-cc8",
+      "n": 12000,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "12000"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 122077,
+      "sha256": "460e390b0338d432438e8f83f1be0617546a826dd54b1d8722d2d28fb2304d04",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-12001-cc8",
+      "n": 12001,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "12001"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 122090,
+      "sha256": "824961a1cb567ef7fd43a19ace5a213612d4e96c0eb6bba7cbd4744a80a2e4cb",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-19999-cc8",
+      "n": 19999,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "19999"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 203401,
+      "sha256": "21bdf194721214d83b2e151affce36b2dc59ab6dd0442d98d87a96f8d531febb",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-20000-cc8",
+      "n": 20000,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "20000"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 203411,
+      "sha256": "0ce07366d3a3bf8dd9dd7b993c1d6490687a5bea1c7919bce5673d4349b491b7",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-20001-cc1",
+      "n": 20001,
+      "workers": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "20001"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 203422,
+      "sha256": "4fab8694563fcd71097a013c94e1146ff8413c00cfb8605532b75d8c7a6a6104",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-20001-cc8",
+      "n": 20001,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "20001"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 203422,
+      "sha256": "4fab8694563fcd71097a013c94e1146ff8413c00cfb8605532b75d8c7a6a6104",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "fasta-40003-cc8",
+      "n": 40003,
+      "workers": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+        "--",
+        "40003"
+      ],
+      "passed": true,
+      "reference_match": true,
+      "bytes": 406776,
+      "sha256": "eab199bce2df22dcf55ac84e0a4bd6cd1be30691903eb8f0831a7e33a81ddd25",
+      "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+      "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 0,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-0.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-0.apl",
+      "fixture_sha256": "109a0e0ba1048872faffe41e0bd39677a89c0cab8a4dc66a63b12d893afb36cd",
+      "states_checked": 0,
+      "bytes": 1,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 1,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-1.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-1.apl",
+      "fixture_sha256": "c30ebe02fc321f3d8d5baec413616ab2a4287da128fcec315bfe5263a6f41239",
+      "states_checked": 1,
+      "bytes": 6,
+      "sha256": "20e236cfcb80e22770235c0cc063ad7db5abbcd2c76c5e082e693a97a3959b37"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 2,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-2.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-2.apl",
+      "fixture_sha256": "904df84a501ce38125944ece77983973e7db9fafc1b14684822c634cd600d5ce",
+      "states_checked": 2,
+      "bytes": 13,
+      "sha256": "1c08b50da287708d583c777f7b9140c9e6728f1f94e0e886c37bd6d8edca7102"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 3,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-3.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-3.apl",
+      "fixture_sha256": "86d208232353f3d9f8964ae70b5eae81bc7eed6e1894859b5ce8765b7e90a730",
+      "states_checked": 3,
+      "bytes": 19,
+      "sha256": "45adcff527a880cba4c93ab46ba438810710f7430ca43cd775e153015e867751"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 7,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-7.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-7.apl",
+      "fixture_sha256": "3ad632073354757bddd67d1a7a2d2900b78001c00ac20f1f3fad8e9d104d4b5d",
+      "states_checked": 7,
+      "bytes": 44,
+      "sha256": "963ce7409364fe050bb325a062f702d81bf0d93b63fd1804a57d7b657bf1b380"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 60,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-60.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-60.apl",
+      "fixture_sha256": "2c7402183279f8d5a1dbd56f566d16a77b91cbcc843d0af38b7cfbf5c419aeae",
+      "states_checked": 60,
+      "bytes": 369,
+      "sha256": "1c93d4eba224d092c3a412bb34de5f3bbba3ea11f8d0f207d21bc8c6f0993af4"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 61,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-61.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-61.apl",
+      "fixture_sha256": "f338d4013fe23b42a25e55577bc74983c468c9ff2cc65135b5d7681a3027b81e",
+      "states_checked": 61,
+      "bytes": 376,
+      "sha256": "d5dd1bc8f40b5ed2a397e82de0bfc7aa173b18f82537b8de0e57e2fbb4d44c41"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 257,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-257.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-257.apl",
+      "fixture_sha256": "b1eca9793c805c595c641e5e3bf2a0da19fad67b8d809b16292adee84c07c6de",
+      "states_checked": 257,
+      "bytes": 1607,
+      "sha256": "fe1cd73892266f7aa77992328f8db32280975b6037015ae525e61690aa49b7ef"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 139968,
+      "multiplier": 3877,
+      "increment": 29573,
+      "initial_seed": 42,
+      "size": 1024,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-1024.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-139968-1024.apl",
+      "fixture_sha256": "45b6675060959e234a318f17776f9c3c9f69da1d1bb5abe7e8d1b62bcf004bc0",
+      "states_checked": 1024,
+      "bytes": 6392,
+      "sha256": "3d7a98d8c9002504f07e3794ea8dc84245e8b4756bf6f3f3941bead5cc22a610"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 97,
+      "multiplier": 13,
+      "increment": 7,
+      "initial_seed": 96,
+      "size": 129,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-97-129.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-97-129.apl",
+      "fixture_sha256": "24d198aafb2830c38c8004200a0f35945f05dba5ba6f2f12e58b7a8411726c44",
+      "states_checked": 129,
+      "bytes": 372,
+      "sha256": "76d91b6f3936e0d781c6e7bbd6f470c49ef2d06844c6eaef460b5010d6f4e85b"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 2,
+      "multiplier": 1,
+      "increment": 1,
+      "initial_seed": 0,
+      "size": 33,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-2-33.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-2-33.apl",
+      "fixture_sha256": "13ef3f133cceabbad5bd4972cc48b64fad5bd1a945279b496273d6023d9c22f6",
+      "states_checked": 33,
+      "bytes": 66,
+      "sha256": "d9adaf8ac189dde45cdc38976da709e793d8452e7bde54dfd8dbb5212e8e1f74"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 100003,
+      "multiplier": 99991,
+      "increment": 981,
+      "initial_seed": 738,
+      "size": 513,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-100003-513.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-100003-513.apl",
+      "fixture_sha256": "b15ea3d1a73e0bd736680c0abb4c132512485a19e5da6f33c37a8ecc4d222ac0",
+      "states_checked": 513,
+      "bytes": 3017,
+      "sha256": "d586e0006d3f68b3edea5f53c2181ec93aed7ac0792121a7c7799bf8feb24163"
+    },
+    {
+      "case": "generic-affine",
+      "modulus": 65537,
+      "multiplier": 17,
+      "increment": 9,
+      "initial_seed": 65536,
+      "size": 257,
+      "passed": true,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-65537-257.apl"
+      ],
+      "fixture": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/results/affine-65537-257.apl",
+      "fixture_sha256": "f3175e15d0af324492bc8133955051a8511cb74d922c35391c648a182d7c6bed",
+      "states_checked": 257,
+      "bytes": 1497,
+      "sha256": "b655c99c4da57dc3c35585d2efeae65015e175861dda2662c4d17d0f1af790ed"
+    }
+  ],
+  "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-fasta-v3/sources/fasta.optimized.apl",
+  "source_sha256": "48002bf2a99dea328634775e7b26fcb2c57be38aa596e01675c671181548d43b",
+  "reference_binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/d-comparison/20261011/binaries/fasta-d-compact",
+  "reference_binary_sha256": "87c47f495b638d7eead011b6117fec38bf2db1e917e21b88702aae2a0e9a2298",
+  "reference_source_sha256": "c25b9f7b7c882402ced4a827acc7656e0c46172d1eff8f6a48d40c9cbdd04a99",
+  "preserved_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/fasta.optimized.apl": "985d033efa0010de9cd97a1096958b0a34d43c26e66f5b170b3941f206d5cd45"
+  },
+  "all_draws": "Generic affine coefficients are generated once per fixed chunk capacity, reused for arbitrary seed/carry and sliced for tails; every actual state is still materialized.",
+  "floating_cdf": "Every state undergoes binary64 division by 139968.0 and unscaled cumulative probability comparisons.",
+  "scan": "General modular affine coefficient composition with doubling shifts; seed-independent coefficients reused across chunks. No output cache or period shortcut.",
+  "planning_only": false,
+  "full_measurements": false
+}

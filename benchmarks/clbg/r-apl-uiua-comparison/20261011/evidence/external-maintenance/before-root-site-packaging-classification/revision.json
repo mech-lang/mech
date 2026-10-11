@@ -1,0 +1,18 @@
+{
+  "type": "post_measurement_exclusion",
+  "status": "complete",
+  "created_at": "2026-10-11T21:23:11.688644+00:00",
+  "event_sha256": "5a4d7ea942b7785913233f5e4bc285d10fade6d73515a981d270650619961303",
+  "files": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/root-site-packaging-20261011.json": "5a4d7ea942b7785913233f5e4bc285d10fade6d73515a981d270650619961303",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/apply_external_exclusion.py": "8e2fea02c1c5860e358be8ea6dbf8099e337dce649d70f2bfe20c059e849dd93",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/summarize.py": "6ad2acc07fdb807b03b07922caabcdc9c4dee0cb41d44d43b7714c43581dfeae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/resume_after_guard_repair.py": "7f79472b83c775b788777faeefebbc1cb4193c3bd4788d9a9a06375215e3aad8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/r-manifest.json": "1b09b555db181b6b5576fb6c21238343ba3d07efe65558a6a75b525ffbbae42a",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/source-audit-r.json": "9a14ef88ea8b2012fa45a3d9a8f14bc5bce694b69334941d0bec90b35b7e182f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/external-maintenance/before-root-site-packaging-classification/timings-r.json": "b8fba547dbdc3a81f51b5674b46e6ba9ed6a67dda8c86bfb1cf0ef3ea34579ee"
+  },
+  "finished_at": "2026-10-11T21:23:11.695377+00:00"
+}

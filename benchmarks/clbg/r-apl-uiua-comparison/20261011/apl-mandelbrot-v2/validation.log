@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/validate.py", line 171, in <module>
+    main()
+    ~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/validate.py", line 98, in main
+    guard.verify()
+    ~~~~~~~~~~~~^^
+  File "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run.py", line 32, in verify
+    assert sha(path)==digest,('Pinned file changed',path);self.states[path]=state
+           ^^^^^^^^^^^^^^^^^
+AssertionError: ('Pinned file changed', '/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-manifest.json')

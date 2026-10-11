@@ -81,7 +81,7 @@ PY_MERGE
 
 The controlled runner repair is recorded in `evidence/harness-v1-partial` and `evidence/harness-repair-staging`. It strengthened process-group cleanup, interruption classification, and logical/resolved dynamic-library pins; no previously measured application/runtime binary changed. `resume_after_guard_repair.py` preserves only execution-identical source/runtime/command/environment rows, records retired candidates and archive hashes, and reindexes every accepted attempt. It is an explicit audited migration, not an ordinary refreeze after an application edit. Current interrupted attempts remain visible and never become successful samples.
 
-The next approved additive preparation uses `apl-regex-v3/manifest.json`,
+The applied additive preparation uses `apl-regex-v3/manifest.json`,
 `apl-revcomp-v2/manifest.json` and `uiua-spectral-v3/manifest.json`. Their own
 READMEs retain build/source/validation recipes. APL regex v3 adds an arbitrary
 PCRE2 count operation, retaining all nine application-driven counts and five
@@ -99,8 +99,10 @@ repeating the same avoidable interpreter overhead. The new sources require
 their own three full validated trials before admission. This decision does not
 claim a measured speed for the replacement programs.
 
-Only after all active benchmark processes exit and the preparation review is
-approved, inspect and apply the explicit migration:
+`evidence/additive-v3-before` retains the completed approved migration, including
+old audits/reports and normal prepare outputs. The following commands reproduce
+that migration on a preparation that has not already applied it. Its application
+must wait until active benchmark processes exit and the source review is approved:
 
 ```sh
 python3 refreeze_additive.py
@@ -120,3 +122,92 @@ complement and spectral comparisons, requiring three newly interleaved control
 samples. Old control trials remain historical evidence. Execution-identical
 application samples are preserved; new sources start with no samples. It never
 retroactively adds newly recorded fields to old attempts.
+
+The applied medium-stage `refreeze_knucleotide.py --apply` revision is recorded
+in `evidence/knucleotide-v2-before`, retaining the complete prior v3 archive
+and its fresh control identities. `apl-knucleotide-v2/manifest.json` supplies
+173/193 LOC streaming/batched APL sources and all-map correctness fixtures.
+The original whole-input APL candidates remain validated preparation evidence
+but are retired on the runtime's boxed-array workspace limit; no unexecuted
+candidate is labeled a full timing failure. `uiua-knucleotide-v2/manifest.json`
+adds a 29 LOC general native-group form while retaining both older Uiua forms
+for actual full trials. The ordinary k-nucleotide controls have no prior full
+samples and therefore receive three fresh runs. Every candidate still visits
+all 125,000,000 THREE bases and constructs the complete seven growing maps;
+none uses the FASTA generator's periodicity to bypass positions or counts.
+
+The short stage is complete: R, APL and Uiua each have four admitted benchmarks
+(regexredux, reverse complement, Pi digits and spectral norm), with three full
+validated samples and three Mech controls per admitted comparison. The spectral
+results below are measured medians; each LOC ratio uses the corresponding Mech
+endpoint, and time ratios use the fresh language-cohort control.
+
+| Language | Spectral form | Seconds | × Mech time | LOC | × Mech LOC |
+| --- | --- | ---: | ---: | ---: | ---: |
+| R | Fastest and smallest | 4.599241 | 52.258216 | 12 | 1.000000 |
+| APL | Fastest | 73.943993 | 835.357014 | 29 | 2.416667 |
+| APL | Smallest | 95.638873 | 1080.447519 | 27 | 2.250000 |
+| Uiua | Fastest | 3.476325 | 36.859336 | 17 | 1.416667 |
+| Uiua | Smallest | 3.780071 | 40.079941 | 9 | 0.750000 |
+
+The measured 33 LOC APL regex v3 optimized program is 14.449671 seconds,
+29.025489× Mech time and 1.375× Mech LOC, compared with approximately 140 seconds
+for its preserved v2 form. Both variants still perform the same nine counts and
+five ordered substitutions. The Uiua compact spectral replacement is measured
+at 3.780071 seconds; its 2307.811772-second scalar trial remains historical
+evidence for the native-array preparation change.
+
+The `medium-v3` preparation is now applied. Its exact reviewed shortlist is
+`medium-v3-plan.json`; `refreeze_prepared.py` archives the prior preparation,
+source audits, reports and harness under `evidence/medium-repair-v3-before`.
+Execution-identical short-suite samples and previous control identities are
+preserved. Changed benchmarks receive new empty control keys for three fresh
+interleaved Mech trials. No full timing is transferred to a changed source.
+
+The new candidates include APL active-pixel Mandelbrot (35/37 LOC), ordinary
+modular-affine FASTA arrays (55 LOC), canonical nbody initial-data copies
+(30 LOC, execution alias), and Uiua EOF-comment parsing (19/27/29 LOC), native
+fannkuch array indices/gather (20/21 LOC), native Mandelbrot packing (11 LOC)
+and canonical nbody array arithmetic (21/21 LOC). All bounded output and work
+checks passed before this freeze. Original APL compact Mandelbrot (33 LOC) and
+FASTA (38 LOC) remain selected. Every helper/application statement is counted.
+The earlier APL FASTA v2 preparation failed a small-case DOMAIN check and is
+retained as rejected preparation, without a fabricated full timing.
+
+GNU APL's pinned macOS runtime disables parallel numerical primitives because
+its configuration lacks `HAVE_AFFINITY_NP`; `Parallel.hh` undefines
+`PARALLEL_ENABLED`. The `--cc 8` flags request a ceiling only. Current metadata
+states serial numerical primitive execution; runtime/source bytes and actual
+measurements did not change.
+
+One original APL optimized Mandelbrot full trial completed in 1540.850009166 s
+with exact PBM output and valid automatic timing guards. It remains historical
+after the reviewed active-index replacement. This single trial is not a
+qualifying median and has no fresh cohort Mech ratio yet. The old sources and
+all real evidence remain available; unrun candidates are never labelled full
+failures merely because source review found avoidable interpreter overhead.
+
+Root's site packaging accidentally overlapped the first R optimized Mandelbrot
+trial. The canonical maintenance event and exact pre-classification archives
+are under `evidence/external-maintenance`. `apply_external_exclusion.py`
+preserved original times, output hashes, monitor data and the original
+`valid_environment` values, while explicitly classifying R attempts 35/36 as
+`PostMeasurementExclusion`. Their optimized/control sample arrays were cleared
+so ordinary resumable full runs replace them. The unaffected 61.935690750 s R
+compact trial remains eligible. The correction and subsequent guard migrations
+retain exact immediate-prior-report lineage for every preserved attempt.
+
+Next full stages, always guarded by the shared mutex, are:
+
+```
+python3 run.py --languages r,uiua --benchmarks mandelbrot,fasta,knucleotide --samples 3
+python3 run.py --languages apl --benchmarks mandelbrot,fasta,knucleotide --samples 3
+python3 plan.py --languages apl,uiua
+python3 run.py --languages r,apl,uiua --benchmarks binarytrees,nbody,fannkuchredux --samples 3
+python3 summarize.py
+```
+
+Scheduling pilots are never chart data and do not replace any canonical full
+attempt. A qualifying candidate still needs at least three exact-output full
+samples and three full fresh Mech controls. Explicit timeouts/resource failures
+stay archived; coverage is reported honestly while long trials continue.

@@ -1,0 +1,8 @@
+Warning: . duplicate is deprecated and will be removed in a future version, use ˙ self, ⊸ by, or ⟜∘ instead
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/results/native-group.instrumented.ua:13:87
+13 | ChunkWindows ← ⧈∘ ⊃K.Width ChunkText &p $"WINDOWS=_ _ _" ⊃(K.Width|K.Start|ChunkSize) .
+                                                                                           ─
+Advice: ◇ content should be passed an operand
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/results/native-group.instrumented.ua:18:20
+18 | ≡(&p ⊂ "MAP=" json ◇) Maps
+                        ─

@@ -1,0 +1,21 @@
+{
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-manifest.json": "f66be574123726a2920b8d08730a0f746b9e39d3d0579cf095cd8dabf2e6d35f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl": "ce26bde246eea5020d33f80f3168f712a0ddc74594ad00f98b3b0c6014d18eeb",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.optimized.apl": "e3c62726b4c552f810c9111d1ef181b7c93999250d805e1658b61d2415f3ff11"
+  },
+  "sources": [
+    {
+      "variant": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.compact.apl",
+      "source_sha256": "5c25c451aa2d8f6cad0e18e77a40d05d9bb47e816eeb55ebee9d865626c41a43",
+      "loc": 35
+    },
+    {
+      "variant": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-mandelbrot-v2/sources/mandelbrot.optimized.apl",
+      "source_sha256": "74dc3d19f12a83b1c14f0c2f83f5edb343147cdcb9a312d020d679084be9cfaa",
+      "loc": 37
+    }
+  ]
+}

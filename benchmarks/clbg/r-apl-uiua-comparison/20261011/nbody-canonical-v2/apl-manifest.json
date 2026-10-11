@@ -1,0 +1,351 @@
+{
+  "status": "prepared-validated",
+  "language": "apl",
+  "created_at": "2026-10-11T20:58:00.599818+00:00",
+  "programs": [
+    {
+      "id": "nbody-apl-compact-canonical-v2",
+      "key": "nbody:nbody-apl-compact-canonical-v2",
+      "benchmark": "nbody",
+      "language": "apl",
+      "variant": "compact",
+      "profile": "compact",
+      "role": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+      "source_provenance": "Newly authored APL port of the canonical algorithm; no published APL Benchmarks Game candidate located in primary searches.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/nbody.reference.d",
+      "upstream_sha256": "c93dcd7434e17bb556fce7c016726f1ccd8c95b4f95055c2cc12f92f59363e19",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Explicit GNU APL implementation with every application helper counted.",
+        "General output launcher preserves application fd 3 without byte transformation; interpreter diagnostics and its automatic exit newline go to stderr.",
+        "Use exact canonical Jupiter z initial coordinate -0.103622044471123109."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Five binary64 bodies; all ten pair forces per requested integration step, canonical velocity-before-position symplectic integrator, offset momentum, both energy computations."
+      },
+      "loc": 30,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "adversarial_validation_status": "passed",
+      "adversarial_validation": [
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-0",
+          "n": 0,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": "\nWARNING: File pipe-to_client still open - closing it\n"
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": "\nWARNING: File pipe-to_client still open - closing it\n"
+        }
+      ],
+      "supersedes_keys": [
+        "nbody:nbody-apl-compact"
+      ],
+      "supersedes_source_sha256": [
+        "8edbd2c8603eb6c276fa7ae6f5169cdc437f0b399ebcf90053398522b781e5c3"
+      ],
+      "canonical_constant_correction": {
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/nbody.compact.apl",
+        "original_source_sha256": "8edbd2c8603eb6c276fa7ae6f5169cdc437f0b399ebcf90053398522b781e5c3",
+        "old_literal": "\u00af0.103622044471123139",
+        "new_literal": "\u00af0.103622044471123109",
+        "old_binary64_hex": "bfba86f96c25ebf2",
+        "canonical_binary64_hex": "bfba86f96c25ebf0",
+        "only_literal_changed": true,
+        "original_full_attempts": 0,
+        "reason": "Two-ULP transcription correction to published canonical initial data; same application algorithm, work shape, runtime and LOC. Original small validated sources remain retained; no full failure is claimed."
+      },
+      "measurement_status": "not-measured",
+      "eligible_for_chart": false,
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": [],
+      "small_validation": {
+        "key": "nbody:nbody-apl-compact-canonical-v2",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+        "n": 1000,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+          "--",
+          "1000"
+        ],
+        "returncode": 0,
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "reference_energies": [
+          -0.16907516382852447,
+          -0.16908760523460611
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true,
+        "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-compact-canonical-v2-1000.stdout"
+      }
+    },
+    {
+      "id": "nbody-apl-optimized-canonical-v2",
+      "key": "nbody:nbody-apl-optimized-canonical-v2",
+      "benchmark": "nbody",
+      "language": "apl",
+      "variant": "optimized",
+      "profile": "optimized",
+      "role": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+      "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "--",
+        "{n}"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html",
+      "source_provenance": "Newly authored APL port of the canonical algorithm; no published APL Benchmarks Game candidate located in primary searches.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/nbody.reference.d",
+      "upstream_sha256": "c93dcd7434e17bb556fce7c016726f1ccd8c95b4f95055c2cc12f92f59363e19",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Explicit GNU APL implementation with every application helper counted.",
+        "General output launcher preserves application fd 3 without byte transformation; interpreter diagnostics and its automatic exit newline go to stderr.",
+        "Identical compact/optimized candidate: no faster alternative established; shared source and command, measure once and reuse exact samples.",
+        "Use exact canonical Jupiter z initial coordinate -0.103622044471123109."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Five binary64 bodies; all ten pair forces per requested integration step, canonical velocity-before-position symplectic integrator, offset momentum, both energy computations."
+      },
+      "loc": 30,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "adversarial_validation_status": "passed",
+      "timing_alias_of": "nbody:nbody-apl-compact-canonical-v2",
+      "adversarial_validation": [
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-0",
+          "n": 0,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "34bc4d4151edc6b41bc68a7fe45586dd7470bf3a202be66a5e760a00f47f4580",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": "\nWARNING: File pipe-to_client still open - closing it\n"
+        },
+        {
+          "benchmark": "nbody",
+          "variant": "compact",
+          "case": "independent-D-1",
+          "n": 1,
+          "input_sha256": null,
+          "bytes": 26,
+          "sha256": "d1aaedf80cee1d942f4934b9e887185b58c4c2d6ca5bee063bd50bd21984b8d2",
+          "reference_match": true,
+          "returncode": 0,
+          "stderr": "\nWARNING: File pipe-to_client still open - closing it\n"
+        }
+      ],
+      "supersedes_keys": [
+        "nbody:nbody-apl-optimized"
+      ],
+      "supersedes_source_sha256": [
+        "8edbd2c8603eb6c276fa7ae6f5169cdc437f0b399ebcf90053398522b781e5c3"
+      ],
+      "canonical_constant_correction": {
+        "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/nbody.compact.apl",
+        "original_source_sha256": "8edbd2c8603eb6c276fa7ae6f5169cdc437f0b399ebcf90053398522b781e5c3",
+        "old_literal": "\u00af0.103622044471123139",
+        "new_literal": "\u00af0.103622044471123109",
+        "old_binary64_hex": "bfba86f96c25ebf2",
+        "canonical_binary64_hex": "bfba86f96c25ebf0",
+        "only_literal_changed": true,
+        "original_full_attempts": 0,
+        "reason": "Two-ULP transcription correction to published canonical initial data; same application algorithm, work shape, runtime and LOC. Original small validated sources remain retained; no full failure is claimed."
+      },
+      "measurement_status": "not-measured",
+      "eligible_for_chart": false,
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": [],
+      "small_validation": {
+        "key": "nbody:nbody-apl-optimized-canonical-v2",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+        "source_sha256": "f457238f6be864126d9ea967de7ce283056f48e8afb2917ac7643b1781f1726d",
+        "n": 1000,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/sources/apl/nbody.compact.apl",
+          "--",
+          "1000"
+        ],
+        "returncode": 0,
+        "bytes": 26,
+        "sha256": "76de83d6d51a74f82828547423f516e7815cfe8cfea6290a2831aa173f806de7",
+        "energies": [
+          -0.169075164,
+          -0.169087605
+        ],
+        "reference_energies": [
+          -0.16907516382852447,
+          -0.16908760523460611
+        ],
+        "tolerance": 1e-08,
+        "reference_match": true,
+        "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+        "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/apl/nbody-apl-optimized-canonical-v2-1000.stdout"
+      }
+    }
+  ],
+  "runtime": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+    "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+    "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+    "architecture": "arm64-apple-darwin",
+    "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+    "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+    "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+    "build_flags": [
+      "--without-x",
+      "--without-gtk3",
+      "--without-sqlite3",
+      "--without-postgresql",
+      "--with-pcre=/opt/homebrew/opt/pcre2",
+      "CORE_COUNT_WANTED=argv",
+      "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+      "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+      "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+    ],
+    "pins": {
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+      "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+    }
+  },
+  "parent_manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-manifest.json",
+  "parent_manifest_sha256": "f66be574123726a2920b8d08730a0f746b9e39d3d0579cf095cd8dabf2e6d35f",
+  "scope": "Additive canonical nbody initial-data correction only; no full timings.",
+  "preparation_command": [
+    "python3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/prepare.py"
+  ],
+  "validation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/nbody-canonical-v2/results/validation.json",
+    "sha256": "9effd3d099c8dc5af10007afda3b46017611da8d6719248179ce424c89987ac2",
+    "checks": 12,
+    "passed": true
+  }
+}

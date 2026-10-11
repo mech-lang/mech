@@ -1,0 +1,4 @@
+Advice: ◇ content should be passed an operand
+  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/results/compact.instrumented.ua:8:20
+8 | ≡(&p ⊂ "MAP=" json ◇) Maps
+                       ─

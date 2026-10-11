@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "type": "external-maintenance",
+  "reason": "Root acknowledged running the Sites source-package helper outside the common timing mutex. The optimized R Mandelbrot first trial overlaps the archive creation directly; the first Mech control is conservatively excluded from the prior QA-to-package helper window because its exact helper start is not proven. The compact trial starts after this window and is unaffected.",
+  "conservative_window": {
+    "start": "2026-10-11T20:52:57.243577+00:00",
+    "end": "2026-10-11T20:54:04.942313+00:00"
+  },
+  "maintenance_evidence": {
+    "source_commit": "be0bd4758828cb89ca08e24e5c81abab42b0aaf8",
+    "source_commit_committer_utc": "2026-10-11T20:54:01+00:00",
+    "archive": "/tmp/mech-benchmark-explorer-r-apl-uiua-short-20261011.tar.gz",
+    "archive_sha256": "7281ae4204673fe0d23a5ee5acfb3ffe969e74f807bf130f56d0c4b7feb91b04",
+    "archive_bytes": 1126057,
+    "archive_birth_root_reported_utc": "2026-10-11T20:54:04.783336+00:00",
+    "archive_mtime_root_reported_utc": "2026-10-11T20:54:04.942313+00:00",
+    "archive_observed_birth_unix": 1791752044.783336,
+    "archive_observed_mtime_ns": 1791752044942313120,
+    "evidence_authority": "Direct root-agent acknowledgement and filesystem archive metadata; monitor did not observe this noncompiler packaging work."
+  },
+  "affected_attempts": [
+    {
+      "language": "r",
+      "signature": {
+        "key": "mandelbrot:mech-control-for-r",
+        "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+        "started_at": "2026-10-11T20:53:48.166861+00:00",
+        "seconds": 0.459317292,
+        "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "workload_n": 16000,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+          "16000",
+          "8"
+        ]
+      }
+    },
+    {
+      "language": "r",
+      "signature": {
+        "key": "mandelbrot:mandelbrot-r-optimized",
+        "source_sha256": "b914726708677fa4d24d8421bca7d2623efc11fd1c31eac5019d222379c0ec0f",
+        "started_at": "2026-10-11T20:53:48.889621+00:00",
+        "seconds": 19.540994,
+        "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "workload_n": 16000,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/mandelbrot/optimized.R",
+          "16000"
+        ]
+      }
+    }
+  ],
+  "policy": "Retain original elapsed seconds, output hash, automatic monitor and valid_environment fields. Exclude only declared timing evidence after explicit classification; no program failure or altered workload is inferred."
+}

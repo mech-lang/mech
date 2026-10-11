@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "status": "prepared-validated",
+  "language": "apl",
+  "created_at": "2026-10-11T20:41:45.393842+00:00",
+  "programs": [
+    {
+      "id": "knucleotide-apl-v2-compact",
+      "key": "knucleotide:knucleotide-apl-v2-compact",
+      "benchmark": "knucleotide",
+      "language": "apl",
+      "variant": "compact",
+      "profile": "compact",
+      "role": "compact",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.compact.apl",
+      "source_sha256": "45c747027626fe1497e45fff4238476600c8025c7c11f823bce0895a06b28af6",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "1",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.compact.apl"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "source_provenance": "New counted GNU APL application with bounded record parsing and seven growing maps; no native support added.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/knucleotide.reference.d",
+      "upstream_sha256": "38172acf82a69d17d8913ada28de921ce4580dc0a466ba3f359b22a11e9361e5",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Read bounded 65,536-byte buffers, select the THREE record across arbitrary header/comment boundaries, normalize case and remove CR/LF in APL.",
+        "Maintain seven live, independently growing open-addressed maps for widths 1,2,3,4,6,12,18; carry at most k\u22121 previous codes per width, count each overlapping window once.",
+        "Drop temporary aliases before table updates; each map persists between input chunks, and all seven persist through final output.",
+        "Original rolling integer-key scalar map updates retained.",
+        "Every application helper is counted; only unchanged GNU APL array primitives and standard IO are used. No native/library benchmark executor, fixed key universe, RNG-period reuse or query-only count shortcut."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Seven generic growing maps retain all keys and counts from all overlapping windows. APL owns record parsing, full-window encoding/counting, equality/probing/growth, frequency sorting and every output. Fast batching uses ordinary grade/gather/scatter and counts duplicate input keys by their exact amounts; it makes no assumptions about canonical input repetition, known answers or the set of encountered keys."
+      },
+      "loc": 173,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "case": "canonical-small",
+        "variant": "compact",
+        "scope": "benchmark-output",
+        "passed": true,
+        "reference_match": true,
+        "input_bytes": 10245,
+        "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "expected_stdout_sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "1",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.compact.apl"
+        ],
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.compact.apl",
+        "source_sha256": "45c747027626fe1497e45fff4238476600c8025c7c11f823bce0895a06b28af6",
+        "returncode": 0,
+        "stdout": "T 31.520\nA 29.600\nC 19.480\nG 19.400\n\nAT 9.922\nTT 9.602\nTA 9.402\nAA 8.402\nGA 6.321\nTC 6.301\nTG 6.201\nGT 6.041\nCT 5.961\nAG 5.841\nCA 5.461\nAC 5.441\nCC 4.041\nCG 4.021\nGC 3.701\nGG 3.341\n\n54\tGGT\n24\tGGTA\n4\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+        "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+        "stdout_bytes": 242,
+        "stdout_sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500"
+      },
+      "adversarial_validation_status": "all-v2-cases-passed",
+      "adversarial_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/results/validation.json",
+        "sha256": "1dd50f726b1cb4f3c21f1afd75062d67555222e8e75efeaa24f361b9fa146a51",
+        "passed": true,
+        "case_count": 24,
+        "scopes": [
+          "benchmark-output",
+          "generic-map",
+          "all-seven-complete-maps"
+        ]
+      },
+      "normalized_loc": 173,
+      "physical_loc": 173,
+      "loc_expansions": [],
+      "supersedes_keys": [
+        "knucleotide:knucleotide-apl-compact"
+      ],
+      "supersedes_source_sha256": "deff052c3ef7367fb86413cb73c70fb03144e564acfa90a80816bd483bea423c",
+      "measurement_status": "prepared-not-fully-timed",
+      "eligible_for_chart": false,
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": []
+    },
+    {
+      "id": "knucleotide-apl-v2-optimized",
+      "key": "knucleotide:knucleotide-apl-v2-optimized",
+      "benchmark": "knucleotide",
+      "language": "apl",
+      "variant": "optimized",
+      "profile": "optimized",
+      "role": "optimized",
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.optimized.apl",
+      "source_sha256": "6c7a7f1b24930901f2ebe0adc6845c07320c5075cdb4608d459238b5dc57cffa",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+        "--cc",
+        "8",
+        "-f",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.optimized.apl"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "build_command": [],
+      "build_status": "not-required",
+      "execution_mode": "interpreted",
+      "runtime": {
+        "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+        "sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+        "version": "BUILDTAG:\n---------\n    Project:        GNU APL\n    Version / SVN:  2.0 / SVN: no-svnversion\n    Build Date:     2026-10-11 14:05:09 EDT\n    Build OS:       Darwin 25.2.0 arm64\n    config.status:  default ./configure options\n    Archive SVN:   no-svn",
+        "architecture": "arm64-apple-darwin",
+        "distribution_url": "https://ftp.gnu.org/gnu/apl/apl-2.0.tar.gz",
+        "distribution_sha256": "24bbb744fce47e62837234a053bdeecee51b9ea61c82c79f7cc191bc6a54c0a1",
+        "primary_runtime_documentation": "https://www.gnu.org/software/apl/apl.html",
+        "build_flags": [
+          "--without-x",
+          "--without-gtk3",
+          "--without-sqlite3",
+          "--without-postgresql",
+          "--with-pcre=/opt/homebrew/opt/pcre2",
+          "CORE_COUNT_WANTED=argv",
+          "CXXFLAGS=-O3 -DNDEBUG -std=c++11",
+          "LDFLAGS=-L/opt/homebrew/opt/pcre2/lib",
+          "CPPFLAGS=-I/opt/homebrew/opt/pcre2/include"
+        ],
+        "pins": {
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+          "/opt/homebrew/opt/pcre2/lib/libpcre2-32.0.dylib": "ca9968ffff24cbfee530350877d70323586a7590016924be418f37deb0012eb9"
+        }
+      },
+      "runtime_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "runtime_environment": {
+        "LC_ALL": "C"
+      },
+      "binary": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl",
+      "binary_sha256": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+      "library_support": [],
+      "source_url": "https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/knucleotide.html",
+      "source_provenance": "New counted GNU APL application with bounded record parsing and seven growing maps; no native support added.",
+      "upstream_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/upstream/apl/knucleotide.reference.d",
+      "upstream_sha256": "38172acf82a69d17d8913ada28de921ce4580dc0a466ba3f359b22a11e9361e5",
+      "upstream_language": "cross-language canonical algorithm reference, not upstream APL",
+      "adaptations": [
+        "Read bounded 65,536-byte buffers, select the THREE record across arbitrary header/comment boundaries, normalize case and remove CR/LF in APL.",
+        "Maintain seven live, independently growing open-addressed maps for widths 1,2,3,4,6,12,18; carry at most k\u22121 previous codes per width, count each overlapping window once.",
+        "Drop temporary aliases before table updates; each map persists between input chunks, and all seven persist through final output.",
+        "Encode every window through ordinary bounded array operations; grade and combine adjacent equal keys, then batch-probe and scatter map updates. Explicitly resolve collisions against both existing and simultaneous incoming keys; rehash all entries on growth.",
+        "Every application helper is counted; only unchanged GNU APL array primitives and standard IO are used. No native/library benchmark executor, fixed key universe, RNG-period reuse or query-only count shortcut."
+      ],
+      "algorithm": {
+        "strict": true,
+        "native_benchmark_kernel": false,
+        "reason": "Seven generic growing maps retain all keys and counts from all overlapping windows. APL owns record parsing, full-window encoding/counting, equality/probing/growth, frequency sorting and every output. Fast batching uses ordinary grade/gather/scatter and counts duplicate input keys by their exact amounts; it makes no assumptions about canonical input repetition, known answers or the set of encountered keys."
+      },
+      "loc": 193,
+      "loc_rule": "One independent statement per line; comments/blanks and standalone closing \u2207 excluded; function headers, I/O and termination count. No diamonds or combined assignments.",
+      "small_validation": {
+        "case": "canonical-small",
+        "variant": "optimized",
+        "scope": "benchmark-output",
+        "passed": true,
+        "reference_match": true,
+        "input_bytes": 10245,
+        "input_sha256": "62d1e8d0df7938d2aefda9a37887e0389231ea72c099c29a51afb6edca1bdc73",
+        "expected_stdout_sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh",
+          "--cc",
+          "8",
+          "-f",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.optimized.apl"
+        ],
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/sources/knucleotide.optimized.apl",
+        "source_sha256": "6c7a7f1b24930901f2ebe0adc6845c07320c5075cdb4608d459238b5dc57cffa",
+        "returncode": 0,
+        "stdout": "T 31.520\nA 29.600\nC 19.480\nG 19.400\n\nAT 9.922\nTT 9.602\nTA 9.402\nAA 8.402\nGA 6.321\nTC 6.301\nTG 6.201\nGT 6.041\nCT 5.961\nAG 5.841\nCA 5.461\nAC 5.441\nCC 4.041\nCG 4.021\nGC 3.701\nGG 3.341\n\n54\tGGT\n24\tGGTA\n4\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n",
+        "stderr": "\nWARNING: File pipe-to_client still open - closing it\n",
+        "stdout_bytes": 242,
+        "stdout_sha256": "baa63c46addb89c63e68ea0055952847fbccf450e89997b2b62234c90e66f500"
+      },
+      "adversarial_validation_status": "all-v2-cases-passed",
+      "adversarial_validation": {
+        "report": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/results/validation.json",
+        "sha256": "1dd50f726b1cb4f3c21f1afd75062d67555222e8e75efeaa24f361b9fa146a51",
+        "passed": true,
+        "case_count": 24,
+        "scopes": [
+          "benchmark-output",
+          "generic-map",
+          "all-seven-complete-maps"
+        ]
+      },
+      "normalized_loc": 193,
+      "physical_loc": 193,
+      "loc_expansions": [],
+      "supersedes_keys": [
+        "knucleotide:knucleotide-apl-optimized"
+      ],
+      "supersedes_source_sha256": "deff052c3ef7367fb86413cb73c70fb03144e564acfa90a80816bd483bea423c",
+      "measurement_status": "prepared-not-fully-timed",
+      "eligible_for_chart": false,
+      "samples_seconds": [],
+      "sample_validation": [],
+      "attempts": []
+    }
+  ],
+  "validation": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/results/validation.json",
+    "sha256": "1dd50f726b1cb4f3c21f1afd75062d67555222e8e75efeaa24f361b9fa146a51",
+    "passed": true,
+    "total_checks": 48
+  },
+  "memory_analysis": {
+    "input_buffer_bytes": 65536,
+    "cells_per_input_byte": 1,
+    "bytes_per_cell": 16,
+    "whole_file_not_retained": true,
+    "per_width_overlap_maximum": 17,
+    "table_storage": "Data-dependent generic growing maps; actual distinct counts are not inferred or cached.",
+    "conditional_capacity_risk": "A table growing past 105,696,460 unique keys requires capacity 301,989,887; key/count APL-cell arrays alone would require 9 GiB. This is a worst-case condition, not measured canonical distinct-key data."
+  },
+  "preserved_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl": "ac9a9e7c4521f3e871fd32143fd50661dd6ea8a7afbde9bbb388cc6786d80836",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/run-apl.sh": "50c937c62df5095151dd766dcbd8bc2058e24a93ccefb6b5b601944a48cdadf4",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/knucleotide.compact.apl": "deff052c3ef7367fb86413cb73c70fb03144e564acfa90a80816bd483bea423c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/sources/regexredux.compact.apl": "3f4541880fe6d47a69bf33813a67f6186493365c6d08f6955721b1ad80e4e75c",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/sources/regexredux.optimized.apl": "bfcfeb21c2753bb6217b26e2db1cff17eed762d9ade7d27077d523e2b27401d8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-regex-v3/manifest.json": "dddaa9ba070a357be18d907f039cbe6236f43390ec62d605fcd471f405142bfd",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/apl-support/libregex-count-v3-apl.dylib": "a458279aad75b4c98a0aca34aa0f898c1aac6d097bd1140abb020ff66df4f919"
+  },
+  "source_recipe": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-knucleotide-v2/prepare_sources.py",
+    "sha256": "9b5402ebf14d212fedc148c7b0ce1b4fa6b747878ddb7c843aa09e01ad7c624a"
+  },
+  "old_manifest": {
+    "path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/apl-manifest.json",
+    "sha256": "052f2d8ba5f62bcb8566eb8d2da137339c2793bbf720fe558df65fbc5c6638ac"
+  },
+  "policy": "Additive candidates only; frozen original sources/evidence unchanged. No full timings in preparation. Parent measures under common guards."
+}

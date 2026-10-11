@@ -1,0 +1,26 @@
+{
+  "revision": "medium-v3",
+  "reason": "Root-approved coherent additive revision at a safe exited timing stage. Admit independently validated APLactive-pixel Mandelbrot, seed-independent affine FASTA arrays and canonical nbody initial data; Uiua EOF-comment parsing, native fannkuch reversal/gather, native Mandelbrot packing and bitwise-equivalent canonical nbody array denominator. Correct APLmacOSserial primitive metadata without changing the runtime. Retain originals, preparations, successful and failed actual trials; preserve execution-identical samples and earlier controls. The separate root maintenance exclusion and its exact archive/lineage remain unchanged. Affected selected sources receive3fresh full trials and3interleaved unchanged Mech controls. No shortcuts, compressed-size score, reduced canonical workloads or extrapolated chart values.",
+  "created_at": "2026-10-11T21:27:22.949805+00:00",
+  "status": "complete",
+  "coordinator_pid_confirmed_exited": 2092,
+  "files": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/refreeze_prepared.py": "6e81404c15e72062435b7d975c217f311b6f5eaf8e6afd34bee00299ea044882",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/medium-v3-plan.json": "ae09eae3df6d5f80f0aed151891206a26d575f2aefe64ac812cebbfd0dc1cfa2",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/prepare.py": "27fcf050ed21db40e747f2e8801ca6f227d82f1ea98f8592bba7b10a768109e5",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/run.py": "5b2a038cfae4112e9e2eee79c3cd57ccc6a1521812828c47bf28986d6a8e139b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/summarize.py": "6ad2acc07fdb807b03b07922caabcdc9c4dee0cb41d44d43b7714c43581dfeae",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/resume_after_guard_repair.py": "7f79472b83c775b788777faeefebbc1cb4193c3bd4788d9a9a06375215e3aad8",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/apl-manifest.json": "f66be574123726a2920b8d08730a0f746b9e39d3d0579cf095cd8dabf2e6d35f",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/source-audit-apl.json": "229e3e88ccf65cc5fa21e7e5793146459b5e5f1b6804cd11c457df07df222aaf",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/timings-apl.json": "610be23722144831a6482296ee9819aafddd3886221c11ad67711475c7fc95db",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/uiua-manifest.json": "f18f4d527002bcc5bd8890ac03477267c0a91a1b4f2401dbdccc98f3a4ed89bc",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/source-audit-uiua.json": "0fbe12fcdacec137abecd954ae8b57e758513722ec1b81f0f1afbb418eec3be9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/medium-repair-v3-before/timings-uiua.json": "6833c003aa888f9678d651988ab385a058b527adbacb7aab1878faa426060d08"
+  },
+  "finished_at": "2026-10-11T21:27:24.466194+00:00",
+  "current_audits": {
+    "apl": "9b26c06182bb97b4d3e26d70d9edd6e5ec78e57f1b59a77a91874869c9e83936",
+    "uiua": "96d5b09171fe578a61584395ad899db71ad02ac3a6924948640b8ef1465876c5"
+  }
+}
