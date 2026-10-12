@@ -1,0 +1,87 @@
+{
+  "status": "passed",
+  "checked_at": "2026-10-12T01:39:13.573414+00:00",
+  "shared_lock": "/tmp/mech-clbg-timing.lock",
+  "fixture_test_count": 11,
+  "fixture_test_seconds": 0.045,
+  "fixture_log_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/mandelbrot-study-fixtures.log",
+  "fixture_log_sha256": "26743cbd699aa026f4f45bed0cdfae447fa80368930cb75a991ce7cfa13564e7",
+  "fixture_evidence": "Captured fixture section of tool session56070 under the shared lock. All11 passed; the later Node PATH lookup failed before import, so only remaining syntax/import steps ran in this follow-up. Fixtures and importer source remained unchanged.",
+  "node": "/Users/cim310/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+  "node_syntax_status": 0,
+  "selected": {
+    "mech": {
+      "fast": {
+        "key": "mandelbrot:array-state:five16-rows-loop-fma",
+        "loc": 16,
+        "seconds": 0.442216834,
+        "samples": [
+          0.467605542,
+          0.436260125,
+          0.442216834
+        ],
+        "timing_sd": 0.016646341154158733
+      },
+      "small": {
+        "key": "mandelbrot:array-state:scalar11",
+        "loc": 11,
+        "seconds": 2.19099025,
+        "samples": [
+          2.19099025,
+          2.193286917,
+          2.168758875
+        ],
+        "timing_sd": 0.013547038778845617
+      }
+    },
+    "uiua": {
+      "fast": {
+        "key": "mandelbrot:uiua-parallel-study:whole16-parallel",
+        "loc": 16,
+        "seconds": 13.552233209,
+        "samples": [
+          13.1898995,
+          13.63272225,
+          13.552233209
+        ],
+        "timing_sd": 0.23588704582079145
+      },
+      "small": {
+        "key": "mandelbrot:uiua-parallel-study:whole11",
+        "loc": 11,
+        "seconds": 55.275512833,
+        "samples": [
+          55.275512833,
+          55.031098666,
+          55.300396291
+        ],
+        "timing_sd": 0.14881682383777675
+      }
+    }
+  },
+  "study_reports": {
+    "mech": {
+      "manifest": "mandelbrot/experiments/20261011-array-state/full-study/manifest.json",
+      "manifest_sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+      "report": "mandelbrot/experiments/20261011-array-state/full-study/report.json",
+      "report_sha256": "4537db0520a282d02fb2f5235e9c7e0ee9fdae09babd8742b15455041738dc1e"
+    },
+    "uiua": {
+      "manifest": "r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full-study/manifest.json",
+      "manifest_sha256": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6",
+      "report": "r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/full-study.json",
+      "report_sha256": "8b0cff489ba75129b78a80682f4e486da48a6ab8b338511a1e4c269bca192b12"
+    }
+  },
+  "pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/mandelbrot_study_data.py": "dd2202bed3aadac4087f71d39e8f8d3e899510bbcb8ef1ad1561f7345f2699f3",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/test_mandelbrot_study_data.py": "8e90e3b914133974d880653b77e3f3913af566c44d306a02cbf544f52c7a8a60",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/dist/app.mjs": "b5a1834008a060ff16f681d01f961f72d649b09a79bad12f9f5c255011f52d85",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/overview/explorer/mandelbrot-study-fixtures.log": "26743cbd699aa026f4f45bed0cdfae447fa80368930cb75a991ce7cfa13564e7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/manifest.json": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/report.json": "4537db0520a282d02fb2f5235e9c7e0ee9fdae09babd8742b15455041738dc1e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full-study/manifest.json": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/full-study.json": "8b0cff489ba75129b78a80682f4e486da48a6ab8b338511a1e4c269bca192b12"
+  },
+  "no_derived_data_write": true
+}

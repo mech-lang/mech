@@ -15,6 +15,7 @@ from d_data import add_d_language
 from r_apl_uiua_data import add_r_apl_uiua_languages
 from interpreter_integration_data import add_interpreter_integration_audit
 from pidigits_work_data import add_pidigits_work_audit
+from mandelbrot_study_data import add_mandelbrot_studies
 
 APPLICATION = 'function-application-audit/20261009T171437Z/application-v3'
 ARRAY_TIMINGS = 'array-comparison/nbody-20261009/comparison-mech-compact.json'
@@ -478,6 +479,7 @@ def enrich_payload(root, data, array_audit_dir):
     add_r_apl_uiua_languages(root,data,load,measured,add_file,sha)
     add_interpreter_integration_audit(root,data,load,sha)
     add_pidigits_work_audit(root,data,load,measured,sha)
+    add_mandelbrot_studies(root,data,load,measured,add_file,sha)
 
     # Retain endpoint programs only, selecting from the current revisions.
     for b in data['benchmarks']:

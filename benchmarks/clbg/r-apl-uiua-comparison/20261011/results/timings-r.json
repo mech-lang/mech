@@ -1293,7 +1293,7 @@
       "loc_expansions": [],
       "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
       "eligible_for_chart": false,
-      "measurement_status": "pending",
+      "measurement_status": "partial",
       "recommended_timeout_seconds": 86400,
       "maximum_workers": 1,
       "allocation_fixture": {
@@ -1305,9 +1305,33 @@
         "leaf_allocation": true
       },
       "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": []
+      "samples_seconds": [
+        224.330496916,
+        223.656413959
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        68,
+        70
+      ],
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "median_seconds": 223.9934554375,
+      "sample_stdev_seconds": 0.4766486299769771
     },
     "binarytrees:binarytrees-r-optimized": {
       "id": "binarytrees-r-optimized",
@@ -1444,7 +1468,7 @@
       "loc_expansions": [],
       "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
       "eligible_for_chart": false,
-      "measurement_status": "pending",
+      "measurement_status": "partial",
       "recommended_timeout_seconds": 86400,
       "maximum_workers": 8,
       "allocation_fixture": {
@@ -1456,9 +1480,33 @@
         "leaf_allocation": true
       },
       "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": []
+      "samples_seconds": [
+        74.600979709,
+        73.453099042
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        69,
+        72
+      ],
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "median_seconds": 74.02703937550001,
+      "sample_stdev_seconds": 0.8116742036286341
     },
     "fasta:fasta-r-compact": {
       "id": "fasta-r-compact",
@@ -2052,7 +2100,7 @@
       "loc_expansions": [],
       "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
       "eligible_for_chart": false,
-      "measurement_status": "pending",
+      "measurement_status": "measured",
       "recommended_timeout_seconds": 14400,
       "maximum_workers": 1,
       "complete_map_fixture": {
@@ -2061,9 +2109,40 @@
         "all_seven_maps_match_independent_python_reference": true
       },
       "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": []
+      "samples_seconds": [
+        156.927437834,
+        158.347077208,
+        157.27453575
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        60,
+        63,
+        65
+      ],
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "median_seconds": 157.27453575,
+      "sample_stdev_seconds": 0.7400673499341633
     },
     "knucleotide:knucleotide-r-optimized": {
       "id": "knucleotide-r-optimized",
@@ -2247,7 +2326,7 @@
       "loc_expansions": [],
       "loc_review": "One independent assignment/statement per line. Long literal arrays and nested calls remain one expression; no independent assignment packing discount.",
       "eligible_for_chart": false,
-      "measurement_status": "pending",
+      "measurement_status": "measured",
       "recommended_timeout_seconds": 14400,
       "maximum_workers": 1,
       "complete_map_fixture": {
@@ -2256,9 +2335,40 @@
         "all_seven_maps_match_independent_python_reference": true
       },
       "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": []
+      "samples_seconds": [
+        34.055290459,
+        33.611058291,
+        34.14320775
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        58,
+        62,
+        66
+      ],
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "median_seconds": 34.055290459,
+      "sample_stdev_seconds": 0.28526441414260867
     },
     "revcomp:revcomp-r-compact": {
       "id": "revcomp-r-compact",
@@ -4497,10 +4607,34 @@
       },
       "control_for": "r",
       "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": [],
-      "measurement_status": "pending"
+      "samples_seconds": [
+        0.45104475,
+        0.399302708
+      ],
+      "sample_validation": [
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        },
+        {
+          "bytes": 455,
+          "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        67,
+        71
+      ],
+      "measurement_status": "partial",
+      "full_validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "median_seconds": 0.425173729,
+      "sample_stdev_seconds": 0.03658714877063914
     },
     "fannkuchredux:mech-control-for-r": {
       "id": "mech-control-fannkuchredux-for-r",
@@ -4703,10 +4837,41 @@
       },
       "control_for": "r",
       "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
-      "samples_seconds": [],
-      "sample_validation": [],
-      "attempts": [],
-      "measurement_status": "pending"
+      "samples_seconds": [
+        0.517407541,
+        0.5187095,
+        0.515946083
+      ],
+      "sample_validation": [
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        },
+        {
+          "bytes": 259,
+          "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+          "reference_match": true
+        }
+      ],
+      "attempts": [
+        59,
+        61,
+        64
+      ],
+      "measurement_status": "measured",
+      "full_validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "median_seconds": 0.517407541,
+      "sample_stdev_seconds": 0.0013824754512187165
     },
     "revcomp:mech-control-for-r": {
       "id": "mech-control-revcomp-for-r",
@@ -4888,6 +5053,35 @@
         "fasta:mech-control-for-r-fasta-v4",
         "fasta:fasta-r-compact",
         "fasta:fasta-r-optimized"
+      ]
+    ],
+    "knucleotide": [
+      [
+        "knucleotide:knucleotide-r-optimized",
+        "knucleotide:mech-control-for-r",
+        "knucleotide:knucleotide-r-compact"
+      ],
+      [
+        "knucleotide:mech-control-for-r",
+        "knucleotide:knucleotide-r-optimized",
+        "knucleotide:knucleotide-r-compact"
+      ],
+      [
+        "knucleotide:mech-control-for-r",
+        "knucleotide:knucleotide-r-compact",
+        "knucleotide:knucleotide-r-optimized"
+      ]
+    ],
+    "binarytrees": [
+      [
+        "binarytrees:mech-control-for-r",
+        "binarytrees:binarytrees-r-compact",
+        "binarytrees:binarytrees-r-optimized"
+      ],
+      [
+        "binarytrees:binarytrees-r-compact",
+        "binarytrees:mech-control-for-r",
+        "binarytrees:binarytrees-r-optimized"
       ]
     ]
   },
@@ -7979,6 +8173,822 @@
       "valid_environment": true,
       "sample": 3,
       "attempt_number": 57
+    },
+    {
+      "key": "knucleotide:knucleotide-r-optimized",
+      "id": "knucleotide-r-optimized",
+      "benchmark": "knucleotide",
+      "language": "r",
+      "source_sha256": "e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-11T22:25:32.530560+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 34.055290459,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 932976,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T22:26:06.769998+00:00",
+      "valid_environment": true,
+      "sample": 1,
+      "attempt_number": 58
+    },
+    {
+      "key": "knucleotide:mech-control-for-r",
+      "id": "mech-control-knucleotide-for-r",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_NARROW\": \"1\", \"MECH_SEQUENCE_PARTITIONS\": \"4\", \"MECH_SEQUENCE_PROFILE\": \"0\", \"MECH_SEQUENCE_STD_MAP\": \"1\"}, \"source_sha256\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\", \"support\": {\"../../hosts/gpu/src/sequence/counts.rs\": \"a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171\", \"../../hosts/gpu/src/sequence/runtime.rs\": \"6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4\", \"array-comparison/all-20261009/investigation/confirmation.json\": \"64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73\", \"knucleotide/knucleotide-compact.mec\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\"}}",
+      "started_at": "2026-10-11T22:26:06.830203+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.517407541,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T22:26:07.533499+00:00",
+      "valid_environment": true,
+      "sample": 1,
+      "attempt_number": 59
+    },
+    {
+      "key": "knucleotide:knucleotide-r-compact",
+      "id": "knucleotide-r-compact",
+      "benchmark": "knucleotide",
+      "language": "r",
+      "source_sha256": "a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-11T22:26:07.597811+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 156.927437834,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 882736,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T22:28:44.722554+00:00",
+      "valid_environment": true,
+      "sample": 1,
+      "attempt_number": 60
+    },
+    {
+      "key": "knucleotide:mech-control-for-r",
+      "id": "mech-control-knucleotide-for-r",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_NARROW\": \"1\", \"MECH_SEQUENCE_PARTITIONS\": \"4\", \"MECH_SEQUENCE_PROFILE\": \"0\", \"MECH_SEQUENCE_STD_MAP\": \"1\"}, \"source_sha256\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\", \"support\": {\"../../hosts/gpu/src/sequence/counts.rs\": \"a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171\", \"../../hosts/gpu/src/sequence/runtime.rs\": \"6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4\", \"array-comparison/all-20261009/investigation/confirmation.json\": \"64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73\", \"knucleotide/knucleotide-compact.mec\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\"}}",
+      "started_at": "2026-10-11T23:17:25.999979+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.5187095,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T23:17:26.712883+00:00",
+      "valid_environment": true,
+      "sample": 2,
+      "attempt_number": 61
+    },
+    {
+      "key": "knucleotide:knucleotide-r-optimized",
+      "id": "knucleotide-r-optimized",
+      "benchmark": "knucleotide",
+      "language": "r",
+      "source_sha256": "e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-11T23:17:26.775149+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 33.611058291,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 934624,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T23:18:00.576473+00:00",
+      "valid_environment": true,
+      "sample": 2,
+      "attempt_number": 62
+    },
+    {
+      "key": "knucleotide:knucleotide-r-compact",
+      "id": "knucleotide-r-compact",
+      "benchmark": "knucleotide",
+      "language": "r",
+      "source_sha256": "a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-11T23:18:00.641867+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 158.347077208,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 882784,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T23:20:39.179732+00:00",
+      "valid_environment": true,
+      "sample": 2,
+      "attempt_number": 63
+    },
+    {
+      "key": "knucleotide:mech-control-for-r",
+      "id": "mech-control-knucleotide-for-r",
+      "benchmark": "knucleotide",
+      "language": "mech",
+      "source_sha256": "3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "MECH_SEQUENCE_PARTITIONS": "4",
+        "MECH_SEQUENCE_NARROW": "1",
+        "MECH_SEQUENCE_PROFILE": "0",
+        "MECH_SEQUENCE_STD_MAP": "1"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": \"4a5abef421bcb5298edde84a61771bd540adb6da76a8310b1279766ab9d553cc\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/knucleotide/mech-compact-final-std1-simd0-p4-after\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"MECH_SEQUENCE_NARROW\": \"1\", \"MECH_SEQUENCE_PARTITIONS\": \"4\", \"MECH_SEQUENCE_PROFILE\": \"0\", \"MECH_SEQUENCE_STD_MAP\": \"1\"}, \"source_sha256\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\", \"support\": {\"../../hosts/gpu/src/sequence/counts.rs\": \"a443af64d67364bf5862ea5372a3fb9315386cb0a6e0af4b1b96fd557fe2b171\", \"../../hosts/gpu/src/sequence/runtime.rs\": \"6614befd92d05ab1c2b9a24de63095836a653d2f2dc6fad632225298015050b4\", \"array-comparison/all-20261009/investigation/confirmation.json\": \"64f93e330f498a5f134d4bf25e785426a3c5bf8f583990f9d3d35e2ee4a13d73\", \"knucleotide/knucleotide-compact.mec\": \"3a2f773f1ebc808cd6e7e430a2c9e85cb33ee234e8a44952210525620ab86139\"}}",
+      "started_at": "2026-10-11T23:51:06.633039+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.515946083,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T23:51:07.342942+00:00",
+      "valid_environment": true,
+      "sample": 3,
+      "attempt_number": 64
+    },
+    {
+      "key": "knucleotide:knucleotide-r-compact",
+      "id": "knucleotide-r-compact",
+      "benchmark": "knucleotide",
+      "language": "r",
+      "source_sha256": "a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-11T23:52:03.913001+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 157.27453575,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 881376,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T23:54:41.376922+00:00",
+      "valid_environment": true,
+      "sample": 3,
+      "attempt_number": 65
+    },
+    {
+      "key": "knucleotide:knucleotide-r-optimized",
+      "id": "knucleotide-r-optimized",
+      "benchmark": "knucleotide",
+      "language": "r",
+      "source_sha256": "e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-11T23:58:31.227486+00:00",
+      "workload_n": 25000000,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 34.14320775,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 931888,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 259,
+      "stdout_sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+      "validation": {
+        "bytes": 259,
+        "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T23:59:05.560919+00:00",
+      "valid_environment": true,
+      "sample": 3,
+      "attempt_number": 66
+    },
+    {
+      "key": "binarytrees:mech-control-for-r",
+      "id": "mech-control-binarytrees-for-r",
+      "benchmark": "binarytrees",
+      "language": "mech",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "21"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"support\": {\"../../hosts/gpu/src/control/runtime.rs\": \"50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b\", \"../../src/core/src/memory_runtime/allocation.rs\": \"03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c\", \"binarytrees/binarytrees-parallel.mec\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"binarytrees/results/conformance.json\": \"51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c\", \"binarytrees/results/records-conformance.json\": \"5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51\"}}",
+      "started_at": "2026-10-12T00:41:23.399185+00:00",
+      "workload_n": 21,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.45104475,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 455,
+      "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:41:24.044774+00:00",
+      "valid_environment": true,
+      "sample": 1,
+      "attempt_number": 67
+    },
+    {
+      "key": "binarytrees:binarytrees-r-compact",
+      "id": "binarytrees-r-compact",
+      "benchmark": "binarytrees",
+      "language": "r",
+      "source_sha256": "441e3d954b41cc3c1356eba42eed13c1f4ee547b475303f5a822cfd3585493dc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/compact.R",
+        "21"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"441e3d954b41cc3c1356eba42eed13c1f4ee547b475303f5a822cfd3585493dc\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-12T00:42:21.666573+00:00",
+      "workload_n": 21,
+      "full_workload": true,
+      "timeout_seconds": 550,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 224.330496916,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 937792,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 455,
+      "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:46:06.191435+00:00",
+      "valid_environment": true,
+      "sample": 1,
+      "attempt_number": 68
+    },
+    {
+      "key": "binarytrees:binarytrees-r-optimized",
+      "id": "binarytrees-r-optimized",
+      "benchmark": "binarytrees",
+      "language": "r",
+      "source_sha256": "b8ae857e270ab9dc85c816117d912005cd1a159aac2dfb38d565887701a05f66",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/optimized.R",
+        "21"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"b8ae857e270ab9dc85c816117d912005cd1a159aac2dfb38d565887701a05f66\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-12T00:50:08.859717+00:00",
+      "workload_n": 21,
+      "full_workload": true,
+      "timeout_seconds": 380,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 74.600979709,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 2063408,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 455,
+      "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:51:23.633770+00:00",
+      "valid_environment": true,
+      "sample": 1,
+      "attempt_number": 69
+    },
+    {
+      "key": "binarytrees:binarytrees-r-compact",
+      "id": "binarytrees-r-compact",
+      "benchmark": "binarytrees",
+      "language": "r",
+      "source_sha256": "441e3d954b41cc3c1356eba42eed13c1f4ee547b475303f5a822cfd3585493dc",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/compact.R",
+        "21"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"441e3d954b41cc3c1356eba42eed13c1f4ee547b475303f5a822cfd3585493dc\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-12T01:35:21.675904+00:00",
+      "workload_n": 21,
+      "full_workload": true,
+      "timeout_seconds": 550,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 223.656413959,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 937760,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 455,
+      "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T01:39:05.523991+00:00",
+      "valid_environment": true,
+      "sample": 2,
+      "attempt_number": 70
+    },
+    {
+      "key": "binarytrees:mech-control-for-r",
+      "id": "mech-control-binarytrees-for-r",
+      "benchmark": "binarytrees",
+      "language": "mech",
+      "source_sha256": "61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after",
+        "21"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"b8f1e30861f6003c10fcbd2b3e58c355d6158068621523fc870bfc292677deb0\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/binarytrees/mech-binarytrees-parallel-after\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"support\": {\"../../hosts/gpu/src/control/runtime.rs\": \"50d009170e52995741c36499b8495e3f86b10a4cb2631c5743d0dc654852cf9b\", \"../../src/core/src/memory_runtime/allocation.rs\": \"03ee3168f16162eceb19eade748e8581d07542677b7cb2d502aea691ea8a1e5c\", \"binarytrees/binarytrees-parallel.mec\": \"61e30dc7a1dc570f164dbc2342b9192a0009c5477d3e46f491e53bc86e4d6b2f\", \"binarytrees/results/conformance.json\": \"51e08678c94b9ebedc0bab0d7c3c91f2fcb017f24201f763e8743dab5ef0316c\", \"binarytrees/results/records-conformance.json\": \"5f67bd19fa6734b401ea00f8d2a577bcfda6108510c45c513da6b5b04ca5ce51\"}}",
+      "started_at": "2026-10-12T01:39:13.636534+00:00",
+      "workload_n": 21,
+      "full_workload": true,
+      "timeout_seconds": 14400,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.399302708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 455,
+      "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T01:39:14.216833+00:00",
+      "valid_environment": true,
+      "sample": 2,
+      "attempt_number": 71
+    },
+    {
+      "key": "binarytrees:binarytrees-r-optimized",
+      "id": "binarytrees-r-optimized",
+      "benchmark": "binarytrees",
+      "language": "r",
+      "source_sha256": "b8ae857e270ab9dc85c816117d912005cd1a159aac2dfb38d565887701a05f66",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+        "--vanilla",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/binarytrees/optimized.R",
+        "21"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {
+        "R_LIBS_USER": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library",
+        "R_ENABLE_JIT": "3",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "LC_ALL": "C"
+      },
+      "execution_fingerprint": "{\"binary_sha256\": null, \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\", \"--vanilla\", \"{source}\", \"{n}\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {\"LC_ALL\": \"C\", \"OMP_NUM_THREADS\": \"1\", \"OPENBLAS_NUM_THREADS\": \"1\", \"R_ENABLE_JIT\": \"3\", \"R_LIBS_USER\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/r-library\", \"VECLIB_MAXIMUM_THREADS\": \"1\"}, \"source_sha256\": \"b8ae857e270ab9dc85c816117d912005cd1a159aac2dfb38d565887701a05f66\", \"support\": {\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/R\": \"c91d51a84b2bf2d2c8aef859df125072cc91cdbd78d8fddb11b9db8d65ca67b2\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript\": \"9b0cba95392d2ebd36595b562e6aa59bbe543c729d9d2a0d871cbff6c24d42ff\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript.bin\": \"4e6c8c4b65f1262b34fa89ff32e5394fbbbcc462eea21bbc45fb64fdf39c6b18\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/exec/R\": \"674969c26c7067a257c780b870489a5b5eddf26f7f8747575bba14a515f9f107\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/etc/Renviron\": \"42db405a0b2547b742404567b5fb177c84ef2779e66a0dcbae32538bd63fbce8\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libR.dylib\": \"93dc6f2db47797a5a9d05b62fb47321f9d93bfa4b3db407f5d2c9f593d130cb9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.0.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.dylib\": \"0a69cb2cb7d53a990a7138c751bacd11ee934dbacb59e841303e3bcbce6eaef9\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRblas.vecLib.dylib\": \"412767de54c2997928b260c4ea6f1b40eae6e29b209a83f6def5ccb45f8838cd\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libRlapack.dylib\": \"574d3011f3aa2028fbf5368ec1bb22277e5a286678a29f7e3287b5c931f578f4\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgcc_s.1.1.dylib\": \"5ed1be16b0cd89c07c26cbf0a8f97c041ec571b23fe29e0af107a95ed1fb3402\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libgfortran.5.dylib\": \"849c574195161779a5b2dcf7f71a339b43befbecfa690df75e84027b8ccd37ef\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libomp.dylib\": \"974c8231f4630498761536d857b7f0b613098b3cd6a9b7582b26e4d3aff814aa\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libquadmath.0.dylib\": \"4c442eb78ac026769b342dcaaaab9e6a9b4e8acf03640263493a6c1677c8e17d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtcl8.6.dylib\": \"5703f6b3772b7e0ed7cb87f7777a51279f372f2d7f20ab792312c16b4c053d17\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/lib/libtk8.6.dylib\": \"16380b75f1637c3787bee288cead9abc1ead78e0a2763eb23aacfff8e53e250a\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdb\": \"390d48b88b86457ec0262fabd7578a2e6309123156d669a24691e41fe851e121\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/base/R/base.rdx\": \"39e43de98ada07cd47dd1c33b3828eda71c4e3c6e790c4b3c32429226c6f584d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdb\": \"6f64eb578c9dd0627f00024aa786c6c40536be2322cec3cbcb42ec9c84054cc1\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/compiler/R/compiler.rdx\": \"aa84f723ba7b1d809374010d72817da84d9ab7d6320fcefb8a20de0f55521e23\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdb\": \"8a5cccff9aa09d2127957be6f39212f317481b2ce91932d6168104e67ab66d56\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/grDevices/R/grDevices.rdx\": \"2337e790b9733fbd0f0129754ea1d308ff4876ab27c1fc834afcc8f9ed776e34\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdb\": \"53c28084edd9d0197ca89bb684c0d2b14205979ca844d8209552ba57bc32f89b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/graphics/R/graphics.rdx\": \"de977491a3895dc6826af5c387f603269bbec5f5b00b45edcd1b5ea6e622adcf\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdb\": \"5d40b37c699aa06c72840ab94a6a9057ebd3314189167a965749ed425affeb9b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/methods/R/methods.rdx\": \"83f4f96cfd24779c638835b3c6cbf93c75a21c0cc8410054c57b3c1b4aa8eb3c\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdb\": \"cdd1975090d9ce38610f34fe8f4c40c83c5c2f430576be942fca2057ec14f313\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/R/parallel.rdx\": \"c62f9164bafb4d12df8ee3caa6b9671c18af11048eab23cf642ad423d1793488\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/parallel/libs/parallel.so\": \"3aa31c43562dae504e252fa8b7c42e73c7b4468cd37cccba74cfea77fc1d736b\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdb\": \"065101c51eefe60a1a584dbeed8d949ad9687f7ed967fd24df214d547b02670f\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/stats/R/stats.rdx\": \"ef56ba136bd43e54f3a15d60ee17b245b0599fbaa6a97097af104937b84c813d\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdb\": \"4ed12041e6b2501953aadcab5a97735f22a1575d5be9146ff21240f4e1ac3ca7\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/library/utils/R/utils.rdx\": \"f19bd86aa747731ae0967a1296d2a3a4c45ac752a66980284b8ebcfafa77e643\", \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/r/semantics-fixtures.tsv\": \"dd81c8866de76f87ff088695a1591b0bf3f0afb1ff08348c8bd3e75515a14bda\"}}",
+      "started_at": "2026-10-12T01:39:14.284385+00:00",
+      "workload_n": 21,
+      "full_workload": true,
+      "timeout_seconds": 380,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 73.453099042,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 2064272,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 455,
+      "stdout_sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+      "validation": {
+        "bytes": 455,
+        "sha256": "341de11a51feab3d8122b4b5d6a68b038a2d14434aa9bc2372f39300bf5f48e1",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T01:40:27.907381+00:00",
+      "valid_environment": true,
+      "sample": 2,
+      "attempt_number": 72
     }
   ],
   "discarded": [],
@@ -7988,7 +8998,8 @@
     "pidigits",
     "spectralnorm",
     "mandelbrot",
-    "fasta"
+    "fasta",
+    "knucleotide"
   ],
   "benchmark_order": [
     "regexredux",
@@ -8119,7 +9130,7 @@
     }
   },
   "machine": "Apple M3",
-  "updated_at": "2026-10-11T21:58:18.259968+00:00",
+  "updated_at": "2026-10-12T01:40:27.910664+00:00",
   "historical_attempts": [
     {
       "key": "fasta:mech-control-for-r",

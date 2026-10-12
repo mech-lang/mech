@@ -1,0 +1,269 @@
+{
+  "status": "ready-for-root-review",
+  "created_at": "2026-10-12T02:24:26.168053+00:00",
+  "self_path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/push-plan.json",
+  "scope": "Combined k-nucleotide import and complete Mandelbrot studies; no Git mutations performed by this task.",
+  "exact_changed_paths": [
+    {
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/manifest.json",
+      "sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9"
+    },
+    {
+      "path": "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/report.json",
+      "sha256": "4537db0520a282d02fb2f5235e9c7e0ee9fdae09babd8742b15455041738dc1e"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/augment_data.py",
+      "sha256": "cf19aa8c49f131292c238b55117585c4712d99f9c35832c3ff2b3cca218ada25"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/data-audit.json",
+      "sha256": "329c128ca43185f56bcca058b019dd07973af2b9199fefa9e225033d0641b580"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/dist/app.mjs",
+      "sha256": "b5a1834008a060ff16f681d01f961f72d649b09a79bad12f9f5c255011f52d85"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/dist/data.json",
+      "sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/mandelbrot-study-fixtures.log",
+      "sha256": "26743cbd699aa026f4f45bed0cdfae447fa80368930cb75a991ce7cfa13564e7"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/mandelbrot-study-import-checks.json",
+      "sha256": "71f7835a2ffeeeea8cfccdb3f0722a5b918a1512479bf4d257dd09f2b846bd96"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/mandelbrot_study_data.py",
+      "sha256": "dd2202bed3aadac4087f71d39e8f8d3e899510bbcb8ef1ad1561f7345f2699f3"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/test_mandelbrot_study_data.py",
+      "sha256": "8e90e3b914133974d880653b77e3f3913af566c44d306a02cbf544f52c7a8a60"
+    },
+    {
+      "path": "benchmarks/clbg/overview/explorer/verify.mjs",
+      "sha256": "df56eebbfd479431b9ddc77dae5132b319fe59c121ece20da897c49423cad823"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/import-receipt.json",
+      "sha256": "e4a87f2c98f0be03ec2b2f57fc3f49a2c21346022a3fcf74d5812e3348b92db3"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/receipt-test-count-correction.json",
+      "sha256": "fc5c3e33590ba99e627a9acd040f2f39858107cc9d89133e2aa22aab97a2ebdd"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/summary.csv",
+      "sha256": "060c3ac2295e2c664ed72ea1fb2d801a8517ba4de366fd0968e43ee9c6c784be"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/summary.json",
+      "sha256": "0e7db5cb62163d72541d6ad31efb9facbd44c913b3a0e1c795c9b204754b8b96"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/summary.md",
+      "sha256": "24b4ab7ed271f3976929b4cd67d18d7ce4388776df1641d2c6ee71798fd19762"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/timings-apl.json",
+      "sha256": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/timings-r.json",
+      "sha256": "961b233cdbc0d8dc179c4974bb1a0e6fb1b7fd2503b6ede70b55487832bbd442"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/timings-uiua.json",
+      "sha256": "e7dedf1555e0fd69bea2faca2bbe938dc4c04cfeb3866baa5d4a8562bfbb49a4"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/combined-data-qa.log",
+      "sha256": "04cadf0ab1e2016051d55d03cddbef9adf159234a20626af84f6435316a10cb1"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/import-receipt.json",
+      "sha256": "ad69ff7c5d6989a5efa9f7deeeb76cce8afef6b72d2950684737a1d14b4892dd"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/mech-manifest.json",
+      "sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/mech-report.json",
+      "sha256": "4537db0520a282d02fb2f5235e9c7e0ee9fdae09babd8742b15455041738dc1e"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.csv",
+      "sha256": "060c3ac2295e2c664ed72ea1fb2d801a8517ba4de366fd0968e43ee9c6c784be"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.json",
+      "sha256": "1cc2c60f71b46121147e8d2f51305b4dbe5f4508ab19d10687d5803ce23f938c"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.md",
+      "sha256": "24b4ab7ed271f3976929b4cd67d18d7ce4388776df1641d2c6ee71798fd19762"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-apl.json",
+      "sha256": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-r.json",
+      "sha256": "ff8008319f70bf70b762eae270898b235e2c73185794df00c591b03d2f12e92b"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-uiua.json",
+      "sha256": "004c830d5ffbf56e62809dcc65e3f6993b1599a31a4768ae2a522d3d6d74bcac"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/uiua-full-study.json",
+      "sha256": "8b0cff489ba75129b78a80682f4e486da48a6ab8b338511a1e4c269bca192b12"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/uiua-manifest.json",
+      "sha256": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/README.md",
+      "sha256": "f3cd2903cf449235a29f3fcb0a0230e85dab9f7e647fd32605e89340b7413c17"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full-study/manifest.json",
+      "sha256": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full_study.py",
+      "sha256": "7a48690bef2f36375c72619f8c74170735273804d089dafb55e6813189613fe5"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/manifest.json",
+      "sha256": "e53419a9421a6a09bdfc74e7821e3b09a1af76652ffe92170d63083ed53cd272"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/prepare.py",
+      "sha256": "f6abac18489db556c88212cdb6213df5089e67e1a9da976f7d056c9e49333eda"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/prepare_manifest.py",
+      "sha256": "a20d7a0ed3e176af8dcbc098267f2dc93f9395716951f2e8b530ac03e8c35bcc"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/full-study.json",
+      "sha256": "8b0cff489ba75129b78a80682f4e486da48a6ab8b338511a1e4c269bca192b12"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/source-audit-active.json",
+      "sha256": "12a5ce51ab440fc1da194b625dc76f7a80f0465c75ace07d734ac44e50204044"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/source-audit-whole.json",
+      "sha256": "c7aba6eef9a9f5a5a10ea59bb810644530f0da33451461b3044976dbcc520b88"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+      "sha256": "5bc9cfbfa3dc1a7978c008dc93e418b7945f8b55b204113d496bb38e40244fa5"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+      "sha256": "7033e16cd285b3a607095b68a49be5091f1bc01f1c09b92d1a01504c7af5dbf8"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/parent-only-gate.ua",
+      "sha256": "7b003a2b54fbba2bd087ff171e57c8163ce75816a15d5360db22f2da99b04828"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua",
+      "sha256": "72772da2a66c0f888de2f97e79893149f3e291ce541ab6334683618be9abac1c"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-whole.ua",
+      "sha256": "053143d152bdf049bf1df1fc99117a868b606ed876789971df460a46fc8a8825"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/validation.json",
+      "sha256": "f9c0ea4e4b65a4133643d6b905b7693b988f30f1b4faf59323d2d0c165fff374"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation.json",
+      "sha256": "f9c0ea4e4b65a4133643d6b905b7693b988f30f1b4faf59323d2d0c165fff374"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/task_threads.py",
+      "sha256": "9855664c0c01e5ad1d97c1d09222f9bf887ea1e8aafbf2168087e142a65c2c0f"
+    },
+    {
+      "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/validate.py",
+      "sha256": "44f8d412b84c32bda639ff72a4418ee45247568926a8b41660724f7ba9aa6ed6"
+    }
+  ],
+  "matching_report_and_summary_blobs": {
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-r.json",
+      "sha256": "ff8008319f70bf70b762eae270898b235e2c73185794df00c591b03d2f12e92b"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-apl.json",
+      "sha256": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-uiua.json",
+      "sha256": "004c830d5ffbf56e62809dcc65e3f6993b1599a31a4768ae2a522d3d6d74bcac"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.json",
+      "sha256": "1cc2c60f71b46121147e8d2f51305b4dbe5f4508ab19d10687d5803ce23f938c"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.md": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.md",
+      "sha256": "24b4ab7ed271f3976929b4cd67d18d7ce4388776df1641d2c6ee71798fd19762"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.csv": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.csv",
+      "sha256": "060c3ac2295e2c664ed72ea1fb2d801a8517ba4de366fd0968e43ee9c6c784be"
+    },
+    "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/manifest.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/mech-manifest.json",
+      "sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9"
+    },
+    "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/report.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/mech-report.json",
+      "sha256": "4537db0520a282d02fb2f5235e9c7e0ee9fdae09babd8742b15455041738dc1e"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full-study/manifest.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/uiua-manifest.json",
+      "sha256": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/full-study.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/uiua-full-study.json",
+      "sha256": "8b0cff489ba75129b78a80682f4e486da48a6ab8b338511a1e4c269bca192b12"
+    }
+  },
+  "tests": {
+    "r_apl_uiua_unittest_cases": 26,
+    "r_apl_uiua_not_repeated": true,
+    "mandelbrot_unittest_cases": 11,
+    "mandelbrot_fixture_log_sha256": "26743cbd699aa026f4f45bed0cdfae447fa80368930cb75a991ce7cfa13564e7",
+    "mandelbrot_checks_receipt": "benchmarks/clbg/overview/explorer/mandelbrot-study-import-checks.json",
+    "mandelbrot_checks_receipt_sha256": "71f7835a2ffeeeea8cfccdb3f0722a5b918a1512479bf4d257dd09f2b846bd96",
+    "full_data_build_and_verify_passed": true,
+    "combined_log": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/combined-data-qa.log",
+    "combined_log_sha256": "04cadf0ab1e2016051d55d03cddbef9adf159234a20626af84f6435316a10cb1"
+  },
+  "retained_original_knucleotide_receipt_sha256": "e4a87f2c98f0be03ec2b2f57fc3f49a2c21346022a3fcf74d5812e3348b92db3",
+  "prior_live_measurements_preserved": 715,
+  "current_knucleotide_snapshot_measurements_preserved": 719,
+  "instructions": "Root must review this concrete plan before staging. For mutable coordinator reports and summaries, use the archived snapshot bytes as index blobs; do not overwrite the owner working files. The explicitly reviewed study source and support file paths are included; binaries, raw outputs, PID/launch/lock metadata and caches are excluded."
+}

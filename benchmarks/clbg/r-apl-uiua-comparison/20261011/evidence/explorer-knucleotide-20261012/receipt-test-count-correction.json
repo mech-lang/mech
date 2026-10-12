@@ -1,0 +1,11 @@
+{
+  "type": "receipt-label-correction",
+  "original_receipt": "import-receipt.json",
+  "original_receipt_sha256": "e4a87f2c98f0be03ec2b2f57fc3f49a2c21346022a3fcf74d5812e3348b92db3",
+  "field": "checks[0]",
+  "recorded_label": "41 importer fixtures",
+  "correct_label": "26 importer unittest cases",
+  "evidence": "The captured unittest output states: Ran 26 tests in 0.181s; OK.",
+  "original_receipt_preserved": true,
+  "measurements_or_eligibility_changed": false
+}

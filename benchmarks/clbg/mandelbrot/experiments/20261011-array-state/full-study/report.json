@@ -1,0 +1,1304 @@
+{
+  "status": "complete",
+  "created_at": "2026-10-11T23:52:03.853798+00:00",
+  "manifest": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/manifest.json",
+  "manifest_sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+  "supervisor": {
+    "pid": 47652,
+    "process_listing": "Sun Oct 11 19:51:01 2026     /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full_study.py --run --manifest-sha256 a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9"
+  },
+  "orders": [
+    {
+      "round": 1,
+      "profiles": [
+        "scalar11",
+        "frozen29-audited",
+        "five16-loop-fma",
+        "five16-rows-loop-fma",
+        "frozen20"
+      ]
+    },
+    {
+      "round": 2,
+      "profiles": [
+        "frozen29-audited",
+        "five16-loop-fma",
+        "frozen20",
+        "scalar11",
+        "five16-rows-loop-fma"
+      ]
+    },
+    {
+      "round": 3,
+      "profiles": [
+        "five16-loop-fma",
+        "frozen29-audited",
+        "five16-rows-loop-fma",
+        "scalar11",
+        "frozen20"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "key": "mandelbrot:array-state:scalar11",
+      "id": "scalar11",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-11T23:58:28.539845+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.19099025,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 29728,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-11T23:58:30.947032+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 1,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/001-scalar11.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 48726,
+        "pgid": 48726,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:frozen29-audited",
+      "id": "frozen29-audited",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\", \"support\": {\"mandelbrot/mandelbrot-compact-program.mec\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"mandelbrot/mandelbrot-program.mec\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\"}}",
+      "started_at": "2026-10-12T00:02:34.256251+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.439956917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:02:34.903364+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 2,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/002-frozen29-audited.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 49169,
+        "pgid": 49169,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:five16-loop-fma",
+      "id": "five16-loop-fma",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"b6d64eb42aef699a52df3199eb2b1fbd842cca03104addb76d579d7b6b938727\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb\", \"support\": {}}",
+      "started_at": "2026-10-12T00:03:23.084930+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.551211708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:03:23.848421+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 3,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/003-five16-loop-fma.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 49290,
+        "pgid": 49290,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:five16-rows-loop-fma",
+      "id": "five16-rows-loop-fma",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T00:18:59.199742+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.467605542,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:18:59.890014+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 4,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/004-five16-rows-loop-fma.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 52036,
+        "pgid": 52036,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:frozen20",
+      "id": "frozen20",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"552206dd52775554d262e5a48a80bb0dda8f43ab79d58e772dcc3f9f12204b80\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"support\": {}}",
+      "started_at": "2026-10-12T00:37:32.564533+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.299516167,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 26064,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:37:35.080196+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 1,
+      "attempt": 5,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/005-frozen20.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 54978,
+        "pgid": 54978,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:frozen29-audited",
+      "id": "frozen29-audited",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\", \"support\": {\"mandelbrot/mandelbrot-compact-program.mec\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"mandelbrot/mandelbrot-program.mec\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\"}}",
+      "started_at": "2026-10-12T00:37:50.688401+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.447988458,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:37:51.362888+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 6,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/006-frozen29-audited.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 55084,
+        "pgid": 55084,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:five16-loop-fma",
+      "id": "five16-loop-fma",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"b6d64eb42aef699a52df3199eb2b1fbd842cca03104addb76d579d7b6b938727\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb\", \"support\": {}}",
+      "started_at": "2026-10-12T00:38:40.423359+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.557237875,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:38:41.197109+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 7,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/007-five16-loop-fma.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 55271,
+        "pgid": 55271,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:frozen20",
+      "id": "frozen20",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"552206dd52775554d262e5a48a80bb0dda8f43ab79d58e772dcc3f9f12204b80\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"support\": {}}",
+      "started_at": "2026-10-12T00:38:56.994115+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.324479708,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 26464,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:38:59.536111+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 8,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/008-frozen20.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 55431,
+        "pgid": 55431,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:scalar11",
+      "id": "scalar11",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T00:40:02.920000+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.193286917,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 29376,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:40:05.331232+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 9,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/009-scalar11.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 55577,
+        "pgid": 55577,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:five16-rows-loop-fma",
+      "id": "five16-rows-loop-fma",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T00:40:25.761255+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.436260125,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:40:26.423314+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 2,
+      "attempt": 10,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/010-five16-rows-loop-fma.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 55654,
+        "pgid": 55654,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:five16-loop-fma",
+      "id": "five16-loop-fma",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"b6d64eb42aef699a52df3199eb2b1fbd842cca03104addb76d579d7b6b938727\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"24c15d96fb4b9e2acd755ee80a2d0c0aa643587016f897328653a8055475eecb\", \"support\": {}}",
+      "started_at": "2026-10-12T00:41:18.095081+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.567141375,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:41:18.880267+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 11,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/011-five16-loop-fma.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 55828,
+        "pgid": 55828,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:frozen29-audited",
+      "id": "frozen29-audited",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"7ed5c8aad032b92c36c92fb6b0f7183e3fdbedc9ea5b7762d10c0a2c6490cddd\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\", \"support\": {\"mandelbrot/mandelbrot-compact-program.mec\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"mandelbrot/mandelbrot-program.mec\": \"c8131e57450a6c0387ce49074f98db3a5f5689575b9279de52192fea31110f90\"}}",
+      "started_at": "2026-10-12T00:41:22.431764+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.467097958,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:41:23.113699+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 12,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/012-frozen29-audited.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 55967,
+        "pgid": 55967,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/function-application-audit/20261009T171437Z/application-v3/builds/mandelbrot/mech-program-simd-loop-fma-after",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:five16-rows-loop-fma",
+      "id": "five16-rows-loop-fma",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"42a54ae5ab8902a4b71d031f3744a1da23c1da1fa26af6943fa3b77475691d8f\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"baf1cc933c9d5f1741f9b20319d66a488fca177940fa5a23bafdd2917a333cde\", \"support\": {}}",
+      "started_at": "2026-10-12T00:42:20.724661+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 0.442216834,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 0,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:42:21.386646+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 13,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/013-five16-rows-loop-fma.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 56426,
+        "pgid": 56426,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/five16-rows-loop-fma",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:scalar11",
+      "id": "scalar11",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"c74553ef6f51e3969edf257ef0083c8103f16bc4a3ef6a70e4a41ca8158aad0a\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"4e4b881e9c2368ba9ddfcbd2b8df49f78e6fd759833b26e7a10374b432de7b3a\", \"support\": {}}",
+      "started_at": "2026-10-12T00:49:53.582401+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.168758875,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 32256,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:49:55.953511+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 14,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/014-scalar11.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 57808,
+        "pgid": 57808,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/scalar11",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    },
+    {
+      "key": "mandelbrot:array-state:frozen20",
+      "id": "frozen20",
+      "benchmark": "mandelbrot",
+      "language": "mech",
+      "source_sha256": "75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169",
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20",
+        "16000",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech",
+      "runtime_environment": {},
+      "execution_fingerprint": "{\"binary_sha256\": \"552206dd52775554d262e5a48a80bb0dda8f43ab79d58e772dcc3f9f12204b80\", \"command\": [\"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20\", \"{n}\", \"8\"], \"cwd\": \"/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech\", \"environment\": {}, \"source_sha256\": \"75a6ef040661e6960de0c7624ae74ccd42baac1d89524b0ae4be196aa226c169\", \"support\": {}}",
+      "started_at": "2026-10-12T00:51:23.959100+00:00",
+      "workload_n": 16000,
+      "full_workload": true,
+      "timeout_seconds": 600,
+      "maximum_rss_mib": 10240,
+      "power_at_start": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "seconds": 2.339851792,
+      "exit_status": 0,
+      "remaining_group_members": [],
+      "competing_compilers": [],
+      "power_changes": [],
+      "power_at_end": {
+        "source": "AC Power",
+        "low_power_mode": 0
+      },
+      "monitor_errors": [],
+      "peak_process_group_rss_kib": 25744,
+      "resource_violation": null,
+      "resource_monitor_errors": [],
+      "stderr": "",
+      "stdout_bytes": 32000015,
+      "stdout_sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+      "validation": {
+        "bytes": 32000015,
+        "sha256": "609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be",
+        "reference_match": true
+      },
+      "finished_at": "2026-10-12T00:51:26.518307+00:00",
+      "valid_environment": true,
+      "pins_unchanged_at_end": true,
+      "round": 3,
+      "attempt": 15,
+      "sampler_wait_status": 0,
+      "result_path": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/attempts/015-frozen20.json",
+      "supervised_native_group": {
+        "type": "native-group-started",
+        "pid": 58309,
+        "pgid": 58309,
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/mandelbrot/experiments/20261011-array-state/validation-current/frozen20",
+          "16000",
+          "8"
+        ]
+      },
+      "supervisor_remaining_members": [],
+      "qualification_checks": {
+        "sampler_exited_normally": true,
+        "authoritative_native_group_received": true,
+        "native_exited_normally": true,
+        "no_execution_error": true,
+        "no_resource_violation": true,
+        "no_resource_monitor_errors": true,
+        "no_compiler_power_monitor_errors": true,
+        "no_monitor_finish_error": true,
+        "no_execute_cleanup_error": true,
+        "no_remaining_execute_group": true,
+        "no_supervisor_cleanup": true,
+        "valid_environment": true,
+        "complete_output_reference_match": true,
+        "pins_unchanged": true
+      },
+      "qualified": true
+    }
+  ],
+  "active": null,
+  "profiles": {
+    "scalar11": {
+      "loc": 11,
+      "state_layout": "1x3 numeric state",
+      "samples_seconds": [
+        2.19099025,
+        2.193286917,
+        2.168758875
+      ],
+      "median_seconds": 2.19099025,
+      "sample_stdev_seconds": 0.013547038778845617
+    },
+    "five16-loop-fma": {
+      "loc": 16,
+      "state_layout": "8x2 numeric state plus scalar iteration",
+      "samples_seconds": [
+        0.551211708,
+        0.557237875,
+        0.567141375
+      ],
+      "median_seconds": 0.557237875,
+      "sample_stdev_seconds": 0.00804309529651341
+    },
+    "five16-rows-loop-fma": {
+      "loc": 16,
+      "state_layout": "2x8 numeric state plus scalar iteration",
+      "samples_seconds": [
+        0.467605542,
+        0.436260125,
+        0.442216834
+      ],
+      "median_seconds": 0.442216834,
+      "sample_stdev_seconds": 0.016646341154158733
+    },
+    "frozen20": {
+      "loc": 20,
+      "state_layout": "separate scalar real/imaginary/iteration state",
+      "samples_seconds": [
+        2.299516167,
+        2.324479708,
+        2.339851792
+      ],
+      "median_seconds": 2.324479708,
+      "sample_stdev_seconds": 0.020356988930513766
+    },
+    "frozen29-audited": {
+      "loc": 29,
+      "state_layout": "separate 8x1 real/imaginary arrays plus scalar iteration",
+      "samples_seconds": [
+        0.439956917,
+        0.447988458,
+        0.467097958
+      ],
+      "median_seconds": 0.447988458,
+      "sample_stdev_seconds": 0.013942230498551039
+    }
+  },
+  "finished_at": "2026-10-12T00:51:26.738628+00:00",
+  "pins_unchanged_at_end": true
+}

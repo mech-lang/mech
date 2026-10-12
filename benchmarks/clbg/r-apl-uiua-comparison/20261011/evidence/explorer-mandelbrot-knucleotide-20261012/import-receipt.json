@@ -1,0 +1,111 @@
+{
+  "status": "verified",
+  "at": "2026-10-12T02:24:26.156212+00:00",
+  "data_sha256": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+  "data_audit_sha256": "329c128ca43185f56bcca058b019dd07973af2b9199fefa9e225033d0641b580",
+  "previous_data_sha256": "edfbd6dba024a774819bc9fb1da7273a9939dcf86cada33af70247a987f06935",
+  "prior_knucleotide_receipt": {
+    "path": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-knucleotide-20261012/import-receipt.json",
+    "sha256": "e4a87f2c98f0be03ec2b2f57fc3f49a2c21346022a3fcf74d5812e3348b92db3",
+    "preserved": true,
+    "fixture_count_correction": "The previous receipt count label is corrected by receipt-test-count-correction.json: 26 unittest cases passed."
+  },
+  "snapshots": {
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-r.json",
+      "sha256": "ff8008319f70bf70b762eae270898b235e2c73185794df00c591b03d2f12e92b"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-apl.json",
+      "sha256": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/timings-uiua.json",
+      "sha256": "004c830d5ffbf56e62809dcc65e3f6993b1599a31a4768ae2a522d3d6d74bcac"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.json",
+      "sha256": "1cc2c60f71b46121147e8d2f51305b4dbe5f4508ab19d10687d5803ce23f938c"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.md": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.md",
+      "sha256": "24b4ab7ed271f3976929b4cd67d18d7ce4388776df1641d2c6ee71798fd19762"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/results/summary.csv": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/summary.csv",
+      "sha256": "060c3ac2295e2c664ed72ea1fb2d801a8517ba4de366fd0968e43ee9c6c784be"
+    },
+    "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/manifest.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/mech-manifest.json",
+      "sha256": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9"
+    },
+    "benchmarks/clbg/mandelbrot/experiments/20261011-array-state/full-study/report.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/mech-report.json",
+      "sha256": "4537db0520a282d02fb2f5235e9c7e0ee9fdae09babd8742b15455041738dc1e"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full-study/manifest.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/uiua-manifest.json",
+      "sha256": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6"
+    },
+    "benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/full-study.json": {
+      "snapshot": "benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/explorer-mandelbrot-knucleotide-20261012/uiua-full-study.json",
+      "sha256": "8b0cff489ba75129b78a80682f4e486da48a6ab8b338511a1e4c269bca192b12"
+    }
+  },
+  "study_pins": {
+    "mandelbrot/experiments/20261011-array-state/full-study/manifest.json": "a8f8d3069a25ffe47ab1bec2e6922108570432baeb5b467fc17d4a44734f55a9",
+    "mandelbrot/experiments/20261011-array-state/full-study/report.json": "4537db0520a282d02fb2f5235e9c7e0ee9fdae09babd8742b15455041738dc1e",
+    "r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/full-study/manifest.json": "d286d36a47de8eda58a8999c6d4c00c498308eda09ad8de89a7ea616b495d1a6",
+    "r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/full-study.json": "8b0cff489ba75129b78a80682f4e486da48a6ab8b338511a1e4c269bca192b12"
+  },
+  "report_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": "ff8008319f70bf70b762eae270898b235e2c73185794df00c591b03d2f12e92b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": "004c830d5ffbf56e62809dcc65e3f6993b1599a31a4768ae2a522d3d6d74bcac"
+  },
+  "added_endpoint_keys": [
+    "mandelbrot:array-state:five16-rows-loop-fma",
+    "mandelbrot:array-state:scalar11",
+    "mandelbrot:uiua-parallel-study:whole11",
+    "mandelbrot:uiua-parallel-study:whole16-parallel"
+  ],
+  "archived_endpoint_keys": [
+    "mandelbrot:mandelbrot-uiua-native-pack-optimized-v2",
+    "mandelbrot:mech-program-compact",
+    "mandelbrot:mech-program-simd-loop-fma"
+  ],
+  "existing_measurements_preserved": 719,
+  "rebaselined_existing_endpoints": [],
+  "previous_live_endpoint_records_preserved": 715,
+  "unchanged_k_nucleotide_endpoints": true,
+  "retained_chart_styles_and_index_unchanged": true,
+  "files": {
+    "dist/data.json": "65bfa4d833f61fff69b16eb3c917e4fcd1eb21d5788bbbeed7e09e9f2382d32f",
+    "data-audit.json": "329c128ca43185f56bcca058b019dd07973af2b9199fefa9e225033d0641b580",
+    "mandelbrot_study_data.py": "dd2202bed3aadac4087f71d39e8f8d3e899510bbcb8ef1ad1561f7345f2699f3",
+    "test_mandelbrot_study_data.py": "8e90e3b914133974d880653b77e3f3913af566c44d306a02cbf544f52c7a8a60",
+    "augment_data.py": "cf19aa8c49f131292c238b55117585c4712d99f9c35832c3ff2b3cca218ada25",
+    "verify.mjs": "df56eebbfd479431b9ddc77dae5132b319fe59c121ece20da897c49423cad823",
+    "dist/app.mjs": "b5a1834008a060ff16f681d01f961f72d649b09a79bad12f9f5c255011f52d85",
+    "mandelbrot-study-import-checks.json": "71f7835a2ffeeeea8cfccdb3f0722a5b918a1512479bf4d257dd09f2b846bd96",
+    "mandelbrot-study-fixtures.log": "26743cbd699aa026f4f45bed0cdfae447fa80368930cb75a991ce7cfa13564e7"
+  },
+  "checks": [
+    "Previously passed 26 R/APL/Uiua importer unittest cases; not repeated",
+    "Separate Mandelbrot importer qualification fixture suite",
+    "build_data.py full source/report admission checks",
+    "verify.mjs numerical, workload, archived-control and paired-control checks"
+  ],
+  "new_mandelbrot_selected": {
+    "mech": {
+      "fast": "mandelbrot:array-state:five16-rows-loop-fma",
+      "small": "mandelbrot:array-state:scalar11"
+    },
+    "uiua": {
+      "fast": "mandelbrot:uiua-parallel-study:whole16-parallel",
+      "small": "mandelbrot:uiua-parallel-study:whole11"
+    }
+  },
+  "timing_reports_never_modified": true,
+  "note": "Exact snapshot files are suitable for staging matching report blobs without overwriting the active coordinator reports. Historical source and sample records remain explicit in mandelbrot_study_audit; the Uiua denominator remains its measured unchanged 29-LOC control."
+}

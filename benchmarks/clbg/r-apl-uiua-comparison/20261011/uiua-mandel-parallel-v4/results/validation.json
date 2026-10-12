@@ -1,0 +1,4393 @@
+{
+  "status": "passed",
+  "created_at": "2026-10-11T23:01:24.799814+00:00",
+  "source_pins": {
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua": "5a3397ac99a36bdff8bf834b5f1c81ed2d53ab969e4f80994ab4870172c9ca65"
+  },
+  "shared_timing_lock": "/tmp/mech-clbg-timing.lock",
+  "runtime": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+  "runtime_sha256": "096e8176bcfd4eff1506e86104ad8a618c2c60b5e2cdd1dd4d286963ebec6f3c",
+  "runtime_environment": {
+    "LC_ALL": "C",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1"
+  },
+  "validator": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/validate.py",
+  "validator_sha256": "44f8d412b84c32bda639ff72a4418ee45247568926a8b41660724f7ba9aa6ed6",
+  "reference_validator": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/validate.py",
+  "reference_validator_sha256": "daa69868d05051b4159ec0b838305c02ad2af763631ca3a7a62c7ee6b7091d92",
+  "cases": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 8,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-1.stdout",
+      "stdout_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-1.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39318,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39318,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39318,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7585792
+        },
+        {
+          "pid": 39318,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69107712
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 1,
+      "spawned_worker_limit": 1,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-1"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "2"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 9,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-2.stdout",
+      "stdout_sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-2.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39319,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39319,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39319,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 17072128
+        },
+        {
+          "pid": 39319,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 71892992
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 4,
+      "spawned_worker_limit": 2,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-2"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 7,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "7"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 14,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-7.stdout",
+      "stdout_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-7.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39320,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39320,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39320,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 24199168
+        },
+        {
+          "pid": 39320,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 71450624
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 49,
+      "spawned_worker_limit": 7,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-7"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 15,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-8.stdout",
+      "stdout_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-8.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39321,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39321,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39321,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 14761984
+        },
+        {
+          "pid": 39321,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69255168
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 64,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-8"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 9,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 25,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-9.stdout",
+      "stdout_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-9.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39322,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39322,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39322,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 23216128
+        },
+        {
+          "pid": 39322,
+          "total_os_threads": 4,
+          "running_os_threads": 3,
+          "resident_bytes": 73154560
+        }
+      ],
+      "peak_total_os_threads": 4,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 81,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-9"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 13,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "13"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 35,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-13.stdout",
+      "stdout_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-13.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39323,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39323,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39323,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 15695872
+        },
+        {
+          "pid": 39323,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69402624
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 169,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-13"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 31,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "31"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 133,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-31.stdout",
+      "stdout_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-31.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39324,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39324,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39324,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 10027008
+        },
+        {
+          "pid": 39324,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69156864
+        },
+        {
+          "pid": 39324,
+          "total_os_threads": 8,
+          "running_os_threads": 6,
+          "resident_bytes": 75776000
+        }
+      ],
+      "peak_total_os_threads": 8,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 961,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-31"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 63,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "63"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 513,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-63.stdout",
+      "stdout_sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-63.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39325,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39325,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39325,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 18939904
+        },
+        {
+          "pid": 39325,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 71794688
+        },
+        {
+          "pid": 39325,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 75694080
+        },
+        {
+          "pid": 39325,
+          "total_os_threads": 3,
+          "running_os_threads": 1,
+          "resident_bytes": 75284480
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 3969,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-63"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 64,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "64"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 521,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-64.stdout",
+      "stdout_sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-64.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39326,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39326,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39326,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 29556736
+        },
+        {
+          "pid": 39326,
+          "total_os_threads": 10,
+          "running_os_threads": 9,
+          "resident_bytes": 75661312
+        },
+        {
+          "pid": 39326,
+          "total_os_threads": 10,
+          "running_os_threads": 9,
+          "resident_bytes": 75710464
+        },
+        {
+          "pid": 39326,
+          "total_os_threads": 6,
+          "running_os_threads": 4,
+          "resident_bytes": 75612160
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 4096,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-64"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 65,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "65"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 594,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-65.stdout",
+      "stdout_sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-65.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39327,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39327,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39327,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7143424
+        },
+        {
+          "pid": 39327,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 52756480
+        },
+        {
+          "pid": 39327,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 75808768
+        },
+        {
+          "pid": 39327,
+          "total_os_threads": 6,
+          "running_os_threads": 4,
+          "resident_bytes": 75792384
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 4225,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-65"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 129,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "129"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 2204,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-129.stdout",
+      "stdout_sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-129.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39328,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39328,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39328,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 11567104
+        },
+        {
+          "pid": 39328,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 71270400
+        },
+        {
+          "pid": 39328,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 75956224
+        },
+        {
+          "pid": 39328,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76038144
+        },
+        {
+          "pid": 39328,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76136448
+        },
+        {
+          "pid": 39328,
+          "total_os_threads": 6,
+          "running_os_threads": 4,
+          "resident_bytes": 76005376
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 16641,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-129"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 200,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "200"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 5011,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-200.stdout",
+      "stdout_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-200.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39329,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 6422528
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69206016
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76005376
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76103680
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76169216
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76251136
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 9,
+          "running_os_threads": 7,
+          "resident_bytes": 76365824
+        },
+        {
+          "pid": 39329,
+          "total_os_threads": 3,
+          "running_os_threads": 1,
+          "resident_bytes": 75956224
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 40000,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "canonical-small"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569",
+      "n": 257,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+        "257"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 8492,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-257.stdout",
+      "stdout_sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-output-257.stderr",
+      "stderr_sha256": "12c73011540b3d56c4205da820b3ddf9e69af09cb681b615c625f1a7cb39f8c1",
+      "native_thread_observations": [
+        {
+          "pid": 39330,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 11468800
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 72548352
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 75923456
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76185600
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76414976
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76627968
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76775424
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 9,
+          "running_os_threads": 7,
+          "resident_bytes": 77037568
+        },
+        {
+          "pid": 39330,
+          "total_os_threads": 5,
+          "running_os_threads": 4,
+          "resident_bytes": 76840960
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "whole",
+      "reference_match": true,
+      "pixels": 66049,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-257"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 8,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-1.stdout",
+      "stdout_sha256": "a8ed35a163cba662b15fe455af22d5f91668d6eb59ef9a2aa9e19e1658745819",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-1.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39343,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39343,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39343,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7618560
+        },
+        {
+          "pid": 39343,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 67567616
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 1,
+      "spawned_worker_limit": 1,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-1"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "2"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 9,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-2.stdout",
+      "stdout_sha256": "2e4e5f9f953fd314adbaa1326f7020d08d403929fec8e60c1ef777440af987dd",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-2.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39344,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39344,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39344,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7798784
+        },
+        {
+          "pid": 39344,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 68845568
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 4,
+      "spawned_worker_limit": 2,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-2"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 7,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "7"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 14,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-7.stdout",
+      "stdout_sha256": "5c8c0137a526ae1609eb7fd0b4cf7b2502816f9c8fdebab1346e47923d43c108",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-7.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39345,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39345,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39345,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 19873792
+        },
+        {
+          "pid": 39345,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69451776
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 49,
+      "spawned_worker_limit": 7,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-7"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 15,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-8.stdout",
+      "stdout_sha256": "5cb3c72ff26073f0dcd32ae46289dcf3ef468694ab383f4b98b1bf33c155f6d3",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-8.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39346,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39346,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39346,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7454720
+        },
+        {
+          "pid": 39346,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69058560
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 64,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-8"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 9,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 25,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-9.stdout",
+      "stdout_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-9.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39347,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39347,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39347,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 25149440
+        },
+        {
+          "pid": 39347,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 72957952
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 81,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-9"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 13,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "13"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 35,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-13.stdout",
+      "stdout_sha256": "3dc3cb62fdba55ebdb69573a3606ee23fb90b655c3f08e179ed7aaf6b15de2f0",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-13.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39348,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39348,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39348,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 6422528
+        },
+        {
+          "pid": 39348,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 67993600
+        },
+        {
+          "pid": 39348,
+          "total_os_threads": 9,
+          "running_os_threads": 7,
+          "resident_bytes": 75857920
+        }
+      ],
+      "peak_total_os_threads": 9,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 169,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-13"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 31,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "31"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 133,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-31.stdout",
+      "stdout_sha256": "b2726bd415c61e7bf15b529c9031b066150fae085d6c780a63e2b05ebce008a1",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-31.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39349,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39349,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39349,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7372800
+        },
+        {
+          "pid": 39349,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69124096
+        },
+        {
+          "pid": 39349,
+          "total_os_threads": 9,
+          "running_os_threads": 8,
+          "resident_bytes": 76070912
+        }
+      ],
+      "peak_total_os_threads": 9,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 961,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-31"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 63,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "63"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 513,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-63.stdout",
+      "stdout_sha256": "fff578e583a052969e57607be53eeafcf0b30eb9e361659e98088f16ef35810e",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-63.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39350,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39350,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39350,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7946240
+        },
+        {
+          "pid": 39350,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 68026368
+        },
+        {
+          "pid": 39350,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76185600
+        },
+        {
+          "pid": 39350,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76300288
+        },
+        {
+          "pid": 39350,
+          "total_os_threads": 3,
+          "running_os_threads": 1,
+          "resident_bytes": 75939840
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 3969,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-63"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 64,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "64"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 521,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-64.stdout",
+      "stdout_sha256": "54e0a14da37569cba6fa618c771c2704f6711783326b2b42197fc533c8f1337b",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-64.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39351,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39351,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39351,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7372800
+        },
+        {
+          "pid": 39351,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69042176
+        },
+        {
+          "pid": 39351,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76234752
+        },
+        {
+          "pid": 39351,
+          "total_os_threads": 9,
+          "running_os_threads": 7,
+          "resident_bytes": 76398592
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 4096,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-64"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 65,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "65"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 594,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-65.stdout",
+      "stdout_sha256": "0a97ee12fbb91ecc31bace13809cefc85f8ec09b66b597f4b1d9a2b76426875c",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-65.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39352,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39352,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39352,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 8355840
+        },
+        {
+          "pid": 39352,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69189632
+        },
+        {
+          "pid": 39352,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 75907072
+        },
+        {
+          "pid": 39352,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76005376
+        },
+        {
+          "pid": 39352,
+          "total_os_threads": 9,
+          "running_os_threads": 7,
+          "resident_bytes": 76103680
+        },
+        {
+          "pid": 39352,
+          "total_os_threads": 5,
+          "running_os_threads": 3,
+          "resident_bytes": 75808768
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 4225,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-65"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 129,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "129"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 2204,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-129.stdout",
+      "stdout_sha256": "9285001b8e46c26687a2fd422846eab8601aae328fc69dc3fa8265bcefdd6ba9",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-129.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39353,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 9814016
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69320704
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76267520
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76365824
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76480512
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76546048
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76627968
+        },
+        {
+          "pid": 39353,
+          "total_os_threads": 3,
+          "running_os_threads": 1,
+          "resident_bytes": 76234752
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 16641,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-129"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 200,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "200"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 5011,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-200.stdout",
+      "stdout_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-200.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39354,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 29638656
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76218368
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76513280
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76693504
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76906496
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76939264
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 77037568
+        },
+        {
+          "pid": 39354,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 77119488
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 40000,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "canonical-small"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31",
+      "n": 257,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+        "257"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 8492,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-257.stdout",
+      "stdout_sha256": "ccc7bd2c7c5018c1ea06b7c78269fa7084867e3cf443e8fba7c0a3d8d50b1056",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-output-257.stderr",
+      "stderr_sha256": "32144cc3b037f2596d0451cd9481a7acc0e8cf1beb474ba47e8de433b0b18b1a",
+      "native_thread_observations": [
+        {
+          "pid": 39355,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 31965184
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 75841536
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76103680
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76218368
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76283904
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76398592
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76513280
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76595200
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76759040
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76759040
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76824576
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76873728
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 76972032
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 77037568
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 8,
+          "running_os_threads": 6,
+          "resident_bytes": 77053952
+        },
+        {
+          "pid": 39355,
+          "total_os_threads": 5,
+          "running_os_threads": 3,
+          "resident_bytes": 76890112
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "active",
+      "reference_match": true,
+      "pixels": 66049,
+      "spawned_worker_limit": 8,
+      "parent_only_output": true,
+      "worker_results_joined_before_binary_payload": true,
+      "case": "width-257"
+    }
+  ],
+  "baseline_cases": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+      "source_sha256": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e",
+      "n": 9,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 25,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-retained-base-9.stdout",
+      "stdout_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-retained-base-9.stderr",
+      "stderr_sha256": "fe3bd497862aa31d3a5173247b742b541201ff3602cefe878ce39e90ea90547e",
+      "native_thread_observations": [
+        {
+          "pid": 39331,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39331,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 229376
+        },
+        {
+          "pid": 39331,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 63471616
+        },
+        {
+          "pid": 39331,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73629696
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "whole",
+      "reference_match": true,
+      "retained_base_unchanged": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+      "source_sha256": "64f2913ec83009b70cc3ac8c4064438732bc1faf4448af198b7052e4cb0aaa4e",
+      "n": 200,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandelbrot-v2/sources/fast.ua",
+        "200"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 5011,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-retained-base-200.stdout",
+      "stdout_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-retained-base-200.stderr",
+      "stderr_sha256": "fe3bd497862aa31d3a5173247b742b541201ff3602cefe878ce39e90ea90547e",
+      "native_thread_observations": [
+        {
+          "pid": 39332,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 573440
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 44646400
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73629696
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 0,
+          "resident_bytes": 73678848
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73678848
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73678848
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        },
+        {
+          "pid": 39332,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73695232
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "whole",
+      "reference_match": true,
+      "retained_base_unchanged": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
+      "source_sha256": "5a3397ac99a36bdff8bf834b5f1c81ed2d53ab969e4f80994ab4870172c9ca65",
+      "n": 9,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 25,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-retained-base-9.stdout",
+      "stdout_sha256": "938f0a0fb19d6e0d884754e89369ae63cf71b840291bc40796692859cec261ce",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-retained-base-9.stderr",
+      "stderr_sha256": "3796aa720e2cb304b7b3e319156503d051c8706502e8fdfe279ea830a11c3f39",
+      "native_thread_observations": [
+        {
+          "pid": 39356,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39356,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39356,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7962624
+        },
+        {
+          "pid": 39356,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 71892992
+        },
+        {
+          "pid": 39356,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73940992
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "active",
+      "reference_match": true,
+      "retained_base_unchanged": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
+      "source_sha256": "5a3397ac99a36bdff8bf834b5f1c81ed2d53ab969e4f80994ab4870172c9ca65",
+      "n": 200,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-active-v3/sources/fast.ua",
+        "200"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 5011,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-retained-base-200.stdout",
+      "stdout_sha256": "97610473750700638fc63d13cfa49d339b67c18e7f26b3f9c9acb61e746472d5",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-retained-base-200.stderr",
+      "stderr_sha256": "3796aa720e2cb304b7b3e319156503d051c8706502e8fdfe279ea830a11c3f39",
+      "native_thread_observations": [
+        {
+          "pid": 39357,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 18694144
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 73498624
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74039296
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74104832
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74121216
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74137600
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74153984
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74153984
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74203136
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74203136
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74219520
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74235904
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74268672
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74268672
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74268672
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74268672
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74285056
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74301440
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74317824
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74317824
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74317824
+        },
+        {
+          "pid": 39357,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 74317824
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "family": "active",
+      "reference_match": true,
+      "retained_base_unchanged": true
+    }
+  ],
+  "traces": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-whole.ua",
+      "source_sha256": "053143d152bdf049bf1df1fc99117a868b606ed876789971df460a46fc8a8825",
+      "n": 9,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-whole.ua",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 170477,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-trace-9.stdout",
+      "stdout_sha256": "6ba29019227b9cad33bfc45c9843b228ba4a921c11385ae2e0d67942771dc1b3",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-trace-9.stderr",
+      "stderr_sha256": "203006ef64aa77e996858ba791ceaabf5b3b2ea61f42064b772e303799fd62cb",
+      "native_thread_observations": [
+        {
+          "pid": 39333,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39333,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39333,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 15974400
+        },
+        {
+          "pid": 39333,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 72220672
+        },
+        {
+          "pid": 39333,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 78610432
+        }
+      ],
+      "peak_total_os_threads": 2,
+      "reference_match": true,
+      "every_row_order_verified": true,
+      "every_requested_pixel_verified": true,
+      "every_required_recurrence_bitwise_verified": true,
+      "escape_states_included": true,
+      "actual_required_pixel_recurrences": 1971,
+      "worker_returned_trace_only": true,
+      "concurrent_worker_stdout": false,
+      "maximum_pixel_iterations": 50,
+      "family": "whole",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "original_source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-whole.ua",
+      "source_sha256": "053143d152bdf049bf1df1fc99117a868b606ed876789971df460a46fc8a8825",
+      "n": 13,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-whole.ua",
+        "13"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 347121,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-trace-13.stdout",
+      "stdout_sha256": "e0a3c6b40f905d7dbdd28a11d428ddbbde5e803649295704e2e3d291b14af931",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-trace-13.stderr",
+      "stderr_sha256": "203006ef64aa77e996858ba791ceaabf5b3b2ea61f42064b772e303799fd62cb",
+      "native_thread_observations": [
+        {
+          "pid": 39334,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39334,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39334,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 41484288
+        },
+        {
+          "pid": 39334,
+          "total_os_threads": 9,
+          "running_os_threads": 7,
+          "resident_bytes": 77316096
+        },
+        {
+          "pid": 39334,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 82739200
+        }
+      ],
+      "peak_total_os_threads": 9,
+      "reference_match": true,
+      "every_row_order_verified": true,
+      "every_requested_pixel_verified": true,
+      "every_required_recurrence_bitwise_verified": true,
+      "escape_states_included": true,
+      "actual_required_pixel_recurrences": 4087,
+      "worker_returned_trace_only": true,
+      "concurrent_worker_stdout": false,
+      "maximum_pixel_iterations": 50,
+      "family": "whole",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "original_source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-whole.ua",
+      "source_sha256": "053143d152bdf049bf1df1fc99117a868b606ed876789971df460a46fc8a8825",
+      "n": 65,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-whole.ua",
+        "65"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 8402778,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-trace-65.stdout",
+      "stdout_sha256": "74cb076cfbfbf00021c63eb3a3d199641f39fd1b4b3b849f64f2eefa2e32e282",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-trace-65.stderr",
+      "stderr_sha256": "203006ef64aa77e996858ba791ceaabf5b3b2ea61f42064b772e303799fd62cb",
+      "native_thread_observations": [
+        {
+          "pid": 39335,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 40796160
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 78970880
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 82706432
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 9,
+          "running_os_threads": 7,
+          "resident_bytes": 85803008
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 89718784
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 104857600
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 120438784
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 134201344
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 148668416
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 164462592
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 174489600
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 180764672
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 125157376
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 137330688
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 150388736
+        },
+        {
+          "pid": 39335,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 158793728
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "reference_match": true,
+      "every_row_order_verified": true,
+      "every_requested_pixel_verified": true,
+      "every_required_recurrence_bitwise_verified": true,
+      "escape_states_included": true,
+      "actual_required_pixel_recurrences": 102808,
+      "worker_returned_trace_only": true,
+      "concurrent_worker_stdout": false,
+      "maximum_pixel_iterations": 50,
+      "family": "whole",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/whole.ua",
+      "original_source_sha256": "183bc351c4428b3c1ff4c23e5d1a19eb6ba6658181142e9267f4b59f92f22569"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua",
+      "source_sha256": "72772da2a66c0f888de2f97e79893149f3e291ce541ab6334683618be9abac1c",
+      "n": 9,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 170477,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-trace-9.stdout",
+      "stdout_sha256": "6ba29019227b9cad33bfc45c9843b228ba4a921c11385ae2e0d67942771dc1b3",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-trace-9.stderr",
+      "stderr_sha256": "4f3dd22d8c0585788484a162e591fbdce065b7ee8811045fdd2262fa71c85d8f",
+      "native_thread_observations": [
+        {
+          "pid": 39358,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39358,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39358,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 42237952
+        },
+        {
+          "pid": 39358,
+          "total_os_threads": 8,
+          "running_os_threads": 6,
+          "resident_bytes": 77201408
+        }
+      ],
+      "peak_total_os_threads": 8,
+      "reference_match": true,
+      "every_row_order_verified": true,
+      "every_requested_pixel_verified": true,
+      "every_required_recurrence_bitwise_verified": true,
+      "escape_states_included": true,
+      "actual_required_pixel_recurrences": 1971,
+      "worker_returned_trace_only": true,
+      "concurrent_worker_stdout": false,
+      "maximum_pixel_iterations": 50,
+      "family": "active",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "original_source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua",
+      "source_sha256": "72772da2a66c0f888de2f97e79893149f3e291ce541ab6334683618be9abac1c",
+      "n": 13,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua",
+        "13"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 347121,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-trace-13.stdout",
+      "stdout_sha256": "e0a3c6b40f905d7dbdd28a11d428ddbbde5e803649295704e2e3d291b14af931",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-trace-13.stderr",
+      "stderr_sha256": "4f3dd22d8c0585788484a162e591fbdce065b7ee8811045fdd2262fa71c85d8f",
+      "native_thread_observations": [
+        {
+          "pid": 39359,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39359,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39359,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 22642688
+        },
+        {
+          "pid": 39359,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 72335360
+        },
+        {
+          "pid": 39359,
+          "total_os_threads": 6,
+          "running_os_threads": 4,
+          "resident_bytes": 77692928
+        }
+      ],
+      "peak_total_os_threads": 6,
+      "reference_match": true,
+      "every_row_order_verified": true,
+      "every_requested_pixel_verified": true,
+      "every_required_recurrence_bitwise_verified": true,
+      "escape_states_included": true,
+      "actual_required_pixel_recurrences": 4087,
+      "worker_returned_trace_only": true,
+      "concurrent_worker_stdout": false,
+      "maximum_pixel_iterations": 50,
+      "family": "active",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "original_source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31"
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua",
+      "source_sha256": "72772da2a66c0f888de2f97e79893149f3e291ce541ab6334683618be9abac1c",
+      "n": 65,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/trace-active.ua",
+        "65"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 8402778,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-trace-65.stdout",
+      "stdout_sha256": "74cb076cfbfbf00021c63eb3a3d199641f39fd1b4b3b849f64f2eefa2e32e282",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-trace-65.stderr",
+      "stderr_sha256": "4f3dd22d8c0585788484a162e591fbdce065b7ee8811045fdd2262fa71c85d8f",
+      "native_thread_observations": [
+        {
+          "pid": 39360,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 28966912
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 79331328
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 10,
+          "running_os_threads": 8,
+          "resident_bytes": 82083840
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 9,
+          "running_os_threads": 7,
+          "resident_bytes": 84459520
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 5,
+          "running_os_threads": 3,
+          "resident_bytes": 85819392
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 97009664
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 113082368
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 127107072
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 137887744
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 152240128
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 167559168
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 177078272
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 181272576
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 126943232
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 140001280
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 153010176
+        },
+        {
+          "pid": 39360,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 158400512
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "reference_match": true,
+      "every_row_order_verified": true,
+      "every_requested_pixel_verified": true,
+      "every_required_recurrence_bitwise_verified": true,
+      "escape_states_included": true,
+      "actual_required_pixel_recurrences": 102808,
+      "worker_returned_trace_only": true,
+      "concurrent_worker_stdout": false,
+      "maximum_pixel_iterations": 50,
+      "family": "active",
+      "original_source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/sources/active.ua",
+      "original_source_sha256": "64d19645de504bde141ce03f369bb1b6aae22ba864d6cfc75e73bbe1b9a4cb31"
+    }
+  ],
+  "worker_gates": [
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+      "source_sha256": "7033e16cd285b3a607095b68a49be5091f1bc01f1c09b92d1a01504c7af5dbf8",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 14,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-1.stdout",
+      "stdout_sha256": "adf54918b6b814310f57fc0bd94e0bc5c27f3a5c7e2a549d7ec170ea106cf54e",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-1.stderr",
+      "stderr_sha256": "6716273d1b3b0ea9c5f83818d84d1876cb1527f7db4d7e325caf0cabb73cc6ab",
+      "native_thread_observations": [
+        {
+          "pid": 39336,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39336,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39336,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 10371072
+        },
+        {
+          "pid": 39336,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 71073792
+        },
+        {
+          "pid": 39336,
+          "total_os_threads": 4,
+          "running_os_threads": 0,
+          "resident_bytes": 74416128
+        }
+      ],
+      "peak_total_os_threads": 4,
+      "family": "whole",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39336,
+          "total_os_threads": 4,
+          "running_os_threads": 0,
+          "resident_bytes": 74416128
+        },
+        {
+          "pid": 39336,
+          "total_os_threads": 4,
+          "running_os_threads": 0,
+          "resident_bytes": 74416128
+        },
+        {
+          "pid": 39336,
+          "total_os_threads": 4,
+          "running_os_threads": 0,
+          "resident_bytes": 74416128
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 1,
+      "expected_spawn_workers": 1,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+      "source_sha256": "7033e16cd285b3a607095b68a49be5091f1bc01f1c09b92d1a01504c7af5dbf8",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+        "2"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 15,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-2.stdout",
+      "stdout_sha256": "ae2a0fe081bf630ae93680aa59494236c6bb01fa8a2e5b8bca405e9358041397",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-2.stderr",
+      "stderr_sha256": "6716273d1b3b0ea9c5f83818d84d1876cb1527f7db4d7e325caf0cabb73cc6ab",
+      "native_thread_observations": [
+        {
+          "pid": 39337,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39337,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39337,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 14712832
+        },
+        {
+          "pid": 39337,
+          "total_os_threads": 3,
+          "running_os_threads": 1,
+          "resident_bytes": 71598080
+        },
+        {
+          "pid": 39337,
+          "total_os_threads": 5,
+          "running_os_threads": 0,
+          "resident_bytes": 74514432
+        }
+      ],
+      "peak_total_os_threads": 5,
+      "family": "whole",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39337,
+          "total_os_threads": 5,
+          "running_os_threads": 0,
+          "resident_bytes": 74514432
+        },
+        {
+          "pid": 39337,
+          "total_os_threads": 5,
+          "running_os_threads": 0,
+          "resident_bytes": 74514432
+        },
+        {
+          "pid": 39337,
+          "total_os_threads": 5,
+          "running_os_threads": 0,
+          "resident_bytes": 74514432
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 2,
+      "expected_spawn_workers": 2,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+      "source_sha256": "7033e16cd285b3a607095b68a49be5091f1bc01f1c09b92d1a01504c7af5dbf8",
+      "n": 7,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+        "7"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 20,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-7.stdout",
+      "stdout_sha256": "7f0586a905823753fb5f115fed42fe5747b58083ecbe202188d61fbfa1aa4b54",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-7.stderr",
+      "stderr_sha256": "6716273d1b3b0ea9c5f83818d84d1876cb1527f7db4d7e325caf0cabb73cc6ab",
+      "native_thread_observations": [
+        {
+          "pid": 39338,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39338,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39338,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7946240
+        },
+        {
+          "pid": 39338,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69140480
+        },
+        {
+          "pid": 39338,
+          "total_os_threads": 10,
+          "running_os_threads": 0,
+          "resident_bytes": 74743808
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "whole",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39338,
+          "total_os_threads": 10,
+          "running_os_threads": 0,
+          "resident_bytes": 74743808
+        },
+        {
+          "pid": 39338,
+          "total_os_threads": 10,
+          "running_os_threads": 0,
+          "resident_bytes": 74743808
+        },
+        {
+          "pid": 39338,
+          "total_os_threads": 10,
+          "running_os_threads": 0,
+          "resident_bytes": 74743808
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 7,
+      "expected_spawn_workers": 7,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+      "source_sha256": "7033e16cd285b3a607095b68a49be5091f1bc01f1c09b92d1a01504c7af5dbf8",
+      "n": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 21,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-8.stdout",
+      "stdout_sha256": "7e4d1412a27aa51a1256327a7075dd39c81f642153937ea418c1c7d2b54d07df",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-8.stderr",
+      "stderr_sha256": "6716273d1b3b0ea9c5f83818d84d1876cb1527f7db4d7e325caf0cabb73cc6ab",
+      "native_thread_observations": [
+        {
+          "pid": 39339,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39339,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39339,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7290880
+        },
+        {
+          "pid": 39339,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 66011136
+        },
+        {
+          "pid": 39339,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74858496
+        }
+      ],
+      "peak_total_os_threads": 11,
+      "family": "whole",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39339,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74858496
+        },
+        {
+          "pid": 39339,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74858496
+        },
+        {
+          "pid": 39339,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74858496
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 8,
+      "expected_spawn_workers": 8,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+      "source_sha256": "7033e16cd285b3a607095b68a49be5091f1bc01f1c09b92d1a01504c7af5dbf8",
+      "n": 9,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 31,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-9.stdout",
+      "stdout_sha256": "1435984fc99c9ad118429f14e7fcf48a7b47ea7ce2939f2e4ce985a483ea526a",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-9.stderr",
+      "stderr_sha256": "6716273d1b3b0ea9c5f83818d84d1876cb1527f7db4d7e325caf0cabb73cc6ab",
+      "native_thread_observations": [
+        {
+          "pid": 39340,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39340,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 147456
+        },
+        {
+          "pid": 39340,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 29622272
+        },
+        {
+          "pid": 39340,
+          "total_os_threads": 3,
+          "running_os_threads": 1,
+          "resident_bytes": 71565312
+        },
+        {
+          "pid": 39340,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74825728
+        }
+      ],
+      "peak_total_os_threads": 11,
+      "family": "whole",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39340,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74825728
+        },
+        {
+          "pid": 39340,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74825728
+        },
+        {
+          "pid": 39340,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74825728
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 8,
+      "expected_spawn_workers": 8,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+      "source_sha256": "7033e16cd285b3a607095b68a49be5091f1bc01f1c09b92d1a01504c7af5dbf8",
+      "n": 13,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+        "13"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 41,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-13.stdout",
+      "stdout_sha256": "62f786b134f505205b460161fa95b88dd160d2b4860c52e6a239aff93cd72569",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-13.stderr",
+      "stderr_sha256": "6716273d1b3b0ea9c5f83818d84d1876cb1527f7db4d7e325caf0cabb73cc6ab",
+      "native_thread_observations": [
+        {
+          "pid": 39341,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39341,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39341,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 1474560
+        },
+        {
+          "pid": 39341,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 52248576
+        },
+        {
+          "pid": 39341,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74776576
+        }
+      ],
+      "peak_total_os_threads": 11,
+      "family": "whole",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39341,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74776576
+        },
+        {
+          "pid": 39341,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74776576
+        },
+        {
+          "pid": 39341,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74776576
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 8,
+      "expected_spawn_workers": 8,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+      "source_sha256": "7033e16cd285b3a607095b68a49be5091f1bc01f1c09b92d1a01504c7af5dbf8",
+      "n": 65,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-whole.ua",
+        "65"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 600,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-65.stdout",
+      "stdout_sha256": "583f98e2b188829dba1ead6758e727881632417fe7ad9682ffe32226791dc842",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/whole-worker-gate-65.stderr",
+      "stderr_sha256": "6716273d1b3b0ea9c5f83818d84d1876cb1527f7db4d7e325caf0cabb73cc6ab",
+      "native_thread_observations": [
+        {
+          "pid": 39342,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39342,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39342,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 16957440
+        },
+        {
+          "pid": 39342,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69222400
+        },
+        {
+          "pid": 39342,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74874880
+        },
+        {
+          "pid": 39342,
+          "total_os_threads": 11,
+          "running_os_threads": 8,
+          "resident_bytes": 77021184
+        },
+        {
+          "pid": 39342,
+          "total_os_threads": 10,
+          "running_os_threads": 7,
+          "resident_bytes": 77086720
+        }
+      ],
+      "peak_total_os_threads": 11,
+      "family": "whole",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39342,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74874880
+        },
+        {
+          "pid": 39342,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74874880
+        },
+        {
+          "pid": 39342,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74874880
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 8,
+      "expected_spawn_workers": 8,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+      "source_sha256": "5bc9cfbfa3dc1a7978c008dc93e418b7945f8b55b204113d496bb38e40244fa5",
+      "n": 1,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+        "1"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 14,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-1.stdout",
+      "stdout_sha256": "adf54918b6b814310f57fc0bd94e0bc5c27f3a5c7e2a549d7ec170ea106cf54e",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-1.stderr",
+      "stderr_sha256": "7c66bbf01b55bbeade754e2df9f10731289b00fe65875978389aea2c255288af",
+      "native_thread_observations": [
+        {
+          "pid": 39361,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39361,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39361,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 29917184
+        },
+        {
+          "pid": 39361,
+          "total_os_threads": 3,
+          "running_os_threads": 1,
+          "resident_bytes": 73220096
+        },
+        {
+          "pid": 39361,
+          "total_os_threads": 4,
+          "running_os_threads": 0,
+          "resident_bytes": 74481664
+        }
+      ],
+      "peak_total_os_threads": 4,
+      "family": "active",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39361,
+          "total_os_threads": 4,
+          "running_os_threads": 0,
+          "resident_bytes": 74481664
+        },
+        {
+          "pid": 39361,
+          "total_os_threads": 4,
+          "running_os_threads": 0,
+          "resident_bytes": 74481664
+        },
+        {
+          "pid": 39361,
+          "total_os_threads": 4,
+          "running_os_threads": 0,
+          "resident_bytes": 74481664
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 1,
+      "expected_spawn_workers": 1,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+      "source_sha256": "5bc9cfbfa3dc1a7978c008dc93e418b7945f8b55b204113d496bb38e40244fa5",
+      "n": 2,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+        "2"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 15,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-2.stdout",
+      "stdout_sha256": "ae2a0fe081bf630ae93680aa59494236c6bb01fa8a2e5b8bca405e9358041397",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-2.stderr",
+      "stderr_sha256": "7c66bbf01b55bbeade754e2df9f10731289b00fe65875978389aea2c255288af",
+      "native_thread_observations": [
+        {
+          "pid": 39362,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39362,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39362,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 7946240
+        },
+        {
+          "pid": 39362,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69222400
+        },
+        {
+          "pid": 39362,
+          "total_os_threads": 5,
+          "running_os_threads": 0,
+          "resident_bytes": 74514432
+        }
+      ],
+      "peak_total_os_threads": 5,
+      "family": "active",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39362,
+          "total_os_threads": 5,
+          "running_os_threads": 0,
+          "resident_bytes": 74514432
+        },
+        {
+          "pid": 39362,
+          "total_os_threads": 5,
+          "running_os_threads": 0,
+          "resident_bytes": 74514432
+        },
+        {
+          "pid": 39362,
+          "total_os_threads": 5,
+          "running_os_threads": 0,
+          "resident_bytes": 74514432
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 2,
+      "expected_spawn_workers": 2,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+      "source_sha256": "5bc9cfbfa3dc1a7978c008dc93e418b7945f8b55b204113d496bb38e40244fa5",
+      "n": 7,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+        "7"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 20,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-7.stdout",
+      "stdout_sha256": "7f0586a905823753fb5f115fed42fe5747b58083ecbe202188d61fbfa1aa4b54",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-7.stderr",
+      "stderr_sha256": "7c66bbf01b55bbeade754e2df9f10731289b00fe65875978389aea2c255288af",
+      "native_thread_observations": [
+        {
+          "pid": 39363,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39363,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39363,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 14893056
+        },
+        {
+          "pid": 39363,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69238784
+        },
+        {
+          "pid": 39363,
+          "total_os_threads": 10,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        }
+      ],
+      "peak_total_os_threads": 10,
+      "family": "active",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39363,
+          "total_os_threads": 10,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        },
+        {
+          "pid": 39363,
+          "total_os_threads": 10,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        },
+        {
+          "pid": 39363,
+          "total_os_threads": 10,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 7,
+      "expected_spawn_workers": 7,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+      "source_sha256": "5bc9cfbfa3dc1a7978c008dc93e418b7945f8b55b204113d496bb38e40244fa5",
+      "n": 8,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+        "8"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 21,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-8.stdout",
+      "stdout_sha256": "7e4d1412a27aa51a1256327a7075dd39c81f642153937ea418c1c7d2b54d07df",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-8.stderr",
+      "stderr_sha256": "7c66bbf01b55bbeade754e2df9f10731289b00fe65875978389aea2c255288af",
+      "native_thread_observations": [
+        {
+          "pid": 39364,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39364,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39364,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 2539520
+        },
+        {
+          "pid": 39364,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 54509568
+        },
+        {
+          "pid": 39364,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74907648
+        }
+      ],
+      "peak_total_os_threads": 11,
+      "family": "active",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39364,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74907648
+        },
+        {
+          "pid": 39364,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74907648
+        },
+        {
+          "pid": 39364,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74907648
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 8,
+      "expected_spawn_workers": 8,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+      "source_sha256": "5bc9cfbfa3dc1a7978c008dc93e418b7945f8b55b204113d496bb38e40244fa5",
+      "n": 9,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+        "9"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 31,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-9.stdout",
+      "stdout_sha256": "1435984fc99c9ad118429f14e7fcf48a7b47ea7ce2939f2e4ce985a483ea526a",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-9.stderr",
+      "stderr_sha256": "7c66bbf01b55bbeade754e2df9f10731289b00fe65875978389aea2c255288af",
+      "native_thread_observations": [
+        {
+          "pid": 39365,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39365,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39365,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 12943360
+        },
+        {
+          "pid": 39365,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69173248
+        },
+        {
+          "pid": 39365,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        }
+      ],
+      "peak_total_os_threads": 11,
+      "family": "active",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39365,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        },
+        {
+          "pid": 39365,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        },
+        {
+          "pid": 39365,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 8,
+      "expected_spawn_workers": 8,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+      "source_sha256": "5bc9cfbfa3dc1a7978c008dc93e418b7945f8b55b204113d496bb38e40244fa5",
+      "n": 13,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+        "13"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 41,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-13.stdout",
+      "stdout_sha256": "62f786b134f505205b460161fa95b88dd160d2b4860c52e6a239aff93cd72569",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-13.stderr",
+      "stderr_sha256": "7c66bbf01b55bbeade754e2df9f10731289b00fe65875978389aea2c255288af",
+      "native_thread_observations": [
+        {
+          "pid": 39366,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39366,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39366,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 11550720
+        },
+        {
+          "pid": 39366,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 69173248
+        },
+        {
+          "pid": 39366,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        },
+        {
+          "pid": 39366,
+          "total_os_threads": 5,
+          "running_os_threads": 2,
+          "resident_bytes": 76300288
+        }
+      ],
+      "peak_total_os_threads": 11,
+      "family": "active",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39366,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        },
+        {
+          "pid": 39366,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        },
+        {
+          "pid": 39366,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74891264
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 8,
+      "expected_spawn_workers": 8,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    },
+    {
+      "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+      "source_sha256": "5bc9cfbfa3dc1a7978c008dc93e418b7945f8b55b204113d496bb38e40244fa5",
+      "n": 65,
+      "command": [
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+        "run",
+        "--no-format",
+        "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/gate-active.ua",
+        "65"
+      ],
+      "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+      "runtime_environment": {
+        "LC_ALL": "C",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1"
+      },
+      "returncode": 0,
+      "bytes": 600,
+      "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-65.stdout",
+      "stdout_sha256": "583f98e2b188829dba1ead6758e727881632417fe7ad9682ffe32226791dc842",
+      "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/active-worker-gate-65.stderr",
+      "stderr_sha256": "7c66bbf01b55bbeade754e2df9f10731289b00fe65875978389aea2c255288af",
+      "native_thread_observations": [
+        {
+          "pid": 39367,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 1,
+          "running_os_threads": 0,
+          "resident_bytes": 32768
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 1,
+          "running_os_threads": 1,
+          "resident_bytes": 2539520
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 2,
+          "running_os_threads": 1,
+          "resident_bytes": 62111744
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74973184
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 11,
+          "running_os_threads": 8,
+          "resident_bytes": 77053952
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 11,
+          "running_os_threads": 8,
+          "resident_bytes": 77365248
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 9,
+          "running_os_threads": 6,
+          "resident_bytes": 77316096
+        }
+      ],
+      "peak_total_os_threads": 11,
+      "family": "active",
+      "reference_match": true,
+      "diagnostic_only": true,
+      "blocked_observations": [
+        {
+          "pid": 39367,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74973184
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74973184
+        },
+        {
+          "pid": 39367,
+          "total_os_threads": 11,
+          "running_os_threads": 0,
+          "resident_bytes": 74973184
+        }
+      ],
+      "parent_total_os_threads": 3,
+      "observed_additional_os_worker_threads": 8,
+      "expected_spawn_workers": 8,
+      "actual_worker_bound_verified": true,
+      "benchmark_native_runtime_unmodified": true
+    }
+  ],
+  "full_performance_runs": 0,
+  "attempt_directory": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z",
+  "parent_thread_baseline": {
+    "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/parent-only-gate.ua",
+    "source_sha256": "7b003a2b54fbba2bd087ff171e57c8163ce75816a15d5360db22f2da99b04828",
+    "n": 0,
+    "command": [
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+      "run",
+      "--no-format",
+      "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/parent-only-gate.ua",
+      "0"
+    ],
+    "cwd": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011",
+    "runtime_environment": {
+      "LC_ALL": "C",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1"
+    },
+    "returncode": 0,
+    "bytes": 6,
+    "stdout_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/parent-only-gate.stdout",
+    "stdout_sha256": "3dfa3fb239f56c778a1e9b33eb31328349edd155a95806dac4378904e88527e5",
+    "stderr_file": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-mandel-parallel-v4/results/validation-20261011T225540387201Z/parent-only-gate.stderr",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "native_thread_observations": [
+      {
+        "pid": 39317,
+        "total_os_threads": 1,
+        "running_os_threads": 0,
+        "resident_bytes": 32768
+      },
+      {
+        "pid": 39317,
+        "total_os_threads": 1,
+        "running_os_threads": 1,
+        "resident_bytes": 163840
+      },
+      {
+        "pid": 39317,
+        "total_os_threads": 2,
+        "running_os_threads": 1,
+        "resident_bytes": 55377920
+      },
+      {
+        "pid": 39317,
+        "total_os_threads": 3,
+        "running_os_threads": 0,
+        "resident_bytes": 71827456
+      }
+    ],
+    "peak_total_os_threads": 3,
+    "blocked_observations": [
+      {
+        "pid": 39317,
+        "total_os_threads": 3,
+        "running_os_threads": 0,
+        "resident_bytes": 71827456
+      },
+      {
+        "pid": 39317,
+        "total_os_threads": 3,
+        "running_os_threads": 0,
+        "resident_bytes": 71827456
+      },
+      {
+        "pid": 39317,
+        "total_os_threads": 3,
+        "running_os_threads": 0,
+        "resident_bytes": 71827456
+      }
+    ]
+  },
+  "parent_total_os_threads": 3,
+  "finished_at": "2026-10-11T23:01:28.738493+00:00",
+  "outputs_passed": 26,
+  "baseline_checks_passed": 4,
+  "traces_passed": 6,
+  "worker_gates_passed": 14
+}

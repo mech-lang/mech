@@ -1,5 +1,5 @@
 {
-  "status": "running",
+  "status": "partial",
   "language": "apl",
   "created_at": "2026-10-11T18:51:49.239896+00:00",
   "sample_count": 3,
@@ -7515,7 +7515,7 @@
     }
   },
   "machine": "Apple M3",
-  "updated_at": "2026-10-11T21:27:23.514453+00:00",
+  "updated_at": "2026-10-11T22:25:31.929797+00:00",
   "historical_attempts": [
     {
       "key": "regexredux:mech-control-for-apl",
@@ -9248,12 +9248,57 @@
       ]
     }
   ],
-  "active": {
-    "key": "mandelbrot:mandelbrot-apl-compact",
-    "sample": 1,
-    "started_at": "2026-10-11T21:58:35.045310+00:00",
-    "timeout_seconds": 14400,
-    "planning_safety_factor": null,
-    "planning_probe_n": null
-  }
+  "coordinator_loss_events": [
+    {
+      "observed_at": "2026-10-11T22:18:35.268263+00:00",
+      "event": "BenchmarkCoordinatorLost",
+      "coordinators_no_longer_present": [
+        25041,
+        27278
+      ],
+      "orphan_pid": 25078,
+      "orphan_ppid": 1,
+      "stale_active": {
+        "key": "mandelbrot:mandelbrot-apl-compact",
+        "sample": 1,
+        "started_at": "2026-10-11T21:58:35.045310+00:00",
+        "timeout_seconds": 14400,
+        "planning_safety_factor": null,
+        "planning_probe_n": null
+      },
+      "trial_continues_uninterrupted": false,
+      "never_chart_eligible": true,
+      "qualification_lost_reasons": [
+        "Benchmark coordinator and wall-clock, compiler, power and RSS monitors no longer present.",
+        "Lock released with benchmark process still active.",
+        "Compiler process overlapped orphan after coordinator loss.",
+        "Original temporary output files are unlinked and cannot be validated through surviving coordinator handles."
+      ],
+      "seconds": null,
+      "exit_status": null,
+      "output_validation": null,
+      "next_action": "Wait for exact orphan process identity to exit before starting replacement or remaining full trials. Resume only through unchanged frozen harness with shared timing mutex.",
+      "event_id": "r-apl-uiua-20261011-apl-mandelbrot-coordinator-loss-25078",
+      "attempt_number": null,
+      "attempt_ordinal_unassigned": true,
+      "attempt_ordinal_policy": "Frozen run.py assigns attempt_number only after execute returns. This process lost its coordinator before return and has no assigned attempt ordinal; no ordinal reservation or synthetic attempt row is made.",
+      "compiler_overlap_evidence": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/coordinator-loss-20261011-v4/compiler-overlap-observation.json",
+      "reconciled_at": "2026-10-11T22:25:31.929585+00:00",
+      "observed_process_identity": {
+        "pid": 25078,
+        "ppid": 1,
+        "pgid": 25078,
+        "etime_observed_for_cleanup_only": "24:36",
+        "cpu_percent": 100.0,
+        "state": "Rs",
+        "command": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/gnu-apl-local/bin/apl --silent --noCIN --noCONT --noColor --noSV --cc 1 -f /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/apl/mandelbrot.compact.apl -- 16000",
+        "lstart": "Sun Oct 11 17:58:35 2026"
+      },
+      "exit_observed_at": "2026-10-11T22:23:11.796394+00:00",
+      "cleanup_record": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/evidence/coordinator-loss-20261011-v4/cleanup.json",
+      "cleanup_status": "group-exit-confirmed",
+      "disposition": "Coordinator-loss event; no sample, fabricated timeout, or source failure recorded.",
+      "prior_report_sha256": "23a2fa135d0e3e01813865d51b7691affb4f8d9a6719749d8acaaff945fd900b"
+    }
+  ]
 }

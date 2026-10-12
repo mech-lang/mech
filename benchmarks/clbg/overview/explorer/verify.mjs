@@ -16,6 +16,26 @@ function historicalMeasurement(mech){
   return mech;
 }
 
+// Later source studies keep the preceding endpoint records and source bytes in
+// their audit. Earlier cohorts must still verify their original controls there.
+function recordedProgram(key){
+  const program=data.programs[key]??data.mandelbrot_study_audit?.previous_endpoints.mech.programs.find(row=>row.key===key);
+  assert(program,`Missing recorded program: ${key}`);
+  return program;
+}
+function recordedFile(key){
+  const file=data.files[key]??data.mandelbrot_study_audit?.previous_endpoints.mech.files[key];
+  assert(file,`Missing recorded source: ${key}`);
+  return file;
+}
+function originalMechEndpoint(benchmark,profile){
+  const previous=benchmark.key==='mandelbrot'?data.mandelbrot_study_audit?.previous_endpoints.mech:null;
+  if(!previous)return historicalMeasurement(data.programs[benchmark.groups.find(group=>group.language==='mech')[profile]]);
+  const rows=[...previous.programs];
+  rows.sort(profile==='fast'?(a,b)=>a.seconds-b.seconds||a.loc-b.loc:(a,b)=>a.loc-b.loc||a.seconds-b.seconds);
+  return historicalMeasurement(rows[0]);
+}
+
 const selection={benchmarks:new Set(data.benchmarks.map(b=>b.key)),languages:new Set(data.languages.map(l=>l.key)),disabled:new Set()};
 const years=JSON.parse(fs.readFileSync(new URL('./language-years.json',import.meta.url)));
 const newLanguageKeys=['r','apl','uiua'].filter(key=>data.languages.some(l=>l.key===key));
@@ -415,8 +435,8 @@ for(const benchmark of data.benchmarks){
   assert(data.programs[group.fast].seconds<=data.programs[group.small].seconds);
   assert(data.programs[group.small].loc<=data.programs[group.fast].loc);
   const control=matlabAudit.controls[benchmark.key];assert.equal(control.samples_seconds.length,3);
-  assert.equal(control.chart_key,benchmark.groups.find(g=>g.language==='mech').fast);
-  assert.equal(control.source_sha256,data.files[data.programs[control.chart_key].files[0]].sha256);
+  assert.equal(control.chart_key,originalMechEndpoint(benchmark,'fast').key);
+  assert.equal(control.source_sha256,recordedFile(recordedProgram(control.chart_key).files[0]).sha256);
   for(const key of group.programs){
     const program=data.programs[key];assert.equal(program.samples.length,3);
     assert(program.required_work_validated&&program.algorithm.strict);
@@ -457,9 +477,9 @@ for(const benchmark of data.benchmarks){
   const group=benchmark.groups.find(g=>g.language==='erlang');assert(group?.fast&&group?.small);
   assert(data.programs[group.fast].seconds<=data.programs[group.small].seconds);
   assert(data.programs[group.small].loc<=data.programs[group.fast].loc);
-  const control=erlangAudit.controls[benchmark.key],mech=historicalMeasurement(data.programs[control.chart_key]);
-  assert.equal(control.samples_seconds.length,3);assert.equal(control.chart_key,benchmark.groups.find(g=>g.language==='mech').fast);
-  assert.equal(control.source_sha256,data.files[mech.files[0]].sha256);assert.equal(control.binary_sha256,mech.binary_sha256);
+  const control=erlangAudit.controls[benchmark.key],mech=historicalMeasurement(recordedProgram(control.chart_key));
+  assert.equal(control.samples_seconds.length,3);assert.equal(control.chart_key,originalMechEndpoint(benchmark,'fast').key);
+  assert.equal(control.source_sha256,recordedFile(mech.files[0]).sha256);assert.equal(control.binary_sha256,mech.binary_sha256);
   assert.equal(control.previous_seconds,mech.seconds);
   for(const id of group.programs){
     const program=historicalMeasurement(data.programs[id]);assert.equal(program.samples.length,3);assert(program.required_work_validated&&program.algorithm.strict);
@@ -495,9 +515,9 @@ for(const [key,color,year,runtime,extension] of [['lisp','#3fb68b',1984,'sbcl','
     const group=benchmark.groups.find(g=>g.language===key);assert(group?.fast&&group?.small);
     assert(data.programs[group.fast].seconds<=data.programs[group.small].seconds);
     assert(data.programs[group.small].loc<=data.programs[group.fast].loc);
-    const control=lispRacketAudit.controls[benchmark.key],mech=historicalMeasurement(data.programs[control.chart_key]);
-    assert.equal(control.samples_seconds.length,3);assert.equal(control.chart_key,benchmark.groups.find(g=>g.language==='mech').fast);
-    assert.equal(control.source_sha256,data.files[mech.files[0]].sha256);assert.equal(control.binary_sha256,mech.binary_sha256);
+    const control=lispRacketAudit.controls[benchmark.key],mech=historicalMeasurement(recordedProgram(control.chart_key));
+    assert.equal(control.samples_seconds.length,3);assert.equal(control.chart_key,originalMechEndpoint(benchmark,'fast').key);
+    assert.equal(control.source_sha256,recordedFile(mech.files[0]).sha256);assert.equal(control.binary_sha256,mech.binary_sha256);
     assert.equal(control.previous_seconds,mech.seconds);
     for(const id of group.programs){
       const program=historicalMeasurement(data.programs[id]);assert.equal(program.samples.length,3);assert(program.required_work_validated&&program.algorithm.strict);
@@ -570,11 +590,11 @@ for(const [key,color,year,extension,execution,categories] of [
   for(const benchmark of data.benchmarks){
     const group=benchmark.groups.find(g=>g.language===key),comparison=zigCohort.comparisons_to_mech.find(c=>c.language===key&&c.benchmark===benchmark.key);
     assert(group?.fast&&group?.small);assert.equal(group.fast,comparison.fastest.key);assert.equal(group.small,comparison.smallest.key);
-    const control=zigCohort.controls[benchmark.key],mech=historicalMeasurement(data.programs[control.chart_key]);
-    assert.equal(control.samples.length,3);assert.equal(control.source_sha256,data.files[mech.files[0]].sha256);
+    const control=zigCohort.controls[benchmark.key],mech=historicalMeasurement(recordedProgram(control.chart_key));
+    assert.equal(control.samples.length,3);assert.equal(control.source_sha256,recordedFile(mech.files[0]).sha256);
     assert.equal(control.binary_sha256,mech.binary_sha256);assert.equal(control.preserved_chart_seconds,mech.seconds);
     assert.equal(control.fastest_loc,mech.loc);
-    const smallMech=data.programs[benchmark.groups.find(g=>g.language==='mech').small];
+    const smallMech=originalMechEndpoint(benchmark,'small');
     assert.equal(control.smallest_loc,smallMech.loc);
     for(const kind of ['fastest','smallest']){
       const endpoint=comparison[kind],program=historicalMeasurement(data.programs[endpoint.key]);
@@ -735,4 +755,62 @@ if(data.pidigits_work_audit){
   assert.equal(fixed.loc,49);assert(fixed.required_work_validated&&fixed.algorithm.strict);
   assert.equal(fixed.seconds,audit.comparison.seconds);
   assert.equal(fixed.mech_comparison.time_x_mech,audit.comparison.time_x_mech);
+}
+
+if(data.mandelbrot_study_audit){
+  const audit=data.mandelbrot_study_audit;
+  assert.equal(audit.status,'complete');
+  assert.equal(data.provenance['mandelbrot_study_data.py'],crypto.createHash('sha256').update(fs.readFileSync(new URL('./mandelbrot_study_data.py',import.meta.url))).digest('hex'));
+  const expectedProfiles={mech:['scalar11','five16-loop-fma','five16-rows-loop-fma','frozen20','frozen29-audited'],
+    uiua:['whole11','active14','whole16-parallel','active19-parallel','mech29-control']};
+  for(const [language,identities] of Object.entries(expectedProfiles)){
+    const study=audit.studies[language];
+    assert.deepEqual(new Set(Object.keys(study.profiles)),new Set(identities));
+    assert.equal(study.full_output_reference.bytes,32000015);
+    assert.equal(study.full_output_reference.sha256,'609262469ee6a0262ccd03932e557f745c9e7b997ad17835a02a0232a64807be');
+    assert.equal(data.provenance[study.manifest],study.manifest_sha256);
+    assert.equal(data.provenance[study.report],study.report_sha256);
+    for(const row of Object.values(study.profiles)){
+      assert.equal(row.samples_seconds.length,3);assert.equal(row.sample_execution_metadata.length,3);
+      assert.equal(row.median_seconds,median(row.samples_seconds));
+      const average=row.samples_seconds.reduce((sum,value)=>sum+value,0)/3;
+      const sd=Math.sqrt(row.samples_seconds.reduce((sum,value)=>sum+(value-average)**2,0)/2);
+      assert(Math.abs(row.sample_stdev_seconds-sd)<1e-10);
+      const source=audit.study_sources[row.source_sha256];assert(source);
+      assert.equal(crypto.createHash('sha256').update(source.code).digest('hex'),row.source_sha256);
+      for(const [index,attempt] of row.sample_execution_metadata.entries()){
+        assert.equal(attempt.seconds,row.samples_seconds[index]);assert(attempt.qualified&&attempt.valid_environment&&attempt.full_workload);
+        assert.equal(attempt.exit_status,0);assert.equal(attempt.sampler_wait_status,0);
+        assert.equal(attempt.source_sha256,row.source_sha256);
+        assert.deepEqual(attempt.validation,{...study.full_output_reference,reference_match:true});
+        assert.equal(attempt.workload_n,16000);
+      }
+    }
+    const candidates=identities.filter(identity=>!identity.startsWith('frozen')&&identity!=='mech29-control').map(identity=>study.profiles[identity]);
+    const fast=[...candidates].sort((a,b)=>a.median_seconds-b.median_seconds||a.loc-b.loc||a.key.localeCompare(b.key))[0];
+    const small=[...candidates].sort((a,b)=>a.loc-b.loc||a.median_seconds-b.median_seconds||a.key.localeCompare(b.key))[0];
+    assert.deepEqual(audit.selected[language],{fast:fast.key,small:small.key});
+    const group=data.benchmarks.find(row=>row.key==='mandelbrot').groups.find(row=>row.language===language);
+    assert.equal(group.fast,fast.key);assert.equal(group.small,small.key);
+    for(const row of [fast,small]){
+      const program=data.programs[row.key];assert(program);
+      assert.equal(program.loc,row.loc);assert.equal(program.seconds,row.median_seconds);
+      assert.deepEqual(program.samples,row.samples_seconds);assert.deepEqual(program.files,[row.source_sha256]);
+      assert.equal(program.algorithm.native_benchmark_kernel,false);assert(program.required_work_validated&&program.algorithm.strict);
+    }
+  }
+  const control=audit.studies.uiua.profiles['mech29-control'];assert.equal(control.loc,29);
+  for(const row of audit.previous_endpoints.mech.programs){
+    assert(!data.programs[row.key]);
+    for(const digest of row.files)assert.equal(crypto.createHash('sha256').update(audit.previous_endpoints.mech.files[digest].code).digest('hex'),digest);
+  }
+  for(const key of Object.values(audit.selected.uiua)){
+    const program=data.programs[key],comparison=program.mech_comparison;
+    assert.equal(comparison.scope,'paired-control');assert.equal(comparison.control_key,control.key);
+    assert.equal(comparison.control_loc,29);assert.equal(comparison.source_sha256,control.source_sha256);
+    assert.equal(comparison.seconds,control.median_seconds);assert.deepEqual(comparison.samples_seconds,control.samples_seconds);
+    assert.equal(comparison.time_x_mech,program.seconds/control.median_seconds);
+    assert.equal(comparison.control_loc_x_mech,program.loc/29);
+  }
+  console.log('Verified both complete Mandelbrot studies, thirty qualified full processes, source hashes, selected compact/fast endpoints, archived earlier controls, and explicit paired 29-LOC Mech ratios.');
 }

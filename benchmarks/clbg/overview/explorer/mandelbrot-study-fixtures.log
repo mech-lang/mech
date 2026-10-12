@@ -1,0 +1,16 @@
+test_changed_artifact_is_rejected_before_endpoint_mutation (test_mandelbrot_study_data.ImportTests.test_changed_artifact_is_rejected_before_endpoint_mutation) ... ok
+test_endpoints_preserve_previous_source_samples_and_paired_control_identity (test_mandelbrot_study_data.ImportTests.test_endpoints_preserve_previous_source_samples_and_paired_control_identity) ... ok
+test_running_study_admits_nothing_and_registers_no_live_report_pin (test_mandelbrot_study_data.ImportTests.test_running_study_admits_nothing_and_registers_no_live_report_pin) ... ok
+test_complete_rounds_reconcile_raw_samples (test_mandelbrot_study_data.QualificationTests.test_complete_rounds_reconcile_raw_samples) ... ok
+test_duplicate_missing_or_forged_summary_samples_are_rejected (test_mandelbrot_study_data.QualificationTests.test_duplicate_missing_or_forged_summary_samples_are_rejected) ... ok
+test_flag_cannot_hide_fatal_execution_or_late_monitor_errors (test_mandelbrot_study_data.QualificationTests.test_flag_cannot_hide_fatal_execution_or_late_monitor_errors) ... ok
+test_full_reference_and_authoritative_native_receipt_are_required (test_mandelbrot_study_data.QualificationTests.test_full_reference_and_authoritative_native_receipt_are_required) ... ok
+test_running_study_and_wrong_manifest_are_not_complete_evidence (test_mandelbrot_study_data.QualificationTests.test_running_study_and_wrong_manifest_are_not_complete_evidence) ... ok
+test_source_command_and_fingerprint_cannot_be_relabelled (test_mandelbrot_study_data.QualificationTests.test_source_command_and_fingerprint_cannot_be_relabelled) ... ok
+test_uiua_fatal_fields_and_inherited_lock_are_required (test_mandelbrot_study_data.QualificationTests.test_uiua_fatal_fields_and_inherited_lock_are_required) ... ok
+test_worker_limit_cannot_be_changed_with_consistent_relabelled_records (test_mandelbrot_study_data.QualificationTests.test_worker_limit_cannot_be_changed_with_consistent_relabelled_records) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.045s
+
+OK

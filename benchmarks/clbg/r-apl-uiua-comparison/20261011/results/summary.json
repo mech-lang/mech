@@ -1,6 +1,6 @@
 {
   "status": "partial",
-  "updated_at": "2026-10-11T22:15:53.419639+00:00",
+  "updated_at": "2026-10-12T02:24:17.079741+00:00",
   "comparisons": [
     {
       "language": "r",
@@ -638,24 +638,105 @@
       "language": "r",
       "benchmark": "knucleotide",
       "prepared_candidates": 2,
-      "admitted_candidates": 0,
-      "pending_candidates": [
-        {
-          "key": "knucleotide:knucleotide-r-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "knucleotide:knucleotide-r-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        }
-      ],
+      "admitted_candidates": 2,
+      "pending_candidates": [],
       "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "complete-prepared-candidates",
+      "fastest": {
+        "key": "knucleotide:knucleotide-r-optimized",
+        "id": "knucleotide-r-optimized",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R",
+        "source_sha256": "e42c6118ef070bc4404f7bfb85025c142652f842109b4c8c03a780e17dad5089",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/optimized.R"
+        ],
+        "loc": 42,
+        "seconds": 34.055290459,
+        "samples_seconds": [
+          34.055290459,
+          33.611058291,
+          34.14320775
+        ],
+        "stdev_seconds": 0.28526441414260867,
+        "sample_validation": [
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 65.81908410762803,
+        "loc_x_mech": 2.4705882352941178,
+        "mech_seconds": 0.517407541,
+        "mech_samples_seconds": [
+          0.517407541,
+          0.5187095,
+          0.515946083
+        ],
+        "mech_loc": 17,
+        "control_key": "knucleotide:mech-control-for-r",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "knucleotide:knucleotide-r-compact",
+        "id": "knucleotide-r-compact",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R",
+        "source_sha256": "a92854a06aec59b889c2c8219413e7ab1ed2024196f00b4569c9b6ac1c638dd1",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/R-4.6.1/bin/Rscript",
+          "--vanilla",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/sources/r/knucleotide/compact.R"
+        ],
+        "loc": 27,
+        "seconds": 157.27453575,
+        "samples_seconds": [
+          156.927437834,
+          158.347077208,
+          157.27453575
+        ],
+        "stdev_seconds": 0.7400673499341633,
+        "sample_validation": [
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 303.96645446263415,
+        "loc_x_mech": 1.588235294117647,
+        "mech_seconds": 0.517407541,
+        "mech_samples_seconds": [
+          0.517407541,
+          0.5187095,
+          0.515946083
+        ],
+        "mech_loc": 17,
+        "control_key": "knucleotide:mech-control-for-r",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "r",
@@ -665,13 +746,13 @@
       "pending_candidates": [
         {
           "key": "binarytrees:binarytrees-r-compact",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 2,
+          "status": "partial"
         },
         {
           "key": "binarytrees:binarytrees-r-optimized",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 2,
+          "status": "partial"
         }
       ],
       "failed_candidates": [],
@@ -2019,29 +2100,123 @@
       "language": "uiua",
       "benchmark": "knucleotide",
       "prepared_candidates": 3,
-      "admitted_candidates": 0,
-      "pending_candidates": [
+      "admitted_candidates": 2,
+      "pending_candidates": [],
+      "failed_candidates": [
         {
           "key": "knucleotide:knucleotide-uiua-compact-v3",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "knucleotide:knucleotide-uiua-bounded-optimized-v3",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "knucleotide:knucleotide-uiua-native-group-optimized-v3",
-          "valid_samples": 0,
-          "status": "pending"
+          "failure": {
+            "error": "Benchmark exited with status 1",
+            "error_type": "RuntimeError",
+            "seconds": 625.126071417,
+            "exit_status": 1,
+            "attempt_number": 50,
+            "finished_at": "2026-10-11T22:56:18.040089+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "Error: Array of 1499999868 4-byte elements would be too large (5999.999 MB)\n  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/compact.ua:6:35\n6 | Count    \u2190 \u2227AddCount \u2299(map [] []) \u29c8\u2218\u2299Sequence\n                                      \u2500\n  in Count at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/compact.ua:7:15\n",
+            "resource_violation": null
+          }
         }
       ],
-      "failed_candidates": [],
-      "control_admitted": false,
-      "coverage": "pending",
-      "fastest": null,
-      "smallest": null
+      "control_admitted": true,
+      "coverage": "partial-prepared-candidates",
+      "fastest": {
+        "key": "knucleotide:knucleotide-uiua-native-group-optimized-v3",
+        "id": "knucleotide-uiua-native-group-optimized-v3",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/native-group.ua",
+        "source_sha256": "65afb1ed3299583c0ea1ea83224b5b9e0e954363c2d6bfde7bcf30e5f1b661c1",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/native-group.ua"
+        ],
+        "loc": 29,
+        "seconds": 886.628463583,
+        "samples_seconds": [
+          891.961672875,
+          886.628463583,
+          884.986163583
+        ],
+        "stdev_seconds": 3.6468708167654476,
+        "sample_validation": [
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 1678.575347135788,
+        "loc_x_mech": 1.7058823529411764,
+        "mech_seconds": 0.528202958,
+        "mech_samples_seconds": [
+          0.540452709,
+          0.513598417,
+          0.528202958
+        ],
+        "mech_loc": 17,
+        "control_key": "knucleotide:mech-control-for-uiua-medium-v3",
+        "timing_alias_of": null
+      },
+      "smallest": {
+        "key": "knucleotide:knucleotide-uiua-bounded-optimized-v3",
+        "id": "knucleotide-uiua-bounded-optimized-v3",
+        "source": "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/bounded.ua",
+        "source_sha256": "be3f21d43c56a8b4de2eb661552ff5c13d9390939e34a205c48a878fcbb155ff",
+        "command": [
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/.build/toolchains/uiua-0.19.1/uiua",
+          "run",
+          "--no-format",
+          "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/bounded.ua"
+        ],
+        "loc": 27,
+        "seconds": 933.032745167,
+        "samples_seconds": [
+          920.456796875,
+          933.631193875,
+          933.032745167
+        ],
+        "stdev_seconds": 7.4395043810365715,
+        "sample_validation": [
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          },
+          {
+            "bytes": 259,
+            "sha256": "f8c042fe770dda8f870b967605ea40ca2e353f2bdf92e89a327209dd31d445c7",
+            "reference_match": true
+          }
+        ],
+        "time_x_mech": 1766.4284741983595,
+        "loc_x_mech": 1.588235294117647,
+        "mech_seconds": 0.528202958,
+        "mech_samples_seconds": [
+          0.540452709,
+          0.513598417,
+          0.528202958
+        ],
+        "mech_loc": 17,
+        "control_key": "knucleotide:mech-control-for-uiua-medium-v3",
+        "timing_alias_of": null
+      }
     },
     {
       "language": "uiua",
@@ -2051,13 +2226,13 @@
       "pending_candidates": [
         {
           "key": "binarytrees:binarytrees-uiua-compact",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 2,
+          "status": "partial"
         },
         {
           "key": "binarytrees:binarytrees-uiua-optimized",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 2,
+          "status": "partial"
         }
       ],
       "failed_candidates": [],
@@ -2117,28 +2292,18 @@
     "r": {
       "status": "partial",
       "prepared_benchmarks": 10,
-      "admitted_benchmarks": 6,
+      "admitted_benchmarks": 7,
       "failures": [],
       "pending": [
         {
-          "key": "knucleotide:knucleotide-r-compact",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "knucleotide:knucleotide-r-optimized",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
           "key": "binarytrees:binarytrees-r-compact",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 2,
+          "status": "partial"
         },
         {
           "key": "binarytrees:binarytrees-r-optimized",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 2,
+          "status": "partial"
         },
         {
           "key": "nbody:nbody-r-compact",
@@ -2163,7 +2328,7 @@
       ]
     },
     "apl": {
-      "status": "running",
+      "status": "partial",
       "prepared_benchmarks": 10,
       "admitted_benchmarks": 4,
       "failures": [
@@ -2299,33 +2464,34 @@
     "uiua": {
       "status": "partial",
       "prepared_benchmarks": 10,
-      "admitted_benchmarks": 6,
-      "failures": [],
-      "pending": [
+      "admitted_benchmarks": 7,
+      "failures": [
         {
           "key": "knucleotide:knucleotide-uiua-compact-v3",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "knucleotide:knucleotide-uiua-bounded-optimized-v3",
-          "valid_samples": 0,
-          "status": "pending"
-        },
-        {
-          "key": "knucleotide:knucleotide-uiua-native-group-optimized-v3",
-          "valid_samples": 0,
-          "status": "pending"
-        },
+          "failure": {
+            "error": "Benchmark exited with status 1",
+            "error_type": "RuntimeError",
+            "seconds": 625.126071417,
+            "exit_status": 1,
+            "attempt_number": 50,
+            "finished_at": "2026-10-11T22:56:18.040089+00:00",
+            "stdout_bytes": 0,
+            "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderr": "Error: Array of 1499999868 4-byte elements would be too large (5999.999 MB)\n  at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/compact.ua:6:35\n6 | Count    \u2190 \u2227AddCount \u2299(map [] []) \u29c8\u2218\u2299Sequence\n                                      \u2500\n  in Count at /Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/uiua-knucleotide-v3/sources/compact.ua:7:15\n",
+            "resource_violation": null
+          }
+        }
+      ],
+      "pending": [
         {
           "key": "binarytrees:binarytrees-uiua-compact",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 2,
+          "status": "partial"
         },
         {
           "key": "binarytrees:binarytrees-uiua-optimized",
-          "valid_samples": 0,
-          "status": "pending"
+          "valid_samples": 2,
+          "status": "partial"
         },
         {
           "key": "nbody:nbody-uiua-native-denominator-compact-v3",
@@ -2351,9 +2517,9 @@
     }
   },
   "reports": {
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": "cf9e4a2c3f30d7f164e096a3abe40f03538d62e2765dfe73e6e231a68adeaf13",
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": "23a2fa135d0e3e01813865d51b7691affb4f8d9a6719749d8acaaff945fd900b",
-    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": "e9be8c03bdebee9a05e6dc936eed372715149ce21e853d7b40c320928918fa16"
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-r.json": "ff8008319f70bf70b762eae270898b235e2c73185794df00c591b03d2f12e92b",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-apl.json": "9ef8f3776ce6c7ddf65a29cec7378e782188862a271aea2826df486cac0f98f7",
+    "/Users/cim310/.codex/worktrees/clbg-nbody-v04/mech/benchmarks/clbg/r-apl-uiua-comparison/20261011/results/timings-uiua.json": "004c830d5ffbf56e62809dcc65e3f6993b1599a31a4768ae2a522d3d6d74bcac"
   },
   "admission_rule": "At least three unchanged canonical full-workload, output-validated and environment-valid fresh-process samples for the candidate and its freshly measured Mech AOT control. Partial suites and failed candidates remain explicit. Planning pilots and extrapolations are never admitted.",
   "units": "Seconds; time_x_mech is candidate median / fresh Mech AOT median. LOC ratios compare fastest with Mech fastest LOC and smallest with Mech smallest LOC. Application code only; independent statements count separately."
